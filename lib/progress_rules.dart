@@ -67,6 +67,8 @@ BigInt achievementProgress(GameState s, AchievementDefinition d) =>
         BigInt.from(weeklyCompletionCount(s)),
       AchievementMetric.dailyAllClears => BigInt.from(dailyAllClearCount(s)),
       AchievementMetric.newRecordDays => BigInt.from(s.records.newRecordDays),
+      AchievementMetric.prestiges => BigInt.from(s.prestige.count),
+      AchievementMetric.prestigeStars => BigInt.from(s.prestige.stars),
     };
 
 bool achievementMet(GameState s, AchievementDefinition d) =>

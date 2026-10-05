@@ -13,6 +13,8 @@ enum AchievementMetric {
   weeklyCompletions,
   dailyAllClears,
   newRecordDays,
+  prestiges,
+  prestigeStars,
 }
 
 class AchievementDefinition {
@@ -79,6 +81,13 @@ const achievementDefinitions = [
   AchievementDefinition(
       'record-1', '첫 하루 생산 신기록', AchievementMetric.newRecordDays, '1',
       coins: '3'),
+  // Stage 11 endgame.
+  AchievementDefinition(
+      'prestige-1', '새 노점 첫 개업', AchievementMetric.prestiges, '1',
+      titleReward: '노점 개척자'),
+  AchievementDefinition(
+      'stars-10', '명성 별 10개', AchievementMetric.prestigeStars, '10',
+      coins: '5'),
 ];
 
 // Direct taps no more than this far apart continue a combo. Hold-to-bake

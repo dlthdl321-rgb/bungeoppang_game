@@ -116,6 +116,15 @@ Future<void> offlineActions(GameController c) async {
   }
 }
 
+final offlineAutoTargets = {
+  5: BigInt.from(5000),
+  6: BigInt.from(60000000),
+  7: BigInt.parse('16000000000'),
+  8: BigInt.parse('500000000000'),
+  9: BigInt.parse('4000000000000'),
+  10: BigInt.parse('15000000000000'),
+};
+
 void main() {
   test('오프라인 시즌은 초대 조건 없이 Lv.5·7·9·10 대체 조건을 갖는다', () {
     expect(levels, same(offlineLevels));
@@ -132,7 +141,10 @@ void main() {
       10: (MissionKind.achievements, '12'),
     };
     for (var i = 0; i < levels.length; i++) {
-      expect(levels[i].autoPerSecond, legacy[i].autoPerSecond);
+      // Stage 11 raised the mid/late offline targets to pace Lv.10 at
+      // weeks 3-4; the legacy (debug) season keeps its values.
+      expect(levels[i].autoPerSecond,
+          offlineAutoTargets[levels[i].level] ?? legacy[i].autoPerSecond);
       expect(levels[i].reward, legacy[i].reward);
       final extra = replaced[levels[i].level];
       final kinds = levels[i].missions.map((m) => m.kind).toList();
@@ -449,8 +461,9 @@ void main() {
     tearDown(() => c.dispose());
 
     test('업적은 20개 내외, ID 중복 없음, 보상은 코인 또는 칭호', () {
-      expect(achievementDefinitions.length, 20);
-      expect(achievementDefinitions.map((d) => d.id).toSet().length, 20);
+      // 20 in stage 8, plus the two stage-11 prestige achievements.
+      expect(achievementDefinitions.length, 22);
+      expect(achievementDefinitions.map((d) => d.id).toSet().length, 22);
       for (final d in achievementDefinitions) {
         expect(d.coins != '0' || d.titleReward != null, isTrue, reason: d.id);
       }
@@ -517,7 +530,7 @@ void main() {
     c.dispose();
   });
 
-  test('오프라인 시즌 시뮬레이션: 2회/초 클릭과 효율 구매로 Lv.10 도달', () async {
+  test('오프라인 시즌 시뮬레이션: 2회/초 클릭과 효율 구매 4시간, 중반 도달·폭주 없음', () async {
     final clock = FakeTime()..now = now;
     final c = GameController(MemoryGameRepository(), clock)
       ..state = GameState.initial(clock.utcNow);
@@ -552,9 +565,11 @@ void main() {
       await offlineActions(c);
       reached.putIfAbsent(c.state.level, () => second);
     }
-    expect(c.state.level, 10);
+    // Stage 11: Lv.10 takes weeks now (casual simulation); four hours of
+    // nonstop play reaches the mid levels without running away.
+    expect(c.state.level, inInclusiveRange(6, 9));
     expect(c.state.missions.seenInvitePlayers, isEmpty);
-    expect(c.state.levelRewards.length, 9);
+    expect(c.state.levelRewards.length, c.state.level - 1);
     // Reports a test policy, not a promised human completion time.
     // ignore: avoid_print
     print('offline simulation: levels=$reached, '

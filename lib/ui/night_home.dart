@@ -5,6 +5,7 @@ import '../home_presentation.dart';
 import '../missions.dart';
 import '../achievement_config.dart';
 import '../cosmetic_config.dart';
+import '../prestige_rules.dart';
 import '../progress_rules.dart';
 import '../weekly_config.dart';
 import 'bake_target.dart';
@@ -133,6 +134,12 @@ class NightHome extends StatelessWidget {
               key: const Key('lifetime-value'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: muted, fontSize: 12)),
+          if (controller.state.prestige.stars > 0)
+            Text(
+                '명성 별 ${controller.state.prestige.stars} · 생산 +${(prestigePermille(controller.state) - 1000) ~/ 10}%',
+                key: const Key('home-prestige'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: cream, fontSize: 12)),
           if (controller.state.achievements.equippedTitle case final title?)
             Text('칭호 · $title',
                 key: const Key('home-title'),

@@ -16,7 +16,7 @@ void main() {
     }
   });
 
-  test('후속 단계 효과와 기본 가격은 커지고 마지막 자동 생산은 20조 목표를 넘는다', () {
+  test('후속 단계 효과와 기본 가격은 커지고 최상위 자동 생산 25개 이내로 Lv.10 목표 도달', () {
     expect(skillValuesEvidence, 'estimated');
     expect(upgrades.map((u) => u.id).toSet().length, upgrades.length);
     for (final kind in UpgradeKind.values) {
@@ -29,8 +29,11 @@ void main() {
         expect(series[i].unlockTotal >= series[i - 1].unlockTotal, isTrue);
       }
     }
-    expect(upgrades.last.effect >= levels.last.autoPerSecond, isTrue);
-    expect(levels.last.autoPerSecond, BigInt.parse('20000000000000'));
+    // Balance v3: the Lv.10 rate needs several top-tier units (no longer one).
+    expect(levels.last.autoPerSecond <= upgrades.last.effect * BigInt.from(25),
+        isTrue);
+    // Stage 11 retuned the offline-season Lv.10 rate (legacy season keeps 20조).
+    expect(levels.last.autoPerSecond, BigInt.parse('15000000000000'));
   });
 
   test('누적 가격은 원래 유리수 공식으로 각각 올림한 값의 합과 일치한다', () {

@@ -108,8 +108,9 @@ const publicReviewLevels = <LevelDefinition>[
   ]),
 ];
 
-// Same production/skill targets as the legacy season; only the invite goals
-// (Lv.5/7/9/10) are replaced. Values are this game's own tuning.
+// Invite goals (Lv.5/7/9/10) replaced by offline goals. Stage 11 raised the
+// Lv.6-9 per-second targets and set Lv.10 to 15조/s so a casual player
+// reaches Lv.10 in weeks 3-4 (see docs/stage11_balance_endgame.md).
 const offlineLevels = <LevelDefinition>[
   LevelDefinition(1, [], rewardValue: '0'), // Starting level, no claim.
   LevelDefinition(2, [
@@ -133,26 +134,26 @@ const offlineLevels = <LevelDefinition>[
   ]),
   LevelDefinition(6, [
     MissionDefinition(
-        'auto', MissionKind.autoRate, '초당 생산량', '15000000', 'estimated'),
+        'auto', MissionKind.autoRate, '초당 생산량', '60000000', 'estimated'),
   ]),
   LevelDefinition(7, [
     MissionDefinition(
-        'auto', MissionKind.autoRate, '초당 생산량', '500000000', 'estimated'),
+        'auto', MissionKind.autoRate, '초당 생산량', '16000000000', 'estimated'),
     MissionDefinition(
         'items', MissionKind.itemUses, '아이템 누적 사용', '5', 'estimated'),
   ]),
   LevelDefinition(8, [
     MissionDefinition(
-        'auto', MissionKind.autoRate, '초당 생산량', '20000000000', 'estimated'),
+        'auto', MissionKind.autoRate, '초당 생산량', '500000000000', 'estimated'),
   ]),
   LevelDefinition(9, [
     MissionDefinition(
-        'auto', MissionKind.autoRate, '초당 생산량', '500000000000', 'estimated'),
+        'auto', MissionKind.autoRate, '초당 생산량', '4000000000000', 'estimated'),
     MissionDefinition.skill('skill', '은하 공방 보유', 'auto_11', '1'),
   ]),
   LevelDefinition(10, [
     MissionDefinition(
-        'auto', MissionKind.autoRate, '초당 생산량', '20000000000000', 'estimated'),
+        'auto', MissionKind.autoRate, '초당 생산량', '15000000000000', 'estimated'),
     MissionDefinition(
         'achievements', MissionKind.achievements, '업적 달성', '12', 'estimated'),
   ]),

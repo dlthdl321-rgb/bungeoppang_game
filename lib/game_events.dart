@@ -1,6 +1,13 @@
 /// One-shot notifications for sound and celebrations. Never saved; the state
 /// itself is the source of truth.
-enum GameEventKind { purchase, levelUp, missionReward, achievement, itemUsed }
+enum GameEventKind {
+  purchase,
+  levelUp,
+  missionReward,
+  achievement,
+  itemUsed,
+  prestige
+}
 
 class GameEvent {
   final GameEventKind kind;

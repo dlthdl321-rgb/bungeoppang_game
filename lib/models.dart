@@ -9,6 +9,7 @@ import 'invite_models.dart';
 import 'menu_state.dart';
 import 'cosmetic_config.dart';
 import 'progress_state.dart';
+import 'prestige_rules.dart' show totalStarsFor;
 
 enum UpgradeKind { tap, auto }
 
@@ -95,7 +96,7 @@ class GameSettings {
 }
 
 class GameState {
-  static const formatVersion = 8;
+  static const formatVersion = 9;
   BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
   int level, snapshotSequence;
   Map<String, int> upgradeCounts;
@@ -107,6 +108,7 @@ class GameState {
   RecordState records;
   WeeklyState weekly;
   AchievementState achievements;
+  PrestigeState prestige;
   Set<String> ownedSkins;
   String equippedSkin;
   bool tutorialDone;
@@ -127,6 +129,7 @@ class GameState {
       required this.records,
       required this.weekly,
       required this.achievements,
+      required this.prestige,
       required this.ownedSkins,
       required this.equippedSkin,
       required this.tutorialDone,
@@ -152,6 +155,7 @@ class GameState {
       records: RecordState.initial(),
       weekly: WeeklyState.initial(now),
       achievements: AchievementState(),
+      prestige: PrestigeState(),
       ownedSkins: {'redbean'},
       equippedSkin: 'redbean',
       tutorialDone: false,
@@ -181,6 +185,7 @@ class GameState {
         'records': records.toJson(),
         'weekly': weekly.toJson(),
         'achievements': achievements.toJson(),
+        'prestige': prestige.toJson(),
         'ownedSkins': ownedSkins.toList(),
         'equippedSkin': equippedSkin,
         'tutorialDone': tutorialDone,
@@ -294,6 +299,9 @@ class GameState {
         achievements: version >= 7
             ? AchievementState.fromJson(inviteMap(m['achievements']))
             : AchievementState(),
+        prestige: version >= 9
+            ? PrestigeState.fromJson(inviteMap(m['prestige']))
+            : PrestigeState(),
         invites: version >= 5
             ? InviteState.fromJson(inviteMap(m['invites']))
             : InviteState.migrate(missions.seenInvitePlayers),
@@ -312,6 +320,9 @@ class GameState {
         savedAutoRate: natural('savedAutoRate'),
         activeRemainder: natural('activeRemainder') % BigInt.from(1000));
     if (version < 7) result._migrateProgress();
+    if (BigInt.from(result.prestige.stars) > totalStarsFor(result.lifetime)) {
+      throw const FormatException('누적 생산보다 많은 명성 별');
+    }
     final ledger = result.support.ledger;
     if (result.achievements.claimed
             .any((id) => !ledger.containsKey('achievement:$id')) ||

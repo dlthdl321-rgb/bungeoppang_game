@@ -4,6 +4,7 @@ import '../game_controller.dart';
 import '../mission_config.dart';
 import '../missions.dart';
 import '../support_config.dart';
+import '../prestige_rules.dart';
 import 'support_panels.dart';
 
 class LevelMissions extends StatelessWidget {
@@ -32,6 +33,7 @@ class LevelMissions extends StatelessWidget {
         const SizedBox(height: 12),
         if (active == null) ...[
           const Text('최고 레벨 달성 · 모든 레벨 미션 완료', key: Key('missions-finished')),
+          PrestigeCard(controller: c),
         ] else ...[
           Text('Lv.${s.level} → Lv.${active.level} 미션',
               key: const Key('active-mission-title'),
@@ -165,4 +167,52 @@ class LevelMissions extends StatelessWidget {
         MissionKind.achievements => ('achievements', '업적 보기'),
         _ => null,
       };
+}
+
+/// Endgame: open a new stall (prestige) for permanent production stars.
+class PrestigeCard extends StatelessWidget {
+  final GameController controller;
+  const PrestigeCard({super.key, required this.controller});
+  @override
+  Widget build(BuildContext context) {
+    final c = controller, s = c.state;
+    final gain = prestigeStarsAvailable(s).toInt();
+    final now = prestigePermille(s),
+        after = prestigePermilleWith(s.prestige.stars + gain);
+    return Card(
+        key: const Key('prestige-card'),
+        child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('새 노점 열기',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  Text('명성 별 ${s.prestige.stars}개 · 생산 +${(now - 1000) ~/ 10}%',
+                      key: const Key('prestige-stars')),
+                  Text(gain > 0
+                      ? '지금 열면 명성 별 $gain개를 더 받아 생산 +${(after - 1000) ~/ 10}%가 됩니다.'
+                      : '누적 생산이 늘면 명성 별을 더 받을 수 있어요.'),
+                  const Text(
+                      '붕어빵·스킬·레벨은 처음부터 다시 시작합니다. 코인·아이템·꾸미기·업적·칭호·기록·누적 생산은 유지되고, 레벨업 코인은 다시 지급되지 않습니다.'),
+                  FilledButton(
+                      key: const Key('prestige-open'),
+                      onPressed: !c.busy && canPrestige(s)
+                          ? () async {
+                              if (await confirmAction(
+                                  context,
+                                  '새 노점을 열까요?',
+                                  '초기화: 붕어빵 ${exactNumber(s.buns)}개, 스킬, Lv.${s.level} → Lv.1\n'
+                                      '유지: 코인·아이템·꾸미기·업적·칭호·기록·누적 생산\n'
+                                      '명성 별 ${s.prestige.stars} → ${s.prestige.stars + gain}개\n'
+                                      '생산 +${(now - 1000) ~/ 10}% → +${(after - 1000) ~/ 10}%',
+                                  '새 노점 열기')) {
+                                await c.prestige();
+                              }
+                            }
+                          : null,
+                      child: Text(
+                          gain > 0 ? '새 노점 열기 · 별 +$gain' : '별을 더 모아야 해요')),
+                ])));
+  }
 }

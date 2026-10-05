@@ -1,5 +1,6 @@
 import 'economy.dart';
 import 'models.dart';
+import 'prestige_rules.dart';
 import 'support_config.dart';
 import 'support_state.dart';
 
@@ -27,6 +28,9 @@ BigInt settleProduction(
     observeSupport(s, end);
     return BigInt.zero;
   }
+  // Prestige stars scale the base rate once per settlement (per rate, not
+  // per time slice), so splitting a period never changes the result.
+  final rate = baseRate * BigInt.from(prestigePermille(s)) ~/ BigInt.from(1000);
   var cursor = start, total = BigInt.zero;
   while (cursor.isBefore(end)) {
     var boundary = end;
@@ -38,7 +42,7 @@ BigInt settleProduction(
       }
     }
     observeSupport(s, cursor);
-    final numerator = baseRate *
+    final numerator = rate *
             BigInt.from(boundary.difference(cursor).inMilliseconds) *
             s.support.multiplier(EffectChannel.automatic, cursor) *
             BigInt.from(offline ? 1 : 2) +

@@ -283,9 +283,11 @@ void main() {
     expect(c.state.support.coins, BigInt.from(97));
     expect(c.state.support.inventory['fairy'], BigInt.from(2));
     expect(await c.buyCoinItem('invalid', 1), isFalse);
-    expect(await c.buyOrEquip(skins.last), isTrue);
+    // Stage 11 appended skins; this checks cocoa by ID, not catalog order.
+    final cocoa = skins.firstWhere((s) => s.id == 'cocoa');
+    expect(await c.buyOrEquip(cocoa), isTrue);
     expect(c.state.support.coins, BigInt.from(85));
-    expect(await c.buyOrEquip(skins.last), isTrue);
+    expect(await c.buyOrEquip(cocoa), isTrue);
     expect(c.state.support.coins, BigInt.from(85));
     expect(c.state.equippedSkin, 'cocoa');
     expect(c.state.buns, BigInt.from(10000));

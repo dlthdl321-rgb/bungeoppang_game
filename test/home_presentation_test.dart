@@ -4,6 +4,7 @@ import 'package:todays_bungeoppang/mission_config.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'controller_test.dart' show FakeTime;
+import 'level_missions_test.dart' show setRate;
 
 void main() {
   test('모의 이벤트 시간은 시작 전, 종료 시각과 이후를 구분한다', () {
@@ -26,11 +27,11 @@ void main() {
     final s = GameState.initial(DateTime.utc(2026))..level = 9;
     s.missions = MissionState.forLevel(9, DateTime.utc(2026),
         seasonId: legacyInviteMissionSeason);
-    s.upgradeCounts['auto_13'] = 8;
+    setRate(s, BigInt.parse('8000000000000')); // 40% of the Lv.10 rate.
     s.missions.seenInvitePlayers.addAll({'a', 'b', 'c'});
     s.missions.qualifiedInvitePlayers.addAll({'a', 'b', 'c'});
     expect(levelProgressPermille(s), 400);
-    s.upgradeCounts['auto_13'] = 20;
+    setRate(s, BigInt.parse('20000000000000'));
     expect(levelProgressPermille(s), 1000);
     s.missions.qualifiedInvitePlayers.remove('c');
     expect(levelProgressPermille(s), 666);

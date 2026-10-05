@@ -200,3 +200,23 @@ class AchievementState {
     return s;
   }
 }
+
+/// Prestige ("새 노점 열기") progress. Survives every reset.
+class PrestigeState {
+  int stars, count;
+  DateTime? lastAtUtc;
+  PrestigeState({this.stars = 0, this.count = 0, this.lastAtUtc});
+  Map<String, dynamic> toJson() => {
+        'stars': stars,
+        'count': count,
+        'lastAtUtc': lastAtUtc?.toIso8601String(),
+      };
+  factory PrestigeState.fromJson(Map<String, dynamic> m) {
+    final stars = _readCount(m['stars']), count = _readCount(m['count']);
+    final at = m['lastAtUtc'] == null ? null : readUtc(m['lastAtUtc']);
+    if ((count == 0) != (at == null) || (count == 0 && stars != 0)) {
+      throw const FormatException('잘못된 새 노점 기록');
+    }
+    return PrestigeState(stars: stars, count: count, lastAtUtc: at);
+  }
+}

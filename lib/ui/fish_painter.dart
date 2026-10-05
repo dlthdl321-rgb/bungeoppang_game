@@ -10,7 +10,50 @@ class FishPainter extends CustomPainter {
   Color get filling => switch (skin) {
         'cocoa' => const Color(0xff663322),
         'custard' => const Color(0xffffef9b),
+        'sweetpotato' => const Color(0xff8a4f8f),
+        'matcha' => const Color(0xff6f8f3a),
+        'strawberry' => const Color(0xffd9506d),
         _ => const Color(0xffa95738),
+      };
+
+  /// Crust gradient (light to dark) per skin.
+  List<Color> get crust => switch (skin) {
+        'cocoa' => const [
+            Color(0xffb78361),
+            Color(0xff885439),
+            Color(0xff663822),
+            Color(0xff3f251e)
+          ],
+        'custard' => const [
+            Color(0xfffff6cf),
+            Color(0xffffe9a5),
+            Color(0xffe7c56d),
+            Color(0xffbd8844)
+          ],
+        'sweetpotato' => const [
+            Color(0xfff6c98f),
+            Color(0xffe0995a),
+            Color(0xffb8693a),
+            Color(0xff7f4128)
+          ],
+        'matcha' => const [
+            Color(0xffe4eeb4),
+            Color(0xffb9cf78),
+            Color(0xff8aa451),
+            Color(0xff5b7136)
+          ],
+        'strawberry' => const [
+            Color(0xffffe1dc),
+            Color(0xfff6b2ab),
+            Color(0xffe0837c),
+            Color(0xffa9524f)
+          ],
+        _ => const [
+            Color(0xffffed9c),
+            Color(0xfff7ca58),
+            Color(0xffdc9632),
+            Color(0xffac6327)
+          ],
       };
 
   @override
@@ -43,26 +86,7 @@ class FishPainter extends CustomPainter {
       ..shader = LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: skin == 'cocoa'
-            ? const [
-                Color(0xffb78361),
-                Color(0xff885439),
-                Color(0xff663822),
-                Color(0xff3f251e)
-              ]
-            : skin == 'custard'
-                ? const [
-                    Color(0xfffff6cf),
-                    Color(0xffffe9a5),
-                    Color(0xffe7c56d),
-                    Color(0xffbd8844)
-                  ]
-                : const [
-                    Color(0xffffed9c),
-                    Color(0xfff7ca58),
-                    Color(0xffdc9632),
-                    Color(0xffac6327)
-                  ],
+        colors: crust,
         stops: [0, .4, .78, 1],
       ).createShader(const Rect.fromLTWH(0, 20, 320, 195));
     final edge = Paint()

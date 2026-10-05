@@ -24,6 +24,7 @@ import 'weekly_config.dart';
 import 'online_ranking.dart';
 import 'feedback_config.dart';
 import 'game_events.dart';
+import 'prestige_rules.dart';
 import 'ranking_config.dart';
 
 part 'invite_controller.dart';
@@ -67,10 +68,13 @@ class GameController extends ChangeNotifier {
   DateTime get gameNow => state.support.now(clock.utcNow);
   BigInt get currentTapRate =>
       tapRate(state) *
-      state.support.multiplier(EffectChannel.tap, gameNow) ~/
-      BigInt.from(effectScale);
+      state.support.multiplier(EffectChannel.tap, gameNow) *
+      BigInt.from(prestigePermille(state)) ~/
+      BigInt.from(effectScale * 1000);
   BigInt get currentAutoRate =>
       autoRate(state) *
+      BigInt.from(prestigePermille(state)) ~/
+      BigInt.from(1000) *
       state.support.multiplier(EffectChannel.automatic, gameNow) ~/
       BigInt.from(effectScale);
   GameController(this.repository, this.clock,
@@ -164,7 +168,9 @@ class GameController extends ChangeNotifier {
     state.records.lifetimeTaps += BigInt.one;
     state.weekly.taps += BigInt.one;
     final support = state.support;
-    var factor = support.multiplier(EffectChannel.tap, gameNow);
+    var factor = support.multiplier(EffectChannel.tap, gameNow) *
+        BigInt.from(prestigePermille(state)) ~/
+        BigInt.from(1000);
     final rule = comboBonusRule;
     if (rule.enabled && direct && _combo >= rule.threshold) {
       factor = factor * BigInt.from(rule.permille) ~/ BigInt.from(1000);
@@ -187,7 +193,9 @@ class GameController extends ChangeNotifier {
     final target = activeLevelMission(state)!;
     final before = state.copy();
     // Level is the idempotency key across seasons, including legacy records.
-    if (!state.levelRewards.containsKey(target.level)) {
+    // After a prestige the record exists, so coins are paid only once.
+    final paying = !state.levelRewards.containsKey(target.level);
+    if (paying) {
       state.levelRewards[target.level] = LevelRewardRecord(
           level: target.level,
           seasonId: state.missions.seasonId,
@@ -210,7 +218,7 @@ class GameController extends ChangeNotifier {
     if (ok) {
       submitRankingIfDue(force: true);
       _emit(GameEvent(GameEventKind.levelUp, 'Lv.${target.level} 달성',
-          amount: target.reward, unit: '코인'));
+          amount: paying ? target.reward : null, unit: '코인'));
     }
     return ok;
   }
@@ -431,6 +439,41 @@ class GameController extends ChangeNotifier {
     final before = state.copy();
     state.achievements.equippedTitle = title;
     return _commit(before);
+  }
+
+  /// "새 노점 열기": resets this run (buns, skills, level) for permanent stars.
+  /// Coins, items, cosmetics, achievements, titles, records and all-time
+  /// production stay. Level-up coins are never paid twice.
+  Future<bool> prestige() async {
+    if (busy || _away) return false;
+    tick();
+    if (!canPrestige(state)) return false;
+    final before = state.copy();
+    final gained = prestigeStarsAvailable(state).toInt();
+    final s = state;
+    s.buns = BigInt.zero;
+    for (final id in s.upgradeCounts.keys.toList()) {
+      s.upgradeCounts[id] = 0;
+    }
+    s.level = 1;
+    s.missions =
+        MissionState.forLevel(1, clock.utcNow, seasonId: s.missions.seasonId);
+    s.savedAutoRate = BigInt.zero;
+    s.activeRemainder = BigInt.zero;
+    s.support
+      ..autoFraction = BigInt.zero
+      ..tapFraction = BigInt.zero;
+    s.prestige
+      ..stars += gained
+      ..count += 1
+      ..lastAtUtc = clock.utcNow;
+    final ok = await _commitWith(
+        before,
+        GameEvent(GameEventKind.prestige,
+            '새 노점 개업 · 생산 +${(prestigePermille(s) - 1000) ~/ 10}%',
+            amount: BigInt.from(gained), unit: '명성 별'));
+    if (ok) submitRankingIfDue(force: true);
+    return ok;
   }
 
   Future<bool> _commitWith(GameState before, GameEvent event) async {

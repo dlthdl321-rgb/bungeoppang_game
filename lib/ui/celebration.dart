@@ -133,7 +133,7 @@ class _CelebrationHostState extends State<CelebrationHost>
     final audio = GameAudioScope.of(context);
     audio.play(switch (e.kind) {
       GameEventKind.purchase => Sfx.purchase,
-      GameEventKind.levelUp => Sfx.levelUp,
+      GameEventKind.levelUp || GameEventKind.prestige => Sfx.levelUp,
       _ => Sfx.reward,
     });
     if (e.kind == GameEventKind.purchase) return;
@@ -227,6 +227,7 @@ class _CelebrationHostState extends State<CelebrationHost>
                       GameEventKind.levelUp => Icons.emoji_events,
                       GameEventKind.achievement => Icons.military_tech,
                       GameEventKind.itemUsed => Icons.auto_awesome,
+                      GameEventKind.prestige => Icons.storefront,
                       _ => Icons.celebration,
                     },
                     color: const Color(0xffffd36b),
