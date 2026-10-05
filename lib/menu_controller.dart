@@ -3,23 +3,26 @@ part of 'game_controller.dart';
 extension MenuCommands on GameController {
   Future<bool> buyOrEquipCosmetic(String id) async {
     if (busy || _away) return false;
-    final matches = cosmeticDefinitions.where((d) => d.id == id);
+    final matches = cosmetics.where((d) => d.id == id);
     if (matches.isEmpty) return false;
-    final d = matches.first;
-    if (d.slot == CosmeticSlot.fish) {
-      return buyOrEquip(skins.firstWhere((s) => s.id == id));
-    }
+    final d = matches.first, fish = d.slot == CosmeticSlot.fish;
     tick();
+    // Every slot, fish included, must pass the same level/production unlock.
     if (!cosmeticUnlocked(state, d)) return false;
     final before = state.copy();
-    if (!state.wardrobe.owned.contains(id)) {
-      if (!state.support
-          .transact('cosmetic:$id', -d.cost, '${d.name} 구매', gameNow)) {
+    if (!state.ownsCosmetic(d)) {
+      // Fish keeps its historical `skin:` ledger ID so old receipts still match.
+      if (!state.support.transact(fish ? 'skin:$id' : 'cosmetic:$id', -d.cost,
+          '${d.name} 구매', gameNow)) {
         return false;
       }
-      state.wardrobe.owned.add(id);
+      (fish ? state.ownedSkins : state.wardrobe.owned).add(id);
     }
-    state.wardrobe.equipped[d.slot] = id;
+    if (fish) {
+      state.equippedSkin = id;
+    } else {
+      state.wardrobe.equipped[d.slot] = id;
+    }
     return _commit(before);
   }
 

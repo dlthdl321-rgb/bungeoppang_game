@@ -147,7 +147,9 @@ class GameState {
         'savedAutoRate': '$savedAutoRate',
         'activeRemainder': '$activeRemainder'
       };
-  factory GameState.fromJson(Map<String, dynamic> m) {
+  // [cosmetics] lets catalog-evolution tests load saves against a future catalog.
+  factory GameState.fromJson(Map<String, dynamic> m,
+      {Iterable<CosmeticDefinition> cosmetics = cosmeticDefinitions}) {
     BigInt natural(String key) {
       final v = BigInt.tryParse('${m[key]}');
       if (v == null || v.isNegative) {
@@ -185,9 +187,13 @@ class GameState {
       throw const FormatException('잘못된 레벨');
     }
     final equipped = '${m['equippedSkin']}';
+    final fishIds = {
+      for (final d in cosmetics)
+        if (d.slot == CosmeticSlot.fish) d.id
+    };
     final owned = (m['ownedSkins'] as List?)
             ?.whereType<String>()
-            .where((e) => {'redbean', 'custard', 'cocoa'}.contains(e))
+            .where(fishIds.contains)
             .toSet() ??
         {'redbean'};
     if (!owned.contains(equipped)) {
@@ -197,6 +203,10 @@ class GameState {
     if (last == null) {
       throw const FormatException('잘못된 저장 시각');
     }
+    // Events added after a v6 save simply start fresh; only a non-map is damage.
+    final rawEvents =
+        version == formatVersion ? m['events'] ?? const {} : const {};
+    if (rawEvents is! Map) throw const FormatException('이벤트 저장 손상');
     final rewards = <int, LevelRewardRecord>{};
     late final MissionState missions;
     if (version == 3 ||
@@ -243,10 +253,9 @@ class GameState {
             : WardrobeState.initial(),
         events: {
           for (final e in eventDefinitions)
-            e.id: version == formatVersion
-                ? LocalEventState.fromJson(
-                    inviteMap(inviteMap(m['events'])[e.id]), e)
-                : LocalEventState.initial(e)
+            e.id: rawEvents[e.id] == null
+                ? LocalEventState.initial(e)
+                : LocalEventState.fromJson(inviteMap(rawEvents[e.id]), e)
         },
         invites: version == 5 || version == formatVersion
             ? InviteState.fromJson(inviteMap(m['invites']))

@@ -27,6 +27,8 @@ class GameController extends ChangeNotifier {
   final GameRepository repository;
   final TimeService clock;
   final InvitationRepository invitationRepository;
+  // Purchasable catalog. Injectable so tests can exercise future catalog rows.
+  final List<CosmeticDefinition> cosmetics;
   bool _inviteLoading = false, _disposed = false;
   String? inviteError;
   late GameState state;
@@ -46,7 +48,8 @@ class GameController extends ChangeNotifier {
       state.support.multiplier(EffectChannel.automatic, gameNow) ~/
       BigInt.from(effectScale);
   GameController(this.repository, this.clock,
-      {InvitationRepository? invitationRepository})
+      {InvitationRepository? invitationRepository,
+      this.cosmetics = cosmeticDefinitions})
       : invitationRepository =
             invitationRepository ?? MockInvitationRepository();
 
@@ -70,6 +73,8 @@ class GameController extends ChangeNotifier {
       state.missions.activatedAtUtc = clock.utcNow;
       await save();
     }
+    _ticker?.cancel();
+    _periodicSave?.cancel();
     _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) => tick());
     _periodicSave = Timer.periodic(const Duration(seconds: 10), (_) => save());
   }
@@ -201,27 +206,9 @@ class GameController extends ChangeNotifier {
     return buyUpgrade(u, quoteUpgrade(state, u, PurchaseMode.maximum).amount);
   }
 
-  Future<bool> buyOrEquip(SkinDefinition skin) async {
-    if (busy ||
-        _away ||
-        !skins.contains(skin) ||
-        state.level < skin.unlockLevel) {
-      return false;
-    }
-    tick();
-    final before = state.copy();
-    if (!state.ownedSkins.contains(skin.id)) {
-      if (!state.support.transact(
-          'skin:${skin.id}', -skin.cost, '${skin.name} 구매', gameNow)) {
-        return false;
-      }
-      state.ownedSkins.add(skin.id);
-    }
-    state.equippedSkin = skin.id;
-    if (!await _commit(before)) return false;
-    notifyListeners();
-    return true;
-  }
+  // Legacy entry point; the cosmetic command owns unlock and payment rules.
+  Future<bool> buyOrEquip(SkinDefinition skin) async =>
+      skins.contains(skin) && await buyOrEquipCosmetic(skin.id);
 
   Future<bool> claimDaily(String expectedDay, String id) async {
     if (busy || _away) return false;
@@ -386,8 +373,19 @@ class GameController extends ChangeNotifier {
     return gain;
   }
 
+  /// Waits out in-flight commits: a change made mid-commit would miss that
+  /// snapshot, be skipped by [save], and be erased if the commit rolls back.
+  Future<void> _untilIdle() async {
+    while (busy) {
+      final done = _commitDone;
+      if (done == null) return;
+      await done.future;
+    }
+  }
+
   Future<void> updateSettings(
       {bool? vibration, bool? hold, bool? reduceMotion}) async {
+    await _untilIdle();
     state.settings.vibration = vibration ?? state.settings.vibration;
     state.settings.holdToBake = hold ?? state.settings.holdToBake;
     state.settings.reduceMotion = reduceMotion ?? state.settings.reduceMotion;
@@ -396,6 +394,7 @@ class GameController extends ChangeNotifier {
   }
 
   Future<void> finishTutorial() async {
+    await _untilIdle();
     state.tutorialDone = true;
     await save();
     notifyListeners();
@@ -408,6 +407,41 @@ class GameController extends ChangeNotifier {
     _lastMono = clock.monotonicMilliseconds;
     await save();
     notifyListeners();
+  }
+
+  /// Recovery screen: promote the backup snapshot and start the game.
+  /// Returns null on success, otherwise a reason to show the player.
+  Future<String?> restoreBackupAndStart() async {
+    try {
+      if (!await repository.restoreBackup()) return '복구할 이전 저장이 없습니다.';
+    } on FormatException catch (e) {
+      return '이전 저장도 손상되어 복구할 수 없습니다: ${e.message}';
+    } catch (_) {
+      return '복구한 저장을 기록하지 못했습니다. 다시 시도해 주세요.';
+    }
+    return _startAfterRecovery();
+  }
+
+  /// Recovery screen: delete every snapshot and start a new game.
+  Future<String?> resetAndStart() async {
+    try {
+      await reset();
+    } catch (_) {
+      return '데이터를 초기화하지 못했습니다. 다시 시도해 주세요.';
+    }
+    return _startAfterRecovery();
+  }
+
+  Future<String?> _startAfterRecovery() async {
+    error = null;
+    try {
+      await initialize();
+      return null;
+    } on FormatException catch (e) {
+      return '저장 데이터를 열 수 없습니다: ${e.message}';
+    } catch (_) {
+      return '게임을 시작하지 못했습니다. 다시 시도해 주세요.';
+    }
   }
 
   @override

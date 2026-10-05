@@ -2,10 +2,16 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 /// Original vector pastry: embossed scales and a golden baked crust.
+/// Every look, filling included, derives from [skin] so all screens match.
 class FishPainter extends CustomPainter {
-  final Color filling;
   final String skin;
-  const FishPainter(this.filling, {this.skin = 'redbean'});
+  const FishPainter({this.skin = 'redbean'});
+
+  Color get filling => switch (skin) {
+        'cocoa' => const Color(0xff663322),
+        'custard' => const Color(0xffffef9b),
+        _ => const Color(0xffa95738),
+      };
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -120,5 +126,5 @@ class FishPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant FishPainter oldDelegate) =>
-      oldDelegate.filling != filling || oldDelegate.skin != skin;
+      oldDelegate.skin != skin;
 }

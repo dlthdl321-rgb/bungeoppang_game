@@ -69,33 +69,101 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
       home: GameHome(controller: widget.controller));
 }
 
-class RecoveryApp extends StatelessWidget {
+/// Shown when the save cannot be loaded. Switches to [GameApp] once a
+/// recovery command succeeds; otherwise stays and explains why.
+class RecoveryApp extends StatefulWidget {
   final GameController controller;
   const RecoveryApp({super.key, required this.controller});
   @override
-  Widget build(BuildContext context) => MaterialApp(
-      home: Scaffold(
-          body: SafeArea(
-              child: Center(
-                  child: Padding(
-                      padding: const EdgeInsets.all(24),
-                      child: Column(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.warning_amber, size: 64),
-                        Text(controller.error ?? '저장 데이터를 열 수 없습니다.'),
-                        const SizedBox(height: 16),
-                        FilledButton(
-                            onPressed: () async {
-                              final recovered =
-                                  await controller.repository.recover();
-                              if (recovered != null) {
-                                await controller.repository.save(recovered);
-                              }
-                            },
-                            child: const Text('이전 저장 복구')),
-                        TextButton(
-                            onPressed: controller.reset,
-                            child: const Text('새로 시작 (데이터 초기화)'))
-                      ]))))));
+  State<RecoveryApp> createState() => _RecoveryAppState();
+}
+
+class _RecoveryAppState extends State<RecoveryApp> {
+  bool _working = false, _started = false;
+  String? _message;
+
+  Future<void> _run(Future<String?> Function() command) async {
+    setState(() {
+      _working = true;
+      _message = null;
+    });
+    final failure = await command();
+    if (!mounted) return;
+    setState(() {
+      _working = false;
+      _message = failure;
+      _started = failure == null;
+    });
+  }
+
+  Future<void> _confirmReset(BuildContext context) async {
+    final yes = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+                title: const Text('정말 초기화할까요?'),
+                content: const Text('모든 진행 상황과 이전 저장이 삭제되며 되돌릴 수 없습니다.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(ctx, false),
+                      child: const Text('취소')),
+                  FilledButton(
+                      key: const Key('recovery-reset-confirm'),
+                      onPressed: () => Navigator.pop(ctx, true),
+                      child: const Text('초기화'))
+                ]));
+    if (yes == true) await _run(widget.controller.resetAndStart);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_started) return GameApp(controller: widget.controller);
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: '오늘의 붕어빵',
+        home: Scaffold(
+            body: SafeArea(
+                child: Center(
+                    child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: Builder(
+                            builder: (context) => Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.warning_amber, size: 64),
+                                      Text(
+                                          widget.controller.error ??
+                                              '저장 데이터를 열 수 없습니다.',
+                                          textAlign: TextAlign.center),
+                                      if (_message != null)
+                                        Padding(
+                                            padding:
+                                                const EdgeInsets.only(top: 12),
+                                            child: Text(_message!,
+                                                key: const Key(
+                                                    'recovery-message'),
+                                                textAlign: TextAlign.center,
+                                                style: TextStyle(
+                                                    color: Theme.of(context)
+                                                        .colorScheme
+                                                        .error))),
+                                      const SizedBox(height: 16),
+                                      if (_working)
+                                        const Padding(
+                                            padding: EdgeInsets.only(bottom: 8),
+                                            child: CircularProgressIndicator()),
+                                      FilledButton(
+                                          onPressed: _working
+                                              ? null
+                                              : () => _run(widget.controller
+                                                  .restoreBackupAndStart),
+                                          child: const Text('이전 저장 복구')),
+                                      TextButton(
+                                          onPressed: _working
+                                              ? null
+                                              : () => _confirmReset(context),
+                                          child: const Text('새로 시작 (데이터 초기화)'))
+                                    ])))))));
+  }
 }
 
 class GameHome extends StatefulWidget {

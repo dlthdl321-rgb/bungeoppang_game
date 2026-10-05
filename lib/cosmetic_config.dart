@@ -1,3 +1,5 @@
+import 'config_values.dart';
+
 // All prices/unlocks are estimated. Artwork is drawn locally, not extracted.
 enum CosmeticSlot { fish, background, stove, decoration }
 
@@ -8,7 +10,8 @@ class CosmeticDefinition {
   const CosmeticDefinition(
       this.id, this.name, this.slot, this.price, this.unlockLevel,
       [this.unlockProduction = '0']);
-  BigInt get cost => BigInt.parse(price);
+  BigInt get cost => configBigInt(price);
+  BigInt get unlockProductionAmount => configBigInt(unlockProduction);
 }
 
 const cosmeticDefinitions = [

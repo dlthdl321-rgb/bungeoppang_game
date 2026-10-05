@@ -49,8 +49,8 @@ class LocalEventState {
   final Map<String, DateTime> receipts = {};
   LocalEventState._(this.participants, this.claimedCounts);
   factory LocalEventState.initial(EventDefinition d) => LocalEventState._(
-      BigInt.parse(d.initialParticipants),
-      {for (final r in d.rewards) r.id: BigInt.parse(r.initialClaimed)});
+      d.initialParticipantsAmount,
+      {for (final r in d.rewards) r.id: r.initialClaimedAmount});
   Map<String, dynamic> toJson() => {
         'joined': joined,
         'participants': '$participants',
@@ -70,13 +70,12 @@ class LocalEventState {
     final s = LocalEventState._(readNatural(m['participants']), {})
       ..joined = m['joined'] as bool;
     if (s.participants <
-        BigInt.parse(d.initialParticipants) +
-            (s.joined ? BigInt.one : BigInt.zero)) {
+        d.initialParticipantsAmount + (s.joined ? BigInt.one : BigInt.zero)) {
       throw const FormatException('이벤트 참여 수 오류');
     }
     for (final r in d.rewards) {
       final n = readNatural((m['claimedCounts'] as Map)[r.id]);
-      if (n < BigInt.parse(r.initialClaimed) || n > BigInt.parse(r.capacity)) {
+      if (n < r.initialClaimedAmount || n > r.capacityAmount) {
         throw const FormatException('이벤트 수량 범위 오류');
       }
       s.claimedCounts[r.id] = n;
@@ -94,7 +93,7 @@ class LocalEventState {
     }
     for (final r in d.rewards.where((r) => s.receipts.containsKey(r.id))) {
       if (!r.prerequisites.every(s.receipts.containsKey) ||
-          s.claimedCounts[r.id]! <= BigInt.parse(r.initialClaimed)) {
+          s.claimedCounts[r.id]! <= r.initialClaimedAmount) {
         throw const FormatException('이벤트 수령 순서/수량 오류');
       }
     }

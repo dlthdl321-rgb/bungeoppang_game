@@ -3,7 +3,7 @@ import 'event_config.dart';
 import 'models.dart';
 
 bool cosmeticUnlocked(GameState s, CosmeticDefinition d) =>
-    s.level >= d.unlockLevel && s.lifetime >= BigInt.parse(d.unlockProduction);
+    s.level >= d.unlockLevel && s.lifetime >= d.unlockProductionAmount;
 
 enum EventPhase { upcoming, active, ended }
 
@@ -13,8 +13,7 @@ EventPhase eventPhase(EventDefinition d, DateTime now) => now.isBefore(d.start)
         ? EventPhase.ended
         : EventPhase.active;
 BigInt eventRemaining(GameState s, EventDefinition d, EventRewardDefinition r) {
-  final remaining =
-      BigInt.parse(r.capacity) - s.events[d.id]!.claimedCounts[r.id]!;
+  final remaining = r.capacityAmount - s.events[d.id]!.claimedCounts[r.id]!;
   return remaining.isNegative ? BigInt.zero : remaining;
 }
 
@@ -27,6 +26,6 @@ bool canClaimEvent(
       !s.support.ledger.containsKey('event:${d.id}:${r.id}') &&
       eventRemaining(s, d, r) > BigInt.zero &&
       s.level >= r.requiredLevel &&
-      s.lifetime >= BigInt.parse(r.requiredProduction) &&
+      s.lifetime >= r.requiredProductionAmount &&
       r.prerequisites.every(saved.receipts.containsKey);
 }

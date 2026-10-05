@@ -1,3 +1,4 @@
+import 'config_values.dart';
 import 'support_config.dart';
 
 class EventRewardDefinition {
@@ -9,6 +10,9 @@ class EventRewardDefinition {
   const EventRewardDefinition(this.id, this.title, this.requiredLevel,
       this.requiredProduction, this.capacity, this.initialClaimed, this.reward,
       {this.prerequisites = const [], this.isFinal = false});
+  BigInt get requiredProductionAmount => configBigInt(requiredProduction);
+  BigInt get capacityAmount => configBigInt(capacity);
+  BigInt get initialClaimedAmount => configBigInt(initialClaimed);
 }
 
 class EventDefinition {
@@ -16,8 +20,9 @@ class EventDefinition {
   final List<EventRewardDefinition> rewards;
   const EventDefinition(this.id, this.title, this.startsAt, this.endsAt,
       this.initialParticipants, this.rewards);
-  DateTime get start => DateTime.parse(startsAt);
-  DateTime get end => DateTime.parse(endsAt);
+  DateTime get start => configUtc(startsAt);
+  DateTime get end => configUtc(endsAt);
+  BigInt get initialParticipantsAmount => configBigInt(initialParticipants);
 }
 
 // Fixed mock season, not a live offer. Change ID for a new event; retain old
@@ -39,3 +44,5 @@ const eventDefinitions = [
   ])
 ];
 const currentEventId = 'night-market-2026';
+// Single source for every screen that shows "the" event.
+final currentEvent = eventDefinitions.firstWhere((d) => d.id == currentEventId);

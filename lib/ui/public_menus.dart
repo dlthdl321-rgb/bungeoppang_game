@@ -3,6 +3,7 @@ import '../cosmetic_config.dart';
 import '../economy.dart';
 import '../event_config.dart';
 import '../game_controller.dart';
+import '../home_presentation.dart';
 import '../menu_rules.dart';
 import '../ranking.dart';
 import 'fish_painter.dart';
@@ -57,7 +58,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
                                   width: 180,
                                   height: 135,
                                   child: CustomPaint(
-                                      painter: FishPainter(Colors.brown,
+                                      painter: FishPainter(
                                           skin: equipped(
                                               CosmeticSlot.fish))))))))),
           Text(preview == null ? '현재 장착 모습' : '미리보기 · 아직 장착되지 않았습니다',
@@ -73,7 +74,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
                               style: Theme.of(context).textTheme.titleMedium),
                           Text('가격 ${compactNumber(d.cost)} 코인 · 생산 효과 없음'),
                           Text(
-                              '해금: 레벨 ${d.unlockLevel} · 누적 ${compactNumber(BigInt.parse(d.unlockProduction))}개'),
+                              '해금: 레벨 ${d.unlockLevel} · 누적 ${compactNumber(d.unlockProductionAmount)}개'),
                           Text(
                               '현재 ${cosmeticDefinitions.firstWhere((item) => item.id == c.state.equippedCosmetic(slot)).name} → ${d.name}'),
                           Wrap(spacing: 8, children: [
@@ -178,12 +179,8 @@ class EventPanel extends StatelessWidget {
       {super.key, required this.controller, required this.onExchange});
   @override
   Widget build(BuildContext context) {
-    final c = controller,
-        d = eventDefinitions.firstWhere((d) => d.id == currentEventId),
-        saved = c.state.events[currentEventId]!;
+    final c = controller, d = currentEvent, saved = c.state.events[d.id]!;
     final phase = eventPhase(d, c.gameNow);
-    final remaining =
-        (phase == EventPhase.upcoming ? d.start : d.end).difference(c.gameNow);
     String date(DateTime v) =>
         '${v.add(const Duration(hours: 9)).toIso8601String().substring(0, 16).replaceFirst('T', ' ')} KST';
     return SingleChildScrollView(
@@ -194,9 +191,8 @@ class EventPanel extends StatelessWidget {
               '모의 이벤트 · 일정·수량·참여자·보상은 추정 설정입니다. 이 기기 안에서만 기록되며 실제 돈·상품·포인트는 지급되지 않습니다.'),
           Text(d.title, style: Theme.of(context).textTheme.titleLarge),
           Text('${date(d.start)} ~ ${date(d.end)}'),
-          Text(phase == EventPhase.ended
-              ? '이벤트 종료'
-              : '${phase == EventPhase.upcoming ? '시작' : '종료'}까지 ${remaining.inDays}일 ${remaining.inHours % 24}시간 ${remaining.inMinutes % 60}분'),
+          Text(eventCountdownLabel(d, c.gameNow),
+              key: const Key('event-panel-countdown')),
           Text('모의 참여자 ${compactNumber(saved.participants)}명'),
           FilledButton(
               key: const Key('event-join'),
@@ -214,7 +210,7 @@ class EventPanel extends StatelessWidget {
                           Text(r.title,
                               style: Theme.of(context).textTheme.titleMedium),
                           Text(
-                              '레벨 ${c.state.level}/${r.requiredLevel} · 누적 ${compactNumber(c.state.lifetime)}/${compactNumber(BigInt.parse(r.requiredProduction))}개'),
+                              '레벨 ${c.state.level}/${r.requiredLevel} · 누적 ${compactNumber(c.state.lifetime)}/${compactNumber(r.requiredProductionAmount)}개'),
                           Text(
                               '보상 ${r.reward.coins} 코인${r.reward.items.isEmpty ? '' : ' · ${r.reward.items.entries.map((e) => '${e.key == 'fairy' ? '요정' : '황금버터'} ${e.value}개').join(' · ')}'}'),
                           Text(
@@ -246,7 +242,7 @@ class EventPanel extends StatelessWidget {
                 key: const Key('event-exhaust'),
                 onPressed: !c.busy && phase == EventPhase.active
                     ? () => c.simulateEventClaims(
-                        d.id, 'final', BigInt.parse(d.rewards.last.capacity))
+                        d.id, 'final', d.rewards.last.capacityAmount)
                     : null,
                 child: const Text('가상 다른 참여자로 최종 수량 소진'))
           ]),

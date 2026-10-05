@@ -117,11 +117,6 @@ class _BakeTargetState extends State<BakeTarget>
         ? 0.0
         : (1 - (_elapsed - _lastTap) / 180).clamp(0.0, 1.0);
     final skin = widget.controller.state.equippedSkin;
-    final filling = skin == 'cocoa'
-        ? const Color(0xff663322)
-        : skin == 'custard'
-            ? const Color(0xffffef9b)
-            : const Color(0xffa95738);
     return RepaintBoundary(
       child: Semantics(
         button: true,
@@ -175,7 +170,7 @@ class _BakeTargetState extends State<BakeTarget>
                             child: CustomPaint(
                                 size: Size(box.maxWidth,
                                     math.min(box.maxHeight, box.maxWidth * .8)),
-                                painter: FishPainter(filling, skin: skin))),
+                                painter: FishPainter(skin: skin))),
                         for (final burst in _bursts)
                           Positioned(
                               key: ValueKey(burst),

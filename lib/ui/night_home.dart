@@ -247,18 +247,18 @@ class NightHome extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                     Text(
-                        '모의 이벤트 · ${homeEvent.countdownAt(controller.gameNow)}',
+                        '모의 이벤트 · ${eventCountdownLabel(currentEvent, controller.gameNow)}',
                         key: const Key('event-countdown'),
                         style: const TextStyle(
                             fontSize: 12,
                             color: cream,
                             fontWeight: FontWeight.w700)),
                     const SizedBox(height: 4),
-                    Text('${homeEvent.title}  ›',
+                    Text('${currentEvent.title}  ›',
                         style: const TextStyle(
                             fontSize: 13, fontWeight: FontWeight.w700)),
                     Text(
-                        '선착순 잔여 ${eventRemaining(controller.state, eventDefinitions.first, eventDefinitions.first.rewards.last)}명 · 실제 지급 없음',
+                        '선착순 잔여 ${eventRemaining(controller.state, currentEvent, currentEvent.rewards.last)}명 · 실제 지급 없음',
                         style: const TextStyle(color: muted, fontSize: 10)),
                   ])),
             )),

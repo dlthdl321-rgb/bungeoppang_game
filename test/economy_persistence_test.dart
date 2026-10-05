@@ -21,6 +21,14 @@ class JsonRepository implements GameRepository {
   @override
   Future<GameState?> recover() async => _decode('backup');
   @override
+  Future<bool> restoreBackup() async {
+    final backup = _decode('backup');
+    if (backup == null) return false;
+    disk['current'] = jsonEncode(backup.toJson());
+    return true;
+  }
+
+  @override
   Future<void> clear() async => disk.clear();
   @override
   Future<void> save(GameState state) async {

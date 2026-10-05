@@ -30,24 +30,42 @@ class RankingEntry {
   const RankingEntry(this.id, this.name, this.score, this.isMe, this.rank);
 }
 
+typedef _Row = ({String id, String name, BigInt score, bool friend});
+
+int _compareRows(_Row a, _Row b) {
+  final score = b.score.compareTo(a.score);
+  return score != 0 ? score : a.id.compareTo(b.id);
+}
+
+// Fixture scores are parsed and sorted once, not on every 100ms rebuild.
+final List<_Row> _fixtureRows = [
+  for (final r in rankingFixtures)
+    (id: r.$1, name: r.$2, score: BigInt.parse(r.$3), friend: r.$4)
+]..sort(_compareRows);
+final _lastRanking = <bool, (BigInt, List<RankingEntry>)>{};
+
+/// Unmodifiable; the same instance is returned while [lifetime] is unchanged.
 List<RankingEntry> rankingFor(BigInt lifetime, {bool friendsOnly = false}) {
-  final rows = <({String id, String name, BigInt score, bool me})>[
-    for (final r in rankingFixtures.where((r) => !friendsOnly || r.$4))
-      (id: r.$1, name: r.$2, score: BigInt.parse(r.$3), me: false),
-    (id: 'self', name: '나', score: lifetime, me: true),
-  ]..sort((a, b) {
-      final score = b.score.compareTo(a.score);
-      return score != 0 ? score : a.id.compareTo(b.id);
-    });
+  final cached = _lastRanking[friendsOnly];
+  if (cached != null && cached.$1 == lifetime) return cached.$2;
+  final me = (id: 'self', name: '나', score: lifetime, friend: true);
+  final rows = [
+    for (final r in _fixtureRows)
+      if (!friendsOnly || r.friend) r
+  ];
+  final at = rows.indexWhere((r) => _compareRows(me, r) < 0);
+  rows.insert(at < 0 ? rows.length : at, me);
   var rank = 0;
   BigInt? previous;
-  return [
+  final result = List<RankingEntry>.unmodifiable([
     for (var i = 0; i < rows.length; i++)
       (() {
         final r = rows[i];
         if (previous != r.score) rank = i + 1;
         previous = r.score;
-        return RankingEntry(r.id, r.name, r.score, r.me, rank);
+        return RankingEntry(r.id, r.name, r.score, r.id == me.id, rank);
       })()
-  ];
+  ]);
+  _lastRanking[friendsOnly] = (lifetime, result);
+  return result;
 }
