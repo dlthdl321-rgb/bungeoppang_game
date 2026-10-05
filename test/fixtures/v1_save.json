@@ -1,0 +1,18 @@
+{
+  "formatVersion": 1,
+  "balanceVersion": 1,
+  "snapshotSequence": 37,
+  "buns": "123456789012345678901234567890",
+  "lifetime": "9999999999999999999999999999999999999999",
+  "stars": "21",
+  "upgradeCounts": {"tap_1":25,"tap_2":2,"tap_3":3,"auto_1":10,"auto_2":6,"auto_3":2},
+  "level":10,
+  "rewardedLevels":[2,3,4,5,6,7,8,9,10],
+  "ownedSkins":["redbean","custard","cocoa"],
+  "equippedSkin":"cocoa",
+  "tutorialDone":true,
+  "settings":{"vibration":false,"holdToBake":true,"reduceMotion":true},
+  "lastSettledUtc":"2026-01-01T00:00:00.000Z",
+  "savedAutoRate":"270",
+  "activeRemainder":"321"
+}
