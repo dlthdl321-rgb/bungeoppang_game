@@ -285,7 +285,7 @@ void main() {
       expect(find.byKey(const Key('cosmetic-slot-fish')), findsNothing);
       await tapVisible(tester, const Key('cosmetic-slot-hat'));
       await tapVisible(tester, const Key('preview-beanie'));
-      expect(find.text('미리보기 · 아직 장착되지 않았습니다'), findsOneWidget);
+      expect(find.text('미리보기 · 미장착'), findsOneWidget);
       expect(c.state.equippedCosmetic(CosmeticSlot.hat), 'nohat');
       await tapVisible(tester, const Key('buy-cosmetic-beanie'));
       await tapVisible(tester, const Key('confirm-support'));

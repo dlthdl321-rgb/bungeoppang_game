@@ -43,7 +43,7 @@ class DailyMissionsPanel extends StatelessWidget {
               onPressed: onStore,
               child: const Text('아이템 · 코인 상점 열기')),
           const Text(
-              '생산 미션은 접속 중 생산, 스킬 구매는 구매 수량, 초당 목표는 아이템 제외 기본 생산 기준입니다. 받지 않은 보상은 자정에 사라집니다.'),
+              '초당 목표는 아이템 제외 · 안 받은 보상은 자정에 사라져요'),
           saveError(c),
           for (final d in dailyDefinitions)
             Card(
@@ -75,7 +75,7 @@ class DailyMissionsPanel extends StatelessWidget {
                                   : null,
                               child: Text(daily.claimed.contains(d.id)
                                   ? '수령 완료'
-                                  : '미션 보상 받기')),
+                                  : '보상 받기')),
                         ]))),
           Card(
               child: Padding(
@@ -153,7 +153,7 @@ class _SupportPanelState extends State<SupportPanel> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const Text(
-                        '아이템 효과 시간은 앱을 닫아도 흐릅니다. 같은 아이템은 효과가 끝난 뒤 다시 쓸 수 있습니다.'),
+                        '효과 시간은 앱을 닫아도 흘러요'),
                     saveError(c),
                     for (final item in itemDefinitions) _item(context, item),
                     if (_shop) ...[
@@ -171,8 +171,8 @@ class _SupportPanelState extends State<SupportPanel> {
                                       Text(
                                           '가격 ${skin.cost} 코인 · Lv.${skin.unlockLevel} 해금'),
                                       Text(c.state.ownedSkins.contains(skin.id)
-                                          ? '현재 영구 보유'
-                                          : '현재 미보유 → 구매 후 영구 보유·장착'),
+                                          ? '영구 보유'
+                                          : '미보유'),
                                       FilledButton(
                                           key: Key('coin-skin-${skin.id}'),
                                           onPressed: !c.busy &&
@@ -185,7 +185,7 @@ class _SupportPanelState extends State<SupportPanel> {
                                                   if (await confirmAction(
                                                       context,
                                                       '${skin.name} 구매',
-                                                      '가격 ${skin.cost} 코인\n현재 ${exactNumber(s.coins)} → 구매 후 ${exactNumber(s.coins - skin.cost)} 코인\n미보유 → 영구 보유·장착\n생산 효과 없음',
+                                                      '가격 ${skin.cost} 코인\n코인 ${exactNumber(s.coins)} → ${exactNumber(s.coins - skin.cost)}\n영구 보유 · 바로 장착',
                                                       '구매')) {
                                                     await c.buyOrEquip(skin);
                                                   }
@@ -243,7 +243,7 @@ class _SupportPanelState extends State<SupportPanel> {
                       key: Key('item-time-${item.id}')),
                   if (_shop) ...[
                     Text(
-                        '가격 ${item.coinPrice} 코인 · 구매 후 수량 ${compactNumber(quantity + BigInt.one)}개'),
+                        '${item.coinPrice} 코인 · 구매 후 ${compactNumber(quantity + BigInt.one)}개'),
                     FilledButton(
                         key: Key('coin-buy-${item.id}'),
                         onPressed: !c.busy && s.coins >= price
@@ -251,7 +251,7 @@ class _SupportPanelState extends State<SupportPanel> {
                                 if (await confirmAction(
                                     context,
                                     '${item.name} 구매',
-                                    '가격 $price 코인\n현재 ${exactNumber(s.coins)} → 구매 후 ${exactNumber(s.coins - price)} 코인\n보유 $quantity → ${quantity + BigInt.one}개\n구매만으로 효과가 활성화되지 않습니다.',
+                                    '가격 $price 코인\n코인 ${exactNumber(s.coins)} → ${exactNumber(s.coins - price)}\n보유 $quantity → ${quantity + BigInt.one}개\n사용해야 효과가 켜져요',
                                     '구매')) {
                                   await c.buyCoinItem(item.id, sequence);
                                 }

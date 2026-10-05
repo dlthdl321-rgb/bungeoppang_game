@@ -104,7 +104,7 @@ class GameController extends ChangeNotifier {
     try {
       state = await repository.load() ?? GameState.initial(clock.utcNow);
     } on FormatException catch (e) {
-      error = '저장 데이터가 손상되었습니다: ${e.message}';
+      error = '저장 데이터 손상: ${e.message}';
       rethrow;
     }
     _lastMono = clock.monotonicMilliseconds;
@@ -505,7 +505,7 @@ class GameController extends ChangeNotifier {
       return true;
     } catch (_) {
       state = before;
-      error = '저장하지 못했습니다. 다시 시도해 주세요.';
+      error = '저장 실패. 다시 시도해 주세요.';
       return false;
     } finally {
       busy = false;
@@ -522,7 +522,7 @@ class GameController extends ChangeNotifier {
       await repository.save(state.copy());
       error = null;
     } catch (_) {
-      error = '저장하지 못했습니다. 다시 시도해 주세요.';
+      error = '저장 실패. 다시 시도해 주세요.';
       notifyListeners();
     }
   }
@@ -619,11 +619,11 @@ class GameController extends ChangeNotifier {
   /// Returns null on success, otherwise a reason to show the player.
   Future<String?> restoreBackupAndStart() async {
     try {
-      if (!await repository.restoreBackup()) return '복구할 이전 저장이 없습니다.';
+      if (!await repository.restoreBackup()) return '복구할 이전 저장이 없어요.';
     } on FormatException catch (e) {
-      return '이전 저장도 손상되어 복구할 수 없습니다: ${e.message}';
+      return '이전 저장도 손상됨: ${e.message}';
     } catch (_) {
-      return '복구한 저장을 기록하지 못했습니다. 다시 시도해 주세요.';
+      return '복구 저장 실패. 다시 시도해 주세요.';
     }
     return _startAfterRecovery();
   }
@@ -633,7 +633,7 @@ class GameController extends ChangeNotifier {
     try {
       await reset();
     } catch (_) {
-      return '데이터를 초기화하지 못했습니다. 다시 시도해 주세요.';
+      return '초기화 실패. 다시 시도해 주세요.';
     }
     return _startAfterRecovery();
   }
@@ -644,9 +644,9 @@ class GameController extends ChangeNotifier {
       await initialize();
       return null;
     } on FormatException catch (e) {
-      return '저장 데이터를 열 수 없습니다: ${e.message}';
+      return '저장 데이터를 열 수 없어요: ${e.message}';
     } catch (_) {
-      return '게임을 시작하지 못했습니다. 다시 시도해 주세요.';
+      return '게임 시작 실패. 다시 시도해 주세요.';
     }
   }
 

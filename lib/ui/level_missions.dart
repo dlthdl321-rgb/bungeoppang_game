@@ -29,16 +29,15 @@ class LevelMissions extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('현재 Lv.${s.level}', style: Theme.of(context).textTheme.titleLarge),
-        const Text('조건을 모두 채우면 레벨업 보상으로 코인을 받습니다.'),
+        const Text('조건을 모두 채우고 코인 보상을 받아요.'),
         const SizedBox(height: 12),
         if (active == null) ...[
-          const Text('최고 레벨 달성 · 모든 레벨 미션 완료', key: Key('missions-finished')),
+          const Text('최고 레벨 달성', key: Key('missions-finished')),
           PrestigeCard(controller: c),
         ] else ...[
           Text('Lv.${s.level} → Lv.${active.level} 미션',
               key: const Key('active-mission-title'),
               style: Theme.of(context).textTheme.titleMedium),
-          const Text('모든 조건을 달성한 뒤 직접 레벨업 보상을 받으세요.'),
           for (final p in missionProgress(s, active)) _missionCard(context, p),
           const SizedBox(height: 8),
           Text('레벨업 보상: 코인 ${compactNumber(reward)}개'),
@@ -56,7 +55,7 @@ class LevelMissions extends StatelessWidget {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                           content: Text(ok
                               ? 'Lv.$target 달성 · 코인 ${compactNumber(reward)}개 수령'
-                              : c.error ?? '조건을 다시 확인해 주세요.')));
+                              : c.error ?? '조건을 확인해 주세요.')));
                     }
                   }
                 : null,
@@ -67,7 +66,7 @@ class LevelMissions extends StatelessWidget {
           const Divider(height: 28),
           Text('다음 단계 미리보기 · Lv.${preview.level}',
               key: const Key('mission-preview')),
-          const Text('아직 시작되지 않은 단계입니다. 진행은 이 단계가 열린 뒤부터 계산합니다.'),
+          const Text('열리면 진행이 시작돼요.'),
           for (final m in preview.missions)
             Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -107,10 +106,10 @@ class LevelMissions extends StatelessWidget {
             semanticsLabel: m.title,
             semanticsValue: '${p.permille ~/ 10}%'),
         if (c.state.missions.waivedGoals.contains(m.id))
-          const Text('이전 버전에서 친구 초대 조건을 채워 완료로 인정했습니다.',
+          const Text('이전 버전 초대 기록으로 완료 인정',
               key: Key('mission-waived')),
         if (m.kind == MissionKind.newPlayerInvites && c.developerTools) ...[
-          const Text('개발자 도구 · 활성화 후 초대한 신규 플레이어의 레벨 1 달성만 인정'),
+          const Text('개발자 도구 · 활성화 후 신규 초대의 Lv.1 달성만 인정'),
           TextButton(
               key: const Key('mission-invites'),
               onPressed: () => onOpen('invite'),
@@ -123,7 +122,7 @@ class LevelMissions extends StatelessWidget {
               child: Text(label)),
         if (m.kind == MissionKind.goldenButterUses) ...[
           Text(
-              '황금버터 ${c.state.support.inventory['butter']}개 보유 · 사용하면 1개를 소비하고 클릭 생산이 늘어납니다.'),
+              '황금버터 ${c.state.support.inventory['butter']}개 보유 · 쓰면 클릭 생산 증가'),
           TextButton(
               key: const Key('mock-butter'),
               onPressed: p.complete ||
@@ -191,10 +190,9 @@ class PrestigeCard extends StatelessWidget {
                   Text('명성 별 ${s.prestige.stars}개 · 생산 +${(now - 1000) ~/ 10}%',
                       key: const Key('prestige-stars')),
                   Text(gain > 0
-                      ? '지금 열면 명성 별 $gain개를 더 받아 생산 +${(after - 1000) ~/ 10}%가 됩니다.'
-                      : '누적 생산이 늘면 명성 별을 더 받을 수 있어요.'),
-                  const Text(
-                      '붕어빵·스킬·레벨은 처음부터 다시 시작합니다. 코인·아이템·꾸미기·업적·칭호·기록·누적 생산은 유지되고, 레벨업 코인은 다시 지급되지 않습니다.'),
+                      ? '지금 열면 별 +$gain · 생산 +${(after - 1000) ~/ 10}%'
+                      : '누적 생산이 늘면 별이 더 쌓여요.'),
+                  const Text('붕어빵·스킬·레벨만 초기화 (레벨업 코인 재지급 없음)'),
                   FilledButton(
                       key: const Key('prestige-open'),
                       onPressed: !c.busy && canPrestige(s)

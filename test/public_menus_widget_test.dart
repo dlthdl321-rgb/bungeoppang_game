@@ -42,7 +42,7 @@ void main() {
         await tester.pumpAndSettle();
         // Stage 8: fictional ranking → personal records, mock season → weekly.
         await tapVisible(tester, const Key('menu-records'));
-        expect(find.textContaining('이 기기에서 플레이한 내 기록'), findsOneWidget);
+        expect(find.textContaining('이 기기 기록'), findsOneWidget);
         expect(find.textContaining('순위'), findsNothing);
         c.state.lifetime = BigInt.parse('1000000000000000000');
         c.tick();

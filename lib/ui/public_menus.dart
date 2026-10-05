@@ -36,7 +36,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
         padding: const EdgeInsets.all(16),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('붕어빵, 사장님, 가게의 모습을 바꿉니다. 생산 효과는 없습니다.'),
+          const Text('모습만 바뀌어요 (생산 효과 없음)'),
           const SizedBox(height: 8),
           SegmentedButton<CosmeticCategory>(
               showSelectedIcon: false,
@@ -68,13 +68,13 @@ class _WardrobePanelState extends State<WardrobePanel> {
           const SizedBox(height: 12),
           Semantics(
               label:
-                  '${cosmeticCategoryLabel(category)} 꾸미기 미리보기, 구매 전에는 저장되지 않음',
+                  '${cosmeticCategoryLabel(category)} 꾸미기 미리보기',
               child: SizedBox(
                   height: 180,
                   child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: _preview(equipped)))),
-          Text(preview == null ? '현재 장착 모습' : '미리보기 · 아직 장착되지 않았습니다',
+          Text(preview == null ? '현재 장착 모습' : '미리보기 · 미장착',
               key: const Key('cosmetic-preview-status')),
           for (final d in cosmeticDefinitions.where((d) => d.slot == slot))
             Card(
@@ -86,10 +86,10 @@ class _WardrobePanelState extends State<WardrobePanel> {
                           Text(d.name,
                               style: Theme.of(context).textTheme.titleMedium),
                           Text(d.free
-                              ? '무료 · 생산 효과 없음'
-                              : '가격 ${compactNumber(d.cost)} 코인 · 생산 효과 없음'),
+                              ? '무료'
+                              : '${compactNumber(d.cost)} 코인'),
                           Text(
-                              '해금: 레벨 ${d.unlockLevel} · 누적 ${compactNumber(d.unlockProductionAmount)}개'),
+                              '해금 Lv.${d.unlockLevel} · 누적 ${compactNumber(d.unlockProductionAmount)}개'),
                           Text(
                               '현재 ${cosmeticDefinitions.firstWhere((item) => item.id == c.state.equippedCosmetic(slot)).name} → ${d.name}'),
                           Wrap(spacing: 8, children: [
@@ -110,7 +110,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
                                             await confirmAction(
                                                 context,
                                                 '${d.name} 구매',
-                                                '가격 ${d.cost} 코인\n현재 ${exactNumber(c.state.support.coins)} → 구매 후 ${exactNumber(c.state.support.coins - d.cost)} 코인\n미보유 → 영구 보유·장착\n생산 효과 없음',
+                                                '가격 ${d.cost} 코인\n코인 ${exactNumber(c.state.support.coins)} → ${exactNumber(c.state.support.coins - d.cost)}\n영구 보유 · 바로 장착',
                                                 '구매')) {
                                           final ok =
                                               await c.buyOrEquipCosmetic(d.id);

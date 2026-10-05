@@ -247,7 +247,7 @@ class NightHome extends StatelessWidget {
                 const SizedBox(height: 7),
                 Text(
                     next == null
-                        ? '모든 성장 목표를 달성했어요'
+                        ? '모든 목표 달성'
                         : '미션 ${goals!.where((p) => p.complete).length}/${goals.length} 완료 · '
                             '${canClaimLevel(s) ? '보상 받기' : '조건 보기'}  ›',
                     style: const TextStyle(color: muted, fontSize: 11)),

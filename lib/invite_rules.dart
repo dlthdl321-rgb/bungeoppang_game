@@ -124,6 +124,6 @@ void _reward(GameState s, InviteVisit visit, InviteEvent event, bool fresh,
 }
 
 String invitationText(InviteProfile profile, InviteTicket ticket) =>
-    '${ticket.origin == InviteOrigin.mock ? '[모의 초대 · 실제 서비스 연결 없음]\n' : ''}'
-    '오늘의 붕어빵에 함께 놀러 오세요!\n추천 코드: ${profile.referralCode}\n${ticket.url}\n'
-    '시제품이며 현금·상품 지급은 없습니다.${ticket.origin == InviteOrigin.mock ? '\n이 링크로 실제 상대를 확인하지 않습니다.' : ''}';
+    '${ticket.origin == InviteOrigin.mock ? '[모의 초대 · 실제 연결 없음]\n' : ''}'
+    '오늘의 붕어빵 같이 해요!\n추천 코드: ${profile.referralCode}\n${ticket.url}\n'
+    '현금·상품 지급은 없습니다.';

@@ -97,7 +97,7 @@ void main() {
     expect(c.state.level, 3);
     expect(c.state.support.coins, BigInt.zero);
     expect(c.state.missions.butterUses, BigInt.one);
-    expect(find.textContaining('저장하지 못했습니다'), findsWidgets);
+    expect(find.textContaining('저장 실패'), findsWidgets);
     await tapVisible(tester, const Key('claim-level'));
     expect(c.state.level, 4);
     expect(c.state.missions.qualifiedInvitePlayers, isEmpty);
@@ -113,7 +113,7 @@ void main() {
     await tapVisible(tester, const Key('menu-share'));
     await tapVisible(tester, const Key('developer-invites'));
     expect(find.byKey(const Key('mock-invite-notice')), findsOneWidget);
-    expect(find.textContaining('미리 채울 수 없습니다'), findsOneWidget);
+    expect(find.textContaining('미리 채울 수 없어요'), findsOneWidget);
     await tapVisible(tester, const Key('invite-debug'));
     expect(
         tester

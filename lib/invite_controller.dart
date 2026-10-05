@@ -47,7 +47,7 @@ extension InvitationCommands on GameController {
         rethrow;
       }
     } catch (_) {
-      if (!_disposed) inviteError = '초대 정보를 처리하지 못했습니다. 다시 시도해 주세요.';
+      if (!_disposed) inviteError = '초대 처리 실패. 다시 시도해 주세요.';
       return false;
     } finally {
       _inviteLoading = false;

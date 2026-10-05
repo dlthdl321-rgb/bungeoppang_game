@@ -60,9 +60,9 @@ class _SkillShopState extends State<SkillShop> {
     final unit = u.kind == UpgradeKind.tap ? '클릭당' : '초당';
     final nextPrice = q.maxed ? BigInt.zero : priceAt(u, owned);
     final status = !q.unlocked
-        ? '잠김 · 누적 ${compactNumber(u.unlockTotal)}개에 해금'
+        ? '잠김 · 누적 ${compactNumber(u.unlockTotal)}개 해금'
         : q.maxed
-            ? '최대 강화 완료'
+            ? '최대 강화'
             : canBuy
                 ? '구매 가능'
                 : '재화 부족';
@@ -108,7 +108,7 @@ class _SkillShopState extends State<SkillShop> {
                           if (!ok && mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(SnackBar(
                                 content: Text(c.error ??
-                                    '구매 조건이 바뀌었습니다. 가격과 재화를 확인해 주세요.')));
+                                    '구매 조건이 바뀌었어요. 다시 확인해 주세요.')));
                           }
                         }
                       : null,
@@ -117,7 +117,7 @@ class _SkillShopState extends State<SkillShop> {
                       : '$amountLabel · ${compactNumber(q.cost)}')),
               TextButton(
                   onPressed: () => _details(u, q),
-                  child: const Text('정확한 가격·효과 보기')),
+                  child: const Text('자세히 보기')),
             ],
           )),
     );
@@ -131,7 +131,7 @@ class _SkillShopState extends State<SkillShop> {
           title: Text(u.name),
           content: SelectableText('수량 ${q.amount}개\n가격 ${exactNumber(q.cost)}\n'
               '현재 효과 ${exactNumber(q.currentRate)}\n구매 후 효과 ${exactNumber(q.afterRate)}\n'
-              '해금: 누적 ${exactNumber(u.unlockTotal)}개\n가격은 개별 구매 가격을 각각 올림한 합계입니다.'),
+              '해금: 누적 ${exactNumber(u.unlockTotal)}개\n가격은 개당 가격 올림 합계'),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(ctx), child: const Text('확인'))

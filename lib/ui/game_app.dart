@@ -121,7 +121,7 @@ class _RecoveryAppState extends State<RecoveryApp> {
         context: context,
         builder: (ctx) => AlertDialog(
                 title: const Text('정말 초기화할까요?'),
-                content: const Text('모든 진행 상황과 이전 저장이 삭제되며 되돌릴 수 없습니다.'),
+                content: const Text('진행·이전 저장 모두 삭제, 되돌릴 수 없어요.'),
                 actions: [
                   TextButton(
                       onPressed: () => Navigator.pop(ctx, false),
@@ -154,7 +154,7 @@ class _RecoveryAppState extends State<RecoveryApp> {
                                       const Icon(Icons.warning_amber, size: 64),
                                       Text(
                                           widget.controller.error ??
-                                              '저장 데이터를 열 수 없습니다.',
+                                              '저장 데이터를 열 수 없어요.',
                                           textAlign: TextAlign.center),
                                       if (_message != null)
                                         Padding(
@@ -209,8 +209,7 @@ class _GameHomeState extends State<GameHome> {
           builder: (ctx) => AlertDialog(
             scrollable: true,
             title: const Text('오늘의 붕어빵'),
-            content: const Text(
-                '큰 붕어빵을 눌러 생산하고, 오른쪽 상점에서 클릭과 자동 생산을 강화해요. 아래 진행 막대에서 다음 레벨 목표를 확인하세요.'),
+            content: const Text('붕어빵을 눌러 굽고, 상점에서 강화해요.'),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx),
@@ -360,7 +359,7 @@ class _GameHomeState extends State<GameHome> {
                                     builder: (_) => AlertDialog(
                                             title: const Text('정말 초기화할까요?'),
                                             content: const Text(
-                                                '모든 진행 상황이 삭제되며 되돌릴 수 없습니다.'),
+                                                '모든 진행 삭제, 되돌릴 수 없어요.'),
                                             actions: [
                                               TextButton(
                                                   onPressed: () =>

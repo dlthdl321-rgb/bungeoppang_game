@@ -36,7 +36,7 @@ class RecordsPanel extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('이 기기에서 플레이한 내 기록입니다.'),
+          const Text('이 기기 기록'),
           if (title != null)
             Text('칭호 · $title', key: const Key('records-title')),
           _OnlineRankingCard(controller: controller),
@@ -102,7 +102,7 @@ class RecordsPanel extends StatelessWidget {
                                 final DateTime at => kstLabel(at),
                                 null => '이전 버전 기록 · 시각 없음',
                               }),
-                        if (s.level == 1) const Text('아직 레벨업 기록이 없습니다.'),
+                        if (s.level == 1) const Text('레벨업 기록 없음'),
                       ]))),
         ]));
   }
@@ -124,20 +124,18 @@ class _OnlineRankingCard extends StatelessWidget {
                 children: [
                   Text('온라인 랭킹 · Google Play 게임즈', style: _heading(context)),
                   if (!status.configured)
-                    const Text('온라인 랭킹은 준비 중입니다.',
+                    const Text('온라인 랭킹 준비 중',
                         key: Key('ranking-unavailable'))
                   else if (!status.authenticated) ...[
-                    const Text(
-                        'Play 게임즈에 로그인하면 최고 초당 생산·누적 생산·최고 콤보로 다른 플레이어와 순위를 겨룰 수 있습니다.'),
+                    const Text('로그인하고 초당 생산·누적 생산·콤보 순위를 겨뤄요.'),
                     FilledButton(
                         key: const Key('ranking-sign-in'),
                         onPressed: c.rankingBusy ? null : c.signInRanking,
                         child: const Text('Play 게임즈 로그인')),
                   ] else ...[
-                    const Text(
-                        '기록은 이 기기에서 계산되어 Google Play 게임즈 순위표에 올라갑니다. 일간·주간·전체 순위를 볼 수 있습니다.'),
+                    const Text('내 기록이 Play 게임즈 순위표에 올라가요.'),
                     if (lifetimeExceedsRanking(c.state))
-                      const Text('누적 생산이 순위표 최대치를 넘어 최대치로 올라갑니다.',
+                      const Text('누적 생산은 순위표 최대치로 올라가요.',
                           key: Key('ranking-lifetime-capped')),
                     FilledButton.icon(
                         key: const Key('ranking-open'),
@@ -165,8 +163,7 @@ class WeeklyPanel extends StatelessWidget {
           Text(theme.description),
           Text(weeklyCountdownLabel(weekly.week, c.gameNow),
               key: const Key('weekly-countdown')),
-          const Text(
-              '매주 월요일 00:00(한국 시각)에 새 도전이 자동으로 시작됩니다. 받지 않은 보상은 주가 바뀌면 사라집니다.'),
+          const Text('매주 월요일 00:00(한국 시각) 갱신 · 안 받은 보상은 사라져요'),
           saveError(c),
           for (final g in weeklyGoals)
             Card(
@@ -293,7 +290,7 @@ class _AchievementPanelState extends State<AchievementPanel> {
       ]),
       const SizedBox(height: 12),
       Text(
-          '꾸미기 도감 ${cosmeticsOwnedCount(s)} / $collectibleCosmeticCount (기본 외형·피부톤 제외)',
+          '꾸미기 도감 ${cosmeticsOwnedCount(s)} / $collectibleCosmeticCount (기본 제외)',
           key: const Key('collection-cosmetics'),
           style: _heading(context)),
       for (final category in CosmeticCategory.values) ...[
@@ -348,11 +345,11 @@ class _SharePanelState extends State<SharePanel> {
         await widget.sharing.share(gameShareText, origin);
       }
       if (mounted) {
-        setState(() => _message = copy ? '소개 문구와 링크를 복사했습니다.' : '공유 창을 닫았습니다.');
+        setState(() => _message = copy ? '문구와 링크를 복사했어요.' : '공유 창을 닫았어요.');
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _message = '공유 기능을 사용할 수 없습니다. 복사하기를 이용해 주세요.');
+        setState(() => _message = '공유할 수 없어요. 복사해 주세요.');
       }
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -363,8 +360,7 @@ class _SharePanelState extends State<SharePanel> {
   Widget build(BuildContext context) => SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Text('친구에게 오늘의 붕어빵을 소개해 보세요. 공유해도 게임 보상은 없으며, '
-            '받는 앱과 상대는 직접 고릅니다.'),
+        const Text('친구에게 게임을 소개해요. (보상 없음)'),
         const SizedBox(height: 12),
         Card(
             child: Padding(
@@ -389,7 +385,7 @@ class _SharePanelState extends State<SharePanel> {
           TextButton(
               key: const Key('developer-invites'),
               onPressed: widget.onDeveloperInvites,
-              child: const Text('개발자 도구 · 초대 시스템 (디버그 빌드 전용)')),
+              child: const Text('개발자 도구 · 초대 시스템 (디버그)')),
         ],
       ]));
 }

@@ -82,7 +82,7 @@ void main() {
     expect(find.textContaining('1개 구매 후 클릭당'), findsWidgets);
     final details = find.descendant(
         of: find.byKey(const Key('skill-tap_2')),
-        matching: find.text('정확한 가격·효과 보기'));
+        matching: find.text('자세히 보기'));
     await tester.ensureVisible(details);
     await tester.pumpAndSettle();
     await tester.tap(details);

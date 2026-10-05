@@ -46,7 +46,7 @@ void main() {
         expect(c.currentTapRate, BigInt.one);
         await tapVisible(tester, const Key('support-shop'));
         await tapVisible(tester, const Key('coin-buy-fairy'));
-        expect(find.textContaining('구매만으로 효과가 활성화되지 않습니다'), findsOneWidget);
+        expect(find.textContaining('사용해야 효과가 켜져요'), findsOneWidget);
         await tapVisible(tester, const Key('confirm-support'));
         expect(c.state.support.coins, BigInt.from(104));
         expect(c.state.support.inventory['fairy'], BigInt.from(3));

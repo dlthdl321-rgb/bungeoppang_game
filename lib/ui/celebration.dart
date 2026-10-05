@@ -297,7 +297,7 @@ class OfflineRewardDialog extends StatelessWidget {
                           fontWeight: FontWeight.w900)),
                   const SizedBox(height: 4),
                   Text(
-                      '자리를 비운 ${hours > 0 ? '$hours시간 ' : ''}$minutes분 동안 노점이 쉬지 않고 구웠어요',
+                      '${hours > 0 ? '$hours시간 ' : ''}$minutes분 동안 구웠어요',
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Color(0xffc4d0d7))),
                   const SizedBox(
@@ -314,7 +314,7 @@ class OfflineRewardDialog extends StatelessWidget {
                           fontWeight: FontWeight.w900)),
                   const SizedBox(height: 6),
                   const Text(
-                      '자리를 비운 동안은 자동 생산의 50%를 최대 ${maxOfflineMs ~/ 3600000}시간까지 받아요.',
+                      '자리 비운 동안 자동 생산 50% (최대 ${maxOfflineMs ~/ 3600000}시간)',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: Color(0xffc4d0d7), fontSize: 12)),
                   const SizedBox(height: 12),

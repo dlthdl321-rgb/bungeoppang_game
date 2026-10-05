@@ -47,12 +47,12 @@ class _InvitePanelState extends State<InvitePanel> {
       }
       if (mounted) {
         setState(() => _message = copy
-            ? '초대 문구·링크를 복사했습니다. 보상은 지급되지 않습니다.'
-            : '공유 화면을 닫았습니다. 실제 전송·상대 참여 여부는 확인할 수 없습니다.');
+            ? '문구·링크 복사 완료 (보상 없음)'
+            : '공유 창 닫힘 (전송 여부 확인 불가)');
       }
     } catch (_) {
       if (mounted) {
-        setState(() => _message = '공유 기능을 사용할 수 없습니다. 문구 복사를 이용해 주세요.');
+        setState(() => _message = '공유 불가. 문구 복사를 이용해 주세요.');
       }
     } finally {
       if (mounted) setState(() => _sharing = false);
@@ -75,7 +75,7 @@ class _InvitePanelState extends State<InvitePanel> {
       }
       _message = ok
           ? '모의 이벤트 저장 완료 · ${c.state.invites.visits[_selected]?.note ?? ''}'
-          : c.error ?? '적용하지 않았습니다. 순서·상대 ID·저장 상태를 확인해 주세요.';
+          : c.error ?? '적용 안 됨. 순서·ID·저장 상태를 확인해 주세요.';
     });
   }
 
@@ -107,9 +107,9 @@ class _InvitePanelState extends State<InvitePanel> {
           Text(c.canSimulateInvites ? '모의 기능 · 초대 성공 테스트' : '친구 초대 현황',
               key: const Key('mock-invite-notice')),
           Text(c.canSimulateInvites
-              ? '이 기기의 모의 사용자입니다. 추천 코드는 서버 계정이 아닙니다. 링크는 실제 서비스에 연결되지 않으며 상대를 검증하지 않습니다.'
-              : '참여 결과는 연결된 초대 저장소에서 확인합니다.'),
-          const Text('복사·공유만으로 보상이 지급되지 않습니다. 현금·상품 지급은 없습니다.'),
+              ? '이 기기 모의 사용자 · 실제 연결·상대 검증 없음'
+              : '참여 결과는 초대 저장소에서 확인해요.'),
+          const Text('복사·공유만으론 보상 없음 · 현금·상품 지급 없음'),
           const SizedBox(height: 12),
           if (state.profile != null)
             SelectableText('내 추천 코드\n${state.profile!.referralCode}',
@@ -122,8 +122,8 @@ class _InvitePanelState extends State<InvitePanel> {
                       final ok = await c.prepareInvitation();
                       if (mounted) {
                         setState(() => _message = ok
-                            ? '새 초대 링크를 저장했습니다.'
-                            : c.error ?? c.inviteError ?? '초대 링크를 만들지 못했습니다.');
+                            ? '새 초대 링크 저장 완료'
+                            : c.error ?? c.inviteError ?? '초대 링크 생성 실패');
                       }
                     },
               child: Text(
@@ -132,7 +132,7 @@ class _InvitePanelState extends State<InvitePanel> {
             SelectableText(c.inviteShareText!,
                 key: const Key('invite-share-text')),
             if (ticket.missionToken != c.state.missions.token)
-              const Text('이전 미션에서 만든 링크입니다. 현재 미션을 위해 새 링크를 만드세요.'),
+              const Text('이전 미션 링크예요. 새 링크를 만드세요.'),
             Wrap(spacing: 8, children: [
               Builder(
                   builder: (ctx) => OutlinedButton(
@@ -154,10 +154,10 @@ class _InvitePanelState extends State<InvitePanel> {
                       final ok = await c.refreshInvitations();
                       if (mounted) {
                         setState(() => _message = ok
-                            ? '초대 현황을 확인했습니다.'
+                            ? '초대 현황 갱신 완료'
                             : c.error ??
                                 c.inviteError ??
-                                '조회하지 못했습니다. 다시 시도해 주세요.');
+                                '조회 실패. 다시 시도해 주세요.');
                       }
                     },
               child: const Text('초대 현황 새로고침')),
@@ -173,23 +173,23 @@ class _InvitePanelState extends State<InvitePanel> {
           Text(
               '신규 레벨 1 달성: ${rewardLabel(newInviteReward)}\n기존 사용자 참여: ${rewardLabel(existingInviteReward)}'),
           const Text(
-              '보상은 추정 설정 · 초대한 이 기기에 지급합니다. 같은 상대는 하루 한 번, 신규 성공은 전체 기간 한 번입니다. 기존 사용자는 다음 날 다시 참여할 수 있습니다.'),
+              '같은 상대 하루 1회 · 신규 성공은 1회만 · 기존 사용자는 매일 가능'),
           if (goals.isEmpty)
-            const Text('현재 활성화된 신규 초대 미션이 없습니다. 다음 단계의 초대는 미리 채울 수 없습니다.')
+            const Text('활성 초대 미션 없음 · 다음 단계는 미리 채울 수 없어요')
           else
             for (final p in goals)
               Text(
                   'Lv.${active!.level} 도달 미션 · ${p.current}/${p.definition.target}명 ${p.complete ? '완료' : '진행 중'}',
                   key: const Key('mock-invite-progress')),
           const Text(
-              '미션 활성화 후 생성한 링크의 신규 참여만 인정합니다. 기존 사용자·과거 링크·이미 처리한 신규 사용자는 레벨 미션에서 제외됩니다.'),
+              '미션 활성화 후 만든 링크의 신규 참여만 인정'),
           if (c.canSimulateInvites)
             ExpansionTile(
                 key: const Key('invite-debug'),
                 title: const Text('개발자 도구 · 모의 상태 생성'),
                 children: [
                   const Text(
-                      '실제 개인정보 대신 가상 상대 ID를 입력하세요. 단계별 결과는 이 기기에만 저장됩니다.'),
+                      '가상 상대 ID 입력 · 결과는 이 기기에만 저장'),
                   TextField(
                       key: const Key('invite-player'),
                       controller: _player,
@@ -251,7 +251,7 @@ class _InvitePanelState extends State<InvitePanel> {
                               if (mounted) {
                                 setState(() => _message = ok
                                     ? '이벤트 반영'
-                                    : '이미 처리한 eventId · 보상과 미션 변경 없음');
+                                    : '이미 처리한 eventId · 변경 없음');
                               }
                             },
                       child: const Text('동일 eventId 재전송')),
@@ -262,7 +262,7 @@ class _InvitePanelState extends State<InvitePanel> {
                               final ok = await c.createMockInvite();
                               if (mounted) {
                                 setState(() => _message = ok
-                                    ? '현재 미션용 신규 성공을 일괄 생성했습니다. 모의 데이터입니다.'
+                                    ? '신규 성공 생성 완료 (모의)'
                                     : c.error ?? '모의 입력 실패');
                               }
                             }
@@ -286,7 +286,7 @@ class _InvitePanelState extends State<InvitePanel> {
                           Text(
                               '참여일 ${dailyKey(visit.clickedAtUtc)} · ${state.profile?.origin == InviteOrigin.mock ? '모의 데이터' : '서버 결과'}'),
                         ]))),
-          const Text('최근 30개 방문 표시 · 원본 이벤트 ID와 보상 기록은 자정에도 보존합니다.'),
+          const Text('최근 30개 방문 표시'),
         ]));
   }
 
