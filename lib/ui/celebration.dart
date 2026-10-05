@@ -241,6 +241,12 @@ class _CelebrationHostState extends State<CelebrationHost>
                         color: Colors.white,
                         fontSize: 16,
                         fontWeight: FontWeight.w800)),
+                for (final line in e.details)
+                  Text(line,
+                      key: Key('celebration-detail-$line'),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                          color: Color(0xffc4d0d7), fontSize: 13)),
                 if (e.amount != null) ...[
                   const SizedBox(height: 4),
                   CountUpText(e.amount!,

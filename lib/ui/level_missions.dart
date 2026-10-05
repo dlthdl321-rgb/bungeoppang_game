@@ -161,7 +161,7 @@ class LevelMissions extends StatelessWidget {
   }
 
   static (String, String)? _shortcut(MissionKind kind) => switch (kind) {
-        MissionKind.cosmeticsOwned => ('skins', '꾸미기 열기'),
+        MissionKind.cosmeticsOwned => ('skins:avatar', '사장님 꾸미기 열기'),
         MissionKind.itemUses => ('support', '아이템 사용하기'),
         MissionKind.skillLevel => ('shop', '상점 열기'),
         MissionKind.achievements => ('achievements', '업적 보기'),

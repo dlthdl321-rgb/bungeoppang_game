@@ -143,7 +143,10 @@ FISH_SKINS = {
 }
 
 
-def fish(skin):
+FISH_PATTERNS = ["scales", "heartscale", "starmark", "crispgrid"]
+
+
+def fish(skin, pattern="scales"):
     light, base, shade, filling, line = FISH_SKINS[skin]
     s = Sprite(64, 48)
     body = s.ellipse(38.5, 25, 20.5, 14.5)
@@ -164,13 +167,26 @@ def fish(skin):
     for a, b in [((8, 13), (18, 22)), ((7, 24), (18, 25)), ((8, 35), (18, 28))]:
         s.fill(s.line([a, b]) & sil, shade)
     s.pixels(arc_points(25, 25, 4, 8, -60, 60), shade)
-    # Embossed scales: shade arc with a highlight underneath.
+    # Embossed pattern. Scales: shade arc with a highlight underneath.
     inner = body & ~edge(body, 0, 3) & ~edge(body, 0, -3)
-    for r, y0 in enumerate([15, 21, 27]):
+    if pattern == "starmark":
+        star = s.poly(star_points(35, 25, 7.5, 3.4))
+        s.fill(star & inner, shade)
+        s.fill(star & inner & edge(star, 0, -1), light)
+    elif pattern == "crispgrid":
+        grid = inner & (s.xs > 21) & (s.xs < 45) & (((s.xs + s.ys) % 8 == 0) | ((s.xs - s.ys) % 8 == 0))
+        s.fill(grid, shade)
+        s.fill(shifted(grid, 0, 1) & inner & ~grid & (s.xs > 21) & (s.xs < 45), light)
+    for r, y0 in enumerate([15, 21, 27] if pattern in ("scales", "heartscale") else []):
         for c in range(4):
             x0 = 23 + c * 6 + (r % 2) * 3
             pts = [(x0, y0), (x0 + 1, y0 + 1), (x0 + 2, y0 + 1), (x0 + 3, y0)]
             if x0 + 3 > 43 or not all(inner[y, x] for x, y in pts):
+                continue
+            if pattern == "heartscale":
+                s.pixels([(x0, y0), (x0 + 2, y0), (x0, y0 + 1), (x0 + 1, y0 + 1),
+                          (x0 + 2, y0 + 1), (x0 + 1, y0 + 2)], "red" if skin == "strawberry" else "rose")
+                s.put(x0, y0, light)
                 continue
             if skin == "strawberry":  # seeds instead of scales
                 s.pixels([(x0 + 1, y0), (x0 + 2, y0 + 1)], "red")
@@ -198,6 +214,223 @@ def fish(skin):
     if skin == "sweetpotato":
         s.pixels([(48, 8), (49, 7), (49, 6), (48, 5), (48, 4), (49, 3), (52, 7), (53, 6), (53, 5)], "grey")
     return s
+
+
+def star_points(cx, cy, r, inner_r, points=5):
+    pts = []
+    for i in range(points * 2):
+        a = math.radians(-90 + i * 180 / points)
+        rr = r if i % 2 == 0 else inner_r
+        pts.append((cx + rr * math.cos(a), cy + rr * math.sin(a)))
+    return pts
+
+
+# Toppings are 64x48 overlays drawn over any flavour and pattern.
+FISH_TOPPINGS = ["sugar", "choco", "almond", "sprinkle"]
+
+
+def topping(kind):
+    s = Sprite(64, 48)
+    body = s.ellipse(38.5, 25, 20.5, 14.5)
+    back = body & (s.ys < 19) & (s.xs > 22) & (s.xs < 47)  # top of the back, clear of the face
+    rng = random.Random(kind)
+    spots = [(x, y) for y in range(s.h) for x in range(s.w) if back[y, x]]
+    if kind == "sugar":
+        for x, y in rng.sample(spots, 34):
+            s.put(x, y, "snow" if rng.random() < .7 else "cream")
+    elif kind == "choco":
+        wave = [(x, 13 + (0, 1, 2, 1)[x % 4]) for x in range(23, 47)]
+        wave = [(x, y) for x, y in wave if body[y, x]]
+        s.pixels(wave, "deep")
+        s.pixels([(x, y + 1) for x, y in wave], "cocoa")
+        for x, y in wave[4::8]:  # drips
+            s.fill(s.rect(x, y + 2, 1, 3), "cocoa")
+            s.put(x, y + 5, "deep")
+    elif kind == "almond":
+        slices = np.zeros((s.h, s.w), bool)
+        for cx, cy in [(26, 15), (31, 12), (37, 11), (43, 13), (34, 16)]:
+            m = s.ellipse(cx + .5, cy + .5, 2.5, 1.5)
+            s.fill(m, "cream")
+            s.fill(m & edge(m, 0, 1), "butter")
+            slices |= m
+        s.outline("toast", mask=slices)
+    elif kind == "sprinkle":
+        colors = ["rose", "teal", "green", "lavender", "snow", "red"]
+        placed = 0
+        for x, y in rng.sample(spots, len(spots)):
+            dx, dy = rng.choice([(1, 0), (0, 1), (1, 1), (1, -1)])
+            end = (x + 2 * dx, y + 2 * dy)
+            near = s.a[max(y - 2, 0):y + 4, max(x - 1, 0):x + 4, 3]
+            if placed == 14 or not back[end[1], end[0]] or near.any():
+                continue
+            s.pixels([(x, y), (x + dx, y + dy), end], colors[placed % len(colors)])
+            placed += 1
+    return s
+
+
+# ---------------------------------------------------------------- vendor (avatar)
+#
+# Layers share one 44x60 canvas and stack in this order: skin (head, neck),
+# outfit (torso, sleeves), hair, hat, tool, hands. In the scene the canvas
+# sits at AVATAR_AT, right of the stove; rows below the counter are hidden.
+# Must match lib/ui/pixel_sprites.dart and lib/ui/night_stall_painter.dart.
+
+AVATAR_W, AVATAR_H = 44, 60
+AVATAR_AT = (118, 250)
+SKIN_TONES = {  # light, base, shade
+    "skin1": ("cream", "peach", "tan"),
+    "skin2": ("peach", "tan", "toast"),
+    "skin3": ("tan", "umber", "wood_dark"),
+}
+
+
+def avatar_head(tone):
+    light, base, shade = SKIN_TONES[tone]
+    s = Sprite(AVATAR_W, AVATAR_H)
+    head = s.ellipse(22, 19, 8.5, 8.5)
+    ears = s.ellipse(13.5, 20.5, 1.6, 2.5) | s.ellipse(30.5, 20.5, 1.6, 2.5)
+    neck = s.rect(19, 26, 6, 4)
+    shade_body(s, head | ears | neck, light, base, shade)
+    s.outline()
+    s.pixels([(18, 19), (18, 20), (25, 19), (25, 20)], "deep")
+    s.pixels([(16, 23), (17, 23), (26, 23), (27, 23)], "rose" if tone == "skin3" else "pink")
+    s.pixels([(20, 24), (21, 25), (22, 25), (23, 24)], "outline")
+    return s
+
+
+def avatar_hands(tone):
+    light, base, shade = SKIN_TONES[tone]
+    s = Sprite(AVATAR_W, AVATAR_H)
+    hands = s.ellipse(9.5, 51.5, 3, 2.6) | s.ellipse(35.5, 51.5, 3, 2.6)
+    shade_body(s, hands, light, base, shade)
+    s.outline()
+    return s
+
+
+OUTFITS = {  # sweater light, base, shade
+    "apron": ("sky", "dusk_blue", "navy2"),
+    "padding": ("grey", "stone", "outline"),
+    "stripe": ("cream", "grey", "stone"),
+    "chefcoat": ("snow", "snow", "ice"),
+}
+
+
+def avatar_outfit(kind):
+    light, base, shade = OUTFITS[kind]
+    s = Sprite(AVATAR_W, AVATAR_H)
+    torso = s.poly([(13, 29), (31, 29), (37, 34), (38, 59), (6, 59), (7, 34)])
+    sleeves = s.poly([(6, 33), (12, 33), (13, 50), (6, 50)]) | s.poly([(32, 33), (38, 33), (39, 50), (31, 50)])
+    shade_body(s, torso | sleeves, light, base, shade)
+    s.fill(edge(sleeves, 1, 0) & sleeves, shade)
+    if kind in ("apron", "stripe"):
+        apron = s.rect(14, 37, 16, 23) | s.rect(15, 29, 2, 8) | s.rect(27, 29, 2, 8)
+        if kind == "apron":
+            shade_body(s, apron, "cream", "cream", "grey")
+            pocket = s.rect(17, 46, 10, 5)
+            s.fill(pocket, "grey")
+            s.fill(pocket & (s.ys == 46), "stone")
+        else:
+            s.fill(apron, "cream")
+            s.fill(apron & (s.xs % 4 < 2), "red")
+            s.fill(apron & edge(apron, 1, 0), "wine")
+        s.outline(mask=apron)
+    elif kind == "padding":
+        vest = torso & ~sleeves & (s.xs > 9) & (s.xs < 35)
+        shade_body(s, vest, "peach", "orange", "toast")
+        s.fill(vest & (s.ys % 5 == 0), "toast")
+        s.fill(vest & (s.xs == 22), "grey")
+        s.fill(s.rect(17, 29, 10, 3), "orange")  # collar
+        s.outline(mask=vest)
+    elif kind == "chefcoat":
+        s.fill(s.rect(17, 29, 10, 3), "grey")
+        for x in (18, 25):
+            for y in range(36, 58, 5):
+                s.put(x, y, "stone")
+    s.outline()
+    return s
+
+
+HAIRS = {"short": ("wood", "wood_dark"), "ponytail": ("wood", "wood_dark"), "curly": ("gold", "toast")}
+
+
+def avatar_hair(kind):
+    light, base = HAIRS[kind]
+    s = Sprite(AVATAR_W, AVATAR_H)
+    if kind == "curly":
+        hair = np.zeros((s.h, s.w), bool)
+        for cx, cy in [(14, 16), (17, 12), (22, 10.5), (27, 12), (30, 16), (31, 20), (13, 20)]:
+            hair |= s.ellipse(cx, cy, 3.4, 3.4)
+        hair &= ~s.rect(15, 17, 14, 10)  # keep the face clear
+    else:
+        hair = (s.ellipse(22, 17, 9.6, 8) & (s.ys < 18)) | s.rect(13, 17, 2, 4) | s.rect(29, 17, 2, 4)
+        hair |= s.poly([(15, 16), (21, 16), (17, 19)])  # fringe
+        if kind == "ponytail":
+            hair |= s.ellipse(33.5, 23, 2.6, 5) | s.rect(30, 15, 3, 4)
+    s.fill(hair, base)
+    s.fill(hair & edge(hair, 0, -1), light)
+    s.fill(hair & s.checker() & (s.ys == 12), light)
+    if kind == "ponytail":
+        s.fill(s.rect(31, 17, 3, 2), "red")
+    s.outline()
+    return s
+
+
+AVATAR_HATS = ["beanie", "earmuffs", "chefhat", "santa"]
+
+
+def avatar_hat(kind):
+    s = Sprite(AVATAR_W, AVATAR_H)
+    if kind == "beanie":
+        dome = s.ellipse(22, 14, 10, 8) & (s.ys < 14)
+        shade_body(s, dome, "rose", "red", "wine")
+        s.fill(dome & (s.xs % 3 == 0), "wine")
+        band = s.rect(12, 13, 20, 4)
+        s.fill(band, "cream")
+        s.fill(band & s.checker(), "grey")
+        s.fill(s.ellipse(22, 5, 2.6, 2.6), "cream")
+    elif kind == "earmuffs":
+        s.fill(s.line([(13, 18), (15, 11), (22, 8), (29, 11), (31, 18)], width=2), "stone")
+        for cx in (13, 31):
+            shade_body(s, s.ellipse(cx, 21, 3.2, 3.8), "pink", "pink", "rose")
+    elif kind == "chefhat":
+        puff = s.ellipse(22, 6, 7.5, 5) | s.ellipse(16, 8, 4, 4) | s.ellipse(28, 8, 4, 4)
+        band = s.rect(13, 9, 18, 5)
+        shade_body(s, puff | band, "snow", "snow", "ice")
+        s.fill(band & (s.ys == 9), "ice")
+    elif kind == "santa":
+        cone = s.poly([(12, 13), (32, 13), (30, 6), (37, 4), (39, 8), (35, 8)])
+        shade_body(s, cone, "rose", "red", "wine")
+        s.fill(s.rect(11, 12, 22, 4), "snow")
+        s.fill(s.rect(11, 15, 22, 1), "ice")
+        s.fill(s.ellipse(39, 7, 2.6, 2.6), "snow")
+    s.outline()
+    return s
+
+
+TOOLS = {"tongs": ("snow", "grey", "stone"), "goldtongs": ("light", "butter", "gold")}
+
+
+def avatar_tool(kind):
+    light, base, shade = TOOLS[kind]
+    s = Sprite(AVATAR_W, AVATAR_H)
+    prongs = s.line([(8, 58), (5, 36)]) | s.line([(11, 58), (11, 36)])
+    s.fill(prongs, base)
+    s.fill(prongs & edge(prongs, -1, 0), light)
+    s.fill(s.rect(4, 35, 3, 2) | s.rect(10, 35, 3, 2), shade)  # grips
+    s.outline()
+    if kind == "goldtongs":
+        s.pixels([(2, 40), (1, 41), (2, 41), (3, 41), (2, 42)], "snow")
+    return s
+
+
+AVATAR_LAYERS = {
+    "skin": (list(SKIN_TONES), avatar_head),
+    "hands": (list(SKIN_TONES), avatar_hands),
+    "outfit": (list(OUTFITS), avatar_outfit),
+    "hair": (list(HAIRS), avatar_hair),
+    "hat": (AVATAR_HATS, avatar_hat),
+    "tool": (list(TOOLS), avatar_tool),
+}
 
 
 # ---------------------------------------------------------------- scenes
@@ -754,6 +987,13 @@ def build():
     out = {}
     for skin in FISH_SKINS:
         out[f"fish/{skin}.png"] = fish(skin)
+        for pattern in FISH_PATTERNS[1:]:
+            out[f"fish/{skin}@{pattern}.png"] = fish(skin, pattern)
+    for kind in FISH_TOPPINGS:
+        out[f"topping/{kind}.png"] = topping(kind)
+    for layer, (ids, make) in AVATAR_LAYERS.items():
+        for i in ids:
+            out[f"avatar/{layer}/{i}.png"] = make(i)
     scenes = {"night": scene_night, "dusk": scene_dusk, "forest": scene_forest,
               "snow": scene_snow, "cherry": scene_cherry, "seaside": scene_seaside}
     for name, make in scenes.items():

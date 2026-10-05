@@ -7,6 +7,7 @@ import '../economy.dart';
 import '../feedback_config.dart';
 import '../game_audio.dart';
 import '../game_controller.dart';
+import '../cosmetic_config.dart';
 import 'fish_painter.dart';
 import 'tap_effects.dart';
 
@@ -142,7 +143,7 @@ class _BakeTargetState extends State<BakeTarget>
     final squash =
         reduce ? 0.0 : squashAmount((_elapsed - _lastTap) / squashMs);
     final base = 1 - .07 * pulse;
-    final skin = widget.controller.state.equippedSkin;
+    final look = widget.controller.state.equippedCosmetic;
     return RepaintBoundary(
       child: Semantics(
         button: true,
@@ -203,7 +204,10 @@ class _BakeTargetState extends State<BakeTarget>
                       child: CustomPaint(
                           size: Size(box.maxWidth,
                               math.min(box.maxHeight, box.maxWidth * .8)),
-                          painter: FishPainter(skin: skin))),
+                          painter: FishPainter(
+                              skin: look(CosmeticSlot.fish),
+                              pattern: look(CosmeticSlot.pattern),
+                              topping: look(CosmeticSlot.topping)))),
                   if (!reduce)
                     Positioned.fill(
                         child: IgnorePointer(

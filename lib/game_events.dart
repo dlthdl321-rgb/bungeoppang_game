@@ -15,5 +15,8 @@ class GameEvent {
   // Coins (rewards, level-up) or the item count left; null when nothing to count.
   final BigInt? amount;
   final String? unit;
-  const GameEvent(this.kind, this.title, {this.amount, this.unit});
+  // Extra lines under the title, e.g. cosmetics a level-up unlocked.
+  final List<String> details;
+  const GameEvent(this.kind, this.title,
+      {this.amount, this.unit, this.details = const []});
 }

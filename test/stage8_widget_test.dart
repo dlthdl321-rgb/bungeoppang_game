@@ -141,8 +141,10 @@ void main() {
     await tapVisible(tester, const Key('level-mission-entry'));
     expect(canClaimLevel(c.state), isFalse);
     await tapVisible(tester, const Key('mission-open-cosmetics'));
-    await tapVisible(tester, const Key('cosmetic-slot-decoration'));
-    await tapVisible(tester, const Key('buy-cosmetic-lantern'));
+    // The shortcut introduces the vendor tab.
+    expect(find.byKey(const Key('preview-avatar')), findsOneWidget);
+    await tapVisible(tester, const Key('cosmetic-slot-hat'));
+    await tapVisible(tester, const Key('buy-cosmetic-beanie'));
     await tapVisible(tester, const Key('confirm-support'));
     expect(canClaimLevel(c.state), isTrue);
     await closeSheets(tester);

@@ -319,6 +319,8 @@ void main() {
         await tester.pump();
         await tapVisible(tester, const Key('menu-skins'));
         for (final slot in CosmeticSlot.values) {
+          await tapVisible(
+              tester, Key('cosmetic-category-${slot.category.name}'));
           await tapVisible(tester, Key('cosmetic-slot-${slot.name}'));
           final last = cosmeticDefinitions.lastWhere((d) => d.slot == slot);
           await tapVisible(tester, Key('preview-${last.id}'));

@@ -4,12 +4,21 @@ import 'config_values.dart';
 import 'models.dart';
 import 'weekly_config.dart';
 
-/// Non-default cosmetics owned across every slot.
-int cosmeticsOwnedCount(GameState s) => cosmeticDefinitions
-    .where((d) => defaultCosmetics[d.slot] != d.id && s.ownsCosmetic(d))
+/// Collectible cosmetics owned, across every slot or within [category].
+int cosmeticsOwnedCount(GameState s, [CosmeticCategory? category]) =>
+    cosmeticDefinitions
+        .where((d) =>
+            d.collectible &&
+            (category == null || d.slot.category == category) &&
+            s.ownsCosmetic(d))
+        .length;
+
+/// Collectible cosmetics in the catalog, across every slot or in [category].
+int collectibleCount([CosmeticCategory? category]) => cosmeticDefinitions
+    .where((d) =>
+        d.collectible && (category == null || d.slot.category == category))
     .length;
-final collectibleCosmeticCount =
-    cosmeticDefinitions.where((d) => defaultCosmetics[d.slot] != d.id).length;
+final collectibleCosmeticCount = collectibleCount();
 
 BigInt totalItemUses(GameState s) =>
     s.support.itemUses.values.fold(BigInt.zero, (a, b) => a + b);
@@ -62,6 +71,10 @@ BigInt achievementProgress(GameState s, AchievementDefinition d) =>
       AchievementMetric.cosmeticsOwned ||
       AchievementMetric.allCosmetics =>
         BigInt.from(cosmeticsOwnedCount(s)),
+      AchievementMetric.avatarCosmeticsOwned =>
+        BigInt.from(cosmeticsOwnedCount(s, CosmeticCategory.avatar)),
+      AchievementMetric.pastryCosmeticsOwned =>
+        BigInt.from(cosmeticsOwnedCount(s, CosmeticCategory.bungeoppang)),
       AchievementMetric.playDays => BigInt.from(s.records.playDays),
       AchievementMetric.weeklyCompletions =>
         BigInt.from(weeklyCompletionCount(s)),

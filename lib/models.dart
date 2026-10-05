@@ -96,7 +96,7 @@ class GameSettings {
 }
 
 class GameState {
-  static const formatVersion = 9;
+  static const formatVersion = 10;
   BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
   int level, snapshotSequence;
   Map<String, int> upgradeCounts;
@@ -288,7 +288,8 @@ class GameState {
         levelRewards: rewards,
         missions: missions,
         wardrobe: version >= 6
-            ? WardrobeState.fromJson(inviteMap(m['wardrobe']))
+            ? WardrobeState.fromJson(inviteMap(m['wardrobe']),
+                legacy: version < 10)
             : WardrobeState.initial(),
         records: version >= 7
             ? RecordState.fromJson(inviteMap(m['records']))

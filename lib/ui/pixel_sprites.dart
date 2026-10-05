@@ -31,18 +31,46 @@ class PixelSprites {
     ..filterQuality = FilterQuality.none
     ..isAntiAlias = false;
 
-  static String _cosmeticPath(CosmeticDefinition d) => switch (d.slot) {
-        CosmeticSlot.fish => 'assets/images/fish/${d.id}.png',
-        CosmeticSlot.background => 'assets/images/bg/${d.id}.png',
-        CosmeticSlot.stove => 'assets/images/stove/${d.id}.png',
-        CosmeticSlot.decoration => 'assets/images/deco/${d.id}.png',
-      };
+  /// Null for blank items and for patterns, which are baked into the fish
+  /// images (see [fish]).
+  static String? _cosmeticPath(CosmeticDefinition d) =>
+      blankCosmetics.contains(d.id)
+          ? null
+          : switch (d.slot) {
+              CosmeticSlot.fish => 'assets/images/fish/${d.id}.png',
+              CosmeticSlot.pattern => null,
+              CosmeticSlot.topping => 'assets/images/topping/${d.id}.png',
+              CosmeticSlot.skin ||
+              CosmeticSlot.hair ||
+              CosmeticSlot.outfit ||
+              CosmeticSlot.hat ||
+              CosmeticSlot.tool =>
+                'assets/images/avatar/${d.slot.name}/${d.id}.png',
+              CosmeticSlot.background => 'assets/images/bg/${d.id}.png',
+              CosmeticSlot.stove => 'assets/images/stove/${d.id}.png',
+              CosmeticSlot.decoration => 'assets/images/deco/${d.id}.png',
+            };
+
+  static String _fishPath(String flavor, String pattern) =>
+      'assets/images/fish/$flavor${pattern == defaultCosmetics[CosmeticSlot.pattern] ? '' : '@$pattern'}.png';
+
+  static String _handsPath(String skin) => 'assets/images/avatar/hands/$skin.png';
+
+  static Iterable<CosmeticDefinition> _slot(CosmeticSlot slot) =>
+      cosmeticDefinitions.where((d) => d.slot == slot);
 
   static Iterable<String> get _paths sync* {
     for (final d in cosmeticDefinitions) {
-      if (d.slot != CosmeticSlot.decoration || d.id != 'none') {
-        yield _cosmeticPath(d);
+      final path = _cosmeticPath(d);
+      if (path != null) yield path;
+    }
+    for (final flavor in _slot(CosmeticSlot.fish)) {
+      for (final pattern in _slot(CosmeticSlot.pattern)) {
+        yield _fishPath(flavor.id, pattern.id);
       }
+    }
+    for (final skin in _slot(CosmeticSlot.skin)) {
+      yield _handsPath(skin.id);
     }
     yield 'assets/images/stall/counter.png';
     yield 'assets/images/stall/counter_snow.png';
@@ -65,10 +93,20 @@ class PixelSprites {
 
   static ui.Image? cosmetic(CosmeticSlot slot, String id) {
     for (final d in cosmeticDefinitions) {
-      if (d.slot == slot && d.id == id) return _images[_cosmeticPath(d)];
+      if (d.slot == slot && d.id == id) {
+        final path = _cosmeticPath(d);
+        return path == null ? null : _images[path];
+      }
     }
     return null;
   }
+
+  /// The bungeoppang of [flavor] embossed with [pattern].
+  static ui.Image? fish(String flavor, String pattern) =>
+      _images[_fishPath(flavor, pattern)];
+
+  /// The vendor's hands, drawn over the held tool.
+  static ui.Image? hands(String skin) => _images[_handsPath(skin)];
 
   static ui.Image? counter({bool snow = false}) =>
       _images['assets/images/stall/counter${snow ? '_snow' : ''}.png'];

@@ -217,8 +217,21 @@ class GameController extends ChangeNotifier {
     final ok = await _commit(before);
     if (ok) {
       submitRankingIfDue(force: true);
+      // Cosmetics this level unlocks, one line per category.
+      final unlocked = <CosmeticCategory, List<String>>{};
+      for (final d in cosmetics) {
+        if (d.collectible && d.unlockLevel == target.level) {
+          (unlocked[d.slot.category] ??= []).add(d.name);
+        }
+      }
       _emit(GameEvent(GameEventKind.levelUp, 'Lv.${target.level} 달성',
-          amount: paying ? target.reward : null, unit: '코인'));
+          amount: paying ? target.reward : null,
+          unit: '코인',
+          details: [
+            for (final c in CosmeticCategory.values)
+              if (unlocked[c] case final names?)
+                '새 ${cosmeticCategoryLabel(c)} 꾸미기 · ${names.join(', ')}'
+          ]));
     }
     return ok;
   }

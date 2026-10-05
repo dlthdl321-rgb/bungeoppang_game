@@ -8,7 +8,9 @@ enum AchievementMetric {
   bestCombo,
   itemUses,
   cosmeticsOwned,
-  allCosmetics, // Target is the number of non-default cosmetics.
+  allCosmetics, // Target is the number of collectible cosmetics.
+  avatarCosmeticsOwned, // Collectible vendor (avatar) cosmetics.
+  pastryCosmeticsOwned, // Collectible flavour/pattern/topping cosmetics.
   playDays,
   weeklyCompletions,
   dailyAllClears,
@@ -88,6 +90,13 @@ const achievementDefinitions = [
   AchievementDefinition(
       'stars-10', '명성 별 10개', AchievementMetric.prestigeStars, '10',
       coins: '5'),
+  // Stage 12 customization.
+  AchievementDefinition(
+      'avatar-5', '사장님 옷장 5벌', AchievementMetric.avatarCosmeticsOwned, '5',
+      coins: '3'),
+  AchievementDefinition(
+      'fish-5', '붕어빵 공방 5종', AchievementMetric.pastryCosmeticsOwned, '5',
+      coins: '3'),
 ];
 
 // Direct taps no more than this far apart continue a combo. Hold-to-bake

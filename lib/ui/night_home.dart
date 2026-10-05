@@ -4,7 +4,6 @@ import '../game_controller.dart';
 import '../home_presentation.dart';
 import '../missions.dart';
 import '../achievement_config.dart';
-import '../cosmetic_config.dart';
 import '../prestige_rules.dart';
 import '../progress_rules.dart';
 import '../weekly_config.dart';
@@ -34,13 +33,10 @@ class NightHome extends StatelessWidget {
           child: Stack(children: [
             Positioned.fill(
                 child: RepaintBoundary(
-                    child: CustomPaint(
-                        painter: NightStallPainter(
-                            background:
-                                state.equippedCosmetic(CosmeticSlot.background),
-                            stove: state.equippedCosmetic(CosmeticSlot.stove),
-                            decoration: state
-                                .equippedCosmetic(CosmeticSlot.decoration))))),
+                    child: StallScene(
+                        equipped: state.equippedCosmetic,
+                        taps: state.records.lifetimeTaps,
+                        reduceMotion: reduce))),
             SafeArea(
                 child: Center(
                     child: ConstrainedBox(

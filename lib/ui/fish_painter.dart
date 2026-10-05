@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
 import 'pixel_sprites.dart';
 
-/// Pixel-art bungeoppang for [skin], fitted into the canvas and centered.
-/// Every screen draws the same sprite, so all looks match.
+/// Pixel-art bungeoppang: [skin] (flavour) embossed with [pattern], with
+/// [topping] on top, fitted into the canvas and centered. Every screen draws
+/// the same sprites, so all looks match.
 class FishPainter extends CustomPainter {
-  final String skin;
-  const FishPainter({this.skin = 'redbean'});
+  final String skin, pattern, topping;
+  const FishPainter(
+      {this.skin = 'redbean', this.pattern = 'scales', this.topping = 'plain'});
 
   /// Filling colour of the sprite (FISH_SKINS in tools/draw_pixel_assets.py).
   Color get filling => switch (skin) {
@@ -51,20 +53,23 @@ class FishPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final image = PixelSprites.cosmetic(CosmeticSlot.fish, skin);
+    final image = PixelSprites.fish(skin, pattern);
     if (image == null) return;
     final scale =
         math.min(size.width / image.width, size.height / image.height);
+    final dst = Rect.fromCenter(
+        center: size.center(Offset.zero),
+        width: image.width * scale,
+        height: image.height * scale);
+    PixelSprites.draw(canvas, image, dst);
+    // Topping overlays share the fish canvas size.
     PixelSprites.draw(
-        canvas,
-        image,
-        Rect.fromCenter(
-            center: size.center(Offset.zero),
-            width: image.width * scale,
-            height: image.height * scale));
+        canvas, PixelSprites.cosmetic(CosmeticSlot.topping, topping), dst);
   }
 
   @override
   bool shouldRepaint(covariant FishPainter oldDelegate) =>
-      oldDelegate.skin != skin;
+      oldDelegate.skin != skin ||
+      oldDelegate.pattern != pattern ||
+      oldDelegate.topping != topping;
 }

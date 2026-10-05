@@ -22,6 +22,8 @@ void main() {
         c.tick();
         await tester.pump();
         await tapVisible(tester, const Key('menu-skins'));
+        await tapVisible(tester, const Key('cosmetic-category-stall'));
+        expect(find.byKey(const Key('preview-stall')), findsOneWidget);
         for (final pair in [
           (CosmeticSlot.background, 'dusk'),
           (CosmeticSlot.stove, 'copper'),

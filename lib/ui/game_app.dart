@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../cosmetic_config.dart';
 import '../economy.dart';
 import '../game_audio.dart';
 import '../game_controller.dart';
@@ -269,14 +270,14 @@ class _GameHomeState extends State<GameHome> {
                       padding: const EdgeInsets.fromLTRB(20, 12, 8, 4),
                       child: Row(children: [
                         Expanded(
-                            child: Text(titles[destination]!,
+                            child: Text(titles[destination.split(':').first]!,
                                 style: Theme.of(ctx).textTheme.titleLarge)),
                         IconButton(
                             tooltip: '닫기',
                             onPressed: () => Navigator.pop(ctx),
                             icon: const Icon(Icons.close)),
                       ])),
-                  if (destination == 'shop' || destination == 'skins')
+                  if (destination == 'shop' || destination.startsWith('skins'))
                     Padding(
                         padding: const EdgeInsets.all(12),
                         child: Text(destination == 'shop'
@@ -304,6 +305,8 @@ class _GameHomeState extends State<GameHome> {
             Expanded(child: SkillShop(controller: c))
           ]),
         'skins' => WardrobePanel(controller: c),
+        'skins:avatar' => WardrobePanel(
+            controller: c, initialCategory: CosmeticCategory.avatar),
         'records' => RecordsPanel(controller: c),
         'share' => SharePanel(
             controller: c,

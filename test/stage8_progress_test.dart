@@ -461,9 +461,9 @@ void main() {
     tearDown(() => c.dispose());
 
     test('업적은 20개 내외, ID 중복 없음, 보상은 코인 또는 칭호', () {
-      // 20 in stage 8, plus the two stage-11 prestige achievements.
-      expect(achievementDefinitions.length, 22);
-      expect(achievementDefinitions.map((d) => d.id).toSet().length, 22);
+      // 20 in stage 8, two stage-11 prestige and two stage-12 wardrobe ones.
+      expect(achievementDefinitions.length, 24);
+      expect(achievementDefinitions.map((d) => d.id).toSet().length, 24);
       for (final d in achievementDefinitions) {
         expect(d.coins != '0' || d.titleReward != null, isTrue, reason: d.id);
       }

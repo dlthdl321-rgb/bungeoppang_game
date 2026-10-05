@@ -3,20 +3,30 @@ import '../cosmetic_config.dart';
 import '../economy.dart';
 import '../game_controller.dart';
 import '../menu_rules.dart';
+import 'avatar_painter.dart';
 import 'fish_painter.dart';
 import 'night_stall_painter.dart';
 import 'support_panels.dart';
 
 class WardrobePanel extends StatefulWidget {
   final GameController controller;
-  const WardrobePanel({super.key, required this.controller});
+  final CosmeticCategory initialCategory;
+  const WardrobePanel(
+      {super.key,
+      required this.controller,
+      this.initialCategory = CosmeticCategory.bungeoppang});
   @override
   State<WardrobePanel> createState() => _WardrobePanelState();
 }
 
 class _WardrobePanelState extends State<WardrobePanel> {
-  CosmeticSlot slot = CosmeticSlot.fish;
+  late CosmeticCategory category = widget.initialCategory;
+  late CosmeticSlot slot = _slots(category).first;
   String? preview;
+
+  static List<CosmeticSlot> _slots(CosmeticCategory c) =>
+      CosmeticSlot.values.where((s) => s.category == c).toList();
+
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
@@ -26,9 +36,26 @@ class _WardrobePanelState extends State<WardrobePanel> {
         padding: const EdgeInsets.all(16),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('노점과 붕어빵의 모습을 바꿉니다. 생산 효과는 없습니다.'),
+          const Text('붕어빵, 사장님, 가게의 모습을 바꿉니다. 생산 효과는 없습니다.'),
+          const SizedBox(height: 8),
+          SegmentedButton<CosmeticCategory>(
+              showSelectedIcon: false,
+              segments: [
+                for (final cat in CosmeticCategory.values)
+                  ButtonSegment(
+                      value: cat,
+                      label: Text(cosmeticCategoryLabel(cat),
+                          key: Key('cosmetic-category-${cat.name}'))),
+              ],
+              selected: {category},
+              onSelectionChanged: (picked) => setState(() {
+                    category = picked.single;
+                    slot = _slots(category).first;
+                    preview = null;
+                  })),
+          const SizedBox(height: 8),
           Wrap(spacing: 8, children: [
-            for (final s in CosmeticSlot.values)
+            for (final s in _slots(category))
               ChoiceChip(
                   key: Key('cosmetic-slot-${s.name}'),
                   label: Text(cosmeticSlotLabel(s)),
@@ -40,24 +67,13 @@ class _WardrobePanelState extends State<WardrobePanel> {
           ]),
           const SizedBox(height: 12),
           Semantics(
-              label: '꾸미기 미리보기, 구매 전에는 저장되지 않음',
+              label:
+                  '${cosmeticCategoryLabel(category)} 꾸미기 미리보기, 구매 전에는 저장되지 않음',
               child: SizedBox(
                   height: 180,
                   child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
-                      child: CustomPaint(
-                          painter: NightStallPainter(
-                              background: equipped(CosmeticSlot.background),
-                              stove: equipped(CosmeticSlot.stove),
-                              decoration: equipped(CosmeticSlot.decoration)),
-                          child: Center(
-                              child: SizedBox(
-                                  width: 180,
-                                  height: 135,
-                                  child: CustomPaint(
-                                      painter: FishPainter(
-                                          skin: equipped(
-                                              CosmeticSlot.fish))))))))),
+                      child: _preview(equipped)))),
           Text(preview == null ? '현재 장착 모습' : '미리보기 · 아직 장착되지 않았습니다',
               key: const Key('cosmetic-preview-status')),
           for (final d in cosmeticDefinitions.where((d) => d.slot == slot))
@@ -69,7 +85,9 @@ class _WardrobePanelState extends State<WardrobePanel> {
                         children: [
                           Text(d.name,
                               style: Theme.of(context).textTheme.titleMedium),
-                          Text('가격 ${compactNumber(d.cost)} 코인 · 생산 효과 없음'),
+                          Text(d.free
+                              ? '무료 · 생산 효과 없음'
+                              : '가격 ${compactNumber(d.cost)} 코인 · 생산 효과 없음'),
                           Text(
                               '해금: 레벨 ${d.unlockLevel} · 누적 ${compactNumber(d.unlockProductionAmount)}개'),
                           Text(
@@ -114,5 +132,36 @@ class _WardrobePanelState extends State<WardrobePanel> {
                         ]))),
           if (c.error != null) Text(c.error!),
         ]));
+  }
+
+  /// Each category previews its own subject: the pastry up close, the vendor
+  /// alone, or the whole stall with vendor and pastry.
+  Widget _preview(String Function(CosmeticSlot) equipped) {
+    final fish = CustomPaint(
+        painter: FishPainter(
+            skin: equipped(CosmeticSlot.fish),
+            pattern: equipped(CosmeticSlot.pattern),
+            topping: equipped(CosmeticSlot.topping)));
+    return switch (category) {
+      CosmeticCategory.bungeoppang => ColoredBox(
+          key: const Key('preview-bungeoppang'),
+          color: const Color(0xff1e2140),
+          child: Padding(padding: const EdgeInsets.all(12), child: fish)),
+      CosmeticCategory.avatar => ColoredBox(
+          key: const Key('preview-avatar'),
+          color: const Color(0xff1e2140),
+          child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: CustomPaint(
+                  painter: AvatarPainter(AvatarLook.of(equipped))))),
+      CosmeticCategory.stall => CustomPaint(
+          key: const Key('preview-stall'),
+          painter: NightStallPainter(
+              background: equipped(CosmeticSlot.background),
+              stove: equipped(CosmeticSlot.stove),
+              decoration: equipped(CosmeticSlot.decoration),
+              avatar: AvatarLook.of(equipped)),
+          child: Center(child: SizedBox(width: 120, height: 90, child: fish))),
+    };
   }
 }

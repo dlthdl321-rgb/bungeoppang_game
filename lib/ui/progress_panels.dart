@@ -293,15 +293,25 @@ class _AchievementPanelState extends State<AchievementPanel> {
       ]),
       const SizedBox(height: 12),
       Text(
-          '꾸미기 도감 ${cosmeticsOwnedCount(s)} / $collectibleCosmeticCount (기본 외형 제외)',
+          '꾸미기 도감 ${cosmeticsOwnedCount(s)} / $collectibleCosmeticCount (기본 외형·피부톤 제외)',
           key: const Key('collection-cosmetics'),
           style: _heading(context)),
-      for (final slot in CosmeticSlot.values)
-        for (final d in cosmeticDefinitions.where((d) => d.slot == slot))
-          ListTile(
-              dense: true,
-              title: Text('${cosmeticSlotLabel(slot)} · ${d.name}'),
-              trailing: Text(s.ownsCosmetic(d) ? '보유' : '미보유')),
+      for (final category in CosmeticCategory.values) ...[
+        Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Text(
+                '${cosmeticCategoryLabel(category)} ${cosmeticsOwnedCount(s, category)} / ${collectibleCount(category)}',
+                key: Key('collection-${category.name}'),
+                style: Theme.of(context).textTheme.titleSmall)),
+        for (final slot in CosmeticSlot.values)
+          if (slot.category == category)
+            for (final d in cosmeticDefinitions
+                .where((d) => d.slot == slot && d.collectible))
+              ListTile(
+                  dense: true,
+                  title: Text('${cosmeticSlotLabel(slot)} · ${d.name}'),
+                  trailing: Text(s.ownsCosmetic(d) ? '보유' : '미보유')),
+      ],
     ];
   }
 }

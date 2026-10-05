@@ -15,6 +15,8 @@ PALETTE = {
     "lavender": "#B28AD8",
     # wood / neutrals
     "wood": "#5C3A28", "wood_dark": "#3A2420", "grey": "#C9C2BA", "stone": "#7A726C",
+    # vendor skin tones (used with cream, peach, toast and wood_dark)
+    "tan": "#D9A07A", "umber": "#8A5536",
 }
 
 GAME_PALETTE = list(PALETTE.values())
