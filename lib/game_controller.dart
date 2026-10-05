@@ -21,9 +21,12 @@ import 'cosmetic_config.dart';
 import 'menu_rules.dart';
 import 'progress_rules.dart';
 import 'weekly_config.dart';
+import 'online_ranking.dart';
+import 'ranking_config.dart';
 
 part 'invite_controller.dart';
 part 'menu_controller.dart';
+part 'ranking_controller.dart';
 
 class GameController extends ChangeNotifier {
   final GameRepository repository;
@@ -34,6 +37,11 @@ class GameController extends ChangeNotifier {
   // Debug-only invite simulator, referral code and test tools. Release builds
   // show plain game sharing instead. Injectable so tests can check both.
   final bool developerTools;
+  final RankingService ranking;
+  RankingStatus rankingStatus = RankingStatus.unavailable;
+  bool _rankingBusy = false;
+  int? _lastRankingSubmitMs;
+  Map<String, int>? _lastRankingScores;
   bool _inviteLoading = false, _disposed = false;
   String? inviteError;
   late GameState state;
@@ -61,12 +69,18 @@ class GameController extends ChangeNotifier {
   GameController(this.repository, this.clock,
       {InvitationRepository? invitationRepository,
       this.cosmetics = cosmeticDefinitions,
+      this.ranking = const NoRankingService(),
       bool? developerTools})
       : developerTools = developerTools ?? !kReleaseMode,
         invitationRepository =
             invitationRepository ?? MockInvitationRepository();
 
   void _notifyInviteChanged() {
+    if (!_disposed) notifyListeners();
+  }
+
+  // For command extensions (ranking), which cannot call notifyListeners.
+  void _notifyChanged() {
     if (!_disposed) notifyListeners();
   }
 
@@ -86,6 +100,7 @@ class GameController extends ChangeNotifier {
       state.missions.activatedAtUtc = clock.utcNow;
       await save();
     }
+    unawaited(refreshRanking());
     _ticker?.cancel();
     _periodicSave?.cancel();
     _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) => tick());
@@ -98,6 +113,7 @@ class GameController extends ChangeNotifier {
     settleActive(now - _lastMono);
     _lastMono = now;
     _markPlayed();
+    submitRankingIfDue();
     notifyListeners();
   }
 
@@ -175,7 +191,9 @@ class GameController extends ChangeNotifier {
     }
     state.level = target.level;
     state.missions = state.missions.advance(state.level, clock.utcNow);
-    return _commit(before);
+    final ok = await _commit(before);
+    if (ok) submitRankingIfDue(force: true);
+    return ok;
   }
 
   Future<bool> recordMockInvite(MockInviteSuccess event) async {
@@ -415,6 +433,7 @@ class GameController extends ChangeNotifier {
     _away = true;
     state.lastSettledUtc = gameNow;
     state.savedAutoRate = autoRate(state);
+    submitRankingIfDue(force: true);
     await save();
   }
 
@@ -439,6 +458,7 @@ class GameController extends ChangeNotifier {
     _away = false;
     _lastMono = clock.monotonicMilliseconds;
     _markPlayed();
+    if (_ticker != null) unawaited(refreshRanking());
     lastOfflineReward = gain;
     if (gain > BigInt.zero && !await _commit(before)) return BigInt.zero;
     notifyListeners();

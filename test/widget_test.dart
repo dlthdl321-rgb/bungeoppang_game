@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
+import 'package:todays_bungeoppang/online_ranking.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/time_service.dart';
@@ -37,7 +38,8 @@ Future<GameController> mountGame(WidgetTester tester, Size size,
     FixedTime? clock,
     CountingRepository? repository,
     bool maxLevel = false,
-    bool? developerTools}) async {
+    bool? developerTools,
+    RankingService ranking = const NoRankingService()}) async {
   await tester.binding.setSurfaceSize(size);
   tester.view.devicePixelRatio = 1;
   tester.platformDispatcher.textScaleFactorTestValue = textScale;
@@ -63,7 +65,8 @@ Future<GameController> mountGame(WidgetTester tester, Size size,
   repo.current!.settings
     ..vibration = false
     ..reduceMotion = reduced;
-  final c = GameController(repo, time, developerTools: developerTools);
+  final c = GameController(repo, time,
+      developerTools: developerTools, ranking: ranking);
   await c.initialize();
   await tester.pumpWidget(GameApp(controller: c));
   await tester.pump();

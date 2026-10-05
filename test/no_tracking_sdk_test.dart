@@ -40,13 +40,18 @@ const _manifestSources = [
   'android/app/build.gradle.kts',
   'pubspec.lock',
 ];
+// Play Games Services v2 components are expected since the leaderboard
+// decision; it talks through the Play services app, so this app itself still
+// needs no network permission. Ads, ad ID, billing, Firebase and Google
+// Analytics measurement must never appear.
 const _forbiddenManifestEntries = <String>[
   'android.permission.INTERNET',
   'android.permission.ACCESS_NETWORK_STATE',
   'com.google.android.gms.permission.AD_ID',
   'android.permission.ACCESS_ADSERVICES',
   'com.android.vending.BILLING',
-  'com.google.android.gms',
+  'com.google.android.gms.ads',
+  'com.google.android.gms.measurement',
   'com.google.firebase',
 ];
 
@@ -95,7 +100,7 @@ void main() {
     expect(hits, isEmpty);
   });
 
-  test('Android Gradle files add no Play services or Firebase', () {
+  test('Android Gradle files add only Play Games Services v2, no Firebase', () {
     for (final path in [
       'android/build.gradle.kts',
       'android/app/build.gradle.kts'
@@ -103,7 +108,12 @@ void main() {
       final text = File(path).readAsStringSync();
       expect(text, isNot(contains('com.google.gms')), reason: path);
       expect(text, isNot(contains('com.google.firebase')), reason: path);
-      expect(text, isNot(contains('play-services')), reason: path);
+      final services = RegExp(r'play-services-[a-z0-9-]+')
+          .allMatches(text)
+          .map((m) => m.group(0))
+          .toSet();
+      expect(services.difference({'play-services-games-v2'}), isEmpty,
+          reason: path);
     }
   });
 
@@ -117,21 +127,27 @@ void main() {
   test('병합 매니페스트 검사는 금지 권한·SDK 항목을 찾아낸다', () {
     const clean = '<manifest><application android:label="x"/></manifest>';
     expect(manifestViolations(clean), isEmpty);
+    const games = '<manifest>'
+        '<meta-data android:name="com.google.android.gms.games.APP_ID"/>'
+        '<provider android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"/>'
+        '</manifest>';
+    expect(manifestViolations(games), isEmpty);
     const dirty = '<manifest>'
         '<uses-permission android:name="android.permission.INTERNET"/>'
         '<uses-permission android:name="com.google.android.gms.permission.AD_ID"/>'
         '<uses-permission android:name="com.android.vending.BILLING"/>'
+        '<service android:name="com.google.android.gms.measurement.AppMeasurementService"/>'
         '</manifest>';
     expect(manifestViolations(dirty), [
       'android.permission.INTERNET',
       'com.google.android.gms.permission.AD_ID',
       'com.android.vending.BILLING',
-      'com.google.android.gms',
+      'com.google.android.gms.measurement',
     ]);
   });
 
   final release = releaseManifest();
-  test('release 병합 매니페스트에 네트워크·광고·결제·Play 서비스 항목이 없다', () {
+  test('release 병합 매니페스트에 네트워크 권한·광고·결제·Firebase·분석 항목이 없다', () {
     expect(manifestViolations(release.file!.readAsStringSync()), isEmpty,
         reason: release.file!.path);
   }, skip: release.skip ?? false);

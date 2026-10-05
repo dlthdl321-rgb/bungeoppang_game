@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Google Play Games Services IDs. Replace the empty values with the
+  "games-ids.xml" exported from Play Console (Grow > Play Games Services >
+  Setup and management > Configuration > Get resources), keeping these names.
+  While app_id is empty, android/app/build.gradle.kts links no Play Games SDK
+  and online ranking stays hidden.
+-->
+<resources>
+    <string name="app_id" translatable="false"></string>
+    <string name="leaderboard_best_auto_rate" translatable="false"></string>
+    <string name="leaderboard_lifetime" translatable="false"></string>
+    <string name="leaderboard_best_combo" translatable="false"></string>
+</resources>

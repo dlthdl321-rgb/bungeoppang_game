@@ -6,6 +6,7 @@ import '../game_controller.dart';
 import '../home_presentation.dart';
 import '../invite_config.dart';
 import '../invite_sharing.dart';
+import '../online_ranking.dart';
 import '../progress_rules.dart';
 import '../weekly_config.dart';
 import 'support_panels.dart' show rewardLabel, saveError;
@@ -34,9 +35,10 @@ class RecordsPanel extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('이 기기에서 플레이한 내 기록입니다. 다른 사람의 기록과 비교하지 않습니다.'),
+          const Text('이 기기에서 플레이한 내 기록입니다.'),
           if (title != null)
             Text('칭호 · $title', key: const Key('records-title')),
+          _OnlineRankingCard(controller: controller),
           Card(
               child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -99,6 +101,47 @@ class RecordsPanel extends StatelessWidget {
                         if (s.level == 1) const Text('아직 레벨업 기록이 없습니다.'),
                       ]))),
         ]));
+  }
+}
+
+/// Google Play Games leaderboards. Hidden until Play Console IDs exist.
+class _OnlineRankingCard extends StatelessWidget {
+  final GameController controller;
+  const _OnlineRankingCard({required this.controller});
+  @override
+  Widget build(BuildContext context) {
+    final c = controller, status = c.rankingStatus;
+    return Card(
+        key: const Key('online-ranking'),
+        child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text('온라인 랭킹 · Google Play 게임즈', style: _heading(context)),
+                  if (!status.configured)
+                    const Text('온라인 랭킹은 준비 중입니다.',
+                        key: Key('ranking-unavailable'))
+                  else if (!status.authenticated) ...[
+                    const Text(
+                        'Play 게임즈에 로그인하면 최고 초당 생산·누적 생산·최고 콤보로 다른 플레이어와 순위를 겨룰 수 있습니다.'),
+                    FilledButton(
+                        key: const Key('ranking-sign-in'),
+                        onPressed: c.rankingBusy ? null : c.signInRanking,
+                        child: const Text('Play 게임즈 로그인')),
+                  ] else ...[
+                    const Text(
+                        '기록은 이 기기에서 계산되어 Google Play 게임즈 순위표에 올라갑니다. 일간·주간·전체 순위를 볼 수 있습니다.'),
+                    if (lifetimeExceedsRanking(c.state))
+                      const Text('누적 생산이 순위표 최대치를 넘어 최대치로 올라갑니다.',
+                          key: Key('ranking-lifetime-capped')),
+                    FilledButton.icon(
+                        key: const Key('ranking-open'),
+                        onPressed: c.showRanking,
+                        icon: const Icon(Icons.leaderboard_outlined),
+                        label: const Text('순위 보기')),
+                  ],
+                ])));
   }
 }
 
