@@ -11,7 +11,7 @@
 | 분석·오류 수집 SDK | 별도 SDK 없음. 단, Play 게임즈 SDK 자체가 분석·진단 정보를 Google로 보냄(랭킹을 켠 빌드) | 위와 같음, 아래 표 |
 | Google Play 게임즈 서비스 | v2 리더보드만(앱 ID 설정 시) | `play-services-games-v2` 22.1.0, `games-ids.xml`의 `app_id`가 있을 때만 링크 |
 | 네트워크 | 배포 빌드에 INTERNET 권한 없음 | 병합 매니페스트에서 INTERNET은 `src/debug/AndroidManifest.xml`에서만 들어옴 |
-| 직접 의존성 | `sqflite`, `path`, `share_plus` | 기기 저장, 경로 처리, OS 공유 창 |
+| 직접 의존성 | `sqflite`, `path`, `share_plus`, `audioplayers` | 기기 저장, 경로 처리, OS 공유 창, 앱에 포함된 효과음·BGM 재생(로컬 에셋만) |
 
 `test/no_tracking_sdk_test.dart`가 의존성 목록을 검사해, 금지 SDK가 들어오면 `flutter test`에서 실패합니다.
 
@@ -50,6 +50,7 @@ Play Console 양식의 각 데이터 유형·목적에 어떻게 대응시킬지
 - 게임 공유는 사용자가 버튼을 누르고 받는 앱을 직접 고릅니다. 앱이 서버로 보내지 않으며, 내용은 고정된 게임 소개 문구와 스토어 링크(`invite_config.dart`의 `storeUrl`)뿐입니다. 사용자·기기 식별자나 추적 파라미터는 붙이지 않습니다.
 - 친구 초대 시뮬레이터·추천 코드·개발자 도구는 디버그 빌드(`kReleaseMode`가 false)에서만 열립니다.
 - `share_plus`는 Android 공유 인텐트만 엽니다. `sqflite`·`path`는 네트워크를 쓰지 않습니다.
+- `audioplayers`는 앱에 포함된 WAV만 재생합니다. 전이 의존성에 `http`가 있지만(URL 재생 기능용) 앱은 URL 소스를 쓰지 않으며, release 병합 매니페스트에 INTERNET 권한이 없습니다(2026-10-05 빌드에서 확인).
 - Play 게임즈 서비스 v2는 Google Play 서비스 앱을 통해 통신하므로, 앱 자체 release 병합 매니페스트에는 INTERNET 권한이 없습니다(2026-10-05 빌드에서 확인). 광고 ID·결제·Firebase·Google 애널리틱스 항목도 없습니다.
 
 ## 출시 전 확인

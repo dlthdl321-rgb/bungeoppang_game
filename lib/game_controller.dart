@@ -22,6 +22,8 @@ import 'menu_rules.dart';
 import 'progress_rules.dart';
 import 'weekly_config.dart';
 import 'online_ranking.dart';
+import 'feedback_config.dart';
+import 'game_events.dart';
 import 'ranking_config.dart';
 
 part 'invite_controller.dart';
@@ -38,6 +40,11 @@ class GameController extends ChangeNotifier {
   // show plain game sharing instead. Injectable so tests can check both.
   final bool developerTools;
   final RankingService ranking;
+  final ComboBonus comboBonusRule;
+  final _events = StreamController<GameEvent>.broadcast();
+  Stream<GameEvent> get events => _events.stream;
+  // How long the last offline settlement covered (after the cap).
+  Duration lastOfflineDuration = Duration.zero;
   RankingStatus rankingStatus = RankingStatus.unavailable;
   bool _rankingBusy = false;
   int? _lastRankingSubmitMs;
@@ -70,6 +77,7 @@ class GameController extends ChangeNotifier {
       {InvitationRepository? invitationRepository,
       this.cosmetics = cosmeticDefinitions,
       this.ranking = const NoRankingService(),
+      this.comboBonusRule = comboBonus,
       bool? developerTools})
       : developerTools = developerTools ?? !kReleaseMode,
         invitationRepository =
@@ -82,6 +90,10 @@ class GameController extends ChangeNotifier {
   // For command extensions (ranking), which cannot call notifyListeners.
   void _notifyChanged() {
     if (!_disposed) notifyListeners();
+  }
+
+  void _emit(GameEvent event) {
+    if (!_disposed) _events.add(event);
   }
 
   Future<void> initialize() async {
@@ -152,9 +164,12 @@ class GameController extends ChangeNotifier {
     state.records.lifetimeTaps += BigInt.one;
     state.weekly.taps += BigInt.one;
     final support = state.support;
-    final numerator =
-        tapRate(state) * support.multiplier(EffectChannel.tap, gameNow) +
-            support.tapFraction;
+    var factor = support.multiplier(EffectChannel.tap, gameNow);
+    final rule = comboBonusRule;
+    if (rule.enabled && direct && _combo >= rule.threshold) {
+      factor = factor * BigInt.from(rule.permille) ~/ BigInt.from(1000);
+    }
+    final numerator = tapRate(state) * factor + support.tapFraction;
     final gain = numerator ~/ BigInt.from(effectScale);
     support.tapFraction = numerator % BigInt.from(effectScale);
     state.buns += gain;
@@ -192,7 +207,11 @@ class GameController extends ChangeNotifier {
     state.level = target.level;
     state.missions = state.missions.advance(state.level, clock.utcNow);
     final ok = await _commit(before);
-    if (ok) submitRankingIfDue(force: true);
+    if (ok) {
+      submitRankingIfDue(force: true);
+      _emit(GameEvent(GameEventKind.levelUp, 'Lv.${target.level} 달성',
+          amount: target.reward, unit: '코인'));
+    }
     return ok;
   }
 
@@ -248,6 +267,7 @@ class GameController extends ChangeNotifier {
     observeSupport(state, gameNow);
     state.savedAutoRate = autoRate(state);
     if (!await _commit(before)) return false;
+    _emit(GameEvent(GameEventKind.purchase, u.name));
     notifyListeners();
     return true;
   }
@@ -292,7 +312,12 @@ class GameController extends ChangeNotifier {
     } else {
       daily.claimed.add(id);
     }
-    return _commit(before);
+    return _commitWith(
+        before,
+        GameEvent(GameEventKind.missionReward, all ? '일일 미션 전체 완료' : '일일 미션 완료',
+            amount: BigInt.parse(
+                (all ? dailyAllReward : matches.first.reward).coins),
+            unit: '코인'));
   }
 
   Future<bool> useItem(String id, {BigInt? expectedUses}) async {
@@ -323,7 +348,14 @@ class GameController extends ChangeNotifier {
             true) {
       state.missions.butterUses += BigInt.one;
     }
-    return _commit(before);
+    return _commitWith(
+        before,
+        GameEvent(
+            GameEventKind.itemUsed,
+            '${item.name} · ${item.channel == EffectChannel.tap ? '클릭' : '자동'} 생산 '
+            '${BigInt.parse(item.multiplierPermille) * BigInt.from(100) ~/ BigInt.from(effectScale)}%',
+            amount: BigInt.from(item.durationSeconds),
+            unit: '초 동안'));
   }
 
   Future<bool> buyCoinItem(String id, int expectedSequence) async {
@@ -340,7 +372,7 @@ class GameController extends ChangeNotifier {
     }
     state.support.inventory[id] = state.support.inventory[id]! + BigInt.one;
     state.support.purchaseSequence++;
-    return _commit(before);
+    return _commitWith(before, GameEvent(GameEventKind.purchase, item.name));
   }
 
   Future<bool> claimWeekly(String expectedWeek, String goalId) async {
@@ -360,7 +392,10 @@ class GameController extends ChangeNotifier {
       return false;
     }
     weekly.claimed.add(goalId);
-    return _commit(before);
+    return _commitWith(
+        before,
+        GameEvent(GameEventKind.missionReward, '주간 도전 · ${matches.first.title}',
+            amount: BigInt.parse(matches.first.reward.coins), unit: '코인'));
   }
 
   Future<bool> claimAchievement(String id) async {
@@ -378,7 +413,11 @@ class GameController extends ChangeNotifier {
       return false;
     }
     state.achievements.claimed.add(id);
-    return _commit(before);
+    return _commitWith(
+        before,
+        GameEvent(GameEventKind.achievement,
+            '업적 · ${d.title}${d.titleReward == null ? '' : ' · 칭호 「${d.titleReward}」'}',
+            amount: d.coins == '0' ? null : BigInt.parse(d.coins), unit: '코인'));
   }
 
   /// Shows an earned title on the home screen; null shows none.
@@ -392,6 +431,12 @@ class GameController extends ChangeNotifier {
     final before = state.copy();
     state.achievements.equippedTitle = title;
     return _commit(before);
+  }
+
+  Future<bool> _commitWith(GameState before, GameEvent event) async {
+    final ok = await _commit(before);
+    if (ok) _emit(event);
+    return ok;
   }
 
   Future<bool> _commit(GameState before) async {
@@ -444,6 +489,7 @@ class GameController extends ChangeNotifier {
     var ms = now.difference(state.lastSettledUtc).inMilliseconds;
     if (ms < 0) ms = 0;
     if (ms > maxOfflineMs) ms = maxOfflineMs;
+    lastOfflineDuration = Duration(milliseconds: ms);
     final before = state.copy();
     final gain = settleProduction(
         state,
@@ -475,12 +521,24 @@ class GameController extends ChangeNotifier {
     }
   }
 
+  /// One save per call: sliders should call this on release, not per frame.
   Future<void> updateSettings(
-      {bool? vibration, bool? hold, bool? reduceMotion}) async {
+      {bool? vibration,
+      bool? hold,
+      bool? reduceMotion,
+      bool? soundEffects,
+      bool? music,
+      int? sfxVolume,
+      int? musicVolume}) async {
     await _untilIdle();
-    state.settings.vibration = vibration ?? state.settings.vibration;
-    state.settings.holdToBake = hold ?? state.settings.holdToBake;
-    state.settings.reduceMotion = reduceMotion ?? state.settings.reduceMotion;
+    final s = state.settings;
+    s.vibration = vibration ?? s.vibration;
+    s.holdToBake = hold ?? s.holdToBake;
+    s.reduceMotion = reduceMotion ?? s.reduceMotion;
+    s.soundEffects = soundEffects ?? s.soundEffects;
+    s.music = music ?? s.music;
+    s.sfxVolume = (sfxVolume ?? s.sfxVolume).clamp(0, 100);
+    s.musicVolume = (musicVolume ?? s.musicVolume).clamp(0, 100);
     await save();
     notifyListeners();
   }
@@ -539,6 +597,7 @@ class GameController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _events.close();
     _ticker?.cancel();
     _periodicSave?.cancel();
     super.dispose();

@@ -20,7 +20,7 @@ flutter test
 flutter run
 ```
 
-이 Windows 환경에서는 한글 경로에서 Flutter 셰이더 도구와 Kotlin 데몬이 실패했으므로 영문 경로 또는 영문 드라이브 매핑에서 실행해야 합니다. 예: `subst B: "프로젝트 절대경로"` 후 `B:`에서 실행합니다. `android/gradle.properties`는 Kotlin 인프로세스 컴파일을 사용하도록 설정되어 있습니다.
+이 Windows 환경에서는 한글 경로에서 Flutter 셰이더 도구와 Kotlin 데몬이 실패했으므로 영문 경로 또는 영문 드라이브 매핑에서 실행해야 합니다. 예: `subst B: "프로젝트 절대경로"` 후 `B:`에서 실행합니다. `android/gradle.properties`는 Kotlin 인프로세스 컴파일을 사용하도록 설정되어 있습니다. release 빌드는 Gradle·Pub 캐시도 영문 경로여야 합니다: `$env:GRADLE_USER_HOME='C:\GradleCache'; $env:PUB_CACHE='C:\PubCacheBungeoppang'` 후 `flutter pub get`, `flutter build apk --release`. 기본 Pub 캐시(한글 사용자 폴더)에서는 오디오 패키지가 가져오는 `jni`의 CMake 빌드가 실패합니다.
 
 debug APK는 `flutter build apk --debug`로 다시 만들 수 있습니다. 생성 위치는 `build/app/outputs/flutter-apk/app-debug.apk`입니다.
 
@@ -36,6 +36,8 @@ Android 가상 기기는 `TodayBungeoppang_API35`입니다. 2026-10-05에는 AEH
 - `lib/weekly_config.dart`, `lib/achievement_config.dart`: 주간 도전 목표·보상·계절 테마, 업적 20개·칭호·콤보 판정 시간
 - `lib/progress_state.dart`, `lib/progress_rules.dart`: 내 기록·주간 도전·업적 저장 상태와 진행 계산
 - `lib/ui/progress_panels.dart`: 내 기록, 주간 도전, 업적·도감, 게임 공유 화면
+- `lib/feedback_config.dart`, `lib/game_audio.dart`, `lib/game_events.dart`: 연출 상한·시간·콤보 보너스, 효과음/BGM 정책, 축하용 일회성 이벤트
+- `lib/ui/tap_effects.dart`, `lib/ui/celebration.dart`: 부스러기 풀·스쿼시, 축하 배너·카운트업·오프라인 보상 화면
 - `lib/online_ranking.dart`, `lib/ranking_config.dart`, `lib/ranking_controller.dart`: Play 게임즈 리더보드 채널·점수 변환·제출 시점
 - `android/app/src/playGames`, `android/app/src/noPlayGames`: Play 게임즈 v2 연동 코드와, 앱 ID가 없을 때 넣는 대체 코드
 - `lib/invite_config.dart`: 스토어 링크·공유 문구, (디버그 전용) 초대 정책
@@ -138,6 +140,24 @@ SQLite 테이블과 SQL 버전 1은 유지하며 JSON 본문 버전은 **7**입�
 
 개발자가 직접 수집하는 데이터는 없으며 게임 저장은 기기 안에서만 합니다. 온라인 랭킹을 켠 빌드에서는 Play 게임즈 서비스가 게이머 프로필·점수·SDK 분석/진단 정보를 Google로 보냅니다. [개인정보처리방침](docs/privacy_policy.md)과 [Play Console 데이터 보안 양식 기준](docs/play_data_safety.md)을 참고하세요. `test/no_tracking_sdk_test.dart`는 광고·인앱결제·분석 SDK가 의존성에 들어오거나 Play 서비스 중 `play-services-games-v2` 외의 모듈이 추가되면 실패하고, release 병합 매니페스트가 있으면 인터넷·광고 ID·결제·Firebase·애널리틱스 항목도 검사합니다.
 
+## 연출·사운드 (10단계)
+
+- 탭: 누른 위치에서 +N이 떠오르고(최대 `maxFloatingGains`개), 붕어빵이 눌림·스쿼시·스트레치로 반응하며, 부스러기 파티클이 미리 만든 풀(`maxCrumbParticles`개, 할당 없이 재사용)에서 튑니다. 연타 콤보는 20·50에서 색이 바뀌고 탭마다 살짝 튑니다.
+- 콤보 경제 보너스는 `feedback_config.dart`의 `comboBonus`로 켤 수 있으며 **기본값은 끔**입니다(켜면 기준 콤보 이상 직접 탭에만 배율 적용).
+- 레벨업, 일일·주간 미션 보상, 업적, 아이템 사용 때 화면 위 축하 배너와 숫자 카운트업, 색종이(풀 `maxConfetti`개)가 나옵니다. 바텀시트 위에도 보이며 여러 개는 차례로 나옵니다. 구매는 효과음만 냅니다.
+- 오프라인 보상은 꾸민 "다시 오셨네요!" 화면에서 비운 시간과 받은 양을 카운트업으로 보여 줍니다.
+- 모션 줄이기(앱 설정 또는 시스템)가 켜져 있으면 파티클·스쿼시·색종이·떠오르는 숫자를 끄고, 숫자는 바로 최종값을 보여 줍니다.
+- 효과음(탭·구매·보상·레벨업)과 잔잔한 BGM. 설정에서 효과음·배경 음악을 켜고 끄며 볼륨(0~100%)을 바꿉니다. 슬라이더는 손을 뗄 때 한 번만 저장합니다. 앱이 백그라운드로 가면 BGM을 멈추고 돌아오면 다시 재생합니다. 다른 앱 음악을 끊지 않도록 오디오 포커스를 섞기(mixWithOthers)로 둡니다.
+- 저장 형식 v8: 설정에 `soundEffects`, `music`, `sfxVolume`, `musicVolume` 추가(v1~v7은 기본값 켬·70%·40%).
+
 ## 에셋과 라이선스
 
-외부 이미지·음원·폰트를 포함하지 않습니다. 메인 붕어빵은 앱 내부 `CustomPainter` 코드로 독립 제작했습니다. Flutter 및 패키지 라이선스는 각 배포물의 라이선스를 따릅니다(`flutter`, BSD-3-Clause 계열; `sqflite`, BSD-2-Clause; `path`, BSD-3-Clause; `share_plus`, BSD-3-Clause). 원작 로고·스크린샷·추출 에셋은 사용하지 않았습니다.
+외부 이미지·폰트를 포함하지 않습니다. 메인 붕어빵은 앱 내부 `CustomPainter` 코드로 독립 제작했습니다. 원작 로고·스크린샷·추출 에셋은 사용하지 않았습니다.
+
+| 에셋 | 출처 | 라이선스 |
+| --- | --- | --- |
+| `assets/audio/tap.wav`, `purchase.wav`, `reward.wav`, `levelup.wav`, `bgm.wav` | 이 프로젝트가 `tools/generate_sounds.py`로 직접 합성(사인파·감쇠 엔벨로프·필터 노이즈, 외부 샘플 없음, 고정 시드로 재현 가능) | CC0 1.0 (퍼블릭 도메인 헌정) |
+
+다시 만들려면 `python tools/generate_sounds.py`(numpy 필요)를 실행합니다. 22.05kHz 모노 16비트 WAV, 합계 약 1.1MB입니다.
+
+패키지 라이선스는 각 배포물의 라이선스를 따릅니다(`flutter`, BSD-3-Clause 계열; `sqflite`, BSD-2-Clause; `path`, BSD-3-Clause; `share_plus`, BSD-3-Clause; `audioplayers`, MIT).

@@ -171,12 +171,8 @@ class NightHome extends StatelessWidget {
               Padding(
                   padding: const EdgeInsets.only(bottom: 14),
                   child: controller.currentCombo >= comboDisplayMinimum
-                      ? Text('${controller.currentCombo} 콤보',
-                          key: const Key('combo-label'),
-                          style: const TextStyle(
-                              color: cream,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900))
+                      ? _ComboLabel(
+                          combo: controller.currentCombo, reduce: reduce)
                       : const Text('붕어빵을 눌러 구워요',
                           style: TextStyle(color: cream, fontSize: 13))),
             ])),
@@ -356,5 +352,36 @@ class _MenuButton extends StatelessWidget {
                             children: children))),
           )),
     );
+  }
+}
+
+/// Combo counter: colour steps at 20/50 and a short pop per new tap.
+class _ComboLabel extends StatelessWidget {
+  final int combo;
+  final bool reduce;
+  const _ComboLabel({required this.combo, required this.reduce});
+  @override
+  Widget build(BuildContext context) {
+    final color = combo >= 50
+        ? const Color(0xffffc94d)
+        : combo >= 20
+            ? const Color(0xffff9f6b)
+            : NightHome.cream;
+    final text = Text('$combo 콤보',
+        key: const Key('combo-label'),
+        style: TextStyle(
+            color: color,
+            fontSize: combo >= 20 ? 16 : 13,
+            fontWeight: FontWeight.w900,
+            shadows: const [Shadow(color: Colors.black, blurRadius: 4)]));
+    if (reduce) return text;
+    return TweenAnimationBuilder<double>(
+        key: ValueKey(combo),
+        tween: Tween(begin: 1.3, end: 1),
+        duration: const Duration(milliseconds: 160),
+        curve: Curves.easeOut,
+        builder: (_, scale, child) =>
+            Transform.scale(scale: scale, child: child),
+        child: text);
   }
 }

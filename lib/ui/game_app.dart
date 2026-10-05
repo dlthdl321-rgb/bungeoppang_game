@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../economy.dart';
+import '../game_audio.dart';
 import '../game_controller.dart';
+import 'celebration.dart';
 import 'skill_shop.dart';
 import 'night_home.dart';
 import 'level_missions.dart';
@@ -11,7 +13,9 @@ import 'progress_panels.dart';
 
 class GameApp extends StatefulWidget {
   final GameController controller;
-  const GameApp({super.key, required this.controller});
+  final GameAudio audio;
+  const GameApp(
+      {super.key, required this.controller, this.audio = const SilentAudio()});
   @override
   State<GameApp> createState() => _GameAppState();
 }
@@ -22,11 +26,19 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    widget.controller.addListener(_syncAudio);
+    widget.audio.init().then((_) => _syncAudio());
   }
+
+  // Settings live in the controller; the audio follows them. Cheap no-op
+  // when nothing changed, so it is fine on every controller notification.
+  void _syncAudio() => widget.audio.configure(widget.controller.state.settings);
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    widget.controller.removeListener(_syncAudio);
+    widget.audio.dispose();
     widget.controller.dispose();
     super.dispose();
   }
@@ -34,23 +46,23 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      widget.audio.resumeMusic();
       widget.controller.resume().then((v) {
         if (v > BigInt.zero && mounted) {
+          widget.audio.play(Sfx.reward);
           showDialog(
               context: _navigatorKey.currentContext!,
-              builder: (_) => AlertDialog(
-                      title: const Text('다시 오셨네요!'),
-                      content: Text('자리를 비운 동안 ${compactNumber(v)}개를 구웠어요.'),
-                      actions: [
-                        TextButton(
-                            onPressed: () => _navigatorKey.currentState!.pop(),
-                            child: const Text('확인'))
-                      ]));
+              builder: (dialogContext) => OfflineRewardDialog(
+                  amount: v,
+                  away: widget.controller.lastOfflineDuration,
+                  reduceMotion: widget.controller.state.settings.reduceMotion ||
+                      MediaQuery.disableAnimationsOf(dialogContext)));
         }
       });
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused) {
+      widget.audio.pauseMusic();
       widget.controller.leaveActive();
     }
   }
@@ -67,6 +79,10 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
               surface: const Color(0xfffff8e8)),
           scaffoldBackgroundColor: const Color(0xfffff8e8),
           useMaterial3: true),
+      // Above the navigator so celebrations show over sheets and dialogs.
+      builder: (context, child) => GameAudioScope(
+          audio: widget.audio,
+          child: CelebrationHost(controller: widget.controller, child: child!)),
       home: GameHome(controller: widget.controller));
 }
 
@@ -74,7 +90,9 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
 /// recovery command succeeds; otherwise stays and explains why.
 class RecoveryApp extends StatefulWidget {
   final GameController controller;
-  const RecoveryApp({super.key, required this.controller});
+  final GameAudio audio;
+  const RecoveryApp(
+      {super.key, required this.controller, this.audio = const SilentAudio()});
   @override
   State<RecoveryApp> createState() => _RecoveryAppState();
 }
@@ -117,7 +135,9 @@ class _RecoveryAppState extends State<RecoveryApp> {
 
   @override
   Widget build(BuildContext context) {
-    if (_started) return GameApp(controller: widget.controller);
+    if (_started) {
+      return GameApp(controller: widget.controller, audio: widget.audio);
+    }
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         title: '오늘의 붕어빵',
@@ -327,6 +347,7 @@ class _GameHomeState extends State<GameHome> {
                               value: c.state.settings.reduceMotion,
                               onChanged: (v) =>
                                   c.updateSettings(reduceMotion: v)),
+                          SoundSettings(controller: c),
                           ListTile(
                               textColor: Colors.red,
                               title: const Text('데이터 초기화'),
@@ -355,5 +376,69 @@ class _GameHomeState extends State<GameHome> {
                                 }
                               })
                         ]))))));
+  }
+}
+
+/// Sound toggles and volumes. Sliders preview locally while dragging and save
+/// once on release, so dragging never writes the save file per frame.
+class SoundSettings extends StatefulWidget {
+  final GameController controller;
+  const SoundSettings({super.key, required this.controller});
+  @override
+  State<SoundSettings> createState() => _SoundSettingsState();
+}
+
+class _SoundSettingsState extends State<SoundSettings> {
+  int? _sfxDrag, _musicDrag;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = widget.controller, s = c.state.settings;
+    Widget slider(String key, String label, bool enabled, int saved, int? drag,
+            void Function(int?) setDrag, void Function(int) commit) =>
+        Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('$label ${drag ?? saved}%'),
+              Slider(
+                  key: Key(key),
+                  value: (drag ?? saved).toDouble(),
+                  min: 0,
+                  max: 100,
+                  divisions: 20,
+                  label: '${drag ?? saved}%',
+                  onChanged: enabled
+                      ? (v) => setState(() => setDrag(v.round()))
+                      : null,
+                  onChangeEnd: enabled
+                      ? (v) {
+                          setState(() => setDrag(null));
+                          commit(v.round());
+                        }
+                      : null),
+            ]));
+    return Column(mainAxisSize: MainAxisSize.min, children: [
+      SwitchListTile(
+          key: const Key('setting-sfx'),
+          title: const Text('효과음'),
+          value: s.soundEffects,
+          onChanged: (v) => c.updateSettings(soundEffects: v)),
+      slider('setting-sfx-volume', '효과음 크기', s.soundEffects, s.sfxVolume,
+          _sfxDrag, (v) => _sfxDrag = v, (v) => c.updateSettings(sfxVolume: v)),
+      SwitchListTile(
+          key: const Key('setting-music'),
+          title: const Text('배경 음악'),
+          value: s.music,
+          onChanged: (v) => c.updateSettings(music: v)),
+      slider(
+          'setting-music-volume',
+          '배경 음악 크기',
+          s.music,
+          s.musicVolume,
+          _musicDrag,
+          (v) => _musicDrag = v,
+          (v) => c.updateSettings(musicVolume: v)),
+    ]);
   }
 }

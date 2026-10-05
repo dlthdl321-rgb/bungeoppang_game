@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
+import 'game_audio.dart';
 import 'game_controller.dart';
 import 'online_ranking.dart';
 import 'repository.dart';
@@ -14,10 +15,11 @@ Future<void> main() async {
       ranking: defaultTargetPlatform == TargetPlatform.android
           ? const PlayGamesRankingService()
           : const NoRankingService());
+  final audio = AudioplayersAudio();
   try {
     await controller.initialize();
-    runApp(GameApp(controller: controller));
+    runApp(GameApp(controller: controller, audio: audio));
   } catch (_) {
-    runApp(RecoveryApp(controller: controller));
+    runApp(RecoveryApp(controller: controller, audio: audio));
   }
 }

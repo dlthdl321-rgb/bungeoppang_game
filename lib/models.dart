@@ -2,6 +2,7 @@ import 'achievement_config.dart';
 import 'balance.dart' show balanceVersion, upgrades, levels;
 import 'economy.dart' show autoRate;
 import 'economy_config.dart';
+import 'feedback_config.dart';
 import 'mission_state.dart';
 import 'support_state.dart';
 import 'invite_models.dart';
@@ -46,27 +47,55 @@ class SkinDefinition {
 }
 
 class GameSettings {
-  bool vibration, holdToBake, reduceMotion;
+  bool vibration, holdToBake, reduceMotion, soundEffects, music;
+  int sfxVolume, musicVolume; // Whole percents, 0..100.
   GameSettings(
       {this.vibration = true,
       this.holdToBake = false,
-      this.reduceMotion = false});
+      this.reduceMotion = false,
+      this.soundEffects = true,
+      this.music = true,
+      this.sfxVolume = defaultSfxVolume,
+      this.musicVolume = defaultMusicVolume});
   Map<String, dynamic> toJson() => {
         'vibration': vibration,
         'holdToBake': holdToBake,
-        'reduceMotion': reduceMotion
+        'reduceMotion': reduceMotion,
+        'soundEffects': soundEffects,
+        'music': music,
+        'sfxVolume': sfxVolume,
+        'musicVolume': musicVolume,
       };
-  factory GameSettings.fromJson(Object? raw) {
+
+  /// Sound settings exist from v8; older saves get the defaults.
+  factory GameSettings.fromJson(Object? raw, {bool withSound = false}) {
     final m = raw is Map ? raw : const {};
-    return GameSettings(
+    final settings = GameSettings(
         vibration: m['vibration'] is bool ? m['vibration'] as bool : true,
         holdToBake: m['holdToBake'] == true,
         reduceMotion: m['reduceMotion'] == true);
+    if (!withSound) return settings;
+    int volume(String key) {
+      final v = m[key];
+      if (v is! int || v < 0 || v > 100) {
+        throw FormatException('잘못된 $key');
+      }
+      return v;
+    }
+
+    if (m['soundEffects'] is! bool || m['music'] is! bool) {
+      throw const FormatException('잘못된 소리 설정');
+    }
+    return settings
+      ..soundEffects = m['soundEffects'] as bool
+      ..music = m['music'] as bool
+      ..sfxVolume = volume('sfxVolume')
+      ..musicVolume = volume('musicVolume');
   }
 }
 
 class GameState {
-  static const formatVersion = 7;
+  static const formatVersion = 8;
   BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
   int level, snapshotSequence;
   Map<String, int> upgradeCounts;
@@ -278,7 +307,7 @@ class GameState {
         ownedSkins: owned,
         equippedSkin: equipped,
         tutorialDone: m['tutorialDone'] == true,
-        settings: GameSettings.fromJson(m['settings']),
+        settings: GameSettings.fromJson(m['settings'], withSound: version >= 8),
         lastSettledUtc: last.toUtc(),
         savedAutoRate: natural('savedAutoRate'),
         activeRemainder: natural('activeRemainder') % BigInt.from(1000));

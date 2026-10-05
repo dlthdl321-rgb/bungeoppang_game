@@ -10,7 +10,8 @@ extension MenuCommands on GameController {
     // Every slot, fish included, must pass the same level/production unlock.
     if (!cosmeticUnlocked(state, d)) return false;
     final before = state.copy();
-    if (!state.ownsCosmetic(d)) {
+    final buying = !state.ownsCosmetic(d);
+    if (buying) {
       // Fish keeps its historical `skin:` ledger ID so old receipts still match.
       if (!state.support.transact(fish ? 'skin:$id' : 'cosmetic:$id', -d.cost,
           '${d.name} 구매', gameNow)) {
@@ -23,6 +24,7 @@ extension MenuCommands on GameController {
     } else {
       state.wardrobe.equipped[d.slot] = id;
     }
-    return _commit(before);
+    if (!buying) return _commit(before);
+    return _commitWith(before, GameEvent(GameEventKind.purchase, d.name));
   }
 }
