@@ -58,7 +58,3 @@ const itemDefinitions = [
   ItemDefinition('fairy', '요정', EffectChannel.automatic, '2000', 300, '3', '1'),
   ItemDefinition('butter', '황금버터', EffectChannel.tap, '2000', 60, '2', '1'),
 ];
-const finalExchangeId = 'final:prototype-v1';
-const finalExchangeCost = '10';
-const finalExchangeLevel = 10;
-const finalExchangeTitle = '모의 완주 기념 기록';

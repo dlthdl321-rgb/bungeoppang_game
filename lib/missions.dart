@@ -1,6 +1,7 @@
 import 'economy.dart';
 import 'mission_config.dart';
 import 'models.dart';
+import 'progress_rules.dart';
 
 LevelDefinition? activeLevelMission(GameState state) {
   final target = state.missions.targetLevel;
@@ -30,15 +31,24 @@ List<MissionProgress> missionProgress(GameState state, LevelDefinition level) {
           m,
           !active
               ? BigInt.zero
-              : switch (m.kind) {
-                  MissionKind.tutorial =>
-                    state.tutorialDone ? BigInt.one : BigInt.zero,
-                  MissionKind.lifetime => state.lifetime,
-                  MissionKind.autoRate => autoRate(state),
-                  MissionKind.newPlayerInvites =>
-                    BigInt.from(state.missions.qualifiedInvitePlayers.length),
-                  MissionKind.goldenButterUses => state.missions.butterUses,
-                },
+              : state.missions.waivedGoals.contains(m.id)
+                  ? m.target
+                  : switch (m.kind) {
+                      MissionKind.tutorial =>
+                        state.tutorialDone ? BigInt.one : BigInt.zero,
+                      MissionKind.lifetime => state.lifetime,
+                      MissionKind.autoRate => autoRate(state),
+                      MissionKind.newPlayerInvites => BigInt.from(
+                          state.missions.qualifiedInvitePlayers.length),
+                      MissionKind.goldenButterUses => state.missions.butterUses,
+                      MissionKind.cosmeticsOwned =>
+                        BigInt.from(cosmeticsOwnedCount(state)),
+                      MissionKind.itemUses => totalItemUses(state),
+                      MissionKind.skillLevel =>
+                        BigInt.from(state.upgradeCounts[m.skillId] ?? 0),
+                      MissionKind.achievements =>
+                        BigInt.from(achievementsMetCount(state)),
+                    },
           active)
   ];
 }

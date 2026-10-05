@@ -1,6 +1,4 @@
 import 'cosmetic_config.dart';
-import 'event_config.dart';
-import 'support_state.dart';
 
 class WardrobeState {
   final Set<String> owned;
@@ -37,65 +35,6 @@ class WardrobeState {
         throw const FormatException('꾸미기 장착 슬롯 불일치');
       }
       s.equipped[slot] = id as String;
-    }
-    return s;
-  }
-}
-
-class LocalEventState {
-  bool joined = false;
-  BigInt participants;
-  final Map<String, BigInt> claimedCounts;
-  final Map<String, DateTime> receipts = {};
-  LocalEventState._(this.participants, this.claimedCounts);
-  factory LocalEventState.initial(EventDefinition d) => LocalEventState._(
-      d.initialParticipantsAmount,
-      {for (final r in d.rewards) r.id: r.initialClaimedAmount});
-  Map<String, dynamic> toJson() => {
-        'joined': joined,
-        'participants': '$participants',
-        'claimedCounts': {
-          for (final e in claimedCounts.entries) e.key: '${e.value}'
-        },
-        'receipts': {
-          for (final e in receipts.entries) e.key: e.value.toIso8601String()
-        }
-      };
-  factory LocalEventState.fromJson(Map<String, dynamic> m, EventDefinition d) {
-    if (m['joined'] is! bool ||
-        m['claimedCounts'] is! Map ||
-        m['receipts'] is! Map) {
-      throw const FormatException('이벤트 저장 손상');
-    }
-    final s = LocalEventState._(readNatural(m['participants']), {})
-      ..joined = m['joined'] as bool;
-    if (s.participants <
-        d.initialParticipantsAmount + (s.joined ? BigInt.one : BigInt.zero)) {
-      throw const FormatException('이벤트 참여 수 오류');
-    }
-    for (final r in d.rewards) {
-      final n = readNatural((m['claimedCounts'] as Map)[r.id]);
-      if (n < r.initialClaimedAmount || n > r.capacityAmount) {
-        throw const FormatException('이벤트 수량 범위 오류');
-      }
-      s.claimedCounts[r.id] = n;
-    }
-    for (final e in (m['receipts'] as Map).entries) {
-      final matches = d.rewards.where((r) => r.id == e.key);
-      final at = readUtc(e.value);
-      if (!s.joined ||
-          matches.isEmpty ||
-          at.isBefore(d.start) ||
-          !at.isBefore(d.end)) {
-        throw const FormatException('이벤트 수령 오류');
-      }
-      s.receipts[e.key as String] = at;
-    }
-    for (final r in d.rewards.where((r) => s.receipts.containsKey(r.id))) {
-      if (!r.prerequisites.every(s.receipts.containsKey) ||
-          s.claimedCounts[r.id]! <= r.initialClaimedAmount) {
-        throw const FormatException('이벤트 수령 순서/수량 오류');
-      }
     }
     return s;
   }

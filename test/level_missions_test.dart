@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todays_bungeoppang/balance.dart';
+import 'package:todays_bungeoppang/balance.dart' hide levels;
 import 'package:todays_bungeoppang/economy.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/mission_config.dart';
@@ -28,12 +28,19 @@ void setRate(GameState state, BigInt rate) {
   if (rate > state.support.daily.peakAuto) state.support.daily.peakAuto = rate;
 }
 
+// Stage 8: the release season has no invite goals. These tests exercise the
+// invite-goal season kept for the debug invite system, with the same
+// expectations as before; the offline season is covered in
+// stage8_progress_test.dart.
+final levels = levelsForSeason(legacyInviteMissionSeason);
+
 GameController atLevel(int level, FakeTime clock,
         [GameRepository? repository]) =>
     GameController(repository ?? MemoryGameRepository(), clock)
       ..state = (GameState.initial(clock.utcNow)
         ..level = level
-        ..missions = MissionState.forLevel(level, clock.utcNow)
+        ..missions = MissionState.forLevel(level, clock.utcNow,
+            seasonId: legacyInviteMissionSeason)
         ..tutorialDone = true);
 
 MockInviteSuccess receipt(GameController c, String id,

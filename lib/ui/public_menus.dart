@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
 import '../economy.dart';
-import '../event_config.dart';
 import '../game_controller.dart';
-import '../home_presentation.dart';
 import '../menu_rules.dart';
-import '../ranking.dart';
 import 'fish_painter.dart';
 import 'night_stall_painter.dart';
 import 'support_panels.dart';
@@ -29,7 +26,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
         padding: const EdgeInsets.all(16),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('자체 제작 외형 · 가격과 해금 조건은 추정 설정입니다. 생산 효과는 없습니다.'),
+          const Text('노점과 붕어빵의 모습을 바꿉니다. 생산 효과는 없습니다.'),
           Wrap(spacing: 8, children: [
             for (final s in CosmeticSlot.values)
               ChoiceChip(
@@ -115,137 +112,6 @@ class _WardrobePanelState extends State<WardrobePanel> {
                                                 : '구매')),
                           ]),
                         ]))),
-          if (c.error != null) Text(c.error!),
-        ]));
-  }
-}
-
-class RankingPanel extends StatefulWidget {
-  final GameController controller;
-  const RankingPanel({super.key, required this.controller});
-  @override
-  State<RankingPanel> createState() => _RankingPanelState();
-}
-
-class _RankingPanelState extends State<RankingPanel> {
-  bool friends = false;
-  @override
-  Widget build(BuildContext context) {
-    final entries =
-        rankingFor(widget.controller.state.lifetime, friendsOnly: friends);
-    final me = entries.firstWhere((e) => e.isMe);
-    return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text(
-              '모의 랭킹 · 다른 이름·점수·친구 관계는 가상 데이터입니다. 실제 사용자나 연락처에 연결되지 않습니다.'),
-          Wrap(spacing: 8, children: [
-            for (final f in [false, true])
-              ChoiceChip(
-                  key: Key(f ? 'ranking-friends' : 'ranking-all'),
-                  label: Text(f ? '친구 순위' : '전체 순위'),
-                  selected: f == friends,
-                  onSelected: (_) => setState(() => friends = f))
-          ]),
-          Card(
-              child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text(
-                      '내 순위 ${me.rank}위 · 누적 생산 ${compactNumber(me.score)}개',
-                      key: const Key('ranking-my-rank')))),
-          const Text('누적 생산량 기준 · 동점은 공동 순위'),
-          for (final e in entries)
-            Card(
-                color: e.isMe
-                    ? Theme.of(context).colorScheme.secondaryContainer
-                    : null,
-                child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('${e.rank}위 · ${e.name}${e.isMe ? ' (나)' : ''}'),
-                          Text('${compactNumber(e.score)}개')
-                        ]))),
-        ]));
-  }
-}
-
-class EventPanel extends StatelessWidget {
-  final GameController controller;
-  final VoidCallback onExchange;
-  const EventPanel(
-      {super.key, required this.controller, required this.onExchange});
-  @override
-  Widget build(BuildContext context) {
-    final c = controller, d = currentEvent, saved = c.state.events[d.id]!;
-    final phase = eventPhase(d, c.gameNow);
-    String date(DateTime v) =>
-        '${v.add(const Duration(hours: 9)).toIso8601String().substring(0, 16).replaceFirst('T', ' ')} KST';
-    return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text(
-              '모의 이벤트 · 일정·수량·참여자·보상은 추정 설정입니다. 이 기기 안에서만 기록되며 실제 돈·상품·포인트는 지급되지 않습니다.'),
-          Text(d.title, style: Theme.of(context).textTheme.titleLarge),
-          Text('${date(d.start)} ~ ${date(d.end)}'),
-          Text(eventCountdownLabel(d, c.gameNow),
-              key: const Key('event-panel-countdown')),
-          Text('모의 참여자 ${compactNumber(saved.participants)}명'),
-          FilledButton(
-              key: const Key('event-join'),
-              onPressed: !c.busy && !saved.joined && phase == EventPhase.active
-                  ? () => c.joinEvent(d.id)
-                  : null,
-              child: Text(saved.joined ? '참여 완료' : '모의 이벤트 참여')),
-          for (final r in d.rewards)
-            Card(
-                child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(r.title,
-                              style: Theme.of(context).textTheme.titleMedium),
-                          Text(
-                              '레벨 ${c.state.level}/${r.requiredLevel} · 누적 ${compactNumber(c.state.lifetime)}/${compactNumber(r.requiredProductionAmount)}개'),
-                          Text(
-                              '보상 ${r.reward.coins} 코인${r.reward.items.isEmpty ? '' : ' · ${r.reward.items.entries.map((e) => '${e.key == 'fairy' ? '요정' : '황금버터'} ${e.value}개').join(' · ')}'}'),
-                          Text(
-                              '선착순 잔여 ${eventRemaining(c.state, d, r)} / ${r.capacity}명'),
-                          if (r.prerequisites.isNotEmpty)
-                            const Text('앞 단계 보상을 수령해야 합니다.'),
-                          FilledButton(
-                              key: Key('event-claim-${r.id}'),
-                              onPressed: !c.busy &&
-                                      canClaimEvent(c.state, d, r, c.gameNow)
-                                  ? () => c.claimEventReward(d.id, r.id)
-                                  : null,
-                              child: Text(saved.receipts.containsKey(r.id)
-                                  ? '수령 완료'
-                                  : eventRemaining(c.state, d, r) == BigInt.zero
-                                      ? '수량 소진'
-                                      : phase == EventPhase.ended
-                                          ? '종료'
-                                          : r.isFinal
-                                              ? '최종 모의 보상 수령'
-                                              : '모의 보상 수령')),
-                        ]))),
-          TextButton(
-              key: const Key('event-exchange'),
-              onPressed: onExchange,
-              child: const Text('코인으로 모의 완주 기록 교환')),
-          ExpansionTile(title: const Text('개발자 도구 · 모의 선착순'), children: [
-            TextButton(
-                key: const Key('event-exhaust'),
-                onPressed: !c.busy && phase == EventPhase.active
-                    ? () => c.simulateEventClaims(
-                        d.id, 'final', d.rewards.last.capacityAmount)
-                    : null,
-                child: const Text('가상 다른 참여자로 최종 수량 소진'))
-          ]),
           if (c.error != null) Text(c.error!),
         ]));
   }

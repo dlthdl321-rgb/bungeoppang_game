@@ -8,13 +8,9 @@ import 'support_panels.dart';
 
 class LevelMissions extends StatelessWidget {
   final GameController controller;
-  final VoidCallback onInvites;
-  final VoidCallback onItems;
+  final void Function(String destination) onOpen;
   const LevelMissions(
-      {super.key,
-      required this.controller,
-      required this.onInvites,
-      required this.onItems});
+      {super.key, required this.controller, required this.onOpen});
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +28,7 @@ class LevelMissions extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('현재 Lv.${s.level}', style: Theme.of(context).textTheme.titleLarge),
-        const Text(
-            '모의 데이터 · 초대 판정은 테스트 입력, 아이템 효과는 추정 설정입니다. 공유는 직접 선택하며 현금 지급은 없습니다.'),
+        const Text('조건을 모두 채우면 레벨업 보상으로 코인을 받습니다.'),
         const SizedBox(height: 12),
         if (active == null) ...[
           const Text('최고 레벨 달성 · 모든 레벨 미션 완료', key: Key('missions-finished')),
@@ -44,7 +39,7 @@ class LevelMissions extends StatelessWidget {
           const Text('모든 조건을 달성한 뒤 직접 레벨업 보상을 받으세요.'),
           for (final p in missionProgress(s, active)) _missionCard(context, p),
           const SizedBox(height: 8),
-          Text('레벨업 보상: 코인 ${compactNumber(reward)}개 · 수량은 추정 설정'),
+          Text('레벨업 보상: 코인 ${compactNumber(reward)}개'),
           if (c.error != null)
             Text(c.error!,
                 key: const Key('mission-save-error'),
@@ -70,17 +65,14 @@ class LevelMissions extends StatelessWidget {
           const Divider(height: 28),
           Text('다음 단계 미리보기 · Lv.${preview.level}',
               key: const Key('mission-preview')),
-          const Text('아직 활성화되지 않아 진행을 계산하지 않습니다. 초대는 미리 채울 수 없습니다.'),
+          const Text('아직 시작되지 않은 단계입니다. 진행은 이 단계가 열린 뒤부터 계산합니다.'),
           for (final m in preview.missions)
             Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Text('${m.title}: ${compactNumber(m.target)} · 미활성')),
-          Text('예상 보상: 코인 ${compactNumber(preview.reward)}개 (추정)'),
+          Text('보상: 코인 ${compactNumber(preview.reward)}개'),
         ],
         const Divider(height: 28),
-        Text('미션 시즌: ${s.missions.seasonId}',
-            style: Theme.of(context).textTheme.bodySmall),
-        const Text('공개 후기 기준이며 시즌에 따라 조건이 다를 수 있습니다.'),
         ExpansionTile(
           key: const Key('reward-history'),
           title: Text('레벨 보상 기록 ${s.levelRewards.length}건'),
@@ -90,7 +82,7 @@ class LevelMissions extends StatelessWidget {
                   padding: const EdgeInsets.all(8),
                   child: Text(record.source == 'legacy'
                       ? 'Lv.${record.level} · 기존 수령 기록 이전 (금액·시각 미상)'
-                      : 'Lv.${record.level} · 코인 ${compactNumber(record.amount!)}개 수령 완료 (기존 별사탕 포함)')),
+                      : 'Lv.${record.level} · 코인 ${compactNumber(record.amount!)}개 수령 완료')),
           ],
         ),
       ]),
@@ -112,18 +104,24 @@ class LevelMissions extends StatelessWidget {
             value: p.permille / 1000,
             semanticsLabel: m.title,
             semanticsValue: '${p.permille ~/ 10}%'),
-        Text(m.evidence == 'estimated' ? '추정 조건 · estimated' : '공개 후기에서 관찰된 조건',
-            style: Theme.of(context).textTheme.bodySmall),
-        if (m.kind == MissionKind.newPlayerInvites) ...[
-          const Text('활성화 후 초대한 신규 플레이어의 레벨 1 달성만 인정 · 모의'),
+        if (c.state.missions.waivedGoals.contains(m.id))
+          const Text('이전 버전에서 친구 초대 조건을 채워 완료로 인정했습니다.',
+              key: Key('mission-waived')),
+        if (m.kind == MissionKind.newPlayerInvites && c.developerTools) ...[
+          const Text('개발자 도구 · 활성화 후 초대한 신규 플레이어의 레벨 1 달성만 인정'),
           TextButton(
               key: const Key('mission-invites'),
-              onPressed: onInvites,
-              child: const Text('친구 초대 현황 열기')),
+              onPressed: () => onOpen('invite'),
+              child: const Text('초대 시스템 열기')),
         ],
+        if (_shortcut(m.kind) case (final String id, final String label))
+          TextButton(
+              key: Key('mission-open-${m.id}'),
+              onPressed: () => onOpen(id),
+              child: Text(label)),
         if (m.kind == MissionKind.goldenButterUses) ...[
           Text(
-              '황금버터 ${c.state.support.inventory['butter']}개 보유 · 사용 시 수량을 소비하고 추정 효과가 적용됩니다.'),
+              '황금버터 ${c.state.support.inventory['butter']}개 보유 · 사용하면 1개를 소비하고 클릭 생산이 늘어납니다.'),
           TextButton(
               key: const Key('mock-butter'),
               onPressed: p.complete ||
@@ -141,7 +139,7 @@ class LevelMissions extends StatelessWidget {
                       if (!await confirmAction(
                           context,
                           '황금버터 사용',
-                          '황금버터 ${c.state.support.inventory['butter']} → ${c.state.support.inventory['butter']! - BigInt.one}개\n현재 클릭 생산 ${exactNumber(current)} → 사용 후 ${exactNumber(after)}\n${item.durationSeconds}초 적용 · 추정 효과',
+                          '황금버터 ${c.state.support.inventory['butter']} → ${c.state.support.inventory['butter']! - BigInt.one}개\n현재 클릭 생산 ${exactNumber(current)} → 사용 후 ${exactNumber(after)}\n${item.durationSeconds}초 적용',
                           '사용')) {
                         return;
                       }
@@ -152,9 +150,19 @@ class LevelMissions extends StatelessWidget {
                       }
                     },
               child: const Text('황금버터 1개 사용')),
-          TextButton(onPressed: onItems, child: const Text('아이템 확인 · 코인 상점')),
+          TextButton(
+              onPressed: () => onOpen('support'),
+              child: const Text('아이템 확인 · 코인 상점')),
         ],
       ]),
     ));
   }
+
+  static (String, String)? _shortcut(MissionKind kind) => switch (kind) {
+        MissionKind.cosmeticsOwned => ('skins', '꾸미기 열기'),
+        MissionKind.itemUses => ('support', '아이템 사용하기'),
+        MissionKind.skillLevel => ('shop', '상점 열기'),
+        MissionKind.achievements => ('achievements', '업적 보기'),
+        _ => null,
+      };
 }

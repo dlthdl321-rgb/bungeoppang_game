@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/mission_config.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/invite_models.dart';
 import 'widget_test.dart' show mountGame, FixedTime;
@@ -19,7 +20,8 @@ void main() {
         final c = await mountGame(tester, size,
             textScale: scale, clock: clock, reduced: true);
         c.state.level = 9;
-        c.state.missions = MissionState.forLevel(9, clock.utcNow);
+        c.state.missions = MissionState.forLevel(9, clock.utcNow,
+            seasonId: legacyInviteMissionSeason);
         c.tick();
         await tester.pump();
         String? copied;
@@ -42,7 +44,8 @@ void main() {
           messenger.setMockMethodCallHandler(SystemChannels.platform, null);
           messenger.setMockMethodCallHandler(shareChannel, null);
         });
-        await tapVisible(tester, const Key('menu-invite'));
+        await tapVisible(tester, const Key('menu-share'));
+        await tapVisible(tester, const Key('developer-invites'));
         await tapVisible(tester, const Key('invite-prepare'));
         expect(find.byKey(const Key('referral-code')), findsOneWidget);
         await tapVisible(tester, const Key('invite-copy'));
@@ -105,7 +108,8 @@ void main() {
     messenger.setMockMethodCallHandler(
         channel, (_) async => throw PlatformException(code: 'unavailable'));
     addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
-    await tapVisible(tester, const Key('menu-invite'));
+    await tapVisible(tester, const Key('menu-share'));
+    await tapVisible(tester, const Key('developer-invites'));
     await tapVisible(tester, const Key('invite-prepare'));
     await tapVisible(tester, const Key('invite-share'));
     expect(find.textContaining('문구 복사를 이용해 주세요'), findsOneWidget);

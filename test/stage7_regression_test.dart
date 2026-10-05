@@ -3,12 +3,9 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
-import 'package:todays_bungeoppang/event_config.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
-import 'package:todays_bungeoppang/menu_state.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/models.dart';
-import 'package:todays_bungeoppang/ranking.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'controller_test.dart' show FakeTime;
 
@@ -62,27 +59,29 @@ void expectProgressKept(GameState restored, GameState original) {
 void main() {
   final now = DateTime.utc(2026, 10, 5);
 
-  group('a. 새 이벤트 정의가 추가되어도 기존 v6 저장을 읽는다', () {
-    test('누락된 이벤트 항목은 초기 상태로 채우고 진행도는 보존', () {
-      final original = progressed(now);
-      final json = plainJson(original);
-      (json['events'] as Map).remove(currentEventId);
-      final restored = GameState.fromJson(json);
-      expect(restored.events[currentEventId]!.toJson(),
-          LocalEventState.initial(currentEvent).toJson());
-      expectProgressKept(restored, original);
-    });
-    test('events 필드 자체가 없는 v6 저장도 초기 이벤트로 읽는다', () {
-      final original = progressed(now);
-      final json = plainJson(original)..remove('events');
-      final restored = GameState.fromJson(json);
-      expect(restored.events.keys, eventDefinitions.map((e) => e.id));
-      expectProgressKept(restored, original);
-    });
-    test('events가 맵이 아니면 손상으로 거부', () {
-      final json = plainJson(progressed(now))..['events'] = 'broken';
-      expect(() => GameState.fromJson(json), throwsFormatException);
-    });
+  // Stage 8 dropped the per-event save field, so bug (a) now means: whatever
+  // a v6 save holds under 'events', it loads into v7 with progress intact.
+  group('a. v6 저장의 이벤트 항목은 상태와 무관하게 읽힌다', () {
+    for (final entry in <String, Object?>{
+      '항목 누락': <String, Object?>{},
+      '필드 없음': null,
+      '맵이 아닌 값': 'broken',
+    }.entries) {
+      test('${entry.key}: 진행도 보존', () {
+        final original = progressed(now);
+        final json = plainJson(original)..['formatVersion'] = 6;
+        for (final key in ['records', 'weekly', 'achievements']) {
+          json.remove(key);
+        }
+        if (entry.value == null) {
+          json.remove('events');
+        } else {
+          json['events'] = entry.value;
+        }
+        final restored = GameState.fromJson(json);
+        expectProgressKept(restored, original);
+      });
+    }
   });
 
   group('b. 보유 붕어빵 외형은 카탈로그 fish 슬롯 기준으로 복원', () {
@@ -207,15 +206,6 @@ void main() {
       final d = cosmeticDefinitions.firstWhere((d) => d.id == 'custard');
       expect(identical(d.cost, d.cost), isTrue);
     });
-    test('같은 누적 생산의 랭킹은 다시 정렬하지 않는다', () {
-      final lifetime = BigInt.from(123456);
-      expect(identical(rankingFor(lifetime), rankingFor(lifetime)), isTrue);
-      expect(
-          identical(rankingFor(lifetime, friendsOnly: true),
-              rankingFor(lifetime, friendsOnly: true)),
-          isTrue);
-      expect(rankingFor(lifetime + BigInt.one).firstWhere((e) => e.isMe).score,
-          lifetime + BigInt.one);
-    });
+    // Ranking cache test removed with the fictional ranking (stage 8).
   });
 }

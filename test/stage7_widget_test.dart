@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todays_bungeoppang/event_config.dart';
+import 'package:todays_bungeoppang/progress_state.dart';
+import 'package:todays_bungeoppang/weekly_config.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
-import 'package:todays_bungeoppang/menu_rules.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/fish_painter.dart';
@@ -141,15 +141,13 @@ void main() {
     }
   }
 
-  testWidgets('f. 홈 이벤트 카드와 이벤트 화면은 같은 현재 이벤트를 사용', (tester) async {
+  testWidgets('f. 홈 이벤트 카드와 이벤트 화면은 같은 현재 주간 도전을 사용', (tester) async {
     final c = await mountGame(tester, const Size(390, 844));
-    expect(find.textContaining(currentEvent.title), findsOneWidget);
-    expect(
-        find.textContaining(
-            '선착순 잔여 ${eventRemaining(c.state, currentEvent, currentEvent.rewards.last)}명'),
-        findsOneWidget);
+    final theme =
+        seasonThemeForMonth(DateTime.parse(c.state.weekly.week).month);
+    expect(find.textContaining(theme.title), findsOneWidget);
     await tapVisible(tester, const Key('event-entry'));
-    expect(find.text(currentEvent.title), findsOneWidget);
+    expect(find.text(theme.title), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -173,8 +171,9 @@ void main() {
   });
 
   testWidgets('h. 홈 카드와 이벤트 화면 카운트다운은 같은 반올림을 사용', (tester) async {
+    final week = weekKey(FixedTime().now);
     final clock = FixedTime()
-      ..now = currentEvent.end
+      ..now = weekEndUtc(week)
           .subtract(const Duration(days: 1, minutes: 2, milliseconds: 500));
     await mountGame(tester, const Size(390, 844), clock: clock);
     final home =

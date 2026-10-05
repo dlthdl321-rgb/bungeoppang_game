@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
-import 'package:todays_bungeoppang/event_config.dart';
+import 'package:todays_bungeoppang/economy.dart';
 import 'widget_test.dart' show mountGame;
 import 'level_missions_widget_test.dart' show tapVisible;
 
@@ -12,7 +12,8 @@ void main() {
     const Size(412, 915)
   ]) {
     for (final scale in [1.0, 1.5, 2.0]) {
-      testWidgets('꾸미기·랭킹·이벤트 ${size.width}/$scale 확대와 모션 감소', (tester) async {
+      testWidgets('꾸미기·내 기록·주간 도전 ${size.width}/$scale 확대와 모션 감소',
+          (tester) async {
         final c = await mountGame(tester, size,
             textScale: scale, reduced: true, maxLevel: true);
         c.state.lifetime = BigInt.parse('20000000000000');
@@ -37,22 +38,31 @@ void main() {
         expect(c.state.support.coins, BigInt.from(84));
         await tester.tap(find.byTooltip('닫기'));
         await tester.pumpAndSettle();
-        await tapVisible(tester, const Key('menu-ranking'));
-        expect(find.textContaining('모의 랭킹'), findsOneWidget);
-        await tapVisible(tester, const Key('ranking-friends'));
+        // Stage 8: fictional ranking → personal records, mock season → weekly.
+        await tapVisible(tester, const Key('menu-records'));
+        expect(find.textContaining('이 기기에서 플레이한 내 기록'), findsOneWidget);
+        expect(find.textContaining('순위'), findsNothing);
         c.state.lifetime = BigInt.parse('1000000000000000000');
         c.tick();
         await tester.pumpAndSettle();
-        expect(find.textContaining('내 순위 1위'), findsOneWidget);
+        expect(
+            tester.widget<Text>(find.byKey(const Key('record-lifetime'))).data,
+            '${compactNumber(c.state.lifetime)}개');
         await tester.tap(find.byTooltip('닫기'));
         await tester.pumpAndSettle();
+        c.state.weekly.taps = BigInt.from(1000);
+        c.tick();
+        await tester.pump();
         await tapVisible(tester, const Key('event-entry'));
-        await tapVisible(tester, const Key('event-join'));
-        for (final r in eventDefinitions.first.rewards) {
-          await tapVisible(tester, Key('event-claim-${r.id}'));
-        }
-        expect(c.state.events[currentEventId]!.receipts.length, 4);
-        expect(c.state.support.coins, BigInt.from(104));
+        await tapVisible(tester, const Key('weekly-claim-taps'));
+        expect(c.state.weekly.claimed, {'taps'});
+        expect(c.state.support.coins, BigInt.from(87));
+        expect(
+            tester
+                .widget<FilledButton>(
+                    find.byKey(const Key('weekly-claim-taps')))
+                .onPressed,
+            isNull);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       });

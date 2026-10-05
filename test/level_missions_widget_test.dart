@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/mission_config.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'widget_test.dart' show mountGame, CountingRepository;
 import 'level_missions_test.dart' show setRate;
@@ -24,12 +25,14 @@ void main() {
           (tester) async {
         final c = await mountGame(tester, size, textScale: scale);
         c.state.level = 9;
-        c.state.missions = MissionState.forLevel(9, c.clock.utcNow);
+        c.state.missions = MissionState.forLevel(9, c.clock.utcNow,
+            seasonId: legacyInviteMissionSeason);
         setRate(c.state, BigInt.parse('20000000000000'));
         c.tick();
         await tester.pump();
         await tapVisible(tester, const Key('level-mission-entry'));
-        expect(find.textContaining('모의 데이터'), findsOneWidget);
+        // Stage 8 removed the prototype banner; invite goals are debug-only.
+        expect(find.textContaining('개발자 도구'), findsOneWidget);
         expect(find.byKey(const Key('mission-preview')), findsNothing);
         expect(
             tester
@@ -74,7 +77,8 @@ void main() {
     final c = await mountGame(tester, const Size(360, 800),
         textScale: 2, repository: repo);
     c.state.level = 3;
-    c.state.missions = MissionState.forLevel(3, c.clock.utcNow);
+    c.state.missions = MissionState.forLevel(3, c.clock.utcNow,
+        seasonId: legacyInviteMissionSeason);
     c.tick();
     await tester.pump();
     await tapVisible(tester, const Key('level-mission-entry'));
@@ -106,7 +110,8 @@ void main() {
 
   testWidgets('현재 초대 미션이 없으면 일반 친구 초대 화면에서도 생성할 수 없다', (tester) async {
     await mountGame(tester, const Size(390, 844));
-    await tapVisible(tester, const Key('menu-invite'));
+    await tapVisible(tester, const Key('menu-share'));
+    await tapVisible(tester, const Key('developer-invites'));
     expect(find.byKey(const Key('mock-invite-notice')), findsOneWidget);
     expect(find.textContaining('미리 채울 수 없습니다'), findsOneWidget);
     await tapVisible(tester, const Key('invite-debug'));

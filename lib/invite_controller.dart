@@ -3,6 +3,7 @@ part of 'game_controller.dart';
 extension InvitationCommands on GameController {
   bool get invitesBusy => busy || _inviteLoading;
   bool get canSimulateInvites =>
+      developerTools &&
       invitationRepository.origin == InviteOrigin.mock &&
       invitationRepository is InvitationSimulator;
   bool get canQuickInvite {

@@ -7,6 +7,7 @@ import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/missions.dart';
 import 'package:todays_bungeoppang/mission_config.dart';
+import 'package:todays_bungeoppang/mission_state.dart';
 import 'controller_test.dart' show FakeTime;
 
 class SlowRepository extends MemoryGameRepository {
@@ -39,11 +40,18 @@ Future<void> claimReadyMissions(GameController c) async {
   }
 }
 
+// Stage 8: these pacing tests target the invite-goal season (kept for the
+// debug invite system); the offline season has its own simulation in
+// stage8_progress_test.dart.
+GameState legacySeasonState(DateTime now) => GameState.initial(now)
+  ..missions =
+      MissionState.forLevel(1, now, seasonId: legacyInviteMissionSeason);
+
 void main() {
   test('2회/초 클릭과 효율 구매 시뮬레이션: 초반 성장부터 초당 20조·레벨10까지', () async {
     final clock = FakeTime();
     final c = GameController(MemoryGameRepository(), clock)
-      ..state = GameState.initial(clock.utcNow);
+      ..state = legacySeasonState(clock.utcNow);
     c.state.tutorialDone = true;
     final reached = <int, int>{1: 0};
     int? firstPurchase, firstAutomatic;
@@ -104,7 +112,7 @@ void main() {
     final clock = FakeTime();
     GameController build() {
       final c = GameController(MemoryGameRepository(), clock)
-        ..state = GameState.initial(clock.utcNow);
+        ..state = legacySeasonState(clock.utcNow);
       c.state.upgradeCounts['auto_14'] = 3;
       c.state.upgradeCounts['auto_1'] = 1;
       return c;

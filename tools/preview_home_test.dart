@@ -9,7 +9,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
-import 'package:todays_bungeoppang/invite_models.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import '../test/widget_test.dart' show FixedTime;
@@ -89,17 +88,12 @@ void main() {
     await tester.pump();
     for (final preview in [
       ('level-mission-entry', 'missions'),
-      ('mission-invites', 'invites'),
+      ('mission-open-achievements', 'mission-shortcut'),
     ]) {
       await tester.ensureVisible(find.byKey(Key(preview.$1)));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(Key(preview.$1)));
       await tester.pumpAndSettle();
-      if (preview.$2 == 'invites') {
-        await c.prepareInvitation();
-        await c.simulateInvitation(InviteEventKind.clicked, 'preview-friend');
-        await tester.pumpAndSettle();
-      }
       expect(tester.takeException(), isNull);
       final capture = tester.renderObject<RenderRepaintBoundary>(
           find.byKey(const Key('app-capture')));
@@ -128,7 +122,6 @@ void main() {
       ('menu-daily', 'daily'),
       ('daily-store', 'items'),
       ('support-shop', 'coins'),
-      ('support-exchange', 'exchange'),
     ]) {
       await tester.ensureVisible(find.byKey(Key(preview.$1)));
       await tester.pumpAndSettle();
@@ -145,14 +138,16 @@ void main() {
         image.dispose();
       });
     }
-    for (var i = 0; i < 3; i++) {
+    for (var i = 0; i < 2; i++) {
       await tester.tap(find.byTooltip('닫기').last);
       await tester.pumpAndSettle();
     }
     for (final preview in [
       ('menu-skins', 'wardrobe'),
-      ('menu-ranking', 'ranking'),
-      ('event-entry', 'event'),
+      ('menu-records', 'records'),
+      ('menu-achievements', 'achievements'),
+      ('menu-share', 'share'),
+      ('event-entry', 'weekly'),
     ]) {
       await tester.ensureVisible(find.byKey(Key(preview.$1)));
       await tester.tap(find.byKey(Key(preview.$1)));

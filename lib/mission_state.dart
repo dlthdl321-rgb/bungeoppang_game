@@ -51,6 +51,9 @@ class MissionState {
   final int generation;
   DateTime? activatedAtUtc;
   final Set<String> seenInvitePlayers, qualifiedInvitePlayers;
+  // Goal IDs of the active level counted as complete because the save had
+  // already met the friend-invite goal they replaced (v7 migration).
+  final Set<String> waivedGoals;
   BigInt butterUses;
   MissionState(
       {required this.seasonId,
@@ -59,7 +62,9 @@ class MissionState {
       required this.activatedAtUtc,
       required this.seenInvitePlayers,
       required this.qualifiedInvitePlayers,
-      required this.butterUses});
+      required this.butterUses,
+      Set<String>? waivedGoals})
+      : waivedGoals = waivedGoals ?? {};
 
   factory MissionState.forLevel(int level, DateTime? now,
           {String seasonId = currentMissionSeason}) =>
@@ -84,6 +89,34 @@ class MissionState {
         qualifiedInvitePlayers: {},
         butterUses: BigInt.zero,
       );
+
+  /// Moves a legacy invite-season save to the current season. An invite goal
+  /// already met for the active level waives the goals that replaced it.
+  MissionState migrateToCurrentSeason() {
+    if (seasonId == currentMissionSeason) return this;
+    final waived = <String>{};
+    final target = targetLevel;
+    if (target != null && activatedAtUtc != null) {
+      final old = levelsForSeason(seasonId)[target - 1].missions;
+      final fresh = levelsForSeason(currentMissionSeason)[target - 1].missions;
+      final invite = old.where((m) => m.kind == MissionKind.newPlayerInvites);
+      if (invite.isNotEmpty &&
+          BigInt.from(qualifiedInvitePlayers.length) >= invite.first.target) {
+        waived.addAll(
+            fresh.map((m) => m.id).where((id) => !old.any((o) => o.id == id)));
+      }
+    }
+    return MissionState(
+        seasonId: currentMissionSeason,
+        targetLevel: targetLevel,
+        generation: generation,
+        activatedAtUtc: activatedAtUtc,
+        seenInvitePlayers: Set.of(seenInvitePlayers),
+        qualifiedInvitePlayers: Set.of(qualifiedInvitePlayers),
+        butterUses: butterUses,
+        waivedGoals: waived);
+  }
+
   Map<String, dynamic> toJson() => {
         'seasonId': seasonId,
         'targetLevel': targetLevel,
@@ -92,6 +125,7 @@ class MissionState {
         'seenInvitePlayers': seenInvitePlayers.toList(),
         'qualifiedInvitePlayers': qualifiedInvitePlayers.toList(),
         'butterUses': butterUses.toString(),
+        'waivedGoals': waivedGoals.toList(),
       };
   factory MissionState.fromJson(Map<String, dynamic> m, int level) {
     final seasonId = m['seasonId'];
@@ -116,6 +150,18 @@ class MissionState {
 
     final seen = players('seenInvitePlayers'),
         qualified = players('qualifiedInvitePlayers');
+    final rawWaived = m['waivedGoals'] ?? const [];
+    final targetIds = target == null
+        ? const <String>{}
+        : levelsForSeason(seasonId)[target - 1]
+            .missions
+            .map((d) => d.id)
+            .toSet();
+    if (rawWaived is! List ||
+        rawWaived.any((id) => !targetIds.contains(id)) ||
+        rawWaived.toSet().length != rawWaived.length) {
+      throw const FormatException('잘못된 대체 조건 기록');
+    }
     if (m['targetLevel'] != target ||
         generation is! int ||
         generation < 1 ||
@@ -134,7 +180,8 @@ class MissionState {
         activatedAtUtc: at?.toUtc(),
         seenInvitePlayers: seen,
         qualifiedInvitePlayers: qualified,
-        butterUses: uses);
+        butterUses: uses,
+        waivedGoals: rawWaived.cast<String>().toSet());
   }
 }
 

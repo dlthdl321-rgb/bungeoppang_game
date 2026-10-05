@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
-import 'package:todays_bungeoppang/support_config.dart';
 import 'widget_test.dart' show mountGame, FixedTime;
 import 'level_missions_widget_test.dart' show tapVisible;
 import 'support_system_test.dart' show fund, completeDaily;
@@ -13,7 +12,7 @@ void main() {
     const Size(412, 915)
   ]) {
     for (final scale in [1.0, 1.5, 2.0]) {
-      testWidgets('보조 진행 ${size.width}/$scale 일일 보상→아이템→코인 구매→모의 교환',
+      testWidgets('보조 진행 ${size.width}/$scale 일일 보상→아이템→코인 구매→업적·칭호',
           (tester) async {
         final clock = FixedTime();
         final c = await mountGame(tester, size, textScale: scale, clock: clock);
@@ -36,7 +35,7 @@ void main() {
         expect(c.state.support.coins, BigInt.from(107));
         await tapVisible(tester, const Key('daily-store'));
         await tapVisible(tester, const Key('item-use-butter'));
-        expect(find.textContaining('추정 효과'), findsWidgets);
+        expect(find.textContaining('초 동안 적용'), findsWidgets);
         await tapVisible(tester, const Key('confirm-support'));
         expect(c.currentTapRate, BigInt.from(2));
         expect(c.state.support.inventory['butter'], BigInt.one);
@@ -55,19 +54,28 @@ void main() {
         await tapVisible(tester, const Key('confirm-support'));
         expect(c.state.equippedSkin, 'cocoa');
         expect(c.state.support.coins, BigInt.from(92));
-        await tapVisible(tester, const Key('support-exchange'));
-        expect(find.byKey(const Key('final-mock-notice')), findsOneWidget);
-        await tapVisible(tester, const Key('final-exchange'));
-        expect(find.textContaining('실제 돈·상품·포인트는 지급되지 않습니다'), findsOneWidget);
-        await tapVisible(tester, const Key('confirm-support'));
-        expect(c.state.support.coins, BigInt.from(82));
-        expect(c.state.support.ledger.containsKey(finalExchangeId), isTrue);
-        expect(find.byKey(const Key('final-received')), findsOneWidget);
+        // Stage 8: the final mock exchange became achievements and titles.
+        while (find.byTooltip('닫기').evaluate().isNotEmpty) {
+          await tester.tap(find.byTooltip('닫기').last);
+          await tester.pumpAndSettle();
+        }
+        await tapVisible(tester, const Key('menu-achievements'));
+        await tapVisible(tester, const Key('achievement-claim-bake-1e4'));
+        expect(c.state.support.coins, BigInt.from(94));
         expect(
             tester
-                .widget<FilledButton>(find.byKey(const Key('final-exchange')))
+                .widget<FilledButton>(
+                    find.byKey(const Key('achievement-claim-bake-1e4')))
                 .onPressed,
             isNull);
+        await tapVisible(tester, const Key('achievement-claim-level-10'));
+        expect(c.state.support.coins, BigInt.from(94));
+        await tapVisible(tester, const Key('achievement-tab-collection'));
+        await tapVisible(tester, const Key('title-level-10'));
+        expect(c.state.achievements.equippedTitle, '골목 명장');
+        await tester.tap(find.byTooltip('닫기'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('home-title')), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       });

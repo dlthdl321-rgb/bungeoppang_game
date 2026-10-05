@@ -7,6 +7,7 @@ import 'level_missions.dart';
 import 'invite_panel.dart';
 import 'support_panels.dart';
 import 'public_menus.dart';
+import 'progress_panels.dart';
 
 class GameApp extends StatefulWidget {
   final GameController controller;
@@ -226,10 +227,11 @@ class _GameHomeState extends State<GameHome> {
       'shop': '상점 · 생산 스킬',
       'skins': '꾸미기',
       'daily': '일일 미션',
-      'ranking': '랭킹',
-      'invite': '친구 초대',
-      'event': '이벤트 보상 안내',
-      'exchange': '모의 보상 교환',
+      'records': '내 기록',
+      'share': '게임 공유',
+      'invite': '개발자 도구 · 초대 시스템',
+      'event': '주간 도전',
+      'achievements': '업적 · 도감',
       'balance': '생산 기록',
       'missions': '레벨 미션',
       'support': '아이템 · 코인 상점',
@@ -267,12 +269,8 @@ class _GameHomeState extends State<GameHome> {
   }
 
   Widget _entryPreview(String destination) {
-    final details = switch (destination) {
-      'ranking' =>
-        '모의 기능 · 랭킹 진입 화면\n\n내 누적 생산 ${compactNumber(c.state.lifetime)}개\n실제 사용자 순위 서버에는 연결되어 있지 않습니다.',
-      _ =>
-        '보유 붕어빵\n${exactNumber(c.state.buns)}개\n\n누적 생산\n${exactNumber(c.state.lifetime)}개\n\n클릭당 ${exactNumber(c.currentTapRate)}개\n초당 ${exactNumber(c.currentAutoRate)}개\n보유 코인 ${exactNumber(c.state.support.coins)}개',
-    };
+    final details =
+        '보유 붕어빵\n${exactNumber(c.state.buns)}개\n\n누적 생산\n${exactNumber(c.state.lifetime)}개\n\n클릭당 ${exactNumber(c.currentTapRate)}개\n초당 ${exactNumber(c.currentAutoRate)}개\n보유 코인 ${exactNumber(c.state.support.coins)}개';
     return SingleChildScrollView(
         padding: const EdgeInsets.all(24), child: SelectableText(details));
   }
@@ -286,19 +284,19 @@ class _GameHomeState extends State<GameHome> {
             Expanded(child: SkillShop(controller: c))
           ]),
         'skins' => WardrobePanel(controller: c),
-        'ranking' => RankingPanel(controller: c),
-        'missions' => LevelMissions(
+        'records' => RecordsPanel(controller: c),
+        'share' => SharePanel(
             controller: c,
-            onInvites: () => _open('invite'),
-            onItems: () => _open('support')),
-        'invite' => InvitePanel(controller: c),
+            onDeveloperInvites:
+                c.developerTools ? () => _open('invite') : null),
+        'achievements' => AchievementPanel(controller: c),
+        'missions' => LevelMissions(controller: c, onOpen: _open),
+        // Debug-only screen; release builds never route here.
+        'invite' when c.developerTools => InvitePanel(controller: c),
         'daily' =>
           DailyMissionsPanel(controller: c, onStore: () => _open('support')),
-        'support' =>
-          SupportPanel(controller: c, onExchange: () => _open('exchange')),
-        'exchange' => FinalExchangePanel(controller: c),
-        'event' =>
-          EventPanel(controller: c, onExchange: () => _open('exchange')),
+        'support' => SupportPanel(controller: c),
+        'event' => WeeklyPanel(controller: c),
         _ => _entryPreview(destination),
       };
   Future<void> _settings() async {

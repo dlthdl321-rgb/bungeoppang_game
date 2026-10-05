@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/home_presentation.dart';
+import 'package:todays_bungeoppang/mission_config.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'controller_test.dart' show FakeTime;
@@ -23,7 +24,8 @@ void main() {
 
   test('복합 목표 진행률은 부족한 조건을 기준으로 표시한다', () {
     final s = GameState.initial(DateTime.utc(2026))..level = 9;
-    s.missions = MissionState.forLevel(9, DateTime.utc(2026));
+    s.missions = MissionState.forLevel(9, DateTime.utc(2026),
+        seasonId: legacyInviteMissionSeason);
     s.upgradeCounts['auto_13'] = 8;
     s.missions.seenInvitePlayers.addAll({'a', 'b', 'c'});
     s.missions.qualifiedInvitePlayers.addAll({'a', 'b', 'c'});

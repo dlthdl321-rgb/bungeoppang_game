@@ -51,10 +51,10 @@ class _BakeTargetState extends State<BakeTarget>
     });
   }
 
-  void _bake() {
+  void _bake({bool direct = true}) {
     if (!_active || widget.controller.busy) return;
     final c = widget.controller;
-    final amount = c.tap();
+    final amount = c.tap(direct: direct);
     final now = c.clock.monotonicMilliseconds;
     if (c.state.settings.vibration &&
         (_lastHaptic == null || now - _lastHaptic! >= 80)) {
@@ -142,8 +142,8 @@ class _BakeTargetState extends State<BakeTarget>
                 ? (_) {
                     _stopHold();
                     _bake();
-                    _hold = Timer.periodic(
-                        const Duration(milliseconds: 250), (_) => _bake());
+                    _hold = Timer.periodic(const Duration(milliseconds: 250),
+                        (_) => _bake(direct: false));
                   }
                 : null,
             onLongPressEnd: (_) => _stopHold(),

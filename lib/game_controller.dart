@@ -16,9 +16,11 @@ import 'invite_repository.dart';
 import 'mock_invite_repository.dart';
 import 'invite_config.dart';
 import 'invite_rules.dart';
+import 'achievement_config.dart';
 import 'cosmetic_config.dart';
-import 'event_config.dart';
 import 'menu_rules.dart';
+import 'progress_rules.dart';
+import 'weekly_config.dart';
 
 part 'invite_controller.dart';
 part 'menu_controller.dart';
@@ -29,6 +31,9 @@ class GameController extends ChangeNotifier {
   final InvitationRepository invitationRepository;
   // Purchasable catalog. Injectable so tests can exercise future catalog rows.
   final List<CosmeticDefinition> cosmetics;
+  // Debug-only invite simulator, referral code and test tools. Release builds
+  // show plain game sharing instead. Injectable so tests can check both.
+  final bool developerTools;
   bool _inviteLoading = false, _disposed = false;
   String? inviteError;
   late GameState state;
@@ -37,6 +42,12 @@ class GameController extends ChangeNotifier {
   Timer? _ticker, _periodicSave;
   String? error;
   BigInt lastOfflineReward = BigInt.zero;
+  // Combo is session-only; the best value is kept in records.
+  int _combo = 0, _lastComboMs = 0;
+  int get currentCombo =>
+      clock.monotonicMilliseconds - _lastComboMs <= comboWindowMilliseconds
+          ? _combo
+          : 0;
   Completer<void>? _commitDone;
   DateTime get gameNow => state.support.now(clock.utcNow);
   BigInt get currentTapRate =>
@@ -49,8 +60,10 @@ class GameController extends ChangeNotifier {
       BigInt.from(effectScale);
   GameController(this.repository, this.clock,
       {InvitationRepository? invitationRepository,
-      this.cosmetics = cosmeticDefinitions})
-      : invitationRepository =
+      this.cosmetics = cosmeticDefinitions,
+      bool? developerTools})
+      : developerTools = developerTools ?? !kReleaseMode,
+        invitationRepository =
             invitationRepository ?? MockInvitationRepository();
 
   void _notifyInviteChanged() {
@@ -84,7 +97,15 @@ class GameController extends ChangeNotifier {
     final now = clock.monotonicMilliseconds;
     settleActive(now - _lastMono);
     _lastMono = now;
+    _markPlayed();
     notifyListeners();
+  }
+
+  // In memory only; persisted by the periodic/command saves.
+  void _markPlayed() {
+    final day = state.support.daily.day;
+    state.records.touchDay(day);
+    state.weekly.touchDay(day);
   }
 
   void settleActive(int elapsedMs) {
@@ -98,9 +119,22 @@ class GameController extends ChangeNotifier {
     state.savedAutoRate = autoRate(state);
   }
 
-  BigInt tap() {
+  /// [direct] is false for hold-to-bake repeats, which never build combos.
+  BigInt tap({bool direct = true}) {
     if (_away || busy) return BigInt.zero;
     tick();
+    if (direct) {
+      final now = clock.monotonicMilliseconds;
+      _combo = _combo > 0 && now - _lastComboMs <= comboWindowMilliseconds
+          ? _combo + 1
+          : 1;
+      _lastComboMs = now;
+      if (_combo > state.records.todayBestCombo) {
+        state.records.todayBestCombo = _combo;
+      }
+    }
+    state.records.lifetimeTaps += BigInt.one;
+    state.weekly.taps += BigInt.one;
     final support = state.support;
     final numerator =
         tapRate(state) * support.multiplier(EffectChannel.tap, gameNow) +
@@ -192,6 +226,7 @@ class GameController extends ChangeNotifier {
     state.buns -= cost;
     state.upgradeCounts[u.id] = owned + amount;
     state.support.daily.purchases += BigInt.from(amount);
+    state.weekly.purchases += BigInt.from(amount);
     observeSupport(state, gameNow);
     state.savedAutoRate = autoRate(state);
     if (!await _commit(before)) return false;
@@ -235,6 +270,7 @@ class GameController extends ChangeNotifier {
     }
     if (all) {
       daily.allClaimed = true;
+      state.weekly.dailyAllClears += BigInt.one;
     } else {
       daily.claimed.add(id);
     }
@@ -289,19 +325,54 @@ class GameController extends ChangeNotifier {
     return _commit(before);
   }
 
-  Future<bool> exchangeFinalReward() async {
+  Future<bool> claimWeekly(String expectedWeek, String goalId) async {
+    if (busy || _away) return false;
+    tick();
+    final weekly = state.weekly;
+    final matches = weeklyGoals.where((g) => g.id == goalId);
+    if (weekly.week != expectedWeek ||
+        matches.isEmpty ||
+        weekly.claimed.contains(goalId) ||
+        !weeklyGoalComplete(state, matches.first)) {
+      return false;
+    }
+    final before = state.copy();
+    if (!grantReward(state, 'weekly:$expectedWeek:$goalId',
+        matches.first.reward, gameNow, '주간 도전 ${matches.first.title}')) {
+      return false;
+    }
+    weekly.claimed.add(goalId);
+    return _commit(before);
+  }
+
+  Future<bool> claimAchievement(String id) async {
+    if (busy || _away) return false;
+    tick();
+    final matches = achievementDefinitions.where((d) => d.id == id);
+    if (matches.isEmpty ||
+        state.achievements.claimed.contains(id) ||
+        !achievementMet(state, matches.first)) {
+      return false;
+    }
+    final d = matches.first, before = state.copy();
+    if (!grantReward(state, 'achievement:$id', RewardDefinition(d.coins),
+        gameNow, '업적 ${d.title}')) {
+      return false;
+    }
+    state.achievements.claimed.add(id);
+    return _commit(before);
+  }
+
+  /// Shows an earned title on the home screen; null shows none.
+  Future<bool> equipTitle(String? title) async {
     if (busy ||
         _away ||
-        state.level < finalExchangeLevel ||
-        state.support.ledger.containsKey(finalExchangeId)) {
+        (title != null && !state.achievements.titles.contains(title)) ||
+        state.achievements.equippedTitle == title) {
       return false;
     }
-    tick();
     final before = state.copy();
-    if (!state.support.transact(finalExchangeId,
-        -BigInt.parse(finalExchangeCost), finalExchangeTitle, gameNow)) {
-      return false;
-    }
+    state.achievements.equippedTitle = title;
     return _commit(before);
   }
 
@@ -367,6 +438,7 @@ class GameController extends ChangeNotifier {
     state.savedAutoRate = autoRate(state);
     _away = false;
     _lastMono = clock.monotonicMilliseconds;
+    _markPlayed();
     lastOfflineReward = gain;
     if (gain > BigInt.zero && !await _commit(before)) return BigInt.zero;
     notifyListeners();

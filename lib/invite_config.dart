@@ -15,3 +15,10 @@ const inviteVisitLimit = 1000;
 const inviteEventLimit = 5000;
 // Reserved non-resolving domain: never send prototype referrals to a real host.
 const mockInviteBaseUrl = 'https://example.invalid/todays-bungeoppang/invite';
+
+// Release "share the game": no reward, no tracking parameters, no referral.
+// Resolves only once the app is published under this application ID.
+const storeUrl =
+    'https://play.google.com/store/apps/details?id=com.todaybungeoppang.todays_bungeoppang';
+const gameShareText = '오늘의 붕어빵 — 밤 골목 노점에서 황금 붕어빵을 굽는 클리커 게임이에요. '
+    '광고 없이 무료로 즐길 수 있어요.\n$storeUrl';

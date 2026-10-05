@@ -36,7 +36,8 @@ Future<GameController> mountGame(WidgetTester tester, Size size,
     bool reduced = false,
     FixedTime? clock,
     CountingRepository? repository,
-    bool maxLevel = false}) async {
+    bool maxLevel = false,
+    bool? developerTools}) async {
   await tester.binding.setSurfaceSize(size);
   tester.view.devicePixelRatio = 1;
   tester.platformDispatcher.textScaleFactorTestValue = textScale;
@@ -62,7 +63,7 @@ Future<GameController> mountGame(WidgetTester tester, Size size,
   repo.current!.settings
     ..vibration = false
     ..reduceMotion = reduced;
-  final c = GameController(repo, time);
+  final c = GameController(repo, time, developerTools: developerTools);
   await c.initialize();
   await tester.pumpWidget(GameApp(controller: c));
   await tester.pump();
@@ -114,7 +115,15 @@ void main() {
       await mountGame(tester, size);
       expect(find.byKey(const Key('fish-button')), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
-      for (final id in ['daily', 'shop', 'skins', 'ranking', 'invite']) {
+      // Stage 8 menus: ranking → records, invite → share, plus achievements.
+      for (final id in [
+        'daily',
+        'achievements',
+        'shop',
+        'skins',
+        'records',
+        'share'
+      ]) {
         expect(find.byKey(Key('menu-$id')).hitTestable(), findsOneWidget);
       }
       final fish = tester.getRect(find.byKey(const Key('fish-button')));
@@ -140,7 +149,14 @@ void main() {
                 .scale(16),
             16 * scale);
         expect(tester.takeException(), isNull);
-        for (final id in ['shop', 'skins', 'daily', 'ranking', 'invite']) {
+        for (final id in [
+          'shop',
+          'skins',
+          'daily',
+          'achievements',
+          'records',
+          'share'
+        ]) {
           await tester.ensureVisible(find.byKey(Key('menu-$id')));
           await tester.tap(find.byKey(Key('menu-$id')));
           await tester.pumpAndSettle();
@@ -152,7 +168,8 @@ void main() {
         await tester.ensureVisible(find.byKey(const Key('event-entry')));
         await tester.tap(find.byKey(const Key('event-entry')));
         await tester.pumpAndSettle();
-        expect(find.textContaining('실제 지급 없음'), findsWidgets);
+        // Stage 8: the mock-season notice became the weekly challenge.
+        expect(find.byKey(const Key('weekly-countdown')), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.tap(find.byTooltip('닫기'));
         await tester.pumpAndSettle();

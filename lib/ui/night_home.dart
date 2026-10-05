@@ -3,9 +3,10 @@ import '../economy.dart';
 import '../game_controller.dart';
 import '../home_presentation.dart';
 import '../missions.dart';
+import '../achievement_config.dart';
 import '../cosmetic_config.dart';
-import '../event_config.dart';
-import '../menu_rules.dart';
+import '../progress_rules.dart';
+import '../weekly_config.dart';
 import 'bake_target.dart';
 import 'night_stall_painter.dart';
 
@@ -92,6 +93,13 @@ class NightHome extends StatelessWidget {
             icon: Icons.assignment_turned_in_outlined,
             onPressed: () => onOpen('daily'),
             horizontal: true),
+        const SizedBox(width: 6),
+        _MenuButton(
+            id: 'achievements',
+            label: '업적',
+            icon: Icons.military_tech_outlined,
+            onPressed: () => onOpen('achievements'),
+            horizontal: true),
         const Spacer(),
         const Flexible(
             child: Text('오늘의 붕어빵',
@@ -125,6 +133,11 @@ class NightHome extends StatelessWidget {
               key: const Key('lifetime-value'),
               textAlign: TextAlign.center,
               style: const TextStyle(color: muted, fontSize: 12)),
+          if (controller.state.achievements.equippedTitle case final title?)
+            Text('칭호 · $title',
+                key: const Key('home-title'),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: cream, fontSize: 12)),
           const SizedBox(height: 9),
           Wrap(
               alignment: WrapAlignment.center,
@@ -155,10 +168,17 @@ class NightHome extends StatelessWidget {
               Expanded(
                   child:
                       BakeTarget(controller: controller, reduceMotion: reduce)),
-              const Padding(
-                  padding: EdgeInsets.only(bottom: 14),
-                  child: Text('붕어빵을 눌러 구워요',
-                      style: TextStyle(color: cream, fontSize: 13))),
+              Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: controller.currentCombo >= comboDisplayMinimum
+                      ? Text('${controller.currentCombo} 콤보',
+                          key: const Key('combo-label'),
+                          style: const TextStyle(
+                              color: cream,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900))
+                      : const Text('붕어빵을 눌러 구워요',
+                          style: TextStyle(color: cream, fontSize: 13))),
             ])),
         Positioned(
             right: 6,
@@ -170,8 +190,8 @@ class NightHome extends StatelessWidget {
               for (final item in const [
                 ('shop', '상점', Icons.storefront_outlined),
                 ('skins', '꾸미기', Icons.checkroom_outlined),
-                ('ranking', '랭킹', Icons.emoji_events_outlined),
-                ('invite', '친구 초대', Icons.person_add_alt_1_outlined),
+                ('records', '내 기록', Icons.insights_outlined),
+                ('share', '공유', Icons.share_outlined),
               ]) ...[
                 _MenuButton(
                     id: item.$1,
@@ -235,34 +255,45 @@ class NightHome extends StatelessWidget {
     );
   }
 
-  Widget _event() => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-        child: Semantics(
-            button: true,
-            child: InkWell(
-              key: const Key('event-entry'),
-              onTap: () => onOpen('event'),
-              child: _Panel(
-                  child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                    Text(
-                        '모의 이벤트 · ${eventCountdownLabel(currentEvent, controller.gameNow)}',
-                        key: const Key('event-countdown'),
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: cream,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 4),
-                    Text('${currentEvent.title}  ›',
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w700)),
-                    Text(
-                        '선착순 잔여 ${eventRemaining(controller.state, currentEvent, currentEvent.rewards.last)}명 · 실제 지급 없음',
-                        style: const TextStyle(color: muted, fontSize: 10)),
-                  ])),
-            )),
-      );
+  Widget _event() {
+    final weekly = controller.state.weekly;
+    final theme = seasonThemeForMonth(DateTime.parse(weekly.week).month);
+    final done = weeklyGoals.where((g) => weekly.claimed.contains(g.id)).length;
+    final ready = weeklyGoals
+        .where((g) =>
+            !weekly.claimed.contains(g.id) &&
+            weeklyGoalComplete(controller.state, g))
+        .length;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Semantics(
+          button: true,
+          child: InkWell(
+            key: const Key('event-entry'),
+            onTap: () => onOpen('event'),
+            child: _Panel(
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                  Text(
+                      '주간 도전 · ${weeklyCountdownLabel(weekly.week, controller.gameNow)}',
+                      key: const Key('event-countdown'),
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: cream,
+                          fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 4),
+                  Text('${theme.title}  ›',
+                      style: const TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700)),
+                  Text(
+                      '보상 수령 $done/${weeklyGoals.length}${ready > 0 ? ' · 받을 보상 $ready개' : ''}',
+                      key: const Key('event-summary'),
+                      style: const TextStyle(color: muted, fontSize: 10)),
+                ])),
+          )),
+    );
+  }
 }
 
 class _Panel extends StatelessWidget {

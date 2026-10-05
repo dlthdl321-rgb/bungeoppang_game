@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/mission_config.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/invite_models.dart';
 import 'package:todays_bungeoppang/invite_repository.dart';
@@ -266,7 +267,10 @@ void main() {
     final restored = GameState.fromJson(json);
     expect(restored.support.toJson(), c.state.support.toJson());
     expect(restored.invites.legacyPlayers, {'legacy'});
-    expect(restored.missions.toJson(), c.state.missions.toJson());
+    // Stage 8: pre-v7 saves move to the offline season. Everything else in
+    // the mission record is kept; 1 of 3 invites waives nothing.
+    expect(restored.missions.toJson(),
+        c.state.missions.toJson()..['seasonId'] = currentMissionSeason);
     expect(restored.copy().toJson(), restored.toJson());
     c.dispose();
   });
@@ -276,7 +280,8 @@ void main() {
         invitationRepository: remote)
       ..state = (GameState.initial(clock.utcNow)
         ..level = 4
-        ..missions = MissionState.forLevel(4, clock.utcNow));
+        ..missions = MissionState.forLevel(4, clock.utcNow,
+            seasonId: legacyInviteMissionSeason));
     expect(await c.prepareInvitation(), isTrue);
     expect(c.canSimulateInvites, isFalse);
     final ticket = c.state.invites.latestTicket!;

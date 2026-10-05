@@ -6,8 +6,9 @@ class InviteSharingService {
   const InviteSharingService();
   Future<void> copy(String text) =>
       Clipboard.setData(ClipboardData(text: text));
-  Future<void> share(String text, Rect origin) async {
-    await SharePlus.instance.share(ShareParams(
-        text: text, subject: '오늘의 붕어빵 모의 초대', sharePositionOrigin: origin));
+  Future<void> share(String text, Rect origin,
+      {String subject = '오늘의 붕어빵'}) async {
+    await SharePlus.instance.share(
+        ShareParams(text: text, subject: subject, sharePositionOrigin: origin));
   }
 }

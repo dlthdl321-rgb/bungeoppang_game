@@ -7,10 +7,15 @@ bool dailyComplete(GameState s, DailyDefinition d) =>
     s.support.daily.progress(d.metric) >= BigInt.parse(d.target);
 bool dailyAllComplete(GameState s) =>
     dailyDefinitions.every((d) => dailyComplete(s, d));
+// Single funnel for time passing: daily/weekly rollover and record peaks.
 void observeSupport(GameState s, DateTime now) {
+  final day = s.support.daily.day, production = s.support.daily.production;
   s.support.observe(now);
+  if (s.support.daily.day != day) s.records.closeDay(day, production);
+  s.weekly.rollTo(s.support.observedUtc);
   final rate = autoRate(s);
   if (rate > s.support.daily.peakAuto) s.support.daily.peakAuto = rate;
+  if (rate > s.records.bestAutoRate) s.records.bestAutoRate = rate;
 }
 
 // Split at effect boundaries and midnight. Never round each segment separately:

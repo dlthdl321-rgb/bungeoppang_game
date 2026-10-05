@@ -1,6 +1,7 @@
 import 'models.dart';
 import 'missions.dart';
-import 'event_config.dart';
+import 'progress_state.dart';
+import 'support_config.dart';
 
 /// The one countdown format for every event surface. Remaining time is
 /// rounded up to whole seconds, so "0s" is only shown once the event ended.
@@ -16,8 +17,12 @@ String countdownLabel(DateTime start, DateTime end, DateTime now) {
   return '종료까지 $days일 $hours:$minutes:$secs';
 }
 
-String eventCountdownLabel(EventDefinition d, DateTime now) =>
-    countdownLabel(d.start, d.end, now);
+/// Korean local date-time for record screens, e.g. "2026-10-05 21:30 KST".
+String kstLabel(DateTime utc) =>
+    '${utc.toUtc().add(const Duration(minutes: dailyUtcOffsetMinutes)).toIso8601String().substring(0, 16).replaceFirst('T', ' ')} KST';
+
+String weeklyCountdownLabel(String week, DateTime now) =>
+    countdownLabel(weekStartUtc(week), weekEndUtc(week), now);
 
 /// All progress arithmetic is integral. Only the bounded paint ratio is double.
 int levelProgressPermille(GameState state) {

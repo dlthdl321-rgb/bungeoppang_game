@@ -298,22 +298,24 @@ void main() {
     c.dispose();
   });
 
-  test('최종 교환 레벨·가격·1회 수령·실패 복구·재시작 후 중복 금지', () async {
+  // Stage 8: the final mock exchange became the Lv.10 achievement.
+  test('Lv.10 업적 조건·1회 수령·칭호·재시작 후 중복 금지', () async {
     final clock = FakeTime(), disk = <String, String>{};
     final c = atLevel(9, clock, JsonRepository(disk));
     fund(c);
-    expect(await c.exchangeFinalReward(), isFalse);
+    expect(await c.claimAchievement('level-10'), isFalse);
     c.state.level = 10;
     c.state.missions = MissionState.forLevel(10, clock.utcNow);
-    expect(await c.exchangeFinalReward(), isTrue);
-    expect(c.state.support.coins, BigInt.from(90));
-    expect(await c.exchangeFinalReward(), isFalse);
+    expect(await c.claimAchievement('level-10'), isTrue);
+    expect(c.state.support.coins, BigInt.from(100));
+    expect(c.state.achievements.titles, {'골목 명장'});
+    expect(await c.claimAchievement('level-10'), isFalse);
     c.dispose();
     final restart = GameController(JsonRepository(disk), clock);
     await restart.initialize();
-    expect(await restart.exchangeFinalReward(), isFalse);
-    expect(restart.state.support.ledger[finalExchangeId]!.reason,
-        finalExchangeTitle);
+    expect(await restart.claimAchievement('level-10'), isFalse);
+    expect(restart.state.support.ledger['achievement:level-10']!.reason,
+        '업적 Lv.10 완주');
     restart.dispose();
   });
 
@@ -329,7 +331,7 @@ void main() {
       () => ctrl.claimDaily(ctrl.state.support.daily.day, 'all'),
       () => ctrl.useItem('fairy'),
       () => ctrl.buyCoinItem('butter', ctrl.state.support.purchaseSequence),
-      ctrl.exchangeFinalReward,
+      () => ctrl.claimAchievement('level-5'),
     ]) {
       final before = ctrl.state.toJson();
       repo.pending = Completer<void>();
@@ -341,7 +343,7 @@ void main() {
       expect(await running, isFalse);
       expect(ctrl.state.toJson(), before);
     }
-    expect(await ctrl.exchangeFinalReward(), isTrue);
+    expect(await ctrl.claimAchievement('level-5'), isTrue);
     c.dispose();
     ctrl.dispose();
   });

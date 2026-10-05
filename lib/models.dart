@@ -1,11 +1,13 @@
+import 'achievement_config.dart';
 import 'balance.dart' show balanceVersion, upgrades, levels;
+import 'economy.dart' show autoRate;
 import 'economy_config.dart';
 import 'mission_state.dart';
 import 'support_state.dart';
 import 'invite_models.dart';
 import 'menu_state.dart';
-import 'event_config.dart';
 import 'cosmetic_config.dart';
+import 'progress_state.dart';
 
 enum UpgradeKind { tap, auto }
 
@@ -64,7 +66,7 @@ class GameSettings {
 }
 
 class GameState {
-  static const formatVersion = 6;
+  static const formatVersion = 7;
   BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
   int level, snapshotSequence;
   Map<String, int> upgradeCounts;
@@ -73,7 +75,9 @@ class GameState {
   SupportState support;
   InviteState invites;
   WardrobeState wardrobe;
-  Map<String, LocalEventState> events;
+  RecordState records;
+  WeeklyState weekly;
+  AchievementState achievements;
   Set<String> ownedSkins;
   String equippedSkin;
   bool tutorialDone;
@@ -91,7 +95,9 @@ class GameState {
       required this.support,
       required this.invites,
       required this.wardrobe,
-      required this.events,
+      required this.records,
+      required this.weekly,
+      required this.achievements,
       required this.ownedSkins,
       required this.equippedSkin,
       required this.tutorialDone,
@@ -99,7 +105,10 @@ class GameState {
       required this.lastSettledUtc,
       required this.savedAutoRate,
       required this.activeRemainder});
-  factory GameState.initial([DateTime? now]) => GameState(
+  factory GameState.initial([DateTime? now]) =>
+      _initial(now ?? DateTime.now().toUtc());
+  // A new game counts its creation day as the first play day.
+  static GameState _initial(DateTime now) => GameState(
       buns: BigInt.zero,
       lifetime: BigInt.zero,
       stars: BigInt.zero,
@@ -107,20 +116,22 @@ class GameState {
       snapshotSequence: 0,
       upgradeCounts: {for (final u in upgrades) u.id: 0},
       levelRewards: {},
-      missions: MissionState.forLevel(1, now ?? DateTime.now().toUtc()),
-      support: SupportState.initial(now ?? DateTime.now().toUtc()),
+      missions: MissionState.forLevel(1, now),
+      support: SupportState.initial(now),
       invites: InviteState(),
       wardrobe: WardrobeState.initial(),
-      events: {
-        for (final e in eventDefinitions) e.id: LocalEventState.initial(e)
-      },
+      records: RecordState.initial(),
+      weekly: WeeklyState.initial(now),
+      achievements: AchievementState(),
       ownedSkins: {'redbean'},
       equippedSkin: 'redbean',
       tutorialDone: false,
       settings: GameSettings(),
-      lastSettledUtc: (now ?? DateTime.now().toUtc()).toUtc(),
+      lastSettledUtc: now.toUtc(),
       savedAutoRate: BigInt.zero,
-      activeRemainder: BigInt.zero);
+      activeRemainder: BigInt.zero)
+    ..records.touchDay(dailyKey(now))
+    ..weekly.touchDay(dailyKey(now));
   GameState copy() => GameState.fromJson(toJson());
   Map<String, dynamic> toJson() => {
         'formatVersion': formatVersion,
@@ -138,7 +149,9 @@ class GameState {
         'support': support.toJson(),
         'invites': invites.toJson(),
         'wardrobe': wardrobe.toJson(),
-        'events': {for (final e in events.entries) e.key: e.value.toJson()},
+        'records': records.toJson(),
+        'weekly': weekly.toJson(),
+        'achievements': achievements.toJson(),
         'ownedSkins': ownedSkins.toList(),
         'equippedSkin': equippedSkin,
         'tutorialDone': tutorialDone,
@@ -159,12 +172,7 @@ class GameState {
     }
 
     final version = m['formatVersion'];
-    if (version != 1 &&
-        version != 2 &&
-        version != 3 &&
-        version != 4 &&
-        version != 5 &&
-        version != formatVersion) {
+    if (version is! int || version < 1 || version > formatVersion) {
       throw const FormatException('지원하지 않는 저장 버전');
     }
     final countsRaw = m['upgradeCounts'];
@@ -203,16 +211,11 @@ class GameState {
     if (last == null) {
       throw const FormatException('잘못된 저장 시각');
     }
-    // Events added after a v6 save simply start fresh; only a non-map is damage.
-    final rawEvents =
-        version == formatVersion ? m['events'] ?? const {} : const {};
-    if (rawEvents is! Map) throw const FormatException('이벤트 저장 손상');
+    // v6 'events' (fixed mock season) is dropped in v7. Rewards already
+    // claimed from it live on in the coin ledger and inventory.
     final rewards = <int, LevelRewardRecord>{};
     late final MissionState missions;
-    if (version == 3 ||
-        version == 4 ||
-        version == 5 ||
-        version == formatVersion) {
+    if (version >= 3) {
       final rawRewards = m['levelRewards'], rawMissions = m['missions'];
       if (rawRewards is! Map || rawMissions is! Map) {
         throw const FormatException('레벨 미션 저장 누락');
@@ -226,8 +229,10 @@ class GameState {
         }
         rewards[record.level] = record;
       }
-      missions =
+      final saved =
           MissionState.fromJson(Map<String, dynamic>.from(rawMissions), lvl);
+      // v7 saves keep their season (debug builds can run the legacy one).
+      missions = version < 7 ? saved.migrateToCurrentSeason() : saved;
     } else {
       for (final level
           in (m['rewardedLevels'] as List? ?? []).whereType<int>()) {
@@ -248,19 +253,22 @@ class GameState {
         upgradeCounts: counts,
         levelRewards: rewards,
         missions: missions,
-        wardrobe: version == formatVersion
+        wardrobe: version >= 6
             ? WardrobeState.fromJson(inviteMap(m['wardrobe']))
             : WardrobeState.initial(),
-        events: {
-          for (final e in eventDefinitions)
-            e.id: rawEvents[e.id] == null
-                ? LocalEventState.initial(e)
-                : LocalEventState.fromJson(inviteMap(rawEvents[e.id]), e)
-        },
-        invites: version == 5 || version == formatVersion
+        records: version >= 7
+            ? RecordState.fromJson(inviteMap(m['records']))
+            : RecordState.initial(),
+        weekly: version >= 7
+            ? WeeklyState.fromJson(inviteMap(m['weekly']))
+            : WeeklyState.initial(last.toUtc()),
+        achievements: version >= 7
+            ? AchievementState.fromJson(inviteMap(m['achievements']))
+            : AchievementState(),
+        invites: version >= 5
             ? InviteState.fromJson(inviteMap(m['invites']))
             : InviteState.migrate(missions.seenInvitePlayers),
-        support: version == 4 || version == 5 || version == formatVersion
+        support: version >= 4
             ? SupportState.fromJson(m['support'] is Map
                 ? Map<String, dynamic>.from(m['support'] as Map)
                 : throw const FormatException('보조 진행 저장 누락'))
@@ -274,14 +282,37 @@ class GameState {
         lastSettledUtc: last.toUtc(),
         savedAutoRate: natural('savedAutoRate'),
         activeRemainder: natural('activeRemainder') % BigInt.from(1000));
-    for (final e in result.events.entries) {
-      for (final id in e.value.receipts.keys) {
-        if (!result.support.ledger.containsKey('event:${e.key}:$id')) {
-          throw const FormatException('이벤트 보상 원장 누락');
-        }
-      }
+    if (version < 7) result._migrateProgress();
+    final ledger = result.support.ledger;
+    if (result.achievements.claimed
+            .any((id) => !ledger.containsKey('achievement:$id')) ||
+        result.weekly.claimed.any(
+            (id) => !ledger.containsKey('weekly:${result.weekly.week}:$id'))) {
+      throw const FormatException('업적·주간 보상 원장 누락');
     }
     return result;
+  }
+
+  /// v7: seed records from what older saves can prove, never invent values.
+  void _migrateProgress() {
+    final today = support.daily.day;
+    final days = {
+      today,
+      for (final id in support.ledger.keys)
+        if (id.startsWith('daily:')) id.split(':')[1],
+    };
+    final rates = [autoRate(this), savedAutoRate, support.daily.peakAuto];
+    records
+      ..bestAutoRate = rates.reduce((a, b) => a > b ? a : b)
+      ..lifetimeTaps = support.daily.taps
+      ..playDays = days.length
+      ..lastPlayDay = today;
+    weekly.rollTo(support.observedUtc);
+    if (support.ledger.containsKey(legacyFinalExchangeId) &&
+        support.transact('achievement:$legacyFinisherAchievement', BigInt.zero,
+            '완주 기록 이전', lastSettledUtc)) {
+      achievements.claimed.add(legacyFinisherAchievement);
+    }
   }
 
   String equippedCosmetic(CosmeticSlot slot) =>

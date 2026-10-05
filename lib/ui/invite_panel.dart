@@ -43,7 +43,7 @@ class _InvitePanelState extends State<InvitePanel> {
       if (copy) {
         await widget.sharing.copy(text);
       } else {
-        await widget.sharing.share(text, origin);
+        await widget.sharing.share(text, origin, subject: '오늘의 붕어빵 모의 초대');
       }
       if (mounted) {
         setState(() => _message = copy
