@@ -24,3 +24,10 @@ flutter:
   # Synthesized by tools/generate_sounds.py (CC0 1.0); see README.
   assets:
     - assets/audio/
+    # Pixel art from tools/draw_pixel_assets.py (see docs/pixel_art_prompts.md).
+    - assets/images/fish/
+    - assets/images/bg/
+    - assets/images/stall/
+    - assets/images/stove/
+    - assets/images/deco/
+    - assets/images/icons/

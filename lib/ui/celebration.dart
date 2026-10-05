@@ -9,6 +9,7 @@ import '../game_audio.dart';
 import '../game_controller.dart';
 import '../game_events.dart';
 import 'fish_painter.dart';
+import 'pixel_sprites.dart';
 
 /// Counts from 0 to [value] with integer BigInt steps (no double rounding),
 /// ending exactly on [value]. Shows the final value at once when [instant].
@@ -66,11 +67,12 @@ class _Confetti {
 
 /// Fixed pool of [maxConfetti] pieces, created once per celebration host.
 class _ConfettiPainter extends CustomPainter {
+  // Palette butter, orange, mint and pink (tools/palette.py).
   static const _colors = [
-    Color(0xffffd36b),
-    Color(0xffff8f6b),
-    Color(0xff91d5c0),
-    Color(0xfffff3c8)
+    Color(0xfff8d27a),
+    Color(0xffff9e4a),
+    Color(0xffb9e3a8),
+    Color(0xfff6b3c2)
   ];
   final List<_Confetti> pieces;
   final double t; // 0..1 of the celebration.
@@ -82,9 +84,11 @@ class _ConfettiPainter extends CustomPainter {
       paint.color = _colors[p.color].withValues(alpha: (1 - t).clamp(0, 1));
       final y = -20 + p.vy * t * size.height;
       final x = p.x * size.width + math.sin(t * 12 + p.sway) * 14;
+      // Square pieces snapped to a 4px grid, like the pixel art.
+      final side = p.size < 8 ? 4.0 : 8.0;
       canvas.drawRect(
-          Rect.fromCenter(
-              center: Offset(x, y), width: p.size, height: p.size * .6),
+          Rect.fromLTWH(
+              (x / 4).roundToDouble() * 4, (y / 4).roundToDouble() * 4, side, side),
           paint);
     }
   }
@@ -222,16 +226,14 @@ class _CelebrationHostState extends State<CelebrationHost>
                     BoxShadow(color: Color(0x88000000), blurRadius: 18)
                   ]),
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Icon(
+                PixelIcon(
                     switch (e.kind) {
-                      GameEventKind.levelUp => Icons.emoji_events,
-                      GameEventKind.achievement => Icons.military_tech,
-                      GameEventKind.itemUsed => Icons.auto_awesome,
-                      GameEventKind.prestige => Icons.storefront,
-                      _ => Icons.celebration,
+                      GameEventKind.achievement => 'achievements',
+                      GameEventKind.itemUsed => 'butter',
+                      GameEventKind.prestige => 'shop',
+                      _ => 'star',
                     },
-                    color: const Color(0xffffd36b),
-                    size: 34),
+                    size: 36),
                 const SizedBox(height: 6),
                 Text(e.title,
                     textAlign: TextAlign.center,

@@ -14,6 +14,7 @@ import 'package:todays_bungeoppang/support_rules.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/fish_painter.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
+import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'controller_test.dart' show FakeTime;
 import 'level_missions_test.dart' show setRate;
 import 'level_missions_widget_test.dart' show tapVisible;
@@ -274,6 +275,7 @@ void main() {
       expect(fish.map((p) => p.crust.first).toSet().length, fish.length);
     });
     testWidgets('모든 배경·화로·장식 조합을 예외 없이 그린다', (tester) async {
+      await tester.runAsync(PixelSprites.load);
       for (final bg in cosmeticDefinitions
           .where((d) => d.slot == CosmeticSlot.background)) {
         for (final stove

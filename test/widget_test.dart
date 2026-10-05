@@ -9,6 +9,7 @@ import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/time_service.dart';
 import 'package:todays_bungeoppang/ui/bake_target.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
+import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 
 class FixedTime implements TimeService {
   DateTime now = DateTime.utc(2026, 9, 29, 12);
@@ -40,6 +41,8 @@ Future<GameController> mountGame(WidgetTester tester, Size size,
     bool maxLevel = false,
     bool? developerTools,
     RankingService ranking = const NoRankingService()}) async {
+  // Decoding needs real async; the app does this in main() before runApp.
+  await tester.runAsync(PixelSprites.load);
   await tester.binding.setSurfaceSize(size);
   tester.view.devicePixelRatio = 1;
   tester.platformDispatcher.textScaleFactorTestValue = textScale;

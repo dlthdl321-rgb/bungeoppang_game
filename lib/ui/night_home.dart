@@ -10,6 +10,7 @@ import '../progress_rules.dart';
 import '../weekly_config.dart';
 import 'bake_target.dart';
 import 'night_stall_painter.dart';
+import 'pixel_sprites.dart';
 
 class NightHome extends StatelessWidget {
   final GameController controller;
@@ -91,14 +92,14 @@ class NightHome extends StatelessWidget {
         _MenuButton(
             id: 'daily',
             label: '일일 미션',
-            icon: Icons.assignment_turned_in_outlined,
+            icon: 'daily',
             onPressed: () => onOpen('daily'),
             horizontal: true),
         const SizedBox(width: 6),
         _MenuButton(
             id: 'achievements',
             label: '업적',
-            icon: Icons.military_tech_outlined,
+            icon: 'achievements',
             onPressed: () => onOpen('achievements'),
             horizontal: true),
         const Spacer(),
@@ -109,7 +110,7 @@ class NightHome extends StatelessWidget {
         IconButton(
             tooltip: '설정',
             onPressed: () => onOpen('settings'),
-            icon: const Icon(Icons.settings_outlined, color: muted, size: 22)),
+            icon: const PixelIcon('settings')),
       ]));
 
   Widget _production(BuildContext context) => Padding(
@@ -191,15 +192,15 @@ class NightHome extends StatelessWidget {
             child:
                 Column(mainAxisAlignment: MainAxisAlignment.center, children: [
               for (final item in const [
-                ('shop', '상점', Icons.storefront_outlined),
-                ('skins', '꾸미기', Icons.checkroom_outlined),
-                ('records', '내 기록', Icons.insights_outlined),
-                ('share', '공유', Icons.share_outlined),
+                ('shop', '상점'),
+                ('skins', '꾸미기'),
+                ('records', '내 기록'),
+                ('share', '공유'),
               ]) ...[
                 _MenuButton(
                     id: item.$1,
                     label: item.$2,
-                    icon: item.$3,
+                    icon: item.$1,
                     onPressed: () => onOpen(item.$1)),
                 const SizedBox(height: 8),
               ],
@@ -315,7 +316,9 @@ class _Panel extends StatelessWidget {
 
 class _MenuButton extends StatelessWidget {
   final String id, label;
-  final IconData icon;
+
+  /// Name of a [PixelIcon].
+  final String icon;
   final VoidCallback onPressed;
   final bool horizontal;
   const _MenuButton(
@@ -327,7 +330,7 @@ class _MenuButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final children = <Widget>[
-      Icon(icon, color: NightHome.cream, size: horizontal ? 22 : 27),
+      PixelIcon(icon),
       SizedBox(width: horizontal ? 6 : 0, height: horizontal ? 0 : 3),
       Text(label,
           textAlign: TextAlign.center,

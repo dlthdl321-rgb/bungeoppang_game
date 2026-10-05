@@ -7,6 +7,7 @@ import 'online_ranking.dart';
 import 'repository.dart';
 import 'time_service.dart';
 import 'ui/game_app.dart';
+import 'ui/pixel_sprites.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,6 +17,7 @@ Future<void> main() async {
           ? const PlayGamesRankingService()
           : const NoRankingService());
   final audio = AudioplayersAudio();
+  await PixelSprites.load();
   try {
     await controller.initialize();
     runApp(GameApp(controller: controller, audio: audio));

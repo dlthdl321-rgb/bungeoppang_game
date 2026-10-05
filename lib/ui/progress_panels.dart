@@ -9,6 +9,7 @@ import '../invite_sharing.dart';
 import '../online_ranking.dart';
 import '../progress_rules.dart';
 import '../weekly_config.dart';
+import 'pixel_sprites.dart';
 import 'support_panels.dart' show rewardLabel, saveError;
 
 TextStyle? _heading(BuildContext context) =>
@@ -141,7 +142,7 @@ class _OnlineRankingCard extends StatelessWidget {
                     FilledButton.icon(
                         key: const Key('ranking-open'),
                         onPressed: c.showRanking,
-                        icon: const Icon(Icons.leaderboard_outlined),
+                        icon: const PixelIcon('leaderboard'),
                         label: const Text('순위 보기')),
                   ],
                 ])));
@@ -364,7 +365,7 @@ class _SharePanelState extends State<SharePanel> {
             builder: (buttonContext) => FilledButton.icon(
                 key: const Key('share-game'),
                 onPressed: _sharing ? null : () => _share(buttonContext),
-                icon: const Icon(Icons.share_outlined),
+                icon: const PixelIcon('share'),
                 label: const Text('공유하기'))),
         Builder(
             builder: (buttonContext) => TextButton(
