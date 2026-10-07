@@ -2,6 +2,7 @@ import 'package:cloud_functions/cloud_functions.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/services.dart';
+import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'invite_models.dart';
 import 'online_backend.dart';
 
@@ -10,7 +11,10 @@ import 'online_backend.dart';
 //   flutter build appbundle --dart-define=FIREBASE_API_KEY=...
 //     --dart-define=FIREBASE_APP_ID=... --dart-define=FIREBASE_SENDER_ID=...
 //     --dart-define=FIREBASE_PROJECT_ID=...
+//     --dart-define=KAKAO_NATIVE_APP_KEY=...
 // Without them the app runs with NoOnlineBackend (online features hidden).
+// The Kakao key also goes into the Android manifest (build.gradle.kts).
+const kakaoNativeAppKey = String.fromEnvironment('KAKAO_NATIVE_APP_KEY');
 const _apiKey = String.fromEnvironment('FIREBASE_API_KEY');
 const _appId = String.fromEnvironment('FIREBASE_APP_ID');
 const _senderId = String.fromEnvironment('FIREBASE_SENDER_ID');
@@ -18,20 +22,21 @@ const _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
 const firebaseConfigured = _apiKey != '' &&
     _appId != '' &&
     _senderId != '' &&
-    _projectId != '';
+    _projectId != '' &&
+    kakaoNativeAppKey != '';
 
 /// The region of the Cloud Functions (firebase/functions/src/index.ts).
 const functionsRegion = 'asia-northeast3';
 
 class FirebaseOnlineBackend implements OnlineBackend {
-  static const _playGames = MethodChannel('todays_bungeoppang/play_games');
-
   final FirebaseAuth _auth;
   final FirebaseFunctions _functions;
+  String? _kakaoName;
   FirebaseOnlineBackend._(this._auth, this._functions);
 
-  /// The real backend when this build has a Firebase project, else
-  /// [NoOnlineBackend]. Never throws.
+  /// The real backend when this build has a Firebase project and a Kakao
+  /// key (KakaoSdk.init is done in main), else [NoOnlineBackend]. Never
+  /// throws. Firebase keeps the session, so a restart stays signed in.
   static Future<OnlineBackend> create() async {
     if (!firebaseConfigured) return const NoOnlineBackend();
     try {
@@ -55,29 +60,69 @@ class FirebaseOnlineBackend implements OnlineBackend {
   bool get signedIn => _auth.currentUser != null;
 
   @override
-  String? get displayName => _auth.currentUser?.displayName;
+  String? get displayName => _auth.currentUser?.displayName ?? _kakaoName;
 
   @override
-  Future<bool> signIn() async {
-    if (signedIn) return true;
+  Future<SignInResult> signIn() async {
+    if (signedIn) return SignInResult.success;
     try {
-      final status = await _playGames.invokeMapMethod<String, Object?>('status');
-      if (status?['configured'] != true) return false;
-      if (status?['authenticated'] != true &&
-          await _playGames.invokeMethod<bool>('signIn') != true) {
-        return false;
-      }
-      final code = await _playGames.invokeMethod<String>('serverAuthCode');
-      if (code == null || code.isEmpty) return false;
-      await _auth.signInWithCredential(
-          PlayGamesAuthProvider.credential(serverAuthCode: code));
-      return signedIn;
-    } on PlatformException {
-      return false;
-    } on MissingPluginException {
-      return false;
+      final kakao = await _kakaoLogin();
+      if (kakao == null) return SignInResult.canceled;
+      final r = await _functions
+          .httpsCallable('authKakao')
+          .call<Object?>({'accessToken': kakao.accessToken});
+      final data = r.data is Map ? r.data as Map : const {};
+      final token = data['token'];
+      if (token is! String) return SignInResult.failed;
+      _kakaoName = data['displayName'] as String?;
+      await _auth.signInWithCustomToken(token);
+      return signedIn ? SignInResult.success : SignInResult.failed;
+    } on FirebaseFunctionsException {
+      return SignInResult.failed;
     } on FirebaseAuthException {
-      return false;
+      return SignInResult.failed;
+    } on KakaoException {
+      return SignInResult.failed;
+    } on PlatformException {
+      return SignInResult.failed;
+    } on MissingPluginException {
+      return SignInResult.failed;
+    }
+  }
+
+  /// KakaoTalk first; if it is missing or fails (not logged in there, an
+  /// old version, ...) the Kakao account page. Null when the player backed
+  /// out.
+  static Future<OAuthToken?> _kakaoLogin() async {
+    final user = UserApi.instance;
+    if (await isKakaoTalkInstalled()) {
+      try {
+        return await user.loginWithKakaoTalk();
+      } catch (e) {
+        if (_canceled(e)) return null;
+      }
+    }
+    try {
+      return await user.loginWithKakaoAccount();
+    } catch (e) {
+      if (_canceled(e)) return null;
+      rethrow;
+    }
+  }
+
+  static bool _canceled(Object e) =>
+      (e is PlatformException && e.code == 'CANCELED') ||
+      (e is KakaoAuthException && e.error == AuthErrorCause.accessDenied) ||
+      (e is KakaoClientException && e.reason == ClientErrorCause.cancelled);
+
+  @override
+  Future<void> signOut() async {
+    _kakaoName = null;
+    await _auth.signOut();
+    try {
+      await UserApi.instance.logout();
+    } catch (_) {
+      // Kakao clears its token even when the logout call fails.
     }
   }
 
@@ -100,9 +145,13 @@ class FirebaseOnlineBackend implements OnlineBackend {
             (_, 'already-visited') => OnlineFailure.alreadyOwned,
             (_, 'already-accepted') => OnlineFailure.alreadyAccepted,
             ('not-found', _) => OnlineFailure.notFound,
-            ('invalid-argument' || 'already-exists' || 'failed-precondition' ||
+            (
+              'invalid-argument' ||
+                  'already-exists' ||
+                  'failed-precondition' ||
                   'resource-exhausted',
-              _) =>
+              _
+            ) =>
               OnlineFailure.rejected,
             _ => OnlineFailure.unavailable,
           },
@@ -133,9 +182,8 @@ class FirebaseOnlineBackend implements OnlineBackend {
   @override
   Future<WalletSnapshot> syncWallet() async {
     final r = await _call('walletSync');
-    return WalletSnapshot((r['gold'] as num).toInt(), [
-      for (final g in r['grants'] as List? ?? const []) _grant(g as Map)
-    ]);
+    return WalletSnapshot((r['gold'] as num).toInt(),
+        [for (final g in r['grants'] as List? ?? const []) _grant(g as Map)]);
   }
 
   @override
@@ -169,8 +217,8 @@ class FirebaseOnlineBackend implements OnlineBackend {
 
   @override
   Future<List<FriendInfo>> friends() async => [
-        for (final f in (await _call('friendList'))['friends'] as List? ??
-            const [])
+        for (final f
+            in (await _call('friendList'))['friends'] as List? ?? const [])
           _friend(f as Map)
       ];
 
@@ -180,9 +228,9 @@ class FirebaseOnlineBackend implements OnlineBackend {
 
   @override
   Future<List<ServerVisit>> fetchVisits(Set<String> applied) async => [
-        for (final v in (await _call('visitsFetch', {
-              'applied': applied.toList()
-            }))['visits'] as List? ??
+        for (final v in (await _call(
+                    'visitsFetch', {'applied': applied.toList()}))['visits']
+                as List? ??
             const [])
           ServerVisit(
               id: (v as Map)['id'] as String,
@@ -219,9 +267,8 @@ class FirebaseOnlineBackend implements OnlineBackend {
 
   @override
   Future<List<InviteEvent>> inviteFetchEvents(Set<String> committed) async => [
-        for (final e in (await _call('inviteFetchEvents', {
-              'committed': committed.toList()
-            }))['events'] as List? ??
+        for (final e in (await _call('inviteFetchEvents',
+                {'committed': committed.toList()}))['events'] as List? ??
             const [])
           InviteEvent(
               eventId: (e as Map)['eventId'] as String,
@@ -232,4 +279,34 @@ class FirebaseOnlineBackend implements OnlineBackend {
               atUtc: _at(e['atMs']),
               origin: InviteOrigin.server)
       ];
+
+  @override
+  Future<void> rankingSubmit(Map<String, int> scores) =>
+      // As strings: scores reach 2^63-1, past what JSON numbers keep exact.
+      _call('rankingSubmit',
+          {for (final e in scores.entries) e.key: e.value.toString()});
+
+  @override
+  Future<RankingBoard> rankingTop(String board) async {
+    final r = await _call('rankingTop', {'board': board});
+    final me = r['me'];
+    return RankingBoard(
+        board,
+        [
+          for (final e in r['entries'] as List? ?? const [])
+            RankingEntry(
+                rank: ((e as Map)['rank'] as num).toInt(),
+                playerId: e['playerId'] as String,
+                name: e['name'] as String? ?? '친구',
+                score: BigInt.parse(e['score'] as String),
+                look: _look(e['look']),
+                me: e['me'] == true)
+        ],
+        me is Map
+            ? (
+                rank: (me['rank'] as num).toInt(),
+                score: BigInt.parse(me['score'] as String)
+              )
+            : null);
+  }
 }

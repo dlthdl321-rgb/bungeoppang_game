@@ -1,0 +1,38 @@
+[
+  {
+    "index": 1,
+    "file": "stove/iron.png",
+    "prompt": "Use case: precise-object-edit. Edit ONLY the supplied ORIGINAL game sprite, not any newly generated griddle. Preserve its original crisp pixel-art/dot texture, palette, pixel density, chunky round cute bungeoppang design, and camera angle. The SIX original round golden fish with cute tiny eyes, rounded snouts and simple rounded scales MUST remain visually identical; do not redraw as realistic fish, do not add mouths, do not sharpen their silhouettes. Preserve the central two-by-three baking plate, all six cavity positions, metal detailing and blue gas flames exactly. This is a minimal peripheral repair/outpainting, not a redesign. Extend the canvas with empty margin so the entire existing right handle is completed, and the existing left hinged lid assembly is complete. Add the missing open side lid halves and their matching handles at the LEFT and RIGHT edges, using the existing side hinges, fold outward low to the sides and never overlap or obscure the six fish. Retain the original sprite scale and original pixel grid. Added side pieces must use the same visible square-pixel edges and shading as the source. Do not paint a new rear upright lid. Do not add legs, new burners, realistic textures, gradients, blur, antialiasing or a shadow. Fully visible object with margin on all four sides, wide landscape canvas approximately 2:1. Preserve transparent background. No text.",
+    "references": [
+      "C:/Users/이소이/Desktop/Git/붕어빵 게임/assets/images/stove/iron.png"
+    ],
+    "status": "pending"
+  },
+  {
+    "index": 2,
+    "file": "stove/castiron.png",
+    "prompt": "Output dimensions: 2048×1024.\nCozy warm Korean street-food pixel art, detailed 16-bit style, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text, no watermark.\nIdentity-preserving edit of the reference griddle. Keep exactly the same camera, size, position, shape, open lid angle, handles, hinges, burner, legs and the six baked fish.\nChange ONLY the metal material: heavy black cast iron with a faint cool purple sheen and a matte texture. Wooden grips and blue flames stay the same.\nPlain solid white background, nothing cropped.\nThe reference is the corrected ORIGINAL game sprite. Preserve the original cute rounded fish, tiny eyes, rounded scales and original crisp dot/pixel texture precisely. Change metal color ONLY. No realistic fish redesign. Preserve transparent background.",
+    "references": [
+      "C:\\Users\\이소이\\Desktop\\Git\\붕어빵 게임\\이미지\\추가 생성 이미지 2\\stove\\iron.png"
+    ],
+    "status": "pending"
+  },
+  {
+    "index": 3,
+    "file": "stove/copper.png",
+    "prompt": "Output dimensions: 2048×1024.\nCozy warm Korean street-food pixel art, detailed 16-bit style, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text, no watermark.\nIdentity-preserving edit of the reference griddle. Keep exactly the same camera, size, position, shape, open lid angle, handles, hinges, burner, legs and the six baked fish.\nChange ONLY the metal material: polished warm copper with rosy orange highlights and slightly darker copper edges. Wooden grips and blue flames stay the same.\nPlain solid white background, nothing cropped.\nThe reference is the corrected ORIGINAL game sprite. Preserve the original cute rounded fish, tiny eyes, rounded scales and original crisp dot/pixel texture precisely. Change metal color ONLY. No realistic fish redesign. Preserve transparent background.",
+    "references": [
+      "C:\\Users\\이소이\\Desktop\\Git\\붕어빵 게임\\이미지\\추가 생성 이미지 2\\stove\\iron.png"
+    ],
+    "status": "pending"
+  },
+  {
+    "index": 4,
+    "file": "stove/golden.png",
+    "prompt": "Output dimensions: 2048×1024.\nCozy warm Korean street-food pixel art, detailed 16-bit style, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text, no watermark.\nIdentity-preserving edit of the reference griddle. Keep exactly the same camera, size, position, shape, open lid angle, handles, hinges, burner, legs and the six baked fish.\nChange ONLY the metal material: shiny gold with bright yellow highlights and two or three tiny sparkles on the lid. Wooden grips and blue flames stay the same.\nPlain solid white background, nothing cropped.\nThe reference is the corrected ORIGINAL game sprite. Preserve the original cute rounded fish, tiny eyes, rounded scales and original crisp dot/pixel texture precisely. Change metal color ONLY. No realistic fish redesign. Preserve transparent background.",
+    "references": [
+      "C:\\Users\\이소이\\Desktop\\Git\\붕어빵 게임\\이미지\\추가 생성 이미지 2\\stove\\iron.png"
+    ],
+    "status": "pending"
+  }
+]

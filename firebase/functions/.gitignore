@@ -1,2 +1,5 @@
 node_modules/
 lib/
+# Function settings such as KAKAO_APP_ID stay out of the repository.
+.env
+.env.*

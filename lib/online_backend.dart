@@ -1,7 +1,8 @@
 import 'invite_models.dart';
 
 // The app's view of the Firebase backend (firebase/functions): sign-in with
-// Play Games, the 황금 붕어빵 wallet and invitations. FirebaseOnlineBackend
+// a Kakao account, the 황금 붕어빵 wallet, friends, invitations and the
+// online ranking. FirebaseOnlineBackend
 // (lib/firebase_online_backend.dart) talks to the real server;
 // FakeOnlineBackend follows the same rules in memory for tests.
 
@@ -19,6 +20,10 @@ enum OnlineFailure {
   alreadyAccepted,
   notFound,
 }
+
+/// How a Kakao login ended. [canceled] means the player backed out: no
+/// error is shown for it.
+enum SignInResult { success, canceled, failed }
 
 class OnlineException implements Exception {
   final OnlineFailure failure;
@@ -68,6 +73,30 @@ class ServerVisit {
       this.look = const {}});
 }
 
+/// One row of an online ranking board. [score] is exact (up to 2^63-1).
+class RankingEntry {
+  final int rank;
+  final String playerId, name;
+  final Map<String, String> look;
+  final BigInt score;
+  final bool me;
+  const RankingEntry(
+      {required this.rank,
+      required this.playerId,
+      required this.name,
+      required this.score,
+      this.look = const {},
+      this.me = false});
+}
+
+/// The top of a board and my own place on it (null before my first score).
+class RankingBoard {
+  final String board;
+  final List<RankingEntry> entries;
+  final ({int rank, BigInt score})? me;
+  const RankingBoard(this.board, this.entries, this.me);
+}
+
 class WalletSnapshot {
   final int gold;
   final List<WalletGrant> grants;
@@ -75,12 +104,19 @@ class WalletSnapshot {
 }
 
 abstract class OnlineBackend {
-  /// False when the build has no Firebase/Play Games configuration.
+  /// False when the build has no Firebase/Kakao configuration.
   bool get configured;
 
-  /// Signs in to Firebase with the Play Games account; false if declined.
-  Future<bool> signIn();
+  /// Logs in with Kakao (KakaoTalk if installed, else the Kakao account
+  /// page) and signs in to Firebase with the server's custom token. Opens
+  /// Kakao's screens, so only call it when the player asked to log in.
+  Future<SignInResult> signIn();
+
+  /// True while the Firebase session lasts, also after an app restart.
   bool get signedIn;
+
+  /// Signs out of Firebase and Kakao.
+  Future<void> signOut();
 
   Future<WalletSnapshot> syncWallet();
 
@@ -91,7 +127,7 @@ abstract class OnlineBackend {
   Future<(int gold, WalletGrant grant)> spend(
       String requestId, PremiumKind kind, String itemId);
 
-  /// The signed-in player's name (Play Games), if known.
+  /// The signed-in player's Kakao nickname, if they agreed to share it.
   String? get displayName;
 
   /// Tells the server how my vendor looks, for my visits and invite guest.
@@ -110,6 +146,11 @@ abstract class OnlineBackend {
   Future<bool> inviteAccept(String code, {String? ticketId});
   Future<void> inviteReachedLevelOne();
   Future<List<InviteEvent>> inviteFetchEvents(Set<String> committed);
+
+  /// Sends my best scores (ranking_config.dart board names); the server
+  /// keeps each board's highest.
+  Future<void> rankingSubmit(Map<String, int> scores);
+  Future<RankingBoard> rankingTop(String board);
 }
 
 /// No Firebase in this build: everything reports [OnlineFailure.unavailable].
@@ -121,7 +162,9 @@ class NoOnlineBackend implements OnlineBackend {
   @override
   bool get signedIn => false;
   @override
-  Future<bool> signIn() async => false;
+  Future<SignInResult> signIn() async => SignInResult.failed;
+  @override
+  Future<void> signOut() async {}
   @override
   Future<WalletSnapshot> syncWallet() async => _off();
   @override
@@ -155,6 +198,10 @@ class NoOnlineBackend implements OnlineBackend {
   @override
   Future<List<InviteEvent>> inviteFetchEvents(Set<String> committed) async =>
       _off();
+  @override
+  Future<void> rankingSubmit(Map<String, int> scores) async => _off();
+  @override
+  Future<RankingBoard> rankingTop(String board) async => _off();
 }
 
 /// In-memory backend with the server's rules, for tests and debug builds.
@@ -167,7 +214,10 @@ class FakeOnlineBackend implements OnlineBackend {
       : now = now ?? DateTime.now;
 
   int gold = 0;
-  bool allowSignIn = true;
+
+  /// What the next [signIn] does (the player logs in, backs out or it fails).
+  SignInResult signInResult = SignInResult.success;
+  int signIns = 0, signOuts = 0;
   bool offline = false;
   @override
   bool signedIn = false;
@@ -249,7 +299,64 @@ class FakeOnlineBackend implements OnlineBackend {
   }
 
   @override
-  Future<bool> signIn() async => signedIn = allowSignIn && !offline;
+  Future<SignInResult> signIn() async {
+    signIns++;
+    final result = offline ? SignInResult.failed : signInResult;
+    signedIn = result == SignInResult.success;
+    return result;
+  }
+
+  @override
+  Future<void> signOut() async {
+    signOuts++;
+    signedIn = false;
+  }
+
+  /// My best per board, and other players' rows by board (rank ignored).
+  final rankingBest = <String, BigInt>{};
+  final rankingOthers = <String, List<RankingEntry>>{};
+  final rankingSubmissions = <Map<String, int>>[];
+
+  @override
+  Future<void> rankingSubmit(Map<String, int> scores) async {
+    _check();
+    rankingSubmissions.add(Map.of(scores));
+    for (final MapEntry(:key, :value) in scores.entries) {
+      final score = BigInt.from(value);
+      if (score > (rankingBest[key] ?? BigInt.zero)) rankingBest[key] = score;
+    }
+  }
+
+  @override
+  Future<RankingBoard> rankingTop(String board) async {
+    _check();
+    final mine = rankingBest[board];
+    final rows = [
+      ...?rankingOthers[board],
+      if (mine != null)
+        RankingEntry(
+            rank: 0,
+            playerId: 'pfake',
+            name: name,
+            score: mine,
+            look: look,
+            me: true),
+    ]..sort((a, b) => b.score.compareTo(a.score));
+    int rankOf(BigInt score) => rows.where((r) => r.score > score).length + 1;
+    return RankingBoard(
+        board,
+        [
+          for (final r in rows.take(100))
+            RankingEntry(
+                rank: rankOf(r.score),
+                playerId: r.playerId,
+                name: r.name,
+                score: r.score,
+                look: r.look,
+                me: r.me)
+        ],
+        mine == null ? null : (rank: rankOf(mine), score: mine));
+  }
 
   @override
   Future<WalletSnapshot> syncWallet() async {

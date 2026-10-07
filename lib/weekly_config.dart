@@ -17,7 +17,7 @@ class WeeklyGoalDefinition {
 }
 
 const weeklyGoals = [
-  WeeklyGoalDefinition('taps', '붕어빵 1,000번 굽기', WeeklyMetric.taps, '1000',
+  WeeklyGoalDefinition('taps', '탭으로 1,000번 굽기', WeeklyMetric.taps, '1000',
       RewardDefinition('3')),
   WeeklyGoalDefinition('days', '3일 동안 노점 열기', WeeklyMetric.playDays, '3',
       RewardDefinition('3')),

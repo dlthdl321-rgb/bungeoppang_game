@@ -30,7 +30,7 @@ class LevelMissions extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Text('현재 Lv.${s.level}', style: Theme.of(context).textTheme.titleLarge),
-        const Text('조건을 모두 채우고 코인 보상을 받아요.'),
+        const Text('조건을 모두 채우면 자동으로 레벨업하고 코인 보상을 받아요.'),
         const SizedBox(height: 12),
         if (active == null) ...[
           const Text('최고 레벨 달성', key: Key('missions-finished')),

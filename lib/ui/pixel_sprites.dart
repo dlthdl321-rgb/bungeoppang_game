@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import '../avatar_rig_config.dart';
 import '../cosmetic_config.dart';
 
 /// Pixel-art images in assets/images, drawn by tools/draw_pixel_assets.py
@@ -47,6 +48,14 @@ class PixelSprites {
     'tab_fish',
     'tab_stall',
     'tab_gear',
+    // Settings, sheets and the menu (추가 생성 이미지, stage 3).
+    'back',
+    'bgm',
+    'sfx',
+    'vibration',
+    'volume',
+    'save',
+    'menu',
   ];
 
   /// Effects in assets/images/fx: a tiny bungeoppang for tap particles
@@ -128,9 +137,15 @@ class PixelSprites {
 
   /// The vendor, cut from the concept sheets by tools/concept_avatar.py:
   /// `avatar/<character>/base.png` (body, face, default hair and clothes)
-  /// and `avatar/<character>/<slot>_<id>.png`, all the same canvas.
+  /// and `avatar/<character>/<slot>_<id>.png`, placed on one 280x520
+  /// canvas. tools/avatar_layers.py trims their empty margins and records
+  /// where each sat ([avatarTrimOffsets]).
   static String _avatarPath(String character, String layer) =>
       'assets/images/avatar/$character/$layer.png';
+
+  /// [avatarPart]'s file, relative to assets/images (the rig's key).
+  static String avatarPartPath(String character, CosmeticSlot slot, String id) =>
+      'avatar/$character/${slot.name}_$id.png';
 
   static String _skillPath(String id) => 'assets/images/skills/$id.png';
 
@@ -164,6 +179,20 @@ class PixelSprites {
         if (d.slot.category == CosmeticCategory.avatar &&
             !blankCosmetics.contains(d.id)) {
           yield _avatarPath(character.id, '${d.slot.name}_${d.id}');
+          // An item's back and front halves (rigItemHalves), when drawn.
+          for (final half in rigItemHalves.keys) {
+            yield _avatarPath(character.id, '${d.slot.name}_${d.id}_$half');
+          }
+        }
+      }
+      // Eye and mouth frames for every view, rest frames included (they
+      // may be drawn one day; today the art's own face is the rest).
+      for (final view in const ['front', 'side']) {
+        for (final channel in rigChannels) {
+          for (final frame in channel.frames) {
+            yield 'assets/images/'
+                '${rigFeaturePicture(character.id, view, channel.id, frame)}';
+          }
         }
       }
     }
@@ -192,7 +221,23 @@ class PixelSprites {
     }
   }
 
-  static Future<void> load() => _loading ??= Future.wait(_paths.map(_loadOne));
+  static Future<void> load() => _loading ??= _loadAll();
+
+  /// Loads every known path that the app ships. Optional pictures (item
+  /// halves, face frames) are only tried when the asset list has them; if
+  /// the list cannot be read, every path is tried and misses are skipped.
+  static Future<void> _loadAll() async {
+    Set<String>? shipped;
+    try {
+      shipped = (await AssetManifest.loadFromAssetBundle(rootBundle))
+          .listAssets()
+          .toSet();
+    } catch (_) {}
+    await Future.wait(_paths
+        .toSet()
+        .where((p) => shipped == null || shipped.contains(p))
+        .map(_loadOne));
+  }
 
   static Future<void> _loadOne(String path) async {
     try {
@@ -207,23 +252,15 @@ class PixelSprites {
   /// Stage 14 items whose art is not drawn yet borrow the closest existing
   /// art, so a new default never leaves the scene blank. Remove an entry
   /// once its own file is in assets/images.
-  static const artStandIns = {
-    // Only the user's own art is used (concept folder and the extra art
-    // set). Backgrounds without their own picture borrow a concept one.
-    'night': 'snow',
-    'seaside': 'snow',
-    'dusk': 'autumn',
-    'forest': 'clear',
-  };
+  // Only the user's own art is used (concept folder and the extra art set).
+  // Every background has its own picture now (추가 생성 이미지, stage 2).
+  static const artStandIns = <String, String>{};
 
   /// Stage 14 items still waiting for their art (오늘의붕어빵_이미지교체
   /// 프롬프트 B4, B8, B9). Until then they draw a stand-in ([artStandIns])
   /// or nothing. Remove an id when its file is added, and add the new
   /// avatar folders (top, bottom, shoes, accessory) to pubspec.yaml.
   static const artPending = {
-    'night', 'dusk', 'forest', 'seaside', //
-    'lantern', 'bunting', 'starlights', 'windchime', 'snowman', //
-    'paperlanterns', //
     // Vendor items the concept sheets do not have (the base figure's own
     // hair, tee, shorts and flats are the defaults).
     'short', 'ponytail', 'curly', 'skin2', 'skin3', 'stripe', 'chefcoat',
@@ -258,6 +295,10 @@ class PixelSprites {
   /// default the base already wears, or art still to come).
   static ui.Image? avatarPart(String character, CosmeticSlot slot, String id) =>
       _images[_avatarPath(character, '${slot.name}_$id')];
+
+  /// Any loaded picture by its path under assets/images (one decoded copy
+  /// per file, shared by every painter), or null when it is not shipped.
+  static ui.Image? byPath(String path) => _images['assets/images/$path'];
 
   /// Icon of an upgrade skill (`tap_1`..`auto_16`).
   static ui.Image? skill(String id) => _images[_skillPath(id)];
@@ -332,43 +373,15 @@ class PixelSprites {
   }
 }
 
-/// A square pixel-art icon from assets/images/icons. Icons whose picture is
-/// not in the user's art yet show a plain system glyph instead.
+/// A square pixel-art icon from assets/images/icons ([PixelSprites.iconNames]).
 class PixelIcon extends StatelessWidget {
   final String name;
   final double size;
-
-  /// Colour of the system glyph shown while the art is missing; pick a light
-  /// one on dark buttons.
-  final Color glyphColor;
-  const PixelIcon(this.name,
-      {super.key, this.size = 24, this.glyphColor = const Color(0xff7d3419)});
-
-  /// System glyphs for icons still waiting for their art.
-  static const glyphs = {
-    'shop': Icons.storefront,
-    'skins': Icons.checkroom,
-    'records': Icons.bar_chart,
-    'share': Icons.share,
-    'daily': Icons.event_available,
-    'achievements': Icons.emoji_events,
-    'settings': Icons.settings,
-    'leaderboard': Icons.leaderboard,
-    'star': Icons.star,
-    'butter': Icons.bolt,
-  };
+  const PixelIcon(this.name, {super.key, this.size = 24});
 
   @override
-  Widget build(BuildContext context) {
-    final image = PixelSprites.icon(name);
-    final glyph = glyphs[name];
-    if (image == null && glyph != null) {
-      return SizedBox.square(
-          dimension: size,
-          child: Icon(glyph, size: size * .9, color: glyphColor));
-    }
-    return PixelImage(image, size: size);
-  }
+  Widget build(BuildContext context) =>
+      PixelImage(PixelSprites.icon(name), size: size);
 }
 
 /// Any loaded sprite as a square widget (skill and item icons).

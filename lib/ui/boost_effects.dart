@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
 import '../game_controller.dart';
 import '../support_config.dart';
+import 'avatar_face.dart';
 import 'avatar_painter.dart';
 import 'cozy_style.dart';
 import 'fish_painter.dart';
 import 'pixel_sprites.dart';
 import 'support_panels.dart' show remainingLabel;
+import 'weather_layer.dart';
 
 /// Recolours a sprite to shining gold, keeping its shading (brightness).
 const goldTint = ColorFilter.matrix([
@@ -228,9 +230,14 @@ class _GuestArrivalLayerState extends State<GuestArrivalLayer>
               height: size * 1.15,
               child: Opacity(
                 opacity: approach.clamp(0.0, 1.0),
-                child: CustomPaint(
-                    key: const Key('guest-arrival'),
-                    painter: AvatarPainter(look)),
+                // The visitor blinks, and talks while saying hello.
+                child: AvatarFace(
+                  animate: WeatherLayer.animate && !widget.reduceMotion,
+                  talking: approach > .9 && t < .8,
+                  builder: (context, face) => CustomPaint(
+                      key: const Key('guest-arrival'),
+                      painter: AvatarPainter(look, face: face)),
+                ),
               ),
             ),
             if (approach > .9)

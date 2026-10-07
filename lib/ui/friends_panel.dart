@@ -6,6 +6,7 @@ import '../support_config.dart';
 import 'avatar_painter.dart';
 import 'boost_effects.dart';
 import 'cozy_style.dart';
+import 'ranking_panel.dart' show OnlineAccountBar;
 
 /// 친구: my ID, the invitation ID I was given, adding friends by ID and the
 /// daily visit that gives a friend a 5-minute boost.
@@ -20,15 +21,9 @@ class _FriendsPanelState extends State<FriendsPanel> {
   final _invite = TextEditingController(), _friend = TextEditingController();
   String? _myId, _message;
   List<FriendInfo>? _friends;
-  bool _working = false;
+  bool _working = false, _signedIn = false;
 
   GameController get c => widget.controller;
-
-  @override
-  void initState() {
-    super.initState();
-    if (c.online.configured) _refresh();
-  }
 
   @override
   void dispose() {
@@ -38,6 +33,7 @@ class _FriendsPanelState extends State<FriendsPanel> {
   }
 
   Future<void> _refresh() async {
+    if (!c.online.signedIn) return;
     final id = await c.myOnlineId();
     final list = await c.loadFriends();
     if (mounted) {
@@ -62,6 +58,18 @@ class _FriendsPanelState extends State<FriendsPanel> {
 
   @override
   Widget build(BuildContext context) {
+    // Load when signed in (also on opening), forget on sign-out. Opening
+    // the panel never starts the Kakao login by itself.
+    if (c.online.signedIn != _signedIn) {
+      _signedIn = c.online.signedIn;
+      _myId = null;
+      _friends = null;
+      if (_signedIn) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _refresh();
+        });
+      }
+    }
     final online = c.online.configured;
     final visit = boostOf(BoostKind.visit), invite = boostOf(BoostKind.invite);
     return SingleChildScrollView(
@@ -70,8 +78,12 @@ class _FriendsPanelState extends State<FriendsPanel> {
         if (!online)
           const Padding(
               padding: EdgeInsets.only(bottom: 8),
-              child: Text('온라인 기능을 준비 중이에요',
-                  key: Key('friends-offline'))),
+              child: Text('온라인 기능을 준비 중이에요', key: Key('friends-offline')))
+        else ...[
+          OnlineAccountBar(
+              controller: c, guide: '카카오 계정으로 로그인하면 친구를 추가하고 서로 방문할 수 있어요.'),
+          const SizedBox(height: 8),
+        ],
         CozyPanel(
           padding: const EdgeInsets.all(10),
           child: Row(children: [
@@ -137,8 +149,7 @@ class _FriendsPanelState extends State<FriendsPanel> {
             ),
           ),
         const Divider(height: 28),
-        Text(
-            '초대받았나요? 친구 아이디를 입력하고 Lv.1을 달성하면, 그 친구가 손님으로 와서 '
+        Text('초대받았나요? 친구 아이디를 입력하고 Lv.1을 달성하면, 그 친구가 손님으로 와서 '
             '${invite.durationSeconds ~/ 60}분 동안 생산 ${invite.multiplierPermille ~/ 1000}배'),
         const SizedBox(height: 6),
         _field(
@@ -147,8 +158,8 @@ class _FriendsPanelState extends State<FriendsPanel> {
             label: '초대 아이디',
             button: '입력',
             enabled: online && !_working,
-            onPressed: () => _run(() => c.acceptInvite(_invite.text),
-                '초대를 받았어요. Lv.1을 달성해 보세요')),
+            onPressed: () => _run(
+                () => c.acceptInvite(_invite.text), '초대를 받았어요. Lv.1을 달성해 보세요')),
       ]),
     );
   }

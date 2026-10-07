@@ -2,9 +2,13 @@ rules_version = '2';
 
 // Every read and write goes through Cloud Functions (Admin SDK bypasses
 // these rules). The app never touches Firestore directly, so wallets,
-// purchases and invites cannot be edited from a modified client.
+// purchases, invites and rankings cannot be edited from a modified client.
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Rankings are read and written only by rankingSubmit / rankingTop.
+    match /rankings/{document=**} {
+      allow read, write: if false;
+    }
     match /{document=**} {
       allow read, write: if false;
     }

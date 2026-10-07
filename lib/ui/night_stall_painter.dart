@@ -42,14 +42,23 @@ class NightStallPainter extends CustomPainter {
   static const stoveAt = Offset(30, 268);
   // Right of the stove; rows below the counter top are hidden behind it.
   static const avatarAt = Offset(116, 250);
+  /// Top-left of each copy of a decoration, in scene units; a true flag
+  /// mirrors that copy (the lantern art has its post on the right, so the
+  /// left-hand one is flipped to stand on the outside too).
   static const decorationAt = {
-    'lantern': [Offset(8, 78), Offset(158, 78)],
-    'windchime': [Offset(10, 74), Offset(156, 74)],
-    'bunting': [Offset(0, 100)],
-    'starlights': [Offset(0, 104)],
-    'paperlanterns': [Offset(0, 104)],
-    'snowman': [Offset(148, 274)],
+    'lantern': [(Offset(8, 78), true), (Offset(150, 78), false)],
+    'windchime': [(Offset(10, 74), false), (Offset(156, 74), false)],
+    'bunting': [(Offset(0, 100), false)],
+    'starlights': [(Offset(0, 104), false)],
+    'paperlanterns': [(Offset(0, 104), false)],
+    // On the street at the right, behind the counter: the home screen's
+    // cooking cut covers the counter's right end.
+    'snowman': [(Offset(128, 66), false)],
   };
+
+  /// Decoration art is stored at this many pixels per scene unit
+  /// (tools/apply_extra_art.py DECO_SCALE), so it keeps its finer dots.
+  static const decorationScale = 3.0;
 
   /// Concept-art backgrounds come at their own resolution (335x762, not the
   /// 180x400 scene grid); they are scaled smoothly so the raw art shows as
@@ -137,8 +146,22 @@ class NightStallPainter extends CustomPainter {
           canvas, PixelSprites.cosmetic(CosmeticSlot.stove, stove), stoveAt);
     }
     final deco = PixelSprites.cosmetic(CosmeticSlot.decoration, decoration);
-    for (final at in decorationAt[decoration] ?? const <Offset>[]) {
-      PixelSprites.drawAt(canvas, deco, at);
+    if (deco != null) {
+      final size = Size(deco.width / decorationScale,
+          deco.height / decorationScale);
+      for (final (at, mirror)
+          in decorationAt[decoration] ?? const <(Offset, bool)>[]) {
+        final dst = at & size;
+        if (!mirror) {
+          PixelSprites.draw(canvas, deco, dst);
+          continue;
+        }
+        canvas.save();
+        canvas.translate(dst.left + dst.right, 0);
+        canvas.scale(-1, 1);
+        PixelSprites.draw(canvas, deco, dst);
+        canvas.restore();
+      }
     }
     canvas.restore();
   }

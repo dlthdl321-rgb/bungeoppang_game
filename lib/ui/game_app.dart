@@ -5,6 +5,7 @@ import '../game_audio.dart';
 import '../game_controller.dart';
 import 'celebration.dart';
 import 'friends_panel.dart';
+import 'avatar_painter.dart';
 import 'cozy_style.dart';
 import 'skill_shop.dart';
 import 'night_home.dart';
@@ -14,6 +15,7 @@ import 'support_panels.dart';
 import 'pixel_sprites.dart';
 import 'public_menus.dart';
 import 'progress_panels.dart';
+import 'ranking_panel.dart';
 import 'shop_panel.dart';
 
 class GameApp extends StatefulWidget {
@@ -33,6 +35,22 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_syncAudio);
     widget.audio.init().then((_) => _syncAudio());
+    // A cold start settles the time away in initialize(), before this app
+    // exists; greet the player once the navigator is up.
+    WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _welcomeBack(widget.controller.lastOfflineReward));
+  }
+
+  void _welcomeBack(BigInt gain) {
+    if (!mounted || !widget.controller.welcomesBack(gain)) return;
+    widget.audio.play(Sfx.reward);
+    showDialog(
+        context: _navigatorKey.currentContext!,
+        builder: (dialogContext) => OfflineRewardDialog(
+            amount: gain,
+            away: widget.controller.lastOfflineDuration,
+            reduceMotion: widget.controller.state.settings.reduceMotion ||
+                MediaQuery.disableAnimationsOf(dialogContext)));
   }
 
   // Settings live in the controller; the audio follows them. Cheap no-op
@@ -61,18 +79,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       widget.audio.resumeMusic();
-      widget.controller.resume().then((v) {
-        if (v > BigInt.zero && mounted) {
-          widget.audio.play(Sfx.reward);
-          showDialog(
-              context: _navigatorKey.currentContext!,
-              builder: (dialogContext) => OfflineRewardDialog(
-                  amount: v,
-                  away: widget.controller.lastOfflineDuration,
-                  reduceMotion: widget.controller.state.settings.reduceMotion ||
-                      MediaQuery.disableAnimationsOf(dialogContext)));
-        }
-      });
+      widget.controller.resume().then(_welcomeBack);
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused) {
@@ -258,6 +265,7 @@ class _GameHomeState extends State<GameHome> {
       'skins': '꾸미기',
       'daily': '일일 미션',
       'records': '내 기록',
+      'ranking': '온라인 랭킹',
       'share': '게임 공유',
       'invite': '개발자 도구 · 초대 시스템',
       'event': '주간 도전',
@@ -387,6 +395,7 @@ class _GameHomeState extends State<GameHome> {
         'achievements:collection' =>
           AchievementPanel(controller: c, initialCollection: true),
         'records' => RecordsPanel(controller: c),
+        'ranking' => RankingPanel(controller: c),
         'share' => SharePanel(
             controller: c,
             onDeveloperInvites:
@@ -451,20 +460,25 @@ class _GameHomeState extends State<GameHome> {
                               children: [
                                 SoundSettings(controller: c),
                                 CozySettingRow(
-                                    icon: Icons.vibration_rounded,
+                                    icon: const PixelIcon('vibration',
+                                        size: 28),
                                     label: '진동',
                                     value: c.state.settings.vibration,
                                     onChanged: (v) =>
                                         c.updateSettings(vibration: v)),
                                 CozySettingRow(
-                                    icon: Icons.touch_app_rounded,
+                                    icon: const Icon(Icons.touch_app_rounded,
+                                        color: Cozy.ink, size: 28),
                                     label: '길게 눌러 굽기',
                                     subtitle: '길게 누르면 초당 4회',
                                     value: c.state.settings.holdToBake,
                                     onChanged: (v) =>
                                         c.updateSettings(hold: v)),
                                 CozySettingRow(
-                                    icon: Icons.slow_motion_video_rounded,
+                                    icon: const Icon(
+                                        Icons.slow_motion_video_rounded,
+                                        color: Cozy.ink,
+                                        size: 28),
                                     label: '모션 줄이기',
                                     value: c.state.settings.reduceMotion,
                                     onChanged: (v) =>
@@ -482,14 +496,33 @@ class _GameHomeState extends State<GameHome> {
                                             await c.save();
                                             if (ctx.mounted) Navigator.pop(ctx);
                                           },
-                                    icon: const Icon(Icons.save_rounded,
-                                        size: 28),
+                                    icon: const PixelIcon('save', size: 28),
                                     label: const Text('저장')),
                                 TextButton(
                                     style: TextButton.styleFrom(
                                         foregroundColor: Cozy.brick),
                                     onPressed: () => _confirmReset(ctx),
                                     child: const Text('데이터 초기화')),
+                                // Development only, last so the player's
+                                // settings keep their places: outlines the
+                                // vendor's layers and marks their anchors.
+                                if (c.developerTools)
+                                  ValueListenableBuilder<bool>(
+                                      valueListenable: AvatarRigDebug.show,
+                                      builder: (context, on, _) =>
+                                          CozySettingRow(
+                                              key: const Key(
+                                                  'setting-rig-debug'),
+                                              icon: const Icon(
+                                                  Icons.grid_on_rounded,
+                                                  color: Cozy.ink,
+                                                  size: 28),
+                                              label: '레이어 기준점 보기',
+                                              subtitle:
+                                                  '개발용 · 사장님 그림의 경계와 기준점',
+                                              value: on,
+                                              onChanged: (v) => AvatarRigDebug
+                                                  .show.value = v)),
                               ]),
                         ),
                       ]),
@@ -575,13 +608,13 @@ class _SoundSettingsState extends State<SoundSettings> {
     return Column(mainAxisSize: MainAxisSize.min, children: [
       CozySettingRow(
           key: const Key('setting-music'),
-          icon: Icons.music_note_rounded,
+          icon: const PixelIcon('bgm', size: 28),
           label: '배경음',
           value: s.music,
           onChanged: (v) => c.updateSettings(music: v)),
       CozySettingRow(
           key: const Key('setting-sfx'),
-          icon: Icons.volume_up_rounded,
+          icon: const PixelIcon('sfx', size: 28),
           label: '효과음',
           value: s.soundEffects,
           onChanged: (v) => c.updateSettings(soundEffects: v)),
@@ -592,7 +625,7 @@ class _SoundSettingsState extends State<SoundSettings> {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             const Row(children: [
-              Icon(Icons.volume_up_rounded, color: Cozy.ink, size: 26),
+              PixelIcon('volume', size: 26),
               SizedBox(width: 8),
               Text('음량', style: TextStyle(fontFamily: 'Jua', fontSize: 20)),
             ]),

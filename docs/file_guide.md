@@ -36,6 +36,8 @@
 
 단계별 문서는 작업 당시의 기록입니다. 출시·온라인 설정은 [15단계 문서](stage15_release_online.md)에서 확인하세요.
 
+- [MASTER.md](MASTER.md) — 현재 기준 마스터 문서
+- [readme_history.md](readme_history.md) — 예전 README의 단계별 설명
 - [pixel_art_prompts.md](pixel_art_prompts.md)
 - [play_data_safety.md](play_data_safety.md)
 - [privacy_policy.md](privacy_policy.md)

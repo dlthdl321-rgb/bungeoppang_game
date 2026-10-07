@@ -1,0 +1,320 @@
+{
+ "pivots": {
+  "parts/girl_front_eyes_half.png": [
+   53.5,
+   24.0
+  ],
+  "parts/girl_front_eyes_closed.png": [
+   53.5,
+   24.0
+  ],
+  "parts/girl_front_mouth_small.png": [
+   13,
+   4
+  ],
+  "parts/girl_front_mouth_wide.png": [
+   13,
+   6
+  ],
+  "parts/boy_front_eyes_half.png": [
+   60.5,
+   21.0
+  ],
+  "parts/boy_front_eyes_closed.png": [
+   60.5,
+   21.0
+  ],
+  "parts/boy_front_mouth_small.png": [
+   13,
+   4
+  ],
+  "parts/boy_front_mouth_wide.png": [
+   13,
+   6
+  ],
+  "parts/girl_side_eyes_half.png": [
+   47.5,
+   20.0
+  ],
+  "parts/girl_side_eyes_closed.png": [
+   47.5,
+   20.0
+  ],
+  "parts/girl_side_mouth_small.png": [
+   4,
+   2
+  ],
+  "parts/girl_side_mouth_wide.png": [
+   4,
+   3
+  ]
+ },
+ "anchors": {
+  "avatar/girl/base.png": {
+   "eyes": [
+    153.5,
+    155.0
+   ],
+   "mouth": [
+    152,
+    184
+   ]
+  },
+  "avatar/boy/base.png": {
+   "eyes": [
+    151.5,
+    156.0
+   ],
+   "mouth": [
+    150,
+    184
+   ]
+  },
+  "cook/girl_1.png": {
+   "eyes": [
+    323.5,
+    156.0
+   ],
+   "mouth": [
+    323,
+    187
+   ]
+  },
+  "cook/girl_2.png": {
+   "eyes": [
+    293.5,
+    157.0
+   ],
+   "mouth": [
+    293,
+    188
+   ]
+  },
+  "cook/girl_3.png": {
+   "eyes": [
+    285.5,
+    155.0
+   ],
+   "mouth": [
+    285,
+    186
+   ]
+  },
+  "cook/girl_4.png": {
+   "eyes": [
+    323.5,
+    137.0
+   ],
+   "mouth": [
+    323,
+    168
+   ]
+  },
+  "cook/girl_5.png": {
+   "eyes": [
+    304.5,
+    135.0
+   ],
+   "mouth": [
+    304,
+    166
+   ]
+  },
+  "cook/girl_6.png": {
+   "eyes": [
+    305.5,
+    134.0
+   ],
+   "mouth": [
+    305,
+    165
+   ]
+  }
+ },
+ "trim": {
+  "avatar/boy/accessory_crossbag.png": [
+   174,
+   273
+  ],
+  "avatar/boy/accessory_fishpin.png": [
+   186,
+   100
+  ],
+  "avatar/boy/accessory_glasses.png": [
+   94,
+   127
+  ],
+  "avatar/boy/accessory_mittens.png": [
+   59,
+   330
+  ],
+  "avatar/boy/accessory_scarf.png": [
+   81,
+   199
+  ],
+  "avatar/boy/base.png": [
+   0,
+   11
+  ],
+  "avatar/boy/hat_ballcap.png": [
+   56,
+   11
+  ],
+  "avatar/boy/hat_bandana.png": [
+   56,
+   0
+  ],
+  "avatar/boy/hat_beanie.png": [
+   56,
+   0
+  ],
+  "avatar/boy/hat_newsboy.png": [
+   56,
+   6
+  ],
+  "avatar/boy/outfit_padding.png": [
+   61,
+   208
+  ],
+  "avatar/boy/shoes_boots.png": [
+   81,
+   424
+  ],
+  "avatar/boy/shoes_furboots.png": [
+   81,
+   413
+  ],
+  "avatar/boy/shoes_sneakers.png": [
+   81,
+   419
+  ],
+  "avatar/boy/tool_fishhold.png": [
+   199,
+   328
+  ],
+  "avatar/boy/tool_paperbag.png": [
+   199,
+   317
+  ],
+  "avatar/boy/tool_tongs.png": [
+   199,
+   321
+  ],
+  "avatar/boy/top_cardigan.png": [
+   63,
+   208
+  ],
+  "avatar/boy/top_creamlong.png": [
+   58,
+   208
+  ],
+  "avatar/boy/top_creamsweater.png": [
+   55,
+   208
+  ],
+  "avatar/boy/top_pinksweater.png": [
+   59,
+   208
+  ],
+  "avatar/boy/top_sagesweater.png": [
+   57,
+   208
+  ],
+  "avatar/girl/accessory_crossbag.png": [
+   174,
+   260
+  ],
+  "avatar/girl/accessory_fishpin.png": [
+   195,
+   100
+  ],
+  "avatar/girl/accessory_glasses.png": [
+   116,
+   129
+  ],
+  "avatar/girl/accessory_mittens.png": [
+   67,
+   323
+  ],
+  "avatar/girl/accessory_ribbon.png": [
+   175,
+   39
+  ],
+  "avatar/girl/accessory_scarf.png": [
+   99,
+   189
+  ],
+  "avatar/girl/base.png": [
+   36,
+   23
+  ],
+  "avatar/girl/bottom_skirt.png": [
+   98,
+   288
+  ],
+  "avatar/girl/hat_ballcap.png": [
+   84,
+   28
+  ],
+  "avatar/girl/hat_bandana.png": [
+   84,
+   14
+  ],
+  "avatar/girl/hat_beanie.png": [
+   84,
+   3
+  ],
+  "avatar/girl/hat_newsboy.png": [
+   84,
+   23
+  ],
+  "avatar/girl/outfit_padding.png": [
+   87,
+   208
+  ],
+  "avatar/girl/shoes_boots.png": [
+   107,
+   443
+  ],
+  "avatar/girl/shoes_furboots.png": [
+   107,
+   442
+  ],
+  "avatar/girl/shoes_sneakers.png": [
+   107,
+   446
+  ],
+  "avatar/girl/tool_fishhold.png": [
+   198,
+   321
+  ],
+  "avatar/girl/tool_paperbag.png": [
+   198,
+   310
+  ],
+  "avatar/girl/tool_tongs.png": [
+   198,
+   314
+  ],
+  "avatar/girl/top_cardigan.png": [
+   85,
+   208
+  ],
+  "avatar/girl/top_creamlong.png": [
+   84,
+   208
+  ],
+  "avatar/girl/top_creamsweater.png": [
+   87,
+   208
+  ],
+  "avatar/girl/top_pinksweater.png": [
+   85,
+   208
+  ],
+  "avatar/girl/top_sagesweater.png": [
+   83,
+   208
+  ]
+ }
+}

@@ -1,0 +1,1152 @@
+[
+  {
+    "source": "bungeoppang_assets_RAW_add39_261007_1628_06.zip",
+    "prompts": [
+      {
+        "path": "cook/boy_6_hat_chefhat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a tall white chef hat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_hat_santa.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a red Santa hat with cream trim and pompom. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_hat_santa.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a red Santa hat with cream trim and pompom. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_hat_santa.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a red Santa hat with cream trim and pompom. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_hat_santa.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a red Santa hat with cream trim and pompom. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_hat_santa.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a red Santa hat with cream trim and pompom. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_hat_santa.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a red Santa hat with cream trim and pompom. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_outfit_stripe.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with thin brick red vertical stripes. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_outfit_stripe.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with thin brick red vertical stripes. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_outfit_stripe.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with thin brick red vertical stripes. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_outfit_stripe.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with thin brick red vertical stripes. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_outfit_stripe.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with thin brick red vertical stripes. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_outfit_stripe.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with thin brick red vertical stripes. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_outfit_chefcoat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the white tee with a white double-breasted chef coat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_outfit_chefcoat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the white tee with a white double-breasted chef coat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_outfit_chefcoat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the white tee with a white double-breasted chef coat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_outfit_chefcoat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the white tee with a white double-breasted chef coat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_outfit_chefcoat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the white tee with a white double-breasted chef coat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_outfit_chefcoat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the white tee with a white double-breasted chef coat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: use small golden tongs with a tiny sparkle; put them flat on the counter, do not hold them, both hands must keep their original action. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: use small golden tongs with a tiny sparkle; put them flat on the counter, do not hold them, both hands must keep their original action. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: use small golden tongs with a tiny sparkle; put them flat on the counter, do not hold them, both hands must keep their original action. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: use small golden tongs with a tiny sparkle; put them flat on the counter, do not hold them, both hands must keep their original action. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: use small golden tongs with a tiny sparkle; replace the held silver tongs only. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: use small golden tongs with a tiny sparkle; replace the held silver tongs only. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a small dusty pink hair bow. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a small dusty pink hair bow. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a small dusty pink hair bow. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a small dusty pink hair bow. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a small dusty pink hair bow. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a small dusty pink hair bow. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink cardigan over the white tee. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink cardigan over the white tee. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink cardigan over the white tee. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink cardigan over the white tee. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink cardigan over the white tee. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink cardigan over the white tee. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_outfit_sweater.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the tee with a cream knitted long-sleeve sweater. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_outfit_sweater.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the tee with a cream knitted long-sleeve sweater. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      }
+    ]
+  },
+  {
+    "source": "bungeoppang_assets_RAW_saved261_261007_1601_05.zip",
+    "prompts": [
+      {
+        "section": 6,
+        "path": "cook/girl_3_hat_blackcap.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a black baseball cap. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_4_hat_blackcap.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a black baseball cap. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_6_outfit_chefcoat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: the tee becomes a white double-breasted chef coat. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_1_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: replace held silver tongs with small golden tongs with a sparkle; in poses where tongs are not held, place small golden tongs on the counter without changing hands action. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_2_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: replace held silver tongs with small golden tongs with a sparkle; in poses where tongs are not held, place small golden tongs on the counter without changing hands action. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_3_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: replace held silver tongs with small golden tongs with a sparkle; in poses where tongs are not held, place small golden tongs on the counter without changing hands action. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_4_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: replace held silver tongs with small golden tongs with a sparkle; in poses where tongs are not held, place small golden tongs on the counter without changing hands action. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_5_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: replace held silver tongs with small golden tongs with a sparkle; in poses where tongs are not held, place small golden tongs on the counter without changing hands action. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_6_tool_goldtongs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: replace held silver tongs with small golden tongs with a sparkle; in poses where tongs are not held, place small golden tongs on the counter without changing hands action. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_1_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink cardigan over the white tee. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_2_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink cardigan over the white tee. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_3_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink cardigan over the white tee. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_4_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink cardigan over the white tee. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_5_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink cardigan over the white tee. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_6_outfit_cardigan.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink cardigan over the white tee. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_1_outfit_sweater.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: the tee becomes a cream knit sweater. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_2_outfit_sweater.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: the tee becomes a cream knit sweater. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_3_outfit_sweater.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: the tee becomes a cream knit sweater. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_4_outfit_sweater.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: the tee becomes a cream knit sweater. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_5_outfit_sweater.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: the tee becomes a cream knit sweater. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_6_outfit_sweater.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: the tee becomes a cream knit sweater. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_1_accessory_pin.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small golden bungeoppang shaped pin on the tee chest. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_2_accessory_pin.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small golden bungeoppang shaped pin on the tee chest. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_3_accessory_pin.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small golden bungeoppang shaped pin on the tee chest. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_4_accessory_pin.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small golden bungeoppang shaped pin on the tee chest. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_5_accessory_pin.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small golden bungeoppang shaped pin on the tee chest. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_6_accessory_pin.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small golden bungeoppang shaped pin on the tee chest. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_1_accessory_glasses.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add round brown framed glasses. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_2_accessory_glasses.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add round brown framed glasses. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_3_accessory_glasses.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add round brown framed glasses. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_4_accessory_glasses.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add round brown framed glasses. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_5_accessory_glasses.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add round brown framed glasses. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_6_accessory_glasses.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add round brown framed glasses. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_1_accessory_scarf.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink knitted scarf. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_2_accessory_scarf.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink knitted scarf. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_3_accessory_scarf.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink knitted scarf. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_4_accessory_scarf.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink knitted scarf. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_5_accessory_scarf.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink knitted scarf. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_6_accessory_scarf.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a dusty pink knitted scarf. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_1_accessory_gloves.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add cream gloves to both hands. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_2_accessory_gloves.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add cream gloves to both hands. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_3_accessory_gloves.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add cream gloves to both hands. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_4_accessory_gloves.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add cream gloves to both hands. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_5_accessory_gloves.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add cream gloves to both hands. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_6_accessory_gloves.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add cream gloves to both hands. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_1_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small dusty pink hair bow. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_2_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small dusty pink hair bow. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_3_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small dusty pink hair bow. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_4_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small dusty pink hair bow. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_5_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small dusty pink hair bow. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/girl_6_accessory_ribbon.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/girl_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a small dusty pink hair bow. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/boy_1_outfit_apron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a caramel-brown bib apron actually worn: straps over both shoulders, tied at the waist with a side bow, a small golden bungeoppang emblem on the chest, ends above the knees. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/boy_2_outfit_apron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a caramel-brown bib apron actually worn: straps over both shoulders, tied at the waist with a side bow, a small golden bungeoppang emblem on the chest, ends above the knees. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/boy_3_outfit_apron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a caramel-brown bib apron actually worn: straps over both shoulders, tied at the waist with a side bow, a small golden bungeoppang emblem on the chest, ends above the knees. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "section": 6,
+        "path": "cook/boy_4_outfit_apron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark. Use case: identity-preserve. Edit target: the input cooking scene. Keep exactly the same scene, character identity, pose, camera, framing, body proportions, counter and iron mold position and size. Change ONLY the vendor appearance: add a caramel-brown bib apron actually worn: straps over both shoulders, tied at the waist with a side bow, a small golden bungeoppang emblem on the chest, ends above the knees. Keep all unrelated clothes and objects identical. White background. No new scene elements. Preserve the current hands action."
+      },
+      {
+        "path": "cook/boy_5_outfit_apron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a caramel brown bib apron with shoulder straps, waist ties, and a small golden fish chest emblem. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_outfit_apron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a caramel brown bib apron with shoulder straps, waist ties, and a small golden fish chest emblem. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_outfit_darkapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dark chocolate brown bib apron with shoulder straps, waist ties and two pockets. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_outfit_darkapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dark chocolate brown bib apron with shoulder straps, waist ties and two pockets. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_outfit_darkapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dark chocolate brown bib apron with shoulder straps, waist ties and two pockets. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_outfit_darkapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dark chocolate brown bib apron with shoulder straps, waist ties and two pockets. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_outfit_darkapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dark chocolate brown bib apron with shoulder straps, waist ties and two pockets. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_outfit_darkapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dark chocolate brown bib apron with shoulder straps, waist ties and two pockets. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_outfit_creamapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with shoulder straps, waist ties and a small golden fish chest emblem. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_outfit_creamapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with shoulder straps, waist ties and a small golden fish chest emblem. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_outfit_creamapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with shoulder straps, waist ties and a small golden fish chest emblem. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_outfit_creamapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with shoulder straps, waist ties and a small golden fish chest emblem. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_outfit_creamapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with shoulder straps, waist ties and a small golden fish chest emblem. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_outfit_creamapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a cream bib apron with shoulder straps, waist ties and a small golden fish chest emblem. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_outfit_waistapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink waist apron tied with a side bow, no shoulder straps. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_outfit_waistapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink waist apron tied with a side bow, no shoulder straps. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_outfit_waistapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink waist apron tied with a side bow, no shoulder straps. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_outfit_waistapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink waist apron tied with a side bow, no shoulder straps. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_outfit_waistapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink waist apron tied with a side bow, no shoulder straps. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_outfit_waistapron.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a dusty pink waist apron tied with a side bow, no shoulder straps. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_hair_short.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with neat center-parted short dark chocolate brown hair. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_hair_short.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with neat center-parted short dark chocolate brown hair. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_hair_short.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with neat center-parted short dark chocolate brown hair. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_hair_short.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with neat center-parted short dark chocolate brown hair. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_hair_short.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with neat center-parted short dark chocolate brown hair. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_hair_short.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with neat center-parted short dark chocolate brown hair. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_hair_ponytail.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with short dark brown hair tied in a small topknot. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_hair_ponytail.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with short dark brown hair tied in a small topknot. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_hair_ponytail.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with short dark brown hair tied in a small topknot. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_hair_ponytail.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with short dark brown hair tied in a small topknot. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_hair_ponytail.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with short dark brown hair tied in a small topknot. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_hair_ponytail.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with short dark brown hair tied in a small topknot. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_hair_curly.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with fluffy short dark brown curls. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_hair_curly.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with fluffy short dark brown curls. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_hair_curly.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with fluffy short dark brown curls. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_hair_curly.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with fluffy short dark brown curls. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_hair_curly.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with fluffy short dark brown curls. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_hair_curly.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace hair with fluffy short dark brown curls. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_hat_redbandana.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a brick red triangular bandana tied behind the head. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_hat_redbandana.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a brick red triangular bandana tied behind the head. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_hat_redbandana.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a brick red triangular bandana tied behind the head. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_hat_redbandana.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a brick red triangular bandana tied behind the head. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_hat_redbandana.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a brick red triangular bandana tied behind the head. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_hat_redbandana.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a brick red triangular bandana tied behind the head. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_hat_blackcap.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a black baseball cap. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_hat_blackcap.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a black baseball cap. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_hat_blackcap.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a black baseball cap. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_hat_blackcap.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a black baseball cap. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_hat_blackcap.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a black baseball cap. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_hat_blackcap.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a black baseball cap. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_hat_earmuffs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear fluffy cream earmuffs. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_hat_earmuffs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear fluffy cream earmuffs. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_hat_earmuffs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear fluffy cream earmuffs. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_hat_earmuffs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear fluffy cream earmuffs. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_hat_earmuffs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear fluffy cream earmuffs. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_6_hat_earmuffs.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_6.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear fluffy cream earmuffs. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_1_hat_chefhat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_1.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a tall white chef hat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_2_hat_chefhat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_2.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a tall white chef hat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_3_hat_chefhat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_3.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a tall white chef hat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_4_hat_chefhat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_4.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a tall white chef hat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      },
+      {
+        "path": "cook/boy_5_hat_chefhat.png",
+        "references": [
+          "/workspace/scratch/b74e40dc8ed5/output/bungeoppang_missing_assets_261007_0238_01/cook/boy_5.png"
+        ],
+        "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: wear a tall white chef hat. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+      }
+    ]
+  }
+]

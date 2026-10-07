@@ -292,9 +292,11 @@ bool? isNightTime(String time, DateTime local) => switch (time) {
     };
 
 /// The background picture for [background] at night: its own `<id>_night`
-/// art when there is some (the snow theme pairs 눈 오는 낮 with 겨울밤).
+/// art when there is some (the snow theme pairs 눈 오는 낮 with 겨울밤;
+/// 야간 골목 is a night scene already, so it is not darkened again).
 String nightBackground(String background) => switch (background) {
       'snowday' => 'snow',
+      'night' => 'night',
       _ => '${background}_night',
     };
 

@@ -5,7 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 // The privacy policy and Play data safety form promise no ads, analytics or
 // crash reporting. Since stage 15 the app signs in to Firebase (Auth,
 // Functions) and sells 황금 붕어빵 through Google Play Billing; those exact
-// packages are allowed, nothing else in their families.
+// packages are allowed, nothing else in their families. Since stage 16 it
+// logs in with the Kakao SDK (kakao_flutter_sdk_user: login only).
 const _allowed = <String>{
   'firebase_core',
   'firebase_core_platform_interface',
@@ -58,9 +59,9 @@ const _manifestSources = [
   'android/app/build.gradle.kts',
   'pubspec.lock',
 ];
-// Play Games Services v2, Firebase Auth/Functions (network) and Play
-// Billing are expected since stage 15. Ads, the ad ID, ad services, Google
-// Analytics measurement and Crashlytics must never appear.
+// Firebase Auth/Functions (network), Play Billing (stage 15) and the Kakao
+// login activities (stage 16) are expected. Ads, the ad ID, ad services,
+// Google Analytics measurement and Crashlytics must never appear.
 const _forbiddenManifestEntries = <String>[
   'com.google.android.gms.permission.AD_ID',
   'android.permission.ACCESS_ADSERVICES',
@@ -118,8 +119,9 @@ void main() {
     expect(hits, isEmpty);
   });
 
-  test('Android Gradle files add only Play Games Services v2 and no Firebase '
-      'analytics', () {
+  test(
+      'Android Gradle files add no Google Play services library and no '
+      'Firebase analytics', () {
     for (final path in [
       'android/build.gradle.kts',
       'android/app/build.gradle.kts'
@@ -133,8 +135,7 @@ void main() {
           .allMatches(text)
           .map((m) => m.group(0))
           .toSet();
-      expect(services.difference({'play-services-games-v2'}), isEmpty,
-          reason: path);
+      expect(services, isEmpty, reason: path);
     }
   });
 
@@ -145,7 +146,8 @@ void main() {
   });
 
   test('pubspec.lock 허용 목록 밖의 Firebase·결제 패키지는 여전히 걸린다', () {
-    bool isForbidden(String p) => !_allowed.contains(p) &&
+    bool isForbidden(String p) =>
+        !_allowed.contains(p) &&
         _forbidden.any(
             (f) => f.contains('_') ? p.contains(f) : p.split('_').contains(f));
     expect(isForbidden('firebase_auth'), isFalse);
@@ -158,11 +160,11 @@ void main() {
   test('병합 매니페스트 검사는 금지 권한·SDK 항목을 찾아낸다', () {
     const clean = '<manifest><application android:label="x"/></manifest>';
     expect(manifestViolations(clean), isEmpty);
-    const games = '<manifest>'
-        '<meta-data android:name="com.google.android.gms.games.APP_ID"/>'
-        '<provider android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"/>'
+    const kakao = '<manifest>'
+        '<activity android:name="com.kakao.sdk.flutter.auth.AuthCodeHandlerActivity"/>'
+        '<package android:name="com.kakao.talk"/>'
         '</manifest>';
-    expect(manifestViolations(games), isEmpty);
+    expect(manifestViolations(kakao), isEmpty);
     const online = '<manifest>'
         '<uses-permission android:name="android.permission.INTERNET"/>'
         '<uses-permission android:name="com.android.vending.BILLING"/>'

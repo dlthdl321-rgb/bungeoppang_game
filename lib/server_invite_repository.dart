@@ -3,7 +3,7 @@ import 'invite_repository.dart';
 import 'online_backend.dart';
 
 /// Invitations through the Firebase backend: the production adapter for
-/// [InvitationRepository]. Signs in to Play Games first when needed.
+/// [InvitationRepository]. Logs in with Kakao first when needed.
 class ServerInvitationRepository implements InvitationRepository {
   final OnlineBackend backend;
   const ServerInvitationRepository(this.backend);
@@ -15,7 +15,7 @@ class ServerInvitationRepository implements InvitationRepository {
     if (!backend.configured) {
       throw const OnlineException(OnlineFailure.unavailable);
     }
-    if (!backend.signedIn && !await backend.signIn()) {
+    if (!backend.signedIn && await backend.signIn() != SignInResult.success) {
       throw const OnlineException(OnlineFailure.signedOut);
     }
   }

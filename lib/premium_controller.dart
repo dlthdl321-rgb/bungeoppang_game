@@ -10,8 +10,10 @@ extension PremiumCommands on GameController {
             .where((d) => d.id == itemId)
             .map(cosmeticGoldPrice)
             .firstOrNull,
-        PremiumKind.skill =>
-          upgrades.where((u) => u.id == itemId).map(skillUnlockGoldPrice).firstOrNull,
+        PremiumKind.skill => upgrades
+            .where((u) => u.id == itemId)
+            .map(skillUnlockGoldPrice)
+            .firstOrNull,
         PremiumKind.boost =>
           itemId == BoostKind.bought.name ? boughtBoostGold : null,
       };
@@ -29,10 +31,7 @@ extension PremiumCommands on GameController {
   /// Opens Google Play's purchase sheet; the gold arrives through
   /// [_onPurchase] once the server has checked the purchase.
   Future<String?> buyGoldPack(String productId) async {
-    if (!online.configured) return '온라인 기능을 준비 중이에요';
-    if (!online.signedIn && !await online.signIn()) {
-      return 'Google Play 게임즈에 로그인해 주세요';
-    }
+    if (await _requireSignIn() case final error?) return error;
     return await billing.buy(productId) ? null : '결제를 시작할 수 없어요';
   }
 
@@ -47,7 +46,8 @@ extension PremiumCommands on GameController {
         break;
     }
     try {
-      if (!online.signedIn && !await online.signIn()) return;
+      // Signed out: the plugin delivers the purchase again after login.
+      if (!online.signedIn) return;
       final gold = await online.redeemPurchase(p.productId, p.purchaseToken);
       await billing.complete(p);
       await _setGold(gold);
@@ -70,11 +70,10 @@ extension PremiumCommands on GameController {
     if (!online.configured) return '온라인 기능을 준비 중이에요';
     if (state.premium.gold < price) return '$goldName이 부족해요';
     try {
-      if (!online.signedIn && !await online.signIn()) {
-        return 'Google Play 게임즈에 로그인해 주세요';
-      }
-      final requestId = List.generate(
-          20, (_) => _requestAlphabet[_requestRandom.nextInt(36)]).join();
+      if (await _requireSignIn() case final error?) return error;
+      final requestId =
+          List.generate(20, (_) => _requestAlphabet[_requestRandom.nextInt(36)])
+              .join();
       final (gold, grant) = await online.spend(requestId, kind, itemId);
       if (busy || _away || _disposed) return null; // applied on next sync
       tick();

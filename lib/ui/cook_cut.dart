@@ -1,6 +1,9 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../avatar_rig_config.dart';
 import '../cosmetic_config.dart';
+import 'avatar_face.dart';
 import 'avatar_painter.dart';
 import 'cozy_style.dart';
 import 'pixel_sprites.dart';
@@ -13,16 +16,19 @@ import 'weather_layer.dart';
 /// loops them (준비 → 반죽 → 닫기 → 굽기 → 꺼내기 → 포장) and shows 꺼내기
 /// on a tap; the frames are the concept art as drawn, so they do not show
 /// equipped cosmetics. Others are drawn from avatar layers wearing every
-/// equipped item and lift the tongs on a tap. Still when [reduceMotion].
+/// equipped item and lift the tongs on a tap. Either way the vendor blinks
+/// and talks while [greeting] (a visitor is at the stall) with eye and
+/// mouth layers over the face. Still when [reduceMotion].
 class CookCut extends StatefulWidget {
   final String Function(CosmeticSlot) equipped;
   final BigInt taps;
-  final bool reduceMotion;
+  final bool reduceMotion, greeting;
   const CookCut(
       {super.key,
       required this.equipped,
       required this.taps,
-      this.reduceMotion = false});
+      this.reduceMotion = false,
+      this.greeting = false});
 
   static const liftMs = 250;
 
@@ -92,19 +98,24 @@ class _CookCutState extends State<CookCut> with TickerProviderStateMixin {
           padding: const EdgeInsets.all(3),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(3),
-            child: AnimatedBuilder(
-                animation: Listenable.merge([_lift, _loop]),
-                builder: (context, _) => CustomPaint(
-                    key: const Key('cook-cut'),
-                    size: Size.infinite,
-                    painter: CookCutPainter(
-                        look: AvatarLook.of(widget.equipped),
-                        lift: _lift.isAnimating
-                            ? math.sin(math.pi * _lift.value)
-                            : 0,
-                        frame: (_loop.value * PixelSprites.cookFrameCount)
-                                .floor() %
-                            PixelSprites.cookFrameCount))),
+            child: AvatarFace(
+              animate: WeatherLayer.animate && !widget.reduceMotion,
+              talking: widget.greeting,
+              builder: (context, face) => AnimatedBuilder(
+                  animation: Listenable.merge([_lift, _loop]),
+                  builder: (context, _) => CustomPaint(
+                      key: const Key('cook-cut'),
+                      size: Size.infinite,
+                      painter: CookCutPainter(
+                          look: AvatarLook.of(widget.equipped),
+                          face: face,
+                          lift: _lift.isAnimating
+                              ? math.sin(math.pi * _lift.value)
+                              : 0,
+                          frame: (_loop.value * PixelSprites.cookFrameCount)
+                                  .floor() %
+                              PixelSprites.cookFrameCount))),
+            ),
           ),
         ),
       );
@@ -116,19 +127,26 @@ class _CookCutState extends State<CookCut> with TickerProviderStateMixin {
 class CookCutPainter extends CustomPainter {
   final AvatarLook look;
 
+  /// Eye and mouth frames ([AvatarFace]).
+  final Map<String, String> face;
+
   /// Tap animation of the vendor, 0..1.
   final double lift;
 
   /// Concept cooking frame (0-based) when not lifting.
   final int frame;
-  const CookCutPainter({required this.look, this.lift = 0, this.frame = 0});
+  CookCutPainter(
+      {required this.look, this.face = const {}, this.lift = 0, this.frame = 0})
+      : super(repaint: AvatarRigDebug.show);
 
   /// The 꺼내기 (taking out with tongs) frame, shown on a tap.
   static const tapFrame = 4;
 
-  /// Concept frames are big photos-sized art; smooth downscaling keeps them
-  /// from shimmering at the window's small size.
-  static final _framePaint = Paint()..filterQuality = FilterQuality.medium;
+  /// Concept frames are big photos-sized art; high-quality downscaling keeps
+  /// them sharp without shimmering at the window's small size. The shop
+  /// interior is stored at 4x nearest-neighbour, so the same smooth filter
+  /// only softens the edges of its dots.
+  static final _framePaint = Paint()..filterQuality = FilterQuality.high;
 
   /// Fraction of the avatar canvas, from the top, shown in the window.
   static const visibleHeight = .9;
@@ -150,16 +168,15 @@ class CookCutPainter extends CustomPainter {
     }
     final frames = PixelSprites.cookFrames(look.character);
     if (frames != null) {
-      final image = frames[lift > 0 ? tapFrame : frame % frames.length];
+      final shown = lift > 0 ? tapFrame : frame % frames.length;
+      final image = frames[shown];
       // Fill the window's height, anchored to the bottom right like the
-      // avatar below.
+      // avatar below. The face layers hang on this frame's own anchors.
       final scale = size.height / image.height;
-      final w = image.width * scale;
-      canvas.drawImageRect(
-          image,
-          Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-          Rect.fromLTWH(size.width - w, 0, w, size.height),
-          _framePaint);
+      AvatarRig(look.character, cookPoses[shown % cookPoses.length],
+              face: face)
+          .paint(canvas, _framePaint,
+              at: Offset(size.width - image.width * scale, 0), scale: scale);
       return;
     }
     const art = AvatarLook.size;
@@ -169,11 +186,14 @@ class CookCutPainter extends CustomPainter {
     canvas.translate(size.width - art.width * scale,
         size.height - art.height * visibleHeight * scale);
     canvas.scale(scale);
-    look.paint(canvas, Offset.zero, lift: lift);
+    look.paint(canvas, Offset.zero, lift: lift, face: face);
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant CookCutPainter old) =>
-      old.look != look || old.lift != lift || old.frame != frame;
+      old.look != look ||
+      old.lift != lift ||
+      old.frame != frame ||
+      !mapEquals(old.face, face);
 }

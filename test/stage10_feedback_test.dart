@@ -349,11 +349,29 @@ void main() {
         Navigator.of(tester.element(find.byKey(const Key('setting-sfx'))))
             .pop();
         await tester.pumpAndSettle();
-        // Offline reward screen after 2 hours away.
+        // 2 hours away pays out without the welcome-back screen.
         tester.binding
             .handleAppLifecycleStateChanged(AppLifecycleState.inactive);
         await tester.pump();
         clock.advance(const Duration(hours: 2));
+        tester.binding
+            .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+        await tester.pump();
+        await tester.pump();
+        expect(c.lastOfflineReward, greaterThan(BigInt.zero));
+        expect(find.byKey(const Key('offline-reward')), findsNothing);
+        // A golden chance may have landed; let it expire (test pumps never
+        // move the monotonic clock).
+        if (c.goldenChance case final chance?) {
+          clock.advance(
+              Duration(milliseconds: chance.expiresAtMs - clock.mono));
+          c.tick();
+        }
+        // Offline reward screen after a day away.
+        tester.binding
+            .handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+        await tester.pump();
+        clock.advance(offlineWelcomeAfter);
         tester.binding
             .handleAppLifecycleStateChanged(AppLifecycleState.resumed);
         await tester.pump();
@@ -368,9 +386,10 @@ void main() {
                     matching: find.byType(Text)))
                 .data,
             '${_digits(c.lastOfflineReward)}개');
-        expect(c.lastOfflineDuration, const Duration(hours: 2));
-        // Two hours on the monotonic clock put a golden chance on the
-        // griddle; let it expire, since test pumps never move this clock.
+        expect(c.lastAwayDuration, offlineWelcomeAfter);
+        expect(c.lastOfflineDuration, const Duration(milliseconds: maxOfflineMs));
+        // A day on the monotonic clock put a golden chance on the griddle;
+        // let it expire, since test pumps never move this clock.
         if (c.goldenChance case final chance?) {
           clock.advance(
               Duration(milliseconds: chance.expiresAtMs - clock.mono));
@@ -382,6 +401,40 @@ void main() {
         await tester.pumpWidget(const SizedBox.shrink());
       });
     }
+  }
+
+  for (final (away, shown) in [
+    (offlineWelcomeAfter - const Duration(minutes: 1), false),
+    (offlineWelcomeAfter, true),
+  ]) {
+    testWidgets('앱을 새로 켤 때 ${away.inMinutes}분 비웠으면 보상 화면 $shown',
+        (tester) async {
+      final clock = FixedTime();
+      final c = await mountApp(tester, sizes.first,
+          clock: clock,
+          setUp: (s) => s
+            ..upgradeCounts['auto_3'] = 2
+            ..savedAutoRate = BigInt.from(200)
+            ..lastSettledUtc = clock.utcNow.subtract(away));
+      await tester.pump();
+      // Paid either way; only the screen depends on the time away.
+      expect(c.lastOfflineReward, greaterThan(BigInt.zero));
+      expect(c.lastAwayDuration, away);
+      expect(find.byKey(const Key('offline-reward')),
+          shown ? findsOneWidget : findsNothing);
+      if (shown) {
+        await tester.pump(const Duration(milliseconds: countUpMs + 50));
+        expect(
+            tester
+                .widget<Text>(find.descendant(
+                    of: find.byKey(const Key('offline-reward-amount')),
+                    matching: find.byType(Text)))
+                .data,
+            '${_digits(c.lastOfflineReward)}개');
+      }
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
   }
 
   test('합성 효과음 자산: WAV 22.05kHz 모노 16비트, 길이 범위', () {

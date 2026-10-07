@@ -6,7 +6,6 @@ import '../game_controller.dart';
 import '../home_presentation.dart';
 import '../invite_config.dart';
 import '../invite_sharing.dart';
-import '../online_ranking.dart';
 import '../progress_rules.dart';
 import '../weekly_config.dart';
 import 'pixel_sprites.dart';
@@ -39,7 +38,6 @@ class RecordsPanel extends StatelessWidget {
           const Text('이 기기 기록'),
           if (title != null)
             Text('칭호 · $title', key: const Key('records-title')),
-          _OnlineRankingCard(controller: controller),
           Card(
               child: Padding(
                   padding: const EdgeInsets.all(12),
@@ -105,45 +103,6 @@ class RecordsPanel extends StatelessWidget {
                         if (s.level == 1) const Text('레벨업 기록 없음'),
                       ]))),
         ]));
-  }
-}
-
-/// Google Play Games leaderboards. Hidden until Play Console IDs exist.
-class _OnlineRankingCard extends StatelessWidget {
-  final GameController controller;
-  const _OnlineRankingCard({required this.controller});
-  @override
-  Widget build(BuildContext context) {
-    final c = controller, status = c.rankingStatus;
-    return Card(
-        key: const Key('online-ranking'),
-        child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text('온라인 랭킹 · Google Play 게임즈', style: _heading(context)),
-                  if (!status.configured)
-                    const Text('온라인 랭킹 준비 중',
-                        key: Key('ranking-unavailable'))
-                  else if (!status.authenticated) ...[
-                    const Text('로그인하고 초당 생산·누적 생산·콤보 순위를 겨뤄요.'),
-                    FilledButton(
-                        key: const Key('ranking-sign-in'),
-                        onPressed: c.rankingBusy ? null : c.signInRanking,
-                        child: const Text('Play 게임즈 로그인')),
-                  ] else ...[
-                    const Text('내 기록이 Play 게임즈 순위표에 올라가요.'),
-                    if (lifetimeExceedsRanking(c.state))
-                      const Text('누적 생산은 순위표 최대치로 올라가요.',
-                          key: Key('ranking-lifetime-capped')),
-                    FilledButton.icon(
-                        key: const Key('ranking-open'),
-                        onPressed: c.showRanking,
-                        icon: const PixelIcon('leaderboard'),
-                        label: const Text('순위 보기')),
-                  ],
-                ])));
   }
 }
 

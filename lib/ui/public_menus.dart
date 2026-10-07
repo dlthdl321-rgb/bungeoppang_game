@@ -8,6 +8,8 @@ import '../home_presentation.dart';
 import '../menu_rules.dart';
 import '../mission_alerts.dart';
 import '../weekly_config.dart';
+import '../avatar_rig_config.dart';
+import 'avatar_face.dart';
 import 'avatar_painter.dart';
 import 'count_badge.dart';
 import 'cozy_style.dart';
@@ -15,6 +17,7 @@ import 'fish_painter.dart';
 import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'support_panels.dart';
+import 'weather_layer.dart';
 
 /// The concept art's wardrobe (07_UI/꾸미기): tabs 헤어 / 의상 / 소품 /
 /// 붕어빵 / 가게 (approved D3), a preview on top, a 3-column grid of items and
@@ -245,10 +248,18 @@ class _WardrobePanelState extends State<WardrobePanel> {
                 fit: BoxFit.cover,
                 child: PixelArt(PixelSprites.screenArt('wardrobe_bg'),
                     width: 120, height: 72)),
+            // Blinks by itself and talks when tapped; trying items on
+            // keeps whatever motion is playing.
             Padding(
                 padding: const EdgeInsets.all(8),
-                child:
-                    CustomPaint(painter: AvatarPainter(AvatarLook.of(_shown)))),
+                child: AvatarFace(
+                    animate: WeatherLayer.animate &&
+                        !c.state.settings.reduceMotion,
+                    onTap: talkClip,
+                    builder: (context, face) => CustomPaint(
+                        key: const Key('preview-avatar-face'),
+                        painter:
+                            AvatarPainter(AvatarLook.of(_shown), face: face)))),
           ])),
       WardrobeTab.stall => CustomPaint(
           key: const Key('preview-stall'),
@@ -360,6 +371,13 @@ class MenuPanel extends StatelessWidget {
         null,
         const PixelIcon('records', size: 32),
         const Key('menu-records')
+      ),
+      (
+        'ranking',
+        '온라인 랭킹',
+        '초당 생산·누적 생산·콤보 순위',
+        const PixelIcon('leaderboard', size: 32),
+        const Key('menu-ranking')
       ),
       (
         'skins:stall',

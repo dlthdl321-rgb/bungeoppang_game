@@ -146,7 +146,7 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
           '· 결제는 Google Play로 처리돼요. 구매 후 사용하지 않은 $goldName은 '
           '구매일로부터 7일 안에 청약철회를 요청할 수 있어요.\n'
           '· 미성년자는 법정대리인의 동의 없이 결제하면 취소될 수 있어요.\n'
-          '· $goldName은 이 계정(Google Play 게임즈)에 보관되고, 다시 설치해도 꾸미기와 '
+          '· $goldName은 로그인한 카카오 계정에 보관되고, 다시 설치해도 꾸미기와 '
           '스킬 해금은 돌아와요. 이미 쓴 부스트는 돌아오지 않아요.',
           key: Key('gold-terms'),
           style: TextStyle(color: Cozy.inkSoft, fontSize: 11)),

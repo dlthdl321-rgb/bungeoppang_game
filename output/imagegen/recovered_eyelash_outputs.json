@@ -1,0 +1,429 @@
+[
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/accessory_ribbon.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/accessory_ribbon.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-ff430d1a-c77a-4505-9b7c-3b5d42910cbf.png",
+    "distance": 0.0003609172417782247,
+    "ratio": 13.912590980529785
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/face_grin.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_grin.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-adea366f-0abb-40e9-94d3-74bf06e180e9.png",
+    "distance": 0.0006156130693852901,
+    "ratio": 8.95014762878418
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/face_neutral.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_neutral.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-b796dd4b-a32a-43b0-a69d-de19bc0f2454.png",
+    "distance": 0.0006639272905886173,
+    "ratio": 4.444818496704102
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/face_sleepy.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_sleepy.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-a76414be-3a01-4b5e-a170-db3b05a395fa.png",
+    "distance": 0.0006171382265165448,
+    "ratio": 11.058382987976074
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/face_smile.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_smile.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-207389bd-ceaa-4199-9876-33eeb593bab5.png",
+    "distance": 0.0007187467999756336,
+    "ratio": 3.3065195083618164
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/face_surprised.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_surprised.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-f93fb5d4-5cd0-4d9c-875b-dbfd89182757.png",
+    "distance": 0.0008177265990525484,
+    "ratio": 2.7951102256774902
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/face_wink.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_wink.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-d436a185-4917-49f0-8712-4bc63a4e7245.png",
+    "distance": 0.0005199628649279475,
+    "ratio": 9.571791648864746
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/hair_curly.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hair_curly.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-d7c76ad0-e866-4604-8063-35fbed9e1a13.png",
+    "distance": 0.0004474941815715283,
+    "ratio": 19.662073135375977
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/hair_ponytail.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hair_ponytail.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-dfda1ea7-ee97-444d-a31a-885302aac978.png",
+    "distance": 0.00039192326948978007,
+    "ratio": 44.17893600463867
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/hair_short.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hair_short.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-21fc96b4-b23d-40de-8a69-49ef83c90897.png",
+    "distance": 0.000326979294186458,
+    "ratio": 53.88172149658203
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/hat_blackcap.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_blackcap.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-2c661ac3-005e-42eb-972f-adf53ac95a16.png",
+    "distance": 0.00038110004970803857,
+    "ratio": 33.554893493652344
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/hat_chefhat.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_chefhat.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-c0223dac-890e-4ad5-995b-ec063e3b2471.png",
+    "distance": 0.00032491289312019944,
+    "ratio": 286.4672546386719
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/hat_earmuffs.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_earmuffs.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-71c76eca-8378-4520-9ba5-8c690f5e7335.png",
+    "distance": 0.00043072711559943855,
+    "ratio": 39.10503005981445
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/hat_redbandana.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_redbandana.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-0a3cfdde-8a89-45cd-89c9-a64c4242078f.png",
+    "distance": 0.00046235110494308174,
+    "ratio": 34.790260314941406
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/hat_santa.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_santa.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-b7431e7b-bfa5-4583-a35f-1c7eacc022ec.png",
+    "distance": 0.0006615416496060789,
+    "ratio": 50.10816192626953
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/outfit_apron.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_apron.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-d467adf6-a78f-4852-9c95-b99a702455ba.png",
+    "distance": 0.00035362280323170125,
+    "ratio": 20.229089736938477
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/outfit_brownpants.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_brownpants.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-711f7c84-1b1f-4c54-a296-af4eba8116c2.png",
+    "distance": 0.00041255782707594335,
+    "ratio": 32.550289154052734
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/outfit_chefcoat.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_chefcoat.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-6b521607-8d92-4885-a1fd-d97b3aad7347.png",
+    "distance": 0.000320780643960461,
+    "ratio": 19.306486129760742
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/outfit_creamapron.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_creamapron.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-df47d499-e7f8-4eee-94c8-7e188a85de16.png",
+    "distance": 0.00030285996035672724,
+    "ratio": 30.876373291015625
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/outfit_darkapron.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_darkapron.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-d56141d4-69c2-45f9-8ac3-da3fad2aa487.png",
+    "distance": 0.00034175001201219857,
+    "ratio": 19.578142166137695
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/outfit_skirt.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_skirt.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-6d84f154-04b1-4ce4-a009-b323cb85c6ff.png",
+    "distance": 0.00027484475867822766,
+    "ratio": 17.602148056030273
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/outfit_stripe.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_stripe.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-e9e6cc64-c8aa-4331-b2fa-575b83e414d8.png",
+    "distance": 0.0003359485126566142,
+    "ratio": 27.38452911376953
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/outfit_waistapron.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_waistapron.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-f809ee56-d109-44bd-8821-7b0c157b9197.png",
+    "distance": 0.0006389125483110547,
+    "ratio": 10.869266510009766
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/outfit_widepants.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_widepants.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-c1c8a649-8699-45df-a1c5-9a329c40126c.png",
+    "distance": 0.0006501900497823954,
+    "ratio": 19.314607620239258
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/skin_skin2.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/skin_skin2.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-1c9d6e26-821d-4949-af48-968062d16e13.png",
+    "distance": 0.0003849448112305254,
+    "ratio": 10.757562637329102
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/skin_skin3.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/skin_skin3.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-c99ad4f7-9d7e-499b-86e4-d269da71407f.png",
+    "distance": 0.00024104035401251167,
+    "ratio": 15.609203338623047
+  },
+  {
+    "path": "이미지/추가 생성 이미지/avatar/boy/tool_goldtongs.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/tool_goldtongs.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-58558f1d-3ed0-42c8-bd15-8b6538c4d960.png",
+    "distance": 0.0003911005624104291,
+    "ratio": 35.83279800415039
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-8d3c0bb3-17bf-4805-909a-c9844c75f062.png",
+    "distance": 0.00018166367954108864,
+    "ratio": 1.962433934211731
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_accessory_ribbon.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_accessory_ribbon.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-6556dac5-d35b-4554-8746-5671d34c663a.png",
+    "distance": 0.00013438508904073387,
+    "ratio": 3.517162561416626
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_hair_curly.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hair_curly.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-a6705ce0-353b-4d59-978e-535937594fd7.png",
+    "distance": 9.415171371074393e-05,
+    "ratio": 39.05316162109375
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_hair_ponytail.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hair_ponytail.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-11087875-416c-4d4b-b656-e2c53df78c4e.png",
+    "distance": 5.380376023822464e-05,
+    "ratio": 147.9653778076172
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_hair_short.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hair_short.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-a1010244-68c4-4a19-9f32-da97713adafc.png",
+    "distance": 4.356186400400475e-05,
+    "ratio": 84.68710327148438
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_hat_blackcap.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_blackcap.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-bbfbf868-82d6-4369-baba-79a406eadaa2.png",
+    "distance": 0.0001445263042114675,
+    "ratio": 38.52949523925781
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_hat_chefhat.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_chefhat.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-1dbb5574-832d-40f7-9d83-ec1e3d2fbbe7.png",
+    "distance": 6.760110409231856e-05,
+    "ratio": 377.2207336425781
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_hat_earmuffs.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_earmuffs.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-0624c72a-f94b-44dd-a7db-85a136979c80.png",
+    "distance": 0.00015803940186742693,
+    "ratio": 45.61674880981445
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_hat_redbandana.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_redbandana.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-39260c30-37fc-4b25-aa92-ebfdf31bb01c.png",
+    "distance": 6.871745426906273e-05,
+    "ratio": 108.35173034667969
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_hat_santa.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_santa.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-cd48167d-02cd-4c5f-8245-8d8338b30513.png",
+    "distance": 0.00010911714343819767,
+    "ratio": 143.22216796875
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_apron.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_apron.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-fa447708-4795-43ee-8c53-dde878984e8d.png",
+    "distance": 0.00010096166806761175,
+    "ratio": 26.229387283325195
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_cardigan.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_cardigan.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-a230a36e-71a9-4271-ba7c-caa3a97c4afe.png",
+    "distance": 9.557956946082413e-05,
+    "ratio": 30.027284622192383
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_chefcoat.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_chefcoat.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-a4e85d49-a8e9-4d87-ab77-27d50ba5a870.png",
+    "distance": 9.00344894034788e-05,
+    "ratio": 18.40432357788086
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_creamapron.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_creamapron.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-541d509a-4dfe-477a-8cd9-ab5814a1a82b.png",
+    "distance": 0.00018936193373519927,
+    "ratio": 11.973048210144043
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_darkapron.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_darkapron.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-33c378ba-624f-4f1a-8687-8638550273ba.png",
+    "distance": 7.957787602208555e-05,
+    "ratio": 30.92706871032715
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_stripe.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_stripe.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-2da4a1ed-81e9-4e54-aff8-a0e9bd54c9cc.png",
+    "distance": 0.00010064629168482497,
+    "ratio": 22.70053482055664
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_sweater.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_sweater.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-6c919026-4075-4327-a6df-eeba273e159f.png",
+    "distance": 9.860213322099298e-05,
+    "ratio": 17.169078826904297
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_waistapron.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_waistapron.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-29a208eb-31fc-49e7-999d-12cd2bc461fd.png",
+    "distance": 0.00010593047772999853,
+    "ratio": 19.558900833129883
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_1_tool_goldtongs.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_tool_goldtongs.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-7cc3fb9a-bf9b-448a-bdcc-e6ea9a7c3056.png",
+    "distance": 5.1413633627817035e-05,
+    "ratio": 6.612060546875
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-bdfaf6e1-fc18-48a0-bd73-1d0b9093df05.png",
+    "distance": 0.00017835914331953973,
+    "ratio": 3.1574642658233643
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_accessory_ribbon.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_accessory_ribbon.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-d560488f-5cf0-4531-b02d-f0fe0a8a9c7f.png",
+    "distance": 0.0001432819990441203,
+    "ratio": 4.733232021331787
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_hair_curly.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hair_curly.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-be62113c-5930-44dd-bad7-4adf65425871.png",
+    "distance": 0.00016504238010384142,
+    "ratio": 16.144432067871094
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_hair_ponytail.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hair_ponytail.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-0a6b8dfb-f47a-456e-987f-fb8c28ac37f6.png",
+    "distance": 0.00018049169739242643,
+    "ratio": 34.10171890258789
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_hair_short.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hair_short.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-20d087b9-a568-42b9-adba-93358cc5fb2a.png",
+    "distance": 0.0002221367903985083,
+    "ratio": 13.730142593383789
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_hat_blackcap.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_blackcap.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-67990bfd-945b-4ff9-9b8d-cf4f6057b677.png",
+    "distance": 0.00018055345572065562,
+    "ratio": 32.60250473022461
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_hat_chefhat.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_chefhat.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-44dbab10-26e3-4188-b0e6-46b15ee45235.png",
+    "distance": 0.00011242059554206207,
+    "ratio": 171.6587371826172
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_hat_earmuffs.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_earmuffs.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-15bbb981-a793-474c-ba0c-aa13d936bcdb.png",
+    "distance": 0.00016469249385409057,
+    "ratio": 43.52730941772461
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_hat_redbandana.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_redbandana.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-5c31c38e-eb65-4568-ab4b-49436c790e00.png",
+    "distance": 0.0001455475576221943,
+    "ratio": 46.704559326171875
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_hat_santa.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_santa.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-b38d03f8-8466-4196-a135-437e19144ede.png",
+    "distance": 0.00017302816559094936,
+    "ratio": 124.03128814697266
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_2_outfit_apron.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_outfit_apron.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-a2aeda18-34d2-4ed2-8fe5-e05dcfe6f1d1.png",
+    "distance": 0.00016203316044993699,
+    "ratio": 17.949296951293945
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_3_outfit_sweater.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_outfit_sweater.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-dfd52b19-8d22-47b8-9fd3-4e9440ece662.png",
+    "distance": 0.0,
+    "ratio": 2568178.0
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_4_outfit_sweater.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_outfit_sweater.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-f7a1f386-f900-4d1d-a30d-b23f2da7a0ab.png",
+    "distance": 0.0,
+    "ratio": 1857831.375
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_5_outfit_sweater.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_outfit_sweater.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-97d2b84e-8860-4b44-af3e-f6ed9729b814.png",
+    "distance": 0.0,
+    "ratio": 2286882.75
+  },
+  {
+    "path": "이미지/추가 생성 이미지/cook/boy_6_outfit_sweater.png",
+    "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_outfit_sweater.png",
+    "source": "C:\\Users\\이소이\\.codex\\generated_images\\01a115e0-894c-70d0-8d96-15f8bbd3d591\\exec-1017f7a8-d95e-4549-ad82-c57d3ae1731e.png",
+    "distance": 0.0,
+    "ratio": 1688186.75
+  }
+]

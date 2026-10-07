@@ -12,9 +12,9 @@ import 'package:todays_bungeoppang/support_config.dart';
 import 'controller_test.dart' show FakeTime;
 import 'stage12_customization_test.dart' show setLevel;
 
-FakeOnlineBackend fakeBackend(FakeTime t) => FakeOnlineBackend(
-    products: {for (final p in goldProducts) p.id: p.gold},
-    prices: {
+FakeOnlineBackend fakeBackend(FakeTime t) => FakeOnlineBackend(products: {
+      for (final p in goldProducts) p.id: p.gold
+    }, prices: {
       PremiumKind.cosmetic: {
         for (final d in cosmeticDefinitions)
           if (cosmeticGoldPrice(d) case final price?) d.id: price
@@ -24,12 +24,17 @@ FakeOnlineBackend fakeBackend(FakeTime t) => FakeOnlineBackend(
           if (skillUnlockGoldPrice(u) case final price?) u.id: price
       },
       PremiumKind.boost: {BoostKind.bought.name: boughtBoostGold},
-    },
-    now: () => t.now);
+    }, now: () => t.now);
 
-Future<(GameController, FakeOnlineBackend, FakeBillingService,
-    MemoryGameRepository)> start(FakeTime t,
-    {FakeOnlineBackend? backend, MemoryGameRepository? repo}) async {
+Future<
+        (
+          GameController,
+          FakeOnlineBackend,
+          FakeBillingService,
+          MemoryGameRepository
+        )>
+    start(FakeTime t,
+        {FakeOnlineBackend? backend, MemoryGameRepository? repo}) async {
   final b = backend ?? fakeBackend(t);
   final billing = FakeBillingService({for (final p in goldProducts) p.id: '₩'});
   final r = repo ?? MemoryGameRepository();
@@ -95,8 +100,7 @@ void main() {
     await b.signIn();
     final skill = upgrades.firstWhere((u) => u.unlockTotal > BigInt.zero);
     expect(quoteUpgrade(c.state, skill, PurchaseMode.one).unlocked, isFalse);
-    expect(await c.spendGold(PremiumKind.skill, skill.id),
-        contains('부족'));
+    expect(await c.spendGold(PremiumKind.skill, skill.id), contains('부족'));
     b.gold = 500;
     c.state.premium.gold = 500;
     expect(await c.spendGold(PremiumKind.skill, skill.id), isNull);
@@ -141,7 +145,8 @@ void main() {
     expect(fresh.activeBoost, isNull);
     expect(fresh.state.premium.gold, backend.gold);
     // A purchase made later on another device is applied once.
-    await backend.spend('other-device-1', PremiumKind.boost, BoostKind.bought.name);
+    await backend.spend(
+        'other-device-1', PremiumKind.boost, BoostKind.bought.name);
     await fresh.syncOnline();
     expect(fresh.activeBoost?.kind, BoostKind.bought);
     fresh.dispose();
@@ -150,6 +155,7 @@ void main() {
   test('친구 방문과 초대 손님은 한 번씩만 부스트가 되고 손님 줄에 선다', () async {
     final t = FakeTime();
     final (c, b, _, _) = await start(t);
+    await b.signIn(); // background sync never opens the Kakao login
     b.inbox.addAll([
       const ServerVisit(id: 'visit_a', name: '앨리스', invite: false),
       const ServerVisit(
@@ -170,6 +176,7 @@ void main() {
   test('Lv.2가 되면 초대 Lv.1 달성을 한 번만 알린다', () async {
     final t = FakeTime();
     final (c, b, _, _) = await start(t);
+    await b.signIn();
     await c.syncOnline();
     expect(b.levelOneReports, 0);
     setLevel(c.state, 2, t.now);
@@ -190,9 +197,9 @@ void main() {
     expect((await c.loadFriends())!.single.visitedToday, isTrue);
     expect(await c.acceptInvite('BBAAAAAAAA'), isNull);
     expect(await c.acceptInvite('BBAAAAAAAA'), '초대 아이디는 한 번만 입력할 수 있어요');
-    b.allowSignIn = false;
+    b.signInResult = SignInResult.canceled;
     b.signedIn = false;
-    expect(await c.addFriend('BBAAAAAAAA'), 'Google Play 게임즈에 로그인해 주세요');
+    expect(await c.addFriend('BBAAAAAAAA'), '카카오 계정으로 로그인해 주세요');
     c.dispose();
   });
 
@@ -223,7 +230,10 @@ void main() {
     final old = s.toJson()..remove('premium');
     expect(GameState.fromJson(old).premium.gold, 0);
     final bad = s.toJson()
-      ..['premium'] = {...s.premium.toJson(), 'skillUnlocks': ['tap_999']};
+      ..['premium'] = {
+        ...s.premium.toJson(),
+        'skillUnlocks': ['tap_999']
+      };
     expect(() => GameState.fromJson(bad), throwsFormatException);
   });
 }

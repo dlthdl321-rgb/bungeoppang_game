@@ -7,7 +7,7 @@ import { Store } from "./store";
 // clicked -> classifiedNew -> reachedLevelOne for a new player, or
 // clicked -> existingParticipated for someone who already played.
 //
-// Identity is the Firebase account (signed in with Play Games). Players are
+// Identity is the Firebase account (signed in with Kakao). Players are
 // shown to each other only as an opaque playerId, never the account id.
 
 export class InviteError extends Error {

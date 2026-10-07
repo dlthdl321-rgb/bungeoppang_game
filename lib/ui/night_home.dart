@@ -135,7 +135,8 @@ class NightHome extends StatelessWidget {
                 child: CookCut(
                     equipped: e,
                     taps: state.records.lifetimeTaps,
-                    reduceMotion: reduce)),
+                    reduceMotion: reduce,
+                    greeting: controller.guestArrivals.isNotEmpty)),
             Positioned(
                 left: side, width: w, bottom: 0, child: _nav(padding.bottom)),
           ]);
@@ -177,7 +178,7 @@ class NightHome extends StatelessWidget {
               child: CozyRoundButton(
                   key: const Key('menu-menu'),
                   tooltip: '메뉴',
-                  icon: const _MenuGlyph(),
+                  icon: const PixelIcon('menu', size: 28),
                   onPressed: () => onOpen('menu'))),
           Expanded(
               child: Column(children: [
@@ -194,7 +195,7 @@ class NightHome extends StatelessWidget {
           CozyRoundButton(
               tooltip: '설정',
               icon:
-                  const PixelIcon('settings', size: 28, glyphColor: Cozy.cream),
+                  const PixelIcon('settings', size: 28),
               onPressed: () => onOpen('settings')),
         ]),
       ]),
@@ -369,7 +370,7 @@ class NightHome extends StatelessWidget {
         height: navHeight - 6,
         child: Row(children: [
           for (final (id, label, icon) in const <(String, String, Widget)>[
-            ('menu', '메뉴', _MenuGlyph(color: Cozy.wood)),
+            ('menu', '메뉴', PixelIcon('menu', size: 28)),
             ('skills', '스킬', PixelIcon('skill', size: 34)),
             ('skins', '꾸미기', PixelIcon('tab_outfit', size: 34)),
             ('shop', '상점', PixelIcon('shop', size: 28)),
@@ -398,18 +399,6 @@ class _TitleFish extends StatelessWidget {
   @override
   Widget build(BuildContext context) =>
       PixelArt(PixelSprites.screenArt('title_fish'), width: 18, height: 14);
-}
-
-/// The pixel `menu` icon, or three bars until it is drawn.
-class _MenuGlyph extends StatelessWidget {
-  final Color color;
-  const _MenuGlyph({this.color = Cozy.cream});
-  @override
-  Widget build(BuildContext context) {
-    final icon = PixelSprites.icon('menu');
-    if (icon != null) return PixelImage(icon, size: 28);
-    return Icon(Icons.menu_rounded, color: color, size: 28);
-  }
 }
 
 class _NavButton extends StatelessWidget {

@@ -33,10 +33,19 @@ void main() {
     expect(PixelSprites.sceneBackground('snowday', true), (snowNight, false));
     expect(PixelSprites.sceneBackground('snow', false), (snowDay, false));
     expect(PixelSprites.sceneBackground('snow', null), (snowNight, false));
-    final clear = PixelSprites.cosmetic(CosmeticSlot.background, 'clear');
-    final (image, darken) = PixelSprites.sceneBackground('clear', true);
-    // Until bg/clear_night.png arrives.
-    expect(image, clear);
-    expect(darken, isTrue);
+    // Four seasons have their own night picture (bg/<id>_night.png).
+    for (final id in ['clear', 'rain', 'autumn', 'cherry']) {
+      final (image, darken) = PixelSprites.sceneBackground(id, true);
+      expect(image, isNotNull, reason: id);
+      expect(image, isNot(PixelSprites.cosmetic(CosmeticSlot.background, id)),
+          reason: id);
+      expect(darken, isFalse, reason: id);
+    }
+    // 야간 골목 is already night.
+    final night = PixelSprites.cosmetic(CosmeticSlot.background, 'night');
+    expect(PixelSprites.sceneBackground('night', true), (night, false));
+    // Without night art the day picture is darkened.
+    final dusk = PixelSprites.cosmetic(CosmeticSlot.background, 'dusk');
+    expect(PixelSprites.sceneBackground('dusk', true), (dusk, true));
   });
 }

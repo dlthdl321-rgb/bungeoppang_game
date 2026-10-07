@@ -17,6 +17,7 @@ dependencies:
   firebase_auth: ^6.7.0
   cloud_functions: ^6.5.0
   in_app_purchase: ^3.3.1
+  kakao_flutter_sdk_user: ^2.0.1
 
 dev_dependencies:
   flutter_test:
@@ -47,6 +48,10 @@ flutter:
     - assets/images/event/
     - assets/images/ui/
     - assets/images/cook/
+    # Stall decorations from 추가 생성 이미지 (tools/apply_extra_art.py).
+    - assets/images/deco/
     # Vendor parts cut from the concept sheets (tools/concept_avatar.py).
     - assets/images/avatar/girl/
     - assets/images/avatar/boy/
+    # Eye and mouth frames laid over the vendor's face (tools/avatar_layers.py).
+    - assets/images/parts/

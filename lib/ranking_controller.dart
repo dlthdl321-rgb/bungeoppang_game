@@ -1,8 +1,6 @@
 part of 'game_controller.dart';
 
 extension RankingCommands on GameController {
-  bool get rankingBusy => _rankingBusy;
-
   Future<void> refreshRanking() async {
     final status = await ranking.status();
     if (_disposed) return;
@@ -10,27 +8,17 @@ extension RankingCommands on GameController {
     _notifyChanged();
   }
 
-  Future<bool> signInRanking() async {
-    if (_rankingBusy || !rankingStatus.configured) return false;
-    _rankingBusy = true;
-    _notifyChanged();
-    try {
-      await ranking.signIn();
-      await refreshRanking();
-      submitRankingIfDue(force: true);
-      return rankingStatus.authenticated;
-    } finally {
-      _rankingBusy = false;
-      _notifyChanged();
-    }
-  }
-
   /// Pushes current bests when signed in. Unforced calls are throttled and
-  /// skipped when nothing improved; nothing here touches the save file.
+  /// skipped when nothing improved; even forced ones keep the server's
+  /// minimum gap. Nothing here touches the save file.
   void submitRankingIfDue({bool force = false}) {
     if (!rankingStatus.authenticated) return;
     final now = clock.monotonicMilliseconds, last = _lastRankingSubmitMs;
-    if (!force && last != null && now - last < rankingSubmitIntervalMs) return;
+    if (last != null &&
+        now - last <
+            (force ? rankingSubmitMinGapMs : rankingSubmitIntervalMs)) {
+      return;
+    }
     final scores = rankingScores(state), previous = _lastRankingScores;
     if (previous != null &&
         scores.entries.every((e) => previous[e.key] == e.value)) {
@@ -38,12 +26,19 @@ extension RankingCommands on GameController {
     }
     _lastRankingSubmitMs = now;
     _lastRankingScores = scores;
-    unawaited(ranking.submit(scores));
+    unawaited(_rankingSubmission = ranking.submit(scores));
   }
 
-  Future<bool> showRanking() async {
-    if (!rankingStatus.authenticated) return false;
+  /// [board] with my latest bests sent first; null when it cannot be
+  /// loaded (offline, signed out).
+  Future<RankingBoard?> loadRanking(String board) async {
+    if (!rankingStatus.authenticated) return null;
     submitRankingIfDue(force: true);
-    return ranking.showLeaderboards();
+    await _rankingSubmission;
+    try {
+      return await ranking.top(board);
+    } on OnlineException {
+      return null;
+    }
   }
 }

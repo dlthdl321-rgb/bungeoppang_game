@@ -1,0 +1,858 @@
+{
+  "mode": "built-in image_gen",
+  "instruction": "모든 남자 아바타의 속눈썹은 눈꼬리 끝에만 짧게 돌출",
+  "prompts": [
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/accessory_ribbon.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/accessory_ribbon.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/face_grin.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_grin.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/face_neutral.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_neutral.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/face_sleepy.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_sleepy.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/face_smile.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_smile.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/face_surprised.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_surprised.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/face_wink.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/face_wink.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/hair_curly.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hair_curly.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/hair_ponytail.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hair_ponytail.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/hair_short.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hair_short.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/hat_blackcap.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_blackcap.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/hat_chefhat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_chefhat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/hat_earmuffs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_earmuffs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/hat_redbandana.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_redbandana.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/hat_santa.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/hat_santa.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/outfit_apron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_apron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/outfit_brownpants.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_brownpants.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/outfit_chefcoat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_chefcoat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/outfit_creamapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_creamapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/outfit_darkapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_darkapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/outfit_skirt.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_skirt.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/outfit_stripe.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_stripe.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/outfit_waistapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_waistapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/outfit_widepants.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/outfit_widepants.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/skin_skin2.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/skin_skin2.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/skin_skin3.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/skin_skin3.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/avatar/boy/tool_goldtongs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/avatar/boy/tool_goldtongs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_accessory_ribbon.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_accessory_ribbon.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_hair_curly.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hair_curly.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_hair_ponytail.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hair_ponytail.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_hair_short.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hair_short.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_hat_blackcap.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_blackcap.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_hat_chefhat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_chefhat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_hat_earmuffs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_earmuffs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_hat_redbandana.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_redbandana.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_hat_santa.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_hat_santa.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_apron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_apron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_cardigan.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_cardigan.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_chefcoat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_chefcoat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_creamapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_creamapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_darkapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_darkapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_stripe.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_stripe.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_sweater.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_sweater.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_outfit_waistapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_outfit_waistapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_1_tool_goldtongs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_1_tool_goldtongs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_accessory_ribbon.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_accessory_ribbon.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_hair_curly.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hair_curly.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_hair_ponytail.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hair_ponytail.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_hair_short.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hair_short.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_hat_blackcap.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_blackcap.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_hat_chefhat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_chefhat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_hat_earmuffs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_earmuffs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_hat_redbandana.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_redbandana.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_hat_santa.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_hat_santa.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_outfit_apron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_outfit_apron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_outfit_cardigan.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_outfit_cardigan.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_outfit_chefcoat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_outfit_chefcoat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_outfit_creamapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_outfit_creamapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_outfit_darkapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_outfit_darkapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_outfit_stripe.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_outfit_stripe.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_outfit_sweater.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_outfit_sweater.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_outfit_waistapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_outfit_waistapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_2_tool_goldtongs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_2_tool_goldtongs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_accessory_ribbon.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_accessory_ribbon.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_hair_curly.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_hair_curly.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_hair_ponytail.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_hair_ponytail.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_hair_short.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_hair_short.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_hat_blackcap.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_hat_blackcap.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_hat_chefhat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_hat_chefhat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_hat_earmuffs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_hat_earmuffs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_hat_redbandana.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_hat_redbandana.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_hat_santa.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_hat_santa.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_outfit_apron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_outfit_apron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_outfit_cardigan.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_outfit_cardigan.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_outfit_chefcoat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_outfit_chefcoat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_outfit_creamapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_outfit_creamapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_outfit_darkapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_outfit_darkapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_outfit_stripe.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_outfit_stripe.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_outfit_sweater.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_outfit_sweater.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_outfit_waistapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_outfit_waistapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_3_tool_goldtongs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_3_tool_goldtongs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_accessory_ribbon.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_accessory_ribbon.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_hair_curly.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_hair_curly.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_hair_ponytail.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_hair_ponytail.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_hair_short.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_hair_short.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_hat_blackcap.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_hat_blackcap.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_hat_chefhat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_hat_chefhat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_hat_earmuffs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_hat_earmuffs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_hat_redbandana.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_hat_redbandana.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_hat_santa.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_hat_santa.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_outfit_apron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_outfit_apron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_outfit_cardigan.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_outfit_cardigan.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_outfit_chefcoat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_outfit_chefcoat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_outfit_creamapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_outfit_creamapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_outfit_darkapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_outfit_darkapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_outfit_stripe.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_outfit_stripe.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_outfit_sweater.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_outfit_sweater.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_outfit_waistapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_outfit_waistapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_4_tool_goldtongs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_4_tool_goldtongs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_accessory_ribbon.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_accessory_ribbon.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_hair_curly.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_hair_curly.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_hair_ponytail.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_hair_ponytail.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_hair_short.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_hair_short.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_hat_blackcap.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_hat_blackcap.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_hat_chefhat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_hat_chefhat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_hat_earmuffs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_hat_earmuffs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_hat_redbandana.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_hat_redbandana.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_hat_santa.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_hat_santa.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_outfit_apron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_outfit_apron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_outfit_cardigan.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_outfit_cardigan.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_outfit_chefcoat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_outfit_chefcoat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_outfit_creamapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_outfit_creamapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_outfit_darkapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_outfit_darkapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_outfit_stripe.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_outfit_stripe.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_outfit_sweater.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_outfit_sweater.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_outfit_waistapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_outfit_waistapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_5_tool_goldtongs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_5_tool_goldtongs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_accessory_ribbon.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_accessory_ribbon.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_hair_curly.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_hair_curly.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_hair_ponytail.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_hair_ponytail.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_hair_short.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_hair_short.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_hat_blackcap.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_hat_blackcap.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_hat_chefhat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_hat_chefhat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_hat_earmuffs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_hat_earmuffs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_hat_redbandana.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_hat_redbandana.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_hat_santa.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_hat_santa.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_outfit_apron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_outfit_apron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_outfit_cardigan.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_outfit_cardigan.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_outfit_chefcoat.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_outfit_chefcoat.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_outfit_creamapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_outfit_creamapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_outfit_darkapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_outfit_darkapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_outfit_stripe.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_outfit_stripe.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_outfit_sweater.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_outfit_sweater.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_outfit_waistapron.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_outfit_waistapron.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "이미지/추가 생성 이미지/cook/boy_6_tool_goldtongs.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/이미지/추가 생성 이미지/cook/boy_6_tool_goldtongs.png",
+      "transparent": false,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    },
+    {
+      "path": "assets/images/avatar/boy/base.png",
+      "reference": "output/imagegen/boy_eyelashes_backup/assets/images/avatar/boy/base.png",
+      "transparent": true,
+      "prompt": "Precise localized edit of the supplied image. Change ONLY the male character eyelashes. Remove every protruding lash spike along the upper eyelid except at its outer corner. Each eye must have exactly one very short subtle eyelash protruding only at the far outer eye corner, pointing outward. The inner corner and middle of both upper lids are smooth, with no protruding eyelash spikes. Preserve the eye shapes, pupils, gaze, mouth and existing expression, skin, hairstyle, all clothing and accessories, hands, pose, scene objects, counter and cooking action, composition, original framing, dimensions, pixel art rendering, palette, and background. Keep existing glasses and closed-eye expressions intact where present. Keep the thin upper eyelid line; avoid thick eyeliner and long feminine eyelashes. Do not add text or labels. Preserve transparency if the source has it; otherwise preserve the original white background. One edited image only."
+    }
+  ]
+}

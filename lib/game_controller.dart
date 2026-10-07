@@ -53,10 +53,12 @@ class GameController extends ChangeNotifier {
   Stream<GameEvent> get events => _events.stream;
   // How long the last offline settlement covered (after the cap).
   Duration lastOfflineDuration = Duration.zero;
+  // How long the player was actually away (no cap).
+  Duration lastAwayDuration = Duration.zero;
   RankingStatus rankingStatus = RankingStatus.unavailable;
-  bool _rankingBusy = false;
   int? _lastRankingSubmitMs;
   Map<String, int>? _lastRankingScores;
+  Future<void>? _rankingSubmission;
   bool _inviteLoading = false, _disposed = false;
   String? inviteError;
   late GameState state;
@@ -65,6 +67,10 @@ class GameController extends ChangeNotifier {
   Timer? _ticker, _periodicSave;
   String? error;
   BigInt lastOfflineReward = BigInt.zero;
+
+  /// Whether [gain] from the last [resume] earns the welcome-back screen.
+  bool welcomesBack(BigInt gain) =>
+      gain > BigInt.zero && lastAwayDuration >= offlineWelcomeAfter;
   // Combo is session-only; the best value is kept in records.
   int _combo = 0, _lastComboMs = 0;
   int get currentCombo =>
@@ -82,7 +88,7 @@ class GameController extends ChangeNotifier {
 
   /// Firebase backend (online_controller.dart): friends, visits, invites.
   final OnlineBackend online;
-  bool _onlineSyncing = false, _levelOneReported = false;
+  bool _onlineSyncing = false, _levelOneReported = false, _signingIn = false;
   int? _lastOnlineSyncMs;
 
   /// Google Play Billing for 황금 붕어빵 packs (premium_controller.dart).
@@ -163,7 +169,27 @@ class GameController extends ChangeNotifier {
     _syncOnlineIfDue(now);
     _markPlayed();
     submitRankingIfDue();
+    // _autoLevelUp(now);
     notifyListeners();
+  }
+
+  // Set while an automatic level-up runs (claimLevelUp ticks again).
+  bool _autoLeveling = false;
+  // A failed save is retried after a pause, not on every 100ms tick.
+  int? _autoLevelRetryMs;
+
+  /// Levels up by itself once every goal is met; the levelUp event shows the
+  /// reward banner. The level advances synchronously, so the "미션 달성"
+  /// notice never sees the level as claimable.
+  void _autoLevelUp(int nowMs) {
+    if (_autoLeveling || !canClaimLevel(state)) return;
+    if (_autoLevelRetryMs case final retry? when nowMs < retry) return;
+    _autoLeveling = true;
+    final target = activeLevelMission(state)!.level;
+    claimLevelUp(target).then((ok) {
+      _autoLevelRetryMs = ok ? null : nowMs + autoLevelRetryMs;
+      _autoLeveling = false;
+    });
   }
 
   // In memory only; persisted by the periodic/command saves.
@@ -504,6 +530,7 @@ class GameController extends ChangeNotifier {
     final now = gameNow;
     var ms = now.difference(state.lastSettledUtc).inMilliseconds;
     if (ms < 0) ms = 0;
+    lastAwayDuration = Duration(milliseconds: ms);
     if (ms > maxOfflineMs) ms = maxOfflineMs;
     lastOfflineDuration = Duration(milliseconds: ms);
     final before = state.copy();
@@ -521,8 +548,9 @@ class GameController extends ChangeNotifier {
     _lastMono = clock.monotonicMilliseconds;
     _markPlayed();
     if (_ticker != null) unawaited(refreshRanking());
-    lastOfflineReward = gain;
+    lastOfflineReward = BigInt.zero;
     if (gain > BigInt.zero && !await _commit(before)) return BigInt.zero;
+    lastOfflineReward = gain;
     notifyListeners();
     return gain;
   }

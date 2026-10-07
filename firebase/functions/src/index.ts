@@ -1,15 +1,20 @@
 import { initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
-import { CallableRequest, HttpsError, onCall } from "firebase-functions/v2/https";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { google } from "googleapis";
+import { signedIn } from "./auth";
 import { catalog } from "./catalog";
 import * as friends from "./friends";
 import * as invites from "./invites";
+import { KakaoAccounts, KakaoError, authKakao as checkKakao, kakaoRestApi } from "./kakao";
+import * as ranking from "./ranking";
 import { AlreadyExists, Doc, Store, Tx } from "./store";
 import { PlayPurchases, WalletError, redeemPurchase, spendGold, syncWallet } from "./wallet";
 
-// Callable endpoints for the app. Every call needs a Firebase account signed
-// in with Google Play Games; the app never reads or writes Firestore itself.
+// Callable endpoints for the app. authKakao turns a Kakao login into a
+// Firebase account; every other call needs that account (auth.ts). The app
+// never reads or writes Firestore itself.
 
 initializeApp();
 const db = getFirestore();
@@ -58,14 +63,32 @@ const play: PlayPurchases = {
   },
 };
 
-function signedIn(req: CallableRequest): string {
-  const uid = req.auth?.uid;
-  if (!uid) throw new HttpsError("unauthenticated", "sign in with Google Play Games first");
-  if (req.auth?.token.firebase?.sign_in_provider !== "playgames.google.com") {
-    throw new HttpsError("permission-denied", "a Play Games account is required");
-  }
-  return uid;
-}
+// Custom tokens need the function's service account to hold "Service
+// Account Token Creator" (docs/stage16_kakao_login_ranking.md).
+const auth = getAuth();
+const kakaoAccounts: KakaoAccounts = {
+  createCustomToken: (uid, claims) => auth.createCustomToken(uid, claims),
+  async setDisplayName(uid, name) {
+    try {
+      await auth.updateUser(uid, { displayName: name });
+    } catch (e) {
+      if ((e as { code?: string }).code !== "auth/user-not-found") throw e;
+      await auth.createUser({ uid, ...(name ? { displayName: name } : {}) });
+    }
+  },
+};
+
+const rankingQueries: ranking.RankingQueries = {
+  async top(board, limit) {
+    const snap = await db.collection(`rankings/${board}/entries`)
+      .orderBy("score", "desc").orderBy("updatedAt", "asc").limit(limit).get();
+    return snap.docs.map((d) => ({ id: d.id, data: d.data() }));
+  },
+  async countAbove(board, score) {
+    const snap = await db.collection(`rankings/${board}/entries`).where("score", ">", score).count().get();
+    return snap.data().count;
+  },
+};
 
 /** Maps domain errors to callable errors the app can tell apart. */
 async function handle<T>(work: () => Promise<T>): Promise<T> {
@@ -86,12 +109,32 @@ async function handle<T>(work: () => Promise<T>): Promise<T> {
               : "invalid-argument";
       throw new HttpsError(code, e.message, { reason: e.code });
     }
+    if (e instanceof ranking.RankingError) {
+      const code = e.code === "too-soon" ? "resource-exhausted" : "invalid-argument";
+      throw new HttpsError(code, e.message, { reason: e.code });
+    }
+    if (e instanceof KakaoError) {
+      const code = e.code === "expired"
+        ? "unauthenticated"
+        : e.code === "wrong-app"
+          ? "permission-denied"
+          : e.code === "unavailable"
+            ? "unavailable"
+            : e.code === "misconfigured"
+              ? "failed-precondition"
+              : "invalid-argument";
+      throw new HttpsError(code, e.message, { reason: e.code });
+    }
     if (e instanceof AlreadyExists) throw new HttpsError("aborted", "please retry");
     throw e;
   }
 }
 
 const options = { region: "asia-northeast3", enforceAppCheck: false };
+
+// Set in functions/.env (not committed): KAKAO_APP_ID=<카카오 앱 ID>.
+export const authKakao = onCall(options, (req) =>
+  handle(() => checkKakao(kakaoRestApi, kakaoAccounts, process.env.KAKAO_APP_ID, req.data ?? {})));
 
 export const walletSync = onCall(options, (req) =>
   handle(() => syncWallet(store, signedIn(req))));
@@ -131,3 +174,9 @@ export const friendVisit = onCall(options, (req) =>
 
 export const visitsFetch = onCall(options, (req) =>
   handle(async () => ({ visits: await friends.fetchVisits(store, signedIn(req), req.data ?? {}, Date.now()) })));
+
+export const rankingSubmit = onCall(options, (req) =>
+  handle(() => ranking.submit(store, signedIn(req), req.data ?? {}, Date.now())));
+
+export const rankingTop = onCall(options, (req) =>
+  handle(() => ranking.top(store, rankingQueries, signedIn(req), req.data ?? {})));

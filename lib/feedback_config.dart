@@ -20,6 +20,13 @@ const maxConfetti = 36;
 /// counted ("외 N개") so the banner fits on small screens.
 const levelUpNamesShown = 3;
 
+/// The "다시 오셨네요!" screen shows only after this long away (real time,
+/// not capped like the reward). Shorter absences still pay out silently.
+const offlineWelcomeAfter = Duration(hours: 24);
+
+/// After a failed automatic level-up save, wait this long before retrying.
+const autoLevelRetryMs = 10000;
+
 /// How long the "미션 달성!" notice stays when a goal becomes claimable.
 const missionNoticeMs = 2600;
 

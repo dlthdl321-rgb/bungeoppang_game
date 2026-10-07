@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'pixel_sprites.dart';
 
 /// Colours of the concept art (이미지/붕어빵게임_개발에셋_261006_1905_01):
 /// cream panels in wooden frames, dark chocolate text, orange buttons.
@@ -249,7 +250,7 @@ class CozyBackButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(11),
                 border: Border.all(color: Cozy.woodLight, width: 1.5)),
             child: const Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.undo_rounded, color: Cozy.ink, size: 24),
+              PixelIcon('back', size: 24),
               SizedBox(width: 8),
               Text('돌아가기',
                   style: TextStyle(
@@ -263,7 +264,8 @@ class CozyBackButton extends StatelessWidget {
 /// A settings row like the concept: an icon, the name and an ON/OFF pill.
 /// Tapping anywhere on the row toggles it.
 class CozySettingRow extends StatelessWidget {
-  final IconData icon;
+  /// A [PixelIcon], or a system [Icon] where no pixel art exists yet.
+  final Widget icon;
   final String label;
   final String? subtitle;
   final bool value;
@@ -295,7 +297,7 @@ class CozySettingRow extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
                 child: Row(children: [
-                  Icon(icon, color: Cozy.ink, size: 28),
+                  SizedBox.square(dimension: 28, child: Center(child: icon)),
                   const SizedBox(width: 10),
                   Expanded(
                       child: Column(

@@ -1,5 +1,5 @@
-import 'package:flutter/services.dart';
 import 'models.dart';
+import 'online_backend.dart';
 import 'ranking_config.dart';
 
 class RankingStatus {
@@ -8,78 +8,58 @@ class RankingStatus {
   static const unavailable = RankingStatus();
 }
 
-/// Online leaderboard port. The game never depends on it to be playable.
+/// Online ranking port. The game never depends on it to be playable.
 abstract class RankingService {
   Future<RankingStatus> status();
-  Future<bool> signIn();
+
+  /// Sends my best scores; failures are dropped (the next one retries).
   Future<void> submit(Map<String, int> scores);
-  Future<bool> showLeaderboards();
+
+  /// The top [rankingTopCount] of [board] and my place. Throws
+  /// [OnlineException] when offline or signed out.
+  Future<RankingBoard> top(String board);
 }
 
-/// Platforms without Play Games (iOS, tests, desktop).
+/// Builds without the online server (iOS, tests, no Kakao key).
 class NoRankingService implements RankingService {
   const NoRankingService();
   @override
   Future<RankingStatus> status() async => RankingStatus.unavailable;
   @override
-  Future<bool> signIn() async => false;
-  @override
   Future<void> submit(Map<String, int> scores) async {}
   @override
-  Future<bool> showLeaderboards() async => false;
+  Future<RankingBoard> top(String board) async =>
+      throw const OnlineException(OnlineFailure.unavailable);
 }
 
-/// Android Play Games Services v2 through MainActivity's method channel.
-class PlayGamesRankingService implements RankingService {
-  static const channel = MethodChannel('todays_bungeoppang/play_games');
-  const PlayGamesRankingService();
+/// The game's own boards on the Firebase server, through [OnlineBackend]
+/// and its Kakao sign-in.
+class ServerRankingService implements RankingService {
+  final OnlineBackend online;
+  const ServerRankingService(this.online);
 
   @override
-  Future<RankingStatus> status() async {
-    try {
-      final m = await channel.invokeMapMethod<String, Object?>('status');
-      return RankingStatus(
-          configured: m?['configured'] == true,
-          authenticated: m?['authenticated'] == true);
-    } on MissingPluginException {
-      return RankingStatus.unavailable;
-    } on PlatformException {
-      return RankingStatus.unavailable;
-    }
-  }
-
-  @override
-  Future<bool> signIn() => _bool('signIn');
+  Future<RankingStatus> status() async => RankingStatus(
+      configured: online.configured,
+      authenticated: online.configured && online.signedIn);
 
   @override
   Future<void> submit(Map<String, int> scores) async {
     try {
-      await channel.invokeMethod<int>('submitScores', scores);
-    } on MissingPluginException {
-      // Not available on this platform.
-    } on PlatformException {
-      // Offline or signed out: the next submission retries the best scores.
+      await online.rankingSubmit(scores);
+    } on OnlineException {
+      // Offline, too soon or refused: the next submission retries the bests.
     }
   }
 
   @override
-  Future<bool> showLeaderboards() => _bool('showLeaderboards');
-
-  Future<bool> _bool(String method) async {
-    try {
-      return await channel.invokeMethod<bool>(method) == true;
-    } on MissingPluginException {
-      return false;
-    } on PlatformException {
-      return false;
-    }
-  }
+  Future<RankingBoard> top(String board) => online.rankingTop(board);
 }
 
 int _clamp(BigInt value) =>
     (value > rankingScoreMax ? rankingScoreMax : value).toInt();
 
-/// Best values only; Play Games keeps each player's highest score.
+/// Best values only; the server keeps each player's highest score.
 Map<String, int> rankingScores(GameState s) => {
       rankingBestAutoRate: _clamp(s.records.bestAutoRate),
       rankingLifetime: _clamp(s.lifetime),

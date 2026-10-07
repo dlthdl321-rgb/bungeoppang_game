@@ -1,13 +1,22 @@
+import java.util.Base64
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-val playGamesAppId = Regex("""name="app_id"[^>]*>\s*([0-9]*)\s*<""")
-    .find(file("src/main/res/values/games-ids.xml").readText())
-    ?.groupValues?.get(1).orEmpty()
-val playGamesEnabled = playGamesAppId.isNotEmpty()
+// --dart-define values reach Gradle base64-encoded in "dart-defines". The
+// Kakao native app key (KAKAO_NATIVE_APP_KEY) is never stored in the
+// repository; the manifest's Kakao login redirect scheme is "kakao<key>".
+// Without a key the scheme gets a placeholder and online features stay off.
+val dartDefines: Map<String, String> =
+    (project.findProperty("dart-defines") as String?).orEmpty()
+        .split(",")
+        .filter { it.isNotEmpty() }
+        .map { String(Base64.getDecoder().decode(it)).split("=", limit = 2) }
+        .associate { it[0] to it.getOrElse(1) { "" } }
+val kakaoNativeAppKey = dartDefines["KAKAO_NATIVE_APP_KEY"].orEmpty()
 
 android {
     namespace = "com.todaybungeoppang.todays_bungeoppang"
@@ -32,10 +41,8 @@ android {
         // flag during build.
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-    }
-
-    sourceSets.getByName("main") {
-        java.srcDir(if (playGamesEnabled) "src/playGames/kotlin" else "src/noPlayGames/kotlin")
+        manifestPlaceholders["kakaoNativeAppKey"] =
+            kakaoNativeAppKey.ifEmpty { "-not-configured" }
     }
 
     buildTypes {
@@ -55,13 +62,4 @@ kotlin {
 
 flutter {
     source = "../.."
-}
-
-// Play Games Services v2 (v1 can no longer be used by new titles) is linked
-// only once games-ids.xml holds the numeric Play Console app ID. Until then
-// the build carries no Play Games SDK and online ranking stays hidden.
-dependencies {
-    if (playGamesEnabled) {
-        implementation("com.google.android.gms:play-services-games-v2:22.1.0")
-    }
 }

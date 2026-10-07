@@ -25,6 +25,15 @@ for s in spring summer autumn winter; do
   $P "$RAW/event/$s.png" -o "$OUT/event" --size "$(px 160x48)" --mode background --no-grid --preview 0
 done
 $P "$RAW/ui/wardrobe_bg.png" -o "$OUT/ui" --size "$(px 120x72)" --mode background --no-grid --preview 0
+# The cooking cut on the home screen stretches the shop interior past its
+# size with smooth filtering; 4x nearest-neighbour keeps its dots sharp.
+python - "$OUT/ui/wardrobe_bg.png" <<'PY'
+import sys
+from PIL import Image
+p = sys.argv[1]
+im = Image.open(p)
+im.resize((im.width * 4, im.height * 4), Image.NEAREST).save(p, optimize=True)
+PY
 $P "$RAW/ui/offline.png" -o "$OUT/ui" --size "$(px 64x48)" --preview 0
 $P "$RAW/ui/title_fish.png" -o "$OUT/ui" --size "$(px 16x12)" --preview 0
 # Post lamps: logical 9x14, the size of stall/postlamp.png.

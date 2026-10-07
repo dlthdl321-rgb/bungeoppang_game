@@ -1,0 +1,11 @@
+﻿{
+    "status":  "stopped",
+    "reason":  "image_gen returned Error",
+    "total":  324,
+    "generated":  146,
+    "reused":  1,
+    "saved":  147,
+    "missing_saved_files":  0,
+    "last_saved":  "cook/girl_2_bottom_brownpants.png",
+    "stopped_at":  "cook/girl_3_bottom_brownpants.png"
+}

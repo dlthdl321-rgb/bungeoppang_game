@@ -2,11 +2,13 @@
 
 작성: 2026-10-06. 14단계(시안 적용)와 같은 작업 폴더에서 병행 중이다.
 
+> **2026-10-07: 로그인과 랭킹은 16단계에서 카카오 로그인과 자체 랭킹으로 바뀌었다.** 아래의 로그인·랭킹 설명과 설정 절차는 [16단계 기록](stage16_kakao_login_ranking.md)이 대신한다. 결제·지갑·친구·초대는 그대로다.
+
 ## 결정 기록
 
 | 항목 | 결정 |
 |---|---|
-| 서버 | **Firebase.** Play 게임즈 계정으로 Firebase Auth에 로그인한다. 데이터는 Firestore(서울)에 두고, 앱은 Cloud Functions만 호출한다 |
+| 서버 | **Firebase.** 카카오 계정으로 Firebase Auth에 로그인한다(16단계, 커스텀 토큰). 데이터는 Firestore(서울)에 두고, 앱은 Cloud Functions만 호출한다 |
 | 유료 재화 이름 | **황금 붕어빵**. 코인은 무료 재화로 유지한다 |
 | 먼저 해금 | **스킬**(누적 생산 조건 건너뛰기), **레벨 잠긴 꾸미기**(잠금 무시), **부스트 구매**(아이템이 없어져서 대체) |
 | 캐시 꾸미기 | **모든 꾸미기를 코인 또는 황금 붕어빵으로** 살 수 있다 |
@@ -21,7 +23,7 @@
 ## 구조
 
 ```
-앱 ── Play 게임즈 로그인 ──> serverAuthCode ──> Firebase Auth (playgames.google.com)
+앱 ── 카카오 로그인 ──> 접속 토큰 ──> authKakao ──> 커스텀 토큰 ──> Firebase Auth (16단계)
  │
  ├─ Google Play Billing (in_app_purchase) ── 구매 토큰 ──┐
  │                                                     v
@@ -41,7 +43,7 @@
   - 한 계정은 초대를 한 번만 수락할 수 있다. 자기 자신은 초대할 수 없다.
   - 서로에게는 계정 ID 대신 해시한 `playerId`만 보인다.
   - Lv.1 달성은 앱이 알리는 값을 믿는다. 서버가 검증하지 않으므로 보상(요정 1개)은 작게 둔다.
-- **랭킹**은 9단계 Play 게임즈 리더보드를 그대로 쓴다.
+- **랭킹**은 16단계에서 서버 자체 랭킹(`rankingSubmit`/`rankingTop`)으로 바꿨다.
 
 ## 가격표 (`lib/premium_config.dart` → `firebase/functions/src/catalog.json`)
 
@@ -67,7 +69,7 @@
 | 영역 | 파일 | 상태 |
 |---|---|---|
 | 서버 | `firebase/functions/src/{wallet,invites,friends,store,catalog,index}.ts`, `firestore.rules` | 단위 테스트 14개 통과(`npm test`). 실제 배포 전 |
-| 서버 함수 | `walletSync/Redeem/Spend`, `inviteRegister/CreateTicket/Accept/LevelOne/FetchEvents`, `profileSet`, `friendAdd/List/Visit`, `visitsFetch` | 모두 Play 게임즈 로그인 계정만 호출 가능 |
+| 서버 함수 | `walletSync/Redeem/Spend`, `inviteRegister/CreateTicket/Accept/LevelOne/FetchEvents`, `profileSet`, `friendAdd/List/Visit`, `visitsFetch` | 모두 카카오 로그인 계정만 호출 가능(16단계) |
 | 앱 서버 연결 | `lib/online_backend.dart`, `lib/firebase_online_backend.dart`, `lib/server_invite_repository.dart` | Firebase 설정은 `--dart-define`으로만 넣음(저장소에 없음) |
 | 결제 | `lib/billing_service.dart`, `lib/play_billing_service.dart` | 서버가 확인·소비한 뒤 앱이 결제를 마무리함(autoConsume 끔) |
 | 세이브 | `lib/premium_state.dart`(`premium` 항목), `support-v2`(부스트, 받은 방문) | 옛 세이브: 지갑 없음 → 빈 지갑, `support-v1` → 아이템 버리고 사용 횟수만 부스트 횟수로 |
@@ -85,14 +87,12 @@
 
 1. **Play Console**
    - 앱을 만들고, 앱 서명 키의 SHA-1을 확인한다.
-   - Play 게임즈 서비스를 설정한다. 앱 ID와 리더보드 3개를 만들고 `games-ids.xml`을 받는다.
    - 수익 창출 → 인앱 상품에 위 5개 ID를 **소비성**으로 만들고 가격을 정한다.
    - 앱 콘텐츠 → 데이터 삭제: 계정 삭제 요청 방법(이메일)을 입력한다.
    - 결제 프로필(판매자 계정)을 만든다.
 2. **Firebase**
    - 프로젝트를 만들고 Android 앱(`com.todaybungeoppang.todays_bungeoppang`, SHA-1 등록)을 추가한다. Android 앱 설정 값(API 키, 앱 ID, 발신자 ID, 프로젝트 ID)을 확인한다(4번에서 사용).
-   - Authentication에서 **Play Games** 로그인을 켠다. Play 게임즈의 클라이언트 ID·보안 비밀을 입력한다.
-   - "Web client" OAuth ID를 `firebase-ids.xml`의 `server_client_id`에 넣는다. Play Console의 Play 게임즈 사용자 인증 정보에 '게임 서버'로도 등록한다.
+   - 로그인 설정(카카오 앱 ID, 커스텀 토큰 권한)은 [16단계 기록](stage16_kakao_login_ranking.md)의 콘솔 작업을 따른다.
    - Firestore를 서울 리전(`asia-northeast3`)으로 만든다.
    - Blaze 요금제로 바꾼다. Functions와 외부 API 호출에 필요하다.
 3. **구매 확인 권한**

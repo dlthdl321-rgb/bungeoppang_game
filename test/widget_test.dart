@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
+import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/online_ranking.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/repository.dart';
@@ -40,7 +41,8 @@ Future<GameController> mountGame(WidgetTester tester, Size size,
     CountingRepository? repository,
     bool maxLevel = false,
     bool? developerTools,
-    RankingService ranking = const NoRankingService()}) async {
+    RankingService ranking = const NoRankingService(),
+    OnlineBackend online = const NoOnlineBackend()}) async {
   // Decoding needs real async; the app does this in main() before runApp.
   await tester.runAsync(PixelSprites.load);
   await tester.binding.setSurfaceSize(size);
@@ -69,7 +71,7 @@ Future<GameController> mountGame(WidgetTester tester, Size size,
     ..vibration = false
     ..reduceMotion = reduced;
   final c = GameController(repo, time,
-      developerTools: developerTools, ranking: ranking);
+      developerTools: developerTools, ranking: ranking, online: online);
   await c.initialize();
   await tester.pumpWidget(GameApp(controller: c));
   await tester.pump();
@@ -172,6 +174,7 @@ void main() {
           'menu-collection',
           'menu-achievements',
           'menu-records',
+          'menu-ranking',
           'menu-theme',
           'menu-daily',
           'menu-missions',

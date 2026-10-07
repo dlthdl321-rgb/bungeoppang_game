@@ -1,0 +1,13 @@
+이전 생성 이미지 9장 합침
+이번에 누락 이미지 49장 생성
+전체 358장
+남자 속눈썹 수정 142/142장 완료
+수정 대기 0장: eyelashes_pending.json
+수정 전 원본: output/imagegen/boy_eyelashes_backup
+수정 이미지 원본 크기 유지 확인 완료
+프롬프트 문서 1~14절 및 조리 동작 반복 누락 점검 완료
+PNG 무결성 확인 완료
+고해상도 배경 6종: 실제 약 832 x 1891, 목표 1080 x 2456 미달
+배경 제거, 레이어 추출, 게임 규격 정렬은 별도 작업입니다.
+목록: manifest_complete.json
+미리보기: gallery_complete.html

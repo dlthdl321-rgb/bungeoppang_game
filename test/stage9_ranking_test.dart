@@ -1,44 +1,57 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
+import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/online_ranking.dart';
 import 'package:todays_bungeoppang/ranking_config.dart';
+import 'package:todays_bungeoppang/repository.dart';
+import 'package:todays_bungeoppang/ui/ranking_panel.dart';
 import 'controller_test.dart' show FakeTime;
 import 'level_missions_widget_test.dart' show tapVisible;
+import 'online_backend_test.dart' show backend;
 import 'stage8_widget_test.dart' show expectNoPrototypeText;
 import 'widget_test.dart' show CountingRepository, mountGame;
 
+// Stage 16: Kakao login and the game's own online ranking (the server side
+// is tested in firebase/functions/test/ranking.test.ts).
+
 class FakeRanking implements RankingService {
-  bool configured, authenticated, signInSucceeds;
+  bool configured, authenticated;
   final submissions = <Map<String, int>>[];
-  int shows = 0, signIns = 0;
-  FakeRanking(
-      {this.configured = true,
-      this.authenticated = true,
-      this.signInSucceeds = true});
+  final loaded = <String>[];
+  FakeRanking({this.configured = true, this.authenticated = true});
   @override
   Future<RankingStatus> status() async => RankingStatus(
       configured: configured, authenticated: configured && authenticated);
   @override
-  Future<bool> signIn() async {
-    signIns++;
-    if (signInSucceeds) authenticated = true;
-    return authenticated;
-  }
-
-  @override
   Future<void> submit(Map<String, int> scores) async =>
       submissions.add(Map.of(scores));
   @override
-  Future<bool> showLeaderboards() async {
-    shows++;
-    return true;
+  Future<RankingBoard> top(String board) async {
+    loaded.add(board);
+    return RankingBoard(board, const [], null);
   }
 }
 
 final now = DateTime.utc(2026, 10, 5, 3);
+
+/// Two other players on every board, one with an avatar.
+FakeOnlineBackend rankedBackend() {
+  final b = backend();
+  for (final board in rankingBoards) {
+    b.rankingOthers[board] = [
+      RankingEntry(
+          rank: 0,
+          playerId: 'p1',
+          name: '붕어왕',
+          score: BigInt.parse('123456789012345'),
+          look: const {'hair': 'long'}),
+      RankingEntry(rank: 0, playerId: 'p2', name: '팥순이', score: BigInt.zero),
+    ];
+  }
+  return b;
+}
 
 void main() {
   group('점수 변환', () {
@@ -93,125 +106,214 @@ void main() {
       expect(repo.saves, saves); // Ranking never writes the save file.
     });
 
-    test('레벨업·앱 나가기·순위 열기에서는 바로 보낸다', () async {
+    test('레벨업·앱 나가기·순위 열기에서는 바로 보내되 서버 최소 간격은 지킨다', () async {
       c.tick();
       final base = ranking.submissions.length;
       c.state.tutorialDone = true;
       c.state.lifetime = BigInt.from(10);
       expect(await c.claimLevelUp(2), isTrue);
-      expect(ranking.submissions.length, base + 1);
-      c.tap();
+      expect(ranking.submissions.length, base); // Under a minute: held back.
+      clock.advance(rankingSubmitMinGapMs);
+      c.state.lifetime = BigInt.from(11);
       await c.leaveActive();
-      expect(ranking.submissions.length, base + 2);
+      expect(ranking.submissions.length, base + 1);
       await c.resume();
+      clock.advance(rankingSubmitMinGapMs);
       c.tap();
-      expect(await c.showRanking(), isTrue);
-      expect(ranking.submissions.length, base + 3);
-      expect(ranking.shows, 1);
+      expect((await c.loadRanking(rankingBestCombo))!.board, rankingBestCombo);
+      expect(ranking.submissions.length, base + 2);
+      expect(ranking.loaded, [rankingBestCombo]);
     });
 
-    test('로그인하지 않았거나 준비되지 않았으면 보내지 않는다', () async {
+    test('로그인하지 않았거나 준비되지 않았으면 보내지도 불러오지도 않는다', () async {
       ranking.authenticated = false;
       await c.refreshRanking();
       c.tap();
       clock.advance(rankingSubmitIntervalMs);
       c.tick();
-      expect(await c.showRanking(), isFalse);
+      expect(await c.loadRanking(rankingLifetime), isNull);
       expect(ranking.submissions, isEmpty);
-      ranking.configured = false;
-      await c.refreshRanking();
-      expect(await c.signInRanking(), isFalse);
-      expect(ranking.signIns, 0);
-    });
-
-    test('로그인 성공 후 바로 현재 기록을 보낸다', () async {
-      ranking.authenticated = false;
-      await c.refreshRanking();
-      c.tap();
-      expect(await c.signInRanking(), isTrue);
-      expect(c.rankingStatus.authenticated, isTrue);
-      expect(ranking.submissions.single[rankingLifetime], 1);
+      expect(ranking.loaded, isEmpty);
     });
   });
 
-  group('Play 게임즈 채널', () {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    const channel = PlayGamesRankingService.channel;
-    final messenger =
-        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
-    tearDown(() => messenger.setMockMethodCallHandler(channel, null));
+  group('카카오 로그인', () {
+    late FakeTime clock;
+    late FakeOnlineBackend online;
+    late GameController c;
+    Future<void> start({FakeOnlineBackend? using}) async {
+      clock = FakeTime()..now = now;
+      online = using ?? rankedBackend();
+      c = GameController(MemoryGameRepository(), clock,
+          online: online, ranking: ServerRankingService(online));
+      await c.initialize();
+      await c.refreshRanking();
+    }
 
-    test('플러그인이 없는 플랫폼은 준비되지 않음으로 처리', () async {
-      const service = PlayGamesRankingService();
-      expect((await service.status()).configured, isFalse);
-      expect(await service.signIn(), isFalse);
-      await service.submit({rankingLifetime: 1});
-      expect(await service.showLeaderboards(), isFalse);
+    tearDown(() => c.dispose());
+
+    test('성공하면 프로필을 보내고 바로 내 기록을 올린다', () async {
+      await start();
+      expect(c.rankingStatus.configured, isTrue);
+      expect(c.rankingStatus.authenticated, isFalse);
+      c.tap();
+      expect(await c.signInOnline(), isNull);
+      expect(online.signedIn, isTrue);
+      expect(c.rankingStatus.authenticated, isTrue);
+      expect(online.name, '테스터'); // the Kakao nickname
+      expect(online.rankingSubmissions.single[rankingLifetime], 1);
+      final board = (await c.loadRanking(rankingLifetime))!;
+      expect(board.entries.map((e) => (e.rank, e.name)),
+          [(1, '붕어왕'), (2, '테스터'), (3, '팥순이')]);
+      expect(board.me, (rank: 2, score: BigInt.one));
     });
 
-    test('상태·제출 인자를 그대로 주고받는다', () async {
-      final calls = <MethodCall>[];
-      messenger.setMockMethodCallHandler(channel, (call) async {
-        calls.add(call);
-        return switch (call.method) {
-          'status' => {'configured': true, 'authenticated': true},
-          'submitScores' => 3,
-          _ => true,
-        };
-      });
-      const service = PlayGamesRankingService();
-      final status = await service.status();
-      expect(status.configured && status.authenticated, isTrue);
-      await service.submit({rankingBestCombo: 9});
-      expect(calls.last.arguments, {rankingBestCombo: 9});
-      expect(await service.showLeaderboards(), isTrue);
+    test('사용자가 취소하면 메시지 없이 그대로 로그아웃 상태', () async {
+      await start();
+      online.signInResult = SignInResult.canceled;
+      expect(await c.signInOnline(), isNull);
+      expect(online.signedIn, isFalse);
+      expect(c.rankingStatus.authenticated, isFalse);
+      expect(online.rankingSubmissions, isEmpty);
+      // An action that needs the account says so instead.
+      expect(await c.addFriend('BBAAAAAAAA'), '카카오 계정으로 로그인해 주세요');
     });
 
-    test('플랫폼 오류는 게임을 멈추지 않는다', () async {
-      messenger.setMockMethodCallHandler(
-          channel, (_) async => throw PlatformException(code: 'offline'));
-      const service = PlayGamesRankingService();
-      expect((await service.status()).authenticated, isFalse);
-      await service.submit({rankingLifetime: 1});
-      expect(await service.signIn(), isFalse);
+    test('실패하면 다시 해 달라고 알린다', () async {
+      await start();
+      online.signInResult = SignInResult.failed;
+      expect(await c.signInOnline(), '로그인하지 못했어요. 잠시 후 다시 해 주세요');
+      expect(online.signedIn, isFalse);
+      expect(await c.addFriend('BBAAAAAAAA'), '로그인하지 못했어요. 잠시 후 다시 해 주세요');
+    });
+
+    test('키가 없는 빌드는 온라인 기능이 준비 중이고 게임은 그대로', () async {
+      clock = FakeTime()..now = now;
+      c = GameController(MemoryGameRepository(), clock);
+      await c.initialize();
+      await c.refreshRanking();
+      expect(c.rankingStatus.configured, isFalse);
+      expect(await c.signInOnline(), '온라인 기능을 준비 중이에요');
+      expect(await c.loadRanking(rankingBestAutoRate), isNull);
+      c.tap();
+      expect(c.state.lifetime, BigInt.one);
+    });
+
+    test('배경 동기화는 카카오 로그인 화면을 열지 않는다', () async {
+      await start();
+      await c.syncOnline();
+      clock.advance(onlineSyncIntervalMs);
+      c.tick();
+      await Future<void>.delayed(Duration.zero);
+      expect(online.signIns, 0);
+    });
+
+    test('Firebase 세션이 살아 있으면 다시 켜도 로그인 상태', () async {
+      await start(using: rankedBackend()..signedIn = true);
+      expect(c.rankingStatus.authenticated, isTrue);
+      expect(online.signIns, 0);
+    });
+
+    test('로그아웃하면 카카오와 Firebase 모두에서 나가고, 다시 로그인하면 기록을 새로 보낸다', () async {
+      await start();
+      await c.signInOnline();
+      await c.signOutOnline();
+      expect(online.signOuts, 1);
+      expect(online.signedIn, isFalse);
+      expect(c.rankingStatus.authenticated, isFalse);
+      clock.advance(rankingSubmitMinGapMs);
+      await c.signInOnline();
+      expect(online.rankingSubmissions.length, 2);
     });
   });
 
   for (final size in const [Size(360, 800), Size(390, 844), Size(412, 915)]) {
     for (final scale in [1.0, 1.5, 2.0]) {
-      testWidgets('내 기록 온라인 랭킹 카드 ${size.width}/$scale', (tester) async {
-        final ranking = FakeRanking(authenticated: false);
+      testWidgets('온라인 랭킹 화면 ${size.width}/$scale', (tester) async {
+        final online = rankedBackend();
         final c = await mountGame(tester, size,
-            textScale: scale, developerTools: false, ranking: ranking);
-        await tester.runAsync(c.refreshRanking);
+            textScale: scale,
+            developerTools: false,
+            online: online,
+            ranking: ServerRankingService(online));
         c.state.lifetime = rankingScoreMax + BigInt.one;
+        c.state.records.bestAutoRate = BigInt.from(5);
         c.tick();
         await tester.pump();
         await tapVisible(tester, const Key('menu-menu'));
-        await tapVisible(tester, const Key('menu-records'));
-        expectNoPrototypeText(tester, 'records');
-        await tapVisible(tester, const Key('ranking-sign-in'));
-        await tester.runAsync(() async {});
+        await tapVisible(tester, const Key('menu-ranking'));
+        expectNoPrototypeText(tester, 'ranking');
+        expect(find.byKey(const Key('ranking-list')), findsNothing);
+        await tapVisible(tester, const Key('online-sign-in'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('online-account')), findsOneWidget);
+        expect(find.byKey(const Key('ranking-list')), findsOneWidget);
+        expect(find.text('붕어왕'), findsOneWidget);
+        expect(
+            find.text(rankingScoreLabel(
+                rankingBestAutoRate, BigInt.parse('123456789012345'))),
+            findsOneWidget);
+        expect(find.text('내 순위 · 2위'), findsOneWidget);
+        await tapVisible(tester, Key('ranking-tab-$rankingLifetime'));
         await tester.pumpAndSettle();
         expect(
             find.byKey(const Key('ranking-lifetime-capped')), findsOneWidget);
-        await tapVisible(tester, const Key('ranking-open'));
-        expect(ranking.shows, 1);
+        expect(find.text('내 순위 · 1위'), findsOneWidget);
+        await tapVisible(tester, Key('ranking-tab-$rankingBestCombo'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('ranking-me')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+        await tapVisible(tester, const Key('online-sign-out'));
+        await tester.pumpAndSettle();
+        expect(find.byKey(const Key('online-sign-in')), findsOneWidget);
+        expect(online.signOuts, 1);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
       });
     }
   }
 
-  testWidgets('Play 게임즈 설정 전에는 준비 중으로 표시', (tester) async {
-    final c = await mountGame(tester, const Size(390, 844),
-        ranking: FakeRanking(configured: false));
-    await tester.runAsync(c.refreshRanking);
-    await tester.pump();
+  testWidgets('로그인을 취소하면 안내 없이 로그인 버튼이 그대로 있다', (tester) async {
+    final online = rankedBackend()..signInResult = SignInResult.canceled;
+    await mountGame(tester, const Size(390, 844),
+        online: online, ranking: ServerRankingService(online));
     await tapVisible(tester, const Key('menu-menu'));
-    await tapVisible(tester, const Key('menu-records'));
+    await tapVisible(tester, const Key('menu-ranking'));
+    await tapVisible(tester, const Key('online-sign-in'));
+    expect(online.signIns, 1);
+    expect(find.byKey(const Key('online-sign-in-error')), findsNothing);
+    expect(find.byKey(const Key('online-sign-in')), findsOneWidget);
+    online.signInResult = SignInResult.failed;
+    await tapVisible(tester, const Key('online-sign-in'));
+    expect(find.text('로그인하지 못했어요. 잠시 후 다시 해 주세요'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('키가 없는 빌드는 랭킹과 친구가 준비 중으로 표시', (tester) async {
+    await mountGame(tester, const Size(390, 844));
+    await tapVisible(tester, const Key('menu-menu'));
+    await tapVisible(tester, const Key('menu-ranking'));
     expect(find.byKey(const Key('ranking-unavailable')), findsOneWidget);
-    expect(find.byKey(const Key('ranking-sign-in')), findsNothing);
+    expect(find.byKey(const Key('online-sign-in')), findsNothing);
+    await tester.tap(find.byTooltip('닫기'));
+    await tester.pumpAndSettle();
+    await tapVisible(tester, const Key('menu-menu'));
+    await tapVisible(tester, const Key('menu-friends'));
+    expect(find.byKey(const Key('friends-offline')), findsOneWidget);
+    expect(find.byKey(const Key('online-sign-in')), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('친구 화면을 열어도 로그인 화면이 저절로 뜨지 않는다', (tester) async {
+    final online = rankedBackend();
+    await mountGame(tester, const Size(390, 844),
+        online: online, ranking: ServerRankingService(online));
+    await tapVisible(tester, const Key('menu-menu'));
+    await tapVisible(tester, const Key('menu-friends'));
+    expect(online.signIns, 0);
+    expect(find.byKey(const Key('online-sign-in')), findsOneWidget);
+    await tapVisible(tester, const Key('online-sign-in'));
+    expect(find.text('내 아이디  BBFAKECODE'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

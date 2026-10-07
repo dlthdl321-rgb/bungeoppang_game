@@ -1,0 +1,38 @@
+[
+  {
+    "index": 1,
+    "file": "stove/iron.png",
+    "prompt": "Correct ONLY the LEFT OPEN LID of this supplied pixel-art griddle image. The current left lid with THREE vertically stacked fish hollows is WRONG. Replace it with a mechanically matching SINGLE FULL SIX-CAVITY COVER: EXACTLY TWO ROWS of THREE FISH HOLLOWS, matching the central lower mold's TWO ROWS of THREE golden pastries. It must fold closed to align one-to-one over all six lower fish. Hinge is on the LEFT SHORT EDGE of the central rectangular mold. Therefore the SHORT hinge-adjacent dimension contains ONLY TWO fish hollows, one in the upper row and one in the lower row, NOT THREE. The lid's LONG dimension extends outward to the LEFT and contains THREE columns per row; most of these columns continue outside the left crop. In the visible part immediately beside the hinge there must be exactly TWO empty fish impressions stacked top-to-bottom, with the rest of the SIX total impressions extending horizontally OFFSCREEN LEFT. The lid is a reflected matching counterpart of the base plate across the left hinge, same rectangular footprint, matching two-row spacing and corresponding fish shapes. Its hinge-side edge runs the same depth as the lower mold, not a taller edge for three fish. Tilt the lid open outward to left, keep its far left part intentionally cropped. Do not depict a narrow three-fish lid. Keep the original central griddle, all six cute golden pastries, their positions, two rows, original dot/pixel texture, repaired straight top-right rim, blue flames and cropped right handle COMPLETELY UNCHANGED. Same canvas, no zooming out. Transparent background. Do not add any right lid or rear lid. ONLY repair left lid layout to TWO ROWS BY THREE COLUMNS.",
+    "references": [
+      "C:/Users/이소이/.codex/generated_images/01a116fc-1361-7450-bc25-f2d76056f984/exec-fca35d2c-20d9-4eea-9a60-69e6688f1c6d.png"
+    ],
+    "status": "pending"
+  },
+  {
+    "index": 2,
+    "file": "stove/castiron.png",
+    "prompt": "Use case: precise-object-edit. Edit this supplied corrected original game sprite. Change ONLY the metal material to heavy black cast iron with a faint cool purple sheen and matte texture. Keep all six cute round golden fish, the original crisp pixel/dot art, layout, frame crop, size and positions EXACTLY identical. Keep the ONE LEFT OPEN LID containing TWO ROWS BY THREE COLUMNS of empty fish hollows; its far side extends offscreen left, with ONLY TWO hinge-adjacent hollows visible vertically. No three-hole vertical lid. Keep the intact repaired top-right metal rim and intentionally cropped original right handle. Do not add extra lids or uncrop the object. Preserve wooden grips and blue flames. Preserve transparent background. No text, no new objects, no style changes.",
+    "references": [
+      "C:\\Users\\이소이\\Desktop\\Git\\붕어빵 게임\\이미지\\추가 생성 이미지 2\\stove\\iron.png"
+    ],
+    "status": "pending"
+  },
+  {
+    "index": 3,
+    "file": "stove/copper.png",
+    "prompt": "Use case: precise-object-edit. Edit this supplied corrected original game sprite. Change ONLY the metal material to polished warm copper with rosy orange highlights and darker copper edges. Keep all six cute round golden fish, the original crisp pixel/dot art, layout, frame crop, size and positions EXACTLY identical. Keep the ONE LEFT OPEN LID containing TWO ROWS BY THREE COLUMNS of empty fish hollows; its far side extends offscreen left, with ONLY TWO hinge-adjacent hollows visible vertically. No three-hole vertical lid. Keep the intact repaired top-right metal rim and intentionally cropped original right handle. Do not add extra lids or uncrop the object. Preserve wooden grips and blue flames. Preserve transparent background. No text, no new objects, no style changes.",
+    "references": [
+      "C:\\Users\\이소이\\Desktop\\Git\\붕어빵 게임\\이미지\\추가 생성 이미지 2\\stove\\iron.png"
+    ],
+    "status": "pending"
+  },
+  {
+    "index": 4,
+    "file": "stove/golden.png",
+    "prompt": "Use case: precise-object-edit. Edit this supplied corrected original game sprite. Change ONLY the metal material to shiny gold with bright yellow highlights and two tiny sparkles on the left lid. Keep all six cute round golden fish, the original crisp pixel/dot art, layout, frame crop, size and positions EXACTLY identical. Keep the ONE LEFT OPEN LID containing TWO ROWS BY THREE COLUMNS of empty fish hollows; its far side extends offscreen left, with ONLY TWO hinge-adjacent hollows visible vertically. No three-hole vertical lid. Keep the intact repaired top-right metal rim and intentionally cropped original right handle. Do not add extra lids or uncrop the object. Preserve wooden grips and blue flames. Preserve transparent background. No text, no new objects, no style changes.",
+    "references": [
+      "C:\\Users\\이소이\\Desktop\\Git\\붕어빵 게임\\이미지\\추가 생성 이미지 2\\stove\\iron.png"
+    ],
+    "status": "pending"
+  }
+]

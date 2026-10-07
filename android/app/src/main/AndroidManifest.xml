@@ -1,7 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
         android:label="오늘의 붕어빵"
-        android:name=".GamesApplication"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -30,10 +29,20 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- Play Games Services v2; the value comes from games-ids.xml. -->
-        <meta-data
-            android:name="com.google.android.gms.games.APP_ID"
-            android:value="@string/app_id" />
+        <!-- Kakao login: the Kakao account page returns here. The key comes
+             from dart-define KAKAO_NATIVE_APP_KEY (build.gradle.kts). -->
+        <activity
+            android:name="com.kakao.sdk.flutter.auth.AuthCodeHandlerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:host="oauth"
+                    android:scheme="kakao${kakaoNativeAppKey}" />
+            </intent-filter>
+        </activity>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
