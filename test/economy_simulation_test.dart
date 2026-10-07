@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/economy.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
+import 'package:todays_bungeoppang/invite_config.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/missions.dart';
@@ -13,7 +14,7 @@ import 'package:todays_bungeoppang/support_config.dart';
 import 'package:todays_bungeoppang/support_rules.dart';
 import 'package:todays_bungeoppang/weekly_config.dart';
 import 'package:todays_bungeoppang/progress_rules.dart';
-import 'controller_test.dart' show FakeTime;
+import 'controller_test.dart' show FakeTime, catchPlacedGoldenChance;
 import 'stage8_progress_test.dart' show offlineActions;
 
 class SlowRepository extends MemoryGameRepository {
@@ -26,12 +27,13 @@ class SlowRepository extends MemoryGameRepository {
 }
 
 // Explicit user actions replace the old automatic level awards. Mock social
-// and item inputs only occur AFTER their own mission becomes active.
+// and golden chance inputs only occur AFTER their own mission becomes active.
 Future<void> claimReadyMissions(GameController c) async {
   while (activeLevelMission(c.state) != null) {
     final target = activeLevelMission(c.state)!;
-    if (target.missions.any((m) => m.kind == MissionKind.goldenButterUses)) {
-      await c.simulateButterUse(c.state.missions.token);
+    if (target.missions.any((m) => m.kind == MissionKind.goldenCatches) &&
+        c.state.missions.goldenCatches == BigInt.zero) {
+      expect(await catchPlacedGoldenChance(c), isTrue);
     }
     for (final p in missionProgress(c.state, target)) {
       if (p.definition.kind == MissionKind.newPlayerInvites) {
@@ -144,8 +146,15 @@ void main() {
     await claimReadyMissions(a);
     expect(a.state.level, 10);
     final reward = a.state.support.coins;
+    // Level coins plus the coins each new invitation paid (stage 14).
+    final invites = levelsForSeason(legacyInviteMissionSeason)
+        .expand((l) => l.missions)
+        .where((m) => m.kind == MissionKind.newPlayerInvites)
+        .fold(BigInt.zero, (sum, m) => sum + m.target);
     expect(
-        reward, levels.skip(1).fold(BigInt.zero, (sum, l) => sum + l.reward));
+        reward,
+        levels.skip(1).fold(BigInt.zero, (sum, l) => sum + l.reward) +
+            invites * BigInt.parse(newInviteReward.coins));
     a.settleActive(1000000);
     a.tap();
     expect(a.state.level, 10);
@@ -358,7 +367,8 @@ Future<CasualReport> simulateCasualPlayer(
   final rng = math.Random(seed);
   final installed = DateTime.utc(2026, 10, 4, 23); // Monday 08:00 KST.
   final clock = FakeTime()..now = installed;
-  final c = GameController(MemoryGameRepository(), clock);
+  final c = GameController(MemoryGameRepository(), clock,
+      goldenRandom: math.Random(seed));
   await c.initialize();
   c.state.tutorialDone = true; // The first-launch guide is read.
   final report = CasualReport();

@@ -1,0 +1,469 @@
+{
+  "files": [
+    {
+      "path": "raw/ui/ui_001.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/07_UI/\uc2a4\ud0ac_\ucef7_261006_1905_01.png",
+      "sha256": "4179d401d4ec533f73d2e424b53d2ef975c36aee54886441afbd69c25efa909a"
+    },
+    {
+      "path": "raw/ui/ui_002.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/07_UI/\uafb8\ubbf8\uae30_\ucef7_261006_1905_01.png",
+      "sha256": "1cc86aacb4f63643526fd446582a9b7450e04f173cef77fa53e49bc9d1c5b3ee"
+    },
+    {
+      "path": "raw/ui/ui_003.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/07_UI/\uba54\uc778UI_\ud654\uba74_261006_1905_01.png",
+      "sha256": "5f0cdcd4647845185eaa4d79096b801990b8b16472f191753bebea2a53a7a37a"
+    },
+    {
+      "path": "raw/ui/ui_004.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/07_UI/\uc0c1\uc810_\ucef7_261006_1905_01.png",
+      "sha256": "f8368a88ec3f553192e382ff1e7c26dbb8e9bd9d64bdd20e64ad64d842889c6d"
+    },
+    {
+      "path": "raw/ui/ui_005.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/07_UI/\uc124\uc815_\ucef7_261006_1905_01.png",
+      "sha256": "67094e3cc831540ccf569123b8d7211a4598b63f37a3446bf04e098b95425021"
+    },
+    {
+      "path": "raw/ui/ui_006.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/07_UI/\uc911\uc559\ud074\ub9ac\ucee4\ud654\uba74_\ud654\uba74_261006_1905_01.png",
+      "sha256": "6ff0c96c976e302f841856b21ffe774b67ad9c0f31f322f8c546bcf3e00c04c6"
+    },
+    {
+      "path": "raw/ui/ui_007.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/07_UI/\uba54\ub274_\ucef7_261006_1905_01.png",
+      "sha256": "1384becba3e722d6a9d75a1cc59fee0ed2e7dc033f62be85ff284749ae897209"
+    },
+    {
+      "path": "raw/ui/ui_008.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/07_UI/\uc870\ub9ac\ucef7\uac00\uc2a4\ud654\uba74_\ud654\uba74_261006_1905_01.png",
+      "sha256": "12e3938c399f0f61cc592ab1e4a7908e1b31e896c2708cfb412429799e05c7ec"
+    },
+    {
+      "path": "raw/references/references_001.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ub0a8\uc790\ubc18\ubc14\uc9c0\ubcc0\uacbd_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "e1e295ffcd868f2014c3aaf8df8c9902cae92b18f7045ccba0619fcb6d8b5fe2"
+    },
+    {
+      "path": "raw/references/references_002.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uac00\uac8c\uafb8\ubbf8\uae30\uc694\uc18c_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "06c3b012b497680be0691594393b77af981d0d26b452598e0a04264ad9a70034"
+    },
+    {
+      "path": "raw/references/references_003.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uc870\ub9ac\ucef7\uac00\uc2a4\ud654\uba74_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "12e3938c399f0f61cc592ab1e4a7908e1b31e896c2708cfb412429799e05c7ec"
+    },
+    {
+      "path": "raw/references/references_004.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uc190\ub2d8\ubaa8\uc158_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "d8018efd72ca7e815f3eb1db7d0760d57f37500814a5601c18a2a602b4484e3c"
+    },
+    {
+      "path": "raw/references/references_005.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ubd95\uc5b4\ube75\ud45c\uc815\ucd08\uc548_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "25e90f976e704e2bbe900e33dd4ffee8693a704370d8157facd563fc48a28d08"
+    },
+    {
+      "path": "raw/references/references_006.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ubbf8\ubd84\ub958\uc0dd\uc131\uc774\ubbf8\uc9c005_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "9917898e5cb132b5972c922f61cd48c368637e89cb5c393e4f17e99af6ac9624"
+    },
+    {
+      "path": "raw/references/references_007.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ub0a8\uc790\uafb8\ubbf8\uae30\ucd08\uc548_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "4c82d1652ef5b354a7511118dbe66f494e107f996e9f03d6e885da39f78f9eff"
+    },
+    {
+      "path": "raw/references/references_008.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uc911\uc559\ud074\ub9ac\ucee4\ud654\uba74_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "6ff0c96c976e302f841856b21ffe774b67ad9c0f31f322f8c546bcf3e00c04c6"
+    },
+    {
+      "path": "raw/references/references_009.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ubc30\uacbd6\uc885_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "97ef865abeef70c2cdfd3525a91d46b5da198a94f9548a0261f323275c795197"
+    },
+    {
+      "path": "raw/references/references_010.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ubd95\uc5b4\ube75\uc120\ud0dd_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "ede625d6df146f2d1b012f9bd039fd96f13855d29e8f7120e85f60a8f1851d7e"
+    },
+    {
+      "path": "raw/references/references_011.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uc11c\ube0cUI5\uc885_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "40ac26eb2b7157a4983934a0468dc17bbde5f50df5810b0142e8305da9496c5c"
+    },
+    {
+      "path": "raw/references/references_012.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ubd95\uc5b4\ube75\ucd08\uc548_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "4864592718726f24dd810b3af69263513497ea336f620d692d4a2b4132fc9a50"
+    },
+    {
+      "path": "raw/references/references_013.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uc5ec\uc790\uc870\ub9ac\ubaa8\uc158_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "18f8ce7ca96ddbbb98b05c27ec62ea213793ce130214e7cf8ec5983d76ac656e"
+    },
+    {
+      "path": "raw/references/references_014.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uc5ec\uc790\ucc29\uc6a98\uc885_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "5983bc039f2c292326da2a321fda4e7d45ac93072bf58b7ea988b99c1adf545b"
+    },
+    {
+      "path": "raw/references/references_015.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uc5ec\uc790\uafb8\ubbf8\uae30\uc120\ud0dd_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "0b4b75b462a7221c0d29ddd5a0cc7c8ea3edd315078dc7213757ad57fbd67751"
+    },
+    {
+      "path": "raw/references/references_016.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ubbf8\ubd84\ub958\uc0dd\uc131\uc774\ubbf8\uc9c001_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "33047b77f27f29a91bf64c89126ea5cf2032e5e07b0666941da0adf03b6eba00"
+    },
+    {
+      "path": "raw/references/references_017.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ub3c4\ud2b8\ube44\uad50_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "0af91edee545bde76c5aa6c820a6360f0e094e8a31d79172bb6d744b99e694d0"
+    },
+    {
+      "path": "raw/references/references_018.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ub0a8\uc790\ub2e4\ub9ac\ubcc0\uacbd_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "c2753a397a3f3a96318a61713f645cad0777f89bee9e8c54a5244b5665ba1784"
+    },
+    {
+      "path": "raw/references/references_019.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uc5ec\uc790\uafb8\ubbf8\uae30\ucd08\uc548_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "ed6c2265ba243fe7cda76c10ed3e6af6667fd11507cec183ca28a56727d35f81"
+    },
+    {
+      "path": "raw/references/references_020.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uba54\uc778UI_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "5f0cdcd4647845185eaa4d79096b801990b8b16472f191753bebea2a53a7a37a"
+    },
+    {
+      "path": "raw/references/references_021.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ub0a0\uc528\ubaa8\uc158_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "05a0efef019ea83c382db799b985d7af313ba3792d27589f5ef9849252a5aa0f"
+    },
+    {
+      "path": "raw/references/references_022.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ubd95\uc5b4\ube75\ubb34\ud45c\uc815_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "9305ba7a5b026b2d9e1dd21939af5e9f93b7f6f2aa71193bc45c91ebfdc56b8a"
+    },
+    {
+      "path": "raw/references/references_023.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\uc5ec\uc790\uae30\ubcf8_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "e9917fa75871ae3753ff40cbcc5dd6c5c66c0b830d77ada13225e901b26faba5"
+    },
+    {
+      "path": "raw/references/references_024.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ub0a8\uc790\ucc29\uc6a98\uc885_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "dac37a955aa2fa4c8ac63cba100f7f0fa27243177ef1c5fd1adc792964cd2038"
+    },
+    {
+      "path": "raw/references/references_025.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/01_\uc6d0\ubcf8\uc804\uccb4/\ub0a8\uc790\uafb8\ubbf8\uae30\uc120\ud0dd_\uc6d0\ubcf8_261006_1905_01.png",
+      "sha256": "41dbabe871a65696ace28f8d6b86a3eed3eda6392d2dd0d4956f7dbbab3e401b"
+    },
+    {
+      "path": "raw/weather/weather_001.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15810_\ucef7_261006_1905_01.png",
+      "sha256": "6c474c7fff60752e5a3f4e535e36c0e7b2f2af132ebbafc2b8c8507ec7dd4b1d"
+    },
+    {
+      "path": "raw/weather/weather_002.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15811_\ucef7_261006_1905_01.png",
+      "sha256": "0d1cac23db7480f3caab9b42462c1cf91064549c583f65e30cf95ba654306b69"
+    },
+    {
+      "path": "raw/weather/weather_003.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15805_\ucef7_261006_1905_01.png",
+      "sha256": "1fa8b886a4e8ae7b8ac64be82348d0df80e5025e6222d72c3a5f1d772ec48ae6"
+    },
+    {
+      "path": "raw/weather/weather_004.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15812_\ucef7_261006_1905_01.png",
+      "sha256": "bfbc1ef6f1bf06284b9512b8e063c5a799ae45acca337ca34836f080733c0c75"
+    },
+    {
+      "path": "raw/weather/weather_005.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15802_\ucef7_261006_1905_01.png",
+      "sha256": "8830397e1425c95d27a2e23b4172ddeb2080e8afbb67b2b7731e135681718c3d"
+    },
+    {
+      "path": "raw/weather/weather_006.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15816_\ucef7_261006_1905_01.png",
+      "sha256": "65716a11a7f5dad5b8f182b6b03dd1e79fe5e2ea92393208cb170d95dd87ab56"
+    },
+    {
+      "path": "raw/weather/weather_007.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15803_\ucef7_261006_1905_01.png",
+      "sha256": "a37cf491f7993fce354fcb03981d28089d3e4baab4f031b292cf081c5fa88de5"
+    },
+    {
+      "path": "raw/weather/weather_008.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15813_\ucef7_261006_1905_01.png",
+      "sha256": "0558e432bd2037629e2587c91ca3c7620ed9bdda3f930fc4a79538b232189b85"
+    },
+    {
+      "path": "raw/weather/weather_009.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15818_\ucef7_261006_1905_01.png",
+      "sha256": "18e430f4187783f3f687b036501f3ea2ffdaeda25533406eb806df9523400a45"
+    },
+    {
+      "path": "raw/weather/weather_010.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15806_\ucef7_261006_1905_01.png",
+      "sha256": "11e8d02c8628c7e315a45ed504928d8049f72d6a957f650f09e00e61a8dca2c4"
+    },
+    {
+      "path": "raw/weather/weather_011.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15807_\ucef7_261006_1905_01.png",
+      "sha256": "ebca33d03838ad31b826b560806afdc2549202a1bf937b51bfa0c4c8b83a4879"
+    },
+    {
+      "path": "raw/weather/weather_012.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15817_\ucef7_261006_1905_01.png",
+      "sha256": "60c8fc9e9fbf21a14b6a6960bc98a9cddb5678f52b1c7c2ed9f8b829b44ae59b"
+    },
+    {
+      "path": "raw/weather/weather_013.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15801_\ucef7_261006_1905_01.png",
+      "sha256": "781612d1343c9e5d91fc0f77d12953939b546983c417339fcee618face7c63ca"
+    },
+    {
+      "path": "raw/weather/weather_014.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15814_\ucef7_261006_1905_01.png",
+      "sha256": "0dfb7b0b5ff20e6bcf5c94f3552f1815c87896a3c97a850705bf7d67249c1dd0"
+    },
+    {
+      "path": "raw/weather/weather_015.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15804_\ucef7_261006_1905_01.png",
+      "sha256": "5e0dfbb9973247a5f3d109ba17145193b96b73b98ff066106f126ba0c08da1b1"
+    },
+    {
+      "path": "raw/weather/weather_016.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15809_\ucef7_261006_1905_01.png",
+      "sha256": "2719a664aa179f06f330d24233b79e96a01313eada9ade170e49f6fbb24fce26"
+    },
+    {
+      "path": "raw/weather/weather_017.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15815_\ucef7_261006_1905_01.png",
+      "sha256": "0ceddfa3dcac4c328df875e3525f2e896a1ff976f5d523afa9c5645edb708b18"
+    },
+    {
+      "path": "raw/weather/weather_018.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/03_\ub0a0\uc528\ud504\ub808\uc784/\ub0a0\uc528\ubaa8\uc15808_\ucef7_261006_1905_01.png",
+      "sha256": "429d4bf5a109be2fdd9eaaf1edea33c4e231f7f3e703fe423eb36b069beee00a"
+    },
+    {
+      "path": "raw/backgrounds/backgrounds_001.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/02_\ubc30\uacbd/\uaca8\uc6b8\ubc24_\ucef7_261006_1905_01.png",
+      "sha256": "9c2aef6dec03cd2e8e7e077721d6f4410b9ea34b1638d0be7b6fbac2df197c91"
+    },
+    {
+      "path": "raw/backgrounds/backgrounds_002.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/02_\ubc30\uacbd/\ub9d1\uc74c_\ucef7_261006_1905_01.png",
+      "sha256": "3790f938fb25d30e8217f34f57aa67106be399ba738c409f10e407060a771e76"
+    },
+    {
+      "path": "raw/backgrounds/backgrounds_003.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/02_\ubc30\uacbd/\uac00\uc744_\ucef7_261006_1905_01.png",
+      "sha256": "bd0ac6ddacca4b102b129e71dad43c6deddf08ec384638b5cc473af8af5d9c36"
+    },
+    {
+      "path": "raw/backgrounds/backgrounds_004.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/02_\ubc30\uacbd/\ub208_\ucef7_261006_1905_01.png",
+      "sha256": "936f241f94717da250eb5b647a5ce4e4d1bc6b37e947811c9c9c0bff117e8309"
+    },
+    {
+      "path": "raw/backgrounds/backgrounds_005.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/02_\ubc30\uacbd/\ube44_\ucef7_261006_1905_01.png",
+      "sha256": "1f1efc9ecda7160c5ca6ea633e6335cf5f89cd0d8e2e25e010ca8f2b95c5ff31"
+    },
+    {
+      "path": "raw/backgrounds/backgrounds_006.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/02_\ubc30\uacbd/\ubc9a\uaf43_\ucef7_261006_1905_01.png",
+      "sha256": "0da612e08cbd765272267e522b6496463e02dc94532444ae5eb9123130b7f970"
+    },
+    {
+      "path": "raw/cooking/cooking_001.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/04_\uc870\ub9ac\ud504\ub808\uc784/\uc870\ub9ac05\uaebc\ub0b4\uae30_\ucef7_261006_1905_01.png",
+      "sha256": "26eb35337083f44088874076237ea715f78dad0865361c2cab8db1ebd472adc3"
+    },
+    {
+      "path": "raw/cooking/cooking_002.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/04_\uc870\ub9ac\ud504\ub808\uc784/\uc870\ub9ac01\uc900\ube44_\ucef7_261006_1905_01.png",
+      "sha256": "906010c42d2380b70f3107d23602a9cffcc2b98d950fc4789b373ba2a741459f"
+    },
+    {
+      "path": "raw/cooking/cooking_003.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/04_\uc870\ub9ac\ud504\ub808\uc784/\uc870\ub9ac06\ud3ec\uc7a5_\ucef7_261006_1905_01.png",
+      "sha256": "676a7ea062c6cef3ff6eac56069e76020b759d1a1d73282757321c7b34ab6bd7"
+    },
+    {
+      "path": "raw/cooking/cooking_004.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/04_\uc870\ub9ac\ud504\ub808\uc784/\uc870\ub9ac02\ubc18\uc8fd_\ucef7_261006_1905_01.png",
+      "sha256": "fcd2b704c3dca82fd70afce1bbb9097857b26aa3e7d248094b25d2cbbca91159"
+    },
+    {
+      "path": "raw/cooking/cooking_005.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/04_\uc870\ub9ac\ud504\ub808\uc784/\uc870\ub9ac03\ub2eb\uae30_\ucef7_261006_1905_01.png",
+      "sha256": "69e9864b1f4f45c6298cdb5d31b301bb915c55c590557a1ada5dd22669b1344d"
+    },
+    {
+      "path": "raw/cooking/cooking_006.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/04_\uc870\ub9ac\ud504\ub808\uc784/\uc870\ub9ac04\uad7d\uae30_\ucef7_261006_1905_01.png",
+      "sha256": "5e69ef38c85b3fba74bd0ebf727ec7001d5dd25233b3f0bb345c0792b98241bb"
+    },
+    {
+      "path": "raw/customers/customers_001.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/05_\uc190\ub2d8\ud504\ub808\uc784/\uc190\ub2d8\ubaa8\uc15801_\ucef7_261006_1905_01.png",
+      "sha256": "40611802bb8596f2d8ce5c864a8a41b335546031af500f88ed10e5060de0e4bb"
+    },
+    {
+      "path": "raw/customers/customers_002.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/05_\uc190\ub2d8\ud504\ub808\uc784/\uc190\ub2d8\ubaa8\uc15805_\ucef7_261006_1905_01.png",
+      "sha256": "752bbcc7156916ca928fe91d4e21aa3ca550f2706e3c969b64edb8fa09aa3fcc"
+    },
+    {
+      "path": "raw/customers/customers_003.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/05_\uc190\ub2d8\ud504\ub808\uc784/\uc190\ub2d8\ubaa8\uc15802_\ucef7_261006_1905_01.png",
+      "sha256": "8a192898fb5d9fd9083eb2172b6403ba093382259e5ab256cd66a3dfb615419d"
+    },
+    {
+      "path": "raw/customers/customers_004.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/05_\uc190\ub2d8\ud504\ub808\uc784/\uc190\ub2d8\ubaa8\uc15804_\ucef7_261006_1905_01.png",
+      "sha256": "4745d32dcfd494b4e1c57123de7ad911dbcb41a3bb8c1115adf9493270202d20"
+    },
+    {
+      "path": "raw/customers/customers_005.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/05_\uc190\ub2d8\ud504\ub808\uc784/\uc190\ub2d8\ubaa8\uc15806_\ucef7_261006_1905_01.png",
+      "sha256": "56d6503bcb3d86495863afaca02ecb50d301a02abfaa790d2414f5784b48e79f"
+    },
+    {
+      "path": "raw/customers/customers_006.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/05_\uc190\ub2d8\ud504\ub808\uc784/\uc190\ub2d8\ubaa8\uc15803_\ucef7_261006_1905_01.png",
+      "sha256": "8070721ce9bf953b5fff5b7dce02428f65d67d4aae78a3f0fa8915e50a1ef976"
+    },
+    {
+      "path": "raw/outfits/outfits_001.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\ub0a8\uc790\ucc29\uc6a98\uc88501_\ucef7_261006_1905_01.png",
+      "sha256": "034285d7f40ed6ecd02a5df0704d057e976c049f9c0651e5d42aa99718f93e2d"
+    },
+    {
+      "path": "raw/outfits/outfits_002.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\ub0a8\uc790\ucc29\uc6a98\uc88505_\ucef7_261006_1905_01.png",
+      "sha256": "aa8828087f5c1359ff6c632665e75d42595998f57c86431725fcc69c360d0cd6"
+    },
+    {
+      "path": "raw/outfits/outfits_003.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\ub0a8\uc790\ucc29\uc6a98\uc88504_\ucef7_261006_1905_01.png",
+      "sha256": "d194808ffc6a24b968e03fabbb546038e7e3da8c2166a0bb6d15819ef18fe7fd"
+    },
+    {
+      "path": "raw/outfits/outfits_004.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\ub0a8\uc790\ucc29\uc6a98\uc88506_\ucef7_261006_1905_01.png",
+      "sha256": "7b846a40f2853fa68c7717ecf95bf87a500db1bb27c021f3bbdceb04e9cd8754"
+    },
+    {
+      "path": "raw/outfits/outfits_005.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\ub0a8\uc790\ucc29\uc6a98\uc88503_\ucef7_261006_1905_01.png",
+      "sha256": "fbcd87d9ed551df42e1ae9533507e5c6de4b04fa34c639b33bba92eed30fcc73"
+    },
+    {
+      "path": "raw/outfits/outfits_006.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\uc5ec\uc790\ucc29\uc6a98\uc88501_\ucef7_261006_1905_01.png",
+      "sha256": "a155cfc268420c5ff42eacc08c3ad430265ccb2502c3d9c6a92965c94328abfc"
+    },
+    {
+      "path": "raw/outfits/outfits_007.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\ub0a8\uc790\ucc29\uc6a98\uc88507_\ucef7_261006_1905_01.png",
+      "sha256": "60f4ad2384a9f472905706609d02c80d806fe45f8578ce2aa30c14014f629ff2"
+    },
+    {
+      "path": "raw/outfits/outfits_008.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\ub0a8\uc790\ucc29\uc6a98\uc88508_\ucef7_261006_1905_01.png",
+      "sha256": "b7075b7bb328efce8f6d210745b3df4827f68c4511ab24b376ffdae84ccaaf28"
+    },
+    {
+      "path": "raw/outfits/outfits_009.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\uc5ec\uc790\ucc29\uc6a98\uc88507_\ucef7_261006_1905_01.png",
+      "sha256": "ee1339b10f4c89005243947f046e05139d371c52f46dbaef9b0d861150142bb2"
+    },
+    {
+      "path": "raw/outfits/outfits_010.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\uc5ec\uc790\ucc29\uc6a98\uc88504_\ucef7_261006_1905_01.png",
+      "sha256": "c37647122baf5512d691ec4bbdf04bf106ceb0eff11ceedd0aff69b748676b1c"
+    },
+    {
+      "path": "raw/outfits/outfits_011.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\uc5ec\uc790\ucc29\uc6a98\uc88505_\ucef7_261006_1905_01.png",
+      "sha256": "43c1bf687a01998d4a3c3b7e72c14ce0116f92db677f720c09bff5779b0c34b9"
+    },
+    {
+      "path": "raw/outfits/outfits_012.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\ub0a8\uc790\ucc29\uc6a98\uc88502_\ucef7_261006_1905_01.png",
+      "sha256": "ce153af7ca54b8e970c1199a6592d023b840017af0112a76a96da53885d46c33"
+    },
+    {
+      "path": "raw/outfits/outfits_013.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\uc5ec\uc790\ucc29\uc6a98\uc88503_\ucef7_261006_1905_01.png",
+      "sha256": "7374fa19d5cc70cc9daba64ee23fb69fa219dbfd8cda9fe458cf502b169affdd"
+    },
+    {
+      "path": "raw/outfits/outfits_014.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\uc5ec\uc790\ucc29\uc6a98\uc88502_\ucef7_261006_1905_01.png",
+      "sha256": "7bfad7eb453b0088a1ec519761831da11a335b14525bf45377869a7c46742eee"
+    },
+    {
+      "path": "raw/outfits/outfits_015.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\uc5ec\uc790\ucc29\uc6a98\uc88508_\ucef7_261006_1905_01.png",
+      "sha256": "ff2b93e88cba837c73faeb8f3d0bba044f52e7f314071a82e08f433595387b2e"
+    },
+    {
+      "path": "raw/outfits/outfits_016.png",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/06_\ucc29\uc6a9\uc608\uc2dc/\uc5ec\uc790\ucc29\uc6a98\uc88506_\ucef7_261006_1905_01.png",
+      "sha256": "d8a9f56514d62d279889e07433f9175d75038094efdd1d8a5d7daeb6b4ca42a6"
+    },
+    {
+      "path": "preview/animations/animations_001.gif",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/08_\ubaa8\uc158\ubbf8\ub9ac\ubcf4\uae30/\uc870\ub9ac_\ubbf8\ub9ac\ubcf4\uae30_261006_1905_01.gif",
+      "sha256": "02e78b3dff26182d46df4aa3716eec4772a14270bad847017c599cbbf14cf737"
+    },
+    {
+      "path": "preview/animations/animations_002.gif",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/08_\ubaa8\uc158\ubbf8\ub9ac\ubcf4\uae30/\ub9d1\uc74c_\ubbf8\ub9ac\ubcf4\uae30_261006_1905_01.gif",
+      "sha256": "3549191477edb0c4907998f859fecb6b6e9d711e7f478e7e73c4f461f857fa9f"
+    },
+    {
+      "path": "preview/animations/animations_003.gif",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/08_\ubaa8\uc158\ubbf8\ub9ac\ubcf4\uae30/\ubc9a\uaf43_\ubbf8\ub9ac\ubcf4\uae30_261006_1905_01.gif",
+      "sha256": "5eca91b4583e6c58f79b6e59d3d6917659398b3c3106dd57da87795b1e26b992"
+    },
+    {
+      "path": "preview/animations/animations_004.gif",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/08_\ubaa8\uc158\ubbf8\ub9ac\ubcf4\uae30/\ube44_\ubbf8\ub9ac\ubcf4\uae30_261006_1905_01.gif",
+      "sha256": "dd2ed15de0460ae8636c765ac4dffd480d7e3b615301c23223cee6b3032d5c62"
+    },
+    {
+      "path": "preview/animations/animations_005.gif",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/08_\ubaa8\uc158\ubbf8\ub9ac\ubcf4\uae30/\uaca8\uc6b8\ubc24_\ubbf8\ub9ac\ubcf4\uae30_261006_1905_01.gif",
+      "sha256": "ca880917dba640bd397b106ab7d620e29c74054fd5a38f44826f2e9032a3ce7a"
+    },
+    {
+      "path": "preview/animations/animations_006.gif",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/08_\ubaa8\uc158\ubbf8\ub9ac\ubcf4\uae30/\uc190\ub2d8_\ubbf8\ub9ac\ubcf4\uae30_261006_1905_01.gif",
+      "sha256": "f1a3ebc9614a1964068c3f2e301a362bebe6c2e095f1f080a2c94a88a38364f3"
+    },
+    {
+      "path": "preview/animations/animations_007.gif",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/08_\ubaa8\uc158\ubbf8\ub9ac\ubcf4\uae30/\ub208_\ubbf8\ub9ac\ubcf4\uae30_261006_1905_01.gif",
+      "sha256": "2a7ec0a3a8d73551ab8df158a41a9857f93210bc169e5c856ec9a850bf19f373"
+    },
+    {
+      "path": "preview/animations/animations_008.gif",
+      "previous_path": "\ubd95\uc5b4\ube75\uac8c\uc784_\uac1c\ubc1c\uc5d0\uc14b_261006_1905_01/08_\ubaa8\uc158\ubbf8\ub9ac\ubcf4\uae30/\uac00\uc744_\ubbf8\ub9ac\ubcf4\uae30_261006_1905_01.gif",
+      "sha256": "28a9e1b304366efce1e82130c98b08f7560490b9942d41999ab97340134fd3f3"
+    }
+  ]
+}

@@ -153,12 +153,21 @@ class WeeklyPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = controller, weekly = c.state.weekly;
-    final theme = seasonThemeForMonth(DateTime.parse(weekly.week).month);
+    final month = DateTime.parse(weekly.week).month;
+    final theme = seasonThemeForMonth(month);
+    final banner = PixelSprites.seasonBanner(seasonBannerForMonth(month));
     return SingleChildScrollView(
         key: const Key('weekly-scroll'),
         padding: const EdgeInsets.all(16),
         child:
             Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          if (banner != null)
+            ClipRRect(
+                key: const Key('weekly-banner'),
+                borderRadius: BorderRadius.circular(10),
+                child: AspectRatio(
+                    aspectRatio: banner.width / banner.height,
+                    child: PixelArt(banner))),
           Text(theme.title, style: Theme.of(context).textTheme.titleLarge),
           Text(theme.description),
           Text(weeklyCountdownLabel(weekly.week, c.gameNow),
@@ -194,13 +203,17 @@ class WeeklyPanel extends StatelessWidget {
 
 class AchievementPanel extends StatefulWidget {
   final GameController controller;
-  const AchievementPanel({super.key, required this.controller});
+
+  /// Opens on the 도감 (collection) tab.
+  final bool initialCollection;
+  const AchievementPanel(
+      {super.key, required this.controller, this.initialCollection = false});
   @override
   State<AchievementPanel> createState() => _AchievementPanelState();
 }
 
 class _AchievementPanelState extends State<AchievementPanel> {
-  bool _collection = false;
+  late bool _collection = widget.initialCollection;
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
@@ -389,3 +402,12 @@ class _SharePanelState extends State<SharePanel> {
         ],
       ]));
 }
+
+/// Banner art ([PixelSprites.seasonBanners]) for the season that
+/// [seasonThemeForMonth] picks for [month].
+String seasonBannerForMonth(int month) => switch (month) {
+      3 || 4 || 5 => 'spring',
+      6 || 7 || 8 => 'summer',
+      9 || 10 || 11 => 'autumn',
+      _ => 'winter',
+    };

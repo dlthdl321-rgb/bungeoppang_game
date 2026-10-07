@@ -12,6 +12,7 @@ import 'package:todays_bungeoppang/progress_rules.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
 import 'package:todays_bungeoppang/ui/fish_painter.dart';
+import 'package:todays_bungeoppang/ui/cook_cut.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'controller_test.dart' show FakeTime;
@@ -22,9 +23,44 @@ import 'widget_test.dart' show mountGame;
 Iterable<CosmeticDefinition> inSlot(CosmeticSlot slot) =>
     cosmeticDefinitions.where((d) => d.slot == slot);
 
+/// The v11 JSON shape: no stage-14 slots, and night/short were the free
+/// defaults that every save owned.
+Map<String, dynamic> asV11(GameState s) {
+  final json = plainJson(s)..['formatVersion'] = 11;
+  final wardrobe = json['wardrobe'] as Map;
+  final stage14Ids = {
+    for (final d in cosmeticDefinitions)
+      if (stage14Slots.contains(d.slot) || {'clear', 'long'}.contains(d.id))
+        d.id
+  };
+  final equipped = wardrobe['equipped'] as Map
+    ..removeWhere((slot, _) => stage14Slots.any((s) => s.name == slot));
+  if (equipped['background'] == 'clear') equipped['background'] = 'night';
+  if (equipped['hair'] == 'long') equipped['hair'] = 'short';
+  wardrobe['owned'] = {
+    for (final id in wardrobe['owned'] as List)
+      if (!stage14Ids.contains(id)) id,
+    'night',
+    'short',
+  }.toList();
+  return json;
+}
+
+/// The v10 JSON shape: no character slot in the wardrobe.
+Map<String, dynamic> asV10(GameState s) {
+  final json = asV11(s)..['formatVersion'] = 10;
+  final wardrobe = json['wardrobe'] as Map;
+  wardrobe['owned'] = [
+    for (final id in wardrobe['owned'] as List)
+      if (!inSlot(CosmeticSlot.character).any((d) => d.id == id)) id
+  ];
+  (wardrobe['equipped'] as Map).remove(CosmeticSlot.character.name);
+  return json;
+}
+
 /// The v9 JSON shape: no stage-12 slots in the wardrobe.
 Map<String, dynamic> asV9(GameState s) {
-  final json = plainJson(s)..['formatVersion'] = 9;
+  final json = asV10(s)..['formatVersion'] = 9;
   final wardrobe = json['wardrobe'] as Map;
   final stage12Ids = {
     for (final d in cosmeticDefinitions)
@@ -59,40 +95,80 @@ void main() {
       }
     });
 
-    test('분류는 붕어빵 3슬롯, 사장님 5슬롯(피부톤 포함), 가게 3슬롯', () {
+    test('분류는 붕어빵 3슬롯, 사장님 10슬롯(캐릭터·피부톤 포함), 가게 5슬롯(밤낮 포함)', () {
       List<CosmeticSlot> slots(CosmeticCategory c) =>
           CosmeticSlot.values.where((s) => s.category == c).toList();
       expect(slots(CosmeticCategory.bungeoppang),
           [CosmeticSlot.fish, CosmeticSlot.pattern, CosmeticSlot.topping]);
       expect(slots(CosmeticCategory.avatar), [
+        CosmeticSlot.character,
         CosmeticSlot.skin,
         CosmeticSlot.hair,
+        CosmeticSlot.top,
+        CosmeticSlot.bottom,
+        CosmeticSlot.shoes,
         CosmeticSlot.outfit,
         CosmeticSlot.hat,
+        CosmeticSlot.accessory,
         CosmeticSlot.tool
       ]);
-      expect(slots(CosmeticCategory.stall),
-          [CosmeticSlot.background, CosmeticSlot.stove, CosmeticSlot.decoration]);
+      expect(slots(CosmeticCategory.stall), [
+        CosmeticSlot.background,
+        CosmeticSlot.stove,
+        CosmeticSlot.decoration,
+        CosmeticSlot.lamp,
+        CosmeticSlot.time
+      ]);
     });
 
-    test('수집 대상은 35종(붕어빵 12, 사장님 10, 가게 13), 피부톤은 제외', () {
-      expect(collectibleCosmeticCount, 35);
-      expect(collectibleCount(CosmeticCategory.bungeoppang), 12);
-      expect(collectibleCount(CosmeticCategory.avatar), 10);
-      expect(collectibleCount(CosmeticCategory.stall), 13);
+    test('꾸미기 탭은 헤어·의상·소품·붕어빵·가게 (승인 D3)', () {
+      List<CosmeticSlot> slots(WardrobeTab t) =>
+          CosmeticSlot.values.where((s) => s.tab == t).toList();
+      expect(slots(WardrobeTab.hair), [
+        CosmeticSlot.character,
+        CosmeticSlot.skin,
+        CosmeticSlot.hair,
+        CosmeticSlot.hat
+      ]);
+      expect(slots(WardrobeTab.outfit), [
+        CosmeticSlot.top,
+        CosmeticSlot.bottom,
+        CosmeticSlot.shoes,
+        CosmeticSlot.outfit
+      ]);
+      expect(slots(WardrobeTab.props),
+          [CosmeticSlot.accessory, CosmeticSlot.tool]);
+      for (final s in CosmeticSlot.values) {
+        if (s.tab == WardrobeTab.bungeoppang || s.tab == WardrobeTab.stall) {
+          expect(s.tab.name, s.category.name, reason: s.name);
+        }
+      }
+    });
+
+    test('수집 대상은 66종(붕어빵 7, 사장님 38, 가게 21), 캐릭터·피부톤은 제외', () {
+      expect(collectibleCosmeticCount, 66);
+      expect(collectibleCount(CosmeticCategory.bungeoppang), 7); // No flavours.
+      expect(collectibleCount(CosmeticCategory.avatar), 38);
+      expect(collectibleCount(CosmeticCategory.stall), 21); // + 등불 3
+      expect(
+          cosmeticDefinitions.fold(BigInt.zero, (a, d) => a + d.cost),
+          BigInt.from(505));
       expect(inSlot(CosmeticSlot.skin).every((d) => d.free), isTrue);
+      expect(inSlot(CosmeticSlot.character).map((d) => d.id), ['girl', 'boy']);
+      expect(inSlot(CosmeticSlot.character).every((d) => d.free), isTrue);
       final stage12Coins = cosmeticDefinitions
           .where((d) => stage12Slots.contains(d.slot))
           .fold(BigInt.zero, (a, d) => a + d.cost);
-      expect(stage12Coins, BigInt.from(145));
+      // 145 at stage 12, plus stage 14's items in those slots and short.
+      expect(stage12Coins, BigInt.from(223));
     });
   });
 
-  group('저장 v10', () {
-    test('v9 세이브는 붕어빵 맛·가게를 유지하고 새 슬롯은 기본값을 받는다', () {
+  group('저장 v12', () {
+    test('v9 세이브는 붕어빵·가게를 유지하고 새 슬롯은 기본값을 받는다', () {
       final original = progressed();
       final restored = GameState.fromJson(asV9(original));
-      expect(restored.equippedSkin, 'custard');
+      expect(restored.equippedSkin, original.equippedSkin);
       expect(restored.equippedCosmetic(CosmeticSlot.background), 'dusk');
       for (final slot in stage12Slots) {
         expect(restored.equippedCosmetic(slot), defaultCosmetics[slot]);
@@ -100,22 +176,70 @@ void main() {
       for (final d in inSlot(CosmeticSlot.skin)) {
         expect(restored.ownsCosmetic(d), isTrue, reason: d.id);
       }
-      expect(restored.wardrobe.owned, original.wardrobe.owned);
-      expect(restored.wardrobe.equipped, original.wardrobe.equipped);
+      // Nothing is lost compared with the same save at v11, except the old
+      // hair default: v9 had no hair slot, so it gets today's default.
+      final v11 = GameState.fromJson(asV11(original));
+      expect(restored.wardrobe.owned, v11.wardrobe.owned.difference({'short'}));
+      for (final slot in CosmeticSlot.values.where(
+          (s) => s != CosmeticSlot.fish && !stage12Slots.contains(s))) {
+        expect(restored.equippedCosmetic(slot), v11.equippedCosmetic(slot),
+            reason: slot.name);
+      }
     });
 
-    test('v10 저장·복원 왕복은 같다', () {
+    test('v10 세이브는 사장님 꾸미기를 유지하고 캐릭터는 기본값을 받는다', () {
+      final original = progressed();
+      original.wardrobe.owned.add('beanie');
+      original.wardrobe.equipped[CosmeticSlot.hat] = 'beanie';
+      original.wardrobe.equipped[CosmeticSlot.skin] = 'skin2';
+      final restored = GameState.fromJson(asV10(original));
+      expect(restored.equippedCosmetic(CosmeticSlot.hat), 'beanie');
+      expect(restored.equippedCosmetic(CosmeticSlot.skin), 'skin2');
+      expect(restored.equippedCosmetic(CosmeticSlot.character), 'girl');
+      for (final d in inSlot(CosmeticSlot.character)) {
+        expect(restored.ownsCosmetic(d), isTrue, reason: d.id);
+      }
+      final v11 = GameState.fromJson(asV11(original));
+      expect(restored.wardrobe.owned, v11.wardrobe.owned);
+      expect(restored.wardrobe.equipped, v11.wardrobe.equipped);
+    });
+
+    test('v11 세이브는 야간 골목·짧은 머리를 유지하고 새 기본값과 새 슬롯을 받는다', () {
+      final original = progressed();
+      original.wardrobe.owned.add('beanie');
+      original.wardrobe.equipped[CosmeticSlot.hat] = 'beanie';
+      final v11 = asV11(original);
+      final restored = GameState.fromJson(v11);
+      expect(restored.equippedCosmetic(CosmeticSlot.hat), 'beanie');
+      expect(restored.equippedCosmetic(CosmeticSlot.background),
+          (v11['wardrobe'] as Map)['equipped']['background']);
+      expect(restored.equippedCosmetic(CosmeticSlot.hair), 'short');
+      for (final slot in stage14Slots) {
+        expect(restored.equippedCosmetic(slot), defaultCosmetics[slot]);
+      }
+      // Old free defaults stay owned (and now count as collected); the new
+      // defaults are granted.
+      for (final id in ['night', 'short', 'clear', 'long', 'tee', 'noacc']) {
+        expect(restored.wardrobe.owned, contains(id));
+      }
+      expect(cosmeticsOwnedCount(restored),
+          cosmeticsOwnedCount(original) + 2);
+      expect(plainJson(restored)['formatVersion'], 12);
+    });
+
+    test('v12 저장·복원 왕복은 같다', () {
       final s = progressed();
       s.wardrobe.owned.addAll(['beanie', 'heartscale']);
       s.wardrobe.equipped[CosmeticSlot.hat] = 'beanie';
       s.wardrobe.equipped[CosmeticSlot.pattern] = 'heartscale';
       s.wardrobe.equipped[CosmeticSlot.skin] = 'skin3';
+      s.wardrobe.equipped[CosmeticSlot.character] = 'boy';
       final restored = GameState.fromJson(plainJson(s));
       expect(restored.wardrobe.toJson(), s.wardrobe.toJson());
-      expect(plainJson(restored)['formatVersion'], 10);
+      expect(plainJson(restored)['formatVersion'], 12);
     });
 
-    test('v10은 엄격하다: 빠진 슬롯·미보유 장착·모르는 ID는 거부', () {
+    test('v12는 엄격하다: 빠진 슬롯·미보유 장착·모르는 ID는 거부', () {
       final base = plainJson(progressed());
       Map<String, dynamic> broken(void Function(Map w) change) {
         final json = plainJson(GameState.fromJson(base));
@@ -125,16 +249,25 @@ void main() {
 
       for (final json in [
         broken((w) => (w['equipped'] as Map).remove('hat')),
+        broken((w) => (w['equipped'] as Map).remove('character')),
+        broken((w) => (w['equipped'] as Map).remove('accessory')),
+        broken((w) => (w['equipped'] as Map)['top'] = 'cardigan'),
         broken((w) => (w['equipped'] as Map)['hat'] = 'santa'),
         broken((w) => (w['owned'] as List).add('crown')),
         broken((w) => (w['equipped'] as Map)['hat'] = 'tongs'),
       ]) {
         expect(() => GameState.fromJson(json), throwsFormatException);
       }
-      // A stage-12 slot missing from a *v9* save is filled instead.
+      // A slot missing from an older save is filled instead.
       expect(() => WardrobeState.fromJson(
           (asV9(progressed())['wardrobe'] as Map).cast<String, dynamic>(),
-          legacy: true), returnsNormally);
+          version: 9), returnsNormally);
+      expect(() => WardrobeState.fromJson(
+          (asV10(progressed())['wardrobe'] as Map).cast<String, dynamic>(),
+          version: 10), returnsNormally);
+      expect(() => WardrobeState.fromJson(
+          (asV11(progressed())['wardrobe'] as Map).cast<String, dynamic>(),
+          version: 11), returnsNormally);
     });
   });
 
@@ -190,7 +323,7 @@ void main() {
       expect(await c.buyOrEquipCosmetic('goldtongs'), isTrue);
       expect(achievementMet(c.state, def('avatar-5')), isTrue);
       expect(await c.claimAchievement('avatar-5'), isTrue);
-      expect(achievementTarget(def('cosmetics-all')), BigInt.from(35));
+      expect(achievementTarget(def('cosmetics-all')), BigInt.from(66));
     });
 
     test('레벨업 알림은 새로 열린 꾸미기를 분류별 한 줄로 알린다', () async {
@@ -205,8 +338,8 @@ void main() {
       expect(events.last.kind, GameEventKind.levelUp);
       expect(events.last.details, [
         '새 붕어빵 꾸미기 · 하트 비늘, 슈가파우더',
-        '새 사장님 꾸미기 · 묶은 머리, 털 비니',
-        '새 가게 꾸미기 · 보랏빛 해질녘, 종이 등불, 무쇠 화로',
+        '새 사장님 꾸미기 · 묶은 머리, 털 비니, 크림 긴팔 외 5개',
+        '새 가게 꾸미기 · 보랏빛 해질녘, 종이 등불, 무쇠 화로 외 2개',
       ]);
     });
   });
@@ -227,22 +360,22 @@ void main() {
           }
         }
       }
-      for (final skin in inSlot(CosmeticSlot.skin)) {
-        for (final hair in inSlot(CosmeticSlot.hair)) {
-          for (final outfit in inSlot(CosmeticSlot.outfit)) {
-            for (final hat in inSlot(CosmeticSlot.hat)) {
-              for (final tool in inSlot(CosmeticSlot.tool)) {
-                final look = AvatarLook(
-                    skin: skin.id,
-                    hair: hair.id,
-                    outfit: outfit.id,
-                    hat: hat.id,
-                    tool: tool.id);
-                AvatarPainter(look).paint(canvas, const Size(88, 120));
-                NightStallPainter(avatar: look, lift: 1)
-                    .paint(canvas, const Size(360, 800));
-              }
-            }
+      // Every avatar item once per character, over the defaults.
+      final avatarSlots = CosmeticSlot.values
+          .where((s) => s.category == CosmeticCategory.avatar);
+      for (final character in inSlot(CosmeticSlot.character)) {
+        for (final slot in avatarSlots) {
+          for (final item in inSlot(slot)) {
+            String equipped(CosmeticSlot s) => s == slot
+                ? item.id
+                : s == CosmeticSlot.character
+                    ? character.id
+                    : defaultCosmetics[s]!;
+            final look = AvatarLook.of(equipped);
+            AvatarPainter(look).paint(canvas, const Size(88, 120));
+            NightStallPainter(avatar: look).paint(canvas, const Size(360, 800));
+            CookCutPainter(look: look, lift: 1)
+                .paint(canvas, const Size(120, 100));
           }
         }
       }
@@ -250,10 +383,10 @@ void main() {
   });
 
   group('홈·꾸미기 화면', () {
-    double lift(WidgetTester tester) => (tester
-            .widget<CustomPaint>(find.byKey(const Key('stall-scene')))
-            .painter! as NightStallPainter)
-        .lift;
+    CookCutPainter cookCut(WidgetTester tester) => tester
+        .widget<CustomPaint>(find.byKey(const Key('cook-cut')))
+        .painter! as CookCutPainter;
+    double lift(WidgetTester tester) => cookCut(tester).lift;
 
     testWidgets('붕어빵을 탭하면 사장님이 집게를 들고, 모션 감소면 가만히 있다',
         (tester) async {
@@ -262,15 +395,15 @@ void main() {
         expect(lift(tester), 0);
         await tester.tap(find.byKey(const Key('fish-button')));
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: StallScene.liftMs ~/ 2));
+        await tester.pump(const Duration(milliseconds: CookCut.liftMs ~/ 2));
         expect(lift(tester), reduced ? 0 : greaterThan(.5), reason: '$reduced');
-        await tester.pump(const Duration(milliseconds: StallScene.liftMs));
+        await tester.pump(const Duration(milliseconds: CookCut.liftMs));
         expect(lift(tester), 0);
         await tester.pumpWidget(const SizedBox.shrink());
       }
     });
 
-    testWidgets('분류 탭마다 미리보기 대상이 다르고, 장착은 홈에 반영된다', (tester) async {
+    testWidgets('탭마다 미리보기 대상이 다르고, 적용은 홈에 반영된다', (tester) async {
       final c = await mountGame(tester, const Size(390, 844));
       setLevel(c.state, 2, c.clock.utcNow);
       c.state.support
@@ -278,9 +411,12 @@ void main() {
       c.tick();
       await tester.pump();
       await tapVisible(tester, const Key('menu-skins'));
+      // Opens on 헤어, like the concept art.
+      expect(find.byKey(const Key('preview-avatar')), findsOneWidget);
+      await tapVisible(tester, const Key('cosmetic-category-bungeoppang'));
       expect(find.byKey(const Key('preview-bungeoppang')), findsOneWidget);
       expect(find.byKey(const Key('cosmetic-slot-hat')), findsNothing);
-      await tapVisible(tester, const Key('cosmetic-category-avatar'));
+      await tapVisible(tester, const Key('cosmetic-category-hair'));
       expect(find.byKey(const Key('preview-avatar')), findsOneWidget);
       expect(find.byKey(const Key('cosmetic-slot-fish')), findsNothing);
       await tapVisible(tester, const Key('cosmetic-slot-hat'));
@@ -294,10 +430,7 @@ void main() {
       expect(find.byKey(const Key('preview-stall')), findsOneWidget);
       await tester.tap(find.byTooltip('닫기'));
       await tester.pumpAndSettle();
-      final home = tester
-          .widget<CustomPaint>(find.byKey(const Key('stall-scene')))
-          .painter! as NightStallPainter;
-      expect(home.avatar!.hat, 'beanie');
+      expect(cookCut(tester).look.hat, 'beanie');
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
     });

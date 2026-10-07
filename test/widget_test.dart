@@ -76,6 +76,17 @@ Future<GameController> mountGame(WidgetTester tester, Size size,
   return c;
 }
 
+/// Opens the menu from the HUD and taps its [key] entry.
+Future<void> openFromMenu(WidgetTester tester, Key key) async {
+  await tester.ensureVisible(find.byKey(const Key('menu-menu')));
+  await tester.tap(find.byKey(const Key('menu-menu')));
+  await tester.pumpAndSettle();
+  await tester.ensureVisible(find.byKey(key));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(key));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('길게 누르기 중 비활성화와 화면 해제 시 생산 타이머 정지', (tester) async {
     final c = await mountGame(tester, const Size(360, 800));
@@ -121,23 +132,16 @@ void main() {
       await mountGame(tester, size);
       expect(find.byKey(const Key('fish-button')), findsOneWidget);
       expect(find.byType(NavigationBar), findsNothing);
-      // Stage 8 menus: ranking → records, invite → share, plus achievements.
-      for (final id in [
-        'daily',
-        'achievements',
-        'shop',
-        'skins',
-        'records',
-        'share'
-      ]) {
+      // Stage 14: concept layout. Bottom bar 메뉴/스킬/꾸미기/상점, round
+      // menu button in the HUD; the other screens moved into the menu.
+      for (final id in ['menu', 'menubar', 'skills', 'skins', 'shop']) {
         expect(find.byKey(Key('menu-$id')).hitTestable(), findsOneWidget);
       }
       final fish = tester.getRect(find.byKey(const Key('fish-button')));
-      final shop = tester.getRect(find.byKey(const Key('menu-shop')));
+      final bar = tester.getRect(find.byKey(const Key('menu-shop')));
       expect(fish.width, greaterThan(size.width * .65));
-      expect(fish.right, lessThanOrEqualTo(shop.left));
-      expect(tester.getRect(find.byKey(const Key('event-entry'))).bottom,
-          lessThanOrEqualTo(size.height - 24));
+      expect(fish.bottom, lessThanOrEqualTo(bar.top));
+      expect(bar.bottom, lessThanOrEqualTo(size.height));
       expect(find.text('1.23조'), findsOneWidget);
       expect(find.byKey(const Key('tap-rate')), findsOneWidget);
       expect(find.byKey(const Key('auto-rate')), findsOneWidget);
@@ -155,14 +159,7 @@ void main() {
                 .scale(16),
             16 * scale);
         expect(tester.takeException(), isNull);
-        for (final id in [
-          'shop',
-          'skins',
-          'daily',
-          'achievements',
-          'records',
-          'share'
-        ]) {
+        for (final id in ['skills', 'skins', 'shop', 'menu']) {
           await tester.ensureVisible(find.byKey(Key('menu-$id')));
           await tester.tap(find.byKey(Key('menu-$id')));
           await tester.pumpAndSettle();
@@ -171,9 +168,23 @@ void main() {
           await tester.tap(find.byTooltip('닫기'));
           await tester.pumpAndSettle();
         }
-        await tester.ensureVisible(find.byKey(const Key('event-entry')));
-        await tester.tap(find.byKey(const Key('event-entry')));
-        await tester.pumpAndSettle();
+        for (final id in [
+          'menu-collection',
+          'menu-achievements',
+          'menu-records',
+          'menu-theme',
+          'menu-daily',
+          'menu-missions',
+          'menu-friends',
+          'menu-share',
+        ]) {
+          await openFromMenu(tester, Key(id));
+          expect(find.byTooltip('닫기'), findsOneWidget);
+          expect(tester.takeException(), isNull, reason: id);
+          await tester.tap(find.byTooltip('닫기'));
+          await tester.pumpAndSettle();
+        }
+        await openFromMenu(tester, const Key('event-entry'));
         // Stage 8: the mock-season notice became the weekly challenge.
         expect(find.byKey(const Key('weekly-countdown')), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -249,6 +260,8 @@ void main() {
   testWidgets('TimeService 변경으로 이벤트 카운트다운이 갱신된다', (tester) async {
     final clock = FixedTime();
     final c = await mountGame(tester, const Size(390, 844), clock: clock);
+    await tester.tap(find.byKey(const Key('menu-menu')));
+    await tester.pumpAndSettle();
     final before =
         tester.widget<Text>(find.byKey(const Key('event-countdown'))).data;
     clock.advance(const Duration(seconds: 1));
@@ -259,10 +272,10 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('오른쪽 상점 구매 후 홈 재화와 클릭 생산이 갱신된다', (tester) async {
+  testWidgets('스킬 구매 후 홈 재화와 클릭 생산이 갱신된다', (tester) async {
     final c = await mountGame(tester, const Size(390, 844));
     final before = c.state.buns;
-    await tester.tap(find.byKey(const Key('menu-shop')));
+    await tester.tap(find.byKey(const Key('menu-skills')));
     await tester.pumpAndSettle();
     await tester.tap(find.text('1개 · 15'));
     await tester.pumpAndSettle();
@@ -270,7 +283,7 @@ void main() {
     expect(c.state.upgradeCounts['tap_1'], 1);
     await tester.tap(find.byTooltip('닫기'));
     await tester.pumpAndSettle();
-    expect(find.text('클릭당 +2'), findsOneWidget);
+    expect(find.text('클릭당 2개'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

@@ -20,8 +20,6 @@ int collectibleCount([CosmeticCategory? category]) => cosmeticDefinitions
     .length;
 final collectibleCosmeticCount = collectibleCount();
 
-BigInt totalItemUses(GameState s) =>
-    s.support.itemUses.values.fold(BigInt.zero, (a, b) => a + b);
 
 // Ledger-derived counts are cached per ledger size: the ledger only grows,
 // and these are read on every home rebuild through the Lv.10 goal.
@@ -67,7 +65,7 @@ BigInt achievementProgress(GameState s, AchievementDefinition d) =>
       AchievementMetric.level => BigInt.from(s.level),
       AchievementMetric.lifetimeTaps => s.records.lifetimeTaps,
       AchievementMetric.bestCombo => BigInt.from(s.records.bestCombo),
-      AchievementMetric.itemUses => totalItemUses(s),
+      AchievementMetric.boostUses => s.support.boostUses,
       AchievementMetric.cosmeticsOwned ||
       AchievementMetric.allCosmetics =>
         BigInt.from(cosmeticsOwnedCount(s)),

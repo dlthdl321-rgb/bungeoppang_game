@@ -11,7 +11,7 @@ import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/tap_effects.dart';
-import 'controller_test.dart' show FakeTime;
+import 'controller_test.dart' show FakeTime, catchPlacedGoldenChance;
 import 'level_missions_widget_test.dart' show tapVisible;
 import 'stage8_progress_test.dart' show asVersion, progressed, plainJson;
 import 'widget_test.dart' show CountingRepository, FixedTime;
@@ -83,7 +83,7 @@ void main() {
         expect(restored.support.coins, BigInt.from(42), reason: 'v$version');
         expect(restored.ownedSkins, original.ownedSkins, reason: 'v$version');
         if (version >= 4) {
-          expect(restored.support.inventory, original.support.inventory);
+          expect(restored.support.boostUses, original.support.boostUses);
         }
         if (version >= 6) {
           expect(restored.wardrobe.toJson(), original.wardrobe.toJson());
@@ -175,25 +175,25 @@ void main() {
     });
     tearDown(() => c.dispose());
 
-    test('레벨업·업적·아이템·구매는 성공했을 때만 알린다', () async {
+    test('레벨업·업적·부스트·구매는 성공했을 때만 알린다', () async {
       c.state.tutorialDone = true;
       c.state.lifetime = BigInt.from(10);
       repo.failNextSave = true;
       expect(await c.claimLevelUp(2), isFalse);
       expect(await c.claimLevelUp(2), isTrue);
       expect(await c.claimAchievement('bake-1'), isTrue);
-      expect(await c.useItem('butter'), isTrue);
+      expect(await catchPlacedGoldenChance(c), isTrue);
       c.state.buns = BigInt.from(1000);
       expect(await c.buyUpgrade(upgrades.first, 1), isTrue);
       await pumpEventQueue();
       expect(events.map((e) => e.kind), [
         GameEventKind.levelUp,
         GameEventKind.achievement,
-        GameEventKind.itemUsed,
+        GameEventKind.boostStarted,
         GameEventKind.purchase,
       ]);
       expect(events.first.amount, BigInt.from(3));
-      expect(events[2].amount, BigInt.from(60));
+      expect(events[2].amount, BigInt.one); // 황금 찬스: 1분 동안
     });
   });
 
@@ -369,6 +369,14 @@ void main() {
                 .data,
             '${_digits(c.lastOfflineReward)}개');
         expect(c.lastOfflineDuration, const Duration(hours: 2));
+        // Two hours on the monotonic clock put a golden chance on the
+        // griddle; let it expire, since test pumps never move this clock.
+        if (c.goldenChance case final chance?) {
+          clock.advance(
+              Duration(milliseconds: chance.expiresAtMs - clock.mono));
+          c.tick();
+        }
+        expect(c.goldenChance, isNull);
         await tapVisible(tester, const Key('offline-reward-close'));
         expect(find.byKey(const Key('offline-reward')), findsNothing);
         await tester.pumpWidget(const SizedBox.shrink());

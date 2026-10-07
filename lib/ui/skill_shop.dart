@@ -3,6 +3,9 @@ import '../balance.dart';
 import '../economy.dart';
 import '../game_controller.dart';
 import '../models.dart';
+import '../online_backend.dart';
+import 'gold_widgets.dart';
+import 'pixel_sprites.dart';
 
 class SkillShop extends StatefulWidget {
   final GameController controller;
@@ -25,6 +28,9 @@ class _SkillShopState extends State<SkillShop> {
             for (final kind in UpgradeKind.values)
               ChoiceChip(
                   key: Key('kind-${kind.name}'),
+                  avatar: PixelIcon(
+                      kind == UpgradeKind.tap ? 'tab_tap' : 'tab_auto',
+                      size: 18),
                   label: Text(kind == UpgradeKind.tap ? '클릭 생산' : '자동 생산'),
                   selected: kind == _kind,
                   onSelected: (_) => setState(() => _kind = kind)),
@@ -39,6 +45,9 @@ class _SkillShopState extends State<SkillShop> {
             ])
               ChoiceChip(
                   key: Key('quantity-${item.$1.name}'),
+                  avatar: item.$1 == PurchaseMode.ten
+                      ? const PixelIcon('buy10', size: 18)
+                      : null,
                   label: Text(item.$2),
                   selected: _mode == item.$1,
                   onSelected: (_) => setState(() => _mode = item.$1)),
@@ -70,26 +79,44 @@ class _SkillShopState extends State<SkillShop> {
         _mode == PurchaseMode.maximum ? '최대 ${q.amount}개' : '${q.amount}개';
     return Card(
       key: Key('skill-${u.id}'),
-      color: canBuy ? const Color(0xffedf7ed) : null,
+      color: canBuy ? const Color(0xffecfbf0) : null, // palette mint0
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(
-              color: canBuy ? const Color(0xff39704b) : const Color(0xffd7d4cc),
+              color: canBuy ? const Color(0xff63ba8c) : const Color(0xffddd6ea),
               width: canBuy ? 2 : 1)),
       child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('$tier단계 · ${u.name}',
-                  style: Theme.of(context).textTheme.titleMedium),
+              Row(children: [
+                PixelImage(PixelSprites.skill(u.id), size: 48),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Text('$tier단계 · ${u.name}',
+                        style: Theme.of(context).textTheme.titleMedium)),
+              ]),
               Text(
                   '$owned/$maxUpgradeCount · 1개마다 $unit +${compactNumber(u.effect)}'),
+              if (!q.unlocked)
+                const Align(
+                    alignment: Alignment.centerLeft,
+                    child: PixelIcon('lock', size: 18)),
               Text(status,
                   key: Key('status-${u.id}'),
                   style: TextStyle(
                       color: canBuy ? const Color(0xff235f37) : null,
                       fontWeight: FontWeight.w700)),
+              if (!q.unlocked)
+                Align(
+                    alignment: Alignment.centerLeft,
+                    child: GoldPriceButton(
+                        controller: c,
+                        kind: PremiumKind.skill,
+                        itemId: u.id,
+                        title: '${u.name} 먼저 해금',
+                        effect: '누적 생산 조건 없이 지금 붕어빵으로 살 수 있어요')),
               const SizedBox(height: 8),
               Text('현재 $unit ${compactNumber(q.currentRate)}',
                   key: Key('current-${u.id}')),

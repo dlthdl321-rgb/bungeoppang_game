@@ -44,7 +44,7 @@ BigInt settleProduction(
     observeSupport(s, cursor);
     final numerator = rate *
             BigInt.from(boundary.difference(cursor).inMilliseconds) *
-            s.support.multiplier(EffectChannel.automatic, cursor) *
+            s.support.multiplier(cursor) *
             BigInt.from(offline ? 1 : 2) +
         s.support.autoFraction;
     final gain = numerator ~/ BigInt.from(productionQuantum);
@@ -62,13 +62,6 @@ BigInt settleProduction(
 
 bool grantReward(GameState s, String transactionId, RewardDefinition reward,
     DateTime now, String reason) {
-  if (!s.support
-      .transact(transactionId, BigInt.parse(reward.coins), reason, now)) {
-    return false;
-  }
-  for (final item in reward.items.entries) {
-    s.support.inventory[item.key] =
-        s.support.inventory[item.key]! + BigInt.parse(item.value);
-  }
-  return true;
+  return s.support
+      .transact(transactionId, BigInt.parse(reward.coins), reason, now);
 }

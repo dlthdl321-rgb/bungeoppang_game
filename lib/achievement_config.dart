@@ -6,7 +6,7 @@ enum AchievementMetric {
   level,
   lifetimeTaps,
   bestCombo,
-  itemUses,
+  boostUses,
   cosmeticsOwned,
   allCosmetics, // Target is the number of collectible cosmetics.
   avatarCosmeticsOwned, // Collectible vendor (avatar) cosmetics.
@@ -61,7 +61,7 @@ const achievementDefinitions = [
   AchievementDefinition('combo-50', '50 콤보', AchievementMetric.bestCombo, '50',
       titleReward: '번개손'),
   AchievementDefinition(
-      'items-10', '아이템 10회 사용', AchievementMetric.itemUses, '10',
+      'items-10', '부스트 10회 사용', AchievementMetric.boostUses, '10',
       coins: '2'),
   AchievementDefinition(
       'cosmetics-5', '꾸미기 5개 수집', AchievementMetric.cosmeticsOwned, '5',

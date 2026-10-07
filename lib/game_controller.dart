@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'balance.dart';
 import 'economy.dart';
@@ -21,6 +22,9 @@ import 'cosmetic_config.dart';
 import 'menu_rules.dart';
 import 'progress_rules.dart';
 import 'weekly_config.dart';
+import 'billing_service.dart';
+import 'online_backend.dart';
+import 'premium_config.dart';
 import 'online_ranking.dart';
 import 'feedback_config.dart';
 import 'game_events.dart';
@@ -28,6 +32,9 @@ import 'prestige_rules.dart';
 import 'ranking_config.dart';
 
 part 'invite_controller.dart';
+part 'boost_controller.dart';
+part 'online_controller.dart';
+part 'premium_controller.dart';
 part 'menu_controller.dart';
 part 'ranking_controller.dart';
 
@@ -65,25 +72,48 @@ class GameController extends ChangeNotifier {
           ? _combo
           : 0;
   Completer<void>? _commitDone;
+  // Golden chance (boost_controller.dart): session-only, never saved.
+  final math.Random _goldenRandom;
+  GoldenChance? goldenChance;
+  int? _nextGoldenMs;
+
+  /// Visitors whose boost started and whose arrival is still to be shown.
+  final guestArrivals = <GuestVisit>[];
+
+  /// Firebase backend (online_controller.dart): friends, visits, invites.
+  final OnlineBackend online;
+  bool _onlineSyncing = false, _levelOneReported = false;
+  int? _lastOnlineSyncMs;
+
+  /// Google Play Billing for 황금 붕어빵 packs (premium_controller.dart).
+  final BillingService billing;
+  StreamSubscription<BillingPurchase>? _billingSub;
+
+  /// Last wallet message for the shop ('충전 완료', ...), or null.
+  String? premiumNotice;
   DateTime get gameNow => state.support.now(clock.utcNow);
   BigInt get currentTapRate =>
       tapRate(state) *
-      state.support.multiplier(EffectChannel.tap, gameNow) *
+      state.support.multiplier(gameNow) *
       BigInt.from(prestigePermille(state)) ~/
       BigInt.from(effectScale * 1000);
   BigInt get currentAutoRate =>
       autoRate(state) *
       BigInt.from(prestigePermille(state)) ~/
       BigInt.from(1000) *
-      state.support.multiplier(EffectChannel.automatic, gameNow) ~/
+      state.support.multiplier(gameNow) ~/
       BigInt.from(effectScale);
   GameController(this.repository, this.clock,
       {InvitationRepository? invitationRepository,
       this.cosmetics = cosmeticDefinitions,
       this.ranking = const NoRankingService(),
       this.comboBonusRule = comboBonus,
-      bool? developerTools})
+      bool? developerTools,
+      math.Random? goldenRandom,
+      this.online = const NoOnlineBackend(),
+      this.billing = const NoBillingService()})
       : developerTools = developerTools ?? !kReleaseMode,
+        _goldenRandom = goldenRandom ?? math.Random(),
         invitationRepository =
             invitationRepository ?? MockInvitationRepository();
 
@@ -119,6 +149,7 @@ class GameController extends ChangeNotifier {
     unawaited(refreshRanking());
     _ticker?.cancel();
     _periodicSave?.cancel();
+    _billingSub ??= billing.purchases.listen((p) => unawaited(_onPurchase(p)));
     _ticker = Timer.periodic(const Duration(milliseconds: 100), (_) => tick());
     _periodicSave = Timer.periodic(const Duration(seconds: 10), (_) => save());
   }
@@ -128,6 +159,8 @@ class GameController extends ChangeNotifier {
     final now = clock.monotonicMilliseconds;
     settleActive(now - _lastMono);
     _lastMono = now;
+    _updateGoldenChance(now);
+    _syncOnlineIfDue(now);
     _markPlayed();
     submitRankingIfDue();
     notifyListeners();
@@ -168,7 +201,7 @@ class GameController extends ChangeNotifier {
     state.records.lifetimeTaps += BigInt.one;
     state.weekly.taps += BigInt.one;
     final support = state.support;
-    var factor = support.multiplier(EffectChannel.tap, gameNow) *
+    var factor = support.multiplier(gameNow) *
         BigInt.from(prestigePermille(state)) ~/
         BigInt.from(1000);
     final rule = comboBonusRule;
@@ -230,7 +263,8 @@ class GameController extends ChangeNotifier {
           details: [
             for (final c in CosmeticCategory.values)
               if (unlocked[c] case final names?)
-                '새 ${cosmeticCategoryLabel(c)} 꾸미기 · ${names.join(', ')}'
+                '새 ${cosmeticCategoryLabel(c)} 꾸미기 · ${names.take(levelUpNamesShown).join(', ')}'
+                    '${names.length > levelUpNamesShown ? ' 외 ${names.length - levelUpNamesShown}개' : ''}'
           ]));
     }
     return ok;
@@ -253,28 +287,13 @@ class GameController extends ChangeNotifier {
         completedAtUtc: now));
   }
 
-  Future<bool> simulateButterUse(String expectedToken) async {
-    final target = activeLevelMission(state);
-    if (busy ||
-        _away ||
-        state.missions.token != expectedToken ||
-        state.missions.activatedAtUtc == null ||
-        target == null) {
-      return false;
-    }
-    final goals = missionProgress(state, target)
-        .where((p) => p.definition.kind == MissionKind.goldenButterUses);
-    if (goals.isEmpty || goals.every((p) => p.complete)) return false;
-    return useItem('butter');
-  }
-
   Future<bool> buyUpgrade(UpgradeDefinition u, int requested) async {
     // Only catalog definitions can authorize a purchase. A caller must not be
     // able to substitute a cheaper definition under the same persisted ID.
     if (busy || _away || !upgrades.contains(u) || requested <= 0) return false;
     settleActive(clock.monotonicMilliseconds - _lastMono);
     _lastMono = clock.monotonicMilliseconds;
-    if (state.lifetime < u.unlockTotal) return false;
+    if (!skillUnlocked(state, u)) return false;
     final owned = state.upgradeCounts[u.id] ?? 0;
     final amount = requested.clamp(0, maxUpgradeCount - owned);
     if (amount == 0) return false;
@@ -299,10 +318,6 @@ class GameController extends ChangeNotifier {
     _lastMono = clock.monotonicMilliseconds;
     return buyUpgrade(u, quoteUpgrade(state, u, PurchaseMode.maximum).amount);
   }
-
-  // Legacy entry point; the cosmetic command owns unlock and payment rules.
-  Future<bool> buyOrEquip(SkinDefinition skin) async =>
-      skins.contains(skin) && await buyOrEquipCosmetic(skin.id);
 
   Future<bool> claimDaily(String expectedDay, String id) async {
     if (busy || _away) return false;
@@ -339,61 +354,6 @@ class GameController extends ChangeNotifier {
             amount: BigInt.parse(
                 (all ? dailyAllReward : matches.first.reward).coins),
             unit: '코인'));
-  }
-
-  Future<bool> useItem(String id, {BigInt? expectedUses}) async {
-    if (busy || _away) return false;
-    tick();
-    final matches = itemDefinitions.where((i) => i.id == id);
-    if (matches.isEmpty) return false;
-    final item = matches.first, support = state.support;
-    if (support.inventory[id]! <= BigInt.zero ||
-        (expectedUses != null && support.itemUses[id] != expectedUses) ||
-        (itemRepeatPolicy == 'rejectWhileActive' &&
-            support.effects[id]?.activeAt(gameNow) == true)) {
-      return false;
-    }
-    final before = state.copy();
-    support.inventory[id] = support.inventory[id]! - BigInt.one;
-    support.itemUses[id] = support.itemUses[id]! + BigInt.one;
-    support.effects[id] = ActiveItem(
-        id,
-        item.channel,
-        BigInt.parse(item.multiplierPermille),
-        gameNow,
-        gameNow.add(Duration(seconds: item.durationSeconds)));
-    if (id == 'butter' &&
-        activeLevelMission(state)
-                ?.missions
-                .any((m) => m.kind == MissionKind.goldenButterUses) ==
-            true) {
-      state.missions.butterUses += BigInt.one;
-    }
-    return _commitWith(
-        before,
-        GameEvent(
-            GameEventKind.itemUsed,
-            '${item.name} · ${item.channel == EffectChannel.tap ? '클릭' : '자동'} 생산 '
-            '${BigInt.parse(item.multiplierPermille) * BigInt.from(100) ~/ BigInt.from(effectScale)}%',
-            amount: BigInt.from(item.durationSeconds),
-            unit: '초 동안'));
-  }
-
-  Future<bool> buyCoinItem(String id, int expectedSequence) async {
-    if (busy || _away || expectedSequence != state.support.purchaseSequence) {
-      return false;
-    }
-    tick();
-    final matches = itemDefinitions.where((i) => i.id == id);
-    if (matches.isEmpty) return false;
-    final item = matches.first, before = state.copy();
-    if (!state.support.transact('shop:$expectedSequence',
-        -BigInt.parse(item.coinPrice), '${item.name} 구매', gameNow)) {
-      return false;
-    }
-    state.support.inventory[id] = state.support.inventory[id]! + BigInt.one;
-    state.support.purchaseSequence++;
-    return _commitWith(before, GameEvent(GameEventKind.purchase, item.name));
   }
 
   Future<bool> claimWeekly(String expectedWeek, String goalId) async {
@@ -653,6 +613,7 @@ class GameController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _billingSub?.cancel();
     _events.close();
     _ticker?.cancel();
     _periodicSave?.cancel();

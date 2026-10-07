@@ -13,6 +13,10 @@ dependencies:
   path: ^1.9.1
   share_plus: 12.0.2
   audioplayers: 6.8.1
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  cloud_functions: ^6.5.0
+  in_app_purchase: ^3.3.1
 
 dev_dependencies:
   flutter_test:
@@ -21,6 +25,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Rounded Korean display font like the concept UI (SIL OFL 1.1,
+  # assets/fonts/Jua-OFL.txt).
+  fonts:
+    - family: Jua
+      fonts:
+        - asset: assets/fonts/Jua-Regular.ttf
   # Synthesized by tools/generate_sounds.py (CC0 1.0); see README.
   assets:
     - assets/audio/
@@ -29,12 +39,14 @@ flutter:
     - assets/images/bg/
     - assets/images/stall/
     - assets/images/stove/
-    - assets/images/deco/
     - assets/images/icons/
     - assets/images/topping/
-    - assets/images/avatar/skin/
-    - assets/images/avatar/hands/
-    - assets/images/avatar/outfit/
-    - assets/images/avatar/hair/
-    - assets/images/avatar/hat/
-    - assets/images/avatar/tool/
+    - assets/images/skills/
+    # Extra art from 이미지/이미지 raw via tools/pixelize.py (stage 14).
+    - assets/images/fx/
+    - assets/images/event/
+    - assets/images/ui/
+    - assets/images/cook/
+    # Vendor parts cut from the concept sheets (tools/concept_avatar.py).
+    - assets/images/avatar/girl/
+    - assets/images/avatar/boy/

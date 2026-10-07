@@ -1,0 +1,292 @@
+[
+  {
+    "path": "cook/boy_3_outfit_sweater.png",
+    "reference": "이미지/추가 생성 이미지/cook/boy_3.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the tee with a cream knitted long-sleeve sweater. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+  },
+  {
+    "path": "cook/boy_4_outfit_sweater.png",
+    "reference": "이미지/추가 생성 이미지/cook/boy_4.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the tee with a cream knitted long-sleeve sweater. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+  },
+  {
+    "path": "cook/boy_5_outfit_sweater.png",
+    "reference": "이미지/추가 생성 이미지/cook/boy_5.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the tee with a cream knitted long-sleeve sweater. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+  },
+  {
+    "path": "cook/boy_6_outfit_sweater.png",
+    "reference": "이미지/추가 생성 이미지/cook/boy_6.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style matching the reference, crisp square pixels, dark chocolate brown outlines, warm pastel palette, 2-3 tone cel shading, light dithering, no blur, no text. Identity-preserving edit of the reference cooking scene. Keep the same young male vendor, camera, framing, neutral slender limbs, longer beige shorts, wooden counter and iron fish mold, hands and cooking action. Change ONLY this appearance element: replace the tee with a cream knitted long-sleeve sweater. Preserve all other objects and clothing. Male face with short subtle outer eyelashes. Plain solid white background. One complete cooking scene, no panel, no labels."
+  },
+  {
+    "path": "customer/walk_1.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/customers/customers_001.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne chibi customer only, full body, same character design as the input: short black wavy bob, light blue jacket over a cream top, cream pants, brown crossbody bag. Pose: walking toward the viewer, left foot forward. Plain solid flat white background, no ground, no shadow."
+  },
+  {
+    "path": "customer/walk_2.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/customers/customers_001.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne chibi customer only, full body, same character design as the input: short black wavy bob, light blue jacket over a cream top, cream pants, brown crossbody bag. Pose: right foot forward. Plain solid flat white background, no ground, no shadow."
+  },
+  {
+    "path": "customer/stand.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/customers/customers_001.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne chibi customer only, full body, same character design as the input: short black wavy bob, light blue jacket over a cream top, cream pants, brown crossbody bag. Pose: standing at a counter seen from the front, upper body, friendly smile. Plain solid flat white background, no ground, no shadow."
+  },
+  {
+    "path": "customer/order.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/customers/customers_001.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne chibi customer only, full body, same character design as the input: short black wavy bob, light blue jacket over a cream top, cream pants, brown crossbody bag. Pose: pointing up with one finger, mouth open, ordering. Plain solid flat white background, no ground, no shadow."
+  },
+  {
+    "path": "customer/receive.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/customers/customers_001.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne chibi customer only, full body, same character design as the input: short black wavy bob, light blue jacket over a cream top, cream pants, brown crossbody bag. Pose: eyes closed, happy smile, hugging a kraft paper bag of bungeoppang. Plain solid flat white background, no ground, no shadow."
+  },
+  {
+    "path": "customer/leave_1.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/customers/customers_001.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne chibi customer only, full body, same character design as the input: short black wavy bob, light blue jacket over a cream top, cream pants, brown crossbody bag. Pose: walking away seen from behind, left foot forward. Plain solid flat white background, no ground, no shadow."
+  },
+  {
+    "path": "customer/leave_2.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/customers/customers_001.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne chibi customer only, full body, same character design as the input: short black wavy bob, light blue jacket over a cream top, cream pants, brown crossbody bag. Pose: right foot forward. Plain solid flat white background, no ground, no shadow."
+  },
+  {
+    "path": "deco/lantern.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne stall decoration only, front view: one hanging brass stall lantern with a warm glowing amber glass box. Plain solid flat white background."
+  },
+  {
+    "path": "deco/starlights.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne stall decoration only, front view: one long gently sagging wire across the full width with nine round warm light bulbs. Plain solid flat white background."
+  },
+  {
+    "path": "deco/bunting.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne stall decoration only, front view: one long gently sagging string of twelve small triangle flags in brick red, cream, mustard and sage. Plain solid flat white background."
+  },
+  {
+    "path": "deco/windchime.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne stall decoration only, front view: a small bronze Korean temple wind chime with a tiny metal bungeoppang hanging below. Plain solid flat white background."
+  },
+  {
+    "path": "deco/snowman.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne stall decoration only, front view: a small chubby snowman with a rose knitted scarf holding a tiny golden bungeoppang. Plain solid flat white background."
+  },
+  {
+    "path": "deco/paperlanterns.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne stall decoration only, front view: a row of five round glowing paper lanterns on a wire across the full width. Plain solid flat white background."
+  },
+  {
+    "path": "bg/night.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same composition, framing and layout as the input image (the striped awning, wooden posts, lantern, the bungeoppang in its iron mold and the wooden counter stay in the same place and size). Change only the scene: late evening alley without snow, deep navy sky with small stars, warm shop windows and glowing paper lanterns. Vertical, same aspect ratio as the input."
+  },
+  {
+    "path": "bg/dusk.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same composition, framing and layout as the input image (the striped awning, wooden posts, lantern, the bungeoppang in its iron mold and the wooden counter stay in the same place and size). Change only the scene: sunset, violet and rose sky, the first lanterns lit. Vertical, same aspect ratio as the input."
+  },
+  {
+    "path": "bg/forest.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same composition, framing and layout as the input image (the striped awning, wooden posts, lantern, the bungeoppang in its iron mold and the wooden counter stay in the same place and size). Change only the scene: a wooded hillside alley, tall green trees and pines framing the shops, soft evening light, fireflies. Vertical, same aspect ratio as the input."
+  },
+  {
+    "path": "bg/seaside.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same composition, framing and layout as the input image (the striped awning, wooden posts, lantern, the bungeoppang in its iron mold and the wooden counter stay in the same place and size). Change only the scene: a seaside night market by a harbor with small fishing boats and a lighthouse, strings of lanterns, moonlit sea. Vertical, same aspect ratio as the input."
+  },
+  {
+    "path": "icons/shop.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a brick-red shopping bag with a golden bungeoppang emblem. Plain solid flat white background."
+  },
+  {
+    "path": "icons/skins.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a caramel apron on a hanger. Plain solid flat white background."
+  },
+  {
+    "path": "icons/records.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: three ascending bars in caramel, orange and brick red. Plain solid flat white background."
+  },
+  {
+    "path": "icons/share.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a cream paper plane. Plain solid flat white background."
+  },
+  {
+    "path": "icons/daily.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a cream calendar page with a check mark. Plain solid flat white background."
+  },
+  {
+    "path": "icons/achievements.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a golden trophy with a star. Plain solid flat white background."
+  },
+  {
+    "path": "icons/settings.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a chunky golden-brown gear. Plain solid flat white background."
+  },
+  {
+    "path": "icons/leaderboard.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a small podium with 1, 2, 3 steps (no numbers, just steps). Plain solid flat white background."
+  },
+  {
+    "path": "icons/star.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a golden star. Plain solid flat white background."
+  },
+  {
+    "path": "icons/butter.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a golden butter cube with a sparkle. Plain solid flat white background."
+  },
+  {
+    "path": "bg/clear.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nRedraw the input image at a much higher resolution (about 1080 x 2456) with a finer, denser pixel grid and more detail, keeping exactly the same composition, framing, colors and the position and size of every object (awning, posts, lantern, the bungeoppang in its iron mold, the counter). Do not add or remove anything. Preserve the original aspect ratio."
+  },
+  {
+    "path": "bg/rain.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_005.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nRedraw the input image at a much higher resolution (about 1080 x 2456) with a finer, denser pixel grid and more detail, keeping exactly the same composition, framing, colors and the position and size of every object (awning, posts, lantern, the bungeoppang in its iron mold, the counter). Do not add or remove anything. Preserve the original aspect ratio."
+  },
+  {
+    "path": "bg/autumn.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_003.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nRedraw the input image at a much higher resolution (about 1080 x 2456) with a finer, denser pixel grid and more detail, keeping exactly the same composition, framing, colors and the position and size of every object (awning, posts, lantern, the bungeoppang in its iron mold, the counter). Do not add or remove anything. Preserve the original aspect ratio."
+  },
+  {
+    "path": "bg/snowday.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_004.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nRedraw the input image at a much higher resolution (about 1080 x 2456) with a finer, denser pixel grid and more detail, keeping exactly the same composition, framing, colors and the position and size of every object (awning, posts, lantern, the bungeoppang in its iron mold, the counter). Do not add or remove anything. Preserve the original aspect ratio."
+  },
+  {
+    "path": "bg/snow.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_001.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nRedraw the input image at a much higher resolution (about 1080 x 2456) with a finer, denser pixel grid and more detail, keeping exactly the same composition, framing, colors and the position and size of every object (awning, posts, lantern, the bungeoppang in its iron mold, the counter). Do not add or remove anything. Preserve the original aspect ratio."
+  },
+  {
+    "path": "bg/cherry.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_006.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nRedraw the input image at a much higher resolution (about 1080 x 2456) with a finer, denser pixel grid and more detail, keeping exactly the same composition, framing, colors and the position and size of every object (awning, posts, lantern, the bungeoppang in its iron mold, the counter). Do not add or remove anything. Preserve the original aspect ratio."
+  },
+  {
+    "path": "icons/menu.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: three thick horizontal dark brown bars on a cream rounded square. Plain solid flat white background."
+  },
+  {
+    "path": "icons/bgm.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a dark brown double music note. Plain solid flat white background."
+  },
+  {
+    "path": "icons/sfx.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a dark brown speaker with sound waves. Plain solid flat white background."
+  },
+  {
+    "path": "icons/vibration.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a dark brown phone with vibration lines on both sides. Plain solid flat white background."
+  },
+  {
+    "path": "icons/volume.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a small dark brown speaker. Plain solid flat white background."
+  },
+  {
+    "path": "icons/save.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a dark brown floppy disk. Plain solid flat white background."
+  },
+  {
+    "path": "icons/back.png",
+    "reference": "assets/images/icons/coin.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nOne small game UI icon only, bold and readable at small size, warm palette of cream, caramel, golden and brick red, dark chocolate-brown outline. Subject: a dark brown curved return arrow. Plain solid flat white background."
+  },
+  {
+    "path": "fish/redbean@heartscale.png",
+    "reference": "assets/images/fish/redbean.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: the round scales on the body become rows of small embossed heart shapes. Plain solid flat white background."
+  },
+  {
+    "path": "fish/redbean@starmark.png",
+    "reference": "assets/images/fish/redbean.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: one large embossed star brand in the middle of the body, faint small scales around it. Plain solid flat white background."
+  },
+  {
+    "path": "fish/redbean@crispgrid.png",
+    "reference": "assets/images/fish/redbean.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: the scales become a crisp waffle-like diamond grid. Plain solid flat white background."
+  },
+  {
+    "path": "topping/sugar.png",
+    "reference": "assets/images/fish/redbean.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: white powdered sugar dusted along the back of the bungeoppang. Plain solid flat white background."
+  },
+  {
+    "path": "topping/choco.png",
+    "reference": "assets/images/fish/redbean.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: a glossy dark chocolate zigzag drizzle over the bungeoppang. Plain solid flat white background."
+  },
+  {
+    "path": "topping/almond.png",
+    "reference": "assets/images/fish/redbean.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: five sliced almond flakes on the back of the bungeoppang. Plain solid flat white background."
+  },
+  {
+    "path": "topping/sprinkle.png",
+    "reference": "assets/images/fish/redbean.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: short rainbow sprinkles in pink, yellow, mint, sky blue and lilac over the bungeoppang. Plain solid flat white background."
+  },
+  {
+    "path": "stove/copper.png",
+    "reference": "assets/images/stove/iron.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: the griddle's metal becomes shiny warm copper. Plain solid flat white background."
+  },
+  {
+    "path": "stove/castiron.png",
+    "reference": "assets/images/stove/iron.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: the griddle's metal becomes heavy black-violet cast iron with round rivets. Plain solid flat white background."
+  },
+  {
+    "path": "stove/golden.png",
+    "reference": "assets/images/stove/iron.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same object, shape, size and position as the input image. Change only this: the griddle's metal becomes polished gold with small sparkles. Plain solid flat white background."
+  },
+  {
+    "path": "bg/clear_night.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same composition, framing, objects and their positions as the input image (awning, posts, lantern, the bungeoppang in its iron mold, the counter, every shop and tree). Change only the time of day to night: a clear starry night, deep navy sky with small stars and a crescent moon, warm glowing shop windows and lanterns, soft light pools on the paving. Do not add or remove anything. Vertical, preserve original aspect ratio."
+  },
+  {
+    "path": "bg/rain_night.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_005.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same composition, framing, objects and their positions as the input image (awning, posts, lantern, the bungeoppang in its iron mold, the counter, every shop and tree). Change only the time of day to night: a rainy night, dark blue-grey sky, rain streaks, wet paving reflecting the warm shop lights and street lamps. Do not add or remove anything. Vertical, preserve original aspect ratio."
+  },
+  {
+    "path": "bg/autumn_night.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_003.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same composition, framing, objects and their positions as the input image (awning, posts, lantern, the bungeoppang in its iron mold, the counter, every shop and tree). Change only the time of day to night: an autumn night, deep indigo sky with stars, maple trees lit warmly by lanterns, a few fallen leaves on the paving. Do not add or remove anything. Vertical, preserve original aspect ratio."
+  },
+  {
+    "path": "bg/cherry_night.png",
+    "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_006.png",
+    "prompt": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, chibi characters with big heads and glossy brown eyes. Crisp square pixels, no blur, no text, no watermark.\nExactly the same composition, framing, objects and their positions as the input image (awning, posts, lantern, the bungeoppang in its iron mold, the counter, every shop and tree). Change only the time of day to night: a spring night, navy sky, cherry blossoms softly lit by paper lanterns, petals drifting. Do not add or remove anything. Vertical, preserve original aspect ratio."
+  }
+]

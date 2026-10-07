@@ -2,8 +2,26 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
-// The privacy policy and Play data safety form promise no ads, IAP or
-// analytics. Fail fast if a dependency (direct or transitive) breaks that.
+// The privacy policy and Play data safety form promise no ads, analytics or
+// crash reporting. Since stage 15 the app signs in to Firebase (Auth,
+// Functions) and sells 황금 붕어빵 through Google Play Billing; those exact
+// packages are allowed, nothing else in their families.
+const _allowed = <String>{
+  'firebase_core',
+  'firebase_core_platform_interface',
+  'firebase_core_web',
+  'firebase_auth',
+  'firebase_auth_platform_interface',
+  'firebase_auth_web',
+  'cloud_functions',
+  'cloud_functions_platform_interface',
+  'cloud_functions_web',
+  '_flutterfire_internals',
+  'in_app_purchase',
+  'in_app_purchase_android',
+  'in_app_purchase_platform_interface',
+  'in_app_purchase_storekit',
+};
 const _forbidden = <String>[
   'admob',
   'google_mobile_ads',
@@ -40,19 +58,16 @@ const _manifestSources = [
   'android/app/build.gradle.kts',
   'pubspec.lock',
 ];
-// Play Games Services v2 components are expected since the leaderboard
-// decision; it talks through the Play services app, so this app itself still
-// needs no network permission. Ads, ad ID, billing, Firebase and Google
-// Analytics measurement must never appear.
+// Play Games Services v2, Firebase Auth/Functions (network) and Play
+// Billing are expected since stage 15. Ads, the ad ID, ad services, Google
+// Analytics measurement and Crashlytics must never appear.
 const _forbiddenManifestEntries = <String>[
-  'android.permission.INTERNET',
-  'android.permission.ACCESS_NETWORK_STATE',
   'com.google.android.gms.permission.AD_ID',
   'android.permission.ACCESS_ADSERVICES',
-  'com.android.vending.BILLING',
   'com.google.android.gms.ads',
   'com.google.android.gms.measurement',
-  'com.google.firebase',
+  'com.google.firebase.analytics',
+  'com.google.firebase.crashlytics',
 ];
 
 List<String> manifestViolations(String xml) =>
@@ -87,7 +102,7 @@ List<String> manifestViolations(String xml) =>
 }
 
 void main() {
-  test('pubspec.lock has no ad, purchase, analytics or games SDK', () {
+  test('pubspec.lock has no ad, analytics or tracking SDK', () {
     final packages = _packageLine
         .allMatches(File('pubspec.lock').readAsStringSync())
         .map((m) => m.group(1)!)
@@ -96,18 +111,24 @@ void main() {
     // Match whole name segments so e.g. `path` never trips on `ads`.
     bool isForbidden(String p) => _forbidden
         .any((f) => f.contains('_') ? p.contains(f) : p.split('_').contains(f));
-    final hits = packages.where(isForbidden).toList();
+    final hits = packages
+        .where((p) => !_allowed.contains(p))
+        .where(isForbidden)
+        .toList();
     expect(hits, isEmpty);
   });
 
-  test('Android Gradle files add only Play Games Services v2, no Firebase', () {
+  test('Android Gradle files add only Play Games Services v2 and no Firebase '
+      'analytics', () {
     for (final path in [
       'android/build.gradle.kts',
       'android/app/build.gradle.kts'
     ]) {
       final text = File(path).readAsStringSync();
+      // Firebase is set up in Dart (FirebaseOptions), not by the
+      // google-services plugin, which could pull in analytics.
       expect(text, isNot(contains('com.google.gms')), reason: path);
-      expect(text, isNot(contains('com.google.firebase')), reason: path);
+      expect(text, isNot(contains('firebase-analytics')), reason: path);
       final services = RegExp(r'play-services-[a-z0-9-]+')
           .allMatches(text)
           .map((m) => m.group(0))
@@ -117,11 +138,21 @@ void main() {
     }
   });
 
-  test('main manifest requests no network or ad permission', () {
+  test('main manifest requests no ad permission', () {
     final manifest =
         File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
-    expect(manifest, isNot(contains('android.permission.INTERNET')));
     expect(manifest, isNot(contains('AD_ID')));
+  });
+
+  test('pubspec.lock 허용 목록 밖의 Firebase·결제 패키지는 여전히 걸린다', () {
+    bool isForbidden(String p) => !_allowed.contains(p) &&
+        _forbidden.any(
+            (f) => f.contains('_') ? p.contains(f) : p.split('_').contains(f));
+    expect(isForbidden('firebase_auth'), isFalse);
+    expect(isForbidden('in_app_purchase_android'), isFalse);
+    expect(isForbidden('firebase_analytics'), isTrue);
+    expect(isForbidden('firebase_crashlytics'), isTrue);
+    expect(isForbidden('google_mobile_ads'), isTrue);
   });
 
   test('병합 매니페스트 검사는 금지 권한·SDK 항목을 찾아낸다', () {
@@ -132,22 +163,26 @@ void main() {
         '<provider android:name="com.google.android.gms.games.provider.PlayGamesInitProvider"/>'
         '</manifest>';
     expect(manifestViolations(games), isEmpty);
-    const dirty = '<manifest>'
+    const online = '<manifest>'
         '<uses-permission android:name="android.permission.INTERNET"/>'
-        '<uses-permission android:name="com.google.android.gms.permission.AD_ID"/>'
         '<uses-permission android:name="com.android.vending.BILLING"/>'
+        '<service android:name="com.google.firebase.components.ComponentDiscoveryService"/>'
+        '</manifest>';
+    expect(manifestViolations(online), isEmpty);
+    const dirty = '<manifest>'
+        '<uses-permission android:name="com.google.android.gms.permission.AD_ID"/>'
         '<service android:name="com.google.android.gms.measurement.AppMeasurementService"/>'
+        '<service android:name="com.google.firebase.analytics.connector.x"/>'
         '</manifest>';
     expect(manifestViolations(dirty), [
-      'android.permission.INTERNET',
       'com.google.android.gms.permission.AD_ID',
-      'com.android.vending.BILLING',
       'com.google.android.gms.measurement',
+      'com.google.firebase.analytics',
     ]);
   });
 
   final release = releaseManifest();
-  test('release 병합 매니페스트에 네트워크 권한·광고·결제·Firebase·분석 항목이 없다', () {
+  test('release 병합 매니페스트에 광고·광고 ID·분석 항목이 없다', () {
     expect(manifestViolations(release.file!.readAsStringSync()), isEmpty,
         reason: release.file!.path);
   }, skip: release.skip ?? false);

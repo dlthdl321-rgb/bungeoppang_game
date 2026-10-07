@@ -187,6 +187,7 @@ void main() {
         c.state.lifetime = rankingScoreMax + BigInt.one;
         c.tick();
         await tester.pump();
+        await tapVisible(tester, const Key('menu-menu'));
         await tapVisible(tester, const Key('menu-records'));
         expectNoPrototypeText(tester, 'records');
         await tapVisible(tester, const Key('ranking-sign-in'));
@@ -207,6 +208,7 @@ void main() {
         ranking: FakeRanking(configured: false));
     await tester.runAsync(c.refreshRanking);
     await tester.pump();
+    await tapVisible(tester, const Key('menu-menu'));
     await tapVisible(tester, const Key('menu-records'));
     expect(find.byKey(const Key('ranking-unavailable')), findsOneWidget);
     expect(find.byKey(const Key('ranking-sign-in')), findsNothing);

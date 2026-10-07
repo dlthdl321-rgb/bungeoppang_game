@@ -7,6 +7,7 @@ import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
+import 'package:todays_bungeoppang/support_config.dart';
 import 'controller_test.dart' show FakeTime;
 
 /// Holds the next save open until [gate] completes, so a command can be
@@ -36,9 +37,7 @@ GameState progressed(DateTime now) {
   s.missions = MissionState.forLevel(3, now);
   s.upgradeCounts['tap_1'] = 7;
   s.support.transact('test:fund', BigInt.from(42), 'test', now);
-  s.support.inventory['butter'] = BigInt.from(3);
-  s.ownedSkins.add('custard');
-  s.equippedSkin = 'custard';
+  s.support.startBoost(boostOf(BoostKind.bought), now);
   s.wardrobe.owned.add('dusk');
   s.wardrobe.equipped[CosmeticSlot.background] = 'dusk';
   return s;
@@ -49,7 +48,7 @@ void expectProgressKept(GameState restored, GameState original) {
   expect(restored.lifetime, original.lifetime);
   expect(restored.level, original.level);
   expect(restored.support.coins, original.support.coins);
-  expect(restored.support.inventory, original.support.inventory);
+  expect(restored.support.boostUses, original.support.boostUses);
   expect(restored.upgradeCounts, original.upgradeCounts);
   expect(restored.ownedSkins, original.ownedSkins);
   expect(restored.equippedSkin, original.equippedSkin);
@@ -100,6 +99,23 @@ void main() {
       final json = plainJson(GameState.initial(now))
         ..['ownedSkins'] = ['redbean', 'dusk', 'unknown'];
       expect(GameState.fromJson(json).ownedSkins, {'redbean'});
+    });
+    test('없어진 맛을 장착한 옛 저장은 팥 붕어빵으로 불러온다', () {
+      final s = GameState.initial(now);
+      s.support
+        ..transact('test:fund', BigInt.from(10), 'test', now)
+        ..transact('skin:custard', BigInt.from(-6), '커스터드 구매', now);
+      final json = plainJson(s)
+        ..['ownedSkins'] = ['redbean', 'custard']
+        ..['equippedSkin'] = 'custard';
+      final restored = GameState.fromJson(json);
+      expect(restored.equippedSkin, 'redbean');
+      expect(restored.ownedSkins, {'redbean'});
+      // The old receipt stays in the ledger; nothing is refunded.
+      expect(restored.support.coins, BigInt.from(4));
+      expect(restored.support.ledger.containsKey('skin:custard'), isTrue);
+      expect(GameState.fromJson(plainJson(restored)).toJson(),
+          restored.toJson());
     });
     test('현재 카탈로그의 모든 붕어빵 외형은 왕복 저장 후 유지', () {
       final fish =
@@ -183,27 +199,11 @@ void main() {
       expect(c.state.equippedSkin, 'redbean');
       c.dispose();
     });
-    test('기존 붕어빵 구매 경로와 거래 ID는 유지', () async {
-      final clock = FakeTime(), repo = MemoryGameRepository();
-      final c = GameController(repo, clock);
-      await c.initialize();
-      c.state.level = 3;
-      c.state.missions = MissionState.forLevel(3, clock.now);
-      c.state.support
-          .transact('test:fund', BigInt.from(100), 'test', clock.now);
-      expect(await c.buyOrEquipCosmetic('custard'), isTrue);
-      expect(c.state.support.ledger.containsKey('skin:custard'), isTrue);
-      expect(c.state.support.coins, BigInt.from(94));
-      expect(await c.buyOrEquip(skins.first), isTrue);
-      expect(c.state.equippedSkin, 'redbean');
-      expect(c.state.support.coins, BigInt.from(94));
-      c.dispose();
-    });
   });
 
   group('i. 설정 문자열 파싱과 랭킹 정렬 캐시', () {
     test('꾸미기 가격은 매번 다시 파싱하지 않는다', () {
-      final d = cosmeticDefinitions.firstWhere((d) => d.id == 'custard');
+      final d = cosmeticDefinitions.firstWhere((d) => d.id == 'dusk');
       expect(identical(d.cost, d.cost), isTrue);
     });
     // Ranking cache test removed with the fictional ranking (stage 8).

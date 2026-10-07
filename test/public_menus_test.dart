@@ -22,15 +22,16 @@ void main() {
   });
   tearDown(() => c.dispose());
   test('독립 장착 슬롯과 재장착 무과금 및 저장 복원', () async {
-    for (final id in ['cocoa', 'dusk', 'copper', 'lantern']) {
+    for (final id in ['heartscale', 'dusk', 'copper', 'lantern']) {
       expect(await c.buyOrEquipCosmetic(id), isTrue);
     }
-    expect(c.state.support.coins, BigInt.from(72));
-    expect(await c.buyOrEquipCosmetic('night'), isTrue);
+    expect(c.state.support.coins, BigInt.from(79));
+    // Back to the free default and again: no second charge.
+    expect(await c.buyOrEquipCosmetic('clear'), isTrue);
     expect(await c.buyOrEquipCosmetic('dusk'), isTrue);
-    expect(c.state.support.coins, BigInt.from(72));
+    expect(c.state.support.coins, BigInt.from(79));
     final restored = (await repo.load())!;
-    expect(restored.equippedCosmetic(CosmeticSlot.fish), 'cocoa');
+    expect(restored.equippedCosmetic(CosmeticSlot.pattern), 'heartscale');
     expect(restored.equippedCosmetic(CosmeticSlot.background), 'dusk');
     expect(restored.equippedCosmetic(CosmeticSlot.stove), 'copper');
     expect(restored.equippedCosmetic(CosmeticSlot.decoration), 'lantern');
@@ -52,7 +53,7 @@ void main() {
     (json['wardrobe'] as Map)['equipped']['stove'] = 'night';
     expect(() => GameState.fromJson(json), throwsFormatException);
   });
-  test('v5 마이그레이션은 기존 재화와 외형을 보존하고 슬롯 기본값만 추가', () {
+  test('v5 마이그레이션은 기존 재화를 보존, 없어진 맛은 팥으로, 슬롯은 기본값', () {
     c.state.ownedSkins.add('custard');
     c.state.equippedSkin = 'custard';
     final json = c.state.toJson()
@@ -64,8 +65,9 @@ void main() {
     final restored = GameState.fromJson(json);
     expect(restored.support.toJson(), c.state.support.toJson());
     expect(restored.invites.toJson(), c.state.invites.toJson());
-    expect(restored.equippedSkin, 'custard');
-    expect(restored.equippedCosmetic(CosmeticSlot.background), 'night');
+    expect(restored.equippedSkin, 'redbean'); // custard was removed.
+    expect(restored.equippedCosmetic(CosmeticSlot.background),
+        defaultCosmetics[CosmeticSlot.background]);
     expect(restored.achievements.claimed, isEmpty);
   });
   // Stage 8 removed the fictional ranking and the fixed mock event season;

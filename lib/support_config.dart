@@ -1,19 +1,21 @@
 // All values in this file are ESTIMATED prototype rules, not verified effects.
 const supportEvidence = 'estimated';
 const dailyUtcOffsetMinutes = 540; // Fixed Korea midnight, not device timezone.
-const supportConfigVersion = 'support-v1';
+const supportConfigVersion = 'support-v2';
+
+/// Saves before stage 14 (items instead of boosts); still loadable.
+const legacySupportConfigVersion = 'support-v1';
 const effectScale = 1000;
 // Includes milliseconds, permille effects and the existing 50% offline rate.
 const productionQuantum = 2000000;
 
-enum EffectChannel { tap, automatic }
-
 enum DailyMetric { taps, production, purchases, autoRate }
 
+/// Coins paid out by a daily goal or an invitation (items were removed in
+/// stage 14; their rewards became coins).
 class RewardDefinition {
   final String coins;
-  final Map<String, String> items;
-  const RewardDefinition(this.coins, [this.items = const {}]);
+  const RewardDefinition(this.coins);
 }
 
 class DailyDefinition {
@@ -34,27 +36,48 @@ const dailyDefinitions = [
   DailyDefinition(
       'auto', '기본 초당 생산', DailyMetric.autoRate, '10', RewardDefinition('3')),
 ];
-const dailyAllReward = RewardDefinition('5', {'fairy': '1', 'butter': '1'});
+const dailyAllReward = RewardDefinition('10');
 // Active production only; purchased quantity (not button presses); base skill
 // rate peak (temporary boosts cannot satisfy this goal). Explicit estimates.
 const dailyOfflineCounts = false;
-const itemRepeatPolicy = 'rejectWhileActive';
 
-class ItemDefinition {
-  final String id, name, multiplierPermille, coinPrice, starterQuantity;
-  final EffectChannel channel;
-  final int durationSeconds;
-  const ItemDefinition(
-      this.id,
-      this.name,
-      this.channel,
-      this.multiplierPermille,
-      this.durationSeconds,
-      this.coinPrice,
-      this.starterQuantity);
+/// Timed production boosts (stage 14). Each one multiplies both tap and
+/// automatic production; when several run at once only the strongest counts.
+enum BoostKind {
+  /// The invited player reached Lv.1: the inviter visits as a guest.
+  invite,
+
+  /// A friend visited (once per friend per day).
+  visit,
+
+  /// Caught a golden bungeoppang on the griddle.
+  golden,
+
+  /// Bought with 황금 붕어빵.
+  bought,
 }
 
-const itemDefinitions = [
-  ItemDefinition('fairy', '요정', EffectChannel.automatic, '2000', 300, '3', '1'),
-  ItemDefinition('butter', '황금버터', EffectChannel.tap, '2000', 60, '2', '1'),
+class BoostDefinition {
+  final BoostKind kind;
+  final String name;
+  final int multiplierPermille, durationSeconds;
+  const BoostDefinition(
+      this.kind, this.name, this.multiplierPermille, this.durationSeconds);
+  String get id => kind.name;
+}
+
+const boostDefinitions = [
+  BoostDefinition(BoostKind.invite, '초대 손님', 5000, 600),
+  BoostDefinition(BoostKind.visit, '친구 방문', 3000, 300),
+  BoostDefinition(BoostKind.golden, '황금 찬스', 3000, 60),
+  BoostDefinition(BoostKind.bought, '황금 부스트', 3000, 600),
 ];
+
+BoostDefinition boostOf(BoostKind kind) =>
+    boostDefinitions.firstWhere((b) => b.kind == kind);
+
+/// A golden bungeoppang appears on the griddle every 3-7 minutes of play
+/// and can be caught for this long.
+const goldenChanceMinSeconds = 180;
+const goldenChanceMaxSeconds = 420;
+const goldenChanceVisibleSeconds = 8;

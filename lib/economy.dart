@@ -95,7 +95,7 @@ UpgradeQuote quoteUpgrade(GameState s, UpgradeDefinition u, PurchaseMode mode,
     {DateTime? at}) {
   final owned = s.upgradeCounts[u.id] ?? 0;
   final remaining = maxUpgradeCount - owned;
-  final unlocked = s.lifetime >= u.unlockTotal;
+  final unlocked = skillUnlocked(s, u);
   final amount = switch (mode) {
     PurchaseMode.one => remaining > 0 ? 1 : 0,
     PurchaseMode.ten => remaining.clamp(0, 10),
@@ -105,11 +105,7 @@ UpgradeQuote quoteUpgrade(GameState s, UpgradeDefinition u, PurchaseMode mode,
   final rate = u.kind == UpgradeKind.tap ? tapRate(s) : autoRate(s);
   final factor = at == null
       ? BigInt.from(effectScale)
-      : s.support.multiplier(
-          u.kind == UpgradeKind.tap
-              ? EffectChannel.tap
-              : EffectChannel.automatic,
-          at);
+      : s.support.multiplier(at);
   return UpgradeQuote(
       amount: amount,
       cost: cost,
@@ -152,3 +148,8 @@ String compactNumber(BigInt n) {
       .replaceFirst(RegExp(r'0+$'), '');
   return '$sign$whole${fraction.isEmpty ? '' : '.$fraction'}${koreanLargeUnits[group]}';
 }
+
+/// A skill can be bought once lifetime production reaches its goal, or
+/// earlier if it was unlocked with 황금 붕어빵.
+bool skillUnlocked(GameState s, UpgradeDefinition u) =>
+    s.lifetime >= u.unlockTotal || s.premium.skillUnlocks.contains(u.id);

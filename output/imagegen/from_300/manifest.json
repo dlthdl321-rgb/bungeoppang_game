@@ -1,0 +1,62 @@
+﻿{
+  "source": "오늘의붕어빵_이미지생성프롬프트_통합_261007_0223_01.md",
+  "mode": "built-in image_gen",
+  "numbering_note": "파일에는 개별 번호가 없어 순서 확장 기준을 적용함: 1~5절 50장; 6절 기본12장, 항목별186장(여자15항목·남자16항목 각각6컷, goldtongs 포함), 별도 남자6장; 7~14절54장. 총308장. 다른 확장 기준에서는 번호가 달라질 수 있음.",
+  "style": "Cozy warm Korean street-food pixel art, detailed 16-bit style exactly matching the input image: soft warm lighting, dark chocolate-brown outlines, cel shading with light dithering, crisp square pixels, no blur, no text, no watermark.",
+  "entries": [
+    {
+      "number": 300,
+      "file": "topping/almond.png",
+      "reference": "assets/images/fish/redbean.png",
+      "change": "five sliced almond flakes on the back of the bungeoppang"
+    },
+    {
+      "number": 301,
+      "file": "topping/sprinkle.png",
+      "reference": "assets/images/fish/redbean.png",
+      "change": "short rainbow sprinkles in pink, yellow, mint, sky blue and lilac over the bungeoppang"
+    },
+    {
+      "number": 302,
+      "file": "stove/copper.png",
+      "reference": "assets/images/stove/iron.png",
+      "change": "the griddle's metal becomes shiny warm copper"
+    },
+    {
+      "number": 303,
+      "file": "stove/castiron.png",
+      "reference": "assets/images/stove/iron.png",
+      "change": "the griddle's metal becomes heavy black-violet cast iron with round rivets"
+    },
+    {
+      "number": 304,
+      "file": "stove/golden.png",
+      "reference": "assets/images/stove/iron.png",
+      "change": "the griddle's metal becomes polished gold with small sparkles"
+    },
+    {
+      "number": 305,
+      "file": "bg/clear_night.png",
+      "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_002.png",
+      "change": "a clear starry night, deep navy sky with small stars and a crescent moon, warm glowing shop windows and lanterns, soft light pools on the paving"
+    },
+    {
+      "number": 306,
+      "file": "bg/rain_night.png",
+      "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_005.png",
+      "change": "a rainy night, dark blue-grey sky, rain streaks, wet paving reflecting the warm shop lights and street lamps"
+    },
+    {
+      "number": 307,
+      "file": "bg/autumn_night.png",
+      "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_003.png",
+      "change": "an autumn night, deep indigo sky with stars, maple trees lit warmly by lanterns, a few fallen leaves on the paving"
+    },
+    {
+      "number": 308,
+      "file": "bg/cherry_night.png",
+      "reference": "이미지/bungeoppang_raw_assets_261007_0114_01/raw/backgrounds/backgrounds_006.png",
+      "change": "a spring night, navy sky, cherry blossoms softly lit by paper lanterns, petals drifting"
+    }
+  ]
+}

@@ -125,7 +125,7 @@ void main() {
     await step(c, id, InviteEventKind.reachedLevelOne);
     expect(c.state.missions.qualifiedInvitePlayers, {'friend'});
     expect(c.state.invites.visits[id]!.stage, InviteStage.newSuccess);
-    expect(c.state.support.inventory['fairy'], BigInt.from(2));
+    expect(c.state.support.coins, BigInt.from(5));
     expect(c.state.invites.events.length, 3);
     c.dispose();
   });
@@ -140,7 +140,7 @@ void main() {
     await step(c, retry, InviteEventKind.classifiedNew);
     expect(c.state.invites.visits[retry]!.stage, InviteStage.duplicate);
     expect(c.state.missions.qualifiedInvitePlayers, {'friend'});
-    expect(c.state.support.inventory['fairy'], BigInt.from(2));
+    expect(c.state.support.coins, BigInt.from(5));
     expect(c.state.support.ledger.length, 1);
     c.dispose();
   });
@@ -149,15 +149,14 @@ void main() {
     await c.prepareInvitation();
     await succeed(c, 'old', fresh: false);
     await succeed(c, 'old', fresh: false);
-    expect(c.state.support.inventory['butter'], BigInt.from(2));
+    expect(c.state.support.coins, BigInt.from(2));
     expect(c.state.missions.qualifiedInvitePlayers, isEmpty);
     final disguised = await click(c, 'old');
     await step(c, disguised, InviteEventKind.classifiedNew);
     expect(c.state.invites.visits[disguised]!.stage, InviteStage.duplicate);
     await succeed(c, 'new');
     await succeed(c, 'new', fresh: false);
-    expect(c.state.support.inventory['butter'], BigInt.from(2));
-    expect(c.state.support.inventory['fairy'], BigInt.from(2));
+    expect(c.state.support.coins, BigInt.from(7));
     expect(c.state.support.ledger.length, 2);
     c.dispose();
   });
@@ -172,12 +171,12 @@ void main() {
     c.tick();
     await succeed(c, 'old', fresh: false);
     await succeed(c, 'new', fresh: false);
-    expect(c.state.support.inventory['butter'], BigInt.from(4));
+    expect(c.state.support.coins, BigInt.from(11));
     expect(await c.replayMockEvent(oldEvent), isFalse);
     clock.now = clock.now.subtract(const Duration(days: 1));
     c.tick();
     await succeed(c, 'old', fresh: false);
-    expect(c.state.support.inventory['butter'], BigInt.from(4));
+    expect(c.state.support.coins, BigInt.from(11));
     expect(c.state.missions.qualifiedInvitePlayers, {'new'});
     c.dispose();
   });
@@ -220,7 +219,7 @@ void main() {
     expect(c.state.invites.events.length, 4);
     c.dispose();
   });
-  test('중간 단계·보상·eventId 재실행 복원, 저장 실패 시 이벤트/재고/미션 전부 롤백', () async {
+  test('중간 단계·보상·eventId 재실행 복원, 저장 실패 시 이벤트/코인/미션 전부 롤백', () async {
     final clock = FakeTime(), repo = SlowRepository();
     final c = atLevel(4, clock, repo);
     await c.prepareInvitation();
@@ -252,7 +251,7 @@ void main() {
     await again.initialize();
     expect(again.state.toJson(), done);
     expect(await again.replayMockEvent(eventId), isFalse);
-    expect(again.state.support.inventory['fairy'], BigInt.from(2));
+    expect(again.state.support.coins, BigInt.from(5));
     again.dispose();
   });
   test('v4 원장·진행 보존, 이전 초대 사용자 마이그레이션은 소급 보상 없음', () {
@@ -305,7 +304,7 @@ void main() {
     expect(await c.createMockInvite(), isFalse);
     expect(await c.refreshInvitations(), isTrue);
     expect(remote.acknowledged.length, 3);
-    expect(c.state.support.inventory['fairy'], BigInt.from(2));
+    expect(c.state.support.coins, BigInt.from(5));
     final mock = MockInvitationRepository()
         .simulate(ticket, 'forged', InviteEventKind.clicked, clock.utcNow);
     expect(applyInviteEvent(c.state, mock, clock.utcNow, InviteOrigin.server),

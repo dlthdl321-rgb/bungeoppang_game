@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/achievement_config.dart';
 import 'package:todays_bungeoppang/balance.dart';
@@ -36,9 +37,7 @@ GameState progressed() {
   s.missions = MissionState.forLevel(3, now);
   s.upgradeCounts['tap_1'] = 7;
   s.support.transact('test:fund', BigInt.from(42), 'test', now);
-  s.support.inventory['butter'] = BigInt.from(3);
-  s.ownedSkins.add('custard');
-  s.equippedSkin = 'custard';
+  s.support.startBoost(boostOf(BoostKind.bought), now);
   s.wardrobe.owned.add('dusk');
   s.wardrobe.equipped[CosmeticSlot.background] = 'dusk';
   return s;
@@ -67,18 +66,6 @@ Map<String, dynamic> asVersion(GameState s, int version) {
   return json;
 }
 
-Future<void> useAnyItem(GameController c) async {
-  for (final item in itemDefinitions) {
-    final s = c.state.support;
-    if (s.effects[item.id]?.activeAt(c.gameNow) == true) continue;
-    if (s.inventory[item.id] == BigInt.zero) {
-      if (s.coins < BigInt.parse(item.coinPrice)) continue;
-      expect(await c.buyCoinItem(item.id, s.purchaseSequence), isTrue);
-    }
-    expect(await c.useItem(item.id), isTrue);
-  }
-}
-
 /// Explicit player actions for the offline season, only for active goals.
 Future<void> offlineActions(GameController c) async {
   for (final d in achievementDefinitions) {
@@ -87,13 +74,16 @@ Future<void> offlineActions(GameController c) async {
       expect(await c.claimAchievement(d.id), isTrue);
     }
   }
+  // The player taps every golden bungeoppang that shows up on the griddle
+  // (the controller's own 3-7 minute schedule; boosts come only from it).
+  if (c.goldenChance case final chance?) {
+    expect(await c.catchGoldenChance(chance.slot), isTrue);
+  }
   final target = activeLevelMission(c.state);
   if (target == null) return;
   for (final p in missionProgress(c.state, target)) {
     if (p.complete) continue;
     switch (p.definition.kind) {
-      case MissionKind.goldenButterUses:
-        await c.simulateButterUse(c.state.missions.token);
       case MissionKind.cosmeticsOwned:
         final options = cosmeticDefinitions
             .where((d) =>
@@ -105,8 +95,6 @@ Future<void> offlineActions(GameController c) async {
         if (options.isNotEmpty) {
           expect(await c.buyOrEquipCosmetic(options.first.id), isTrue);
         }
-      case MissionKind.itemUses || MissionKind.achievements:
-        await useAnyItem(c);
       default:
         break;
     }
@@ -116,13 +104,14 @@ Future<void> offlineActions(GameController c) async {
   }
 }
 
+// Stage 14 raised Lv.6/8/9/10 again after golden chances sped up play.
 final offlineAutoTargets = {
   5: BigInt.from(5000),
-  6: BigInt.from(60000000),
+  6: BigInt.from(400000000),
   7: BigInt.parse('16000000000'),
-  8: BigInt.parse('500000000000'),
-  9: BigInt.parse('4000000000000'),
-  10: BigInt.parse('15000000000000'),
+  8: BigInt.parse('800000000000'),
+  9: BigInt.parse('5000000000000'),
+  10: BigInt.parse('20000000000000'),
 };
 
 void main() {
@@ -136,7 +125,7 @@ void main() {
         isEmpty);
     final replaced = {
       5: (MissionKind.cosmeticsOwned, '1'),
-      7: (MissionKind.itemUses, '5'),
+      7: (MissionKind.boostUses, '5'),
       9: (MissionKind.skillLevel, '1'),
       10: (MissionKind.achievements, '12'),
     };
@@ -173,8 +162,11 @@ void main() {
           expect(restored.lifetime.toString(), raw['lifetime']);
           expect(restored.support.coins.toString(), raw['stars']);
           expect(restored.level, raw['level']);
-          expect(restored.equippedSkin, raw['equippedSkin']);
-          expect(restored.ownedSkins, (raw['ownedSkins'] as List).toSet());
+          // The v1 player wore cocoa and owned custard: flavours were
+          // removed in stage 14, so the save loads with redbean.
+          expect(raw['equippedSkin'], 'cocoa');
+          expect(restored.equippedSkin, 'redbean');
+          expect(restored.ownedSkins, {'redbean'});
         } else {
           restored = GameState.fromJson(asVersion(original, version));
           expect(restored.buns, original.buns);
@@ -185,7 +177,7 @@ void main() {
           expect(restored.equippedSkin, original.equippedSkin);
           expect(restored.support.coins, BigInt.from(42));
           if (version >= 4) {
-            expect(restored.support.inventory, original.support.inventory);
+            expect(restored.support.boostUses, original.support.boostUses);
             expect(restored.support.ledger.keys,
                 containsAll(original.support.ledger.keys));
           }
@@ -351,13 +343,14 @@ void main() {
           isTrue);
     });
 
-    test('최고 초당 생산은 아이템 효과를 빼고 기록한다', () async {
+    test('최고 초당 생산은 부스트 효과를 빼고 기록한다', () async {
       c.state.buns = BigInt.from(1000);
       expect(
           await c.buyUpgrade(upgrades.firstWhere((u) => u.id == 'auto_1'), 1),
           isTrue);
       expect(c.state.records.bestAutoRate, autoRate(c.state));
-      expect(await c.useItem('fairy'), isTrue);
+      c.state.support.startBoost(boostOf(BoostKind.golden), c.gameNow);
+      expect(c.currentAutoRate, autoRate(c.state) * BigInt.from(3));
       clock.advance(1000);
       c.tick();
       expect(c.state.records.bestAutoRate, autoRate(c.state));
@@ -532,7 +525,8 @@ void main() {
 
   test('오프라인 시즌 시뮬레이션: 2회/초 클릭과 효율 구매 4시간, 중반 도달·폭주 없음', () async {
     final clock = FakeTime()..now = now;
-    final c = GameController(MemoryGameRepository(), clock)
+    final c = GameController(MemoryGameRepository(), clock,
+        goldenRandom: math.Random(8))
       ..state = GameState.initial(clock.utcNow);
     c.state.tutorialDone = true;
     final reached = <int, int>{1: 0};

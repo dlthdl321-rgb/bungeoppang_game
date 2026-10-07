@@ -102,13 +102,15 @@ class CoinTransaction {
   }
 }
 
-class ActiveItem {
-  final String id;
-  final EffectChannel channel;
+/// A running boost (see [BoostKind]). It multiplies tap and automatic
+/// production alike.
+class ActiveBoost {
+  final BoostKind kind;
   final BigInt multiplierPermille;
   final DateTime startedAtUtc, endsAtUtc;
-  const ActiveItem(this.id, this.channel, this.multiplierPermille,
-      this.startedAtUtc, this.endsAtUtc);
+  const ActiveBoost(
+      this.kind, this.multiplierPermille, this.startedAtUtc, this.endsAtUtc);
+  String get id => kind.name;
   int remainingMs(DateTime now) {
     final remaining = endsAtUtc.difference(now).inMilliseconds;
     return remaining < 0 ? 0 : remaining;
@@ -118,27 +120,21 @@ class ActiveItem {
       !now.isBefore(startedAtUtc) && now.isBefore(endsAtUtc);
   Map<String, dynamic> toJson(DateTime now) => {
         'id': id,
-        'channel': channel.name,
         'multiplierPermille': '$multiplierPermille',
         'startedAtUtc': startedAtUtc.toIso8601String(),
         'endsAtUtc': endsAtUtc.toIso8601String(),
         'remainingMs': remainingMs(now)
       };
-  factory ActiveItem.fromJson(Map<String, dynamic> m, DateTime now) {
+  factory ActiveBoost.fromJson(Map<String, dynamic> m, DateTime now) {
     final start = readUtc(m['startedAtUtc']), end = readUtc(m['endsAtUtc']);
     final factor = readNatural(m['multiplierPermille']);
-    if (!itemDefinitions.any((d) => d.id == m['id']) ||
-        !EffectChannel.values.any((v) => v.name == m['channel']) ||
+    final kind = BoostKind.values.where((k) => k.name == m['id']);
+    if (kind.isEmpty ||
         end.isBefore(start) ||
         factor < BigInt.from(effectScale)) {
-      throw const FormatException('아이템 효과 손상');
+      throw const FormatException('부스트 효과 손상');
     }
-    final result = ActiveItem(
-        m['id'] as String,
-        EffectChannel.values.firstWhere((v) => v.name == m['channel']),
-        factor,
-        start,
-        end);
+    final result = ActiveBoost(kind.first, factor, start, end);
     if (m['remainingMs'] != result.remainingMs(now)) {
       throw const FormatException('남은 효과 시간 불일치');
     }
@@ -152,19 +148,28 @@ class SupportState {
       tapFraction = BigInt.zero;
   DateTime observedUtc;
   DailyState daily;
-  final Map<String, BigInt> inventory, itemUses;
-  final Map<String, ActiveItem> effects;
+
+  /// Boosts started so far, all kinds (missions and achievements count it).
+  BigInt boostUses = BigInt.zero;
+
+  /// Running boosts by [ActiveBoost.id].
+  final Map<String, ActiveBoost> effects;
+
+  /// Visits (friend or invite guest) already turned into a boost, so a
+  /// visit the server delivers again is never applied twice.
+  final Set<String> appliedVisits;
   final Map<String, CoinTransaction> ledger;
   int purchaseSequence = 0;
-  SupportState._(this.observedUtc, this.daily, this.inventory, this.itemUses,
-      this.effects, this.ledger);
+  SupportState._(this.observedUtc, this.daily, this.effects,
+      this.appliedVisits, this.ledger);
+
+  /// Oldest applied visits are forgotten past this; the server never
+  /// redelivers a visit that old.
+  static const appliedVisitLimit = 500;
   factory SupportState.initial(DateTime now,
       {BigInt? legacyStars, BigInt? legacyFraction}) {
-    final s = SupportState._(now.toUtc(), DailyState(dailyKey(now)), {
-      for (final i in itemDefinitions) i.id: BigInt.parse(i.starterQuantity)
-    }, {
-      for (final i in itemDefinitions) i.id: BigInt.zero
-    }, {}, {});
+    final s =
+        SupportState._(now.toUtc(), DailyState(dailyKey(now)), {}, {}, {});
     if (legacyStars != null) {
       s.transact('migration:v4', legacyStars, '기존 별사탕 1:1 이전', now);
     }
@@ -178,14 +183,36 @@ class SupportState {
     daily.rollTo(observedUtc);
   }
 
-  BigInt multiplier(EffectChannel channel, DateTime now) {
+  /// Production factor (permille) at [now]: the strongest running boost.
+  BigInt multiplier(DateTime now) {
     var factor = BigInt.from(effectScale);
     for (final effect in effects.values) {
-      if (effect.channel == channel && effect.activeAt(now)) {
-        factor = factor * effect.multiplierPermille ~/ BigInt.from(effectScale);
+      if (effect.activeAt(now) && effect.multiplierPermille > factor) {
+        factor = effect.multiplierPermille;
       }
     }
     return factor;
+  }
+
+  /// Starts [boost] at [now], or adds its duration if it is still running.
+  void startBoost(BoostDefinition boost, DateTime now) {
+    final running = effects[boost.id];
+    final duration = Duration(seconds: boost.durationSeconds);
+    effects[boost.id] = running != null && running.activeAt(now)
+        ? ActiveBoost(boost.kind, running.multiplierPermille,
+            running.startedAtUtc, running.endsAtUtc.add(duration))
+        : ActiveBoost(boost.kind, BigInt.from(boost.multiplierPermille),
+            now.toUtc(), now.toUtc().add(duration));
+    boostUses += BigInt.one;
+  }
+
+  /// Records that [visitId] was applied; false if it already was.
+  bool markVisit(String visitId) {
+    if (!appliedVisits.add(visitId)) return false;
+    while (appliedVisits.length > appliedVisitLimit) {
+      appliedVisits.remove(appliedVisits.first);
+    }
+    return true;
   }
 
   bool transact(String id, BigInt delta, String reason, DateTime at) {
@@ -202,8 +229,8 @@ class SupportState {
         'tapFraction': '$tapFraction',
         'observedUtc': observedUtc.toIso8601String(),
         'daily': daily.toJson(),
-        'inventory': {for (final e in inventory.entries) e.key: '${e.value}'},
-        'itemUses': {for (final e in itemUses.entries) e.key: '${e.value}'},
+        'boostUses': '$boostUses',
+        'appliedVisits': appliedVisits.toList(),
         'effects': {
           for (final e in effects.entries) e.key: e.value.toJson(observedUtc)
         },
@@ -211,10 +238,13 @@ class SupportState {
         'purchaseSequence': purchaseSequence
       };
   factory SupportState.fromJson(Map<String, dynamic> m) {
-    if (m['configVersion'] != supportConfigVersion ||
+    // support-v1 (before stage 14) kept items: their counts and running
+    // item effects are dropped (unreleased, nothing refunded) and past item
+    // uses carry over as boost uses.
+    final legacy = m['configVersion'] == legacySupportConfigVersion;
+    if ((!legacy && m['configVersion'] != supportConfigVersion) ||
         m['daily'] is! Map ||
-        m['inventory'] is! Map ||
-        m['itemUses'] is! Map ||
+        (legacy ? m['itemUses'] is! Map : m['appliedVisits'] is! List) ||
         m['effects'] is! Map ||
         m['ledger'] is! List ||
         m['purchaseSequence'] is! int ||
@@ -222,14 +252,24 @@ class SupportState {
       throw const FormatException('보조 진행 저장 손상');
     }
     final at = readUtc(m['observedUtc']);
+    final visits = legacy ? const <Object?>[] : m['appliedVisits'] as List;
+    if (visits.any((v) => v is! String) ||
+        visits.length > appliedVisitLimit ||
+        visits.toSet().length != visits.length) {
+      throw const FormatException('방문 기록 손상');
+    }
     final s = SupportState._(
-        at, DailyState.fromJson(Map<String, dynamic>.from(m['daily'] as Map)), {
-      for (final i in itemDefinitions)
-        i.id: readNatural((m['inventory'] as Map)[i.id])
-    }, {
-      for (final i in itemDefinitions)
-        i.id: readNatural((m['itemUses'] as Map)[i.id])
-    }, {}, {});
+        at,
+        DailyState.fromJson(Map<String, dynamic>.from(m['daily'] as Map)),
+        {},
+        visits.cast<String>().toSet(),
+        {});
+    s.boostUses = legacy
+        ? (m['itemUses'] as Map)
+            .values
+            .map(readNatural)
+            .fold(BigInt.zero, (a, b) => a + b)
+        : readNatural(m['boostUses']);
     s.coins = readNatural(m['coins']);
     s.autoFraction = readNatural(m['autoFraction']);
     s.tapFraction = readNatural(m['tapFraction']);
@@ -239,12 +279,14 @@ class SupportState {
         s.daily.day != dailyKey(at)) {
       throw const FormatException('진행 나머지/날짜 손상');
     }
-    for (final entry in (m['effects'] as Map).entries) {
-      if (entry.value is! Map) throw const FormatException('효과 저장 손상');
-      final e = ActiveItem.fromJson(
-          Map<String, dynamic>.from(entry.value as Map), at);
-      if (entry.key != e.id) throw const FormatException('효과 ID 불일치');
-      s.effects[e.id] = e;
+    if (!legacy) {
+      for (final entry in (m['effects'] as Map).entries) {
+        if (entry.value is! Map) throw const FormatException('효과 저장 손상');
+        final e = ActiveBoost.fromJson(
+            Map<String, dynamic>.from(entry.value as Map), at);
+        if (entry.key != e.id) throw const FormatException('효과 ID 불일치');
+        s.effects[e.id] = e;
+      }
     }
     var sum = BigInt.zero;
     for (final raw in m['ledger'] as List) {

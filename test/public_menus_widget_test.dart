@@ -41,6 +41,7 @@ void main() {
         await tester.tap(find.byTooltip('닫기'));
         await tester.pumpAndSettle();
         // Stage 8: fictional ranking → personal records, mock season → weekly.
+        await tapVisible(tester, const Key('menu-menu'));
         await tapVisible(tester, const Key('menu-records'));
         expect(find.textContaining('이 기기 기록'), findsOneWidget);
         expect(find.textContaining('순위'), findsNothing);
@@ -55,6 +56,7 @@ void main() {
         c.state.weekly.taps = BigInt.from(1000);
         c.tick();
         await tester.pump();
+        await tapVisible(tester, const Key('menu-menu'));
         await tapVisible(tester, const Key('event-entry'));
         await tapVisible(tester, const Key('weekly-claim-taps'));
         expect(c.state.weekly.claimed, {'taps'});

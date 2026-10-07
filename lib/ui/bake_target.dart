@@ -8,7 +8,9 @@ import '../feedback_config.dart';
 import '../game_audio.dart';
 import '../game_controller.dart';
 import '../cosmetic_config.dart';
+import 'boost_effects.dart';
 import 'fish_painter.dart';
+import 'pixel_sprites.dart';
 import 'tap_effects.dart';
 
 class _Burst {
@@ -26,8 +28,15 @@ class BakeTarget extends StatefulWidget {
   static const effectMilliseconds = floatingGainMs;
   final GameController controller;
   final bool reduceMotion;
+
+  /// Where the bungeoppang should sit, in global (screen) coordinates: over
+  /// the one baked into a concept background. Null centres it in the box.
+  final Rect? fishOnScreen;
   const BakeTarget(
-      {super.key, required this.controller, required this.reduceMotion});
+      {super.key,
+      required this.controller,
+      required this.reduceMotion,
+      this.fishOnScreen});
   @override
   State<BakeTarget> createState() => _BakeTargetState();
 }
@@ -45,6 +54,19 @@ class _BakeTargetState extends State<BakeTarget>
   bool _active = true;
   BigInt? _staticGain;
 
+  /// This box's top-left on screen, to place [BakeTarget.fishOnScreen].
+  Offset _origin = Offset.zero;
+
+  void _trackOrigin() {
+    if (widget.fishOnScreen == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final box = context.findRenderObject();
+      if (!mounted || box is! RenderBox || !box.hasSize) return;
+      final origin = box.localToGlobal(Offset.zero);
+      if (origin != _origin) setState(() => _origin = origin);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -58,7 +80,7 @@ class _BakeTargetState extends State<BakeTarget>
       });
       if (_bursts.isEmpty &&
           crumbs.activeCount == 0 &&
-          _elapsed - _lastTap > squashMs) {
+          _elapsed - _lastTap > tapPopMs) {
         _ticker.stop();
       }
     });
@@ -137,12 +159,7 @@ class _BakeTargetState extends State<BakeTarget>
   @override
   Widget build(BuildContext context) {
     final reduce = widget.reduceMotion;
-    final pulse =
-        reduce ? 0.0 : (1 - (_elapsed - _lastTap) / 180).clamp(0.0, 1.0);
-    // Overall press shrink times a squash (wide/short) then stretch rebound.
-    final squash =
-        reduce ? 0.0 : squashAmount((_elapsed - _lastTap) / squashMs);
-    final base = 1 - .07 * pulse;
+    final pop = reduce ? 1.0 : tapPopScale((_elapsed - _lastTap) / tapPopMs);
     final look = widget.controller.state.equippedCosmetic;
     return RepaintBoundary(
       child: Semantics(
@@ -179,41 +196,53 @@ class _BakeTargetState extends State<BakeTarget>
             onLongPressCancel: _stopHold,
             child: LayoutBuilder(builder: (context, box) {
               _box = box.biggest;
+              _trackOrigin();
+              // The fish canvas: over the baked-in fish when there is one
+              // (its art fills ~77% of the canvas width), else centred.
+              final onScreen = widget.fishOnScreen;
+              final canvasWidth = onScreen == null ? 0.0 : onScreen.width / .77;
+              final fishRect = onScreen == null
+                  ? null
+                  : Rect.fromCenter(
+                      center: onScreen.center - _origin,
+                      width: canvasWidth,
+                      height: canvasWidth * .75);
+              final fish = Transform.scale(
+                  key: const Key('fish-scale'),
+                  scale: pop,
+                  child: _goldenWhileBoosted(CustomPaint(
+                      key: const Key('center-fish'),
+                      size: fishRect?.size ??
+                          Size(
+                              math.min(
+                                  box.maxWidth * .82, box.maxHeight * 1.25),
+                              math.min(box.maxHeight, box.maxWidth * .62)),
+                      painter: FishPainter(
+                          skin: look(CosmeticSlot.fish),
+                          pattern: look(CosmeticSlot.pattern),
+                          topping: look(CosmeticSlot.topping)))));
               return Stack(
                 alignment: Alignment.center,
                 children: [
-                  Container(
-                      key: const Key('fish-glow'),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: RadialGradient(
-                          colors: [
-                            Color.lerp(const Color(0x35ffe59b),
-                                const Color(0x99ffe59b), pulse)!,
-                            const Color(0x00ffe59b)
-                          ],
-                        ),
-                      )),
-                  Transform(
-                      key: const Key('fish-scale'),
-                      alignment: Alignment.center,
-                      transform: Matrix4.diagonal3Values(
-                          base * (1 + .06 * squash),
-                          base * (1 - .08 * squash),
-                          1),
-                      child: CustomPaint(
-                          size: Size(box.maxWidth,
-                              math.min(box.maxHeight, box.maxWidth * .8)),
-                          painter: FishPainter(
-                              skin: look(CosmeticSlot.fish),
-                              pattern: look(CosmeticSlot.pattern),
-                              topping: look(CosmeticSlot.topping)))),
+                  Positioned.fill(
+                      child: IgnorePointer(
+                          child: CustomPaint(
+                              key: const Key('fish-sparkles'),
+                              painter: const SparklePainter()))),
+                  if (fishRect == null)
+                    fish
+                  else
+                    Positioned.fromRect(rect: fishRect, child: fish),
                   if (!reduce)
                     Positioned.fill(
                         child: IgnorePointer(
                             child: CustomPaint(
                                 key: const Key('crumbs'),
-                                painter: CrumbPainter(crumbs, _elapsed)))),
+                                painter: CrumbPainter(crumbs, _elapsed,
+                                    fish: PixelSprites.fx('minifish') ??
+                                        PixelSprites.fish(
+                                            look(CosmeticSlot.fish),
+                                            look(CosmeticSlot.pattern)))))),
                   for (final burst in _bursts)
                     Positioned(
                         key: ValueKey(burst),
@@ -256,4 +285,79 @@ class _BakeTargetState extends State<BakeTarget>
       ),
     );
   }
+}
+
+/// The centre bungeoppang turns gold while any boost runs.
+extension on _BakeTargetState {
+  Widget _goldenWhileBoosted(Widget fish) {
+    if (widget.controller.activeBoost == null) return fish;
+    final glow = PixelSprites.fx('butter_glow');
+    return Stack(alignment: Alignment.center, children: [
+      ColorFiltered(
+          key: const Key('center-fish-golden'),
+          colorFilter: goldTint,
+          child: fish),
+      // The shine drawn for the 96x72 fish canvas, laid over it.
+      if (glow != null)
+        Positioned.fill(child: IgnorePointer(child: PixelArt(glow))),
+    ]);
+  }
+}
+
+/// Fixed four-point pixel sparkles around the bungeoppang (concept art).
+class SparklePainter extends CustomPainter {
+  const SparklePainter();
+
+  /// Centre (fraction of the box) and size in sparkle pixels.
+  static const _sparkles = [
+    (.12, .22, 3),
+    (.86, .18, 2),
+    (.2, .78, 2),
+    (.9, .7, 3),
+    (.08, .52, 1),
+    (.78, .9, 1),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final sprite = PixelSprites.fx('sparkle');
+    if (sprite != null) {
+      for (final (fx, fy, n) in _sparkles) {
+        // Logical 7x7 sparkle; the art may be exported at finer dots.
+        final side = 7 * (1.0 + n) * (size.width / 360);
+        PixelSprites.draw(
+            canvas,
+            sprite,
+            Rect.fromCenter(
+                center: Offset(size.width * fx, size.height * fy),
+                width: side,
+                height: side));
+      }
+      return;
+    }
+    final px = math.max(2.0, (size.width / 120).roundToDouble());
+    final core = Paint()..color = const Color(0xfffff3c4);
+    final ray = Paint()..color = const Color(0xccfed794);
+    for (final (fx, fy, n) in _sparkles) {
+      final c = Offset((size.width * fx / px).roundToDouble() * px,
+          (size.height * fy / px).roundToDouble() * px);
+      canvas.drawRect(Rect.fromCenter(center: c, width: px, height: px), core);
+      for (var i = 1; i <= n; i++) {
+        for (final d in const [
+          Offset(1, 0),
+          Offset(-1, 0),
+          Offset(0, 1),
+          Offset(0, -1)
+        ]) {
+          canvas.drawRect(
+              Rect.fromCenter(
+                  center: c + d * px * i.toDouble(), width: px, height: px),
+              ray);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant SparklePainter oldDelegate) => false;
 }

@@ -9,6 +9,7 @@ import 'invite_models.dart';
 import 'menu_state.dart';
 import 'cosmetic_config.dart';
 import 'progress_state.dart';
+import 'premium_state.dart';
 import 'prestige_rules.dart' show totalStarsFor;
 
 enum UpgradeKind { tap, auto }
@@ -37,15 +38,9 @@ class UpgradeDefinition {
         unlockTotal = BigInt.parse(unlockTotal);
 }
 
-class SkinDefinition {
-  final String id, name;
-  final int unlockLevel;
-  final BigInt cost;
-  SkinDefinition(this.id, this.name, this.unlockLevel, int cost)
-      : cost = BigInt.from(cost);
-  SkinDefinition.decimal(this.id, this.name, this.unlockLevel, String cost)
-      : cost = BigInt.parse(cost);
-}
+/// Flavours sold before stage 14; saves that wore one get redbean back.
+const _removedFlavours = {'custard', 'cocoa', 'sweetpotato', 'matcha', 'strawberry'};
+
 
 class GameSettings {
   bool vibration, holdToBake, reduceMotion, soundEffects, music;
@@ -96,7 +91,7 @@ class GameSettings {
 }
 
 class GameState {
-  static const formatVersion = 10;
+  static const formatVersion = 12;
   BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
   int level, snapshotSequence;
   Map<String, int> upgradeCounts;
@@ -109,6 +104,9 @@ class GameState {
   WeeklyState weekly;
   AchievementState achievements;
   PrestigeState prestige;
+
+  /// 황금 붕어빵 wallet copy and what was bought with it (stage 15).
+  PremiumState premium;
   Set<String> ownedSkins;
   String equippedSkin;
   bool tutorialDone;
@@ -130,6 +128,7 @@ class GameState {
       required this.weekly,
       required this.achievements,
       required this.prestige,
+      required this.premium,
       required this.ownedSkins,
       required this.equippedSkin,
       required this.tutorialDone,
@@ -156,6 +155,7 @@ class GameState {
       weekly: WeeklyState.initial(now),
       achievements: AchievementState(),
       prestige: PrestigeState(),
+      premium: PremiumState(),
       ownedSkins: {'redbean'},
       equippedSkin: 'redbean',
       tutorialDone: false,
@@ -186,6 +186,7 @@ class GameState {
         'weekly': weekly.toJson(),
         'achievements': achievements.toJson(),
         'prestige': prestige.toJson(),
+        'premium': premium.toJson(),
         'ownedSkins': ownedSkins.toList(),
         'equippedSkin': equippedSkin,
         'tutorialDone': tutorialDone,
@@ -228,11 +229,16 @@ class GameState {
     if (lvl is! int || lvl < 1 || lvl > levels.last.level) {
       throw const FormatException('잘못된 레벨');
     }
-    final equipped = '${m['equippedSkin']}';
     final fishIds = {
       for (final d in cosmetics)
         if (d.slot == CosmeticSlot.fish) d.id
     };
+    // Removed flavours (stage 14) fall back to redbean; unreleased, so
+    // nothing is refunded.
+    final saved = '${m['equippedSkin']}';
+    final equipped = fishIds.contains(saved) || !_removedFlavours.contains(saved)
+        ? saved
+        : 'redbean';
     final owned = (m['ownedSkins'] as List?)
             ?.whereType<String>()
             .where(fishIds.contains)
@@ -289,7 +295,7 @@ class GameState {
         missions: missions,
         wardrobe: version >= 6
             ? WardrobeState.fromJson(inviteMap(m['wardrobe']),
-                legacy: version < 10)
+                version: version)
             : WardrobeState.initial(),
         records: version >= 7
             ? RecordState.fromJson(inviteMap(m['records']))
@@ -303,6 +309,14 @@ class GameState {
         prestige: version >= 9
             ? PrestigeState.fromJson(inviteMap(m['prestige']))
             : PrestigeState(),
+        // Added without a format bump: saves before stage 15 have none.
+        premium: PremiumState.fromJson(
+            m['premium'] is Map
+                ? Map<String, dynamic>.from(m['premium'] as Map)
+                : m.containsKey('premium')
+                    ? throw const FormatException('황금 붕어빵 저장 손상')
+                    : null,
+            isSkill: (id) => upgrades.any((u) => u.id == id)),
         invites: version >= 5
             ? InviteState.fromJson(inviteMap(m['invites']))
             : InviteState.migrate(missions.seenInvitePlayers),

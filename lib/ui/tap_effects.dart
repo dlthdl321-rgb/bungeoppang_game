@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 class Crumb {
@@ -53,17 +54,25 @@ class CrumbPool {
   }
 }
 
+/// Draws each crumb as a small bungeoppang ([fish], the equipped flavour)
+/// that pops up from the tap, turning and fading; plain squares if the
+/// sprite is missing.
 class CrumbPainter extends CustomPainter {
-  // Palette gold, toast and butter (tools/palette.py).
+  // Concept crust colours, light to dark.
   static const _shades = [
-    Color(0xffe0a040),
-    Color(0xffa8642f),
-    Color(0xfff8d27a)
+    Color(0xfff4c180),
+    Color(0xffe39e57),
+    Color(0xffc47942)
   ];
   static const _pixel = 3.0;
   final CrumbPool pool;
   final int now;
-  CrumbPainter(this.pool, this.now);
+  final ui.Image? fish;
+  CrumbPainter(this.pool, this.now, {this.fish});
+
+  static final _sprite = Paint()
+    ..filterQuality = FilterQuality.none
+    ..isAntiAlias = false;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -71,13 +80,26 @@ class CrumbPainter extends CustomPainter {
     for (final c in pool.active) {
       final s = (now - c.born) / 1000;
       final fade = (1 - (now - c.born) / pool.lifeMs).clamp(0.0, 1.0);
-      paint.color = _shades[c.shade].withValues(alpha: fade);
-      // Square crumbs snapped to a 3px grid, like the pixel art.
-      final side = c.size < 4 ? _pixel * 2 : _pixel * 3;
-      canvas.drawRect(
-          Rect.fromLTWH(_snap(c.x + c.vx * s), _snap(c.y + c.vy * s + 420 * s * s),
-              side, side),
-          paint);
+      // Rises fast, slows down near the top.
+      final x = c.x + c.vx * s, y = c.y + c.vy * s * 1.4 + 260 * s * s;
+      final image = fish;
+      if (image == null) {
+        paint.color = _shades[c.shade].withValues(alpha: fade);
+        final side = c.size < 4 ? _pixel * 2 : _pixel * 3;
+        canvas.drawRect(Rect.fromLTWH(_snap(x), _snap(y), side, side), paint);
+        continue;
+      }
+      final w = 10 + c.size * 3, h = w * image.height / image.width;
+      _sprite.color = Color.fromRGBO(255, 255, 255, fade);
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(c.vx * s * .012);
+      canvas.drawImageRect(
+          image,
+          Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+          Rect.fromCenter(center: Offset.zero, width: w, height: h),
+          _sprite);
+      canvas.restore();
     }
   }
 
@@ -87,6 +109,11 @@ class CrumbPainter extends CustomPainter {
   bool shouldRepaint(covariant CrumbPainter old) => true;
 }
 
-/// Squash on impact, stretch on rebound; 0 at rest. [t] in 0..1.
-double squashAmount(double t) =>
-    t <= 0 || t >= 1 ? 0 : math.sin(t * math.pi * 2) * (1 - t);
+/// Scale of the tapped bungeoppang [t] (0..1) into the pop:
+/// 1.0 -> 0.94 -> 1.06 -> 1.0, and 1 at rest.
+double tapPopScale(double t) {
+  if (t <= 0 || t >= 1) return 1;
+  if (t < .3) return 1 - .06 * (t / .3);
+  if (t < .7) return .94 + .12 * ((t - .3) / .4);
+  return 1.06 - .06 * ((t - .7) / .3);
+}

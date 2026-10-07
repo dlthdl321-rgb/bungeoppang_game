@@ -20,11 +20,11 @@ const weeklyGoals = [
   WeeklyGoalDefinition('taps', '붕어빵 1,000번 굽기', WeeklyMetric.taps, '1000',
       RewardDefinition('3')),
   WeeklyGoalDefinition('days', '3일 동안 노점 열기', WeeklyMetric.playDays, '3',
-      RewardDefinition('0', {'fairy': '1'})),
+      RewardDefinition('3')),
   WeeklyGoalDefinition('purchases', '스킬 20개 구매', WeeklyMetric.purchases, '20',
       RewardDefinition('3')),
   WeeklyGoalDefinition('dailyAll', '일일 미션 전체 완료 3회',
-      WeeklyMetric.dailyAllClears, '3', RewardDefinition('5', {'butter': '1'})),
+      WeeklyMetric.dailyAllClears, '3', RewardDefinition('7')),
 ];
 
 class SeasonTheme {

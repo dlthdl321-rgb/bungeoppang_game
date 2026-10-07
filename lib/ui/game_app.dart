@@ -4,13 +4,17 @@ import '../economy.dart';
 import '../game_audio.dart';
 import '../game_controller.dart';
 import 'celebration.dart';
+import 'friends_panel.dart';
+import 'cozy_style.dart';
 import 'skill_shop.dart';
 import 'night_home.dart';
 import 'level_missions.dart';
 import 'invite_panel.dart';
 import 'support_panels.dart';
+import 'pixel_sprites.dart';
 import 'public_menus.dart';
 import 'progress_panels.dart';
+import 'shop_panel.dart';
 
 class GameApp extends StatefulWidget {
   final GameController controller;
@@ -33,7 +37,16 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
 
   // Settings live in the controller; the audio follows them. Cheap no-op
   // when nothing changed, so it is fine on every controller notification.
-  void _syncAudio() => widget.audio.configure(widget.controller.state.settings);
+  // The music follows the equipped background's mood the same way.
+  void _syncAudio() => widget.audio
+    ..configure(widget.controller.state.settings)
+    // Night plays the night mood whatever the season.
+    ..setScene(isNightTime(
+                widget.controller.state.equippedCosmetic(CosmeticSlot.time),
+                DateTime.now()) ==
+            true
+        ? 'night'
+        : widget.controller.state.equippedCosmetic(CosmeticSlot.background));
 
   @override
   void dispose() {
@@ -73,13 +86,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       title: '오늘의 붕어빵',
-      theme: ThemeData(
-          splashFactory: InkRipple.splashFactory,
-          colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xff9b4436),
-              surface: const Color(0xfffff8e8)),
-          scaffoldBackgroundColor: const Color(0xfffff8e8),
-          useMaterial3: true),
+      theme: cozyTheme(),
       // Above the navigator so celebrations show over sheets and dialogs.
       builder: (context, child) => GameAudioScope(
           audio: widget.audio,
@@ -151,7 +158,7 @@ class _RecoveryAppState extends State<RecoveryApp> {
                             builder: (context) => Column(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.warning_amber, size: 64),
+                                      const PixelIcon('warning', size: 64),
                                       Text(
                                           widget.controller.error ??
                                               '저장 데이터를 열 수 없어요.',
@@ -209,7 +216,7 @@ class _GameHomeState extends State<GameHome> {
           builder: (ctx) => AlertDialog(
             scrollable: true,
             title: const Text('오늘의 붕어빵'),
-            content: const Text('붕어빵을 눌러 굽고, 상점에서 강화해요.'),
+            content: const Text('붕어빵을 눌러 굽고, 스킬에서 강화해요.'),
             actions: [
               TextButton(
                   onPressed: () => Navigator.pop(ctx),
@@ -244,7 +251,10 @@ class _GameHomeState extends State<GameHome> {
       return;
     }
     final titles = {
-      'shop': '상점 · 생산 스킬',
+      'menu': '메뉴',
+      'skills': '스킬',
+      'friends': '친구',
+      'shop': '상점',
       'skins': '꾸미기',
       'daily': '일일 미션',
       'records': '내 기록',
@@ -260,31 +270,95 @@ class _GameHomeState extends State<GameHome> {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      // A sub-window like the concept UI (07_UI): the balance on top, a
+      // wooden-framed cream panel with the title between little fish and a
+      // red X at its corner, and a '돌아가기' button under it.
       builder: (ctx) => SizedBox(
-        height: MediaQuery.sizeOf(ctx).height * .82,
+        height: MediaQuery.sizeOf(ctx).height * .92,
         child: AnimatedBuilder(
             animation: c,
-            builder: (_, __) => Column(children: [
-                  Padding(
-                      padding: const EdgeInsets.fromLTRB(20, 12, 8, 4),
-                      child: Row(children: [
-                        Expanded(
-                            child: Text(titles[destination.split(':').first]!,
-                                style: Theme.of(ctx).textTheme.titleLarge)),
-                        IconButton(
-                            tooltip: '닫기',
-                            onPressed: () => Navigator.pop(ctx),
-                            icon: const Icon(Icons.close)),
-                      ])),
-                  if (destination == 'shop' || destination.startsWith('skins'))
-                    Padding(
-                        padding: const EdgeInsets.all(12),
-                        child: Text(destination == 'shop'
-                            ? '보유 붕어빵 ${compactNumber(c.state.buns)}개'
-                            : '코인 ${compactNumber(c.state.support.coins)}개')),
-                  Expanded(child: _body(destination)),
-                ])),
+            builder: (_, __) => Padding(
+                  padding: const EdgeInsets.fromLTRB(6, 4, 6, 10),
+                  child: Column(children: [
+                    // The frame's own labels grow with large text only up
+                    // to 1.3x, leaving room for the content, which scales.
+                    _clamped(_balancePill(destination)),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: Stack(clipBehavior: Clip.none, children: [
+                        Positioned.fill(
+                          child: CozyFrame(
+                            child: Column(children: [
+                              Padding(
+                                padding:
+                                    const EdgeInsets.fromLTRB(52, 12, 52, 6),
+                                child: _clamped(Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      PixelArt(
+                                          PixelSprites.screenArt('title_fish'),
+                                          width: 30,
+                                          height: 23),
+                                      const SizedBox(width: 8),
+                                      Flexible(
+                                          child: Text(
+                                              titles[destination
+                                                  .split(':')
+                                                  .first]!,
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                  fontFamily: 'Jua',
+                                                  fontSize: 28,
+                                                  color: Cozy.ink))),
+                                      const SizedBox(width: 8),
+                                      PixelArt(
+                                          PixelSprites.screenArt('title_fish'),
+                                          width: 30,
+                                          height: 23),
+                                    ])),
+                              ),
+                              Expanded(child: _body(destination)),
+                            ]),
+                          ),
+                        ),
+                        Positioned(
+                            top: -8,
+                            right: -6,
+                            child: CozyCloseButton(
+                                onPressed: () => Navigator.pop(ctx))),
+                      ]),
+                    ),
+                    const SizedBox(height: 10),
+                    _clamped(
+                        CozyBackButton(onPressed: () => Navigator.pop(ctx))),
+                  ]),
+                )),
       ),
+    );
+  }
+
+  static Widget _clamped(Widget child) => Builder(
+      builder: (context) =>
+          MediaQuery.withClampedTextScaling(maxScaleFactor: 1.3, child: child));
+
+  /// The balance pill above a sub-window: bungeoppang, or coins where
+  /// things are paid in coins.
+  Widget _balancePill(String destination) {
+    final coins = destination == 'shop' || destination.startsWith('skins');
+    return CozyPanel(
+      radius: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        PixelIcon(coins ? 'coin' : 'bun', size: 24),
+        const SizedBox(width: 8),
+        Text(
+            coins
+                ? '코인 ${compactNumber(c.state.support.coins)}개'
+                : '${compactNumber(c.state.buns)}개',
+            style: const TextStyle(
+                fontFamily: 'Jua', fontSize: 20, color: Cozy.ink)),
+      ]),
     );
   }
 
@@ -295,17 +369,23 @@ class _GameHomeState extends State<GameHome> {
         padding: const EdgeInsets.all(24), child: SelectableText(details));
   }
 
+  /// Closes the open sheet and opens [destination] instead.
+  void _switchTo(String destination) {
+    Navigator.of(context).pop();
+    _open(destination);
+  }
+
   Widget _body(String destination) => switch (destination) {
-        'shop' => Column(children: [
-            TextButton(
-                key: const Key('support-entry'),
-                onPressed: () => _open('support'),
-                child: const Text('아이템 · 코인 상점')),
-            Expanded(child: SkillShop(controller: c))
-          ]),
+        'menu' => MenuPanel(controller: c, onOpen: _switchTo),
+        'skills' => SkillShop(controller: c),
+        'friends' => FriendsPanel(controller: c),
+        'shop' => ShopPanel(controller: c, onOpen: _open),
         'skins' => WardrobePanel(controller: c),
-        'skins:avatar' => WardrobePanel(
-            controller: c, initialCategory: CosmeticCategory.avatar),
+        'skins:avatar' => WardrobePanel(controller: c),
+        'skins:stall' =>
+          WardrobePanel(controller: c, initialTab: WardrobeTab.stall),
+        'achievements:collection' =>
+          AchievementPanel(controller: c, initialCollection: true),
         'records' => RecordsPanel(controller: c),
         'share' => SharePanel(
             controller: c,
@@ -321,63 +401,134 @@ class _GameHomeState extends State<GameHome> {
         'event' => WeeklyPanel(controller: c),
         _ => _entryPreview(destination),
       };
+
+  /// Settings in the concept art's look (07_UI/설정): a cream panel,
+  /// orange ON / grey OFF toggles and a '저장' button. Every change is
+  /// already saved when made; '저장' writes once more and closes.
+  /// Settings like the concept (07_UI/설정): the sub-window frame, a row per
+  /// option with an icon and an ON/OFF pill, the volume sliders and a big
+  /// orange '저장'. Every change is already saved when made; '저장' writes
+  /// once more and closes.
   Future<void> _settings() async {
-    await showModalBottomSheet(
-        context: context,
-        isScrollControlled: true,
-        builder: (ctx) => AnimatedBuilder(
-            animation: c,
-            builder: (_, __) => SafeArea(
-                child: SingleChildScrollView(
-                    child: Padding(
-                        padding: const EdgeInsets.all(20),
-                        child:
-                            Column(mainAxisSize: MainAxisSize.min, children: [
-                          Text('설정',
-                              style: Theme.of(context).textTheme.headlineSmall),
-                          SwitchListTile(
-                              title: const Text('진동'),
-                              value: c.state.settings.vibration,
-                              onChanged: (v) => c.updateSettings(vibration: v)),
-                          SwitchListTile(
-                              title: const Text('길게 눌러 굽기'),
-                              subtitle: const Text('길게 누르면 초당 4회'),
-                              value: c.state.settings.holdToBake,
-                              onChanged: (v) => c.updateSettings(hold: v)),
-                          SwitchListTile(
-                              title: const Text('모션 줄이기'),
-                              value: c.state.settings.reduceMotion,
-                              onChanged: (v) =>
-                                  c.updateSettings(reduceMotion: v)),
-                          SoundSettings(controller: c),
-                          ListTile(
-                              textColor: Colors.red,
-                              title: const Text('데이터 초기화'),
-                              onTap: () async {
-                                final yes = await showDialog<bool>(
-                                    context: ctx,
-                                    builder: (_) => AlertDialog(
-                                            title: const Text('정말 초기화할까요?'),
-                                            content: const Text(
-                                                '모든 진행 삭제, 되돌릴 수 없어요.'),
-                                            actions: [
-                                              TextButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                          context, false),
-                                                  child: const Text('취소')),
-                                              FilledButton(
-                                                  onPressed: () =>
-                                                      Navigator.pop(
-                                                          context, true),
-                                                  child: const Text('초기화'))
-                                            ]));
-                                if (yes == true) {
-                                  await c.reset();
-                                  if (ctx.mounted) Navigator.pop(ctx);
-                                }
-                              })
-                        ]))))));
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => SizedBox(
+        height: MediaQuery.sizeOf(ctx).height * .92,
+        child: AnimatedBuilder(
+          animation: c,
+          builder: (_, __) => Padding(
+            padding: const EdgeInsets.fromLTRB(6, 4, 6, 10),
+            child: Column(children: [
+              _clamped(_balancePill('settings')),
+              const SizedBox(height: 10),
+              Expanded(
+                child: Stack(clipBehavior: Clip.none, children: [
+                  Positioned.fill(
+                    child: CozyFrame(
+                      child: Column(children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(52, 12, 52, 6),
+                          child: _clamped(const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                PixelIcon('settings', size: 30),
+                                SizedBox(width: 8),
+                                Text('설정',
+                                    style: TextStyle(
+                                        fontFamily: 'Jua',
+                                        fontSize: 28,
+                                        color: Cozy.ink)),
+                                SizedBox(width: 8),
+                                PixelIcon('settings', size: 30),
+                              ])),
+                        ),
+                        Expanded(
+                          child: ListView(
+                              padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+                              children: [
+                                SoundSettings(controller: c),
+                                CozySettingRow(
+                                    icon: Icons.vibration_rounded,
+                                    label: '진동',
+                                    value: c.state.settings.vibration,
+                                    onChanged: (v) =>
+                                        c.updateSettings(vibration: v)),
+                                CozySettingRow(
+                                    icon: Icons.touch_app_rounded,
+                                    label: '길게 눌러 굽기',
+                                    subtitle: '길게 누르면 초당 4회',
+                                    value: c.state.settings.holdToBake,
+                                    onChanged: (v) =>
+                                        c.updateSettings(hold: v)),
+                                CozySettingRow(
+                                    icon: Icons.slow_motion_video_rounded,
+                                    label: '모션 줄이기',
+                                    value: c.state.settings.reduceMotion,
+                                    onChanged: (v) =>
+                                        c.updateSettings(reduceMotion: v)),
+                                const SizedBox(height: 6),
+                                FilledButton.icon(
+                                    key: const Key('settings-save'),
+                                    style: FilledButton.styleFrom(
+                                        minimumSize: const Size.fromHeight(56),
+                                        textStyle: const TextStyle(
+                                            fontFamily: 'Jua', fontSize: 24)),
+                                    onPressed: c.busy
+                                        ? null
+                                        : () async {
+                                            await c.save();
+                                            if (ctx.mounted) Navigator.pop(ctx);
+                                          },
+                                    icon: const Icon(Icons.save_rounded,
+                                        size: 28),
+                                    label: const Text('저장')),
+                                TextButton(
+                                    style: TextButton.styleFrom(
+                                        foregroundColor: Cozy.brick),
+                                    onPressed: () => _confirmReset(ctx),
+                                    child: const Text('데이터 초기화')),
+                              ]),
+                        ),
+                      ]),
+                    ),
+                  ),
+                  Positioned(
+                      top: -8,
+                      right: -6,
+                      child:
+                          CozyCloseButton(onPressed: () => Navigator.pop(ctx))),
+                ]),
+              ),
+              const SizedBox(height: 10),
+              _clamped(CozyBackButton(onPressed: () => Navigator.pop(ctx))),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _confirmReset(BuildContext ctx) async {
+    final yes = await showDialog<bool>(
+        context: ctx,
+        builder: (_) => AlertDialog(
+                title: const Text('정말 초기화할까요?'),
+                content: const Text('모든 진행 삭제, 되돌릴 수 없어요.'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('취소')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('초기화'))
+                ]));
+    if (yes == true) {
+      await c.reset();
+      if (ctx.mounted) Navigator.pop(ctx);
+    }
   }
 }
 
@@ -399,10 +550,11 @@ class _SoundSettingsState extends State<SoundSettings> {
     Widget slider(String key, String label, bool enabled, int saved, int? drag,
             void Function(int?) setDrag, void Function(int) commit) =>
         Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.only(top: 4),
             child:
                 Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('$label ${drag ?? saved}%'),
+              Text('$label ${drag ?? saved}%',
+                  style: const TextStyle(color: Cozy.inkSoft)),
               Slider(
                   key: Key(key),
                   value: (drag ?? saved).toDouble(),
@@ -421,26 +573,48 @@ class _SoundSettingsState extends State<SoundSettings> {
                       : null),
             ]));
     return Column(mainAxisSize: MainAxisSize.min, children: [
-      SwitchListTile(
-          key: const Key('setting-sfx'),
-          title: const Text('효과음'),
-          value: s.soundEffects,
-          onChanged: (v) => c.updateSettings(soundEffects: v)),
-      slider('setting-sfx-volume', '효과음 크기', s.soundEffects, s.sfxVolume,
-          _sfxDrag, (v) => _sfxDrag = v, (v) => c.updateSettings(sfxVolume: v)),
-      SwitchListTile(
+      CozySettingRow(
           key: const Key('setting-music'),
-          title: const Text('배경 음악'),
+          icon: Icons.music_note_rounded,
+          label: '배경음',
           value: s.music,
           onChanged: (v) => c.updateSettings(music: v)),
-      slider(
-          'setting-music-volume',
-          '배경 음악 크기',
-          s.music,
-          s.musicVolume,
-          _musicDrag,
-          (v) => _musicDrag = v,
-          (v) => c.updateSettings(musicVolume: v)),
+      CozySettingRow(
+          key: const Key('setting-sfx'),
+          icon: Icons.volume_up_rounded,
+          label: '효과음',
+          value: s.soundEffects,
+          onChanged: (v) => c.updateSettings(soundEffects: v)),
+      Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: CozyPanel(
+          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            const Row(children: [
+              Icon(Icons.volume_up_rounded, color: Cozy.ink, size: 26),
+              SizedBox(width: 8),
+              Text('음량', style: TextStyle(fontFamily: 'Jua', fontSize: 20)),
+            ]),
+            slider(
+                'setting-music-volume',
+                '배경음',
+                s.music,
+                s.musicVolume,
+                _musicDrag,
+                (v) => _musicDrag = v,
+                (v) => c.updateSettings(musicVolume: v)),
+            slider(
+                'setting-sfx-volume',
+                '효과음',
+                s.soundEffects,
+                s.sfxVolume,
+                _sfxDrag,
+                (v) => _sfxDrag = v,
+                (v) => c.updateSettings(sfxVolume: v)),
+          ]),
+        ),
+      ),
     ]);
   }
 }

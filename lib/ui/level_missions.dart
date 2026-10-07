@@ -5,6 +5,7 @@ import '../mission_config.dart';
 import '../missions.dart';
 import '../support_config.dart';
 import '../prestige_rules.dart';
+import 'pixel_sprites.dart';
 import 'support_panels.dart';
 
 class LevelMissions extends StatelessWidget {
@@ -108,6 +109,10 @@ class LevelMissions extends StatelessWidget {
         if (c.state.missions.waivedGoals.contains(m.id))
           const Text('이전 버전 초대 기록으로 완료 인정',
               key: Key('mission-waived')),
+        if (m.kind == MissionKind.newPlayerInvites)
+          const Align(
+              alignment: Alignment.centerLeft,
+              child: PixelIcon('invite', size: 24)),
         if (m.kind == MissionKind.newPlayerInvites && c.developerTools) ...[
           const Text('개발자 도구 · 활성화 후 신규 초대의 Lv.1 달성만 인정'),
           TextButton(
@@ -120,48 +125,15 @@ class LevelMissions extends StatelessWidget {
               key: Key('mission-open-${m.id}'),
               onPressed: () => onOpen(id),
               child: Text(label)),
-        if (m.kind == MissionKind.goldenButterUses) ...[
-          Text(
-              '황금버터 ${c.state.support.inventory['butter']}개 보유 · 쓰면 클릭 생산 증가'),
-          TextButton(
-              key: const Key('mock-butter'),
-              onPressed: p.complete ||
-                      c.busy ||
-                      c.state.support.inventory['butter'] == BigInt.zero
-                  ? null
-                  : () async {
-                      final token = c.state.missions.token;
-                      final item =
-                          itemDefinitions.firstWhere((i) => i.id == 'butter');
-                      final current = c.currentTapRate;
-                      final after = tapRate(c.state) *
-                          BigInt.parse(item.multiplierPermille) ~/
-                          BigInt.from(effectScale);
-                      if (!await confirmAction(
-                          context,
-                          '황금버터 사용',
-                          '황금버터 ${c.state.support.inventory['butter']} → ${c.state.support.inventory['butter']! - BigInt.one}개\n현재 클릭 생산 ${exactNumber(current)} → 사용 후 ${exactNumber(after)}\n${item.durationSeconds}초 적용',
-                          '사용')) {
-                        return;
-                      }
-                      final ok = await c.simulateButterUse(token);
-                      if (!ok && context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text(c.error ?? '현재 미션을 확인해 주세요.')));
-                      }
-                    },
-              child: const Text('황금버터 1개 사용')),
-          TextButton(
-              onPressed: () => onOpen('support'),
-              child: const Text('아이템 확인 · 코인 상점')),
-        ],
+        if (m.kind == MissionKind.goldenCatches)
+          const Text('틀 위 붕어빵이 황금빛으로 반짝일 때 눌러요 (3~7분마다)'),
       ]),
     ));
   }
 
   static (String, String)? _shortcut(MissionKind kind) => switch (kind) {
         MissionKind.cosmeticsOwned => ('skins:avatar', '사장님 꾸미기 열기'),
-        MissionKind.itemUses => ('support', '아이템 사용하기'),
+        MissionKind.boostUses => ('support', '부스트 보기'),
         MissionKind.skillLevel => ('shop', '상점 열기'),
         MissionKind.achievements => ('achievements', '업적 보기'),
         _ => null,
@@ -185,8 +157,12 @@ class PrestigeCard extends StatelessWidget {
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('새 노점 열기',
-                      style: Theme.of(context).textTheme.titleMedium),
+                  Row(children: [
+                    const PixelIcon('prestige', size: 28),
+                    const SizedBox(width: 8),
+                    Text('새 노점 열기',
+                        style: Theme.of(context).textTheme.titleMedium),
+                  ]),
                   Text('명성 별 ${s.prestige.stars}개 · 생산 +${(now - 1000) ~/ 10}%',
                       key: const Key('prestige-stars')),
                   Text(gain > 0

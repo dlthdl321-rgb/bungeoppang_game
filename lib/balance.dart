@@ -30,7 +30,3 @@ final upgrades = List<UpgradeDefinition>.unmodifiable([
   ..._skills(UpgradeKind.auto, autoSkillConfig, lateAutoSkillConfig),
 ]);
 final levels = levelsForSeason(currentMissionSeason);
-final skins = <SkinDefinition>[
-  for (final d in cosmeticDefinitions.where((d) => d.slot == CosmeticSlot.fish))
-    SkinDefinition.decimal(d.id, d.name, d.unlockLevel, d.price),
-];

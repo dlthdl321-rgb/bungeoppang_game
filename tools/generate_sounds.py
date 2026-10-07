@@ -85,31 +85,112 @@ def main():
              for n in [15, 19, 22]]
     write('levelup.wav', mix(*arp, *chord), .7)
 
-    # BGM: a calm 24 s pentatonic loop. Soft pads plus a sparse music-box line;
-    # every voice decays before the loop point so the seam is silent-smooth.
-    beat = .5
-    bars = [(-12, 3), (-9, 7), (-14, 2), (-7, 10)]  # (pad root, melody degree)
-    scale = [0, 2, 4, 7, 9, 12, 14, 16]
-    melody_steps = [0, 2, 4, 2, 5, 4, 2, 1, 3, 5, 6, 5, 4, 2, 3, 0]
+    # Background music: one 24 s loop per mood (lib/music_config.dart maps
+    # each stall background to one). The day loop is the original BGM.
+    for mood in MOODS:
+        write(f'bgm_{mood.name}.wav', bgm_loop(mood), .5)
+
+
+class Mood:
+    """How a BGM loop sounds: tempo, key, scales and timbre."""
+
+    def __init__(self, name, beat, key, pad, scale, melody, melody_octave=0,
+                 bell=(1, .4, .05), melody_release=.35, rest_every=3,
+                 texture=None):
+        self.name, self.beat, self.key, self.pad = name, beat, key, pad
+        self.scale, self.melody, self.melody_octave = scale, melody, melody_octave
+        self.bell, self.melody_release = bell, melody_release
+        self.rest_every, self.texture = rest_every, texture
+
+
+MAJOR_PENTA = [0, 2, 4, 7, 9, 12, 14, 16]
+MINOR_PENTA = [0, 3, 5, 7, 10, 12, 15, 17]
+STEPS = [0, 2, 4, 2, 5, 4, 2, 1, 3, 5, 6, 5, 4, 2, 3, 0]
+BARS = [-12, -9, -14, -7]  # pad roots, relative to the key
+
+
+def fit(samples, n):
+    """[samples] cut or zero-padded to exactly n samples."""
+    return np.pad(samples[:n], (0, max(0, n - len(samples))))
+
+
+def rain_bed(seconds):
+    """Soft rain: low-passed noise with a slow swell, plus a few drips."""
+    n = int(RATE * seconds)
+    hiss = np.convolve(rng.normal(0, 1, n), np.ones(6) / 6, 'same')
+    swell = .75 + .25 * np.sin(2 * math.pi * np.arange(n) / n * 3)
+    drips = [(rng.uniform(0, seconds - 1), .25 * tone(rng.uniform(1400, 2200),
+                                                      .12, release=.04,
+                                                      harmonics=(1,)))
+             for _ in range(40)]
+    return .05 * hiss * swell + fit(mix(*drips), n)
+
+
+def night_bed(seconds):
+    """Night air: a hushed low drone and far-off cricket chirps."""
+    n = int(RATE * seconds)
+    drone = .06 * tone(note(-33), seconds, attack=2, release=seconds,
+                       harmonics=(1, .2))[:n]
+    chirps = []
+    for i in range(int(seconds / 1.6)):
+        start = i * 1.6 + rng.uniform(0, .4)
+        for k in range(3):
+            chirps.append((start + k * .07, .05 * tone(4200, .04, release=.015,
+                                                       harmonics=(1,))))
+    return fit(drone, n) + fit(mix(*chirps), n)
+
+
+MOODS = [
+    # Clear day: the original calm pentatonic loop.
+    Mood('day', .5, 3, (0, 4, 7), MAJOR_PENTA, STEPS),
+    # Cherry blossoms: quicker and higher, brighter music box.
+    Mood('spring', .4, 8, (0, 4, 7, 14), MAJOR_PENTA, STEPS, melody_octave=12,
+         bell=(1, .5, .2, .05), melody_release=.25, rest_every=4),
+    # Autumn, dusk and forest: slower, warm major-seventh pads.
+    Mood('dusk', .6, 0, (0, 4, 7, 11), MAJOR_PENTA,
+         [4, 2, 0, 2, 1, 0, 2, 4, 5, 4, 2, 1, 0, 1, 2, 0],
+         bell=(1, .25, .05), melody_release=.5),
+    # Rain: minor pentatonic over rain.
+    Mood('rain', .75, -2, (0, 3, 7), MINOR_PENTA,
+         [4, 3, 2, 0, 2, 3, 1, 0, 2, 4, 5, 4, 2, 1, 0, 0],
+         bell=(1, .2), melody_release=.6, texture=rain_bed),
+    # Snow: sparse glassy bells, an octave up.
+    Mood('snow', .6, 5, (0, 4, 7), MAJOR_PENTA,
+         [7, 5, 4, 5, 2, 4, 1, 0, 4, 5, 7, 6, 4, 2, 1, 0], melody_octave=12,
+         bell=(1, 0, .45, 0, .2), melody_release=.8, rest_every=2),
+    # Night and seaside: a slow lullaby over a low drone and crickets.
+    Mood('night', .8, -5, (0, 3, 7, 10), MINOR_PENTA,
+         [0, 2, 3, 2, 4, 3, 2, 0, 1, 2, 4, 5, 4, 3, 2, 0],
+         bell=(1, .3), melody_release=.7, rest_every=2, texture=night_bed),
+]
+
+
+def bgm_loop(mood, seconds=24):
+    """Soft pads plus a sparse melody; every voice decays before the loop
+    point so the seam is smooth."""
     parts = []
-    for b, (root, _) in enumerate(bars * 3):
-        start = b * 2.0  # two seconds per bar
-        for interval in (0, 4, 7):
-            parts.append((start, .18 * tone(note(root + interval - 12), 2.0,
-                                            attack=.4, release=.7,
-                                            harmonics=(1, .15))))
-    for i in range(24 * 2):  # eighth-ish notes, sparse
-        if i % 3 == 2:
+    bar = 4 * mood.beat
+    for b in range(int(seconds / bar)):
+        root = BARS[b % len(BARS)] + mood.key
+        for interval in mood.pad:
+            parts.append((b * bar, .18 * tone(note(root + interval - 12), bar,
+                                              attack=.4, release=.7,
+                                              harmonics=(1, .15))))
+    for i in range(int(seconds / mood.beat)):
+        if i % mood.rest_every == mood.rest_every - 1:
             continue
-        step = melody_steps[i % len(melody_steps)]
-        parts.append((i * beat, .35 * tone(note(scale[step] + 3), .9,
-                                           release=.35, harmonics=(1, .4, .05))))
-    loop = mix(*parts)[:int(RATE * 24)]
+        step = mood.melody[i % len(mood.melody)]
+        pitch = mood.scale[step] + mood.key + mood.melody_octave
+        parts.append((i * mood.beat, .35 * tone(note(pitch), .9,
+                                                release=mood.melody_release,
+                                                harmonics=mood.bell)))
+    loop = fit(mix(*parts), int(RATE * seconds))
+    if mood.texture:
+        loop = loop / (np.max(np.abs(loop)) or 1) + mood.texture(seconds)
     fade = int(RATE * .05)
     loop[:fade] *= np.linspace(0, 1, fade)
     loop[-fade:] *= np.linspace(1, 0, fade)
-    write('bgm.wav', loop, .5)
-
+    return loop
 
 if __name__ == '__main__':
     main()

@@ -4,16 +4,24 @@
 // Tap effects. Caps bound work per frame no matter how fast players tap.
 const maxFloatingGains = 8;
 const maxCrumbParticles = 48;
-const crumbsPerTap = 6;
+const crumbsPerTap = 4; // small bungeoppang that pop up from the tap
 const floatingGainMs = 700;
 const crumbLifeMs = 650;
-const squashMs = 240;
+/// Tap pop of the centre bungeoppang: scale 1.0 -> 0.94 -> 1.06 -> 1.0.
+const tapPopMs = 200;
 
 // Celebrations (level-up, rewards, achievements, item use).
 const celebrationMs = 2200;
 const reducedCelebrationMs = 1600;
 const countUpMs = 900;
 const maxConfetti = 36;
+
+/// Cosmetic names listed per category in the level-up banner; the rest are
+/// counted ("외 N개") so the banner fits on small screens.
+const levelUpNamesShown = 3;
+
+/// How long the "미션 달성!" notice stays when a goal becomes claimable.
+const missionNoticeMs = 2600;
 
 // Sound. Volumes are whole percents (stored as ints in the save).
 const defaultSfxVolume = 70;

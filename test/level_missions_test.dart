@@ -4,12 +4,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/balance.dart' hide levels;
 import 'package:todays_bungeoppang/economy.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
+import 'package:todays_bungeoppang/invite_config.dart';
 import 'package:todays_bungeoppang/mission_config.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/missions.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
-import 'controller_test.dart' show FakeTime;
+import 'controller_test.dart' show FakeTime, catchPlacedGoldenChance;
 import 'economy_persistence_test.dart' show JsonRepository;
 import 'economy_simulation_test.dart' show SlowRepository;
 
@@ -112,23 +113,26 @@ void main() {
       c.tap();
       c.settleActive(1000);
       expect(c.state.level, target - 1);
-      expect(c.state.support.coins, BigInt.zero);
+      // Only the invitations paid coins so far (stage 14: coins, not items).
+      final invited = BigInt.parse(newInviteReward.coins) *
+          (invite.isEmpty ? BigInt.zero : invite.single.target);
+      expect(c.state.support.coins, invited);
       expect(canClaimLevel(c.state), isTrue);
       final before = c.state.buns;
       expect(await c.claimLevelUp(target), isTrue);
       expect(c.state.level, target);
       expect(c.state.buns, before);
-      expect(c.state.support.coins, definition.reward);
+      expect(c.state.support.coins, invited + definition.reward);
       expect(c.state.levelRewards[target]!.amount, definition.reward);
       expect(c.state.levelRewards[target]!.claimedAtUtc, clock.utcNow);
       expect(c.state.missions.qualifiedInvitePlayers, isEmpty);
       expect(await c.claimLevelUp(target), isFalse);
-      expect(c.state.support.coins, definition.reward);
+      expect(c.state.support.coins, invited + definition.reward);
       c.dispose();
     });
   }
 
-  test('초반 튜토리얼/누적 미션과 황금버터 모의 입력은 현재 단계에서만 인정', () async {
+  test('초반 튜토리얼/누적 미션과 황금 찬스는 현재 단계에서만 인정', () async {
     final c = atLevel(1, FakeTime());
     c.state.tutorialDone = false;
     c.state.lifetime = BigInt.from(9);
@@ -137,15 +141,16 @@ void main() {
     expect(canClaimLevel(c.state), isFalse);
     c.tap();
     expect(await c.claimLevelUp(2), isTrue);
-    expect(await c.simulateButterUse(c.state.missions.token), isFalse);
+    // Caught before its goal is active: the boost runs, the goal ignores it.
+    expect(await catchPlacedGoldenChance(c), isTrue);
+    expect(c.state.missions.goldenCatches, BigInt.zero);
     setRate(c.state, BigInt.one);
-    final stale = c.state.missions.token;
     expect(await c.claimLevelUp(3), isTrue);
-    expect(await c.simulateButterUse(stale), isFalse);
-    expect(await c.simulateButterUse(c.state.missions.token), isTrue);
-    expect(await c.simulateButterUse(c.state.missions.token), isFalse);
+    expect(canClaimLevel(c.state), isFalse);
+    expect(await catchPlacedGoldenChance(c), isTrue);
+    expect(c.state.missions.goldenCatches, BigInt.one);
     expect(await c.claimLevelUp(4), isTrue);
-    expect(c.state.missions.butterUses, BigInt.zero);
+    expect(c.state.missions.goldenCatches, BigInt.zero);
     expect(c.state.levelRewards.length, 3);
     c.dispose();
   });
@@ -239,7 +244,9 @@ void main() {
     expect(controller.state.toJson(), before);
     expect(await controller.claimLevelUp(10), isTrue);
     expect(await controller.claimLevelUp(10), isFalse);
-    expect(controller.state.support.coins, levels.last.reward);
+    expect(controller.state.support.coins,
+        BigInt.parse(newInviteReward.coins) * BigInt.from(3) +
+            levels.last.reward);
     c.dispose();
     controller.dispose();
   });
@@ -282,8 +289,11 @@ void main() {
     await again.initialize();
     expect(again.state.toJson(), claimed);
     expect(await again.claimLevelUp(10), isFalse);
-    expect(again.state.support.coins,
-        BigInt.from(10).pow(100) + levels.last.reward);
+    expect(
+        again.state.support.coins,
+        BigInt.from(10).pow(100) +
+            BigInt.parse(newInviteReward.coins) * BigInt.from(3) +
+            levels.last.reward);
     again.dispose();
   });
 

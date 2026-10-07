@@ -16,8 +16,8 @@ void main() {
         final c = await mountGame(tester, size, textScale: scale);
         c.state.buns = BigInt.from(10000);
         c.tick();
-        await tester.ensureVisible(find.byKey(const Key('menu-shop')));
-        await tester.tap(find.byKey(const Key('menu-shop')));
+        await tester.ensureVisible(find.byKey(const Key('menu-skills')));
+        await tester.tap(find.byKey(const Key('menu-skills')));
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const Key('quantity-ten')));
         await tester.pumpAndSettle();
@@ -55,12 +55,12 @@ void main() {
     c.state.lifetime = BigInt.zero;
     c.state.buns = BigInt.from(100);
     c.tick();
-    await tester.tap(find.byKey(const Key('menu-shop')));
+    await tester.tap(find.byKey(const Key('menu-skills')));
     await tester.pumpAndSettle();
     expect(tester.widget<Text>(find.byKey(const Key('status-tap_1'))).data,
         '구매 가능');
     expect(tester.widget<Card>(find.byKey(const Key('skill-tap_1'))).color,
-        const Color(0xffedf7ed));
+        const Color(0xffecfbf0));
     await tester.scrollUntilVisible(find.byKey(const Key('buy-tap_2')), 180,
         scrollable: find.descendant(
             of: find.byKey(const Key('skills-tap')),

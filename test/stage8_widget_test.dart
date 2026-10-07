@@ -50,11 +50,16 @@ void main() {
         for (final id in [
           'daily',
           'achievements',
+          'skills',
           'shop',
           'skins',
           'records',
           'share'
         ]) {
+          // Stage 14: only 스킬/꾸미기/상점 stay on the home bar.
+          if (!const {'skills', 'shop', 'skins'}.contains(id)) {
+            await tapVisible(tester, const Key('menu-menu'));
+          }
           await tapVisible(tester, Key('menu-$id'));
           expect(tester.takeException(), isNull, reason: id);
           expectNoPrototypeText(tester, id);
@@ -72,6 +77,7 @@ void main() {
           }
           await closeSheets(tester);
         }
+        await tapVisible(tester, const Key('menu-menu'));
         await tapVisible(tester, const Key('event-entry'));
         expect(tester.takeException(), isNull);
         expectNoPrototypeText(tester, 'weekly');
@@ -88,6 +94,7 @@ void main() {
 
   testWidgets('디버그 모드는 공유 화면에서 개발자 초대 도구로 들어간다', (tester) async {
     await mountGame(tester, const Size(390, 844), developerTools: true);
+    await tapVisible(tester, const Key('menu-menu'));
     await tapVisible(tester, const Key('menu-share'));
     await tapVisible(tester, const Key('developer-invites'));
     expect(find.byKey(const Key('mock-invite-notice')), findsOneWidget);
@@ -106,6 +113,7 @@ void main() {
     final c =
         await mountGame(tester, const Size(390, 844), developerTools: false);
     final before = c.state.toJson();
+    await tapVisible(tester, const Key('menu-menu'));
     await tapVisible(tester, const Key('menu-share'));
     await tapVisible(tester, const Key('share-game'));
     expect(calls, isNotEmpty);
@@ -125,7 +133,7 @@ void main() {
     expect(find.byKey(const Key('combo-label')), findsNothing);
     await tester.tap(find.byKey(const Key('fish-button')));
     await tester.pump(const Duration(milliseconds: 100));
-    expect(find.text('$comboDisplayMinimum 콤보'), findsOneWidget);
+    expect(find.text('$comboDisplayMinimum 콤보!'), findsOneWidget);
     expect(c.state.records.todayBestCombo, comboDisplayMinimum);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -144,6 +152,7 @@ void main() {
     // The shortcut introduces the vendor tab.
     expect(find.byKey(const Key('preview-avatar')), findsOneWidget);
     await tapVisible(tester, const Key('cosmetic-slot-hat'));
+    await tapVisible(tester, const Key('preview-beanie'));
     await tapVisible(tester, const Key('buy-cosmetic-beanie'));
     await tapVisible(tester, const Key('confirm-support'));
     expect(canClaimLevel(c.state), isTrue);
@@ -164,6 +173,7 @@ void main() {
     c.state.support.daily.production = BigInt.from(11);
     c.tick();
     await tester.pump();
+    await tapVisible(tester, const Key('menu-menu'));
     await tapVisible(tester, const Key('menu-records'));
     expect(find.byKey(const Key('record-new-day')), findsOneWidget);
     expect(find.byKey(const Key('record-new-combo')), findsOneWidget);

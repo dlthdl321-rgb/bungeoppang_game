@@ -3,6 +3,7 @@ import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
+import 'package:todays_bungeoppang/support_config.dart';
 import 'package:todays_bungeoppang/time_service.dart';
 
 class FakeTime implements TimeService {
@@ -85,4 +86,12 @@ void main() {
     expect(c.state.buns, BigInt.from(180000));
     c.dispose();
   });
+}
+
+/// Puts a golden bungeoppang on the griddle right now and catches it, for
+/// tests that only need the catch (the schedule has its own tests).
+Future<bool> catchPlacedGoldenChance(GameController c) {
+  c.goldenChance = GoldenChance(
+      0, c.clock.monotonicMilliseconds + goldenChanceVisibleSeconds * 1000);
+  return c.catchGoldenChance(0);
 }

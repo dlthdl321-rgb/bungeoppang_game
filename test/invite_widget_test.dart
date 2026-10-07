@@ -44,6 +44,7 @@ void main() {
           messenger.setMockMethodCallHandler(SystemChannels.platform, null);
           messenger.setMockMethodCallHandler(shareChannel, null);
         });
+        await tapVisible(tester, const Key('menu-menu'));
         await tapVisible(tester, const Key('menu-share'));
         await tapVisible(tester, const Key('developer-invites'));
         await tapVisible(tester, const Key('invite-prepare'));
@@ -69,10 +70,10 @@ void main() {
         expect(c.state.missions.qualifiedInvitePlayers, isEmpty);
         await tapVisible(tester, const Key('invite-level-one'));
         expect(c.state.missions.qualifiedInvitePlayers, {'friend-1'});
-        expect(c.state.support.inventory['fairy'], BigInt.from(2));
+        expect(c.state.support.coins, BigInt.from(5));
         await tapVisible(tester, const Key('invite-replay'));
         expect(find.textContaining('이미 처리한 eventId'), findsOneWidget);
-        expect(c.state.support.inventory['fairy'], BigInt.from(2));
+        expect(c.state.support.coins, BigInt.from(5));
         final input = find.byKey(const Key('invite-player'));
         await tester.ensureVisible(input);
         await tester.pumpAndSettle();
@@ -83,7 +84,7 @@ void main() {
         await tapVisible(tester, const Key('invite-existing'));
         await tapVisible(tester, const Key('invite-click'));
         await tapVisible(tester, const Key('invite-existing'));
-        expect(c.state.support.inventory['butter'], BigInt.from(2));
+        expect(c.state.support.coins, BigInt.from(7));
         expect(find.textContaining('오늘 보상 2명'), findsOneWidget);
         clock.advance(const Duration(days: 1));
         c.tick();
@@ -91,7 +92,7 @@ void main() {
         expect(find.textContaining('오늘 보상 0명'), findsOneWidget);
         await tapVisible(tester, const Key('invite-click'));
         await tapVisible(tester, const Key('invite-existing'));
-        expect(c.state.support.inventory['butter'], BigInt.from(3));
+        expect(c.state.support.coins, BigInt.from(9));
         expect(c.state.missions.qualifiedInvitePlayers, {'friend-1'});
         expect(find.textContaining('오늘 보상 1명'), findsOneWidget);
         expect(tester.takeException(), isNull);
@@ -108,6 +109,7 @@ void main() {
     messenger.setMockMethodCallHandler(
         channel, (_) async => throw PlatformException(code: 'unavailable'));
     addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+    await tapVisible(tester, const Key('menu-menu'));
     await tapVisible(tester, const Key('menu-share'));
     await tapVisible(tester, const Key('developer-invites'));
     await tapVisible(tester, const Key('invite-prepare'));

@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import '../balance.dart';
 import '../economy.dart';
 import '../game_controller.dart';
 import '../support_config.dart';
 import '../support_rules.dart';
 import '../support_state.dart';
+import 'pixel_sprites.dart';
 
-String rewardLabel(RewardDefinition r) => [
-      if (r.coins != '0' || r.items.isEmpty) '코인 ${r.coins}개',
-      for (final e in r.items.entries)
-        '${itemDefinitions.firstWhere((i) => i.id == e.key).name} ${e.value}개',
-    ].join(' · ');
+String rewardLabel(RewardDefinition r) => '코인 ${r.coins}개';
 String remainingLabel(int ms) {
   final seconds = (ms + 999) ~/ 1000;
   return '${seconds ~/ 60}분 ${(seconds % 60).toString().padLeft(2, '0')}초';
@@ -41,9 +37,9 @@ class DailyMissionsPanel extends StatelessWidget {
           TextButton(
               key: const Key('daily-store'),
               onPressed: onStore,
-              child: const Text('아이템 · 코인 상점 열기')),
+              child: const Text('코인 · 부스트 보기')),
           const Text(
-              '초당 목표는 아이템 제외 · 안 받은 보상은 자정에 사라져요'),
+              '초당 목표는 부스트 제외 · 안 받은 보상은 자정에 사라져요'),
           saveError(c),
           for (final d in dailyDefinitions)
             Card(
@@ -119,163 +115,58 @@ Future<bool> confirmAction(BuildContext context, String title, String details,
                 ])) ??
     false;
 
-class SupportPanel extends StatefulWidget {
+/// Coins and boosts: the coin balance and ledger, and every boost with how
+/// to get it and how long the running one lasts.
+class SupportPanel extends StatelessWidget {
   final GameController controller;
   const SupportPanel({super.key, required this.controller});
   @override
-  State<SupportPanel> createState() => _SupportPanelState();
-}
-
-class _SupportPanelState extends State<SupportPanel> {
-  bool _shop = false;
-  @override
   Widget build(BuildContext context) {
-    final c = widget.controller, s = c.state.support;
-    return Column(children: [
-      Text('보유 코인 ${compactNumber(s.coins)}개', key: const Key('coin-balance')),
-      Wrap(spacing: 8, children: [
-        ChoiceChip(
-            key: const Key('support-items'),
-            label: const Text('내 아이템'),
-            selected: !_shop,
-            onSelected: (_) => setState(() => _shop = false)),
-        ChoiceChip(
-            key: const Key('support-shop'),
-            label: const Text('코인 상점'),
-            selected: _shop,
-            onSelected: (_) => setState(() => _shop = true)),
-      ]),
-      Expanded(
-          child: SingleChildScrollView(
-              key: const Key('support-scroll'),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                        '효과 시간은 앱을 닫아도 흘러요'),
-                    saveError(c),
-                    for (final item in itemDefinitions) _item(context, item),
-                    if (_shop) ...[
-                      const Text('꾸미기 · 생산 효과 없음'),
-                      for (final skin
-                          in skins.where((s) => s.cost > BigInt.zero))
-                        Card(
-                            child: Padding(
-                                padding: const EdgeInsets.all(12),
-                                child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.stretch,
-                                    children: [
-                                      Text(skin.name),
-                                      Text(
-                                          '가격 ${skin.cost} 코인 · Lv.${skin.unlockLevel} 해금'),
-                                      Text(c.state.ownedSkins.contains(skin.id)
-                                          ? '영구 보유'
-                                          : '미보유'),
-                                      FilledButton(
-                                          key: Key('coin-skin-${skin.id}'),
-                                          onPressed: !c.busy &&
-                                                  !c.state.ownedSkins
-                                                      .contains(skin.id) &&
-                                                  c.state.level >=
-                                                      skin.unlockLevel &&
-                                                  s.coins >= skin.cost
-                                              ? () async {
-                                                  if (await confirmAction(
-                                                      context,
-                                                      '${skin.name} 구매',
-                                                      '가격 ${skin.cost} 코인\n코인 ${exactNumber(s.coins)} → ${exactNumber(s.coins - skin.cost)}\n영구 보유 · 바로 장착',
-                                                      '구매')) {
-                                                    await c.buyOrEquip(skin);
-                                                  }
-                                                }
-                                              : null,
-                                          child: Text(c.state.ownedSkins
-                                                  .contains(skin.id)
-                                              ? '보유 중'
-                                              : '꾸미기 구매')),
-                                    ]))),
-                    ],
-                    ExpansionTile(title: const Text('코인 거래 기록'), children: [
-                      for (final entry
-                          in s.ledger.values.toList().reversed.take(30))
-                        ListTile(
-                            title: Text(
-                                '${entry.delta.isNegative ? '' : '+'}${exactNumber(entry.delta)} · ${entry.reason}'),
-                            subtitle: Text(entry.id)),
-                    ]),
-                  ]))),
-    ]);
+    final c = controller, s = c.state.support;
+    return SingleChildScrollView(
+        key: const Key('support-scroll'),
+        padding: const EdgeInsets.all(16),
+        child:
+            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Text('보유 코인 ${compactNumber(s.coins)}개',
+              key: const Key('coin-balance')),
+          const Text('부스트가 겹치면 가장 큰 배율 하나만 적용돼요 · 앱을 닫아도 시간이 흘러요'),
+          saveError(c),
+          for (final boost in boostDefinitions) _boost(context, boost),
+          ExpansionTile(title: const Text('코인 거래 기록'), children: [
+            for (final entry in s.ledger.values.toList().reversed.take(30))
+              ListTile(
+                  title: Text(
+                      '${entry.delta.isNegative ? '' : '+'}${exactNumber(entry.delta)} · ${entry.reason}'),
+                  subtitle: Text(entry.id)),
+          ]),
+        ]));
   }
 
-  Widget _item(BuildContext context, ItemDefinition item) {
-    final c = widget.controller, s = c.state.support;
-    final quantity = s.inventory[item.id]!, used = s.itemUses[item.id]!;
-    final effect = s.effects[item.id],
-        running = effect?.activeAt(c.gameNow) == true;
-    final price = BigInt.parse(item.coinPrice), sequence = s.purchaseSequence;
-    final current = item.channel == EffectChannel.tap
-        ? c.currentTapRate
-        : c.currentAutoRate;
-    final base = item.channel == EffectChannel.tap
-        ? tapRate(c.state)
-        : autoRate(c.state);
-    final after = base *
-        BigInt.parse(item.multiplierPermille) ~/
-        BigInt.from(effectScale);
+  Widget _boost(BuildContext context, BoostDefinition boost) {
+    final c = controller, effect = c.state.support.effects[boost.id];
+    final running = effect?.activeAt(c.gameNow) == true;
     return Card(
         child: Padding(
             padding: const EdgeInsets.all(12),
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(item.name,
+                  Text(boost.name,
                       style: Theme.of(context).textTheme.titleMedium),
                   Text(
-                      '보유 ${compactNumber(quantity)}개 · 사용 ${compactNumber(used)}회'),
-                  Text(
-                      '${item.channel == EffectChannel.tap ? '클릭' : '자동'} 생산 ${BigInt.parse(item.multiplierPermille) * BigInt.from(100) ~/ BigInt.from(effectScale)}% · ${item.durationSeconds}초'),
+                      '클릭·자동 생산 ${boost.multiplierPermille ~/ effectScale}배 · ${boost.durationSeconds ~/ 60}분'),
+                  Text(switch (boost.kind) {
+                    BoostKind.invite => '나를 초대한 친구가, 내가 Lv.1을 달성하면 손님으로 와요',
+                    BoostKind.visit => '친구가 하루 한 번 내 가게에 들러요',
+                    BoostKind.golden => '틀 위 황금 붕어빵을 반짝일 때 눌러요',
+                    BoostKind.bought => '상점에서 황금 붕어빵으로 사요',
+                  }),
                   Text(
                       running
-                          ? '활성 · 남은 시간 ${remainingLabel(effect!.remainingMs(c.gameNow))}'
-                          : '비활성',
-                      key: Key('item-time-${item.id}')),
-                  if (_shop) ...[
-                    Text(
-                        '${item.coinPrice} 코인 · 구매 후 ${compactNumber(quantity + BigInt.one)}개'),
-                    FilledButton(
-                        key: Key('coin-buy-${item.id}'),
-                        onPressed: !c.busy && s.coins >= price
-                            ? () async {
-                                if (await confirmAction(
-                                    context,
-                                    '${item.name} 구매',
-                                    '가격 $price 코인\n코인 ${exactNumber(s.coins)} → ${exactNumber(s.coins - price)}\n보유 $quantity → ${quantity + BigInt.one}개\n사용해야 효과가 켜져요',
-                                    '구매')) {
-                                  await c.buyCoinItem(item.id, sequence);
-                                }
-                              }
-                            : null,
-                        child: const Text('코인으로 1개 구매')),
-                  ] else ...[
-                    Text(
-                        '현재 생산 ${compactNumber(current)} → 사용 후 ${compactNumber(after)}'),
-                    FilledButton(
-                        key: Key('item-use-${item.id}'),
-                        onPressed: !c.busy && quantity > BigInt.zero && !running
-                            ? () async {
-                                if (await confirmAction(
-                                    context,
-                                    '${item.name} 사용',
-                                    '수량 $quantity → ${quantity - BigInt.one}개\n현재 생산 ${exactNumber(current)} → 사용 후 ${exactNumber(after)}\n${item.durationSeconds}초 동안 적용',
-                                    '사용')) {
-                                  await c.useItem(item.id, expectedUses: used);
-                                }
-                              }
-                            : null,
-                        child: const Text('아이템 1개 사용')),
-                  ],
+                          ? '진행 중 · 남은 시간 ${remainingLabel(effect!.remainingMs(c.gameNow))}'
+                          : '대기',
+                      key: Key('boost-time-${boost.id}')),
                 ])));
   }
 }

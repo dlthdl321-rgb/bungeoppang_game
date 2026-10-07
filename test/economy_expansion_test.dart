@@ -32,8 +32,9 @@ void main() {
     // Balance v3: the Lv.10 rate needs several top-tier units (no longer one).
     expect(levels.last.autoPerSecond <= upgrades.last.effect * BigInt.from(25),
         isTrue);
-    // Stage 11 retuned the offline-season Lv.10 rate (legacy season keeps 20조).
-    expect(levels.last.autoPerSecond, BigInt.parse('15000000000000'));
+    // Stage 11 retuned the offline-season Lv.10 rate; stage 14 raised it to
+    // 20조 (golden chances), the same as the legacy season.
+    expect(levels.last.autoPerSecond, BigInt.parse('20000000000000'));
   });
 
   test('누적 가격은 원래 유리수 공식으로 각각 올림한 값의 합과 일치한다', () {

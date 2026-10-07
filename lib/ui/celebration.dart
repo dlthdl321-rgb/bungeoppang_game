@@ -8,6 +8,8 @@ import '../feedback_config.dart';
 import '../game_audio.dart';
 import '../game_controller.dart';
 import '../game_events.dart';
+import '../mission_alerts.dart';
+import 'cozy_style.dart';
 import 'fish_painter.dart';
 import 'pixel_sprites.dart';
 
@@ -87,8 +89,8 @@ class _ConfettiPainter extends CustomPainter {
       // Square pieces snapped to a 4px grid, like the pixel art.
       final side = p.size < 8 ? 4.0 : 8.0;
       canvas.drawRect(
-          Rect.fromLTWH(
-              (x / 4).roundToDouble() * 4, (y / 4).roundToDouble() * 4, side, side),
+          Rect.fromLTWH((x / 4).roundToDouble() * 4,
+              (y / 4).roundToDouble() * 4, side, side),
           paint);
     }
   }
@@ -108,7 +110,7 @@ class CelebrationHost extends StatefulWidget {
 }
 
 class _CelebrationHostState extends State<CelebrationHost>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final _queue = Queue<GameEvent>();
   final _confetti = List.generate(maxConfetti, (_) => _Confetti());
   final _random = math.Random(3);
@@ -120,17 +122,50 @@ class _CelebrationHostState extends State<CelebrationHost>
   GameEvent? _current;
   bool _reduced = false;
 
+  /// Goals already claimable; only goals reached after this are announced.
+  /// Taken when the host starts, so the first goal reached is announced.
+  Set<String> _claimable = const {};
+
+  /// The "미션 달성!" notice: newly reached goals, shown for [missionNoticeMs].
+  List<ClaimableGoal> _reached = const [];
+  late final AnimationController _notice = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: missionNoticeMs))
+    ..addStatusListener((s) {
+      if (s == AnimationStatus.completed && mounted) {
+        setState(() => _reached = const []);
+      }
+    });
+
   @override
   void initState() {
     super.initState();
     _sub = widget.controller.events.listen(_onEvent);
+    _claimable = _claimableIds();
+    widget.controller.addListener(_checkGoals);
   }
 
   @override
   void dispose() {
+    widget.controller.removeListener(_checkGoals);
     _sub?.cancel();
     _anim.dispose();
+    _notice.dispose();
     super.dispose();
+  }
+
+  Set<String> _claimableIds() =>
+      {for (final g in claimableGoals(widget.controller.state)) g.id};
+
+  /// Announces goals that became claimable since the last change.
+  void _checkGoals() {
+    final goals = claimableGoals(widget.controller.state);
+    final ids = {for (final g in goals) g.id};
+    final reached = goals.where((g) => !_claimable.contains(g.id)).toList();
+    _claimable = ids;
+    if (reached.isEmpty || !mounted) return;
+    GameAudioScope.of(context).play(Sfx.reward);
+    setState(() => _reached = reached);
+    _notice.forward(from: 0);
   }
 
   void _onEvent(GameEvent e) {
@@ -173,6 +208,7 @@ class _CelebrationHostState extends State<CelebrationHost>
     final e = _current;
     return Stack(children: [
       widget.child,
+      if (_reached.isNotEmpty) _missionNotice(context),
       if (e != null)
         Positioned.fill(
             child: IgnorePointer(
@@ -209,6 +245,80 @@ class _CelebrationHostState extends State<CelebrationHost>
     ]);
   }
 
+  /// Small top notice: "미션 달성!" and what was reached. Slides in unless
+  /// motion is reduced; never blocks taps.
+  Widget _missionNotice(BuildContext context) {
+    final reduced = widget.controller.state.settings.reduceMotion ||
+        MediaQuery.maybeDisableAnimationsOf(context) == true;
+    final first = _reached.first.label;
+    final more = _reached.length - 1;
+    final panel = Material(
+      key: const Key('mission-notice'),
+      color: Colors.transparent,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 360),
+        child: CozyPanel(
+          padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            const PixelIcon('check', size: 28),
+            const SizedBox(width: 8),
+            Flexible(
+              child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('미션 달성!',
+                        style: TextStyle(
+                            fontSize: 15, fontWeight: FontWeight.w900)),
+                    Text(more > 0 ? '$first 외 $more개' : first,
+                        key: const Key('mission-notice-label'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12)),
+                    const Text('메뉴에서 보상을 받아요',
+                        style: TextStyle(fontSize: 11, color: Cozy.inkSoft)),
+                  ]),
+            ),
+          ]),
+        ),
+      ),
+    );
+    return Positioned(
+      left: 16,
+      right: 16,
+      top: 0,
+      child: IgnorePointer(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 64),
+            child: Center(
+              child: AnimatedBuilder(
+                animation: _notice,
+                builder: (context, child) {
+                  final t = _notice.value;
+                  // In for the first 10%, out for the last 15%.
+                  final shown = t < .1
+                      ? t / .1
+                      : t > .85
+                          ? (1 - t) / .15
+                          : 1.0;
+                  return Opacity(
+                      opacity: shown.clamp(0.0, 1.0),
+                      child: reduced
+                          ? child
+                          : Transform.translate(
+                              offset: Offset(0, -16 * (1 - shown)),
+                              child: child));
+                },
+                child: panel,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _banner(BuildContext context, GameEvent e) => Material(
       key: const Key('celebration'),
       color: Colors.transparent,
@@ -229,11 +339,13 @@ class _CelebrationHostState extends State<CelebrationHost>
                 PixelIcon(
                     switch (e.kind) {
                       GameEventKind.achievement => 'achievements',
-                      GameEventKind.itemUsed => 'butter',
-                      GameEventKind.prestige => 'shop',
+                      GameEventKind.boostStarted => 'star',
+                      GameEventKind.prestige => 'prestige',
+                      GameEventKind.levelUp => 'levelup',
                       _ => 'star',
                     },
-                    size: 36),
+                    size: 36,
+                    glyphColor: const Color(0xffffe7ac)),
                 const SizedBox(height: 6),
                 Text(e.title,
                     textAlign: TextAlign.center,
@@ -296,14 +408,17 @@ class OfflineRewardDialog extends StatelessWidget {
                           fontSize: 22,
                           fontWeight: FontWeight.w900)),
                   const SizedBox(height: 4),
-                  Text(
-                      '${hours > 0 ? '$hours시간 ' : ''}$minutes분 동안 구웠어요',
+                  Text('${hours > 0 ? '$hours시간 ' : ''}$minutes분 동안 구웠어요',
                       textAlign: TextAlign.center,
                       style: const TextStyle(color: Color(0xffc4d0d7))),
-                  const SizedBox(
-                      height: 110,
-                      width: 150,
-                      child: CustomPaint(painter: FishPainter())),
+                  // The bag of bungeoppang baked while away (64x48, 2x).
+                  if (PixelSprites.screenArt('offline') case final bag?)
+                    PixelArt(bag, width: 128, height: 96)
+                  else
+                    const SizedBox(
+                        height: 110,
+                        width: 150,
+                        child: CustomPaint(painter: FishPainter())),
                   CountUpText(amount,
                       key: const Key('offline-reward-amount'),
                       suffix: '개',

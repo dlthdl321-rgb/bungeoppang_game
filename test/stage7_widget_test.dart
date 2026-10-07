@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/progress_state.dart';
 import 'package:todays_bungeoppang/weekly_config.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
@@ -145,28 +146,39 @@ void main() {
     final c = await mountGame(tester, const Size(390, 844));
     final theme =
         seasonThemeForMonth(DateTime.parse(c.state.weekly.week).month);
+    await tapVisible(tester, const Key('menu-menu'));
     expect(find.textContaining(theme.title), findsOneWidget);
     await tapVisible(tester, const Key('event-entry'));
     expect(find.text(theme.title), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('g. 옷장 미리보기 속 색상은 실제 홈 외형과 같다', (tester) async {
+  testWidgets('g. 옷장 미리보기 붕어빵은 실제 홈 외형과 같다', (tester) async {
     final clock = FixedTime();
     final c = await mountGame(tester, const Size(390, 844),
         clock: clock, maxLevel: true);
-    c.state.ownedSkins.add('custard');
-    c.state.equippedSkin = 'custard';
+    c.state.wardrobe.owned.addAll(['heartscale', 'sugar']);
+    c.state.wardrobe.equipped[CosmeticSlot.pattern] = 'heartscale';
+    c.state.wardrobe.equipped[CosmeticSlot.topping] = 'sugar';
     c.tick();
     await tester.pump();
-    final home = fishPainters(tester).single;
+    // The HUD and label icons are plain; the bake target wears the equipped
+    // pattern and topping.
+    final home =
+        fishPainters(tester).singleWhere((p) => p.pattern == 'heartscale');
+    expect((home.skin, home.topping), ('redbean', 'sugar'));
     await tapVisible(tester, const Key('menu-skins'));
-    final painters = fishPainters(tester).toList();
-    expect(painters.length, 2);
-    expect(painters.map((p) => p.filling).toSet(), {home.filling});
-    await tapVisible(tester, const Key('preview-cocoa'));
-    final preview = fishPainters(tester).firstWhere((p) => p.skin == 'cocoa');
-    expect(preview.filling, isNot(home.filling));
+    await tapVisible(tester, const Key('cosmetic-category-bungeoppang'));
+    final worn = fishPainters(tester).where((p) =>
+        p.skin == home.skin &&
+        p.pattern == home.pattern &&
+        p.topping == home.topping);
+    expect(worn.length, greaterThanOrEqualTo(2)); // Home and the preview.
+    await tapVisible(tester, const Key('preview-starmark'));
+    final preview =
+        fishPainters(tester).firstWhere((p) => p.pattern == 'starmark');
+    expect((preview.skin, preview.topping), ('redbean', 'sugar'));
+    expect(c.state.equippedCosmetic(CosmeticSlot.pattern), 'heartscale');
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
@@ -176,6 +188,7 @@ void main() {
       ..now = weekEndUtc(week)
           .subtract(const Duration(days: 1, minutes: 2, milliseconds: 500));
     await mountGame(tester, const Size(390, 844), clock: clock);
+    await tapVisible(tester, const Key('menu-menu'));
     final home =
         tester.widget<Text>(find.byKey(const Key('event-countdown'))).data!;
     final label = home.substring(home.indexOf('·') + 2);

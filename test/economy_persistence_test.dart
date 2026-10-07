@@ -52,7 +52,7 @@ void main() {
     expect(c.state.upgradeCounts['tap_1'], 25);
     expect(c.state.upgradeCounts['auto_16'], 0);
     expect(c.state.upgradeCounts.length, upgrades.length);
-    expect(c.state.equippedSkin, 'cocoa');
+    expect(c.state.equippedSkin, 'redbean'); // Wore cocoa, a removed flavour.
     expect(c.state.settings.holdToBake, isTrue);
     expect(c.state.settings.reduceMotion, isTrue);
     expect(c.state.activeRemainder, BigInt.from(321));

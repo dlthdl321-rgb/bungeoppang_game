@@ -40,10 +40,10 @@ List<MissionProgress> missionProgress(GameState state, LevelDefinition level) {
                       MissionKind.autoRate => autoRate(state),
                       MissionKind.newPlayerInvites => BigInt.from(
                           state.missions.qualifiedInvitePlayers.length),
-                      MissionKind.goldenButterUses => state.missions.butterUses,
+                      MissionKind.goldenCatches => state.missions.goldenCatches,
                       MissionKind.cosmeticsOwned =>
                         BigInt.from(cosmeticsOwnedCount(state)),
-                      MissionKind.itemUses => totalItemUses(state),
+                      MissionKind.boostUses => state.support.boostUses,
                       MissionKind.skillLevel =>
                         BigInt.from(state.upgradeCounts[m.skillId] ?? 0),
                       MissionKind.achievements =>

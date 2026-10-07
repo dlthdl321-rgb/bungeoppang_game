@@ -15,8 +15,11 @@ object PlayGamesBridge {
     fun attach(activity: Activity, engine: FlutterEngine) {
         MethodChannel(engine.dartExecutor.binaryMessenger, CHANNEL)
             .setMethodCallHandler { call, result ->
-                result.success(if (call.method == "status") mapOf(
-                    "configured" to false, "authenticated" to false) else false)
+                result.success(when (call.method) {
+                    "status" -> mapOf("configured" to false, "authenticated" to false)
+                    "serverAuthCode" -> null
+                    else -> false
+                })
             }
     }
 

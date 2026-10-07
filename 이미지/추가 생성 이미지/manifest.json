@@ -1,0 +1,1502 @@
+[
+  {
+    "path": "avatar/boy/accessory_ribbon.png",
+    "bytes": 1368495,
+    "sha256": "7194757fcc7d0bf7fe35b1422e5c8b4c29ae50b43cdc104d452d85ce4429ec63"
+  },
+  {
+    "path": "avatar/boy/face_grin.png",
+    "bytes": 1270821,
+    "sha256": "b3da8cb712f4c5217d19acc2fbc0bb4d7195988707badcfa53680f60e960f8bd"
+  },
+  {
+    "path": "avatar/boy/face_neutral.png",
+    "bytes": 1254700,
+    "sha256": "ac7bf0e8929c576a8db8b2f502dd229d2693db7140bc98b931dfba2bad75c06a"
+  },
+  {
+    "path": "avatar/boy/face_sleepy.png",
+    "bytes": 1224540,
+    "sha256": "eb726e266e16c99b2cd184f36e9f3541a2491ca604a044a2cee119b6546882d6"
+  },
+  {
+    "path": "avatar/boy/face_smile.png",
+    "bytes": 152922,
+    "sha256": "fe31fa773d5c10eaede15492b8bb16f947f9c0ce1d61657aaba871d8cdce040c"
+  },
+  {
+    "path": "avatar/boy/face_surprised.png",
+    "bytes": 1315157,
+    "sha256": "fdf2540410b9a6ef836e0d3487760739231eec96bd69cd2780ee965411aae282"
+  },
+  {
+    "path": "avatar/boy/face_wink.png",
+    "bytes": 1411856,
+    "sha256": "09975587aadf81e09fd25a71276dbc7ab64943c8dd78f3f0a47518664a63cc1b"
+  },
+  {
+    "path": "avatar/boy/hair_curly.png",
+    "bytes": 1406244,
+    "sha256": "863cc194b1cea779c02bc26d2ca32a4c733a60d8e5857b37139a3f72e2184069"
+  },
+  {
+    "path": "avatar/boy/hair_ponytail.png",
+    "bytes": 1166177,
+    "sha256": "d576474e2cb6054bc3e706dff88bbff9f326d4299bb2d8ba8c9a1509a4c2c1a1"
+  },
+  {
+    "path": "avatar/boy/hair_short.png",
+    "bytes": 1272288,
+    "sha256": "8df004ea46e33298c0bd4eebd2d043854a8d9c88227c96d66e124acb5c1a7cdb"
+  },
+  {
+    "path": "avatar/boy/hat_blackcap.png",
+    "bytes": 1479092,
+    "sha256": "3cec4ae2009d43ab9e240dd02e7e81355b7e5a1e697e0f3dd26f15cf5ec74720"
+  },
+  {
+    "path": "avatar/boy/hat_chefhat.png",
+    "bytes": 1461598,
+    "sha256": "e61d1df5f71ade3d429681be62b3245e466f438df0d6075af97f938ea3b3bc8d"
+  },
+  {
+    "path": "avatar/boy/hat_earmuffs.png",
+    "bytes": 1575774,
+    "sha256": "2b8f2667aca3c425f9a1dddc37317768a7c2d48f7144809e4d5beabad6675275"
+  },
+  {
+    "path": "avatar/boy/hat_redbandana.png",
+    "bytes": 1608542,
+    "sha256": "cb39e522912746ac5079c13555d70674f68a23e5a2198dea5da78a3216c975f1"
+  },
+  {
+    "path": "avatar/boy/hat_santa.png",
+    "bytes": 1226039,
+    "sha256": "fdbe9e378d0de25e1e4f9089f29fecab0d986cedb42f826763b7607f0126139d"
+  },
+  {
+    "path": "avatar/boy/outfit_apron.png",
+    "bytes": 1397118,
+    "sha256": "122ecf1446d115240b235813b2ff3d066c9ab740b4284f9c5f4773ad8ad7c33b"
+  },
+  {
+    "path": "avatar/boy/outfit_brownpants.png",
+    "bytes": 1453385,
+    "sha256": "4f003094da181501f5817657430c06b90098daed6e20c4b8b07161943511f5ec"
+  },
+  {
+    "path": "avatar/boy/outfit_chefcoat.png",
+    "bytes": 1596930,
+    "sha256": "ac533b634d8d94b2f1c7b7fcb6d87a78a17700d9bd6f9fd5feb43c463fedba6f"
+  },
+  {
+    "path": "avatar/boy/outfit_creamapron.png",
+    "bytes": 1571378,
+    "sha256": "5d5a840bb7e913ebcbe6365a41d134b760f083d30f390353970e5ce2e2b35563"
+  },
+  {
+    "path": "avatar/boy/outfit_darkapron.png",
+    "bytes": 1266407,
+    "sha256": "e3c688cd772067bca3d333c89a29cc514cd0e1e57c8bb62f47bb5e26d16c2a93"
+  },
+  {
+    "path": "avatar/boy/outfit_skirt.png",
+    "bytes": 1416779,
+    "sha256": "744d5ff7568dde06297cbe7e4a0cb130e28ea53c58efb82fe2272331f53c3929"
+  },
+  {
+    "path": "avatar/boy/outfit_stripe.png",
+    "bytes": 1263278,
+    "sha256": "4c524e9cf32944ae51bf62174ec1bc265afbabacf479f6565b9a343e70c3a85e"
+  },
+  {
+    "path": "avatar/boy/outfit_waistapron.png",
+    "bytes": 1505509,
+    "sha256": "916762c5bad4041e7f98d33e79c3a4b2174830faaa68f44c1e990cf02426ddad"
+  },
+  {
+    "path": "avatar/boy/outfit_widepants.png",
+    "bytes": 1267630,
+    "sha256": "b67457bdcd1188c1f2d9cb635f6044816dd81542aa6783657bd70f338b850f76"
+  },
+  {
+    "path": "avatar/boy/skin_skin2.png",
+    "bytes": 1613547,
+    "sha256": "c74c7b2f217ab949252892440e99a22c18f7a80dc5d93d897c85609efdbc395d"
+  },
+  {
+    "path": "avatar/boy/skin_skin3.png",
+    "bytes": 1840845,
+    "sha256": "149acea02473d2942c099152a8a6101f2d82a1e546d87606e82f2869a34d4643"
+  },
+  {
+    "path": "avatar/boy/tool_goldtongs.png",
+    "bytes": 1314981,
+    "sha256": "894a0798ac098b1bd7c90cc44ffab2e1f6a791b37e61d21d7ad0c67e3dd7b6f1"
+  },
+  {
+    "path": "avatar/girl/face_grin.png",
+    "bytes": 1339605,
+    "sha256": "d33cdbb15957ff05420a82cc838c056c35263ad8fc17a8643bb51d02e70d0b4f"
+  },
+  {
+    "path": "avatar/girl/face_neutral.png",
+    "bytes": 1346312,
+    "sha256": "90418a1c9afb5ba68c2ecdad894b253e05b19dcb4a7418bc5636b07ea7b0ea1e"
+  },
+  {
+    "path": "avatar/girl/face_sleepy.png",
+    "bytes": 1255231,
+    "sha256": "d729ddf3e3d671a6090bb1c2f419d94e8199101cff69f76940b996d1f7b81c00"
+  },
+  {
+    "path": "avatar/girl/face_smile.png",
+    "bytes": 160817,
+    "sha256": "712fb378a3a318f9467ed99ccecf13f188361caa3e4144d196e9eb569873a697"
+  },
+  {
+    "path": "avatar/girl/face_surprised.png",
+    "bytes": 1416857,
+    "sha256": "7a9db3c39c66180b4b2390570f683807c633adf12b6ee5a38441ef8ead7de42e"
+  },
+  {
+    "path": "avatar/girl/face_wink.png",
+    "bytes": 1221521,
+    "sha256": "bd5527342dc9cdd7efda07fb3d4f3350b886166deb6117486669178126d1bb16"
+  },
+  {
+    "path": "avatar/girl/hair_curly.png",
+    "bytes": 1309313,
+    "sha256": "e07412a4949b1db681ec489bc76e586dedace5bfb9eac0a98f59d582ce7ba5b9"
+  },
+  {
+    "path": "avatar/girl/hair_ponytail.png",
+    "bytes": 1328704,
+    "sha256": "9c98d0dadf5cfd85a7400195a7ae3fccb3452ac45cf6b0a9db14a3ce04b67e26"
+  },
+  {
+    "path": "avatar/girl/hair_short.png",
+    "bytes": 1185011,
+    "sha256": "6fdb640065d76927386d17e4e3a5d51fcb602c7eae79eb68e8698957e1d84e73"
+  },
+  {
+    "path": "avatar/girl/hat_blackcap.png",
+    "bytes": 1158637,
+    "sha256": "0984dcfa9c5fe1c5faa44afdbb7614d3c20cfe027628ff0eb6707c286de57056"
+  },
+  {
+    "path": "avatar/girl/hat_chefhat.png",
+    "bytes": 1198145,
+    "sha256": "616a46714ffa7331ab93957bbba1bcc3ea7c8a3b75e299ef04b2c42aa4ab29c4"
+  },
+  {
+    "path": "avatar/girl/hat_earmuffs.png",
+    "bytes": 1350366,
+    "sha256": "e30991aa12ee0c0d831f88d8712b269fa6b1ae1bd521050162b1cc8f76826c01"
+  },
+  {
+    "path": "avatar/girl/hat_redbandana.png",
+    "bytes": 1241193,
+    "sha256": "2af071328c0b3ceac20af4d6d517e122bb53ce500e8c3eb2656c51dea11e72e7"
+  },
+  {
+    "path": "avatar/girl/hat_santa.png",
+    "bytes": 1513008,
+    "sha256": "cdf34fc7319cedfc9861dd4fff9f9bc6a146b142e7db98f0983e1fafc7b658cf"
+  },
+  {
+    "path": "avatar/girl/outfit_apron.png",
+    "bytes": 1453813,
+    "sha256": "61c554c3d54dd40c6e011c76be8c522319c80f26bac3ec0fb63c242c3a77dbda"
+  },
+  {
+    "path": "avatar/girl/outfit_brownpants.png",
+    "bytes": 1389568,
+    "sha256": "41179f32193cb633f003c429f455ab07c8015485d168732f1584ab1cb3b2f934"
+  },
+  {
+    "path": "avatar/girl/outfit_chefcoat.png",
+    "bytes": 1346847,
+    "sha256": "fefd721557176a79141f05af11c20c6c8784bac4a8365d37ecb5a5e7f70e2ac4"
+  },
+  {
+    "path": "avatar/girl/outfit_creamapron.png",
+    "bytes": 1297159,
+    "sha256": "4c6486cd0a7904b015aad7350114406fd3e5978a33f1054fbb29543db46039da"
+  },
+  {
+    "path": "avatar/girl/outfit_darkapron.png",
+    "bytes": 1327586,
+    "sha256": "0ce5ee82c01938683a2f3cdc66dfcbde2e7896bd910d5e1d91702dc881c2c5c2"
+  },
+  {
+    "path": "avatar/girl/outfit_stripe.png",
+    "bytes": 1222893,
+    "sha256": "514b1b87bd70d36b81ebc8e984a061b54bb985d42f0d1361604f36ccd2d0814d"
+  },
+  {
+    "path": "avatar/girl/outfit_waistapron.png",
+    "bytes": 1446157,
+    "sha256": "55ba20f20110e0742a487eb2a88ad9079a3a703398bf4b6d0f7e5e777413a2ea"
+  },
+  {
+    "path": "avatar/girl/outfit_widepants.png",
+    "bytes": 1401361,
+    "sha256": "4e88e7fcb9611c8c9debb51314d8a418714a50a286314055e668f2b6f777e1f3"
+  },
+  {
+    "path": "avatar/girl/skin_skin2.png",
+    "bytes": 1444657,
+    "sha256": "7d462f82465bda2c69f1ec1b3fe4ed35a4a068c85959894571b9e8bf1af0998d"
+  },
+  {
+    "path": "avatar/girl/skin_skin3.png",
+    "bytes": 1154245,
+    "sha256": "a3b1abea088a6296cca14455f4cb3cc73686a2dbb6fe483f9fcfbb3257d38922"
+  },
+  {
+    "path": "avatar/girl/tool_goldtongs.png",
+    "bytes": 1443259,
+    "sha256": "044a301796b533827928c30b3447f862cff1fb89b2bd05426d53d042e81c3850"
+  },
+  {
+    "path": "cook/boy_1.png",
+    "bytes": 1367309,
+    "sha256": "b062feacdc8d57aa6c84683c4fe77fbf73e2d9c78b5edcfcf2113cc259b6acec"
+  },
+  {
+    "path": "cook/boy_1_accessory_ribbon.png",
+    "bytes": 1394182,
+    "sha256": "f85d9fdaf05e1370b22509783bb478707951bf2c05bfaae9a91009fddc8607a6"
+  },
+  {
+    "path": "cook/boy_1_hair_curly.png",
+    "bytes": 1667050,
+    "sha256": "21e218ac41e954ccedbd10a5cd815fe9f56c3fd8e48b92687b8dae91f21eb799"
+  },
+  {
+    "path": "cook/boy_1_hair_ponytail.png",
+    "bytes": 1383006,
+    "sha256": "2f9898d5c7b8ee06cbddf9e0f660fc96887f2c2b48503e946a19ef34cc558e5d"
+  },
+  {
+    "path": "cook/boy_1_hair_short.png",
+    "bytes": 1647074,
+    "sha256": "0c1dcdeda9638696d4b2813053c1a78e432cac78ee6fdbd7405693cf7d7db857"
+  },
+  {
+    "path": "cook/boy_1_hat_blackcap.png",
+    "bytes": 1631252,
+    "sha256": "cfb11572a1388999c751f9e9be9c5517a7a653186d501227317c95153175e01b"
+  },
+  {
+    "path": "cook/boy_1_hat_chefhat.png",
+    "bytes": 1655422,
+    "sha256": "ffe433518bf16f534001497632e31d73add1ab94f44228875b57451192015eb9"
+  },
+  {
+    "path": "cook/boy_1_hat_earmuffs.png",
+    "bytes": 1694740,
+    "sha256": "41daafe13dd6047dc7a64f8e9fc7fd526d705b14bed26f4eeaec5619cdc51c3c"
+  },
+  {
+    "path": "cook/boy_1_hat_redbandana.png",
+    "bytes": 1679874,
+    "sha256": "7641773acd66760fc0a780bb477d174bdaeb0c18ba80481541382835acbf800d"
+  },
+  {
+    "path": "cook/boy_1_hat_santa.png",
+    "bytes": 1652036,
+    "sha256": "7c6ec220edcc54f1fad603fd6cc594813858ee8a9c72eb8eb88d055c15eff711"
+  },
+  {
+    "path": "cook/boy_1_outfit_apron.png",
+    "bytes": 1695694,
+    "sha256": "51b6625b91c981b88e524eccffdd7c66ebc5e87437c5f9a7a5ce0bdb5849c912"
+  },
+  {
+    "path": "cook/boy_1_outfit_cardigan.png",
+    "bytes": 1410948,
+    "sha256": "6400ef61ba821e96ce4ab611065369f155ed2f05184d8d7fce8d193282afb934"
+  },
+  {
+    "path": "cook/boy_1_outfit_chefcoat.png",
+    "bytes": 1399148,
+    "sha256": "c18d9c5d47bef0965f153cd77ac57208f1b1c9bd44751f0f0c318b5dcd9e7a6e"
+  },
+  {
+    "path": "cook/boy_1_outfit_creamapron.png",
+    "bytes": 1660476,
+    "sha256": "4be046d202d84337a429e8d3806493e2a0e5166bf9bdfd298ecdce13c5f4739f"
+  },
+  {
+    "path": "cook/boy_1_outfit_darkapron.png",
+    "bytes": 1662709,
+    "sha256": "86d1e5f408aad05d1d6db09c24e6d5e51be0ac637e74c159859761c5c306fc09"
+  },
+  {
+    "path": "cook/boy_1_outfit_stripe.png",
+    "bytes": 1397179,
+    "sha256": "a63e587e55aeea40364a480281d9dfa4406dfc68a1578c73b0c75f288208bb0f"
+  },
+  {
+    "path": "cook/boy_1_outfit_sweater.png",
+    "bytes": 1706240,
+    "sha256": "db25a56ed3207b96024e9afd0a07c5f8a4783a46738e3f34b0f18818f523692c"
+  },
+  {
+    "path": "cook/boy_1_outfit_waistapron.png",
+    "bytes": 1390677,
+    "sha256": "02294e3f61ad4875a7f57e71147b918bc6cf8b08ad835a6b9bdee3df04a55836"
+  },
+  {
+    "path": "cook/boy_1_tool_goldtongs.png",
+    "bytes": 1384538,
+    "sha256": "1fe5efb74d25dc7d1969c032078d936506def308a6e483c5dfb0408492f6091d"
+  },
+  {
+    "path": "cook/boy_2.png",
+    "bytes": 1199083,
+    "sha256": "b3853084e94dff948ac0b3c9978503de426aa799456a426ee627afc770538af4"
+  },
+  {
+    "path": "cook/boy_2_accessory_ribbon.png",
+    "bytes": 1713021,
+    "sha256": "a9463cadf9ed298eedfb4d25658d5c46d715578a1d8c3b3bcfc3f702ac6d8a6c"
+  },
+  {
+    "path": "cook/boy_2_hair_curly.png",
+    "bytes": 1732797,
+    "sha256": "b6f02f6d6fce72bd5de700dbe64056f2d8efe20401b5753559e584fd982d4030"
+  },
+  {
+    "path": "cook/boy_2_hair_ponytail.png",
+    "bytes": 1709939,
+    "sha256": "6ec16a9128277d89a4fecb16a81f9e6046861745f90c83f3c242762dd4ece4d8"
+  },
+  {
+    "path": "cook/boy_2_hair_short.png",
+    "bytes": 1701115,
+    "sha256": "d5b8e7e1875018010fe1a09d08f5aafc4f73c3dbb2fdd68e54ef8d406dbf5447"
+  },
+  {
+    "path": "cook/boy_2_hat_blackcap.png",
+    "bytes": 1718899,
+    "sha256": "5470beac9f8e208cd4166dd6d2be7efb3d47ab97aefacdcd3710f01bb90ceb8d"
+  },
+  {
+    "path": "cook/boy_2_hat_chefhat.png",
+    "bytes": 1724452,
+    "sha256": "44424e9245f57fa6525aaef9d15bf2855b7acccdcdb703b8068bd7ac8caea428"
+  },
+  {
+    "path": "cook/boy_2_hat_earmuffs.png",
+    "bytes": 1432151,
+    "sha256": "83cec079606ab989b64f2bdcb790faa8a566c7817f90a151d9e494db510bdf07"
+  },
+  {
+    "path": "cook/boy_2_hat_redbandana.png",
+    "bytes": 1731703,
+    "sha256": "24a0cb7a242b7e87a3ddfc20c8a11f5747b9e5ba8a5d84bbd5e7a89ae7eaa9b0"
+  },
+  {
+    "path": "cook/boy_2_hat_santa.png",
+    "bytes": 1740490,
+    "sha256": "0cdb7e2ab13a1cacd2c35e930da4b2c1353edeb387c457dea234516edee5cf0e"
+  },
+  {
+    "path": "cook/boy_2_outfit_apron.png",
+    "bytes": 1733884,
+    "sha256": "327221df0523066338bc7fd3a3a04c586235895e68debeffced93da04fd7f50f"
+  },
+  {
+    "path": "cook/boy_2_outfit_cardigan.png",
+    "bytes": 1447175,
+    "sha256": "bf1b406dee67fdb943ff4a96ffc218b01ea39d72873eac17a81f4b20c3c9b676"
+  },
+  {
+    "path": "cook/boy_2_outfit_chefcoat.png",
+    "bytes": 1408343,
+    "sha256": "ca793a5d70b2aa2cacffa741d09123b3fd213dfceb3cf0b9cb5e4041e858191c"
+  },
+  {
+    "path": "cook/boy_2_outfit_creamapron.png",
+    "bytes": 1700918,
+    "sha256": "efe7d84277e7405148a7a99a57392b052c7dd05e35bdafa68134643a200e3332"
+  },
+  {
+    "path": "cook/boy_2_outfit_darkapron.png",
+    "bytes": 1688439,
+    "sha256": "7af93ffeeca740784d9efaec2cac00abc38317a74ed0c55fd954a91ef5baf326"
+  },
+  {
+    "path": "cook/boy_2_outfit_stripe.png",
+    "bytes": 1423721,
+    "sha256": "21d029bf19146d8d9af9e03f89e255e7a91e99ee112922462a9c825dcc04d0d3"
+  },
+  {
+    "path": "cook/boy_2_outfit_sweater.png",
+    "bytes": 1431228,
+    "sha256": "e198c00bd2b1db6d94e2c29eeec47f8b909e25f1a745aac2ec33c1fbd0ef9422"
+  },
+  {
+    "path": "cook/boy_2_outfit_waistapron.png",
+    "bytes": 1698720,
+    "sha256": "0f9689458e2654a0d6dd74dd907888ae78cbd1033496e81b30f8206618d1d8b1"
+  },
+  {
+    "path": "cook/boy_2_tool_goldtongs.png",
+    "bytes": 1703538,
+    "sha256": "c1ccd41182cba86d7a02299cfd74979bd57338dbb67e0efc093c3051d4ea3cd7"
+  },
+  {
+    "path": "cook/boy_3.png",
+    "bytes": 1269561,
+    "sha256": "cd6698b22a2d07f52757c5660eae00da4bbc018376868b7ed7cb312d9d7c6054"
+  },
+  {
+    "path": "cook/boy_3_accessory_ribbon.png",
+    "bytes": 1669505,
+    "sha256": "8cf703e45bb2ddd754b37617141bf3e6718f9fdad61eb67716063520cbf3faf0"
+  },
+  {
+    "path": "cook/boy_3_hair_curly.png",
+    "bytes": 1681533,
+    "sha256": "d9b11fe299e49f5eee7d28bf176738535398d602686054e3b76e52fc11f1784e"
+  },
+  {
+    "path": "cook/boy_3_hair_ponytail.png",
+    "bytes": 1667979,
+    "sha256": "b6e0a605fd47ea102ef41aaa02ff67f109fc44d17ab538de6a75161e6de5bb2a"
+  },
+  {
+    "path": "cook/boy_3_hair_short.png",
+    "bytes": 1674682,
+    "sha256": "6ac11aa7be25bd4f7b2880cd663003810d8375eeca0e39166e67c108492da79b"
+  },
+  {
+    "path": "cook/boy_3_hat_blackcap.png",
+    "bytes": 1366794,
+    "sha256": "ca0423edb13ae88b51fab920c2222854e5f9efaafacc86b36eafe3eedeb07c58"
+  },
+  {
+    "path": "cook/boy_3_hat_chefhat.png",
+    "bytes": 1374724,
+    "sha256": "2699da0aa7510d2753b725f9d7219f422572a536f688abb0dc33ca399f89a793"
+  },
+  {
+    "path": "cook/boy_3_hat_earmuffs.png",
+    "bytes": 1671787,
+    "sha256": "3977472fd2b04e6237d17be0c40fa275bc00832b5031c46b4f846e3cfcab0bc9"
+  },
+  {
+    "path": "cook/boy_3_hat_redbandana.png",
+    "bytes": 1675071,
+    "sha256": "6d8c4b35d839453dfbbf5adcd4b8072aa2bea6e0a84615d15773fd99b1fde632"
+  },
+  {
+    "path": "cook/boy_3_hat_santa.png",
+    "bytes": 1697627,
+    "sha256": "70bd9a198c3953f85069230e433757e1dcd53972c9c72ac51fe9fbbf54bc056e"
+  },
+  {
+    "path": "cook/boy_3_outfit_apron.png",
+    "bytes": 1690795,
+    "sha256": "df665f3f67c321c74064016f863fd205bd994fbea793ee740dca6fe70c1a648b"
+  },
+  {
+    "path": "cook/boy_3_outfit_cardigan.png",
+    "bytes": 1676694,
+    "sha256": "a114d43dc7aa5c8b0c151375b559cfaab73e0189b0245c226854aea8c7c2d049"
+  },
+  {
+    "path": "cook/boy_3_outfit_chefcoat.png",
+    "bytes": 1389069,
+    "sha256": "a0b44bf5352d768faed40ce8b714f8f133954266bb08fc1677d6dffd8c8a7e93"
+  },
+  {
+    "path": "cook/boy_3_outfit_creamapron.png",
+    "bytes": 1547615,
+    "sha256": "e0a5e6c52a4305b3ca3483e4f1c94d8d7641287e0961a4d9c24282eac04df471"
+  },
+  {
+    "path": "cook/boy_3_outfit_darkapron.png",
+    "bytes": 1653839,
+    "sha256": "fb2739d2fde1e5eb024937dad282a3074db3f87f18df9a8392757e39f758d637"
+  },
+  {
+    "path": "cook/boy_3_outfit_stripe.png",
+    "bytes": 1681961,
+    "sha256": "385864132cb420b74fe25b02efeaf039b9ffcadddf62bdea2cb8e252f5cfb530"
+  },
+  {
+    "path": "cook/boy_3_outfit_waistapron.png",
+    "bytes": 1678392,
+    "sha256": "0d8086589c8dfcd00fcf38d3c8443cccafd5c4016dfd85e7d392b7690396c1ac"
+  },
+  {
+    "path": "cook/boy_3_tool_goldtongs.png",
+    "bytes": 1382421,
+    "sha256": "8b8af2860caac5d05ea27d187120fc0db5374effb2de03c47f025a6a9a57b6b0"
+  },
+  {
+    "path": "cook/boy_4.png",
+    "bytes": 1130904,
+    "sha256": "cc45e307e067dc0afe7d88c872af6a867a2bd7926348e86be4b2bbecf7bb7b52"
+  },
+  {
+    "path": "cook/boy_4_accessory_ribbon.png",
+    "bytes": 1612061,
+    "sha256": "b3b51169b937f2a27a1d5624c0b5b2067f19cbfd721e5eabb2c806faea09e6a0"
+  },
+  {
+    "path": "cook/boy_4_hair_curly.png",
+    "bytes": 1647320,
+    "sha256": "45247c9b1c56bd2fa0ab36991dc3c0e4da54b9f1993aca4cba06e8318ca7736a"
+  },
+  {
+    "path": "cook/boy_4_hair_ponytail.png",
+    "bytes": 1645592,
+    "sha256": "653c80d9d68b65ebe7fccf65213ff8ffcc3400deea7612e2c6205d0dda38c2ca"
+  },
+  {
+    "path": "cook/boy_4_hair_short.png",
+    "bytes": 1655387,
+    "sha256": "6bdf674242dd592236ad092f8f59d5a01d2ccfc670c53f8a05a6053c66f4d8a1"
+  },
+  {
+    "path": "cook/boy_4_hat_blackcap.png",
+    "bytes": 1295602,
+    "sha256": "d5e68073895d017892521cbd2b2ffeccad3205e09f2d54bbcce1e6b5006ed0b1"
+  },
+  {
+    "path": "cook/boy_4_hat_chefhat.png",
+    "bytes": 1629076,
+    "sha256": "e2dbed4683c724238fcf0e5738cbb617c03f3db2508a821a23b1dd8488c0835d"
+  },
+  {
+    "path": "cook/boy_4_hat_earmuffs.png",
+    "bytes": 1336962,
+    "sha256": "53360775794cd833b2cc236127f25013cd0689ed5526756368eef69db29115ac"
+  },
+  {
+    "path": "cook/boy_4_hat_redbandana.png",
+    "bytes": 1638549,
+    "sha256": "c53efa1fa78fd012c55967f4fa3b56713dec18665417ca4801cf187dce56e037"
+  },
+  {
+    "path": "cook/boy_4_hat_santa.png",
+    "bytes": 1659542,
+    "sha256": "2f3677363a9fc29b5fd6c1fdd34e4327568a611fb0f68101e037a99abe05da02"
+  },
+  {
+    "path": "cook/boy_4_outfit_apron.png",
+    "bytes": 1658966,
+    "sha256": "d596d9492454c0ed8d58d09f0290c0d155fb4a8c862ab128d26f0746d0c23a9f"
+  },
+  {
+    "path": "cook/boy_4_outfit_cardigan.png",
+    "bytes": 1653299,
+    "sha256": "10bea468d4d58d4ec37630e975997813fb311765c1824408961ad22dbcfc75c8"
+  },
+  {
+    "path": "cook/boy_4_outfit_chefcoat.png",
+    "bytes": 1612591,
+    "sha256": "14e4ac0921c653c8374c52813b8145b24a538b6d092f85531ffcaff9deacde3b"
+  },
+  {
+    "path": "cook/boy_4_outfit_creamapron.png",
+    "bytes": 1327973,
+    "sha256": "0b65eddafe2992f4aec0d0d998834187bda7cb381200103f58c46c2bc0f695cc"
+  },
+  {
+    "path": "cook/boy_4_outfit_darkapron.png",
+    "bytes": 1318642,
+    "sha256": "96a381823021d3840a2b20956d720c9c468910dd71b45440b2e77aad093b3565"
+  },
+  {
+    "path": "cook/boy_4_outfit_stripe.png",
+    "bytes": 1352864,
+    "sha256": "2e65551c742ae6c52087c26c28217eb319ec3f52aefa14f8a80a9f1363a0cef0"
+  },
+  {
+    "path": "cook/boy_4_outfit_waistapron.png",
+    "bytes": 1321347,
+    "sha256": "8bd05da2ba20278c131fff5cb1bd4ca76c227f9eaa04f101351ae48d30e9b54d"
+  },
+  {
+    "path": "cook/boy_4_tool_goldtongs.png",
+    "bytes": 1354323,
+    "sha256": "c1728ae69e9c692eb035224c64d131bbe6ecef938d28208137f37905a34129ae"
+  },
+  {
+    "path": "cook/boy_5.png",
+    "bytes": 1204186,
+    "sha256": "d3ba17b211df90858f5ff53be2760faffb449da4226c41b93df6442b61f684f8"
+  },
+  {
+    "path": "cook/boy_5_accessory_ribbon.png",
+    "bytes": 1393548,
+    "sha256": "a716cff18e15abdaa63307cb2a9bcb25062b30b3efba3dca23529355c34ed768"
+  },
+  {
+    "path": "cook/boy_5_hair_curly.png",
+    "bytes": 1687388,
+    "sha256": "8e77e67af8c4e2d93fcd6d14caee8c1a8c7fa500ac3ba1c3497beea397d27c59"
+  },
+  {
+    "path": "cook/boy_5_hair_ponytail.png",
+    "bytes": 1381907,
+    "sha256": "c403e5dd5bfda9404692901a9c60cd85a9dbb4aebbf8c47907961df3018470db"
+  },
+  {
+    "path": "cook/boy_5_hair_short.png",
+    "bytes": 1664371,
+    "sha256": "8731b9f362d1e5a0a2f32588b2fbbc1c2d1b0a9c772caf7427e69ecb9e3106d3"
+  },
+  {
+    "path": "cook/boy_5_hat_blackcap.png",
+    "bytes": 1677684,
+    "sha256": "93f9a7b028ddf32797e7bae850682e5e80db42e2d0f54490a5f2edf832e851f5"
+  },
+  {
+    "path": "cook/boy_5_hat_chefhat.png",
+    "bytes": 1700325,
+    "sha256": "45f454eb07e19543184f86aca5c47d0063e2fd25d3857f4c07c118323edfb88e"
+  },
+  {
+    "path": "cook/boy_5_hat_earmuffs.png",
+    "bytes": 1660506,
+    "sha256": "c9e35ed06251e6eadd5c094e377697c9dfd6891f4341c85387d24a5460beb793"
+  },
+  {
+    "path": "cook/boy_5_hat_redbandana.png",
+    "bytes": 1709157,
+    "sha256": "f74459a6304ebe4098f2fa9775e8fccf7b4172e42f9a87cb94b90e762bb60c4f"
+  },
+  {
+    "path": "cook/boy_5_hat_santa.png",
+    "bytes": 1445395,
+    "sha256": "231268034cf99d3e9251412a7ffaf05c78bf317c54307eaeb9ef4bcfe23b5300"
+  },
+  {
+    "path": "cook/boy_5_outfit_apron.png",
+    "bytes": 1398573,
+    "sha256": "6423a5f1e1fe5d4af36e55c42af48ab1fe125d6145ec3d7043dde4c666940845"
+  },
+  {
+    "path": "cook/boy_5_outfit_cardigan.png",
+    "bytes": 1694708,
+    "sha256": "2e079463ba232d82197d7c1cb75972e8c7830077097f221821e4136396e2b83d"
+  },
+  {
+    "path": "cook/boy_5_outfit_chefcoat.png",
+    "bytes": 1396496,
+    "sha256": "c7754229f85f7eba4909e692d18745571669bde2121faeb98d2b6c9b662faeca"
+  },
+  {
+    "path": "cook/boy_5_outfit_creamapron.png",
+    "bytes": 1691348,
+    "sha256": "627e657b2db39a3037bf01cea223bebec6423b85eb72f7eb63176bea6ea96690"
+  },
+  {
+    "path": "cook/boy_5_outfit_darkapron.png",
+    "bytes": 1659503,
+    "sha256": "fc633abc83387206e54add816dff11ad00887bbcf91cb0adfc0b49885c488ddd"
+  },
+  {
+    "path": "cook/boy_5_outfit_stripe.png",
+    "bytes": 1688869,
+    "sha256": "50da4569f2ebeaba17486768c3145e06d7028352eb382d29057be48433cf6a95"
+  },
+  {
+    "path": "cook/boy_5_outfit_waistapron.png",
+    "bytes": 1707177,
+    "sha256": "33970f835eb7ac174b28b65c7887063f2356c11b7c04573a2a5a62d127465920"
+  },
+  {
+    "path": "cook/boy_5_tool_goldtongs.png",
+    "bytes": 1362324,
+    "sha256": "3526d3729574a4561c6a4aca0ec2c303ad3de3ddb78db51a747f4907bcadf273"
+  },
+  {
+    "path": "cook/boy_6.png",
+    "bytes": 1261849,
+    "sha256": "f1307ddadec30b533394bbe1add5b8a2501f152828a323f2500f2ee3011c5c6f"
+  },
+  {
+    "path": "cook/boy_6_accessory_ribbon.png",
+    "bytes": 1409367,
+    "sha256": "05ad00dd5746e98e8ab23e3853e4ebc0fc23b7c1e8af63439eba696626f6b5d1"
+  },
+  {
+    "path": "cook/boy_6_hair_curly.png",
+    "bytes": 1690697,
+    "sha256": "e473763504be3138648d43d82bc5492ac67f05c8eeaca5b75410ded977172f2d"
+  },
+  {
+    "path": "cook/boy_6_hair_ponytail.png",
+    "bytes": 1717570,
+    "sha256": "87c7ea9492e106904c83f0a4be7ba43ba0925570970fa4e8cb3ad889c5138540"
+  },
+  {
+    "path": "cook/boy_6_hair_short.png",
+    "bytes": 1686460,
+    "sha256": "586888e641f5c03f3ac43fcd9371726627f8802d23012467dadff4d256d222d9"
+  },
+  {
+    "path": "cook/boy_6_hat_blackcap.png",
+    "bytes": 1701226,
+    "sha256": "1ad00cb74767385a7f993a588388c6f4187b60fe62249e48e9dbfbbab2a2d033"
+  },
+  {
+    "path": "cook/boy_6_hat_chefhat.png",
+    "bytes": 1697682,
+    "sha256": "4c9efc8c5bee8d7d0cfb4eb2d16c13f4f0700a759bf388cced9ff85a87a65147"
+  },
+  {
+    "path": "cook/boy_6_hat_earmuffs.png",
+    "bytes": 1413298,
+    "sha256": "00e2c3684f75dd538f2a6edd8f49c7d5f486e4003d014181442daf5f4a27491e"
+  },
+  {
+    "path": "cook/boy_6_hat_redbandana.png",
+    "bytes": 1682586,
+    "sha256": "8f8efdeea0d5872e63cabadcc6d2038a2fd6267a131c6b3b922737ccfc9c4605"
+  },
+  {
+    "path": "cook/boy_6_hat_santa.png",
+    "bytes": 1697399,
+    "sha256": "53ee1e8ecba3785841b0d115b2a7ec6551c7a6caa4ed6e016b906b5d985f7e35"
+  },
+  {
+    "path": "cook/boy_6_outfit_apron.png",
+    "bytes": 1567730,
+    "sha256": "3b8aeadb2aa392876d6a4f162c44e4a07058ae9981d68c9bce544be782b88b44"
+  },
+  {
+    "path": "cook/boy_6_outfit_cardigan.png",
+    "bytes": 1439356,
+    "sha256": "12dd582cdecc15cebdf07857708dafad4c07ccb1ae8eb263cf1dfe17885d4ce1"
+  },
+  {
+    "path": "cook/boy_6_outfit_chefcoat.png",
+    "bytes": 1427540,
+    "sha256": "5ebd278dc648dcfe2e015dc3a5026906e4bcdef1f80be7a6a77e6e882e54064d"
+  },
+  {
+    "path": "cook/boy_6_outfit_creamapron.png",
+    "bytes": 1431375,
+    "sha256": "783646bef33ccf585b875891007b4220056e8a4e6c9160b2a94875c13682065b"
+  },
+  {
+    "path": "cook/boy_6_outfit_darkapron.png",
+    "bytes": 1684324,
+    "sha256": "bd70c8167713b845a05e15d98d13c968d1bed787a0b541755c1254bf0120838e"
+  },
+  {
+    "path": "cook/boy_6_outfit_stripe.png",
+    "bytes": 1679503,
+    "sha256": "3aba7f8f70253c1de0e18c3e3569d3dfbc7144f0ea6b828e1d8b60c90ad738b7"
+  },
+  {
+    "path": "cook/boy_6_outfit_waistapron.png",
+    "bytes": 1696093,
+    "sha256": "194180aa113099dace0a09ff006a2e018dd6c7924ef1c39c46f533e5acf574d4"
+  },
+  {
+    "path": "cook/boy_6_tool_goldtongs.png",
+    "bytes": 1700971,
+    "sha256": "98a154fda1acd99d829ddafba41e8ae32a35aae83c23c274e22bafe3375f929e"
+  },
+  {
+    "path": "cook/girl_1.png",
+    "bytes": 1356395,
+    "sha256": "6dddb7d7509b0c45154b7b7d089e4b568eeeba02abdd0a57011dd736439ee69c"
+  },
+  {
+    "path": "cook/girl_1_accessory_glasses.png",
+    "bytes": 1714349,
+    "sha256": "89f070930ace4cf59b6377a02e55125b49f6c399a16dd390f606164864ab2ccf"
+  },
+  {
+    "path": "cook/girl_1_accessory_gloves.png",
+    "bytes": 1704475,
+    "sha256": "32a7c4f570733ba129488375494a8a6c6b2a044e5f6296ccc1a0bec7c5028279"
+  },
+  {
+    "path": "cook/girl_1_accessory_pin.png",
+    "bytes": 1687434,
+    "sha256": "7a0d4ad0edd212da4b95f0970baef483611dcdaf4610e5a1c198dca24f41afa0"
+  },
+  {
+    "path": "cook/girl_1_accessory_ribbon.png",
+    "bytes": 1728113,
+    "sha256": "d6c9f3adeb97d54985c8a5e820f3f2b8b0969c1b8778711ca8e92b7397a792b5"
+  },
+  {
+    "path": "cook/girl_1_accessory_scarf.png",
+    "bytes": 1731735,
+    "sha256": "e289c79c2e50262fa5046573fe27a7ead4787baa1bc3304a581fe1399a9fc8a0"
+  },
+  {
+    "path": "cook/girl_1_hair_curly.png",
+    "bytes": 1576323,
+    "sha256": "4192946e84916d2ccba8a8b7ea568b63f90740a11a8aacc9aff366a23943e141"
+  },
+  {
+    "path": "cook/girl_1_hair_ponytail.png",
+    "bytes": 1745798,
+    "sha256": "896a27a6d1a9246ac57c1c4ab0f6e7cbeeb2a4a8f8f695cb3fe82ba32a6524f9"
+  },
+  {
+    "path": "cook/girl_1_hair_short.png",
+    "bytes": 1378535,
+    "sha256": "70a339ef65503c53c05dd79bd4030532259f7fe1685a311e06b62c479828885a"
+  },
+  {
+    "path": "cook/girl_1_hat_blackcap.png",
+    "bytes": 1541415,
+    "sha256": "79b425183c0854526d5bd63f475b421a6b1d7c62e63bd14f054a22a9c47ab62b"
+  },
+  {
+    "path": "cook/girl_1_hat_chefhat.png",
+    "bytes": 1718644,
+    "sha256": "bdff5f34862b977fe227919ff7930a1a0adaad40701160055a3f730b2e99d9eb"
+  },
+  {
+    "path": "cook/girl_1_hat_earmuffs.png",
+    "bytes": 1719309,
+    "sha256": "10b505690a00c7a457d8b3180f4387af4e74e6b3d3f06bf393fefc3a6a62716e"
+  },
+  {
+    "path": "cook/girl_1_hat_redbandana.png",
+    "bytes": 1535331,
+    "sha256": "acf1fe7a46d94c7b3987560a92657f08838ab279d25210739bdd73c6bc5c39b4"
+  },
+  {
+    "path": "cook/girl_1_hat_santa.png",
+    "bytes": 1727360,
+    "sha256": "ac3ebb3099dabc19fdf2be080014567d9e31f0afd5f07cf404eb320282a47085"
+  },
+  {
+    "path": "cook/girl_1_outfit_apron.png",
+    "bytes": 1389038,
+    "sha256": "a40bd76d82c61b108a2a9bb392d8b95785d747a8ad117550c405e41aae5fa71e"
+  },
+  {
+    "path": "cook/girl_1_outfit_cardigan.png",
+    "bytes": 1730183,
+    "sha256": "aaae82f4ef1e2d4862b669b958345241cf618c780feefdd00f56acf18cbb6783"
+  },
+  {
+    "path": "cook/girl_1_outfit_chefcoat.png",
+    "bytes": 1724481,
+    "sha256": "c57952d2611cfb2559eabdced2c871981a1970d2ee2d3f68c0756d87d40f5f54"
+  },
+  {
+    "path": "cook/girl_1_outfit_creamapron.png",
+    "bytes": 1527251,
+    "sha256": "331eccb4b808ff413f5ee46803506e82c75a474bffa4314ddb27b9a58dfa43e0"
+  },
+  {
+    "path": "cook/girl_1_outfit_darkapron.png",
+    "bytes": 1530202,
+    "sha256": "50be5bb067becca1823be73f158313677db7ef3eb3376f90384dba9a57b6eaa8"
+  },
+  {
+    "path": "cook/girl_1_outfit_stripe.png",
+    "bytes": 1731631,
+    "sha256": "f3e9013a5ad44fc8aea2c47226500c3297f6885a66d763a3675ff3743d5f1323"
+  },
+  {
+    "path": "cook/girl_1_outfit_sweater.png",
+    "bytes": 1740348,
+    "sha256": "3776ddab1322ca553d789ec8aa5641e564caa5a2bf595b691711a04332471665"
+  },
+  {
+    "path": "cook/girl_1_outfit_waistapron.png",
+    "bytes": 1543049,
+    "sha256": "725e6e0ff4727eb1c9de7b5a3fe515730ef5b10b54f704318fd4051967ed1b1f"
+  },
+  {
+    "path": "cook/girl_1_tool_goldtongs.png",
+    "bytes": 1478963,
+    "sha256": "82ce5bf5cd795066223d9ab456bbb9a71ec95b93537ab4519e06d8640e8b2438"
+  },
+  {
+    "path": "cook/girl_2.png",
+    "bytes": 1265353,
+    "sha256": "3d3696bd070c646c551908baecbc9dbd4d484c97785c9207f698daa29569968e"
+  },
+  {
+    "path": "cook/girl_2_accessory_glasses.png",
+    "bytes": 1675141,
+    "sha256": "be6212c6766000d30ab068a937ea02a3702b9caa7b8fce3791455d0f2616c25e"
+  },
+  {
+    "path": "cook/girl_2_accessory_gloves.png",
+    "bytes": 1691263,
+    "sha256": "c34e0fa3d4ff42e51a017d772397fbe2f5229d8ddbdf684dda29fa56b073ae6d"
+  },
+  {
+    "path": "cook/girl_2_accessory_pin.png",
+    "bytes": 1671754,
+    "sha256": "1b3dbe3dbce7efe8afdeb7567d769a0880dbbf460caee06c42fbdf8bddebfcd9"
+  },
+  {
+    "path": "cook/girl_2_accessory_ribbon.png",
+    "bytes": 1688701,
+    "sha256": "85a1a39ccd3bea73fbac5ab9eb8dbd8b58b33c2c8114391dc265e19e5b1e00ce"
+  },
+  {
+    "path": "cook/girl_2_accessory_scarf.png",
+    "bytes": 1710218,
+    "sha256": "8de30dafc419b76cac1c815ada2e7ebc72c48041aa869871f450ac43757d6942"
+  },
+  {
+    "path": "cook/girl_2_hair_curly.png",
+    "bytes": 1725738,
+    "sha256": "7d5aeb1d5c1d93d6f69344e70ad50b70fd3bed19341f0c931540fc959368728d"
+  },
+  {
+    "path": "cook/girl_2_hair_ponytail.png",
+    "bytes": 1498446,
+    "sha256": "65d5dd4795e435d77357becc24bc8f63b019616667e9fcfbbbbd0d7bba0e7d50"
+  },
+  {
+    "path": "cook/girl_2_hair_short.png",
+    "bytes": 1471941,
+    "sha256": "cd9c1bd85aa92c1e2638cca25681cf989347eca8af21bd97a0e17ea02a386aaf"
+  },
+  {
+    "path": "cook/girl_2_hat_blackcap.png",
+    "bytes": 1665975,
+    "sha256": "4adf01626e2201ed069f33060168c73e208325257babbecc15b1f4b8076f632c"
+  },
+  {
+    "path": "cook/girl_2_hat_chefhat.png",
+    "bytes": 1452490,
+    "sha256": "a29f9a110f5a00957b91a850d6764f43310bf69cb1999ad1266dddbd26dd1f16"
+  },
+  {
+    "path": "cook/girl_2_hat_earmuffs.png",
+    "bytes": 1679597,
+    "sha256": "7a60240f43b318969bcbc7142c1225b3e9926dc4aca2f0c899d5b1d3deaf1e47"
+  },
+  {
+    "path": "cook/girl_2_hat_redbandana.png",
+    "bytes": 1545250,
+    "sha256": "6519db497a695f870ef59f01aa909d20a2289a1e259f00028bce6436b897e154"
+  },
+  {
+    "path": "cook/girl_2_hat_santa.png",
+    "bytes": 1707041,
+    "sha256": "5995a9e7777587faf846b991e0dd78c9cadaa530ec758ef2373a3ffa0ca12763"
+  },
+  {
+    "path": "cook/girl_2_outfit_apron.png",
+    "bytes": 1499079,
+    "sha256": "179f737496073f64d9f44e26c4581cdd1beffed71f45321a3ad8f5e9c305a038"
+  },
+  {
+    "path": "cook/girl_2_outfit_cardigan.png",
+    "bytes": 1689295,
+    "sha256": "b6b54954530e8e2746c04861998de644dcbd5b206deb17cbb8f1c4717ae108d3"
+  },
+  {
+    "path": "cook/girl_2_outfit_chefcoat.png",
+    "bytes": 1704928,
+    "sha256": "f4ee6a1f9e7064f0ffcf3448e917a11451f1398df0aaad69b7ac2f1f635cd167"
+  },
+  {
+    "path": "cook/girl_2_outfit_creamapron.png",
+    "bytes": 1492634,
+    "sha256": "ad89708adcfb90b3988a122ee32131a001f0209bc28f53e3a9543ead4127edd6"
+  },
+  {
+    "path": "cook/girl_2_outfit_darkapron.png",
+    "bytes": 1482039,
+    "sha256": "998d91fb1caa821e661aa0cd6c9a04fae7d1467b8e14ba42e09a1259f77641a6"
+  },
+  {
+    "path": "cook/girl_2_outfit_stripe.png",
+    "bytes": 1679864,
+    "sha256": "ff82c7cc6359bad6caeefdc59b0b46d5836d24f19dca76eeff20ef19a702842d"
+  },
+  {
+    "path": "cook/girl_2_outfit_sweater.png",
+    "bytes": 1665940,
+    "sha256": "10006003e6bfc191b25b0516a4af08c3f759cffbf597101e862f21c8c0bd2285"
+  },
+  {
+    "path": "cook/girl_2_outfit_waistapron.png",
+    "bytes": 1489264,
+    "sha256": "37c1f85d6517e3bb954c2edd98bae48e64542545290e6c24a5169e161a2735db"
+  },
+  {
+    "path": "cook/girl_2_tool_goldtongs.png",
+    "bytes": 1663287,
+    "sha256": "366f62f4a3437aaffe4c1e19f7bd09b9b77d282dded15600e926ac9673e86bd2"
+  },
+  {
+    "path": "cook/girl_3.png",
+    "bytes": 1397981,
+    "sha256": "aa5a93e0c018d5163bfe1bcd952424457fc7dfc82c398e1e0fb52266ef8a2449"
+  },
+  {
+    "path": "cook/girl_3_accessory_glasses.png",
+    "bytes": 1668747,
+    "sha256": "27598404a8a20e51b376518246377697b4e3e3f6fb82e163c59a3e4bdc09040b"
+  },
+  {
+    "path": "cook/girl_3_accessory_gloves.png",
+    "bytes": 1664507,
+    "sha256": "04f1c47ea55938b1cab92bbac35275dae8db8d3ba6000b43da46373169992772"
+  },
+  {
+    "path": "cook/girl_3_accessory_pin.png",
+    "bytes": 1628296,
+    "sha256": "cdd951cb4a235d8e71d8406d1129f38b8bb37d1313bc5f6c72712d685945b83c"
+  },
+  {
+    "path": "cook/girl_3_accessory_ribbon.png",
+    "bytes": 1660845,
+    "sha256": "d23357ce34553e673188b4a2170c013a6adfee6ec3f2e955c042c3a789d0fe84"
+  },
+  {
+    "path": "cook/girl_3_accessory_scarf.png",
+    "bytes": 1671693,
+    "sha256": "879488904a2ea3e1aaa98bbcc9c41bd6fcc9a9f313a8ba8651dda381d43c0f8b"
+  },
+  {
+    "path": "cook/girl_3_hair_curly.png",
+    "bytes": 1494673,
+    "sha256": "b08eb1654c433b8655b6e25758f3b6304737d6f433949d4bb3c60bc92a4a031b"
+  },
+  {
+    "path": "cook/girl_3_hair_ponytail.png",
+    "bytes": 1296040,
+    "sha256": "9231781e02026660dc8f1c4bc6ea91fcd837c858fbf3a6dc235d368c746b7090"
+  },
+  {
+    "path": "cook/girl_3_hair_short.png",
+    "bytes": 1429230,
+    "sha256": "2303dd5fbc67a88ee1bf1ad17e833a34bba8a366bedb3bb506739d57820fa120"
+  },
+  {
+    "path": "cook/girl_3_hat_blackcap.png",
+    "bytes": 1677904,
+    "sha256": "5cd82e88ab669a17019bd08c13873ddfe7a99b8ac84d94492d901f416ab5391b"
+  },
+  {
+    "path": "cook/girl_3_hat_chefhat.png",
+    "bytes": 1707128,
+    "sha256": "13de34d945054a78f93ccad5fbe5ef8cd153a47917ec9c0633bd1a6579e99335"
+  },
+  {
+    "path": "cook/girl_3_hat_earmuffs.png",
+    "bytes": 1693345,
+    "sha256": "87d3c8d83218f1ab41d5379cb28f8c9d280074ed33d36b62bd978e098b52876e"
+  },
+  {
+    "path": "cook/girl_3_hat_redbandana.png",
+    "bytes": 1495947,
+    "sha256": "24e3f5ada42b91a512d980c096bc5bcaf25bf648496ddf91cae2182842ea16f9"
+  },
+  {
+    "path": "cook/girl_3_hat_santa.png",
+    "bytes": 1669538,
+    "sha256": "df1acb78bd15eb0de97e3844dfb8df10ebc57f5fa42c7f41bb1d35be65fe5143"
+  },
+  {
+    "path": "cook/girl_3_outfit_apron.png",
+    "bytes": 1484635,
+    "sha256": "9fd3eedfa306768e79f93a0ea35a701d78e43975f1f3f407addaa04fa2b7925a"
+  },
+  {
+    "path": "cook/girl_3_outfit_cardigan.png",
+    "bytes": 1683632,
+    "sha256": "be3d688c863e10d2e9957738117c792e1bfd52157f3d12ceef430978215e12eb"
+  },
+  {
+    "path": "cook/girl_3_outfit_chefcoat.png",
+    "bytes": 1682717,
+    "sha256": "ddc9220c5ca5e590703a45d37a7eb3d0ba6113a0846847bbb7337095aa70847f"
+  },
+  {
+    "path": "cook/girl_3_outfit_creamapron.png",
+    "bytes": 1507168,
+    "sha256": "3846414d3eda8b2cba6705ef857eedadf9dcdafec15be6934799791f6ad4f4cc"
+  },
+  {
+    "path": "cook/girl_3_outfit_darkapron.png",
+    "bytes": 1451781,
+    "sha256": "ea948fb8f1dee82c2fddeff4b932798ad03668951c2df69e70734579f9e357e4"
+  },
+  {
+    "path": "cook/girl_3_outfit_stripe.png",
+    "bytes": 1683093,
+    "sha256": "3d24cc0cdea31f02449ae77f2ff9881feb08a564e8aed320941c0654183edd5d"
+  },
+  {
+    "path": "cook/girl_3_outfit_sweater.png",
+    "bytes": 1700842,
+    "sha256": "dcb46ce4b1b12863c02128cfd73697f71fabacd496f699b1e60831e72bd2db0b"
+  },
+  {
+    "path": "cook/girl_3_outfit_waistapron.png",
+    "bytes": 1641423,
+    "sha256": "0921ca0bcd3fa69ca6fdbe603143e38e1e931cb7064d2addd572b7f2d8fd9395"
+  },
+  {
+    "path": "cook/girl_3_tool_goldtongs.png",
+    "bytes": 1664989,
+    "sha256": "55d7d27533944ea4b7453773591bcbe50bb509c17459af4f4e12c142356dcc7b"
+  },
+  {
+    "path": "cook/girl_4.png",
+    "bytes": 1155375,
+    "sha256": "8043155e2deaafbf65d784a58043a744e4b83fa12012c3aaa8a2205fdbc8e891"
+  },
+  {
+    "path": "cook/girl_4_accessory_glasses.png",
+    "bytes": 1644421,
+    "sha256": "9be181a469050af45b7e54dd82824e9e0c08b9fabec5287eae9b0008488a3c01"
+  },
+  {
+    "path": "cook/girl_4_accessory_gloves.png",
+    "bytes": 1632942,
+    "sha256": "dfb1a938d70ea91261fe9d71ba29ed7eaea55b82f585ce6da12353f6f498dc79"
+  },
+  {
+    "path": "cook/girl_4_accessory_pin.png",
+    "bytes": 1643790,
+    "sha256": "78b8970e28345980a6964651f2273965b714f01b57044721b8f50e282c0b4ec8"
+  },
+  {
+    "path": "cook/girl_4_accessory_ribbon.png",
+    "bytes": 1655912,
+    "sha256": "4c71bd5b7d00faebbdf7becdf7c739c6d8f82bb240f6cc5ffda4aa55cac4f895"
+  },
+  {
+    "path": "cook/girl_4_accessory_scarf.png",
+    "bytes": 1682536,
+    "sha256": "992b0e2e5908a20763c78c2accfa019b079dae63b2ec65247dbc87a05f38e296"
+  },
+  {
+    "path": "cook/girl_4_hair_curly.png",
+    "bytes": 1450912,
+    "sha256": "7f08a8aea4c944dcbcdc04805ab397b51bf5594397a30073fd813271c41b00a5"
+  },
+  {
+    "path": "cook/girl_4_hair_ponytail.png",
+    "bytes": 1447439,
+    "sha256": "a9604d77e2d46eedb5a8310a69018b0bc8c3086c02ca28c12448a82c3635be28"
+  },
+  {
+    "path": "cook/girl_4_hair_short.png",
+    "bytes": 1427938,
+    "sha256": "fc5e791ce49c358a679f04fa48c67f021b6c4dde1d66518b894b95ad0ba73820"
+  },
+  {
+    "path": "cook/girl_4_hat_blackcap.png",
+    "bytes": 1636547,
+    "sha256": "e255e52a22423e87bed90c2d2e9b4c5cd0e649b732ccfb3d6e7ae95ee5484c29"
+  },
+  {
+    "path": "cook/girl_4_hat_chefhat.png",
+    "bytes": 1668230,
+    "sha256": "f1333a29ea649a26474ce0c5b323e22f198113a628e6ce155bf72a540afdc8fa"
+  },
+  {
+    "path": "cook/girl_4_hat_earmuffs.png",
+    "bytes": 1365176,
+    "sha256": "6e0d67afa63973fdb59a375ebdf146f53016413c20d291dceec2522f89f1921a"
+  },
+  {
+    "path": "cook/girl_4_hat_redbandana.png",
+    "bytes": 1447692,
+    "sha256": "91ce5f953b29bec33eca4487dea895e2ff81f0f9c51aebd10aa9b172ae40f26a"
+  },
+  {
+    "path": "cook/girl_4_hat_santa.png",
+    "bytes": 1619758,
+    "sha256": "56159e855de5b6ec97827457d92489ef3260fd29c69e2cd59086af184c01a3df"
+  },
+  {
+    "path": "cook/girl_4_outfit_apron.png",
+    "bytes": 1453111,
+    "sha256": "f24634cd82b1cca17545df6e75c675a4417c2c28ae0955ae9b9f652bc17aa1c8"
+  },
+  {
+    "path": "cook/girl_4_outfit_cardigan.png",
+    "bytes": 1654466,
+    "sha256": "240fef69a91e0b0dea6a8600964f098c1ac63a950554ee4294ff3d493c2e2b27"
+  },
+  {
+    "path": "cook/girl_4_outfit_chefcoat.png",
+    "bytes": 1641788,
+    "sha256": "a8361618fb42012cb1dc67d3df18387504d8bf624f0d075d82b9521ef5e060ba"
+  },
+  {
+    "path": "cook/girl_4_outfit_creamapron.png",
+    "bytes": 1437615,
+    "sha256": "3b45c9d5f482c4e845057f148b78f89e76c5407b39be87388c238c3f6e31cb6d"
+  },
+  {
+    "path": "cook/girl_4_outfit_darkapron.png",
+    "bytes": 1425279,
+    "sha256": "bf38ae7e03b072b65f572e0ba519ba214fe8056ad9d455ffd4fa5b2296ab22ad"
+  },
+  {
+    "path": "cook/girl_4_outfit_stripe.png",
+    "bytes": 1355220,
+    "sha256": "37ed229941534c0d940a2c17e8914d0d4b6cf89cb192bac28ea21d88377ce79c"
+  },
+  {
+    "path": "cook/girl_4_outfit_sweater.png",
+    "bytes": 1627521,
+    "sha256": "7fd1c28cfad408c157d752d0735da67fcc87dd6d648c493728b3ed86ede90e6a"
+  },
+  {
+    "path": "cook/girl_4_outfit_waistapron.png",
+    "bytes": 1636726,
+    "sha256": "1901499f992b29817e750d344660429f8e2b233d0d9e00e2b46da8135711436a"
+  },
+  {
+    "path": "cook/girl_4_tool_goldtongs.png",
+    "bytes": 1669484,
+    "sha256": "f39c64915070ec6b4b7e8a12847112bd96d60132296e9934d3c97424d8d56027"
+  },
+  {
+    "path": "cook/girl_5.png",
+    "bytes": 1281134,
+    "sha256": "76c2596e12b84a0a4ee24e6f49858cc758402494b902d8321c955563e0dcc921"
+  },
+  {
+    "path": "cook/girl_5_accessory_glasses.png",
+    "bytes": 1724892,
+    "sha256": "e2a015fe8f957e873eb9515add4917ed50e9f56bfbe5a649f271321f8833e70a"
+  },
+  {
+    "path": "cook/girl_5_accessory_gloves.png",
+    "bytes": 1740162,
+    "sha256": "5ee1aab69ec758b1f65fe31b351ffa32d14c363da946dbedaf4d18142654bb41"
+  },
+  {
+    "path": "cook/girl_5_accessory_pin.png",
+    "bytes": 1706773,
+    "sha256": "fcb1045f7f7f43c24692ea22204f11cedeb73543f4801b8685f31d521976f315"
+  },
+  {
+    "path": "cook/girl_5_accessory_ribbon.png",
+    "bytes": 1720348,
+    "sha256": "8aa55638a096b6d02d8e356cad4f5a6295a135e6cd37bf46de7a3298f408aa40"
+  },
+  {
+    "path": "cook/girl_5_accessory_scarf.png",
+    "bytes": 1757596,
+    "sha256": "9d46b9aa8f6fc0b652577de47d76836bc8cf311b8353ee3712815a4efc45929b"
+  },
+  {
+    "path": "cook/girl_5_hair_curly.png",
+    "bytes": 1732848,
+    "sha256": "3e0251c73fe9abb9baa741f7bffb03375016dcb5e0fc1a5ccb4ae35bb4f66c1d"
+  },
+  {
+    "path": "cook/girl_5_hair_ponytail.png",
+    "bytes": 1541865,
+    "sha256": "dde2bc2609c3008e0146ff2ede096f83378b4073b67ae4be2405b1b29bb430dc"
+  },
+  {
+    "path": "cook/girl_5_hair_short.png",
+    "bytes": 1508474,
+    "sha256": "4d233f88d990538c026a6efdfccb74f29d9b72a390b129302ba3bd5ea42c71ed"
+  },
+  {
+    "path": "cook/girl_5_hat_blackcap.png",
+    "bytes": 1729572,
+    "sha256": "711829857e22cf74589374df6694ed137ebabfc6147d0330da2326bf642fbac8"
+  },
+  {
+    "path": "cook/girl_5_hat_chefhat.png",
+    "bytes": 1720549,
+    "sha256": "e7d6844f61f9ca49ba459053f386a76fb178cd9d309c329e903db0ffe591e0de"
+  },
+  {
+    "path": "cook/girl_5_hat_earmuffs.png",
+    "bytes": 1735591,
+    "sha256": "8ef1eca45ba98ecd5f8859c2dbe0226d22183443ecb1d7b0dce8c32c648b90e0"
+  },
+  {
+    "path": "cook/girl_5_hat_redbandana.png",
+    "bytes": 1749378,
+    "sha256": "55824c76f00d54c00412a24ea25530a2db031a98ac8709f3b715aa7ef3312400"
+  },
+  {
+    "path": "cook/girl_5_hat_santa.png",
+    "bytes": 1752597,
+    "sha256": "1e5f5df62b6614277e8b52e068c106be4fb78331b4dbd2fa8ae737206070246c"
+  },
+  {
+    "path": "cook/girl_5_outfit_apron.png",
+    "bytes": 1510835,
+    "sha256": "259d02522f13d77739a808bdbce65c73d4fa4c5375cc880181f0f70fba8915ee"
+  },
+  {
+    "path": "cook/girl_5_outfit_cardigan.png",
+    "bytes": 1758675,
+    "sha256": "57c3182490fd0c3636670097e79374c122b493a49dcdc70fe5fdc008de8db85d"
+  },
+  {
+    "path": "cook/girl_5_outfit_chefcoat.png",
+    "bytes": 1736903,
+    "sha256": "d9cb5645130befbd13157fccd2f1181e589b89152029fc5c90518c97f88b2433"
+  },
+  {
+    "path": "cook/girl_5_outfit_creamapron.png",
+    "bytes": 1514536,
+    "sha256": "9633c94956735b5a0734746184de8cd2821d4fa6f2d6138472565188e43a0e74"
+  },
+  {
+    "path": "cook/girl_5_outfit_darkapron.png",
+    "bytes": 1513365,
+    "sha256": "49cfcd2192ecadc3be991889a505914f4c6253fcd80b7907c0ddd93667be45cf"
+  },
+  {
+    "path": "cook/girl_5_outfit_stripe.png",
+    "bytes": 1691815,
+    "sha256": "eeed119473db114f65591535117bb6e8b46248dc17a4e8d663b5c15ebd03dc3b"
+  },
+  {
+    "path": "cook/girl_5_outfit_sweater.png",
+    "bytes": 1761379,
+    "sha256": "3a1759e4923dd20a19cd5ebe9aaf8c92d54e5af9e448c63856035089648e9274"
+  },
+  {
+    "path": "cook/girl_5_outfit_waistapron.png",
+    "bytes": 1731828,
+    "sha256": "ae250c9b687bd08893544bbb1e5c6a85b068a792d8641e666d12d767bf25d4ae"
+  },
+  {
+    "path": "cook/girl_5_tool_goldtongs.png",
+    "bytes": 1686667,
+    "sha256": "0f7572a4463a07c5d203dcbcb23e83e7c2fb102b25dabaecf7d61b664abd4bb9"
+  },
+  {
+    "path": "cook/girl_6.png",
+    "bytes": 1296731,
+    "sha256": "31234ecd72258a10cebff3835b6fd43bb11c9b82ee4112a4aefc4ef635216762"
+  },
+  {
+    "path": "cook/girl_6_accessory_glasses.png",
+    "bytes": 1706148,
+    "sha256": "4b1bfc2fa0e11f86ed3b659b849cf0c37f78ecabf6d93dd64733db6f0ab1bf34"
+  },
+  {
+    "path": "cook/girl_6_accessory_gloves.png",
+    "bytes": 1683205,
+    "sha256": "19a79017a36982a205a09ec737479e4fdde5524d75076913ac8270140383edca"
+  },
+  {
+    "path": "cook/girl_6_accessory_pin.png",
+    "bytes": 1676531,
+    "sha256": "52bdb4b323900c500ed89b4b390df4233347c6f41cc27db100dc6a78a988718f"
+  },
+  {
+    "path": "cook/girl_6_accessory_ribbon.png",
+    "bytes": 1670888,
+    "sha256": "caba418f8ce80ef7eb9fec9bc1b22dba4f7623864801418554adbf274554ec75"
+  },
+  {
+    "path": "cook/girl_6_accessory_scarf.png",
+    "bytes": 1686623,
+    "sha256": "f36cd710f30ed7ecef83c387de071f97a2a41c3b7d2b199c766b508047def651"
+  },
+  {
+    "path": "cook/girl_6_hair_curly.png",
+    "bytes": 1542836,
+    "sha256": "f8e0facf44b32945d04a5ac61adf74fa0f86eed371a589fc1ae2e33848e01d18"
+  },
+  {
+    "path": "cook/girl_6_hair_ponytail.png",
+    "bytes": 1523352,
+    "sha256": "6e26b4233c2d6dd7b70424ed3eba0222c7674fcb75873de707b80715298f9196"
+  },
+  {
+    "path": "cook/girl_6_hair_short.png",
+    "bytes": 1661123,
+    "sha256": "f45a22b7868a1a6117f83bcc3f8683d95265662a94732e1dd65fbac1046186de"
+  },
+  {
+    "path": "cook/girl_6_hat_blackcap.png",
+    "bytes": 1689536,
+    "sha256": "4a5703ee29fc36f5059c481a35fa5a6a4f32427ee1595cc4d3f9b7774b923d2b"
+  },
+  {
+    "path": "cook/girl_6_hat_chefhat.png",
+    "bytes": 1752793,
+    "sha256": "83c377bc930a70a49e399ed7d92faf7a75419be14761f1986baf7cf9ad4ddfda"
+  },
+  {
+    "path": "cook/girl_6_hat_earmuffs.png",
+    "bytes": 1694692,
+    "sha256": "50b0805a7a1ea164df33a5975e51534c7a1c596ddce249a59e2649d237a0f6a8"
+  },
+  {
+    "path": "cook/girl_6_hat_redbandana.png",
+    "bytes": 1526060,
+    "sha256": "a10b19a0beda9c2b6b236513fa4a4ae56338f311a42aa49f0088d0f378775c82"
+  },
+  {
+    "path": "cook/girl_6_hat_santa.png",
+    "bytes": 1454534,
+    "sha256": "ddbfd678e63ca3861761cfca0f7fa10a259db874c77b195485c074a5a24b8ec0"
+  },
+  {
+    "path": "cook/girl_6_outfit_apron.png",
+    "bytes": 1338816,
+    "sha256": "f64c7e8f3dfce4b029893bf642d4976fd67556cd2ecccaf088aae0922e86714f"
+  },
+  {
+    "path": "cook/girl_6_outfit_cardigan.png",
+    "bytes": 1675072,
+    "sha256": "623e6e0974499f74c846d6eb6a17210bff2c5a2a49780111b2624c1e76a00bfb"
+  },
+  {
+    "path": "cook/girl_6_outfit_chefcoat.png",
+    "bytes": 1675552,
+    "sha256": "1834e76cbcd61ad23ac91b77bc304fd896663eaf3246ec01f81447f1d366bb23"
+  },
+  {
+    "path": "cook/girl_6_outfit_creamapron.png",
+    "bytes": 1492398,
+    "sha256": "d451f77e7857d254671940f57f3d6f311c4087310f00ef7059ec7a2b36b9710e"
+  },
+  {
+    "path": "cook/girl_6_outfit_darkapron.png",
+    "bytes": 1653555,
+    "sha256": "2a9a2bd26dcb1d3c22745fd55e63272001690e23dc61ec1e02e24278d1f5fa00"
+  },
+  {
+    "path": "cook/girl_6_outfit_stripe.png",
+    "bytes": 1675811,
+    "sha256": "2e488b159ca213d204fda408b235d9a328809d1c2ae47e65a4846dc5e0be5880"
+  },
+  {
+    "path": "cook/girl_6_outfit_sweater.png",
+    "bytes": 1684893,
+    "sha256": "20a51581729aa630f177b2b70aad8a85cabb8f80bb078f8ab9a775bba933b125"
+  },
+  {
+    "path": "cook/girl_6_outfit_waistapron.png",
+    "bytes": 1525012,
+    "sha256": "93eb7ea1a9af41e852f39d5e2807d21b4b01ebf96780eb510160c9c84fd32bac"
+  },
+  {
+    "path": "cook/girl_6_tool_goldtongs.png",
+    "bytes": 1664692,
+    "sha256": "e3f3dd9a27a6c6a148a48cc945568a966a3aa568e513c775046bd2d35639a7fa"
+  }
+]

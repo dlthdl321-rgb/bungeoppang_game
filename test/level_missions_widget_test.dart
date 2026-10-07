@@ -4,6 +4,7 @@ import 'package:todays_bungeoppang/mission_config.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'widget_test.dart' show mountGame, CountingRepository;
 import 'level_missions_test.dart' show setRate;
+import 'controller_test.dart' show catchPlacedGoldenChance;
 
 Future<void> tapVisible(WidgetTester tester, Key key) async {
   final finder = find.byKey(key);
@@ -72,7 +73,7 @@ void main() {
     }
   }
 
-  testWidgets('조건 미리보기/모의 버터 사용/다음 초대 미션 활성화와 저장 실패 재시도', (tester) async {
+  testWidgets('조건 미리보기/황금 찬스/다음 초대 미션 활성화와 저장 실패 재시도', (tester) async {
     final repo = CountingRepository();
     final c = await mountGame(tester, const Size(360, 800),
         textScale: 2, repository: repo);
@@ -89,19 +90,20 @@ void main() {
             .widget<FilledButton>(find.byKey(const Key('claim-level')))
             .onPressed,
         isNull);
-    await tapVisible(tester, const Key('mock-butter'));
-    await tapVisible(tester, const Key('confirm-support'));
+    expect(find.byKey(const Key('mock-butter')), findsNothing);
+    expect(await catchPlacedGoldenChance(c), isTrue);
+    await tester.pumpAndSettle();
     expect(find.text('1 / 1 · 완료'), findsOneWidget);
     repo.failNextSave = true;
     await tapVisible(tester, const Key('claim-level'));
     expect(c.state.level, 3);
     expect(c.state.support.coins, BigInt.zero);
-    expect(c.state.missions.butterUses, BigInt.one);
+    expect(c.state.missions.goldenCatches, BigInt.one);
     expect(find.textContaining('저장 실패'), findsWidgets);
     await tapVisible(tester, const Key('claim-level'));
     expect(c.state.level, 4);
     expect(c.state.missions.qualifiedInvitePlayers, isEmpty);
-    expect(c.state.missions.butterUses, BigInt.zero);
+    expect(c.state.missions.goldenCatches, BigInt.zero);
     expect(find.text('0 / 1 · 진행 중'), findsOneWidget);
     expect(find.text('다음 단계 미리보기 · Lv.6'), findsOneWidget);
     expect(tester.takeException(), isNull);
@@ -110,6 +112,7 @@ void main() {
 
   testWidgets('현재 초대 미션이 없으면 일반 친구 초대 화면에서도 생성할 수 없다', (tester) async {
     await mountGame(tester, const Size(390, 844));
+    await tapVisible(tester, const Key('menu-menu'));
     await tapVisible(tester, const Key('menu-share'));
     await tapVisible(tester, const Key('developer-invites'));
     expect(find.byKey(const Key('mock-invite-notice')), findsOneWidget);

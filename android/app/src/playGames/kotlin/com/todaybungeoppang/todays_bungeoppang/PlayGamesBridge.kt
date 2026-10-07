@@ -7,7 +7,11 @@ import com.google.android.gms.games.PlayGamesSdk
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-/** Play Games Services v2 leaderboards, built only with a configured app ID. */
+/**
+ * Play Games Services v2 sign-in and leaderboards, built only with a
+ * configured app ID. `serverAuthCode` hands Firebase Auth a one-time code
+ * for the signed-in Play Games account (online wallet and invitations).
+ */
 object PlayGamesBridge {
     private const val CHANNEL = "todays_bungeoppang/play_games"
     private const val RC_LEADERBOARD_UI = 9004
@@ -47,6 +51,18 @@ object PlayGamesBridge {
                             sent++
                         }
                         result.success(sent)
+                    }
+                    "serverAuthCode" -> {
+                        // Firebase's Web client ID (firebase-ids.xml).
+                        val clientId = activity.getString(R.string.server_client_id)
+                        if (clientId.isBlank()) {
+                            result.success(null)
+                        } else {
+                            signIn.requestServerSideAccess(clientId, false)
+                                .addOnCompleteListener {
+                                    result.success(if (it.isSuccessful) it.result else null)
+                                }
+                        }
                     }
                     "showLeaderboards" -> PlayGames.getLeaderboardsClient(activity)
                         .getAllLeaderboardsIntent()

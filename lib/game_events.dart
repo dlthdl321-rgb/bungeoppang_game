@@ -5,7 +5,7 @@ enum GameEventKind {
   levelUp,
   missionReward,
   achievement,
-  itemUsed,
+  boostStarted,
   prestige
 }
 

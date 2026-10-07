@@ -7,9 +7,9 @@ enum MissionKind {
   lifetime,
   autoRate,
   newPlayerInvites, // Legacy season only; needs the debug invite system.
-  goldenButterUses,
+  goldenCatches, // Golden bungeoppang caught while the level is active.
   cosmeticsOwned, // Non-default cosmetics owned, all slots.
-  itemUses, // Lifetime item uses, all items.
+  boostUses, // Lifetime boosts started, all kinds.
   skillLevel, // Owned count of [MissionDefinition.skillId].
   achievements, // Achievements whose condition is met.
 }
@@ -71,7 +71,7 @@ const publicReviewLevels = <LevelDefinition>[
         'public-review', earlyMissionSource),
   ]),
   LevelDefinition(4, [
-    MissionDefinition('butter', MissionKind.goldenButterUses, '황금버터 사용', '1',
+    MissionDefinition('butter', MissionKind.goldenCatches, '황금 찬스 잡기', '1',
         'public-review', earlyMissionSource),
   ]),
   LevelDefinition(5, [
@@ -124,7 +124,7 @@ const offlineLevels = <LevelDefinition>[
   ]),
   LevelDefinition(4, [
     MissionDefinition(
-        'butter', MissionKind.goldenButterUses, '황금버터 사용', '1', 'estimated'),
+        'butter', MissionKind.goldenCatches, '황금 찬스 잡기', '1', 'estimated'),
   ]),
   LevelDefinition(5, [
     MissionDefinition(
@@ -134,26 +134,30 @@ const offlineLevels = <LevelDefinition>[
   ]),
   LevelDefinition(6, [
     MissionDefinition(
-        'auto', MissionKind.autoRate, '초당 생산량', '60000000', 'estimated'),
+        // Raised in stage 14 (60M -> 400M): golden chances speed up day 1.
+        'auto', MissionKind.autoRate, '초당 생산량', '400000000', 'estimated'),
   ]),
   LevelDefinition(7, [
     MissionDefinition(
         'auto', MissionKind.autoRate, '초당 생산량', '16000000000', 'estimated'),
     MissionDefinition(
-        'items', MissionKind.itemUses, '아이템 누적 사용', '5', 'estimated'),
+        'items', MissionKind.boostUses, '부스트 누적 사용', '5', 'estimated'),
   ]),
   LevelDefinition(8, [
     MissionDefinition(
-        'auto', MissionKind.autoRate, '초당 생산량', '500000000000', 'estimated'),
+        // Raised in stage 14 (500B -> 800B) to spread Lv.8-10 evenly.
+        'auto', MissionKind.autoRate, '초당 생산량', '800000000000', 'estimated'),
   ]),
   LevelDefinition(9, [
     MissionDefinition(
-        'auto', MissionKind.autoRate, '초당 생산량', '4000000000000', 'estimated'),
-    MissionDefinition.skill('skill', '은하 공방 보유', 'auto_11', '1'),
+        // Raised in stage 14 (4T -> 5T) to keep Lv.9 -> 10 within a week.
+        'auto', MissionKind.autoRate, '초당 생산량', '5000000000000', 'estimated'),
+    MissionDefinition.skill('skill', '성운 공방 보유', 'auto_11', '1'),
   ]),
   LevelDefinition(10, [
     MissionDefinition(
-        'auto', MissionKind.autoRate, '초당 생산량', '15000000000000', 'estimated'),
+        // Raised in stage 14 (15T -> 20T) for the same reason.
+        'auto', MissionKind.autoRate, '초당 생산량', '20000000000000', 'estimated'),
     MissionDefinition(
         'achievements', MissionKind.achievements, '업적 달성', '12', 'estimated'),
   ]),

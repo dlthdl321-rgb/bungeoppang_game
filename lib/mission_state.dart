@@ -54,7 +54,8 @@ class MissionState {
   // Goal IDs of the active level counted as complete because the save had
   // already met the friend-invite goal they replaced (v7 migration).
   final Set<String> waivedGoals;
-  BigInt butterUses;
+  // Saved under the stage-12 key 'butterUses' (it counted golden butter).
+  BigInt goldenCatches;
   MissionState(
       {required this.seasonId,
       required this.targetLevel,
@@ -62,7 +63,7 @@ class MissionState {
       required this.activatedAtUtc,
       required this.seenInvitePlayers,
       required this.qualifiedInvitePlayers,
-      required this.butterUses,
+      required this.goldenCatches,
       Set<String>? waivedGoals})
       : waivedGoals = waivedGoals ?? {};
 
@@ -76,7 +77,7 @@ class MissionState {
         activatedAtUtc: now?.toUtc(),
         seenInvitePlayers: {},
         qualifiedInvitePlayers: {},
-        butterUses: BigInt.zero,
+        goldenCatches: BigInt.zero,
       );
   String get token => '$seasonId/$generation/$targetLevel';
   MissionState advance(int level, DateTime now) => MissionState(
@@ -87,7 +88,7 @@ class MissionState {
         activatedAtUtc: now.toUtc(),
         seenInvitePlayers: Set.of(seenInvitePlayers),
         qualifiedInvitePlayers: {},
-        butterUses: BigInt.zero,
+        goldenCatches: BigInt.zero,
       );
 
   /// Moves a legacy invite-season save to the current season. An invite goal
@@ -113,7 +114,7 @@ class MissionState {
         activatedAtUtc: activatedAtUtc,
         seenInvitePlayers: Set.of(seenInvitePlayers),
         qualifiedInvitePlayers: Set.of(qualifiedInvitePlayers),
-        butterUses: butterUses,
+        goldenCatches: goldenCatches,
         waivedGoals: waived);
   }
 
@@ -124,7 +125,7 @@ class MissionState {
         'activatedAtUtc': activatedAtUtc?.toIso8601String(),
         'seenInvitePlayers': seenInvitePlayers.toList(),
         'qualifiedInvitePlayers': qualifiedInvitePlayers.toList(),
-        'butterUses': butterUses.toString(),
+        'butterUses': goldenCatches.toString(),
         'waivedGoals': waivedGoals.toList(),
       };
   factory MissionState.fromJson(Map<String, dynamic> m, int level) {
@@ -180,7 +181,7 @@ class MissionState {
         activatedAtUtc: at?.toUtc(),
         seenInvitePlayers: seen,
         qualifiedInvitePlayers: qualified,
-        butterUses: uses,
+        goldenCatches: uses,
         waivedGoals: rawWaived.cast<String>().toSet());
   }
 }

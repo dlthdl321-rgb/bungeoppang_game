@@ -4,7 +4,7 @@
 
 ## 지금 게임에 들어 있는 그림
 
-게임의 도트 그림은 [tools/draw_pixel_assets.py](../tools/draw_pixel_assets.py)가 코드로 직접 찍은 것입니다. 팔레트는 [tools/palette.py](../tools/palette.py) 한 곳에서 관리합니다. 게임은 [lib/ui/pixel_sprites.dart](../lib/ui/pixel_sprites.dart)에서 `assets/images/` 아래 파일을 시작할 때 불러와 확대 보간 없이(nearest-neighbor) 그립니다.
+게임의 도트 그림은 파스텔 동화풍으로, [tools/draw_pixel_assets.py](../tools/draw_pixel_assets.py)가 코드로 직접 찍은 것입니다. 그림 코드는 [art_fish.py](../tools/art_fish.py)(붕어빵), [art_avatar.py](../tools/art_avatar.py)(사장님), [art_scene.py](../tools/art_scene.py)(배경·카운터·화로·장식), [art_icons.py](../tools/art_icons.py)(아이콘·스킬·아이템)에 나뉘어 있고, 공통 도구는 [pixel_kit.py](../tools/pixel_kit.py)입니다. 외곽선은 검은색 대신 물체 색의 가장 어두운 단계를 씁니다. 팔레트는 [tools/palette.py](../tools/palette.py) 한 곳에서 관리합니다. 게임은 [lib/ui/pixel_sprites.dart](../lib/ui/pixel_sprites.dart)에서 `assets/images/` 아래 파일을 시작할 때 불러와 확대 보간 없이(nearest-neighbor) 그립니다.
 
 ```powershell
 python tools/draw_pixel_assets.py                      # 전부 다시 그리기
@@ -52,52 +52,52 @@ signature, frame, border, harsh pure black outline
 
 ## 1. 붕어빵 — 꾸미기 `fish` 슬롯
 
-캔버스 64×48. 생성 비율 4:3 권장(예: 1024×768).
+캔버스 96×72. 생성 비율 4:3 권장(예: 1024×768).
 
 ```powershell
-python tools/pixelize.py raw/fish -o assets/images/fish --size 64x48
+python tools/pixelize.py raw/fish -o assets/images/fish --size 96x72
 ```
 
 ### redbean · 팥 붕어빵 (기준 이미지, 가장 먼저 생성)
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: one bungeoppang (Korean fish-shaped pastry), side view facing right, plump round body, embossed scale pattern drawn with darker pixel dots, a tiny 1-pixel dark eye and a small smile, two pink blush pixels on the cheek, classic golden-brown crust (#E0A040, highlight #F8D27A, shade #A8642F), a little dark red bean paste peeking from the tail edge.
-The whole sprite fits within about 60 x 44 pixels.
+The whole sprite fits within about 92 x 68 pixels.
 ```
 
 ### custard · 슈크림 붕어빵
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: the same bungeoppang design as the reference, side view facing right, tiny 1-pixel eye, small smile, pink blush pixels, lighter pale-gold crust (#F8D27A, highlight #FFE9A8), creamy yellow custard peeking from the tail edge with one small cream drip.
-The whole sprite fits within about 60 x 44 pixels.
+The whole sprite fits within about 92 x 68 pixels.
 ```
 
 ### cocoa · 코코아 붕어빵
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: the same bungeoppang design as the reference, side view facing right, tiny cream-colored 1-pixel eye highlight so the face stays visible, small smile, pink blush pixels, chocolate-brown crust (#6B3A1F, highlight #A8642F), glossy dark chocolate filling peeking from the tail edge, a few cream sprinkle pixels on top.
-The whole sprite fits within about 60 x 44 pixels.
+The whole sprite fits within about 92 x 68 pixels.
 ```
 
 ### sweetpotato · 고구마 붕어빵
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: the same bungeoppang design as the reference, side view facing right, tiny 1-pixel eye, small smile, pink blush pixels, warm amber crust (#E0A040 with #FF9E4A accents), purple and orange sweet potato filling (#B28AD8, #FF9E4A) peeking from the tail edge, a tiny 3-pixel steam puff above.
-The whole sprite fits within about 60 x 44 pixels.
+The whole sprite fits within about 92 x 68 pixels.
 ```
 
 ### matcha · 녹차 붕어빵
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: the same bungeoppang design as the reference, side view facing right, tiny 1-pixel eye, small smile, pink blush pixels, soft matcha green crust (#B9E3A8, shade #5E9E5A), pale green cream filling peeking from the tail edge, one tiny leaf accent on top.
-The whole sprite fits within about 60 x 44 pixels.
+The whole sprite fits within about 92 x 68 pixels.
 ```
 
 ### strawberry · 딸기 붕어빵
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: the same bungeoppang design as the reference, side view facing right, tiny 1-pixel eye, small smile, deeper pink blush pixels, light pink crust (#F6B3C2, shade #E07A98), strawberry cream filling peeking from the tail edge, a few red seed pixels arranged like tiny hearts.
-The whole sprite fits within about 60 x 44 pixels.
+The whole sprite fits within about 92 x 68 pixels.
 ```
 
 탭할 때 찌그러지는 연출은 지금처럼 코드(scale 변형)로 처리하므로 프레임 이미지는 만들지 않습니다.
@@ -123,37 +123,37 @@ python tools/pixelize.py raw/bg -o assets/images/bg --mode background --size 180
 
 ### night · 야간 골목
 ```
-Cozy pixel art game background, 16-bit retro style, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Limited palette of about 24 colors, soft dark outlines. Heartwarming, nostalgic Korean night mood. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
+Dreamy pastel storybook pixel art game background, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Soft pastel palette of about 24 colors, outlines in darker shades of each color. Twilight storybook mood: deep periwinkle-violet sky at the top (dark enough for white text), lilac and pink toward the horizon, warm glowing windows with dithered halos, a sleepy smiling moon. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
 Scene: a narrow old Korean alley at night, navy sky (#1E2140, #2E3466) with twinkling 1-pixel stars, a crescent moon, warm yellow windows (#FFE9A8) glowing in small brick houses, power lines across the sky, a flat stone-paved ground at the bottom.
 ```
 
 ### dusk · 보랏빛 해질녘
 ```
-Cozy pixel art game background, 16-bit retro style, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Limited palette of about 24 colors, soft dark outlines. Heartwarming, nostalgic Korean night mood. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
+Dreamy pastel storybook pixel art game background, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Soft pastel palette of about 24 colors, outlines in darker shades of each color. Twilight storybook mood: deep periwinkle-violet sky at the top (dark enough for white text), lilac and pink toward the horizon, warm glowing windows with dithered halos, a sleepy smiling moon. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
 Scene: a purple-pink dusk sky in flat bands (#4B3F72, #B28AD8, #F6B3C2, #FF9E4A at the horizon), silhouetted rooftops and a small water tower, the first few stars appearing, warm lit windows, a flat paved ground at the bottom.
 ```
 
 ### forest · 숲길 노점
 ```
-Cozy pixel art game background, 16-bit retro style, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Limited palette of about 24 colors, soft dark outlines. Heartwarming, nostalgic Korean night mood. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
+Dreamy pastel storybook pixel art game background, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Soft pastel palette of about 24 colors, outlines in darker shades of each color. Twilight storybook mood: deep periwinkle-violet sky at the top (dark enough for white text), lilac and pink toward the horizon, warm glowing windows with dithered halos, a sleepy smiling moon. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
 Scene: a quiet forest path at night, tall layered pine trees in dark greens (#5E9E5A, #2E3466 shadows), fireflies as single yellow pixels, mossy round stones, moonlight drawn as a few pale dithered stripes, a flat dirt path at the bottom.
 ```
 
 ### snow · 눈 오는 밤
 ```
-Cozy pixel art game background, 16-bit retro style, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Limited palette of about 24 colors, soft dark outlines. Heartwarming, nostalgic Korean night mood. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
+Dreamy pastel storybook pixel art game background, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Soft pastel palette of about 24 colors, outlines in darker shades of each color. Twilight storybook mood: deep periwinkle-violet sky at the top (dark enough for white text), lilac and pink toward the horizon, warm glowing windows with dithered halos, a sleepy smiling moon. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
 Scene: a snowy night alley, snowflakes as single white pixels (#F4F7FF), thick snow piled on rooftops and shop signs, cold blue tones (#AFC3E8, #5B6BA8) contrasted with warm orange window light (#FF9E4A), a flat snowy ground at the bottom.
 ```
 
 ### cherry · 벚꽃 골목
 ```
-Cozy pixel art game background, 16-bit retro style, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Limited palette of about 24 colors, soft dark outlines. Heartwarming, nostalgic Korean night mood. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
+Dreamy pastel storybook pixel art game background, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Soft pastel palette of about 24 colors, outlines in darker shades of each color. Twilight storybook mood: deep periwinkle-violet sky at the top (dark enough for white text), lilac and pink toward the horizon, warm glowing windows with dithered halos, a sleepy smiling moon. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
 Scene: a spring alley at night lined with cherry blossom trees (#F6B3C2, #E07A98), pink petals drifting as 1-2 pixel dots, small round paper lanterns, a soft violet night sky (#4B3F72), a flat paved ground at the bottom.
 ```
 
 ### seaside · 바닷가 야시장
 ```
-Cozy pixel art game background, 16-bit retro style, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Limited palette of about 24 colors, soft dark outlines. Heartwarming, nostalgic Korean night mood. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
+Dreamy pastel storybook pixel art game background, vertical 9:20. Chunky square pixels on a strict uniform grid of about 180 pixels wide by 400 pixels tall, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients: skies use 3-5 flat color bands with dithered transitions. Soft pastel palette of about 24 colors, outlines in darker shades of each color. Twilight storybook mood: deep periwinkle-violet sky at the top (dark enough for white text), lilac and pink toward the horizon, warm glowing windows with dithered halos, a sleepy smiling moon. The bottom quarter is covered later by a stall counter, so keep only plain ground there and put no stall, cart or table in the picture. No characters, no text, no UI, no frame.
 Scene: a seaside night market, calm sea with the moon reflected as broken horizontal pixel stripes (#AFC3E8 on #2E3466), string lights along a wooden pier as single warm pixels, a small distant lighthouse, a flat wooden boardwalk at the bottom.
 ```
 
@@ -169,28 +169,28 @@ python tools/pixelize.py raw/stove -o assets/images/stove --size 80x40
 
 ### iron · 기본 화로 (화로 기준 이미지)
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: a small cute bungeoppang baking machine seen from the front, a wide low box with a mold plate on top holding three small golden bungeoppang, a little fire window with orange embers on the front, two short feet, three thin steam wisps above, simple grey iron body (#7A726C, #C9C2BA).
 The whole sprite fits within about 76 x 38 pixels.
 ```
 
 ### copper · 구리 화로
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: the same baking machine design as the reference, front view, shiny copper body (#FF9E4A, highlight #FFC9A0, shade #A8642F), three small bungeoppang on the mold plate, orange embers, three thin steam wisps.
 The whole sprite fits within about 76 x 38 pixels.
 ```
 
 ### castiron · 무쇠 화로
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
-Subject: the same baking machine design as the reference, front view, heavy dark cast-iron body (#4A2C2A, #7A726C) with a row of light rivet pixels, three small bungeoppang on the mold plate, orange embers, three thin steam wisps.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Subject: the same baking machine design as the reference, front view, heavy dark slate-violet cast-iron body (#776F92, #4A4363) with a row of light rivet pixels, three small bungeoppang on the mold plate, orange embers, three thin steam wisps.
 The whole sprite fits within about 76 x 38 pixels.
 ```
 
 ### golden · 황금 화로
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: the same baking machine design as the reference, front view, luxurious golden body (#F8D27A, #E0A040, highlight #FFE9A8) with a few 4-point sparkle pixels, three small bungeoppang on the mold plate, orange embers, three thin steam wisps.
 The whole sprite fits within about 76 x 38 pixels.
 ```
@@ -213,35 +213,35 @@ The whole sprite fits within about 76 x 38 pixels.
 
 ### lantern · 종이 등불
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: one round Korean paper lantern hanging from a short string, warm orange paper (#FF9E4A, #FFE9A8 bright center), thin red rib lines, dark red caps at top and bottom, a small tassel, glow drawn only as dithered pixels inside the outline.
 The whole sprite fits within about 14 x 24 pixels.
 ```
 
 ### bunting · 작은 축제 깃발
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: one long, gently sagging string of twelve tiny triangle festival flags spanning the full width, in pastel pink, butter yellow, mint and sky blue (#F6B3C2, #F8D27A, #B9E3A8, #9AD3E8), each flag outlined.
 The whole sprite fits within about 180 x 22 pixels.
 ```
 
 ### starlights · 별 전구
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: one long, gently sagging garland wire spanning the full width with nine small star-shaped bulbs, alternating butter yellow and pale cream (#F8D27A, #FFE9A8), each star outlined, no glow outside the outline.
 The whole sprite fits within about 180 x 24 pixels.
 ```
 
 ### windchime · 풍경
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: a small traditional Korean temple wind chime (punggyeong), a little bronze bell (#A8642F, #E0A040) with a tiny metal fish hanging below it like a bungeoppang, a short string on top.
 The whole sprite fits within about 14 x 30 pixels.
 ```
 
 ### snowman · 눈사람 (흰 물체라 마젠타 배경)
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure magenta background (#FF00FF), no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure magenta background (#FF00FF), no shadow, no ground, no frame, no text.
 Subject: a tiny chubby two-ball snowman (#F4F7FF, shade #AFC3E8), dot eyes and a small smile, pink blush pixels, a knitted red scarf (#D9573B), a twig arm holding a tiny bungeoppang.
 The whole sprite fits within about 26 x 34 pixels.
 ```
@@ -259,7 +259,7 @@ python tools/pixelize.py raw/icons -o assets/images/icons --size 24x24
 아래 공통 문장 뒤에 표의 `Subject`를 붙여 씁니다.
 
 ```
-Cute cozy pixel art UI icon, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills only. Only 4-6 colors: cream #FFF4E0, butter yellow #F8D27A, gold #E0A040, toasted brown #A8642F, outline #4A2C2A. Closed 1-pixel dark cocoa-brown outline. Bold, simple, readable at very small size, matching a set of game menu icons. Single icon only, centered, empty margin on all sides. Plain solid flat pure white background, no shadow, no frame, no text.
+Cute pastel storybook pixel art UI icon. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills only. Only 4-6 pastel colors from cream, honey, pink, mint, lilac and sky blue. Closed 1-pixel colored outline in a darker shade of the icon's main color. Bold, simple, readable at very small size, matching a set of game menu icons. Single icon only, centered, empty margin on all sides. Plain solid flat pure white background, no shadow, no frame, no text.
 The whole icon fits within about 20 x 20 pixels.
 Subject: <아래 표의 내용>
 ```
@@ -288,9 +288,58 @@ python tools/pixelize.py raw/app/app_icon.png -o assets/images/app --mode backgr
 python tools/draw_pixel_assets.py --only launcher
 ```
 ```
-Cute cozy pixel art mobile app icon, 16-bit retro style. Chunky square pixels on a strict uniform grid of about 64 x 64 pixels, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients. Limited warm palette of about 16 colors, 1-pixel dark cocoa outline (#4A2C2A) on the main subject. Fills the whole square edge to edge.
+Cute pastel storybook pixel art mobile app icon. Chunky square pixels on a strict uniform grid of about 64 x 64 pixels, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no smooth gradients. Limited warm palette of about 16 colors, 1-pixel colored outline (darker shade of each color) on the main subject. Fills the whole square edge to edge.
 Subject: a smiling golden bungeoppang (#F8D27A, #E0A040) wearing a tiny knitted red winter hat (#D9573B), pink blush pixels, a small 3-pixel steam swirl above, centered on a flat navy night background (#1E2140) with a few single-pixel stars. No text.
 ```
+
+---
+
+## 7. 사장님 — 꾸미기 사장님 분류
+
+캔버스 52×60. 모든 레이어가 **같은 캔버스·같은 위치**를 공유하고, 게임이 이 순서로 겹칩니다: 피부(머리·목) → 얼굴(캐릭터) → 옷 → 머리(머리 모양 × 캐릭터) → 모자 → 도구 → 손. 장면에서는 (116, 250)에 놓이고, 카운터(y 304) 아래는 가려집니다. 머리는 크게(가로 약 28px) 그리는 치비 비율입니다.
+
+| 파일 | 내용 |
+|---|---|
+| `avatar/skin/<skin1~3>.png` | 얼굴 없는 머리·귀·목 |
+| `avatar/face/<girl, boy>.png` | 눈·볼터치·입. 여자는 속눈썹과 열린 웃음, 남자는 눈썹 |
+| `avatar/hair/<short, ponytail, curly>_<girl, boy>.png` | 캐릭터마다 다른 머리 모양(단발/짧은 머리, 높은 포니테일/윗머리 묶음, 긴 곱슬/짧은 곱슬) |
+| `avatar/outfit/`, `avatar/hat/`, `avatar/tool/`, `avatar/hands/` | 옷·모자·집게·손 |
+
+레이어는 서로 맞물려야 해서 AI로 따로 만들면 위치가 어긋나기 쉽습니다. 바꾸려면 전신 한 장을 만든 뒤 Claude에게 레이어 분리를 요청하는 편이 안전합니다.
+
+```
+Cute pastel storybook pixel art character, chibi proportions with a big round head, a young Korean bungeoppang street vendor seen from the front, upper body, big shiny eyes and rosy blush, holding silver tongs in the left hand, wearing a pastel blue shirt and a cream apron with a pink heart pocket. Closed 1-pixel colored outline in a darker shade of each color (never black). Plain solid flat pure white background, no text.
+The whole sprite fits within about 52 x 60 pixels.
+```
+
+---
+
+## 8. 스킬 그림 — 상점 카드
+
+캔버스 32×32, 파일은 `skills/tap_1.png`~`tap_16.png`, `auto_1.png`~`auto_16.png`. 둥근 배지 위에 **이름의 소재**(빵틀·반죽·손길→오븐 장갑·비법→책·화로·공방→작은 집·제빵소→가게)를 그리고 **수식어**(반짝이는·달빛·별빛·은하·유성·황금·태양·우주·전설)를 장식으로 더합니다. 배지 색: 클릭 스킬은 분홍, 자동 스킬은 민트, 달·별·은하·유성·우주 계열은 밤하늘, 황금·찬란한·태양·전설 계열은 금빛.
+
+```powershell
+python tools/pixelize.py raw/skills -o assets/images/skills --size 32x32 --margin 0
+```
+```
+Cute pastel storybook pixel art game skill icon. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur. A rounded square badge filling the image ({BADGE}), with {MOTIF} in the middle and {ACCENT}. Closed 1-pixel colored outline in a darker shade of each color. No text.
+The whole icon is 32 x 32 pixels.
+```
+
+---
+
+## 9. 아이템 그림 — 아이템 상점
+
+캔버스 32×32, 파일은 `items/fairy.png`, `items/butter.png`.
+
+```powershell
+python tools/pixelize.py raw/items -o assets/images/items --size 32x32
+```
+
+| id | Subject |
+|---|---|
+| fairy | `a tiny cute fairy with pale blue wings and blonde hair hugging a mini bungeoppang, sparkles around` |
+| butter | `a golden butter cube in isometric view with a cute smiling face and two sparkles` |
 
 ---
 
@@ -311,7 +360,7 @@ Subject: a smiling golden bungeoppang (#F8D27A, #E0A040) wearing a tiny knitted 
 python tools/pixelize.py raw/hero -o assets/images/hero --size 128x96
 ```
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions, heartwarming Korean winter street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, big shiny eyes and rosy blush on any face, dreamy heartwarming Korean street-food mood. Single object only, centered, generous empty margin on all sides. Plain solid flat pure white background, no shadow, no ground, no frame, no text.
 Subject: a large hero golden bungeoppang, the same design as the reference but bigger and more detailed, side view facing right, shining gold crust (#F8D27A, #E0A040, highlight #FFE9A8), happy closed-eye smile (^ ^), pink blush cheeks, a few 4-point sparkle pixels touching the outline, iconic and huggable.
 The whole sprite fits within about 124 x 92 pixels.
 ```
@@ -324,23 +373,16 @@ The whole sprite fits within about 124 x 92 pixels.
 python tools/pixelize.py raw/items -o assets/images/items --size 32x32
 ```
 
-#### fairy · 요정 (자동 생산 강화)
-```
-Cute cozy pixel art game item icon, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills only. Limited palette of about 12 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Bold, simple shape readable at small size. Single object only, centered, empty margin on all sides. Plain solid flat pure white background, no shadow, no frame, no text.
-Subject: a tiny cute fairy hugging a mini bungeoppang, pale blue wings (#9AD3E8) drawn as solid shapes, two sparkle pixels beside her.
-The whole icon fits within about 28 x 28 pixels.
-```
-
 #### coin · 코인
 ```
-Cute cozy pixel art game item icon, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills only. Limited palette of about 12 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Bold, simple shape readable at small size. Single object only, centered, empty margin on all sides. Plain solid flat pure white background, no shadow, no frame, no text.
+Cute pastel storybook pixel art game item icon. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills only. Limited palette of about 12 colors. Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Bold, simple shape readable at small size. Single object only, centered, empty margin on all sides. Plain solid flat pure white background, no shadow, no frame, no text.
 Subject: a round golden coin seen from the front (#F8D27A, rim #E0A040), stamped with a tiny fish silhouette in the center, one diagonal shine.
 The whole icon fits within about 28 x 28 pixels.
 ```
 
 #### bun · 붕어빵 재화
 ```
-Cute cozy pixel art game item icon, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills only. Limited palette of about 12 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Bold, simple shape readable at small size. Single object only, centered, empty margin on all sides. Plain solid flat pure white background, no shadow, no frame, no text.
+Cute pastel storybook pixel art game item icon. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills only. Limited palette of about 12 colors. Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Bold, simple shape readable at small size. Single object only, centered, empty margin on all sides. Plain solid flat pure white background, no shadow, no frame, no text.
 Subject: a very simplified tiny bungeoppang facing right, golden crust (#E0A040), one eye pixel, three scale pixels.
 The whole icon fits within about 28 x 20 pixels.
 ```
@@ -352,7 +394,7 @@ The whole icon fits within about 28 x 20 pixels.
 python tools/pixelize.py raw/ui/panel.png -o assets/images/ui --size 48x48 --margin 0
 ```
 ```
-Cute cozy pixel art UI panel frame, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills only. A cozy wooden signboard frame (#A8642F, #6B3A1F) with a flat cream inner area (#FFF4E0), rounded pixel corners, 2-pixel dark cocoa outline (#4A2C2A), identical thickness on all four sides so it can be 9-slice scaled, nothing inside the cream area. Fills the image edge to edge. Plain solid flat pure white background outside the rounded corners, no shadow, no text.
+Cute pastel storybook pixel art UI panel frame. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills only. A cozy wooden signboard frame (#A8642F, #6B3A1F) with a flat cream inner area (#FFF4E0), rounded pixel corners, 2-pixel colored outline in a darker wood shade (#8A5638), identical thickness on all four sides so it can be 9-slice scaled, nothing inside the cream area. Fills the image edge to edge. Plain solid flat pure white background outside the rounded corners, no shadow, no text.
 About 48 x 48 pixels.
 ```
 
@@ -363,7 +405,7 @@ About 48 x 48 pixels.
 python tools/pixelize.py raw/ui/levelup_banner.png -o assets/images/ui --size 160x48
 ```
 ```
-Cute cozy pixel art game sprite, 16-bit retro style. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Limited warm palette of about 16 colors. Closed 1-pixel dark cocoa-brown outline (#4A2C2A) around the entire silhouette. Kawaii chibi proportions. Single object only, centered, empty margin on all sides. Plain solid flat pure white background, no shadow, no frame, no text, no letters.
+Cute pastel storybook pixel art game sprite. Chunky square pixels on a strict uniform grid, every pixel exactly the same size, hard edges, no anti-aliasing, no blur, no gradients, flat color fills with simple dithering only. Soft pastel palette of about 16 colors (cream, honey, pink, mint, lilac). Closed 1-pixel colored outline in a darker shade of the object's own color (never black) around the entire silhouette. Kawaii chibi proportions, rosy blush on faces. Single object only, centered, empty margin on all sides. Plain solid flat pure white background, no shadow, no frame, no text, no letters.
 Subject: a wide cream ribbon banner (#FFF4E0) with gold trim (#E0A040) and folded ribbon tails, a tiny cheering bungeoppang mascot at each end, the long center area left completely empty for text added later in the game.
 The whole sprite fits within about 156 x 44 pixels.
 ```

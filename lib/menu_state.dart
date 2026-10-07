@@ -21,10 +21,12 @@ class WardrobeState {
         'equipped': {for (final e in equipped.entries) e.key.name: e.value}
       };
 
-  /// [legacy] (save v6..v9) lacks the stage-12 slots: those get their
-  /// defaults and free items are granted. Later saves are checked strictly.
+  /// A save of [version] lacks slots added later ([cosmeticSlotSince]):
+  /// those get their defaults. Every item that is free now is granted, so a
+  /// changed default (v12: clear, long) is owned while the old defaults stay
+  /// owned. Slots the save already knew are checked strictly.
   factory WardrobeState.fromJson(Map<String, dynamic> m,
-      {bool legacy = false}) {
+      {required int version}) {
     if (m['owned'] is! List || m['equipped'] is! Map) {
       throw const FormatException('꾸미기 슬롯 저장 손상');
     }
@@ -35,17 +37,14 @@ class WardrobeState {
     }
     final s = WardrobeState._(raw.cast<String>().toSet(), {});
     final equipped = m['equipped'] as Map;
-    if (legacy) {
-      s.owned.addAll([
-        for (final d in _wardrobeCatalog)
-          if (d.free && stage12Slots.contains(d.slot)) d.id
-      ]);
-    }
+    bool added(CosmeticSlot slot) => cosmeticSlotSince(slot) > version;
+    s.owned.addAll([
+      for (final d in _wardrobeCatalog)
+        if (d.free) d.id
+    ]);
     for (final slot in _wardrobeSlots) {
       final id = equipped[slot.name] ??
-          (legacy && stage12Slots.contains(slot)
-              ? defaultCosmetics[slot]
-              : null);
+          (added(slot) ? defaultCosmetics[slot] : null);
       if (!s.owned.contains(id) ||
           !_wardrobeCatalog.any((d) => d.slot == slot && d.id == id)) {
         throw const FormatException('꾸미기 장착 슬롯 불일치');

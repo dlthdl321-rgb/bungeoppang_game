@@ -10,9 +10,9 @@ import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/prestige_config.dart';
 import 'package:todays_bungeoppang/prestige_rules.dart';
 import 'package:todays_bungeoppang/progress_state.dart';
+import 'package:todays_bungeoppang/support_config.dart';
 import 'package:todays_bungeoppang/support_rules.dart';
 import 'package:todays_bungeoppang/repository.dart';
-import 'package:todays_bungeoppang/ui/fish_painter.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'controller_test.dart' show FakeTime;
@@ -46,9 +46,9 @@ Future<GameController> atMaxLevel(
   c.state.upgradeCounts['auto_16'] = 15;
   c.state.upgradeCounts['tap_1'] = 30;
   c.state.support.transact('test:fund', BigInt.from(77), 'test', now);
-  c.state.support.inventory['fairy'] = BigInt.from(4);
-  c.state.ownedSkins.add('custard');
-  c.state.equippedSkin = 'custard';
+  c.state.support.startBoost(boostOf(BoostKind.bought), now);
+  c.state.wardrobe.owned.add('dusk');
+  c.state.wardrobe.equipped[CosmeticSlot.background] = 'dusk';
   c.state.records.bestAutoRate = autoRate(c.state);
   return c;
 }
@@ -100,8 +100,9 @@ void main() {
       final keep = (
         coins: c.state.support.coins,
         lifetime: c.state.lifetime,
-        fairy: c.state.support.inventory['fairy'],
-        skins: Set.of(c.state.ownedSkins),
+        boosts: c.state.support.toJson()['effects'],
+        boostUses: c.state.support.boostUses,
+        wardrobe: c.state.wardrobe.toJson(),
         best: c.state.records.bestAutoRate,
       );
       expect(await c.prestige(), isTrue);
@@ -114,9 +115,10 @@ void main() {
       expect(s.missions.targetLevel, 2);
       expect(s.support.coins, keep.coins);
       expect(s.lifetime, keep.lifetime);
-      expect(s.support.inventory['fairy'], keep.fairy);
-      expect(s.ownedSkins, keep.skins);
-      expect(s.equippedSkin, 'custard');
+      expect(s.support.toJson()['effects'], keep.boosts);
+      expect(s.support.boostUses, keep.boostUses);
+      expect(s.wardrobe.toJson(), keep.wardrobe);
+      expect(s.equippedCosmetic(CosmeticSlot.background), 'dusk');
       expect(s.achievements.claimed, contains('bake-1'));
       expect(s.records.bestAutoRate, keep.best);
       expect(s.levelRewards.length, 9);
@@ -153,6 +155,7 @@ void main() {
     test('별 1개당 생산 +5%: 클릭·자동·표시 속도, 분할 정산 일치', () async {
       final c = await atMaxLevel();
       expect(await c.prestige(), isTrue);
+      c.state.support.effects.clear(); // Stars only, no running boost.
       setRate(c.state, BigInt.from(1000000));
       c.state.upgradeCounts['tap_1'] = 99; // tapRate 100.
       expect(prestigePermille(c.state), 1250);
@@ -209,7 +212,7 @@ void main() {
         expect(restored.support.coins, BigInt.from(42), reason: 'v$version');
         expect(restored.ownedSkins, original.ownedSkins);
         if (version >= 4) {
-          expect(restored.support.inventory, original.support.inventory);
+          expect(restored.support.boostUses, original.support.boostUses);
         }
         if (version >= 6) {
           expect(restored.wardrobe.toJson(), original.wardrobe.toJson());
@@ -234,11 +237,8 @@ void main() {
     });
   });
 
-  group('새 꾸미기 11종', () {
+  group('새 꾸미기 8종', () {
     const added = {
-      'sweetpotato': (CosmeticSlot.fish, '8', 4),
-      'matcha': (CosmeticSlot.fish, '10', 5),
-      'strawberry': (CosmeticSlot.fish, '14', 7),
       'snow': (CosmeticSlot.background, '7', 3),
       'cherry': (CosmeticSlot.background, '10', 6),
       'seaside': (CosmeticSlot.background, '14', 8),
@@ -266,13 +266,6 @@ void main() {
             isTrue);
       }
       c.dispose();
-    });
-    test('붕어빵 외형마다 겉면·속 색이 다르다', () {
-      final fish = cosmeticDefinitions
-          .where((d) => d.slot == CosmeticSlot.fish)
-          .map((d) => FishPainter(skin: d.id));
-      expect(fish.map((p) => p.filling).toSet().length, fish.length);
-      expect(fish.map((p) => p.crust.first).toSet().length, fish.length);
     });
     testWidgets('모든 배경·화로·장식 조합을 예외 없이 그린다', (tester) async {
       await tester.runAsync(PixelSprites.load);
@@ -318,9 +311,9 @@ void main() {
         c.tick();
         await tester.pump();
         await tapVisible(tester, const Key('menu-skins'));
-        for (final slot in CosmeticSlot.values) {
+        for (final slot in CosmeticSlot.values.where((s) => s.shown)) {
           await tapVisible(
-              tester, Key('cosmetic-category-${slot.category.name}'));
+              tester, Key('cosmetic-category-${slot.tab.name}'));
           await tapVisible(tester, Key('cosmetic-slot-${slot.name}'));
           final last = cosmeticDefinitions.lastWhere((d) => d.slot == slot);
           await tapVisible(tester, Key('preview-${last.id}'));

@@ -2,6 +2,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/widgets.dart';
 import 'feedback_config.dart';
 import 'models.dart';
+import 'music_config.dart';
 
 enum Sfx { tap, purchase, reward, levelUp }
 
@@ -11,6 +12,9 @@ abstract class GameAudio {
   Future<void> init();
   void play(Sfx sfx);
   void configure(GameSettings settings);
+
+  /// Plays the music of [background]'s mood ([musicMoodFor]).
+  void setScene(String background);
   void pauseMusic();
   void resumeMusic();
   Future<void> dispose();
@@ -25,6 +29,8 @@ class SilentAudio implements GameAudio {
   void play(Sfx sfx) {}
   @override
   void configure(GameSettings settings) {}
+  @override
+  void setScene(String background) {}
   @override
   void pauseMusic() {}
   @override
@@ -42,8 +48,22 @@ abstract class SoundPolicy implements GameAudio {
   bool _configured = false;
   final Stopwatch _clock = Stopwatch()..start();
 
+  /// The mood whose loop is (or will be) playing.
+  String mood = musicMoodFor('clear');
+
   void output(Sfx sfx, double volume);
   void musicOutput({required bool playing, required double volume});
+
+  /// Switches the music loop to [mood]'s; a no-op until a backend does it.
+  void moodOutput(String mood) {}
+
+  @override
+  void setScene(String background) {
+    final next = musicMoodFor(background);
+    if (next == mood) return;
+    mood = next;
+    moodOutput(next);
+  }
 
   @override
   void play(Sfx sfx) {
@@ -113,7 +133,7 @@ class AudioplayersAudio extends SoundPolicy {
             path: e.value, maxPlayers: e.key == Sfx.tap ? 4 : 2);
       }
       await _music.setReleaseMode(ReleaseMode.loop);
-      await _music.setSource(AssetSource('audio/bgm.wav'));
+      await _music.setSource(AssetSource(musicAsset(mood)));
       _ready = true;
       _syncMusic();
     } catch (_) {
@@ -137,6 +157,17 @@ class AudioplayersAudio extends SoundPolicy {
       _musicPlaying = false;
       _music.pause().catchError((_) {});
     }
+  }
+
+  /// Swaps the loop; keeps playing if music was playing.
+  @override
+  void moodOutput(String mood) {
+    if (!_ready) return;
+    () async {
+      await _music.setSource(AssetSource(musicAsset(mood)));
+      if (_musicPlaying) await _music.resume();
+    }()
+        .catchError((_) {});
   }
 
   @override
