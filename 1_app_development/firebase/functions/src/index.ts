@@ -3,6 +3,8 @@ import { getAuth } from "firebase-admin/auth";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { google } from "googleapis";
+import developmentBalance from "./generated/development_balance.json";
+import { WorkshopService } from "./workshop_service";
 import { signedIn } from "./auth";
 import { catalog } from "./catalog";
 import * as friends from "./friends";
@@ -180,3 +182,38 @@ export const rankingSubmit = onCall(options, (req) =>
 
 export const rankingTop = onCall(options, (req) =>
   handle(() => ranking.top(store, rankingQueries, signedIn(req), req.data ?? {})));
+
+
+// Prepared source only. Default OFF; never enable without the server evidence
+// validation pipeline, secret binding and integration/security review.
+function workshopService(): WorkshopService {
+  if (process.env.WORKSHOP_ONLINE_ENABLED !== "true") {
+    throw new HttpsError("failed-precondition", "신규 게임 온라인 검증 연결을 준비 중입니다.");
+  }
+  const encoded = process.env.WORKSHOP_SALE_DRAW_KEY_BASE64 ?? "";
+  const key = Buffer.from(encoded,"base64");
+  if (key.length < 32 || key.toString("base64") !== encoded) {
+    throw new HttpsError("failed-precondition", "판매 보상 서버 설정 확인이 필요합니다.");
+  }
+  return new WorkshopService(store,developmentBalance,Date.now,key);
+}
+async function workshopCall(req: Parameters<typeof signedIn>[0], work: (service: WorkshopService, uid: string) => Promise<unknown>) {
+  const uid = signedIn(req);
+  try { return await work(workshopService(),uid); }
+  catch (error) {
+    if (error instanceof HttpsError) throw error;
+    // Domain errors never disclose documents, tokens or provider data.
+    throw new HttpsError("failed-precondition", "진행·거래·검증 상태를 다시 확인해 주세요.");
+  }
+}
+export const workshopProgressClaim = onCall(options,req => workshopCall(req,(s,uid) => s.claim(uid,req.data)));
+export const workshopPurchaseReserve = onCall(options,req => workshopCall(req,(s,uid) => s.purchase(uid,"reserve",req.data)));
+export const workshopPurchaseQuery = onCall(options,req => workshopCall(req,(s,uid) => s.purchase(uid,"query",req.data)));
+export const workshopPurchaseCommit = onCall(options,req => workshopCall(req,(s,uid) => s.purchase(uid,"commit",req.data)));
+export const workshopPurchaseCancel = onCall(options,req => workshopCall(req,(s,uid) => s.purchase(uid,"cancel",req.data)));
+export const workshopRewardSubmit = onCall(options,req => workshopCall(req,(s,uid) => s.reward(uid,req.data,true)));
+export const workshopRewardQuery = onCall(options,req => workshopCall(req,(s,uid) => s.reward(uid,req.data,false)));
+export const workshopAdStart = onCall(options,req => workshopCall(req,(s,uid) => s.adStart(uid,req.data)));
+export const workshopAdQuery = onCall(options,req => workshopCall(req,(s,uid) => s.adQuery(uid,req.data)));
+
+export const workshopProgressTransfer = onCall(options,req => workshopCall(req,(s,uid) => s.transfer(uid,req.data)));

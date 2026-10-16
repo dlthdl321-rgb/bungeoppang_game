@@ -58,6 +58,26 @@ class DevelopmentBalance {
         }
       }
     }
+    final missions=result.section('mission_targets'),rewards=result.section('mission_gold_rewards');
+    const expectedGoals={'daily':{'taps','production','purchases','auto'},'weekly':{'taps','days','purchases','dailyAll'}};
+    if(integer(rewards,'daily_all')<=0) throw const FormatException('미션 보상 누락');
+    for(final scope in expectedGoals.entries) {
+      final goals=_map(missions[scope.key]);
+      if(goals.length!=scope.value.length || !goals.keys.toSet().containsAll(scope.value)) throw const FormatException('확정 미션 구성 변경');
+      for(final e in goals.entries) {
+        final row=_map(e.value);
+        if(row['metric']!=e.key || row['label'] is! String || (row['label'] as String).isEmpty || decimal(row,'target')<=BigInt.zero ||
+            row['reward_key'] is! String || integer(rewards,row['reward_key'] as String)<=0) throw const FormatException('미션 목표/보상 오류');
+      }
+    }
+    final avatar=result.section('avatar_catalog');
+    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool'};
+    for(final e in avatar.entries) {
+      final row=_map(e.value),level=integer(row,'unlock_level');
+      if(row['label'] is! String || (row['label'] as String).isEmpty || !avatarSlots.contains(row['slot']) || row['free'] is! bool ||
+          level<1 || level>50 || (row['free']==false && !result.section('cosmetic_purchase').containsKey(e.key))) throw const FormatException('아바타 카탈로그 오류');
+      decimal(row,'unlock_total');
+    }
     final boundaries = result.integers('doneness', 'boundary_permille');
     if (boundaries.length != 4 || boundaries.first <= 0 ||
         List.generate(3, (i) => boundaries[i] >= boundaries[i + 1]).any((v) => v)) {

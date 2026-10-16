@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'balance.dart';
+import 'workshop_online.dart';
 import 'economy.dart';
 import 'models.dart';
 import 'music_config.dart';

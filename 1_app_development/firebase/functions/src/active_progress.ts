@@ -71,6 +71,10 @@ export async function transferDevelopmentProgress(store: Store, uid: string, tra
       // This result does NOT re-activate the old target; purchase rechecks epoch.
       return { progressId: clean.to, epoch: clean.sourceEpoch + 1 };
     }
+    // Recheck unsettled payment lock in this SAME transaction; an older
+    // transfer attestation must not race a newly reserved purchase.
+    const purchase=await tx.get(`users/${uid}/compositeState/pending`);
+    if (purchase?.transaction) throw new ActiveProgressError("미정산 구매 복구 후 진행을 이전해야 합니다.");
     if (active.progressId !== clean.from || active.epoch !== clean.sourceEpoch) {
       throw new ActiveProgressError("활성 진행 변경, 이전 근거 재대조 필요");
     }

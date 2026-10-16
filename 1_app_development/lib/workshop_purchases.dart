@@ -2,6 +2,17 @@ import 'development_balance.dart';
 import 'development_purchase_journal.dart';
 import 'development_rules.dart';
 
+CompositeQuote quoteWorkshopProduct(DevelopmentBalance config,String id,{required int owned,required int quantity}) {
+  if (!id.startsWith('cosmetic:')) return quoteCompositeSkill(config,id,owned:owned,quantity:quantity);
+  final item=id.substring(9),catalog=config.section('avatar_catalog'),entry=catalog[item];
+  if (entry is! Map<String,dynamic> || entry['free']!=false || owned<0 || owned>1 || quantity<0 || quantity>1-owned) throw const FormatException('꾸미기 구매 범위 오류');
+  final price=config.section('cosmetic_purchase')[item] as Map<String,dynamic>;
+  return CompositeQuote(config.revision,id,owned,quantity,DevelopmentBalance.decimal(price,'buns')*BigInt.from(quantity),
+    BigInt.from(DevelopmentBalance.integer(price,'gold'))*BigInt.from(quantity));
+}
+Map<String,dynamic> workshopProductRequirements(DevelopmentBalance config,String id) => id.startsWith('cosmetic:') ?
+  config.section('avatar_catalog')[id.substring(9)] as Map<String,dynamic> : config.skill(id);
+
 /// Embedded in the SAME durable snapshot as buns. No separate journal-only
 /// transaction may debit/refund this wallet. Network responses must originate
 /// from the authenticated gateway; JSON matching is not authentication.
@@ -15,16 +26,17 @@ class WorkshopPurchases {
   BigInt available(BigInt buns) => account == null ? buns :
       availableBunsAfterReservations(buns, account!, journals.values);
   WorkshopPurchases prepare(DevelopmentBalance config, PurchaseJournal intent,
-      {required BigInt buns, required BigInt lifetime}) {
+      {required BigInt buns, required BigInt lifetime, int level=1}) {
     if ((account != null && account != intent.accountId) || intent.sequence != 0 ||
         journals.values.any((j) => !j.settled)) throw const FormatException('미정산 구매 또는 계정 확인이 필요해요.');
     final old = journals[intent.transactionId];
     if (old != null) throw const FormatException('기존 거래는 같은 ID로 복구해 주세요.');
-    final expected = quoteCompositeSkill(config, intent.quote.skillId,
+    final expected = quoteWorkshopProduct(config, intent.quote.skillId,
       owned: owned[intent.quote.skillId] ?? 0, quantity: intent.quote.quantity);
     final q = intent.quote;
     if (q.revision != expected.revision || q.owned != expected.owned || q.buns != expected.buns || q.gold != expected.gold ||
-        lifetime < DevelopmentBalance.decimal(config.skill(q.skillId), 'unlock_total') || buns < q.buns) {
+        lifetime < DevelopmentBalance.decimal(workshopProductRequirements(config,q.skillId), 'unlock_total') ||
+        (q.skillId.startsWith('cosmetic:') && level < DevelopmentBalance.integer(workshopProductRequirements(config,q.skillId),'unlock_level')) || buns < q.buns) {
       throw const FormatException('구매 조건 또는 견적이 변경됐어요.');
     }
     return WorkshopPurchases._(intent.accountId, {...journals, intent.transactionId: intent}, owned);
@@ -79,7 +91,7 @@ class WorkshopPurchases {
     for (final e in (row['journals'] as Map<String, dynamic>).entries) {
       if (e.value is! Map<String, dynamic>) throw const FormatException('구매 원장 형식 오류');
       final j = PurchaseJournal.fromJson(e.value as Map<String, dynamic>);
-      config.skill(j.quote.skillId);
+      quoteWorkshopProduct(config,j.quote.skillId,owned:0,quantity:0);
       if (j.transactionId != e.key || j.accountId != row['account']) throw const FormatException('구매 원장 소유 불일치');
       if (!j.settled) unsettled++;
       journals[e.key] = j;
@@ -93,9 +105,9 @@ class WorkshopPurchases {
       expected[j.quote.skillId] = count + j.quote.quantity;
     }
     for (final e in (row['owned'] as Map<String, dynamic>).entries) {
-      config.skill(e.key);
+      quoteWorkshopProduct(config,e.key,owned:0,quantity:0);
       final count = DevelopmentBalance.integer(row['owned'] as Map<String, dynamic>, e.key);
-      if (count <= 0 || count != expected.remove(e.key)) throw const FormatException('상품 보유 근거 오류');
+      if (count <= 0 || (e.key.startsWith('cosmetic:') && count!=1) || count != expected.remove(e.key)) throw const FormatException('상품 보유 근거 오류');
       owned[e.key] = count;
     }
     if (expected.isNotEmpty || unsettled > 1 || (journals.isNotEmpty && row['account'] == null)) throw const FormatException('구매 집계 불일치');

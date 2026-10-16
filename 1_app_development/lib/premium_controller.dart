@@ -4,6 +4,20 @@ part of 'game_controller.dart';
 /// spending through the server ([GameController.online]) and restoring what
 /// was bought. The server owns the balance; [GameState.premium] mirrors it.
 extension PremiumCommands on GameController {
+  /// New Workshop only mirrors confirmed server gold, without applying legacy
+  /// prototype item grants to the fresh game's progress.
+  Future<String?> refreshWorkshopWallet() async {
+    if (!online.signedIn) return '로그인 후 확인할 수 있어요.';
+    try {
+      final source=online;
+      final account=source is WorkshopTransport ? source.authenticatedAccount : null;
+      final wallet=await source.syncWallet();
+      if (!source.signedIn || (source is WorkshopTransport && source.authenticatedAccount!=account)) return '계정이 변경됐어요. 잔액을 다시 확인해 주세요.';
+      await _setGold(wallet.gold); return null;
+    }
+    on OnlineException { return '황금붕어빵력 잔액 확인을 다시 시도해 주세요.'; }
+  }
+
   /// Gold price of [itemId] for [kind], or null if it is not for sale.
   int? goldPrice(PremiumKind kind, String itemId) => switch (kind) {
         PremiumKind.cosmetic => cosmetics

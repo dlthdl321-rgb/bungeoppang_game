@@ -211,6 +211,13 @@ export function validateDevelopmentCompositeQuote(config: unknown, input: unknow
   const requested = parseCompositeIntent(input, authenticatedUid);
   const root = object(config), metadata = object(root.metadata);
   const purchase = object(root.skill_purchase), entries = object(purchase.entries);
+  if (requested.skill.startsWith("cosmetic:")) {
+    const item=requested.skill.slice(9),catalog=object(root.avatar_catalog),entry=object(catalog[item]);
+    const price=object(object(root.cosmetic_purchase)[item]);
+    if (entry.free!==false || natural(authoritativeOwned)!==0 || requested.owned!==0 || requested.quantity!==1) return fail("꾸미기 보유/수량 오류");
+    const expected={...requested,revision:text(metadata.revision),buns:decimal(price.buns),gold:String(natural(price.gold))};
+    assertSameCompositeIntent(expected,requested);return expected;
+  }
   if (!Object.prototype.hasOwnProperty.call(entries, requested.skill)) return fail("알 수 없는 스킬");
   const row = object(entries[requested.skill]);
   const owned = natural(authoritativeOwned), cap = natural(purchase.max_owned_per_skill);

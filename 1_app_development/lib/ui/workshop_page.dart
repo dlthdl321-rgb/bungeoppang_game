@@ -9,6 +9,9 @@ import '../development_rules.dart';
 import '../game_controller.dart';
 import '../music_config.dart';
 import '../workshop_controller.dart';
+import '../cosmetic_config.dart';
+import '../workshop_purchases.dart';
+import 'avatar_painter.dart';
 import 'cooking_session_controls.dart';
 
 class WorkshopPage extends StatefulWidget {
@@ -108,11 +111,49 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
                 return ListTile(title: Text('${id.startsWith('tap') ? '손기술' : '자동 생산'} $tier단계'),
                   subtitle: Text('예상 가격: 붕어빵력 ${quote.buns} + 황금붕어빵력 ${quote.gold}'),
                   trailing: FilledButton(onPressed: capped || c.purchaseGateway == null || c.purchaseBusy || c.busy || c.error != null ? null :
-                    () => c.purchaseSkill(c.purchaseGateway!, id), child: Text(capped ? '최대 보유' : '구매')),
+                    () async { await c.purchaseSkill(c.purchaseGateway!,id); await widget.accountController.refreshWorkshopWallet(); }, child: Text(capped ? '최대 보유' : '구매')),
                   leading: Text('$owned개'));
               }),
           ])))));
     } finally { c.gridVisible = true; }
+  }
+  Future<void> _syncOnline() async {
+    final account=widget.accountController;
+    final message=await account.signInOnline();
+    if (!mounted) return;
+    if (message!=null || !account.online.signedIn) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(message ?? '로그인 후 확인할 수 있어요.')));return;
+    }
+    await c.syncRewards();
+    if (!mounted) return;
+    await c.recoverAds();
+    if (!mounted) return;
+    final walletMessage=await account.refreshWorkshopWallet();
+    if (mounted && walletMessage!=null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(walletMessage)));
+  }
+  AvatarLook get _look => AvatarLook.of((slot) => c.state.avatarEquipment[slot.name] ?? defaultCosmetics[slot]!);
+  Future<void> _wardrobe() async {
+    c.gridVisible=false;
+    try {
+      await showModalBottomSheet<void>(context:context,isScrollControlled:true,builder:(context) =>
+        SafeArea(child:SizedBox(height:MediaQuery.sizeOf(context).height*.8,
+          child:AnimatedBuilder(animation:c,builder:(context,_) => ListView(padding:const EdgeInsets.all(16),children:[
+            const Text('사장님 꾸미기'),SizedBox(height:180,child:CustomPaint(painter:AvatarPainter(_look))),
+            if(c.notice!=null) Text(c.notice!),
+            for(final e in c.config.section('avatar_catalog').entries) Builder(builder:(context) {
+              final row=e.value as Map<String,dynamic>,owned=c.ownsAvatar(e.key),equipped=
+                (c.state.avatarEquipment[row['slot']] ?? defaultCosmetics[CosmeticSlot.values.byName(row['slot'] as String)])==e.key;
+              final quote=owned ? null : quoteWorkshopProduct(c.config,'cosmetic:${e.key}',owned:0,quantity:1);
+              return ListTile(title:Text(row['label'] as String),subtitle:Text(owned ? '보유 중' :
+                'Lv.${row['unlock_level']} · 누적 ${row['unlock_total']} · 붕어빵력 ${quote!.buns} + 황금붕어빵력 ${quote.gold}'),
+                trailing:TextButton(onPressed:equipped || c.busy || c.purchaseBusy ? null : owned ? () => c.equipAvatar(e.key) :
+                  c.purchaseGateway==null ? null : () async {
+                    await c.purchaseSkill(c.purchaseGateway!,'cosmetic:${e.key}');
+                    await widget.accountController.refreshWorkshopWallet();
+                  },child:Text(equipped ? '착용 중' : owned ? '착용' : '구매')));
+            }),
+          ])))));
+    } finally { c.gridVisible=true; }
   }
   Future<void> _goldPacks() async {
     c.gridVisible = false;
@@ -145,8 +186,12 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
         builder: (context) => AnimatedBuilder(animation: widget.accountController,
           builder: (context, _) {
             final account = widget.accountController, settings = account.state.settings;
-            return SafeArea(child: Padding(padding: const EdgeInsets.all(16), child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Text('소리 설정'),
+            return SafeArea(child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Text('배경·소리 설정'),
+              AnimatedBuilder(animation:c,builder:(context,_) => DropdownButton<String>(value:c.state.sceneTime,isExpanded:true,
+                items:[for(final item in cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.time))
+                  DropdownMenuItem(value:item.id,child:Text(item.name))],
+                onChanged:c.busy ? null : (value) {if(value!=null)c.setBackgroundTime(value);})),
               SwitchListTile(title: const Text('배경 음악'), value: settings.music, onChanged: (v) => account.updateSettings(music: v)),
               DropdownButton<String>(value: settings.musicSelection, isExpanded: true,
                 items: [for (final entry in musicSelectionLabels.entries)
@@ -161,23 +206,45 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
           }));
     } finally { c.gridVisible = true; }
   }
+  Widget _mission(String scope,String id,{Map<String,dynamic>? rule}) {
+    final missions=c.state.missions,key=missions.claimKey(scope,id),claimed=missions.claims.containsKey(key);
+    final gold=DevelopmentBalance.integer(c.config.section('mission_gold_rewards'),rule?['reward_key'] as String? ?? 'daily_all');
+    final caption=rule==null ? '일일 미션 전체 완료' : rule['label'] as String;
+    final current=rule==null ? '' : '${missions.progress(scope,rule['metric'] as String)}/${rule['target']} · ';
+    return ListTile(title:Text(caption),subtitle:Text('$current황금붕어빵력 $gold · 서버 검증 후 지급'),
+      trailing:TextButton(onPressed:c.busy || claimed || !missions.complete(c.config,scope,id) ? null :
+        () => c.claimMission(scope,id,expectedPeriod:scope=='daily' ? missions.day:missions.week),child:Text(claimed ? '신청 완료' : '보상 신청')));
+  }
   Widget _volume(String label, int value, void Function(int) save) => _VolumeControl(label: label, value: value, save: save);
   @override
   Widget build(BuildContext context) => AnimatedBuilder(animation: c, builder: (context, _) {
     final s = c.state, session = s.session;
     final rule = c.config.mastery(c.difficulty(s.selectedFlavor));
     final target = DevelopmentBalance.integer(rule, 'batter_target_ms');
-    return Scaffold(appBar: AppBar(title: const Text('오늘의 붕어빵'), actions: [IconButton(
-      tooltip: '소리 설정', onPressed: _audioSettings, icon: const Icon(Icons.volume_up)),
-      IconButton(tooltip: '스킬 상점', onPressed: _shop, icon: const Icon(Icons.shopping_cart)),
-      IconButton(tooltip: '황금붕어빵력 충전', onPressed: _goldPacks, icon: const Icon(Icons.storefront))]),
+    return Scaffold(appBar: AppBar(title: const Text('오늘의 붕어빵'), actions: [
+      IconButton(tooltip:'스킬 상점',onPressed:_shop,icon:const Icon(Icons.shopping_cart)),
+      PopupMenuButton<String>(tooltip:'게임 메뉴',onSelected:(value) {
+        switch(value) {
+          case 'avatar':unawaited(_wardrobe());break;
+          case 'sound':unawaited(_audioSettings());break;
+          case 'sync':unawaited(_syncOnline());break;
+          case 'gold':unawaited(_goldPacks());break;
+        }
+      },itemBuilder:(context)=>[
+        const PopupMenuItem(value:'avatar',child:Text('사장님 꾸미기')),
+        const PopupMenuItem(value:'sound',child:Text('배경·소리 설정')),
+        PopupMenuItem(value:'sync',enabled:!c.rewardBusy && !c.adBusy,child:const Text('로그인·보상 확인')),
+        const PopupMenuItem(value:'gold',child:Text('황금붕어빵력 충전')),
+      ]),
+    ]),
       body: SafeArea(child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        ExcludeSemantics(child: Image.asset('assets/images/bg/clear.png', height: 120, fit: BoxFit.cover, filterQuality: FilterQuality.none)),
+        ExcludeSemantics(child: Image.asset(isNightTime(s.sceneTime,DateTime.now())==true ? 'assets/images/bg/clear_night.png':'assets/images/bg/clear.png', height: 120, fit: BoxFit.cover, filterQuality: FilterQuality.none)),
+        Semantics(label:'현재 사장님 아바타',child:SizedBox(height:140,child:CustomPaint(painter:AvatarPainter(_look)))),
         Text('Lv.${s.level} · 붕어빵력 ${s.buns}', style: Theme.of(context).textTheme.titleLarge),
         Text('누적 ${s.lifetime} · 판매 ${s.completedSales}회'),
         AnimatedBuilder(animation: widget.accountController, builder: (context, _) =>
-          Text('황금붕어빵력 ${widget.accountController.state.premium.gold} · 심사 대기 ${s.pendingGold.length}건')),
+          Text('황금붕어빵력 ${widget.accountController.state.premium.gold} · 심사 대기 ${c.pendingRewardCount}건')),
         if (c.error != null) ...[Text(c.error!), FilledButton(onPressed: () => c.reloadAfterError(), child: const Text('저장 다시 확인'))],
         if (c.notice != null) Text(c.notice!),
         if (widget.accountController.error != null) Text(widget.accountController.error!),
@@ -247,7 +314,18 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
           for (final customer in s.tasteObservations.entries) Text('${customer.key.replaceFirst('customer_', '손님 ')}: '
             '${customer.value.entries.map((e) => '${c.flavorLabel(e.key)} ${e.value.map((v) => provisionalDonenessLabels[v]).join('/')}').join(', ')}'),
         ],
-        const Padding(padding: EdgeInsets.only(top: 16), child: Text('황금 심사 대기는 확정 잔액에 포함되지 않아요. 상점·미션 보상·보상광고는 준비 중이에요.')),
+        const Divider(),const Text('일일·주간 미션'),
+        Text('일일 ${s.missions.day} · 주간 ${s.missions.week}'),
+        const Text('손님 판매로도 희귀 황금 보상을 받을 수 있어요. 구매·자동 생산 목표도 포함돼요.'),
+        for(final e in s.missions.goals(c.config,'daily').entries) _mission('daily',e.key,rule:e.value as Map<String,dynamic>),
+        _mission('daily','all'),
+        for(final e in s.missions.goals(c.config,'weekly').entries) _mission('weekly',e.key,rule:e.value as Map<String,dynamic>),
+        const Divider(),const Text('황금 보상 확인'),
+        Text('판매·승급·미션 심사 대기 ${c.pendingRewardCount}건 · 광고 기록 ${s.adAttempts.length}건'),
+        TextButton(onPressed:c.rewardBusy || c.adBusy ? null : _syncOnline,child:const Text('로그인·심사 및 잔액 다시 확인')),
+        const FilledButton(onPressed:null,child:Text('선택형 보상광고 · 하루 최대 2회')),
+        const Text('광고 연결을 준비 중이에요. 시청 완료만으로 지급하지 않고 서버 검증 후 황금 잔액에 반영해요.'),
+        const Padding(padding: EdgeInsets.only(top:16),child:Text('황금 심사 대기는 확정 잔액에 포함되지 않아요.')),
       ]))),
     );
   });

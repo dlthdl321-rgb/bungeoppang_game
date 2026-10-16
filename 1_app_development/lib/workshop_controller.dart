@@ -15,13 +15,16 @@ import 'development_orders.dart';
 import 'development_rules.dart';
 import 'development_purchase_journal.dart';
 import 'workshop_purchases.dart';
+import 'workshop_online.dart';
+import 'workshop_ads.dart';
+import 'workshop_missions.dart';
 
 /// Fresh-game local production aggregate. Gold remains in the authenticated
 /// server wallet; pending claims here are never spendable gold.
 class WorkshopState {
   int sequence = 0, level = 1, taps = 0, completedSales = 0, phaseMs = 0,
       levelStartTaps = 0, levelStartSales = 0, arrivalMs = 0;
-  String selectedFlavor = 'redbean';
+  String selectedFlavor = 'redbean',sceneTime='scenetime';
   final Set<String> recipes = {'redbean'};
   final Set<String> recipeMissions = {};
   final Map<String, Map<String, dynamic>> masteryAwards = {};
@@ -34,7 +37,12 @@ class WorkshopState {
   bool get mastered => masteryAward != null;
   BigInt buns = BigInt.zero, lifetime = BigInt.zero;
   WorkshopPurchases purchases = WorkshopPurchases.empty();
+  String? rewardAccount;
+  final Map<String,String> rewardReceipts = {};
+  final Map<String,Map<String,dynamic>> adAttempts = {};
+  final Map<String,String> avatarEquipment = {};
   late BusinessProgress business;
+  late WorkshopMissions missions;
   InventoryProgress inventory = InventoryProgress.empty();
   late GriddleProgress grid;
   final Map<String, FlavorMasteryProgress> flavorMasteries = {
@@ -46,19 +54,23 @@ class WorkshopState {
   final Map<String, String> sales = {}, pendingGold = {};
   final Set<int> claimedLevels = {};
   WorkshopState.initial(DateTime now, DevelopmentBalance config, String runId) {
+    missions=WorkshopMissions.initial(now);
     business = BusinessProgress.initial(now); grid = GriddleProgress.empty(runId, config);
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
   }
-  Map<String, dynamic> toJson() => {'schema': 2, 'sequence': sequence, 'level': level,
+  Map<String, dynamic> toJson() => {'schema': 3, 'sequence': sequence, 'level': level,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
     'levelStartTaps': levelStartTaps, 'levelStartSales': levelStartSales, 'arrivalMs': arrivalMs,
-    'selectedFlavor': selectedFlavor, 'recipes': recipes.toList()..sort(),
+    'selectedFlavor': selectedFlavor,'sceneTime':sceneTime, 'recipes': recipes.toList()..sort(),
     'recipeMissions': recipeMissions.toList()..sort(),
     'masteryAwards': {for (final e in masteryAwards.entries) e.key: Map<String, dynamic>.from(e.value)},
     'tasteObservations': {for (final e in tasteObservations.entries) e.key:
       {for (final f in e.value.entries) f.key: f.value.toList()..sort()}},
-    'buns': buns.toString(), 'lifetime': lifetime.toString(), 'purchases': purchases.toJson(), 'business': business.toJson(),
+    'buns': buns.toString(), 'lifetime': lifetime.toString(), 'purchases': purchases.toJson(),
+    'rewardAccount':rewardAccount,'rewardReceipts':Map<String,String>.from(rewardReceipts),
+    'adAttempts':{for(final e in adAttempts.entries) e.key:Map<String,dynamic>.from(e.value)},
+    'avatarEquipment':Map<String,String>.from(avatarEquipment),'missions':missions.toJson(), 'business': business.toJson(),
     'inventory': inventory.toJson(), 'grid': grid.toJson(),
     'flavorMasteries': {for (final e in flavorMasteries.entries) e.key: e.value.toJson()},
     'session': session?.toJson(), 'customers': customers.map((c) => c.toJson()).toList(),
@@ -70,7 +82,7 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || ![1, 2, 3].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
     final state = WorkshopState.initial(business.settledUtc, config, grid.runId)
@@ -90,9 +102,11 @@ class WorkshopState {
         state.levelStartTaps > state.taps || state.levelStartSales > state.completedSales) {
       throw const FormatException('신규 진행/재화 불일치');
     }
+    if ((row['schema'] as int)<3 && ['rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime'].any(row.containsKey)) throw const FormatException('구형 저장에 신규 보호 필드가 있어요.');
     if (row['schema'] == 1 && row.containsKey('purchases')) throw const FormatException('구형 저장의 구매 필드 충돌');
-    if (row['schema'] == 2) state.purchases = WorkshopPurchases.fromJson(object('purchases'), config);
+    if ((row['schema'] as int) >= 2) state.purchases = WorkshopPurchases.fromJson(object('purchases'), config);
     state.purchases.available(state.buns);
+    if(row['schema']==3) state.missions=WorkshopMissions.fromJson(object('missions'));
     final catalog = config.section('active_recipes');
     if (row['recipes'] is! List || row['selectedFlavor'] is! String || row['recipeMissions'] is! List) throw const FormatException('레시피 보유 형식 오류');
     state.recipes.clear(); state.flavorMasteries.clear();
@@ -180,8 +194,13 @@ class WorkshopState {
         if (level == null || level < 2 || level > state.level || payload['level'] != level ||
             DevelopmentBalance.integer(payload, 'gold') == 0 || payload['revision'] is! String ||
             (payload['revision'] as String).isEmpty) throw const FormatException('승급 황금 심사 근거 오류');
+      } else if(e.key.startsWith('mission:')) {
+        if(state.missions.claims[e.key.substring(8)]!=e.value) throw const FormatException('미션 황금 신청 원본 불일치');
       } else { throw const FormatException('알 수 없는 황금 심사 종류'); }
       state.pendingGold[e.key] = e.value as String;
+    }
+    for(final claim in state.missions.claims.entries) {
+      if(state.pendingGold['mission:${claim.key}']!=claim.value) throw const FormatException('미션 황금 신청 누락');
     }
     for (final sale in state.sales.keys) {
       if (!state.pendingGold.containsKey('sale:$sale')) throw const FormatException('판매 황금 심사 근거 누락');
@@ -192,6 +211,35 @@ class WorkshopState {
     if (state.sales.length != state.completedSales || state.claimedLevels.length != state.level - 1) {
       throw const FormatException('판매/승급 원장 불일치');
     }
+    if (row['schema']==3) {
+      if(!['scenetime','day','night_time','clock'].contains(row['sceneTime'])) throw const FormatException('배경 시간 저장 오류');
+      state.sceneTime=row['sceneTime'] as String;
+      if (row['rewardAccount'] != null && (row['rewardAccount'] is! String || (row['rewardAccount'] as String).isEmpty)) throw const FormatException('보상 계정 형식 오류');
+      state.rewardAccount=row['rewardAccount'] as String?;
+      if (state.purchases.account != null && state.rewardAccount != null && state.purchases.account != state.rewardAccount) throw const FormatException('구매와 보상 계정 불일치');
+      for (final e in object('rewardReceipts').entries) {
+        final raw=state.pendingGold[e.key];
+        if (raw==null || state.rewardAccount==null || e.value is! String) throw const FormatException('보상 수신 원본 누락');
+        final receipt=jsonDecode(e.value as String);
+        if (receipt is! Map<String,dynamic>) throw const FormatException('보상 수신 형식 오류');
+        final sale=e.key.startsWith('sale:');
+        validateWorkshopRewardReceipt(receipt,account:state.rewardAccount!,progress:state.grid.runId,
+          claim:sale ? e.key.substring(5) : '${state.grid.runId}:${e.key}',kind:sale ? 'sale':'mission',
+          payload:jsonDecode(raw) as Map<String,dynamic>);
+        state.rewardReceipts[e.key]=e.value as String;
+      }
+      for (final e in object('adAttempts').entries) {
+        if (e.value is! Map<String,dynamic> || state.rewardAccount==null) throw const FormatException('광고 기록 형식 오류');
+        state.adAttempts[e.key]=validateWorkshopAd(e.value as Map<String,dynamic>,state.rewardAccount!,e.key);
+      }
+      for (final e in object('avatarEquipment').entries) {
+        if (e.value is! String) throw const FormatException('아바타 착용 형식 오류');
+        final item=config.section('avatar_catalog')[e.value];
+        if (item is! Map<String,dynamic> || item['slot']!=e.key ||
+            (item['free']!=true && state.purchases.owned['cosmetic:${e.value}']!=1)) throw const FormatException('아바타 착용 보유 근거 오류');
+        state.avatarEquipment[e.key]=e.value as String;
+      }
+    }
     return state;
   }
 }
@@ -200,10 +248,14 @@ abstract class WorkshopRepository {
   Future<Map<String, dynamic>?> load();
   Future<void> save(Map<String, dynamic> next, int expectedSequence);
 }
+String _workshopGuard(Map<String,dynamic> row) => jsonEncode(row['schema']==3 ? {
+  'purchases':row['purchases'],'rewardAccount':row['rewardAccount'],
+  'rewardReceipts':row['rewardReceipts'],'adAttempts':row['adAttempts'],
+  'missionClaims':(row['missions'] as Map<String,dynamic>)['claims']} : row['purchases']);
 class SqliteWorkshopRepository implements WorkshopRepository {
   Database? _database;
   Future<Database> get database async => _database ??= await openDatabase(
-    path.join(await getDatabasesPath(), 'todays_bungeoppang_workshop.db'), version: 2,
+    path.join(await getDatabasesPath(), 'todays_bungeoppang_workshop.db'), version: 3,
     onCreate: (db, _) async {
       await db.execute('CREATE TABLE snapshots(slot TEXT PRIMARY KEY, sequence INTEGER NOT NULL, body TEXT NOT NULL)');
       await db.execute('CREATE TABLE purchase_guard(id INTEGER PRIMARY KEY, body TEXT NOT NULL)');
@@ -222,7 +274,7 @@ class SqliteWorkshopRepository implements WorkshopRepository {
       }
       final body = jsonDecode(rows.single['body'] as String) as Map<String, dynamic>;
       if (body['sequence'] != rows.single['sequence'] ||
-          (body['schema'] == 2 && (guards.isEmpty || guards.single['body'] != jsonEncode(body['purchases']))) ||
+          ([2,3].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
           (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('저장/구매 보호 기록 재대조가 필요해요.');
       return body;
     });
@@ -236,15 +288,15 @@ class SqliteWorkshopRepository implements WorkshopRepository {
       if (current.isNotEmpty) {
         final body = jsonDecode(current.single['body'] as String) as Map<String, dynamic>;
         if (body['sequence'] != current.single['sequence'] ||
-            (body['schema'] == 2 && (guards.isEmpty || guards.single['body'] != jsonEncode(body['purchases']))) ||
+            ([2,3].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
             (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('구매 보호 기록 충돌');
       }
       final oldSequence = current.isEmpty ? 0 : current.single['sequence'];
       if (oldSequence != expectedSequence || next['sequence'] != expectedSequence + 1) {
         throw const FormatException('진행 저장 순번 충돌');
       }
-      if (next['schema'] != 2 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
-      await tx.insert('purchase_guard', {'id': 1, 'body': jsonEncode(next['purchases'])}, conflictAlgorithm: ConflictAlgorithm.replace);
+      if (next['schema'] != 3 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
+      await tx.insert('purchase_guard', {'id': 1, 'body': _workshopGuard(next)}, conflictAlgorithm: ConflictAlgorithm.replace);
       if (current.isNotEmpty) await tx.insert('snapshots', {...current.single, 'slot': 'backup'}, conflictAlgorithm: ConflictAlgorithm.replace);
       await tx.insert('snapshots', {'slot': 'current', 'sequence': next['sequence'], 'body': jsonEncode(next)},
           conflictAlgorithm: ConflictAlgorithm.replace);
@@ -264,7 +316,13 @@ class WorkshopController extends ChangeNotifier {
   bool get gridVisible => _gridVisible;
   set gridVisible(bool value) { _gridVisible = value; if (!disposed) notifyListeners(); }
   String? error, notice;
-  bool _purchaseBusy = false, _adPaused = false;
+  bool _purchaseBusy = false, _adPaused = false, _rewardBusy = false, _adBusy = false;
+  bool get rewardBusy => _rewardBusy;
+  bool get adBusy => _adBusy;
+  WorkshopOnline? get onlineGateway => purchaseGateway is WorkshopOnline ? purchaseGateway as WorkshopOnline : null;
+  int get pendingRewardCount => state.pendingGold.keys.where((key) {
+    final raw=state.rewardReceipts[key];return raw==null || (jsonDecode(raw) as Map)['outcome']=='pending';
+  }).length;
   bool get purchaseBusy => _purchaseBusy;
   bool get gameplayPaused => !foreground || _adPaused;
   BigInt get tapRate => state.purchases.rate(config, 'tap');
@@ -334,8 +392,9 @@ class WorkshopController extends ChangeNotifier {
   void _flushActive() {
     final at = _clock.elapsedMilliseconds;
     if (foreground && !busy && error == null) {
-      final settlement = state.business.settle(config, now(), bunsPerSecond: autoRate, offline: false);
+      final settlement = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:at-_lastMono);
       state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
+      state.missions=state.missions.observe(now(),production:settlement.buns,autoPeak:autoRate);
       _advanceMemory(at - _lastMono);
     }
     _lastMono = at;
@@ -376,12 +435,13 @@ class WorkshopController extends ChangeNotifier {
     } else { await command(() {}); }
   }
   Future<bool> openBusiness() => command(() {
-    state.business = state.business.settle(config, now(), bunsPerSecond: autoRate, offline: false).state;
+    state.business = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
     state.business = state.business.beginOrContinue(state.business.settledUtc);
     state.inventory = state.inventory.expire(config, state.business.businessIndex).acceptPrepared(state.business.businessIndex);
+    state.missions=state.missions.observe(now(),businessStarted:true,autoPeak:autoRate);
   });
   Future<bool> closeBusiness() => command(() {
-    final settled = state.business.settle(config, now(), bunsPerSecond: autoRate, offline: false).state;
+    final settled = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
     state.business = settled.close(settled.settledUtc);
     state.customers.clear(); state.arrivalMs = 0;
     if (state.session?.finished != true) { state.session = null; state.phaseMs = 0; }
@@ -391,6 +451,7 @@ class WorkshopController extends ChangeNotifier {
     _flushActive();
     if (_adPaused) return;
     state.buns += tapRate; state.lifetime += tapRate; state.taps++;
+    state.missions=state.missions.observe(now(),taps:1,production:tapRate,autoPeak:autoRate);
     notifyListeners();
   }
   int difficulty(String flavor) => DevelopmentBalance.integer(config.section('active_recipes')[flavor] as Map<String, dynamic>, 'difficulty');
@@ -541,6 +602,113 @@ class WorkshopController extends ChangeNotifier {
     final gold = DevelopmentBalance.integer(rule, 'gold_reward');
     if (gold > 0) state.pendingGold['level:$next'] = jsonEncode({'level': next, 'gold': gold, 'revision': config.revision});
   });
+  Future<bool> setBackgroundTime(String time)=>command(() {
+    if(!['scenetime','day','night_time','clock'].contains(time)) throw const FormatException('배경 시간 선택 오류');
+    state.sceneTime=time;
+  });
+  Future<bool> claimMission(String scope,String goal,{String? expectedPeriod})=>command(() {
+    state.missions=state.missions.observe(now(),autoPeak:autoRate);
+    if(expectedPeriod!=null && expectedPeriod!=(scope=='daily' ? state.missions.day:state.missions.week)) throw const FormatException('미션 기간이 바뀌었어요. 다시 확인해 주세요.');
+    state.missions=state.missions.claim(config,scope,goal);
+    final key=state.missions.claimKey(scope,goal);
+    state.pendingGold['mission:$key']=state.missions.claims[key]!;
+  });
+  bool ownsAvatar(String id) {
+    final entry=config.section('avatar_catalog')[id];
+    return entry is Map<String,dynamic> && (entry['free']==true || state.purchases.owned['cosmetic:$id']==1);
+  }
+  Future<bool> equipAvatar(String id) => command(() {
+    final entry=config.section('avatar_catalog')[id];
+    if (entry is! Map<String,dynamic> || !ownsAvatar(id)) throw const FormatException('보유한 아바타 아이템을 골라 주세요.');
+    state.avatarEquipment[entry['slot'] as String]=id;
+  });
+  Future<bool> _bindRewardAccount(WorkshopOnline gateway,String account) async => command(() {
+    if (gateway.authenticatedAccount!=account || account.isEmpty ||
+        (state.rewardAccount!=null && state.rewardAccount!=account) ||
+        (state.purchases.account!=null && state.purchases.account!=account)) throw const FormatException('원래 진행 계정으로 확인해 주세요.');
+    state.rewardAccount=account;
+  });
+  Future<bool> syncRewards() async {
+    final gateway=onlineGateway;
+    if (gateway==null || _rewardBusy || disposed || error!=null) return false;
+    _rewardBusy=true;
+    try {
+      final account=gateway.authenticatedAccount;
+      await gateway.requireActiveProgress(state.grid.runId);
+      if (!await _bindRewardAccount(gateway,account)) return false;
+      var count=0;
+      for (final key in state.pendingGold.keys.toList()..sort()) {
+        final old=state.rewardReceipts[key];
+        if (old!=null && (jsonDecode(old) as Map)['outcome']!='pending') continue;
+        if (++count>DevelopmentBalance.integer(config.section('pending_reward_sync'),'batch_size')) break;
+        final sale=key.startsWith('sale:'),claim=sale ? key.substring(5) : '${state.grid.runId}:$key';
+        final payload=jsonDecode(state.pendingGold[key]!) as Map<String,dynamic>;
+        final result=await gateway.reward(claim,sale ? 'sale':'mission',payload);
+        if (!await command(() {
+          if (gateway.authenticatedAccount!=account) throw const FormatException('계정이 변경됐어요.');
+          final checked=validateWorkshopRewardReceipt(result,account:account,progress:state.grid.runId,
+            claim:claim,kind:sale ? 'sale':'mission',payload:payload);
+          final oldRaw=state.rewardReceipts[key];
+          if (oldRaw!=null && (jsonDecode(oldRaw) as Map)['outcome']!='pending' && oldRaw!=jsonEncode(checked)) throw const FormatException('확정 보상 수신 충돌');
+          state.rewardReceipts[key]=jsonEncode(checked);
+        })) return false;
+      }
+      return true;
+    } catch (e) { notice='보상 확인 대기를 유지했어요: $e';return false;
+    } finally { _rewardBusy=false;if(!disposed) notifyListeners(); }
+  }
+  Future<bool> showRewardedAd(WorkshopAdDriver driver) async {
+    final gateway=onlineGateway;
+    if (gateway==null || !driver.ready || _adBusy || disposed || error!=null || gameplayPaused) return false;
+    _adBusy=true;
+    try {
+      final account=gateway.authenticatedAccount;
+      await gateway.requireActiveProgress(state.grid.runId);
+      if (!await _bindRewardAccount(gateway,account)) return false;
+      final id=_id();
+      // Persist the ID before reserving a server slot. A failed response is
+      // recovered by the same ID and never replayed through the SDK.
+      if (!await command(() => state.adAttempts[id]={'account':account,'attempt':id,'status':'unknown'})) return false;
+      final approval=validateWorkshopAd(await gateway.startAd(id),account,id);
+      if (gateway.authenticatedAccount!=account || approval['status']!='reserved' || approval['customData'] is! String) return false;
+      if (!await command(() => state.adAttempts[id]=approval)) return false;
+      setAdPaused(true);
+      try { await driver.show(customData:approval['customData'] as String); }
+      finally { setAdPaused(false); }
+      return await _queryAd(gateway,account,id);
+    } catch (e) { notice='광고 검증 대기를 유지했어요: $e';return false;
+    } finally { setAdPaused(false);_adBusy=false;if(!disposed) notifyListeners(); }
+  }
+  Future<bool> _queryAd(WorkshopOnline gateway,String account,String id) async {
+    final result=validateWorkshopAd(await gateway.queryAd(id),account,id);
+    if (gateway.authenticatedAccount!=account) return false;
+    return command(() {
+      final old=state.adAttempts[id]!;
+      if (old['paid']==true && (result['paid']!=true || old['receiptId']!=result['receiptId'] || old['providerProofKey']!=result['providerProofKey'])) throw const FormatException('광고 지급 결과 역행');
+      if ((old['status']=='verified' && result['status']!='verified') ||
+          (old['status']=='verifying' && result['status']=='reserved') ||
+          (old['status']=='rejectedFinal' && result['status']!='rejectedFinal')) throw const FormatException('광고 검증 상태 역행');
+      if (old['status']!='unknown' && result['status']!='unknown' &&
+          (old['day']!=result['day'] || old['revision']!=result['revision'] || old['gold']!=result['gold'])) throw const FormatException('광고 승인 근거 충돌');
+      if (result['status']!='unknown') state.adAttempts[id]=result;
+    });
+  }
+  Future<bool> recoverAds() async {
+    final gateway=onlineGateway;
+    if (gateway==null || _adBusy || disposed || error!=null) return false;
+    _adBusy=true;
+    try {
+      final account=gateway.authenticatedAccount;
+      await gateway.requireActiveProgress(state.grid.runId);
+      if (!await _bindRewardAccount(gateway,account)) return false;
+      for (final e in state.adAttempts.entries.toList()) {
+        if (e.value['paid']==true || e.value['status']=='rejectedFinal') continue;
+        if (!await _queryAd(gateway,account,e.key)) return false;
+      }
+      return true;
+    } catch(e) { notice='광고 복구 확인이 필요해요: $e';return false;
+    } finally { _adBusy=false;if(!disposed) notifyListeners(); }
+  }
   /// Pause gameplay clocks for an approved ad without pausing economy time.
   void setAdPaused(bool value) {
     if (disposed || value == _adPaused) return;
@@ -551,13 +719,14 @@ class WorkshopController extends ChangeNotifier {
     _purchaseBusy = true;
     try {
       final account = gateway.authenticatedAccount;
+      if (state.rewardAccount != null && state.rewardAccount != account) throw const FormatException('원래 보상 계정으로 확인해 주세요.');
       if (account.isEmpty) throw const FormatException('로그인 후 구매할 수 있어요.');
       await gateway.requireActiveProgress(state.grid.runId);
       if (disposed || gateway.authenticatedAccount != account) return false;
-      final quote = quoteCompositeSkill(config, skill, owned: state.purchases.owned[skill] ?? 0, quantity: quantity);
+      final quote = quoteWorkshopProduct(config, skill, owned: state.purchases.owned[skill] ?? 0, quantity: quantity);
       final intent = PurchaseJournal.start(account, _id(), quote);
       if (!await command(() => state.purchases = state.purchases.prepare(config, intent,
-          buns: state.buns, lifetime: state.lifetime))) return false;
+          buns: state.buns, lifetime: state.lifetime,level:state.level))) return false;
       final response = await gateway.reserve(intent);
       if (!await _purchaseResponse(gateway, account, intent.transactionId, response)) return false;
       return await _finishPurchase(gateway, account, intent.transactionId);
@@ -606,8 +775,13 @@ class WorkshopController extends ChangeNotifier {
     journal = state.purchases.journal(transaction);
     if (journal.serverStatus == 'unknown' || journal.serverStatus == 'reserved') return false;
     return command(() {
+      final previous=state.purchases.journal(transaction);
       final result = state.purchases.settle(transaction, state.buns);
       state.purchases = result.purchases; state.buns = result.buns;
+      final current=state.purchases.journal(transaction);
+      if(!previous.applied && current.applied && !current.quote.skillId.startsWith('cosmetic:')) {
+        state.missions=state.missions.observe(now(),purchases:current.quote.quantity,autoPeak:autoRate);
+      }
     });
   }
   @override

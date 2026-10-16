@@ -219,10 +219,11 @@ void main() {
     controller.setAdPaused(false);
     expect(await controller.startPractice(), isTrue);
   });
-  test('schema1은 구매 없는 schema2로 읽되 schema2 구매 누락은 초기화하지 않는다', () {
+  test('schema1은 구매 없는 schema3로 읽되 schema3 구매 누락은 초기화하지 않는다', () {
     final legacy = controller.state.toJson();
-    legacy['schema'] = 1; legacy.remove('purchases');
-    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 2);
+    legacy['schema'] = 1;
+    for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime']) { legacy.remove(key); }
+    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 3);
     final corrupted = controller.state.toJson()..remove('purchases');
     expect(() => WorkshopState.fromJson(corrupted, config), throwsFormatException);
   });

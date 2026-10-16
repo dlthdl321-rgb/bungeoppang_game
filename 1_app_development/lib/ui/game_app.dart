@@ -85,11 +85,11 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     ..setCookingSources(_cookingIds)
     // Night plays the night mood whatever the season.
     ..setScene(isNightTime(
-                widget.controller.state.equippedCosmetic(CosmeticSlot.time),
+                widget.workshop?.state.sceneTime ?? widget.controller.state.equippedCosmetic(CosmeticSlot.time),
                 DateTime.now()) ==
             true
         ? 'night'
-        : widget.controller.state.equippedCosmetic(CosmeticSlot.background));
+        : widget.workshop!=null ? 'clear' : widget.controller.state.equippedCosmetic(CosmeticSlot.background));
 
   @override
   void dispose() {

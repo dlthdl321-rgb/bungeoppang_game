@@ -43,6 +43,15 @@ class BusinessProgress {
         end, total % scale), total ~/ scale);
   }
 
+  /// Foreground economy follows monotonic elapsed time; a changed wall clock
+  /// may advance the calendar cursor but cannot fabricate active production.
+  BusinessSettlement settleActive(DateTime now,{required BigInt bunsPerSecond,required int elapsedMs}) {
+    if(elapsedMs<0 || bunsPerSecond.isNegative) throw const FormatException('전경 생산 시간 오류');
+    final total=fractional+(open ? bunsPerSecond*BigInt.from(elapsedMs)*BigInt.from(1000):BigInt.zero);
+    final scale=BigInt.from(1000000);
+    return BusinessSettlement(BusinessProgress._(open,businessIndex,acceptedDay,observed(now),total%scale),total~/scale);
+  }
+
   /// The caller first settles through the action's timestamp, including when
   /// the business is closed. Same date reopen never ages inventory twice.
   BusinessProgress beginOrContinue(DateTime now) {

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'invite_models.dart';
 import 'online_backend.dart';
+import 'workshop_online.dart';
 
 // Firebase project settings, passed at build time so they stay out of the
 // repository (docs/stage15_release_online.md):
@@ -28,7 +29,7 @@ const firebaseConfigured = _apiKey != '' &&
 /// The region of the Cloud Functions (firebase/functions/src/index.ts).
 const functionsRegion = 'asia-northeast3';
 
-class FirebaseOnlineBackend implements OnlineBackend {
+class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
   final FirebaseAuth _auth;
   final FirebaseFunctions _functions;
   String? _kakaoName;
@@ -52,6 +53,12 @@ class FirebaseOnlineBackend implements OnlineBackend {
       return const NoOnlineBackend();
     }
   }
+
+  @override
+  String get authenticatedAccount => _auth.currentUser?.uid ?? '';
+  @override
+  Future<Map<String,dynamic>> callWorkshop(String name,Map<String,dynamic> data) async =>
+      Map<String,dynamic>.from(await _call(name,Map<String,Object?>.from(data)));
 
   @override
   bool get configured => true;

@@ -7,6 +7,7 @@ import re
 ROOT = Path(__file__).resolve().parents[2]
 CONFIG = ROOT / '1_app_development/config/development_balance.json'
 DOC = ROOT / '2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/14_개발용임시수치설정.md'
+SERVER_CONFIG = ROOT / '1_app_development/firebase/functions/src/generated/development_balance.json'
 CATALOG = ROOT / '1_app_development/firebase/functions/src/catalog.json'
 
 
@@ -59,6 +60,22 @@ def validate(data, catalog):
             require(isinstance(price['buns'], str) and re.fullmatch(r'[1-9][0-9]*', price['buns']),
                     f'{key}: 붕어빵력 비용은 양수 10진 문자열')
             require(type(price['gold']) is int and price['gold'] > 0, f'{key}: 황금 비용 필요')
+    expected_goals = {'daily': {'taps', 'production', 'purchases', 'auto'}, 'weekly': {'taps', 'days', 'purchases', 'dailyAll'}}
+    require(data['mission_gold_rewards']['daily_all'] > 0, '전체 일일 보상')
+    for scope, expected in expected_goals.items():
+        goals = data['mission_targets'][scope]
+        require(set(goals) == expected, '사용자 확정 미션 구성')
+        for key, row in goals.items():
+            require(row['metric'] == key and re.fullmatch(r'[1-9][0-9]*', row['target']) and
+                    data['mission_gold_rewards'][row['reward_key']] > 0, f'{scope}/{key}: 미션 목표/보상')
+    avatar = data['avatar_catalog']
+    avatar_slots = {'character', 'skin', 'hair', 'top', 'bottom', 'shoes', 'outfit', 'hat', 'accessory', 'tool'}
+    require(bool(avatar), '아바타 카탈로그 누락')
+    for key, row in avatar.items():
+        require(row['slot'] in avatar_slots and type(row['free']) is bool and
+                type(row['unlock_level']) is int and 1 <= row['unlock_level'] <= 50 and
+                isinstance(row['unlock_total'], str) and re.fullmatch(r'0|[1-9][0-9]*', row['unlock_total']) and
+                (row['free'] or key in data['cosmetic_purchase']), f'{key}: 아바타 보유/해금 카탈로그')
     for key, price in entries.items():
         require(isinstance(price['effect'], str) and re.fullmatch(r'[1-9][0-9]*', price['effect']) and
                 isinstance(price['unlock_total'], str) and re.fullmatch(r'0|[1-9][0-9]*', price['unlock_total']),
@@ -175,7 +192,7 @@ def render(data):
     for v in data['level_progression']:
         text += '| ' + ' | '.join(str(v[k]) for k in ('level', 'season_total_buns', 'additional_taps', 'additional_sales', 'order_flavor_limit', 'order_quantity_limit', 'order_wait_ms', 'max_queue')) + ' |\n'
     text += '\n## 5. 나머지 설정 전체\n\n| 설정 경로 | 임시값/확정값 |\n| --- | --- |\n'
-    excluded = {'metadata', 'cosmetic_purchase', 'unresolved_non_numeric_policies'}
+    excluded = {'metadata', 'cosmetic_purchase', 'unresolved_non_numeric_policies', 'avatar_catalog', 'mission_targets'}
     for key, val in data.items():
         if key in excluded:
             continue
@@ -186,6 +203,14 @@ def render(data):
             val = {str(v['level']): {'buns_reward': v['buns_reward'], 'gold_reward': v['gold_reward']} for v in val}
         for path, value in flatten(val, key):
             text += f'| `{path}` | `{value}` |\n'
+    text += '\n### 출시 아바타 카탈로그: 기존 에셋 재사용, 수치는 임시값\n\n| ID | 이름 | 슬롯 | 기본 무료 | 해금 Lv | 해금 누적 |\n| --- | --- | --- | --- | --- | --- |\n'
+    for key, row in data['avatar_catalog'].items():
+        text += f"| {key} | {row['label']} | {row['slot']} | {row['free']} | {row['unlock_level']} | {row['unlock_total']} |\n"
+    text += '\n### 신규 일일·주간 미션: 구매·자동 생산 포함(사용자 확정), 수치는 임시값\n\n| 기간 | ID | 목표 | 임시 요구 | 황금 보상 |\n| --- | --- | --- | --- | --- |\n'
+    for scope, goals in data['mission_targets'].items():
+        for key, row in goals.items():
+            text += f"| {scope} | {key} | {row['label']} | {row['target']} | {data['mission_gold_rewards'][row['reward_key']]} |\n"
+    text += f"\n일일 전체 완료 추가 황금: {data['mission_gold_rewards']['daily_all']}. 모든 황금은 서버 검증 후 지급.\n"
     text += '\n## 6. 아직 수치로 해결할 수 없는 항목\n\n'
     text += '\n'.join('- ' + v for v in data['unresolved_non_numeric_policies']) + '\n\n'
     text += '[이전·복구 위험](13_저장이전과구매복구위험검토.md) · [선행 설계](12_선행기획검토와복구설계.md) · [체크리스트](CHECKLIST.md)\n'
@@ -210,10 +235,14 @@ def main():
     expected = render(data)
     defaults = ROOT / '1_app_development/lib/development_audio_defaults.dart'
     expected_defaults = render_audio_defaults(data)
+    expected_server = json.dumps(data, ensure_ascii=False, indent=2) + '\n'
     if args.check:
+        require(SERVER_CONFIG.exists() and SERVER_CONFIG.read_text() == expected_server, '서버 설정 재생성 필요')
         require(defaults.exists() and defaults.read_text() == expected_defaults, '오디오 기본값 재생성 필요')
         require(DOC.exists() and DOC.read_text() == expected, '문서와 설정 불일치: 생성 도구 실행 필요')
     else:
+        SERVER_CONFIG.parent.mkdir(parents=True, exist_ok=True)
+        SERVER_CONFIG.write_text(expected_server)
         DOC.write_text(expected)
         defaults.write_text(expected_defaults)
     print('임시 수치 구조·확정 요구·가격 전체·레벨 표·문서 일치 확인. 앱 실행/밸런스 검수 아님.')

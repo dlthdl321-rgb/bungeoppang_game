@@ -70,4 +70,23 @@ void main() {
     final changed = DevelopmentBalance.fromJson(raw);
     expect(WorkshopPurchases.fromJson(book.toJson(), changed).journals[intent.transactionId]!.quote.buns, BigInt.from(15));
   });
+  test('유료 아바타도 두 재화 견적·레벨·1회 보유 계약을 사용한다', () {
+    final quote=quoteWorkshopProduct(config,'cosmetic:short',owned:0,quantity:1);
+    final cosmetic=PurchaseJournal.start('account','cosmetic_0001',quote);
+    var wardrobe=WorkshopPurchases.empty().prepare(config,cosmetic,buns:BigInt.from(2000),lifetime:BigInt.from(2000),level:50);
+    final receipt={...cosmetic.toJson(),'status':'reserved'};
+    wardrobe=wardrobe.response(cosmetic.transactionId,receipt);
+    final debit=wardrobe.debit(cosmetic.transactionId,BigInt.from(2000));
+    wardrobe=debit.purchases.response(cosmetic.transactionId,{...receipt,'status':'committed','receiptId':'cosmetic-receipt','grantId':'cosmetic-grant'})
+      .settle(cosmetic.transactionId,debit.buns).purchases;
+    expect(wardrobe.owned['cosmetic:short'],1);
+    expect(WorkshopPurchases.fromJson(wardrobe.toJson(),config).owned,wardrobe.owned);
+    expect(()=>quoteWorkshopProduct(config,'cosmetic:short',owned:1,quantity:1),throwsFormatException);
+    expect(()=>quoteWorkshopProduct(config,'cosmetic:boy',owned:0,quantity:1),throwsFormatException);
+  });
+  test('신규 아바타 구매로 배경/붕어빵 꾸미기 범위를 몰래 열지 않는다', () {
+    expect(()=>quoteWorkshopProduct(config,'cosmetic:forest',owned:0,quantity:1),throwsFormatException);
+    expect(()=>quoteWorkshopProduct(config,'cosmetic:choco',owned:0,quantity:1),throwsFormatException);
+  });
+
 }

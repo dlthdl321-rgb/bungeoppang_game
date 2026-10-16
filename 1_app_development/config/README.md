@@ -21,3 +21,6 @@ python 1_app_development/tools/planning_tasks.py render
 ## 현재 신규 게임 소스
 
 main.dart의 신규 Workshop은 초기 팥·추가 슈크림/초코 미션·영업/연습/숙련/6구/재고·손님 판매·수동50레벨·도감 저장 경로다. 구형 코인은 신규 개념이 아니며 실제 복합 결제·검증 황금/광고·친구 연동과 컴파일/실행 검수는 미완료다. 상세는 [18번 연결 범위](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/18_신규게임연결과사용자결정반영.md)를 따른다.
+
+
+개발 설정 revision3은 기존 사장님 아바타51개 메타데이터/임시 해금과 두 재화 가격을 함께 관리합니다. 서버의 `firebase/functions/src/generated/development_balance.json`도 같은 생성 도구가 만들며 `--check`로 앱/문서/서버 사본을 대조합니다. 생성 파일을 직접 고치지 않습니다.

@@ -1,7 +1,7 @@
 {
   "metadata": {
     "schema_version": 1,
-    "revision": "development-provisional-2",
+    "revision": "development-provisional-3",
     "status": "approved_for_provisional_development",
     "release_validated": false,
     "runtime_connected": false,
@@ -1466,6 +1466,419 @@
       "difficulty": 2,
       "initial": false,
       "acquisition_tier": 2
+    }
+  },
+  "avatar_catalog": {
+    "girl": {
+      "label": "여자 사장님",
+      "slot": "character",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "boy": {
+      "label": "남자 사장님",
+      "slot": "character",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "skin1": {
+      "label": "피부톤 1",
+      "slot": "skin",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "skin2": {
+      "label": "피부톤 2",
+      "slot": "skin",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "skin3": {
+      "label": "피부톤 3",
+      "slot": "skin",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "long": {
+      "label": "긴 생머리",
+      "slot": "hair",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "short": {
+      "label": "짧은 머리",
+      "slot": "hair",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "ponytail": {
+      "label": "묶은 머리",
+      "slot": "hair",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "curly": {
+      "label": "곱슬머리",
+      "slot": "hair",
+      "free": false,
+      "unlock_level": 5,
+      "unlock_total": "0"
+    },
+    "apron": {
+      "label": "기본 앞치마",
+      "slot": "outfit",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "padding": {
+      "label": "패딩 조끼",
+      "slot": "outfit",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "stripe": {
+      "label": "줄무늬 앞치마",
+      "slot": "outfit",
+      "free": false,
+      "unlock_level": 5,
+      "unlock_total": "0"
+    },
+    "chefcoat": {
+      "label": "요리사 복",
+      "slot": "outfit",
+      "free": false,
+      "unlock_level": 7,
+      "unlock_total": "0"
+    },
+    "nohat": {
+      "label": "모자 없음",
+      "slot": "hat",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "beanie": {
+      "label": "털 비니",
+      "slot": "hat",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "earmuffs": {
+      "label": "귀마개",
+      "slot": "hat",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "chefhat": {
+      "label": "요리사 모자",
+      "slot": "hat",
+      "free": false,
+      "unlock_level": 6,
+      "unlock_total": "0"
+    },
+    "santa": {
+      "label": "산타 모자",
+      "slot": "hat",
+      "free": false,
+      "unlock_level": 9,
+      "unlock_total": "0"
+    },
+    "tongs": {
+      "label": "붕어빵 집게",
+      "slot": "tool",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "goldtongs": {
+      "label": "황금 집게",
+      "slot": "tool",
+      "free": false,
+      "unlock_level": 9,
+      "unlock_total": "0"
+    },
+    "tee": {
+      "label": "흰 티셔츠",
+      "slot": "top",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "creamlong": {
+      "label": "크림 긴팔",
+      "slot": "top",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "pinksweater": {
+      "label": "분홍 니트",
+      "slot": "top",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "sagesweater": {
+      "label": "세이지 니트",
+      "slot": "top",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "creamsweater": {
+      "label": "꽈배기 니트",
+      "slot": "top",
+      "free": false,
+      "unlock_level": 5,
+      "unlock_total": "0"
+    },
+    "cardigan": {
+      "label": "카디건",
+      "slot": "top",
+      "free": false,
+      "unlock_level": 6,
+      "unlock_total": "0"
+    },
+    "shorts": {
+      "label": "베이지 반바지",
+      "slot": "bottom",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "skirt": {
+      "label": "주름치마",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "widepants": {
+      "label": "와이드 바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "brownpants": {
+      "label": "갈색 바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "flats": {
+      "label": "갈색 단화",
+      "slot": "shoes",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "sneakers": {
+      "label": "흰 운동화",
+      "slot": "shoes",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "boots": {
+      "label": "앵클부츠",
+      "slot": "shoes",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "furboots": {
+      "label": "털 부츠",
+      "slot": "shoes",
+      "free": false,
+      "unlock_level": 7,
+      "unlock_total": "0"
+    },
+    "darkapron": {
+      "label": "초코 앞치마",
+      "slot": "outfit",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "creamapron": {
+      "label": "크림 앞치마",
+      "slot": "outfit",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "waistapron": {
+      "label": "허리 앞치마",
+      "slot": "outfit",
+      "free": false,
+      "unlock_level": 5,
+      "unlock_total": "0"
+    },
+    "bandana": {
+      "label": "크림 두건",
+      "slot": "hat",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "redbandana": {
+      "label": "빨간 두건",
+      "slot": "hat",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "ballcap": {
+      "label": "크림 야구모자",
+      "slot": "hat",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "newsboy": {
+      "label": "헌팅캡",
+      "slot": "hat",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "blackcap": {
+      "label": "검정 야구모자",
+      "slot": "hat",
+      "free": false,
+      "unlock_level": 6,
+      "unlock_total": "0"
+    },
+    "noacc": {
+      "label": "소품 없음",
+      "slot": "accessory",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "ribbon": {
+      "label": "분홍 리본",
+      "slot": "accessory",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "fishpin": {
+      "label": "붕어빵 머리핀",
+      "slot": "accessory",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "glasses": {
+      "label": "동그란 안경",
+      "slot": "accessory",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "scarf": {
+      "label": "분홍 목도리",
+      "slot": "accessory",
+      "free": false,
+      "unlock_level": 5,
+      "unlock_total": "0"
+    },
+    "mittens": {
+      "label": "털장갑",
+      "slot": "accessory",
+      "free": false,
+      "unlock_level": 6,
+      "unlock_total": "0"
+    },
+    "crossbag": {
+      "label": "크로스백",
+      "slot": "accessory",
+      "free": false,
+      "unlock_level": 7,
+      "unlock_total": "0"
+    },
+    "paperbag": {
+      "label": "붕어빵 봉투",
+      "slot": "tool",
+      "free": false,
+      "unlock_level": 5,
+      "unlock_total": "0"
+    },
+    "fishhold": {
+      "label": "갓 구운 붕어빵",
+      "slot": "tool",
+      "free": false,
+      "unlock_level": 8,
+      "unlock_total": "0"
+    }
+  },
+  "mission_targets": {
+    "daily": {
+      "taps": {
+        "label": "붕어빵 탭",
+        "metric": "taps",
+        "target": "50",
+        "reward_key": "daily_taps"
+      },
+      "production": {
+        "label": "오늘 붕어빵력 생산",
+        "metric": "production",
+        "target": "1000",
+        "reward_key": "daily_production"
+      },
+      "purchases": {
+        "label": "스킬 구매 수량",
+        "metric": "purchases",
+        "target": "3",
+        "reward_key": "daily_purchases"
+      },
+      "auto": {
+        "label": "기본 초당 생산",
+        "metric": "auto",
+        "target": "10",
+        "reward_key": "daily_auto"
+      }
+    },
+    "weekly": {
+      "taps": {
+        "label": "주간 붕어빵 탭",
+        "metric": "taps",
+        "target": "1000",
+        "reward_key": "weekly_taps"
+      },
+      "days": {
+        "label": "영업한 날짜",
+        "metric": "days",
+        "target": "3",
+        "reward_key": "weekly_days"
+      },
+      "purchases": {
+        "label": "주간 스킬 구매 수량",
+        "metric": "purchases",
+        "target": "20",
+        "reward_key": "weekly_purchases"
+      },
+      "dailyAll": {
+        "label": "일일 미션 전체 완료",
+        "metric": "dailyAll",
+        "target": "3",
+        "reward_key": "weekly_daily_all"
+      }
     }
   }
 }

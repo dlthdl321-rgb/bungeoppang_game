@@ -14,6 +14,7 @@ import 'server_invite_repository.dart';
 import 'time_service.dart';
 import 'development_balance_asset.dart';
 import 'workshop_controller.dart';
+import 'workshop_online.dart';
 import 'ui/game_app.dart';
 import 'ui/pixel_sprites.dart';
 
@@ -44,7 +45,8 @@ Future<void> main() async {
   try {
     await controller.initialize();
     final config = await loadDevelopmentBalance();
-    workshop = WorkshopController(config, SqliteWorkshopRepository());
+    workshop = WorkshopController(config, SqliteWorkshopRepository(),
+      purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online) : null);
     await workshop.initialize();
     runApp(GameApp(controller: controller, audio: audio, workshop: workshop));
   } catch (_) {
