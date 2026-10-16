@@ -123,7 +123,7 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 | 에셋 | 출처 | 라이선스 |
 | --- | --- | --- |
 | `assets/images/` | 이 프로젝트에서 제작한 도트 그림. 원본과 시안은 `이미지/`, 변환 스크립트는 `tools/` | 프로젝트 소유 |
-| `assets/audio/` 효과음 4종, `bgm_*.wav` 6종, `bgm.wav`(현재 미사용) | `tools/generate_sounds.py`로 직접 합성(외부 샘플 없음, 고정 시드로 재현 가능) | CC0 1.0 |
+| `assets/audio/` 효과음 4종, `bgm_*.wav` 6종 | `tools/generate_sounds.py`로 직접 합성(외부 샘플 없음, 고정 시드로 재현 가능) | CC0 1.0 |
 | `assets/fonts/Jua-Regular.ttf` | Jua 글꼴 | SIL OFL 1.1 (`assets/fonts/Jua-OFL.txt`) |
 
 소리를 다시 만들려면 `python tools/generate_sounds.py`(numpy 필요)를 실행합니다.
