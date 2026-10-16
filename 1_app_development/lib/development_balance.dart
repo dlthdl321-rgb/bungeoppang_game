@@ -42,10 +42,12 @@ class DevelopmentBalance {
       for (var i = 1; i <= 16; i++) {
         final row = _map(entries['${kind}_$i']);
         if (decimal(row, 'buns') <= BigInt.zero || integer(row, 'gold') <= 0 ||
+            decimal(row, 'effect') <= BigInt.zero ||
             integer(row, 'ratio_denominator') <= 0 ||
             integer(row, 'ratio_numerator') < integer(row, 'ratio_denominator')) {
-          throw const FormatException('잘못된 스킬 가격');
+          throw const FormatException('잘못된 스킬 가격/효과');
         }
+        decimal(row, 'unlock_total');
       }
     }
     for (final name in ['cosmetic_purchase', 'boost_purchase']) {

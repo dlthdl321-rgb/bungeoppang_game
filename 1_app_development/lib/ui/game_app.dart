@@ -72,7 +72,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   // An explicit music selection stays independent of background/time changes.
   Set<String> get _cookingIds {
     final workshop = widget.workshop;
-    if (workshop == null || !workshop.foreground || workshop.error != null) return {};
+    if (workshop == null || workshop.gameplayPaused || workshop.error != null) return {};
     final state = workshop.state;
     return {
       if (state.session?.phase == CookingPhase.cooking) 'manual:${state.session!.id}',

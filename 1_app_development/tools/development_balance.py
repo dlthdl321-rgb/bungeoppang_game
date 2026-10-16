@@ -60,6 +60,9 @@ def validate(data, catalog):
                     f'{key}: 붕어빵력 비용은 양수 10진 문자열')
             require(type(price['gold']) is int and price['gold'] > 0, f'{key}: 황금 비용 필요')
     for key, price in entries.items():
+        require(isinstance(price['effect'], str) and re.fullmatch(r'[1-9][0-9]*', price['effect']) and
+                isinstance(price['unlock_total'], str) and re.fullmatch(r'0|[1-9][0-9]*', price['unlock_total']),
+                f'{key}: 스킬 효과/해금 누적은 유효한 BigInt 문자열')
         require(price['ratio_denominator'] > 0 and
                 price['ratio_numerator'] >= price['ratio_denominator'], f'{key}: 가격 증가비')
     require(data['skill_purchase']['gold_step_purchase_count'] > 0, '황금 가격 회차 분모')

@@ -8,6 +8,8 @@ import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
+import 'package:todays_bungeoppang/workshop_purchases.dart';
+import 'package:todays_bungeoppang/development_purchase_journal.dart';
 
 class Repository implements WorkshopRepository {
   Map<String, dynamic>? stored;
@@ -20,6 +22,34 @@ class Repository implements WorkshopRepository {
     if ((stored?['sequence'] ?? 0) != expectedSequence) throw const FormatException('stale');
     stored = jsonDecode(jsonEncode(next)) as Map<String, dynamic>;
   }
+}
+class Gateway implements WorkshopPurchaseGateway {
+  @override
+  String authenticatedAccount = 'account';
+  Map<String,dynamic>? receipt;
+  bool loseCommit = false;
+  Repository? failReceiptSave;
+  int commits = 0, reservations = 0;
+  @override
+  Future<void> requireActiveProgress(String progressId) async {}
+  @override
+  Future<Map<String,dynamic>> reserve(PurchaseJournal intent) async {
+    reservations++;
+    return receipt ??= {...intent.toJson(), 'status':'reserved'};
+  }
+  @override
+  Future<Map<String,dynamic>> commit(PurchaseJournal intent) async {
+    commits++;
+    receipt = {...intent.toJson(), 'status':'committed', 'receiptId':'receipt-fixed', 'grantId':'grant-fixed'};
+    if (loseCommit) { loseCommit = false; throw Exception('response lost'); }
+    failReceiptSave?.fail = true; failReceiptSave = null;
+    return receipt!;
+  }
+  @override
+  Future<Map<String,dynamic>> query(String accountId, String transactionId) async => receipt ??
+    {'account':accountId,'transaction':transactionId,'status':'unknown'};
+  @override
+  Future<Map<String,dynamic>> cancel(String accountId, String transactionId) async => receipt!;
 }
 CookingSession cookingFixture() {
   var s = CookingSession.start(id: 'practice-result', flavor: 'redbean', practice: true,
@@ -125,6 +155,121 @@ void main() {
     expect(controller.state.customers, isEmpty);
     expect(controller.state.tasteObservations.containsKey(customer), isTrue);
     expect(controller.state.pendingGold, isEmpty);
+  });
+
+  test('서버 확정 응답 유실 후 같은 거래 조회로 차감·상품을 중복하지 않는다', () async {
+    await controller.command(() { controller.state.buns = BigInt.from(100); controller.state.lifetime = BigInt.from(100); });
+    final gateway = Gateway()..loseCommit = true;
+    expect(await controller.purchaseSkill(gateway, 'tap_1'), isFalse);
+    final transaction = controller.state.purchases.journals.keys.single;
+    expect(controller.state.buns, BigInt.from(85));
+    expect(controller.state.purchases.owned, isEmpty);
+    expect(await controller.recoverPurchase(gateway, transaction), isTrue);
+    expect(controller.state.purchases.owned, {'tap_1':1});
+    expect(await controller.recoverPurchase(gateway, transaction), isTrue);
+    expect(controller.state.buns, BigInt.from(85));
+    expect(gateway.commits, 1); expect(gateway.reservations, 1);
+  });
+  test('서버 성공 후 영수증 저장 실패는 재읽기 전 새 상품/구매를 허용하지 않는다', () async {
+    await controller.command(() { controller.state.buns = BigInt.from(100); controller.state.lifetime = BigInt.from(100); });
+    final gateway = Gateway()..failReceiptSave = repository;
+    expect(await controller.purchaseSkill(gateway, 'tap_1'), isFalse);
+    expect(controller.error, isNotNull); expect(controller.state.purchases.owned, isEmpty);
+    expect(await controller.purchaseSkill(gateway, 'tap_1'), isFalse);
+    await controller.reloadAfterError();
+    final transaction = controller.state.purchases.journals.keys.single;
+    expect(await controller.recoverPurchase(gateway, transaction), isTrue);
+    expect(controller.state.buns, BigInt.from(85));
+    expect(controller.tapRate, BigInt.from(2));
+  });
+  test('구매 계정을 바꿔도 기존 지갑의 미정산 거래를 다른 계정으로 이전하지 않는다', () async {
+    await controller.command(() { controller.state.buns = BigInt.from(100); controller.state.lifetime = BigInt.from(100); });
+    final gateway = Gateway()..loseCommit = true;
+    await controller.purchaseSkill(gateway, 'tap_1');
+    final transaction = controller.state.purchases.journals.keys.single;
+    gateway.authenticatedAccount = 'other';
+    expect(await controller.recoverPurchase(gateway, transaction), isFalse);
+    expect(controller.state.purchases.account, 'account');
+    expect(controller.state.purchases.owned, isEmpty);
+  });
+  test('자동 스킬의 앱 복귀 정산은 전경100%가 아니라 부재50%를 한 번 적용한다', () async {
+    controller.dispose();
+    var at = now;
+    controller = WorkshopController(config, repository, now: () => at, random: Random(9));
+    await controller.initialize(); await controller.openBusiness();
+    await controller.command(() { controller.state.buns = BigInt.from(100); controller.state.lifetime = BigInt.from(100); });
+    expect(await controller.purchaseSkill(Gateway(), 'auto_1'), isTrue);
+    await controller.setForeground(false);
+    final before = controller.state.buns;
+    at = at.add(const Duration(seconds: 10));
+    await controller.setForeground(true);
+    expect(controller.state.buns - before, BigInt.from(5));
+    await controller.setForeground(true);
+    expect(controller.state.buns - before, BigInt.from(5));
+  });
+  test('광고 일시정지는 고객·제작 입력을 막고 일반 경제 시계는 유지한다', () async {
+    await controller.openBusiness(); await controller.welcomeCustomer();
+    controller.setAdPaused(true);
+    final customer = controller.state.customers.single.toJson();
+    final buns = controller.state.buns;
+    controller.tap();
+    expect(controller.state.buns, buns);
+    expect(await controller.startPractice(), isFalse);
+    expect(controller.state.customers.single.toJson(), customer);
+    controller.setAdPaused(false);
+    expect(await controller.startPractice(), isTrue);
+  });
+  test('schema1은 구매 없는 schema2로 읽되 schema2 구매 누락은 초기화하지 않는다', () {
+    final legacy = controller.state.toJson();
+    legacy['schema'] = 1; legacy.remove('purchases');
+    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 2);
+    final corrupted = controller.state.toJson()..remove('purchases');
+    expect(() => WorkshopState.fromJson(corrupted, config), throwsFormatException);
+  });
+  test('판매 원장과 심사 증거가 달라지면 손상 저장을 거부한다', () async {
+    await controller.openBusiness();
+    await controller.command(() {
+      controller.state.inventory = controller.state.inventory.recordResult(ProductBatch(
+        id:'sale-product', flavor:'redbean', variant:2, quantity:1, madeOnBusinessIndex:1), keep:true);
+      controller.state.customers.add(CustomerOrder(id:'sale-customer', remainingMs:10000,
+        lines:[CustomerOrderLine(flavor:'redbean', quantity:1)]));
+    });
+    expect(await controller.sellToFirstCustomer(), isTrue);
+    final saved = controller.state.toJson();
+    expect(WorkshopState.fromJson(saved,config).completedSales,1);
+    (saved['pendingGold'] as Map)['sale:sale-customer'] = '{}';
+    expect(() => WorkshopState.fromJson(saved, config), throwsFormatException);
+  });
+
+  test('주문 제작은 연습량/손기술을 올리지 않고 제품과 익힘 발견을 함께 저장한다', () async {
+    await controller.openBusiness(); await controller.welcomeCustomer();
+    final order = controller.state.customers.single;
+    expect(await controller.startOrderProduction(order.id,'redbean'), isTrue);
+    expect(controller.state.session!.practice,isFalse);
+    final row = cookingFixture().toJson(); row['practice'] = false;
+    final cooking = CookingSession.fromJson(row);
+    await controller.command(() => controller.state.session = cooking);
+    expect(await controller.cookingCommand(cooking.takeOut(cooking.token,0)), isTrue);
+    expect(controller.state.mastery.practices,0);
+    expect(controller.state.mastery.techniquePasses,0);
+    expect(controller.state.mastery.discovered,isNotEmpty);
+    expect(controller.state.inventory.batches.containsKey(cooking.id),isTrue);
+    final before = controller.state.inventory.toJson();
+    expect(await controller.storeResult(true),isTrue);
+    expect(controller.state.inventory.toJson(),before);
+  });
+  test('이미 판매한 제품을 재고에 되살린 저장은 생산량 대조로 거부한다', () async {
+    await controller.openBusiness();
+    final product = ProductBatch(id:'one-product',flavor:'redbean',variant:2,quantity:1,madeOnBusinessIndex:1);
+    await controller.command(() {
+      controller.state.inventory = controller.state.inventory.recordResult(product,keep:true);
+      controller.state.customers.add(CustomerOrder(id:'one-order',remainingMs:10000,
+        lines:[CustomerOrderLine(flavor:'redbean',quantity:1)]));
+    });
+    expect(await controller.sellToFirstCustomer(),isTrue);
+    final saved = controller.state.toJson();
+    (saved['inventory']['batches'] as Map)['one-product'] = product.toJson();
+    expect(() => WorkshopState.fromJson(saved,config),throwsFormatException);
   });
 
 }

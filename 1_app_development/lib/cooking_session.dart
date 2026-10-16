@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'cooking_input.dart';
 import 'development_balance.dart';
 
@@ -98,4 +99,27 @@ class CookingSession {
         phase, token, index, wrong, first, second, elapsed);
   }
 
+}
+
+/// Only accept one event derivable from the current immutable session. Matching
+/// IDs/tokens alone must not replace flavor, practice context or prior inputs.
+bool isCookingSuccessor(CookingSession previous, CookingSession next) {
+  if (next.id != previous.id || next.token != previous.token + 1) return false;
+  final encoded = jsonEncode(next.toJson());
+  final candidates = <CookingSession Function()>[
+    () => previous.pour(previous.token, next.firstBatterMs ?? 0),
+    () => previous.pour(previous.token, next.secondBatterMs ?? 0),
+    () => previous.fill(previous.token, CookingDirection.left),
+    () => previous.fill(previous.token, CookingDirection.right),
+    () => previous.close(previous.token),
+    () => previous.flip(previous.token),
+    () => previous.takeOut(previous.token, next.donenessElapsedMs ?? 0),
+    () => previous.cancel(),
+  ];
+  for (final candidate in candidates) {
+    try {
+      if (jsonEncode(candidate().toJson()) == encoded) return true;
+    } on FormatException { /* An ineligible event is not a successor. */ }
+  }
+  return false;
 }

@@ -46,4 +46,17 @@ void main() {
     expect(restored.toJson(), session.toJson());
     expect(() => CookingSession.fromJson({...session.toJson(), 'token': 0}), throwsFormatException);
   });
+  test('제작 후속 입력은 같은 ID·토큰이어도 맛/맥락/이전 반죽을 바꿀 수 없다', () {
+    final start = CookingSession.start(id:'same-session', flavor:'redbean', practice:true,
+      fillingSequence:[CookingDirection.left]);
+    final poured = start.pour(start.token, 2000);
+    expect(isCookingSuccessor(start, poured), isTrue);
+    final forged = poured.toJson()..['flavor'] = 'cocoa';
+    expect(isCookingSuccessor(start, CookingSession.fromJson(forged)), isFalse);
+    final changedContext = poured.toJson()..['practice'] = false;
+    expect(isCookingSuccessor(start, CookingSession.fromJson(changedContext)), isFalse);
+    expect(isCookingSuccessor(poured, poured.fill(poured.token, CookingDirection.left)), isTrue);
+    expect(isCookingSuccessor(poured, poured), isFalse);
+  });
+
 }

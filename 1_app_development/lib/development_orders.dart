@@ -114,3 +114,55 @@ class CustomerSalesProgress {
       sales: {...sales, order.id: jsonEncode({'fingerprint': fingerprint, 'evidence': result.evidence})});
   }
 }
+
+/// Structural replay validation of a stored sale, without repricing historical
+/// receipts against today's provisional balance. This is corruption detection,
+/// NOT proof a server may accept to mint gold.
+Map<String, dynamic> validateStoredCustomerSale(String id, String encoded) {
+  final decoded = jsonDecode(encoded);
+  if (decoded is! Map<String, dynamic> || decoded['evidence'] is! Map<String, dynamic> ||
+      decoded['fingerprint'] is! String) throw const FormatException('판매 기록 형식 오류');
+  final evidence = decoded['evidence'] as Map<String, dynamic>;
+  if (evidence['order'] is! Map<String, dynamic> || evidence['products'] is! List ||
+      evidence['revision'] is! String || (evidence['revision'] as String).isEmpty) throw const FormatException('판매 증거 누락');
+  final order = CustomerOrder.fromJson(evidence['order'] as Map<String, dynamic>);
+  final index = DevelopmentBalance.integer(evidence, 'businessIndex');
+  final stars = DevelopmentBalance.integer(evidence, 'stars');
+  final score = DevelopmentBalance.integer(evidence, 'scorePermille');
+  DevelopmentBalance.decimal(evidence, 'ordinaryBuns');
+  if (order.id != id || order.remainingMs == 0 || index == 0 || stars < 1 || stars > 5 || score > 1000) {
+    throw const FormatException('판매 결과 식별/범위 오류');
+  }
+  final selected = [for (final _ in order.lines) <String, int>{}];
+  final batchFacts = <String, String>{};
+  for (final value in evidence['products'] as List) {
+    if (value is! Map<String, dynamic> || value['batch'] is! String || (value['batch'] as String).isEmpty ||
+        value['flavor'] is! String) throw const FormatException('판매 제품 증거 오류');
+    final lineIndex = DevelopmentBalance.integer(value, 'line');
+    final quantity = DevelopmentBalance.integer(value, 'quantity');
+    final variant = DevelopmentBalance.integer(value, 'variant');
+    final made = DevelopmentBalance.integer(value, 'madeOnBusinessIndex');
+    final age = DevelopmentBalance.integer(value, 'age');
+    if (lineIndex >= order.lines.length || quantity == 0 || made == 0 || index - made != age || age >= 5 || variant >= 4) {
+      throw const FormatException('판매 제품 수량/신선도 오류');
+    }
+    final line = order.lines[lineIndex], batch = value['batch'] as String;
+    if (value['flavor'] != line.flavor || (line.variant != null && variant != line.variant) ||
+        (variant == 0 && !(line.special && line.variant == 0)) || selected[lineIndex].containsKey(batch)) {
+      throw const FormatException('판매 제품과 주문 불일치');
+    }
+    final facts = jsonEncode([value['flavor'], variant, made]);
+    if (batchFacts.containsKey(batch) && batchFacts[batch] != facts) throw const FormatException('동일 제품 증거 충돌');
+    batchFacts[batch] = facts;
+    selected[lineIndex][batch] = quantity;
+  }
+  for (var i = 0; i < selected.length; i++) {
+    if (selected[i].values.fold<BigInt>(BigInt.zero, (sum, n) => sum + BigInt.from(n)) != BigInt.from(order.lines[i].quantity)) {
+      throw const FormatException('판매 전량 증거 불일치');
+    }
+  }
+  final fingerprint = jsonEncode([order.id, order.customerId, order.lines.map((l) => l.toJson()).toList(),
+    selected.map((row) { final keys = row.keys.toList()..sort(); return {for (final k in keys) k: row[k]}; }).toList()]);
+  if (fingerprint != decoded['fingerprint']) throw const FormatException('판매 요청 지문 불일치');
+  return evidence;
+}

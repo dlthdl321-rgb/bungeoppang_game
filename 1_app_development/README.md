@@ -141,3 +141,5 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 ## 현재 신규 게임 소스
 
 main.dart의 신규 Workshop은 초기 팥·추가 슈크림/초코 미션·영업/연습/숙련/6구/재고·손님 판매·수동50레벨·도감 저장 경로다. 구형 코인은 신규 개념이 아니며 실제 복합 결제·검증 황금/광고·친구 연동과 컴파일/실행 검수는 미완료다. 상세는 [18번 연결 범위](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/18_신규게임연결과사용자결정반영.md)를 따른다.
+
+최신 후속 소스·미연결 조건·잔여 작업 5개 묶음: [구매·복구 후속과 남은 양](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/19_구매원자저장과복구후속.md). 실제 실행 완료와 구분합니다.

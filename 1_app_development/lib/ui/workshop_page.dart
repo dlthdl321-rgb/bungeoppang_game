@@ -87,17 +87,31 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     try {
       await showModalBottomSheet<void>(context: context, isScrollControlled: true,
         builder: (context) => SafeArea(child: SizedBox(height: MediaQuery.sizeOf(context).height * .75,
-          child: ListView(padding: const EdgeInsets.all(16), children: [
-            const Text('스킬 상점'), const Text('붕어빵력과 황금붕어빵력이 모두 필요해요. 구매 기능은 준비 중이에요.'),
+          child: AnimatedBuilder(animation: c, builder: (context, _) => ListView(padding: const EdgeInsets.all(16), children: [
+            const Text('스킬 상점'), const Text('붕어빵력과 황금붕어빵력이 모두 필요해요.'),
+            if (c.purchaseGateway == null) const Text('서버 구매 검증 연결을 준비 중이에요. 지금은 결제할 수 없어요.'),
+            if (c.notice != null) Text(c.notice!),
+            for (final journal in c.state.purchases.journals.values.where((j) => !j.settled))
+              ListTile(title: Text('구매 확인 대기: ${journal.quote.skillId}'),
+                subtitle: Text('거래 ${journal.transactionId} · ${journal.serverStatus}'),
+                trailing: Wrap(children: [TextButton(onPressed: c.purchaseGateway == null || c.purchaseBusy || c.busy ? null :
+                  () => c.recoverPurchase(c.purchaseGateway!, journal.transactionId), child: const Text('복구')),
+                  TextButton(onPressed: c.purchaseGateway == null || c.purchaseBusy || c.busy ? null :
+                  () => c.recoverPurchase(c.purchaseGateway!, journal.transactionId, cancel: true), child: const Text('취소 확인'))])),
             for (final id in [for (final kind in ['tap','auto']) for (var n = 1; n <= 16; n++) '${kind}_$n'])
               Builder(builder: (context) {
-                final quote = quoteCompositeSkill(c.config, id, owned: 0, quantity: 1);
+                final owned = c.state.purchases.owned[id] ?? 0;
+                final cap = DevelopmentBalance.integer(c.config.section('skill_purchase'), 'max_owned_per_skill');
+                final capped = owned >= cap;
+                final quote = quoteCompositeSkill(c.config, id, owned: capped ? cap : owned, quantity: capped ? 0 : 1);
                 final tier = int.parse(id.split('_').last);
                 return ListTile(title: Text('${id.startsWith('tap') ? '손기술' : '자동 생산'} $tier단계'),
                   subtitle: Text('예상 가격: 붕어빵력 ${quote.buns} + 황금붕어빵력 ${quote.gold}'),
-                  trailing: const Icon(Icons.lock_outline));
+                  trailing: FilledButton(onPressed: capped || c.purchaseGateway == null || c.purchaseBusy || c.busy || c.error != null ? null :
+                    () => c.purchaseSkill(c.purchaseGateway!, id), child: Text(capped ? '최대 보유' : '구매')),
+                  leading: Text('$owned개'));
               }),
-          ]))));
+          ])))));
     } finally { c.gridVisible = true; }
   }
   Future<void> _goldPacks() async {
@@ -204,8 +218,10 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
           Text('현재 단계 경과 ${(s.phaseMs/1000).toStringAsFixed(1)}초'),
           if (session.phase == CookingPhase.result) ...[
             Text('결과: ${provisionalDonenessLabels[evaluateCookingResult(c.config, session, difficulty: c.difficulty(session.flavor)).variant]}'),
-            Wrap(spacing: 8, children: [FilledButton(onPressed: c.busy ? null : () => c.storeResult(true), child: const Text('보관')),
-              TextButton(onPressed: c.busy ? null : () => c.storeResult(false), child: const Text('버리기'))]),
+            if (session.practice) Wrap(spacing: 8, children: [FilledButton(onPressed: c.busy ? null : () => c.storeResult(true), child: const Text('보관')),
+              TextButton(onPressed: c.busy ? null : () => c.storeResult(false), child: const Text('버리기'))])
+            else ...[const Text('주문 제작품은 재고에 저장됐어요. 탄 제품은 판매할 수 없어요.'),
+              FilledButton(onPressed: c.busy ? null : () => c.storeResult(true), child: const Text('결과 닫기'))],
           ] else CookingSessionControls(key: ValueKey('${session.id}:$_sensorEnabled'), session: session, blocked: c.busy || c.error != null,
             cookingElapsedMs: s.phaseMs, onCommand: (next) => c.cookingCommand(next)),
         ],
@@ -218,9 +234,13 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
         for (final b in s.inventory.batches.values) Text('${c.flavorLabel(b.flavor)} ${provisionalDonenessLabels[b.variant]} ${b.quantity}개 · ${s.business.businessIndex-b.madeOnBusinessIndex}영업일 경과'),
         const Divider(), const Text('손님 주문'),
         TextButton(onPressed: c.busy ? null : c.welcomeCustomer, child: const Text('손님 맞이')),
-        for (var i = 0; i < s.customers.length; i++) Text('${i+1}번 손님 · ${s.customers[i].lines.map((line) =>
+        for (var i = 0; i < s.customers.length; i++) ...[Text('${i+1}번 손님 · ${s.customers[i].lines.map((line) =>
           '${c.flavorLabel(line.flavor)} ${line.variant == null ? '(일반 익힘)' : provisionalDonenessLabels[line.variant!]} ${line.quantity}개').join(', ')} · '
           '남은 ${(s.customers[i].remainingMs/1000).ceil()}초'),
+          Wrap(children: [for (final flavor in s.customers[i].lines.map((l) => l.flavor).toSet())
+            TextButton(onPressed: c.busy || session != null || c.gameplayPaused ? null :
+              () => c.startOrderProduction(s.customers[i].id, flavor), child: Text('${c.flavorLabel(flavor)} 주문 제작'))]),
+        ],
         FilledButton(onPressed: s.customers.isEmpty || c.busy ? null : c.sellToFirstCustomer, child: const Text('첫 손님에게 전량 판매')),
         if (s.level >= DevelopmentBalance.integer(c.config.section('feature_unlock_levels'), 'customer_collection_ui')) ...[
           const Divider(), const Text('손님 취향 도감 · 확인한 주문'),

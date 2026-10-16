@@ -15,3 +15,10 @@ Node.js 22를 사용합니다. `npm test`는 TypeScript 빌드와 서버 단위 
 ## 개발 중인 내부 계약
 
 functions/src/development_contracts.ts는 임시 공통 설정 기반 견적 검증·광고 예약/증거 재사용 방지·보상 심사 결과 저장 코드다. 공개 함수로 등록하지 않았고 실제 황금/grant 지급·업체 서명 검증도 연결하지 않았다. 새 테스트 소스는 미실행이다. [구현 경계와 후속 조건](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/17_구매저널저장과서버검증기반.md).
+
+
+## 신규 복합 구매·판매 황금 내부 모듈
+
+`functions/src/composite_purchases.ts`는 기존 gold 지갑의 구매금 홀드/확정/취소와 활성 진행 epoch를 같은 트랜잭션에서 처리합니다. `sale_rewards.ts`는 신뢰된 판매 검증 뒤 서버 최초 확정 KST 날짜·초과분 이월 없음·고정 추첨/일일 상한/지갑/지급 원장을 함께 저장합니다. 기존 `earned_gold.ts`와 동일한 earned ID를 사용해 지급 경로 사이의 중복을 방지합니다.
+
+아직 index.ts의 공개 함수나 실제 verifier로 연결하지 않았습니다. 클라이언트의 재고/별점/차감 표식, 로그인·App Check만으로 서버 검증을 대신하면 안 됩니다. 생산/차감 보호 증거와 계정·진행·거래·고정 지문을 검증하는 운영 adapter가 필요합니다. 실제 서비스 호출·테스트·배포는 수행하지 않았습니다. 전체 소스/운영 경계는 [19번 후속 문서](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/19_구매원자저장과복구후속.md)를 따릅니다.
