@@ -35,6 +35,7 @@ class DevelopmentBalance {
         integer(purchase, 'gold_step_purchase_count') <= 0) {
       throw const FormatException('잘못된 구매 회차');
     }
+    integer(purchase, 'gold_step_amount');
     final entries = _map(purchase['entries']);
     if (entries.length != 32) throw const FormatException('스킬 가격 개수 오류');
     for (final kind in ['tap', 'auto']) {
@@ -60,7 +61,16 @@ class DevelopmentBalance {
         List.generate(3, (i) => boundaries[i] >= boundaries[i + 1]).any((v) => v)) {
       throw const FormatException('익힘 경계 오류');
     }
-    for (final item in result.rows('mastery_difficulties')) {
+    final difficulties = result.rows('mastery_difficulties');
+    if (difficulties.length != 3 ||
+        difficulties.map((r) => integer(r, 'difficulty')).toSet().length != 3 ||
+        !difficulties.every((r) => [0, 1, 2].contains(integer(r, 'difficulty')))) {
+      throw const FormatException('숙련 난이도 목록 오류');
+    }
+    if (integer(result.section('doneness'), 'reference_scale') <= 0) {
+      throw const FormatException('익힘 배율 오류');
+    }
+    for (final item in difficulties) {
       if (integer(item, 'practice_required') < integer(item, 'technique_passes_required') ||
           integer(item, 'technique_passes_required') <= 0 ||
           integer(item, 'doneness_target_ms') <= 0) {

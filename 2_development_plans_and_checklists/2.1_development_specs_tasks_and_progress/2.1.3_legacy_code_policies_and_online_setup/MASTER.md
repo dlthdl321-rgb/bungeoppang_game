@@ -875,3 +875,7 @@ v13은 오디오 설정 musicSelection/cookingSound/cookingVolume만 추가한�
 설정 화면의 배경음 선택은 배경/시간대와 독립이며 ‘배경에 맞춤’으로 기존 모드로 돌아간다. 굽기 루프는 실제 활동 소스가 있을 때만 별도 player로 출력하고 설정/음량·전경에 따라 정지한다. 실제 신규 큰 틀/6구 활동 전달은 미연결이다. 오디오 기본값은 development_balance.json에서 development_audio_defaults.dart로 생성한다. sizzle_loop.wav는 generate_cooking_sound.py로 직접 합성(CC0)했다.
 
 development_balance.dart/asset 로더와 development_rules.dart는 새 복합 견적·익힘·숙련·신선도·KST 날짜·복구 라우팅 계산의 소스를 제공한다. 실제 서버 지갑/광고/신규 게임 흐름 연결은 하지 않았다. [15번 소스 구현·검수 대기](../15_현재환경소스구현과검수대기.md)를 따른다. 테스트 코드는 작성했으나 앱 실행·컴파일/Flutter/서버 테스트·빌드·실기기는 미실행이다.
+
+## 18. 후속 10단계 정적 소스 보강
+
+GameState v13/기존 자산과 지갑은 유지한다. development_rules.dart의 숙련 분리 schema1 직렬화는 결과 원장과 수치/수집을 대조하며 실제 SQLite/해금 저장에는 미연결이다. development_evidence.dart는 계정별 불변 증거 대기와 견적 영수증 필드 비교만 수행한다. 서버 검증·추첨·잔액 변경은 없다. 광고 잔여 계산은 서버 예약/검증대기를 포함한 표시용 스냅샷 계산이며 시작 승인을 대신하지 않는다. game_app.dart는 초기 비활성·detached에서 오디오를 정지하고 init 완료 후 mounted를 확인한다. 실행 검수는 미실행이다. [상세 계약](../16_10단계정적개발과서버계약.md).

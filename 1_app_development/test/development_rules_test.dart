@@ -110,4 +110,50 @@ void main() {
         localDebitEvidence: true, localGrantApplied: true),
         PurchaseRecoveryAction.alreadyApplied);
   });
+  test('회차 경계의 개별 올림과 금 증가·잔액0·보유 상한을 확인한다', () {
+    final whole = quoteCompositeSkill(config, 'tap_1', owned: 9, quantity: 2);
+    final first = quoteCompositeSkill(config, 'tap_1', owned: 9, quantity: 1);
+    final second = quoteCompositeSkill(config, 'tap_1', owned: 10, quantity: 1);
+    expect(whole.buns, first.buns + second.buns);
+    expect(whole.gold, BigInt.from(3));
+    expect(whole.affordable(whole.buns - BigInt.one, whole.gold), isFalse);
+    expect(maximumCompositeSkill(config, 'tap_1', owned: 0,
+        availableBuns: BigInt.zero, availableGold: BigInt.zero).quantity, 0);
+    final cap = DevelopmentBalance.integer(config.section('skill_purchase'), 'max_owned_per_skill');
+    expect(quoteCompositeSkill(config, 'tap_1', owned: cap, quantity: 0).buns, BigInt.zero);
+    expect(() => quoteCompositeSkill(config, 'tap_1', owned: cap, quantity: 1), throwsFormatException);
+  });
+
+  test('광고 한도는 예약·검증대기도 포함하고 시작일 기준으로 분리한다', () {
+    final beforeMidnight = DateTime.utc(2026, 10, 16, 14, 59);
+    RewardedAdSlot slot(String id, RewardedAdSlotPhase phase) => RewardedAdSlot(
+        accountId: 'a', attemptId: id, authorizedStart: beforeMidnight, phase: phase);
+    final slots = [slot('one', RewardedAdSlotPhase.verifying),
+      slot('two', RewardedAdSlotPhase.reserved)];
+    expect(rewardedAdRemaining(config, accountId: 'a', serverNow: beforeMidnight,
+        slots: slots), 0);
+    expect(rewardedAdRemaining(config, accountId: 'a',
+        serverNow: DateTime.utc(2026, 10, 16, 15), slots: slots), 2);
+    expect(rewardedAdRemaining(config, accountId: 'b', serverNow: beforeMidnight,
+        slots: slots), 2);
+    expect(() => rewardedAdRemaining(config, accountId: 'a',
+        serverNow: beforeMidnight, slots: [slots.first, slots.first]), throwsFormatException);
+    expect(rewardedAdRemaining(config, accountId: 'a', serverNow: beforeMidnight,
+        slots: [slot('no', RewardedAdSlotPhase.rejectedFinal)]), 2);
+  });
+
+  test('설정의 난이도 중복·금 증가량 손상·익힘 배율0은 거부한다', () {
+    Map<String, dynamic> raw() => jsonDecode(
+        File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
+    final duplicate = raw();
+    duplicate['mastery_difficulties'][1]['difficulty'] = 0;
+    expect(() => DevelopmentBalance.fromJson(duplicate), throwsFormatException);
+    final negative = raw();
+    negative['skill_purchase']['gold_step_amount'] = -1;
+    expect(() => DevelopmentBalance.fromJson(negative), throwsFormatException);
+    final zero = raw();
+    zero['doneness']['reference_scale'] = 0;
+    expect(() => DevelopmentBalance.fromJson(zero), throwsFormatException);
+  });
+
 }

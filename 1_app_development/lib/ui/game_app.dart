@@ -35,8 +35,14 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_syncAudio);
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    if (lifecycle != null && lifecycle != AppLifecycleState.resumed) {
+      widget.audio.pauseMusic();
+    }
     _syncAudio();
-    widget.audio.init().then((_) => _syncAudio());
+    widget.audio.init().then((_) {
+      if (mounted) _syncAudio();
+    });
     // A cold start settles the time away in initialize(), before this app
     // exists; greet the player once the navigator is up.
     WidgetsBinding.instance.addPostFrameCallback(
@@ -84,7 +90,8 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
       widget.controller.resume().then(_welcomeBack);
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden ||
-        state == AppLifecycleState.paused) {
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached) {
       widget.audio.pauseMusic();
       widget.controller.leaveActive();
     }
