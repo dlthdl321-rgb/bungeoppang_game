@@ -1,0 +1,11 @@
+오늘의 붕어빵 3.3_additional_character_and_background_images 358장
+기존 300장 + 누락 생성 49장 + 이전 생성 9장
+남자 속눈썹 수정 142/142장 완료
+수정 대기 0장: eyelashes_pending.json
+전체 목록·해시·크기: manifest.json
+전체 미리보기: gallery.html
+수정 전 원본: output/4.1_image_generation_workfiles/4.1.1_before_character_eyelash_edits
+배경 6종의 실제 생성 해상도는 약 832 x 1891이며 목표 1080 x 2456에는 미달합니다.
+RAW 원본입니다. 배경 제거 및 레이어 추출·애니메이션 정렬은 별도 작업입니다.
+
+문서 정리 안내: 이 문서는 원본 위치 3_original_images_and_visual_references/추가 생성 이미지에서 이동했습니다. 문서에 적힌 manifest·이미지·미리보기 경로는 원본 자료 폴더를 기준으로 확인하세요.
