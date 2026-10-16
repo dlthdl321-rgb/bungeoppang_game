@@ -69,3 +69,5 @@ Git으로 관리하는 문서는 이 안내에서 전체 목록을 관리한다.
 - [2.3_art_completion_and_backup_reports/2.3.2_character_edit_backup_guide/gallery.html](<2.3_art_completion_and_backup_reports/2.3.2_character_edit_backup_guide/gallery.html>)
 - [2.4_platform_setup_guides/2.4.1_ios_launch_screen_guide/README.md](<2.4_platform_setup_guides/2.4.1_ios_launch_screen_guide/README.md>)
 - [2.5_old_release_archive_guide/README.md](<2.5_old_release_archive_guide/README.md>)
+
+- [선행 작업 P1-001·002·007·008 검토와 복구 설계](2.1_development_specs_tasks_and_progress/12_선행기획검토와복구설계.md)
