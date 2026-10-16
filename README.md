@@ -53,3 +53,5 @@ main.dart의 신규 Workshop은 초기 팥·추가 슈크림/초코 미션·영�
 최신 후속: [온라인·광고·꾸미기 연결과 검수 인계](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/20_온라인광고꾸미기연결과검수인계.md). callable은 소스에 연결했지만 기본 비활성이고 실제 서버 검증 파이프라인/광고 SDK·운영 설정과 실행 검수가 남습니다.
 
 손님 개발 기획 최신 반영: [손님 8명·대사·친밀도·관계·선택 이벤트](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/21_손님캐릭터와관계시스템.md). 관련 기존 기획·결정·기술·저장·검수 문서에 반영했으며 게임 구현과 실행 검수는 별도입니다.
+
+손님 코드 후속: [고정 이웃·무기명·관계/선택·저장 연결과 남은 양](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/22_손님콘텐츠구현과현재환경후속.md). 소스 연결이며 실행 검수 완료가 아닙니다.

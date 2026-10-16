@@ -149,3 +149,5 @@ main.dart의 신규 Workshop은 초기 팥·추가 슈크림/초코 미션·영�
 ## 손님 캐릭터·관계 신규 목표
 
 [21번 손님 기획](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/21_손님캐릭터와관계시스템.md)의8명 고정ID·표시명/개인호칭·전체 대사·친밀도·관계/선택 이벤트·후일담을 관련 기획에 반영했다. 현재 `workshop_controller.dart`의 임시 `customer_N`8종 주문·취향 관찰과 구분한다. 신규 콘텐츠·정적표정·원자 관계 저장·스토리 전체 정지는 아직 구현하지 않았다. 접수/교환 변경안은 결정 대기이며 앱 이탈 정지·KST 영업일 등 기존 확정은 유지한다.
+
+손님 최신 소스는 [22번 후속](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/22_손님콘텐츠구현과현재환경후속.md)을 따릅니다. schema4/SQLite4·네임드/무기명·관계/선택/장면을 연결했고 실제 타입/실행 검수는 남았습니다.

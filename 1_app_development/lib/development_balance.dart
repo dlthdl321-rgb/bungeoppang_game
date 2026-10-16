@@ -135,6 +135,39 @@ class DevelopmentBalance {
       }
       last = total;
     }
+    final relationship = result.section('customer_relationships');
+    final thresholds = result.integers('customer_relationships', 'stage_thresholds');
+    final cap = integer(relationship, 'affinity_cap');
+    if (relationship['provisional'] != true || thresholds.length != 4 || thresholds.first != 0 ||
+        thresholds.last > cap || List.generate(3, (i) => thresholds[i] >= thresholds[i+1]).any((v) => v) ||
+        integer(relationship, 'choice_chance_basis_points') > 10000 ||
+        integer(relationship, 'delay_threshold_permille') > 1000) throw const FormatException('손님 관계 수치 오류');
+    for (final key in ['affinity_cap','ordinary_daily_cap','choice_daily_cap','recent_dialogue_limit',
+        'return_gap_business_days','new_npcs_daily_limit','visits_per_npc_business_day',
+        'choice_first_business_day','choice_gap_business_days','choice_skip_retry_business_days']) {
+      if (integer(relationship, key) == 0) throw const FormatException('손님 관계 양수 설정 오류');
+    }
+    for (final key in ['sale_affinity','corrected_sale_affinity','automatic_dialogue_affinity']) {
+      if (integer(relationship, key) > integer(relationship,'ordinary_daily_cap')) throw const FormatException('일반 친밀도 상한 오류');
+    }
+    final choices = _map(relationship['choice_affinity']);
+    if (choices.length != 4 || !choices.keys.toSet().containsAll(['a','b','c','wave']) ||
+        integer(choices,'wave') != 0 || !(integer(choices,'a') > integer(choices,'b') && integer(choices,'b') > integer(choices,'c')) ||
+        integer(choices,'a') > integer(relationship,'choice_daily_cap')) throw const FormatException('선택 친밀도 설정 오류');
+    if (integer(relationship,'new_npcs_daily_limit')!=2) throw const FormatException('확정 신규 손님 일일 소개 한도 변경');
+    if (integer(relationship,'anonymous_visit_basis_points')>10000 || integer(relationship,'holiday_visit_basis_points')>10000 || integer(relationship,'own_portion_extra_quantity')<1) throw const FormatException('손님 방문 비율/수량 오류');
+    const npcIds={'npc_yunha','npc_doyun','npc_makrye','npc_seojin','npc_taeo','npc_eunchae','npc_minjae','npc_sua'};
+    for(final section in ['customer_choice_conditions','customer_story_conditions','customer_order_preferences']) {
+      final rows=result.section(section);
+      if(rows.length!=npcIds.length || !rows.keys.toSet().containsAll(npcIds)) throw const FormatException('손님 조건 목록 오류');
+    }
+    for(final id in npcIds) {
+      final choice=_map(result.section('customer_choice_conditions')[id]);
+      integer(choice,'min_affinity');integer(choice,'min_visits');
+      if(integer(_map(result.section('customer_story_conditions')[id]),'stage')>=thresholds.length) throw const FormatException('손님 관계 단계 오류');
+      final preference=_map(result.section('customer_order_preferences')[id]);
+      if(!recipes.containsKey(preference['flavor']) || integer(preference,'quantity')<1) throw const FormatException('손님 주문 성향 오류');
+    }
     return result;
   }
 

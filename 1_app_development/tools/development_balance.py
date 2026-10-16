@@ -49,6 +49,34 @@ def validate(data, catalog):
             data['initial_state']['mastery_complete'] is False and
             data['initial_state']['recipe_flavor'] == 'redbean' and
             data['initial_state']['recipe_variant'] == 'medium', '초기 레시피/자산 계약 불일치')
+    relationship = data['customer_relationships']
+    thresholds = relationship['stage_thresholds']
+    require(relationship['provisional'] is True and len(thresholds) == 4 and thresholds[0] == 0
+            and all(a < b for a, b in zip(thresholds, thresholds[1:]))
+            and thresholds[-1] <= relationship['affinity_cap'], '손님 관계 단계/상한 오류')
+    require(relationship['choice_chance_basis_points'] <= 10000 and
+            relationship['delay_threshold_permille'] <= 1000, '손님 관계 비율 범위 오류')
+    for key in ('affinity_cap', 'ordinary_daily_cap', 'choice_daily_cap', 'recent_dialogue_limit',
+                'return_gap_business_days', 'new_npcs_daily_limit', 'visits_per_npc_business_day',
+                'choice_first_business_day', 'choice_gap_business_days', 'choice_skip_retry_business_days'):
+        require(relationship[key] > 0, f'손님 관계 양수 설정: {key}')
+    for key in ('sale_affinity', 'corrected_sale_affinity', 'automatic_dialogue_affinity'):
+        require(relationship[key] <= relationship['ordinary_daily_cap'], f'손님 관계 일반 상한: {key}')
+    points = relationship['choice_affinity']
+    require(set(points) == {'a', 'b', 'c', 'wave'} and points['wave'] == 0 and
+            relationship['choice_daily_cap'] >= points['a'] > points['b'] > points['c'] >= 0,
+            '손님 선택 점수/상한 오류')
+    npc_ids = {'npc_' + name for name in ('yunha','doyun','makrye','seojin','taeo','eunchae','minjae','sua')}
+    for section in ('customer_choice_conditions','customer_story_conditions','customer_order_preferences'):
+        require(set(data[section]) == npc_ids, f'손님 조건 목록 불일치: {section}')
+    for npc_id in npc_ids:
+        choice = data['customer_choice_conditions'][npc_id]
+        require(isinstance(choice['min_affinity'],int) and isinstance(choice['min_visits'],int), '손님 선택 최소 조건 오류')
+        require(0 <= data['customer_story_conditions'][npc_id]['stage'] < len(thresholds), '손님 관계 단계 오류')
+        preference = data['customer_order_preferences'][npc_id]
+        require(preference['flavor'] in data['active_recipes'] and preference['quantity'] > 0, '손님 주문 성향 오류')
+    require(relationship['new_npcs_daily_limit'] == 2, '확정 신규 손님 일일 소개 한도 변경')
+    require(relationship['anonymous_visit_basis_points'] <= 10000 and relationship['holiday_visit_basis_points'] <= 10000 and relationship['own_portion_extra_quantity'] > 0, '손님 방문 비율/수량 오류')
     entries = data['skill_purchase']['entries']
     require(set(entries) == {f'{kind}_{i}' for kind in ('tap', 'auto') for i in range(1, 17)},
             '기존 32개 스킬 누락/가상 ID 추가')

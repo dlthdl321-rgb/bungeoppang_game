@@ -13,6 +13,7 @@ import '../cosmetic_config.dart';
 import '../workshop_purchases.dart';
 import 'avatar_painter.dart';
 import 'cooking_session_controls.dart';
+import 'customer_story_panel.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -31,7 +32,19 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   final Stopwatch _sensorClock = Stopwatch()..start();
   String? _sensorNotice;
   @override
-  void initState() { super.initState(); _gate = TiltDirectionGate.fromBalance(c.config); WidgetsBinding.instance.addObserver(this); }
+  void initState() { super.initState(); _gate = TiltDirectionGate.fromBalance(c.config); WidgetsBinding.instance.addObserver(this); c.addListener(_cancelPausedInput); }
+  void _cancelPausedInput() {
+    if(!c.gameplayPaused) return;
+    _sensorBatter?.cancel();_sensorBatter=null;_gate.reset();_baselineAngle=null;
+  }
+  @override
+  void didUpdateWidget(covariant WorkshopPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if(oldWidget.controller!=widget.controller) {
+      oldWidget.controller.removeListener(_cancelPausedInput);c.addListener(_cancelPausedInput);
+      _sensorBatter?.cancel();_sensorBatter=null;_gate=TiltDirectionGate.fromBalance(c.config);_baselineAngle=null;
+    }
+  }
   Future<void> _setSensor(bool enabled) async {
     await _sensor?.cancel(); _sensor = null; _gate.reset();
     _baselineAngle = null; _sensorBatter?.cancel(); _sensorBatter = null;
@@ -43,6 +56,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       if (!sample.available) {
         setState(() { _sensorEnabled = false; _sensorNotice = '센서 대신 방향 버튼을 이용해 주세요.'; }); return;
       }
+      if(c.gameplayPaused) { _cancelPausedInput(); return; }
       final angle = sample.angleMillidegrees!;
       if (!_gate.calibrated) { _baselineAngle = angle; _gate.calibrate(angle); return; }
       final session = c.state.session;
@@ -73,7 +87,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     if (state != AppLifecycleState.resumed) unawaited(_setSensor(false));
   }
   @override
-  void dispose() { _sensor?.cancel(); _sensorBatter?.cancel(); _sensorClock.stop(); _gate.reset(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
+  void dispose() { c.removeListener(_cancelPausedInput); _sensor?.cancel(); _sensorBatter?.cancel(); _sensorClock.stop(); _gate.reset(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
   Future<void> _closeBusiness() async {
     c.gridVisible = false;
     try {
@@ -219,6 +233,29 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) => AnimatedBuilder(animation: c, builder: (context, _) {
     final s = c.state, session = s.session;
+    final scene=s.customerScene;
+    if(scene!=null) {
+      final id=scene['id'] as String,npc=scene['npc'] as String;
+      Widget content;
+      if(scene['kind']=='choice') {
+        content=CustomerChoicePanel(catalog:c.customerCatalog,eventId:id,
+          completedStories:s.relationships.stories,choiceOrder:List<String>.from(scene['order'] as List),
+          selected:s.relationships.active?['choice'] as String?,
+          onSelect:c.respondToCustomer,onCloseReaction:c.finishCustomerScene);
+      } else {
+        final definition=['story','replay'].contains(scene['kind']) ? c.customerCatalog.story(id) : c.customerCatalog.choice(id);
+        content=Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+          Text(c.customerName(npc)),
+          Text(['story','replay'].contains(scene['kind']) ? definition['event'] as String :
+            (definition['followups'] as Map<String,dynamic>)[scene['choice']] as String),
+          if(['story','replay'].contains(scene['kind']) && definition['scene'] is String) Text(definition['scene'] as String),
+          if(c.notice!=null) Text(c.notice!),if(c.error!=null) Text(c.error!),
+          FilledButton(onPressed:c.busy || c.error!=null ? null : c.finishCustomerScene,child:const Text('대화 마치기')),
+        ]);
+      }
+      return Scaffold(appBar:AppBar(title:const Text('이웃 이야기')),
+        body:SafeArea(child:SingleChildScrollView(padding:const EdgeInsets.all(16),child:content)));
+    }
     final rule = c.config.mastery(c.difficulty(s.selectedFlavor));
     final target = DevelopmentBalance.integer(rule, 'batter_target_ms');
     return Scaffold(appBar: AppBar(title: const Text('오늘의 붕어빵'), actions: [
@@ -301,18 +338,38 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
         for (final b in s.inventory.batches.values) Text('${c.flavorLabel(b.flavor)} ${provisionalDonenessLabels[b.variant]} ${b.quantity}개 · ${s.business.businessIndex-b.madeOnBusinessIndex}영업일 경과'),
         const Divider(), const Text('손님 주문'),
         TextButton(onPressed: c.busy ? null : c.welcomeCustomer, child: const Text('손님 맞이')),
-        for (var i = 0; i < s.customers.length; i++) ...[Text('${i+1}번 손님 · ${s.customers[i].lines.map((line) =>
+        for (var i = 0; i < s.customers.length; i++) ...[Text('${i+1}번 · ${c.customerName(s.customers[i].customerId)} · ${s.customers[i].lines.map((line) =>
           '${c.flavorLabel(line.flavor)} ${line.variant == null ? '(일반 익힘)' : provisionalDonenessLabels[line.variant!]} ${line.quantity}개').join(', ')} · '
           '남은 ${(s.customers[i].remainingMs/1000).ceil()}초'),
+          if(c.customerOrderSpeech(s.customers[i])!=null) Text(c.customerOrderSpeech(s.customers[i])!),
+          if(c.customerWaitingAction(s.customers[i])!=null) Text(c.customerWaitingAction(s.customers[i])!),
+          Text(c.waitingLine(s.customers[i])),
+          if(c.customerDelaySpeech(s.customers[i])!=null) Text(c.customerDelaySpeech(s.customers[i])!),
+          if(c.customerCatalog.contains(s.customers[i].customerId) && c.customerConversation(s.customers[i])!=c.waitingLine(s.customers[i])) Text(c.customerConversation(s.customers[i])),
+          if(c.customerCatalog.contains(s.customers[i].customerId)) TextButton(
+            onPressed:c.busy ? null : ()=>c.observeWaiting(s.customers[i].id),child:const Text('이웃 이야기 확인')),
           Wrap(children: [for (final flavor in s.customers[i].lines.map((l) => l.flavor).toSet())
             TextButton(onPressed: c.busy || session != null || c.gameplayPaused ? null :
               () => c.startOrderProduction(s.customers[i].id, flavor), child: Text('${c.flavorLabel(flavor)} 주문 제작'))]),
         ],
+        if(c.lastSaleFeedback!=null) Text(c.lastSaleFeedback!),
+        if(c.photoReactionSale!=null) ...[
+          const Text('태오: 와, 냄새 좋다. ……아! 또 사진 전에 먹었네.'),
+          TextButton(onPressed:c.busy ? null : ()=>c.acknowledgePhotoReaction(c.photoReactionSale!),child:const Text('태오의 반응 확인')),
+        ],
         FilledButton(onPressed: s.customers.isEmpty || c.busy ? null : c.sellToFirstCustomer, child: const Text('첫 손님에게 전량 판매')),
         if (s.level >= DevelopmentBalance.integer(c.config.section('feature_unlock_levels'), 'customer_collection_ui')) ...[
           const Divider(), const Text('손님 취향 도감 · 확인한 주문'),
-          for (final customer in s.tasteObservations.entries) Text('${customer.key.replaceFirst('customer_', '손님 ')}: '
-            '${customer.value.entries.map((e) => '${c.flavorLabel(e.key)} ${e.value.map((v) => provisionalDonenessLabels[v]).join('/')}').join(', ')}'),
+          for(final story in s.relationships.stories) TextButton(onPressed:c.busy ? null : ()=>c.replayCustomerStory(story),child:Text('${c.customerCatalog.story(story)['event']} · 다시 보기')),
+          for (final customer in s.tasteObservations.entries)
+            if (c.customerCatalog.contains(customer.key)) CustomerRecordCard(
+              catalog:c.customerCatalog,npcId:customer.key,met:s.relationships.met.contains(customer.key),
+              completedStories:s.relationships.stories,
+              stageLabel:const ['첫 만남','낯익은 손님','동네 단골','가까운 이웃'][s.relationships.stage(customer.key,c.config)],
+              observedPreferences:[for(final e in customer.value.entries)
+                '${c.flavorLabel(e.key)} ${e.value.map((v) => provisionalDonenessLabels[v]).join('/')}'],
+            ) else Text('${c.customerName(customer.key)}: '
+              '${customer.value.entries.map((e) => '${c.flavorLabel(e.key)} ${e.value.map((v) => provisionalDonenessLabels[v]).join('/')}').join(', ')}'),
         ],
         const Divider(),const Text('일일·주간 미션'),
         Text('일일 ${s.missions.day} · 주간 ${s.missions.week}'),

@@ -18,6 +18,9 @@ import 'workshop_purchases.dart';
 import 'workshop_online.dart';
 import 'workshop_ads.dart';
 import 'workshop_missions.dart';
+import 'workshop_customers.dart';
+import 'workshop_customer_events.dart';
+import 'workshop_customer_dialogue.dart';
 
 /// Fresh-game local production aggregate. Gold remains in the authenticated
 /// server wallet; pending claims here are never spendable gold.
@@ -51,6 +54,8 @@ class WorkshopState {
   set mastery(FlavorMasteryProgress value) { flavorMasteries[value.flavor] = value; }
   CookingSession? session;
   List<CustomerOrder> customers = [];
+  WorkshopRelationships relationships = WorkshopRelationships.empty();
+  Map<String,dynamic>? customerScene;
   final Map<String, String> sales = {}, pendingGold = {};
   final Set<int> claimedLevels = {};
   WorkshopState.initial(DateTime now, DevelopmentBalance config, String runId) {
@@ -59,12 +64,13 @@ class WorkshopState {
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
   }
-  Map<String, dynamic> toJson() => {'schema': 3, 'sequence': sequence, 'level': level,
+  Map<String, dynamic> toJson() => {'schema': 4, 'sequence': sequence, 'level': level,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
     'levelStartTaps': levelStartTaps, 'levelStartSales': levelStartSales, 'arrivalMs': arrivalMs,
     'selectedFlavor': selectedFlavor,'sceneTime':sceneTime, 'recipes': recipes.toList()..sort(),
     'recipeMissions': recipeMissions.toList()..sort(),
     'masteryAwards': {for (final e in masteryAwards.entries) e.key: Map<String, dynamic>.from(e.value)},
+    'relationships':relationships.toJson(), 'customerScene':customerScene==null ? null : jsonDecode(jsonEncode(customerScene)),
     'tasteObservations': {for (final e in tasteObservations.entries) e.key:
       {for (final f in e.value.entries) f.key: f.value.toList()..sort()}},
     'buns': buns.toString(), 'lifetime': lifetime.toString(), 'purchases': purchases.toJson(),
@@ -82,7 +88,8 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2, 3].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || ![1, 2, 3, 4].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if ((row['schema'] as int) < 4 && (row.containsKey('relationships') || row.containsKey('customerScene'))) throw const FormatException('구형 관계 저장 충돌');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
     final state = WorkshopState.initial(business.settledUtc, config, grid.runId)
@@ -106,7 +113,11 @@ class WorkshopState {
     if (row['schema'] == 1 && row.containsKey('purchases')) throw const FormatException('구형 저장의 구매 필드 충돌');
     if ((row['schema'] as int) >= 2) state.purchases = WorkshopPurchases.fromJson(object('purchases'), config);
     state.purchases.available(state.buns);
-    if(row['schema']==3) state.missions=WorkshopMissions.fromJson(object('missions'));
+    if((row['schema'] as int)>=3) state.missions=WorkshopMissions.fromJson(object('missions'));
+    if (row['schema'] == 4) {
+      state.relationships = WorkshopRelationships.fromJson(object('relationships'),config,WorkshopCustomerCatalog.bundled());
+      if (state.relationships.day > business.businessIndex) throw const FormatException('미래 관계 영업일');
+    }
     final catalog = config.section('active_recipes');
     if (row['recipes'] is! List || row['selectedFlavor'] is! String || row['recipeMissions'] is! List) throw const FormatException('레시피 보유 형식 오류');
     state.recipes.clear(); state.flavorMasteries.clear();
@@ -182,6 +193,26 @@ class WorkshopState {
       salesBuns += DevelopmentBalance.decimal(evidence, 'ordinaryBuns');
       state.sales[e.key] = e.value as String;
     }
+    if (row['schema'] == 4) {
+      final relation = state.relationships.toJson(), visits = relation['visits'] as Map;
+      final npcs = WorkshopCustomerCatalog.bundled();
+      for (final customer in state.customers.where((c) => npcs.contains(c.customerId))) {
+        final visit = visits[customer.id];
+        if (visit is! Map || visit['npc'] != customer.customerId || (visit['context'] is Map && jsonEncode((visit['context'] as Map)['lines'])!=jsonEncode(customer.lines.map((l)=>l.toJson()).toList()))) throw const FormatException('손님 방문 원장 누락');
+      }
+      for(final sale in state.sales.entries) {
+        final evidence=validateStoredCustomerSale(sale.key,sale.value);
+        if(npcs.contains((evidence['order'] as Map)['customerId'] as String) &&
+            !(relation['actions'] as Map).containsKey('sale:${sale.key}')) throw const FormatException('판매의 관계 처리 누락');
+      }
+      for (final entry in (relation['actions'] as Map<String,dynamic>).entries.where((e) => e.key.startsWith('sale:'))) {
+        final id = entry.key.substring(5), saved = state.sales[id];
+        if (saved == null) throw const FormatException('관계 판매 원장 누락');
+        final evidence = validateStoredCustomerSale(id,saved), order = evidence['order'] as Map;
+        final action = entry.value as Map, visit = visits[action['visit']] as Map;
+        if (order['customerId'] != visit['npc'] || action['day'] != evidence['businessIndex'] || (visit['context'] is Map && jsonEncode((visit['context'] as Map)['lines'])!=jsonEncode(order['lines']))) throw const FormatException('관계 판매 근거 불일치');
+      }
+    }
     if (salesBuns > state.lifetime) throw const FormatException('판매 대금 누적 근거 불일치');
     for (final e in object('pendingGold').entries) {
       if (e.value is! String) throw const FormatException('황금 심사 형식 오류');
@@ -211,7 +242,7 @@ class WorkshopState {
     if (state.sales.length != state.completedSales || state.claimedLevels.length != state.level - 1) {
       throw const FormatException('판매/승급 원장 불일치');
     }
-    if (row['schema']==3) {
+    if ((row['schema'] as int)>=3) {
       if(!['scenetime','day','night_time','clock'].contains(row['sceneTime'])) throw const FormatException('배경 시간 저장 오류');
       state.sceneTime=row['sceneTime'] as String;
       if (row['rewardAccount'] != null && (row['rewardAccount'] is! String || (row['rewardAccount'] as String).isEmpty)) throw const FormatException('보상 계정 형식 오류');
@@ -240,6 +271,28 @@ class WorkshopState {
         state.avatarEquipment[e.key]=e.value as String;
       }
     }
+    if (row['schema']==4) {
+      if(!row.containsKey('customerScene')) throw const FormatException('대화 복원 상태 누락');
+      final scene=row['customerScene'];
+      final active=state.relationships.active;
+      if(scene!=null) {
+        if(scene is! Map<String,dynamic> || scene['id'] is! String || scene['npc'] is! String ||
+            !state.relationships.met.contains(scene['npc']) || !['story','replay','choice','followup'].contains(scene['kind'])) throw const FormatException('대화 복원 형식 오류');
+        final catalog=WorkshopCustomerCatalog.bundled();
+        if(active!=null && scene['kind']!='choice') throw const FormatException('활성 선택과 화면 불일치');
+        if(scene['kind']=='story' || scene['kind']=='replay') {
+          if(!catalog.hasStory(scene['id'] as String,scene['npc'] as String) || (scene['kind']=='replay') != state.relationships.stories.contains(scene['id'])) throw const FormatException('관계 장면 근거 오류');
+        } else {
+          final definition=catalog.choice(scene['id'] as String);
+          if(definition['npc_id']!=scene['npc']) throw const FormatException('대화 인물 불일치');
+          if(scene['kind']=='choice') {
+            final order=scene['order'];
+            if(active==null || active['event']!=scene['id'] || order is! List || order.length!=3 || order.toSet().length!=3 || !order.toSet().containsAll(['a','b','c'])) throw const FormatException('선택 대화 근거 오류');
+          } else if((state.relationships.toJson()['followups'] as Map)[scene['id']]!=scene['choice']) throw const FormatException('후일담 근거 오류');
+        }
+        state.customerScene=jsonDecode(jsonEncode(scene)) as Map<String,dynamic>;
+      } else if(active!=null) { throw const FormatException('활성 대화 화면 누락'); }
+    }
     return state;
   }
 }
@@ -248,14 +301,16 @@ abstract class WorkshopRepository {
   Future<Map<String, dynamic>?> load();
   Future<void> save(Map<String, dynamic> next, int expectedSequence);
 }
-String _workshopGuard(Map<String,dynamic> row) => jsonEncode(row['schema']==3 ? {
+String _workshopGuard(Map<String,dynamic> row) => jsonEncode((row['schema'] as int)>=3 ? {
   'purchases':row['purchases'],'rewardAccount':row['rewardAccount'],
   'rewardReceipts':row['rewardReceipts'],'adAttempts':row['adAttempts'],
-  'missionClaims':(row['missions'] as Map<String,dynamic>)['claims']} : row['purchases']);
+  'missionClaims':(row['missions'] as Map<String,dynamic>)['claims'],
+  if(row['schema']==4) 'relationships':row['relationships'],
+  if(row['schema']==4) 'customerScene':row['customerScene']} : row['purchases']);
 class SqliteWorkshopRepository implements WorkshopRepository {
   Database? _database;
   Future<Database> get database async => _database ??= await openDatabase(
-    path.join(await getDatabasesPath(), 'todays_bungeoppang_workshop.db'), version: 3,
+    path.join(await getDatabasesPath(), 'todays_bungeoppang_workshop.db'), version: 4,
     onCreate: (db, _) async {
       await db.execute('CREATE TABLE snapshots(slot TEXT PRIMARY KEY, sequence INTEGER NOT NULL, body TEXT NOT NULL)');
       await db.execute('CREATE TABLE purchase_guard(id INTEGER PRIMARY KEY, body TEXT NOT NULL)');
@@ -274,7 +329,7 @@ class SqliteWorkshopRepository implements WorkshopRepository {
       }
       final body = jsonDecode(rows.single['body'] as String) as Map<String, dynamic>;
       if (body['sequence'] != rows.single['sequence'] ||
-          ([2,3].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
+          ([2,3,4].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
           (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('저장/구매 보호 기록 재대조가 필요해요.');
       return body;
     });
@@ -288,14 +343,14 @@ class SqliteWorkshopRepository implements WorkshopRepository {
       if (current.isNotEmpty) {
         final body = jsonDecode(current.single['body'] as String) as Map<String, dynamic>;
         if (body['sequence'] != current.single['sequence'] ||
-            ([2,3].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
+            ([2,3,4].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
             (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('구매 보호 기록 충돌');
       }
       final oldSequence = current.isEmpty ? 0 : current.single['sequence'];
       if (oldSequence != expectedSequence || next['sequence'] != expectedSequence + 1) {
         throw const FormatException('진행 저장 순번 충돌');
       }
-      if (next['schema'] != 3 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
+      if (next['schema'] != 4 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
       await tx.insert('purchase_guard', {'id': 1, 'body': _workshopGuard(next)}, conflictAlgorithm: ConflictAlgorithm.replace);
       if (current.isNotEmpty) await tx.insert('snapshots', {...current.single, 'slot': 'backup'}, conflictAlgorithm: ConflictAlgorithm.replace);
       await tx.insert('snapshots', {'slot': 'current', 'sequence': next['sequence'], 'body': jsonEncode(next)},
@@ -311,6 +366,8 @@ class WorkshopController extends ChangeNotifier {
   final Random random;
   final WorkshopPurchaseGateway? purchaseGateway;
   late WorkshopState state;
+  final customerCatalog = WorkshopCustomerCatalog.bundled();
+  String customerName(String id) => id.startsWith('anonymous_') ? '지나가는 손님' : customerCatalog.displayName(id,state.relationships.stories);
   bool busy = false, foreground = true, disposed = false;
   bool _gridVisible = true;
   bool get gridVisible => _gridVisible;
@@ -324,7 +381,11 @@ class WorkshopController extends ChangeNotifier {
     final raw=state.rewardReceipts[key];return raw==null || (jsonDecode(raw) as Map)['outcome']=='pending';
   }).length;
   bool get purchaseBusy => _purchaseBusy;
-  bool get gameplayPaused => !foreground || _adPaused;
+  bool get storyPaused => state.customerScene != null;
+  bool get gameplayPaused => !foreground || _adPaused || storyPaused;
+  BusinessSettlement _settleAway() => storyPaused
+      ? state.business.settleActive(now(),bunsPerSecond:autoRate,elapsedMs:0)
+      : state.business.settle(config,now(),bunsPerSecond:autoRate,offline:true);
   BigInt get tapRate => state.purchases.rate(config, 'tap');
   BigInt get autoRate => state.purchases.rate(config, 'auto');
   Completer<void>? _commandIdle;
@@ -340,7 +401,7 @@ class WorkshopController extends ChangeNotifier {
     state = saved == null ? WorkshopState.initial(now(), config, _id()) : WorkshopState.fromJson(saved, config);
     // Only server-committed grants reconstructed from the durable purchase
     // ledger can produce skill effects; legacy local purchases are not used.
-    final settlement = state.business.settle(config, now(), bunsPerSecond: autoRate, offline: true);
+    final settlement = _settleAway();
     state.business = settlement.state;
     state.buns += settlement.buns; state.lifetime += settlement.buns;
     error = null;
@@ -373,17 +434,22 @@ class WorkshopController extends ChangeNotifier {
     final saved = await repository.load();
     if (saved == null) throw const FormatException('복구할 저장 기록 없음');
     state = WorkshopState.fromJson(saved, config);
-    final settlement = state.business.settle(config, now(), bunsPerSecond: autoRate, offline: true);
+    final settlement = _settleAway();
     state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
     error = null; _lastMono = _clock.elapsedMilliseconds;
     await command(() {});
   }
   void _advanceMemory(int ms) {
     if (ms <= 0) return;
-    if (_adPaused) { _checkpoint += ms; return; }
+    if (_adPaused || storyPaused) { _checkpoint += ms; return; }
     if (state.session != null && !state.session!.finished) state.phaseMs += ms;
     if (state.business.permitsProducts(now())) {
-      state.customers = state.customers.map((c) => c.advanceActive(ms)).where((c) => c.remainingMs > 0).toList();
+      final advanced=state.customers.map((c)=>c.advanceActive(ms)).toList();
+      for(final order in advanced.where((c)=>c.remainingMs==0)) {
+        final speech=selectCustomerSpeech(customerCatalog,'timeout',_dialogueFacts(order));
+        if(speech!=null) notice='${customerName(order.customerId)}: ${speech['text']}';
+      }
+      state.customers=advanced.where((c)=>c.remainingMs>0).toList();
       if (state.session == null && gridVisible) state.grid = state.grid.advanceActive(ms);
       state.arrivalMs += ms;
     }
@@ -392,7 +458,7 @@ class WorkshopController extends ChangeNotifier {
   void _flushActive() {
     final at = _clock.elapsedMilliseconds;
     if (foreground && !busy && error == null) {
-      final settlement = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:at-_lastMono);
+      final settlement = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:storyPaused ? 0 : at-_lastMono);
       state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
       state.missions=state.missions.observe(now(),production:settlement.buns,autoPeak:autoRate);
       _advanceMemory(at - _lastMono);
@@ -404,7 +470,7 @@ class WorkshopController extends ChangeNotifier {
     _flushActive();
     if (!foreground || error != null || disposed) return;
     final row = config.rows('level_progression')[state.level - 1];
-    if (!_adPaused && state.business.permitsProducts(now()) &&
+    if (!_adPaused && !storyPaused && state.business.permitsProducts(now()) &&
         state.arrivalMs >= DevelopmentBalance.integer(config.section('ordinary_sale'), 'customer_arrival_interval_ms') &&
         state.customers.length < DevelopmentBalance.integer(row, 'max_queue')) {
       unawaited(welcomeCustomer());
@@ -425,7 +491,7 @@ class WorkshopController extends ChangeNotifier {
     if (disposed || generation != _lifecycleGeneration) return;
     if (value) {
       await command(() {
-        final settlement = state.business.settle(config, now(), bunsPerSecond: autoRate, offline: true);
+        final settlement = _settleAway();
         state.business = settlement.state;
         state.buns += settlement.buns; state.lifetime += settlement.buns;
       });
@@ -435,12 +501,14 @@ class WorkshopController extends ChangeNotifier {
     } else { await command(() {}); }
   }
   Future<bool> openBusiness() => command(() {
+    if(storyPaused) throw const FormatException('대화를 먼저 마쳐 주세요.');
     state.business = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
     state.business = state.business.beginOrContinue(state.business.settledUtc);
     state.inventory = state.inventory.expire(config, state.business.businessIndex).acceptPrepared(state.business.businessIndex);
     state.missions=state.missions.observe(now(),businessStarted:true,autoPeak:autoRate);
   });
   Future<bool> closeBusiness() => command(() {
+    if(storyPaused) throw const FormatException('대화를 먼저 마쳐 주세요.');
     final settled = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
     state.business = settled.close(settled.settledUtc);
     state.customers.clear(); state.arrivalMs = 0;
@@ -449,7 +517,7 @@ class WorkshopController extends ChangeNotifier {
   void tap() {
     if (busy || !foreground || disposed || error != null) return;
     _flushActive();
-    if (_adPaused) return;
+    if (gameplayPaused) return;
     state.buns += tapRate; state.lifetime += tapRate; state.taps++;
     state.missions=state.missions.observe(now(),taps:1,production:tapRate,autoPeak:autoRate);
     notifyListeners();
@@ -549,17 +617,58 @@ class WorkshopController extends ChangeNotifier {
     final total = kinds + random.nextInt(DevelopmentBalance.integer(rule, 'order_quantity_limit') - kinds + 1);
     final quantities = List<int>.filled(kinds, 1);
     for (var i = kinds; i < total; i++) { quantities[random.nextInt(kinds)]++; }
-    final customerId = 'customer_${random.nextInt(DevelopmentBalance.integer(sale, 'customer_archetype_count')) + 1}';
-    final lines = [for (var i = 0; i < kinds; i++) CustomerOrderLine(flavor: choices[i], variant: variant,
+    final named = state.relationships.selectNamedVisitor(state.business.businessIndex,
+      random.nextInt(10000), random.nextInt(1 << 30), config, customerCatalog,alreadyQueued:state.customers.map((c) => c.customerId).toSet());
+    final customerId = named ?? 'anonymous_${_id()}';
+    final pending = state.relationships.toJson()['followups'] as Map;
+    final pendingChoice = named == null ? null : pending['choice_${named.substring(4)}_01'] as String?;
+    var lines = [for (var i = 0; i < kinds; i++) CustomerOrderLine(flavor: choices[i], variant: variant,
       special: special, quantity: quantities[i])];
-    state.customers.add(CustomerOrder(id: _id(), customerId: customerId,
-      remainingMs: DevelopmentBalance.integer(rule, 'order_wait_ms'), lines: lines));
-    final observed = state.tasteObservations.putIfAbsent(customerId, () => {});
-    for (final line in lines) {
-      final variants = observed.putIfAbsent(line.flavor, () => <int>{});
-      if (line.variant != null) variants.add(line.variant!);
+    if (named != null) {
+      final preference = config.section('customer_order_preferences')[named] as Map<String,dynamic>;
+      final flavor = named=='npc_doyun' && state.relationships.met.isEmpty ? 'redbean' : state.recipes.contains(preference['flavor']) ? preference['flavor'] as String : 'redbean';
+      lines = [CustomerOrderLine(flavor:flavor,variant:variant,special:special,
+        quantity:min(DevelopmentBalance.integer(preference,'quantity'),DevelopmentBalance.integer(rule,'order_quantity_limit')))];
+    }
+    var candidate = false;
+    if(named=='npc_yunha' && !(state.relationships.toJson()['choices'] as Map).containsKey('choice_yunha_01') && state.business.businessIndex>=DevelopmentBalance.integer(config.section('customer_relationships'),'choice_first_business_day') &&
+        state.relationships.affinity(named!)>=DevelopmentBalance.integer(config.section('customer_choice_conditions')[named] as Map<String,dynamic>,'min_affinity')) {
+      final prior=state.relationships.toJson(), own=(prior['visits'] as Map).values.where((v)=>(v as Map)['npc']==named).length;
+      final days=<int>{};
+      for(final sale in state.sales.entries) {
+        final e=validateStoredCustomerSale(sale.key,sale.value),o=e['order'] as Map,ls=o['lines'] as List;
+        if(o['customerId']==named && ls.length==1 && (ls.single as Map)['flavor']=='redbean' && (ls.single as Map)['quantity']==DevelopmentBalance.integer(config.section('customer_choice_conditions')['npc_yunha'] as Map<String,dynamic>,'baseline_quantity')) days.add(e['businessIndex'] as int);
+      }
+      final rules=config.section('customer_choice_conditions')[named] as Map<String,dynamic>;
+      candidate=own+1>=DevelopmentBalance.integer(rules,'min_visits') && days.length>=DevelopmentBalance.integer(rules,'redbean_two_success_days');
+      if(candidate) lines=[CustomerOrderLine(flavor:'redbean',quantity:DevelopmentBalance.integer(rules,'candidate_redbean_quantity'),variant:variant,special:special)];
+    }
+    final withOwnPortion=DevelopmentBalance.integer(config.section('customer_order_preferences')['npc_makrye'] as Map<String,dynamic>,'quantity')+DevelopmentBalance.integer(config.section('customer_relationships'),'own_portion_extra_quantity');
+    if(named=='npc_makrye' && pendingChoice=='a' && DevelopmentBalance.integer(rule,'order_quantity_limit')>=withOwnPortion) {
+      lines=[CustomerOrderLine(flavor:lines.single.flavor,quantity:withOwnPortion,variant:variant,special:special)];
+    }
+    final order = CustomerOrder(id:_id(),customerId:customerId,
+      remainingMs:DevelopmentBalance.integer(rule,'order_wait_ms'),lines:lines);
+    state.customers.add(order);
+    if (named != null) {
+      state.relationships = state.relationships.visit(order.id,named,state.business.businessIndex,customerCatalog,context:{
+        'lines':lines.map((l)=>l.toJson()).toList(),'initialWaitMs':order.remainingMs,'working':named=='npc_eunchae' && (pendingChoice!=null || !state.relationships.stories.contains('story_eunchae_01') || random.nextInt(10000)>=DevelopmentBalance.integer(config.section('customer_relationships'),'holiday_visit_basis_points')),
+        'cameraPresent':named=='npc_taeo' && !state.relationships.stories.contains('story_taeo_01'),
+        'running':named=='npc_minjae' && pendingChoice==null && !state.relationships.stories.contains('story_minjae_01'),'sketchObserved':false,
+        'turnedBack':named=='npc_minjae' && pendingChoice==null && state.relationships.affinity(named)>=DevelopmentBalance.integer(config.section('customer_choice_conditions')[named] as Map<String,dynamic>,'min_affinity'),
+        'ownPortion':named=='npc_makrye' && pendingChoice=='a' && lines.single.quantity>=withOwnPortion,
+        'onSite':named=='npc_makrye' && pendingChoice=='b',
+        'photoReminder':named=='npc_taeo' && pendingChoice=='c'});
+      final observed = state.tasteObservations.putIfAbsent(named, () => {});
+      for (final line in lines) {
+        final variants = observed.putIfAbsent(line.flavor, () => <int>{});
+        if (line.variant != null) variants.add(line.variant!);
+      }
+      final followup=_matchingFollowup(order);
+      if(followup!=null) state.customerScene=followup;
     }
   });
+
   Future<bool> sellToFirstCustomer() => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.customers.isEmpty) throw const FormatException('판매할 손님 없음');
     final order = state.customers.first;
@@ -584,7 +693,207 @@ class WorkshopController extends ChangeNotifier {
     state.inventory = sales.inventory; state.buns = sales.ordinaryBuns; state.lifetime = sales.lifetimeSalesBuns;
     state.sales..clear()..addAll(sales.sales);
     state.pendingGold['sale:${order.id}'] = sales.sales[order.id]!;
+    if (customerCatalog.contains(order.customerId)) {
+      state.relationships = state.relationships.successfulSale(order.id,order.id,state.business.businessIndex,config);
+    }
     state.completedSales++; state.customers.removeAt(0);
+    if(customerCatalog.contains(order.customerId)) _afterNamedSale(order);
+  });
+  Map<String,dynamic>? _matchingFollowup(CustomerOrder order) {
+    final journal=state.relationships.toJson(),visits=journal['visits'] as Map;
+    final context=((visits[order.id] as Map?)?['context'] as Map?) ?? {};
+    for(final e in (journal['followups'] as Map).entries) {
+      final npc=order.customerId;
+      if(customerCatalog.choice(e.key as String)['npc_id']!=npc) continue;
+      if(npc=='npc_makrye' && (e.value=='a' && context['ownPortion']!=true || e.value=='b' && context['onSite']!=true)) continue;
+      if(npc=='npc_minjae' && context['running']!=false || npc=='npc_eunchae' && context['working']!=true || npc=='npc_taeo' && e.value=='c' && context['photoReminder']!=true) continue;
+      return {'kind':'followup','id':e.key,'npc':npc,'choice':e.value};
+    }
+    return null;
+  }
+  CustomerDialogueFacts _dialogueFacts(CustomerOrder order) {
+    final context=((state.relationships.toJson()['visits'] as Map)[order.id] as Map?)?['context'] as Map? ?? {};
+    return CustomerDialogueFacts(order:order,stage:state.relationships.stage(order.customerId,config),
+      met:state.relationships.met,stories:state.relationships.stories,
+      working:context['working']==true,running:context['running']==true,cameraPresent:context['cameraPresent']==true,
+      onSite:context['onSite']==true,openingDay:state.business.businessIndex==1);
+  }
+  Map<String,String> _waitingSpeech(CustomerOrder order) => selectCustomerSpeech(customerCatalog,'waiting',_dialogueFacts(order),
+      recent:state.relationships.recent(order.customerId)) ?? {'id':'common_waiting','text':'제 것 나오면 알려주세요.'};
+  String? customerOrderSpeech(CustomerOrder order) {
+    if(!customerCatalog.contains(order.customerId)) return null;
+    final visits=(state.relationships.toJson()['visits'] as Map).values.where((v)=>(v as Map)['npc']==order.customerId).length;
+    final event=visits==1 ? 'first_visit':'order';
+    return selectCustomerSpeech(customerCatalog,event,_dialogueFacts(order),recent:state.relationships.recent(order.customerId))?['text'];
+  }
+  Map<String,String> _neighborSpeech(CustomerOrder order) {
+    final facts=_dialogueFacts(order),rules=config.section('customer_relationships');
+    final events=[if(facts.stage>=DevelopmentBalance.integer(rules,'regular_dialogue_stage')) 'regular',
+      if(facts.stage>=DevelopmentBalance.integer(rules,'friendly_dialogue_stage')) 'neighbor',
+      if(facts.stage>=DevelopmentBalance.integer(rules,'friendly_dialogue_stage')) 'friendly','smalltalk'];
+    final candidates=<Map<String,String>>[];
+    for(final event in events) {
+      if(qualifiesCustomerDialogue(event,facts)) {
+        final definition=(customerCatalog.npc(order.customerId)['dialogues'] as List).cast<Map>().where((d)=>d['event']==event);
+        if(definition.isNotEmpty && definition.first['once_only']==true &&
+            (state.relationships.toJson()['seenDialogue'] as List).contains('${order.customerId}:${definition.first['id']}')) continue;
+        final speech=selectCustomerSpeech(customerCatalog,event,facts,recent:state.relationships.recent(order.customerId));
+        if(speech!=null) candidates.add(speech);
+      }
+    }
+    final recent=state.relationships.recent(order.customerId);
+    final unused=candidates.where((s)=>!recent.contains(s['id']));
+    return unused.isNotEmpty ? unused.first : candidates.isNotEmpty ? candidates.first : _waitingSpeech(order);
+  }
+  String? customerDelaySpeech(CustomerOrder order) {
+    final context=((state.relationships.toJson()['visits'] as Map)[order.id] as Map?)?['context'] as Map?;
+    final initial=context?['initialWaitMs'];
+    if(initial is! int || initial<=0 || (initial-order.remainingMs)*1000<initial*DevelopmentBalance.integer(config.section('customer_relationships'),'delay_threshold_permille')) return null;
+    return selectCustomerSpeech(customerCatalog,'delayed',_dialogueFacts(order))?['text'];
+  }
+  String? get lastSaleFeedback {
+    if(state.sales.isEmpty) return null;
+    final sale=state.sales.entries.last,evidence=validateStoredCustomerSale(sale.key,sale.value);
+    final order=CustomerOrder.fromJson(evidence['order'] as Map<String,dynamic>);
+    final speech=selectCustomerSpeech(customerCatalog,'success',_dialogueFacts(order));
+    return '${customerName(order.customerId)} · 별 ${evidence['stars']} · ${speech?['text'] ?? '감사합니다. 잘 먹을게요.'}';
+  }
+  String customerConversation(CustomerOrder order)=>_neighborSpeech(order)['text']!;
+  String? customerWaitingAction(CustomerOrder order) {
+    if(!customerCatalog.contains(order.customerId)) return null;
+    final facts=_dialogueFacts(order);
+    if(order.customerId=='npc_minjae' && !facts.running || order.customerId=='npc_eunchae' && !facts.working) return '차례를 기다린다.';
+    if(order.customerId=='npc_taeo' && !facts.cameraPresent) return '가게를 둘러본다.';
+    return (customerCatalog.npc(order.customerId)['expressions'] as Map)['waiting'] as String;
+  }
+  String waitingLine(CustomerOrder order)=>_waitingSpeech(order)['text']!;
+  Future<bool> observeWaiting(String orderId)=>command(() {
+    final found=state.customers.where((o)=>o.id==orderId);
+    if(gameplayPaused || found.isEmpty || !customerCatalog.contains(found.single.customerId)) throw const FormatException('기다리는 손님을 확인해 주세요.');
+    final order=found.single,npc=order.customerId;
+    state.relationships=state.relationships.observeVisit(order.id,'waitingSeen');
+    if(npc=='npc_seojin') state.relationships=state.relationships.observeVisit(order.id,'sketchObserved');
+    final id=_neighborSpeech(order)['id']!;
+    state.relationships=state.relationships.recordDialogue(npc,id,state.business.businessIndex,config,customerCatalog,firstAutomaticCompletion:true);
+  });
+  String? get photoReactionSale {
+    final visits=state.relationships.toJson()['visits'] as Map;
+    for(final entry in state.sales.entries.toList().reversed) {
+      final order=validateStoredCustomerSale(entry.key,entry.value)['order'] as Map;
+      if(order['customerId']=='npc_taeo' && ((visits[entry.key] as Map?)?['context'] as Map?)?['cameraPresent']!=false && validateStoredCustomerSale(entry.key,entry.value)['businessIndex']==state.business.businessIndex && ((visits[entry.key] as Map?)?['context'] as Map?)?['photoShown']!=true) return entry.key;
+    }
+    return null;
+  }
+  Future<bool> acknowledgePhotoReaction(String saleId)=>command(() {
+    if(gameplayPaused || photoReactionSale!=saleId) throw const FormatException('판매 반응을 확인해 주세요.');
+    final raw=state.sales[saleId];
+    if(raw==null) throw const FormatException('판매 기록 누락');
+    final evidence=validateStoredCustomerSale(saleId,raw);
+    if(evidence['businessIndex']!=state.business.businessIndex) throw const FormatException('이전 영업일 반응은 기록에서 확인해 주세요.');
+    state.relationships=state.relationships.observeVisit(saleId,'photoShown');
+    _afterNamedSale(CustomerOrder.fromJson(evidence['order'] as Map<String,dynamic>));
+  });
+  CustomerEventFacts _choiceFacts(String npc, CustomerOrder current) {
+    final journal=state.relationships.toJson(), visits=journal['visits'] as Map;
+    final own=visits.entries.where((e)=>(e.value as Map)['npc']==npc).toList();
+    final succeeded=<Map<String,dynamic>>[];
+    final successDays=<int>{},redbeanDays=<int>{},largeDays=<int>{},workDays=<int>{},received=<String>{};
+    var custard=0;
+    for(final entry in (journal['actions'] as Map<String,dynamic>).entries.where((e)=>e.key.startsWith('sale:'))) {
+      final action=entry.value as Map, visit=visits[action['visit']] as Map;
+      if(visit['npc']!=npc) continue;
+      final raw=state.sales[entry.key.substring(5)];
+      if(raw==null) continue;
+      final evidence=validateStoredCustomerSale(entry.key.substring(5),raw),order=evidence['order'] as Map;
+      succeeded.add(evidence);final at=action['day'] as int;successDays.add(at);
+      final lines=(order['lines'] as List).cast<Map>();
+      final quantity=lines.fold<int>(0,(sum,l)=>sum+(l['quantity'] as int));
+      for(final line in lines) {received.add(line['flavor'] as String);}
+      if(lines.length==1 && lines.single['flavor']=='redbean' && quantity==DevelopmentBalance.integer(config.section('customer_choice_conditions')['npc_yunha'] as Map<String,dynamic>,'baseline_quantity')) redbeanDays.add(at);
+      if(quantity>=DevelopmentBalance.integer(config.section('customer_choice_conditions')['npc_makrye'] as Map<String,dynamic>,'large_order_quantity')) largeDays.add(at);
+      if(lines.any((l)=>l['flavor']=='custard')) custard++;
+      if((visit['context'] as Map?)?['working']==true) workDays.add(at);
+    }
+    final previous=own.where((e)=>e.key!=current.id).map((e)=>(e.value as Map)['day'] as int).fold<int>(0,(a,b)=>max(a,b));
+    final context=(visits[current.id] as Map?)?['context'] as Map? ?? {};
+    final otherFlavors=<String>{};
+    for(final evidence in succeeded.where((e)=>(e['order'] as Map)['id']!=current.id)) {
+      for(final line in ((evidence['order'] as Map)['lines'] as List)) { otherFlavors.add((line as Map)['flavor'] as String); }
+    }
+    return CustomerEventFacts(npcId:npc,affinity:state.relationships.affinity(npc),visits:own.length,
+      distinctVisitDays:own.map((e)=>(e.value as Map)['day']).toSet().length,
+      daysSinceLastVisit:previous==0 ? 0 : state.business.businessIndex-previous,
+      redbeanTwoSuccessDays:redbeanDays.length,largeOrderSuccessDays:largeDays.length,
+      otherMetCount:state.relationships.met.length-1,recipeCount:state.recipes.length,receivedFlavorCount:received.length,
+      sketchVisitCount:own.where((e)=>((e.value as Map)['context'] as Map?)?['sketchObserved']==true).length,
+      workVisits:own.where((e)=>((e.value as Map)['context'] as Map?)?['working']==true).length,
+      workSuccessDays:workDays.length,runningVisits:own.where((e)=>((e.value as Map)['context'] as Map?)?['running']==true).length,
+      custardSuccesses:custard,mapStoryKnown:state.relationships.stories.contains('story_doyun_01'),
+      newFlavorFirstServed:current.lines.any((l)=>(config.section('active_recipes')[l.flavor] as Map)['initial']!=true && !otherFlavors.contains(l.flavor)),forgotPhotoShown:context['photoShown']==true,
+      workingVisit:context['working']==true,runningTurnedBack:context['turnedBack']==true,
+      firstVisit:own.length<=1,completedStories:state.relationships.stories);
+  }
+  void _afterNamedSale(CustomerOrder order) {
+    final npc=order.customerId, facts=_choiceFacts(npc,order),journal=state.relationships.toJson();
+    final visits=journal['visits'] as Map;
+    final success=<String,int>{};
+    for(final e in (journal['actions'] as Map<String,dynamic>).entries.where((e)=>e.key.startsWith('sale:'))) {
+      final id=(visits[(e.value as Map)['visit']] as Map)['npc'] as String;
+      success[id]=(success[id] ?? 0)+1;
+    }
+    final story='story_${npc.substring(4)}_01';
+    final storyFacts=WorkshopStoryFacts(met:state.relationships.met,
+      affinity:{for(final id in state.relationships.met) id:state.relationships.affinity(id)},successfulVisits:success,
+      drawingConversationSeen:(journal['seenDialogue'] as List).contains('npc_seojin:seojin_waiting_01'));
+    if(!state.relationships.stories.contains(story) && eligibleCustomerStory(npc,storyFacts,config)) {
+      state.customerScene={'kind':'story','id':story,'npc':npc};return;
+    }
+    final followups=journal['followups'] as Map;
+    for(final e in followups.entries) {
+      if(customerCatalog.choice(e.key as String)['npc_id']==npc) {
+        // Orders/outfits affected by an authored follow-up need generation-time
+        // reservations. Do not narrate those before that reservation exists.
+        final ctx=((visits[order.id] as Map)['context'] as Map?) ?? {};
+        if(npc=='npc_makrye' && (e.value=='a' && ctx['ownPortion']!=true || e.value=='b' && ctx['onSite']!=true)) continue;
+        if(npc=='npc_minjae' && ctx['running']!=false) continue;
+        if(npc=='npc_eunchae' && ctx['working']!=true) continue;
+        if(npc=='npc_taeo' && e.value=='c' && ctx['photoReminder']!=true) continue;
+        state.customerScene={'kind':'followup','id':e.key,'npc':npc,'choice':e.value};return;
+      }
+    }
+    final event='choice_${npc.substring(4)}_01';
+    final candidateMatches=npc!='npc_yunha' || (order.lines.length==1 && order.lines.single.flavor=='redbean' &&
+      order.lines.single.quantity==DevelopmentBalance.integer(config.section('customer_choice_conditions')[npc] as Map<String,dynamic>,'candidate_redbean_quantity'));
+    if(!eligibleCustomerChoice(facts,config,candidateOrderMatches:candidateMatches)) return;
+    state.relationships=state.relationships.rollChoice(state.business.businessIndex,[event],random.nextInt(10000),config,customerCatalog,anotherStoryToday:
+      (journal['storyDays'] as Map).values.contains(state.business.businessIndex) || (journal['followupDays'] as Map).values.contains(state.business.businessIndex));
+    if(state.relationships.active!=null) {
+      final orderIds=['a','b','c']..shuffle(random);
+      state.customerScene={'kind':'choice','id':event,'npc':npc,'order':orderIds};
+    }
+  }
+  Future<bool> respondToCustomer(String choice) => command(() {
+    final scene=state.customerScene;
+    if(scene==null || scene['kind']!='choice') throw const FormatException('선택 대화가 없어요.');
+    state.relationships=state.relationships.choose(scene['id'] as String,choice,config,customerCatalog);
+    if(choice=='wave') state.customerScene=null;
+  });
+  Future<bool> replayCustomerStory(String storyId)=>command(() {
+    if(gameplayPaused || !state.relationships.stories.contains(storyId)) throw const FormatException('완료한 이야기를 선택해 주세요.');
+    final story=customerCatalog.story(storyId);
+    state.customerScene={'kind':'replay','id':storyId,'npc':story['npc_id']};
+  });
+  Future<bool> finishCustomerScene()=>command(() {
+    final scene=state.customerScene;
+    if(scene==null) throw const FormatException('이어갈 대화가 없어요.');
+    final id=scene['id'] as String,npc=scene['npc'] as String;
+    if(scene['kind']=='choice') {state.relationships=state.relationships.closeReaction(id);}
+    else if(scene['kind']=='followup') {state.relationships=state.relationships.consumeFollowup(id,contextMatches:true);}
+    else if(scene['kind']!='replay') {
+      state.relationships=state.relationships.completeStory(npc,id,customerCatalog,eligible:true);
+      state.relationships=state.relationships.recordDialogue(npc,id,state.business.businessIndex,config,customerCatalog,firstAutomaticCompletion:true);
+    }
+    state.customerScene=null;
   });
   bool get canLevelUp {
     if (state.level >= 50) return false;

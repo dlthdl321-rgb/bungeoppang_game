@@ -219,11 +219,11 @@ void main() {
     controller.setAdPaused(false);
     expect(await controller.startPractice(), isTrue);
   });
-  test('schema1은 구매 없는 schema3로 읽되 schema3 구매 누락은 초기화하지 않는다', () {
+  test('schema1은 구매 없는 schema4로 읽되 신규 구매 누락은 초기화하지 않는다', () {
     final legacy = controller.state.toJson();
     legacy['schema'] = 1;
-    for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime']) { legacy.remove(key); }
-    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 3);
+    for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime','relationships','customerScene']) { legacy.remove(key); }
+    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 4);
     final corrupted = controller.state.toJson()..remove('purchases');
     expect(() => WorkshopState.fromJson(corrupted, config), throwsFormatException);
   });
@@ -271,6 +271,65 @@ void main() {
     final saved = controller.state.toJson();
     (saved['inventory']['batches'] as Map)['one-product'] = product.toJson();
     expect(() => WorkshopState.fromJson(saved,config),throwsFormatException);
+  });
+
+  test('첫 도윤은 팥 주문이며 네임드 하루2명 뒤에는 무기명 손님이 온다', () async {
+    await controller.openBusiness();
+    expect(await controller.welcomeCustomer(),isTrue);
+    final first=controller.state.customers.single;
+    expect(first.customerId,'npc_doyun');expect(first.lines.single.flavor,'redbean');
+    await controller.command(()=>controller.state.customers.clear());
+    await controller.welcomeCustomer();
+    expect(controller.state.customers.single.customerId,'npc_yunha');
+    await controller.command(()=>controller.state.customers.clear());
+    await controller.welcomeCustomer();
+    final anonymous=controller.state.customers.single.customerId;
+    expect(anonymous,startsWith('anonymous_'));
+    expect(controller.state.tasteObservations.containsKey(anonymous),isFalse);
+    expect(controller.state.relationships.met.length,2);
+  });
+  test('판매 저장 실패는 재고·방문·친밀도를 함께 복원하고 같은 주문으로 재시도한다', () async {
+    await controller.openBusiness();await controller.welcomeCustomer();
+    final order=controller.state.customers.single;
+    await controller.observeWaiting(order.id);
+    await controller.command(() {
+      controller.state.inventory=controller.state.inventory.recordResult(ProductBatch(
+        id:'named-product',flavor:'redbean',variant:2,quantity:1,madeOnBusinessIndex:1),keep:true);
+    });
+    repository.fail=true;
+    expect(await controller.sellToFirstCustomer(),isFalse);
+    expect(controller.state.relationships.affinity('npc_doyun'),1);
+    expect(controller.state.customers.single.id,order.id);
+    expect(controller.state.inventory.batches['named-product']!.quantity,1);
+    await controller.reloadAfterError();
+    expect(await controller.sellToFirstCustomer(),isTrue);
+    expect(controller.state.relationships.affinity('npc_doyun'),3);
+    final restored=WorkshopState.fromJson(controller.state.toJson(),config);
+    expect(restored.relationships.affinity('npc_doyun'),3);
+    expect(restored.sales.length,1);
+  });
+  test('schema3 보상·구매를 유지하여 schema4로 읽고 관계 누락은 새 기본값으로 덮지 않는다', () {
+    final old=controller.state.toJson()..remove('relationships')..remove('customerScene');old['schema']=3;
+    final restored=WorkshopState.fromJson(old,config);
+    expect(restored.purchases.toJson(),controller.state.purchases.toJson());
+    expect(restored.toJson()['schema'],4);
+    final bad=controller.state.toJson()..remove('relationships');
+    expect(()=>WorkshopState.fromJson(bad,config),throwsFormatException);
+    old['relationships']={};expect(()=>WorkshopState.fromJson(old,config),throwsFormatException);
+  });
+  test('활성 관계 장면을 복원하며 대화 중 탭·영업일 전진을 막는다', () async {
+    await controller.openBusiness();await controller.welcomeCustomer();
+    await controller.command(()=>controller.state.customerScene={
+      'kind':'story','id':'story_doyun_01','npc':'npc_doyun'});
+    final before=controller.state.taps;
+    controller.tap();expect(controller.state.taps,before);
+    expect(await controller.openBusiness(),isFalse);
+    expect(WorkshopState.fromJson(controller.state.toJson(),config).customerScene!['id'],'story_doyun_01');
+    expect(await controller.finishCustomerScene(),isTrue);
+    expect(controller.state.relationships.stories,contains('story_doyun_01'));
+    final affinity=controller.state.relationships.affinity('npc_doyun');
+    await controller.replayCustomerStory('story_doyun_01');await controller.finishCustomerScene();
+    expect(controller.state.relationships.affinity('npc_doyun'),affinity);
   });
 
 }

@@ -24,3 +24,5 @@ main.dart의 신규 Workshop은 초기 팥·추가 슈크림/초코 미션·영�
 
 
 개발 설정 revision3은 기존 사장님 아바타51개 메타데이터/임시 해금과 두 재화 가격을 함께 관리합니다. 서버의 `firebase/functions/src/generated/development_balance.json`도 같은 생성 도구가 만들며 `--check`로 앱/문서/서버 사본을 대조합니다. 생성 파일을 직접 고치지 않습니다.
+
+손님 콘텐츠는 customer_content.json에서, 친밀도/방문/개별 조건 숫자는 development_balance.json의 customer_*에서 관리합니다. tools/customer_content.py와 tools/development_balance.py로 생성물을 동기화합니다. 실제 실행 검수 미완료이며 기존 구매/서버 지갑 권위를 바꾸지 않습니다.

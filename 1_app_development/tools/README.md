@@ -22,3 +22,5 @@ Flutter 앱과 관련된 도구입니다. 원칙적으로 `1_app_development/`�
 저장소 루트에서 `python 1_app_development/tools/development_balance.py`로 단일 JSON 설정을 검증하고14번 문서를 생성합니다. `--check`는 문서 일치만 확인합니다. 게임 실행·밸런스 검수·실제 서버 상품 변경은 하지 않습니다.
 
 굽기 루프 원본은 `python 1_app_development/tools/generate_cooking_sound.py`로 재생성합니다(저장소 루트 기준). 외부 샘플 없는 고정 seed 합성, CC0이며 실행하면 해당 WAV만 갱신합니다. 오디오 기본값 Dart도 development_balance.py의 생성물입니다.
+
+손님 글/인물 원본은 config/customer_content.json, 숫자는 config/development_balance.json입니다. 저장소 루트에서 `python 1_app_development/tools/customer_content.py`로 Dart를 생성하고 `--check`로 일치를 검사합니다. 생성물은 직접 수정하지 않습니다. 앱/테스트 실행 도구가 아닙니다.

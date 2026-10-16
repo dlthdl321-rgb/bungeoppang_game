@@ -1880,5 +1880,157 @@
         "reward_key": "weekly_daily_all"
       }
     }
+  },
+  "customer_relationships": {
+    "provisional": true,
+    "affinity_cap": 100,
+    "stage_thresholds": [
+      0,
+      10,
+      30,
+      60
+    ],
+    "sale_affinity": 2,
+    "corrected_sale_affinity": 1,
+    "automatic_dialogue_affinity": 1,
+    "ordinary_daily_cap": 3,
+    "choice_daily_cap": 3,
+    "recent_dialogue_limit": 3,
+    "return_gap_business_days": 3,
+    "new_npcs_daily_limit": 2,
+    "visits_per_npc_business_day": 1,
+    "delay_threshold_permille": 700,
+    "choice_first_business_day": 7,
+    "choice_gap_business_days": 5,
+    "choice_chance_basis_points": 1200,
+    "choice_skip_retry_business_days": 10,
+    "choice_affinity": {
+      "a": 3,
+      "b": 2,
+      "c": 1,
+      "wave": 0
+    },
+    "anonymous_visit_basis_points": 3000,
+    "own_portion_extra_quantity": 1,
+    "holiday_visit_basis_points": 3000,
+    "friendly_dialogue_stage": 2,
+    "regular_dialogue_stage": 3
+  },
+  "customer_choice_conditions": {
+    "npc_yunha": {
+      "min_affinity": 10,
+      "min_visits": 4,
+      "redbean_two_success_days": 3,
+      "candidate_redbean_quantity": 1,
+      "baseline_quantity": 2
+    },
+    "npc_doyun": {
+      "min_affinity": 10,
+      "min_visits": 3,
+      "recipes": 3,
+      "received_flavors": 2
+    },
+    "npc_makrye": {
+      "min_affinity": 20,
+      "min_visits": 0,
+      "large_order_quantity": 4,
+      "large_order_success_days": 2,
+      "other_met": 3,
+      "forbidden_story": "story_makrye_01"
+    },
+    "npc_seojin": {
+      "min_affinity": 20,
+      "min_visits": 5,
+      "sketch_visits": 2,
+      "forbidden_story": "story_seojin_01"
+    },
+    "npc_taeo": {
+      "min_affinity": 10,
+      "min_visits": 3
+    },
+    "npc_eunchae": {
+      "min_affinity": 10,
+      "min_visits": 0,
+      "work_visits": 3,
+      "work_success_days": 2
+    },
+    "npc_minjae": {
+      "min_affinity": 20,
+      "min_visits": 5,
+      "running_visits": 3,
+      "forbidden_story": "story_minjae_01"
+    },
+    "npc_sua": {
+      "min_affinity": 10,
+      "min_visits": 0,
+      "distinct_visit_days": 3,
+      "custard_successes": 2,
+      "return_gap_days": 3,
+      "forbidden_story": "story_sua_01"
+    }
+  },
+  "customer_story_conditions": {
+    "npc_yunha": {
+      "stage": 3,
+      "successful_visits": 3
+    },
+    "npc_doyun": {
+      "stage": 2
+    },
+    "npc_makrye": {
+      "stage": 3
+    },
+    "npc_seojin": {
+      "stage": 3,
+      "requires_drawing_conversation": true
+    },
+    "npc_taeo": {
+      "stage": 3
+    },
+    "npc_eunchae": {
+      "stage": 3
+    },
+    "npc_minjae": {
+      "stage": 3
+    },
+    "npc_sua": {
+      "stage": 3,
+      "other_npc": "npc_makrye",
+      "other_stage": 2
+    }
+  },
+  "customer_order_preferences": {
+    "npc_yunha": {
+      "flavor": "redbean",
+      "quantity": 2
+    },
+    "npc_doyun": {
+      "flavor": "custard",
+      "quantity": 1
+    },
+    "npc_makrye": {
+      "flavor": "redbean",
+      "quantity": 4
+    },
+    "npc_seojin": {
+      "flavor": "custard",
+      "quantity": 1
+    },
+    "npc_taeo": {
+      "flavor": "redbean",
+      "quantity": 1
+    },
+    "npc_eunchae": {
+      "flavor": "custard",
+      "quantity": 2
+    },
+    "npc_minjae": {
+      "flavor": "redbean",
+      "quantity": 2
+    },
+    "npc_sua": {
+      "flavor": "custard",
+      "quantity": 1
+    }
   }
 }
