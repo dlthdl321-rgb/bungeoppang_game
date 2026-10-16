@@ -83,6 +83,33 @@ def clean(value):
     return str(value).replace('|', '／').replace('\n', ' ')
 
 
+def development_overview(data):
+    """현재 코드와 신규 목표를 원장 근거로 구분한다. 실행 완료를 추정하지 않는다."""
+    snapshot = data.get('development_snapshot')
+    if not snapshot:
+        return ''
+    text = ('## 현재 개발과 기획 구분\n\n'
+            f"정적 검토: {snapshot['reviewed_at']} · 기준 코드 `{snapshot['code_commit'][:7]}`\n\n"
+            '**아래 구현 현황은 소스 존재를 확인한 것이며 실행·테스트 통과를 의미하지 않습니다.**\n\n'
+            + snapshot['execution_validation'] + '\n\n'
+            '### 기존 코드에 있는 기능\n\n| 영역 | 정적 확인 | 코드 근거 |\n| --- | --- | --- |\n')
+    for item in snapshot['existing_code']:
+        links = ' · '.join(f'[{f}](../../1_app_development/lib/{f})' for f in item['files'])
+        text += f"| {clean(item['area'])} | {clean(item['finding'])} | {links} |\n"
+    text += ('\n### 최신 기획에서 개발할 기능\n\n'
+             '| 신규 목표 | 현재 차이 | 연결 작업 |\n| --- | --- | --- |\n')
+    for item in snapshot['planned_work']:
+        links = ' · '.join(f'[{key}](CHECKLIST.md#{key.lower()})' for key in item['task_ids'])
+        text += f"| {clean(item['area'])} | {clean(item['finding'])} | {links} |\n"
+    text += '\n### 기획 문서와 미정 사항\n\n' + snapshot['planning_state'] + '\n\n'
+    text += '\n'.join('- ' + value for value in snapshot['pending_decisions']) + '\n\n'
+    text += ('[상세 기획](02_상세기획서.md) · '
+             '[확정·미정 기준](00_공통기준.md#5-결정-관리) · '
+             '[추천·답변 대기 결정](2.1.1_game_rules_and_decisions/00_결정취합.md)\n\n'
+             '현재 단계는 코드·기획 작업 중심입니다. 실행 환경 준비와 앱·출시 검수는 별도 후속입니다.\n\n')
+    return text
+
+
 def render(root, data, today=None):
     today = today or now()[:10]
     tasks = data['tasks']
@@ -98,7 +125,7 @@ def render(root, data, today=None):
                     if incomplete_estimates else
                     f"예상 시간 가중 진행률: {earned:g}/{hours:g}시간 ({earned/hours*100 if hours else 0:.1f}%)\n\n")
     common = (f"원본: `tasks.json` · 기준일: {today}(한국 시각) · 갱신: {data['updated_at']}\n\n"
-              f"완료 작업 수: {len(done)}/{len(tasks)} ({len(done)/len(tasks)*100 if tasks else 0:.1f}%)\n\n" +
+              f"신규 기획 작업 완료 수: {len(done)}/{len(tasks)} ({len(done)/len(tasks)*100 if tasks else 0:.1f}%)\n\n" +
               time_summary +
               "진행 중·검토 중의 부분 진행률은 합산하지 않는다. 문서 작성은 게임 구현 완료가 아니다.\n")
     def estimate_label(t):
@@ -110,6 +137,7 @@ def render(root, data, today=None):
         return label
     checklist = ('# 개발 체크리스트\n\n자동 생성 문서. 직접 수정하지 않는다.\n\n'
                  '작업 이름을 누르면 아래의 해당 작업 상세로 이동한다. 상세 내용은 tasks.json에서 자동 생성한다.\n\n') + common
+    checklist += '\n' + development_overview(data)
     for stage in ('P1', 'P2', 'P3', 'P4', 'P5', 'P6'):
         checklist += f'\n## {stage}\n\n'
         for t in tasks:
@@ -152,6 +180,7 @@ def render(root, data, today=None):
                       '\n\n[검수 ID 원문 위치](최종검증보고.md#검수-id-원문-위치) · '
                       f"[단계 목록으로 돌아가기](#{t['phase'].lower()})\n")
     report = '# 진행현황\n\n자동 생성 문서. 직접 수정하지 않는다.\n\n' + common
+    report += '\n' + development_overview(data)
     report += '\n## 상태 집계\n\n| 상태 | 작업 수 | 참고 추정 합 | 미산정 작업 |\n| --- | ---: | ---: | ---: |\n'
     for state in STATES:
         subset = [t for t in tasks if t['status'] == state]

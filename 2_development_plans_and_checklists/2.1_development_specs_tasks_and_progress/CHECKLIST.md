@@ -4,9 +4,9 @@
 
 작업 이름을 누르면 아래의 해당 작업 상세로 이동한다. 상세 내용은 tasks.json에서 자동 생성한다.
 
-원본: `tasks.json` · 기준일: 2026-10-14(한국 시각) · 갱신: 2026-10-14T20:48:56+09:00
+원본: `tasks.json` · 기준일: 2026-10-16(한국 시각) · 갱신: 2026-10-16T11:20:41+09:00
 
-완료 작업 수: 0/40 (0.0%)
+신규 기획 작업 완료 수: 0/40 (0.0%)
 
 전체 예상 시간: 미정 · 미산정 작업 16개 · 개정 전/기등록 참고 추정 합 101시간 (최신 전체 시간 아님)
 
@@ -14,9 +14,60 @@
 
 진행 중·검토 중의 부분 진행률은 합산하지 않는다. 문서 작성은 게임 구현 완료가 아니다.
 
+## 현재 개발과 기획 구분
+
+정적 검토: 2026-10-16T11:20:41+09:00 · 기준 코드 `3c995f3`
+
+**아래 구현 현황은 소스 존재를 확인한 것이며 실행·테스트 통과를 의미하지 않습니다.**
+
+이번 갱신에서 게임·서버 실행, 앱 테스트·빌드·실기기 검수 미실행. 문서 생성·원장·링크 검증만 수행.
+
+### 기존 코드에 있는 기능
+
+| 영역 | 정적 확인 | 코드 근거 |
+| --- | --- | --- |
+| 저장·복구 | JSON v12와 SQLite 현재/백업 스냅샷, 저장 이전·복구 코드 | [models.dart](../../1_app_development/lib/models.dart) · [repository.dart](../../1_app_development/lib/repository.dart) |
+| 클리커 생산·경제 | BigInt 탭/자동 생산, 기존 스킬과 가격 계산 | [economy.dart](../../1_app_development/lib/economy.dart) · [economy_config.dart](../../1_app_development/lib/economy_config.dart) · [game_controller.dart](../../1_app_development/lib/game_controller.dart) |
+| 기존 레벨·미션 | offline-v1의 Lv.1~10, 일일·주간·업적·환생 코드 | [mission_config.dart](../../1_app_development/lib/mission_config.dart) · [progress_state.dart](../../1_app_development/lib/progress_state.dart) · [prestige_config.dart](../../1_app_development/lib/prestige_config.dart) |
+| 기존 부재 생산 정산 | 최대 8시간·50% 정산 코드. 영업 상태와 분리된 기존 방식 | [balance.dart](../../1_app_development/lib/balance.dart) · [game_controller.dart](../../1_app_development/lib/game_controller.dart) · [support_rules.dart](../../1_app_development/lib/support_rules.dart) |
+| 꾸미기·화면 | 사장님·붕어빵·가게 꾸미기 및 홈·패널 코드 | [cosmetic_config.dart](../../1_app_development/lib/cosmetic_config.dart) · [ui/game_app.dart](../../1_app_development/lib/ui/game_app.dart) · [ui/night_home.dart](../../1_app_development/lib/ui/night_home.dart) |
+| 기존 오디오 | 배경에 연동한 BGM과 효과음 설정·재생 코드 | [music_config.dart](../../1_app_development/lib/music_config.dart) · [game_audio.dart](../../1_app_development/lib/game_audio.dart) · [models.dart](../../1_app_development/lib/models.dart) |
+| 온라인·결제 기반 | 카카오/Firebase 로그인·랭킹·친구·초대·유료 재화 코드. 실제 서비스 동작은 별도 검증 필요 | [firebase_online_backend.dart](../../1_app_development/lib/firebase_online_backend.dart) · [online_backend.dart](../../1_app_development/lib/online_backend.dart) · [play_billing_service.dart](../../1_app_development/lib/play_billing_service.dart) |
+
+### 최신 기획에서 개발할 기능
+
+| 신규 목표 | 현재 차이 | 연결 작업 |
+| --- | --- | --- |
+| 배경·BGM 독립 선택과 굽기 음향 | 기존 기반만 있음 | [P2-001](CHECKLIST.md#p2-001) · [P2-002](CHECKLIST.md#p2-002) · [P2-003](CHECKLIST.md#p2-003) |
+| 영업 시작·종료·실제 영업일 및 저장 이전 | 신규 동작 미구현 | [P1-005](CHECKLIST.md#p1-005) · [P1-006](CHECKLIST.md#p1-006) · [P5-003](CHECKLIST.md#p5-003) |
+| 레시피·맛별 숙련·5단계 도감 | 신규 동작 미구현 | [P3-001](CHECKLIST.md#p3-001) · [P3-002](CHECKLIST.md#p3-002) · [P3-005](CHECKLIST.md#p3-005) |
+| 큰 틀 제작·센서/터치·익힘 판정 | 신규 동작 미구현 | [P4-001](CHECKLIST.md#p4-001) · [P4-002](CHECKLIST.md#p4-002) · [P4-003](CHECKLIST.md#p4-003) · [P4-004](CHECKLIST.md#p4-004) · [P4-005](CHECKLIST.md#p4-005) |
+| 독립 6구 생산·직접 수확 | 홈의 6칸 그림만 있음; 독립 제품 생산·수확 미구현 | [P5-001](CHECKLIST.md#p5-001) · [P5-002](CHECKLIST.md#p5-002) |
+| 주문·대기열·손님 취향·즉석 판매 | 방문/부스트 기반만 있음; 새 주문·판매 미구현 | [P3-004](CHECKLIST.md#p3-004) · [P4-006](CHECKLIST.md#p4-006) · [P4-007](CHECKLIST.md#p4-007) |
+| 제작일별 재고·5영업일 신선도·납품 | 신규 동작 미구현 | [P5-004](CHECKLIST.md#p5-004) · [P5-005](CHECKLIST.md#p5-005) |
+| 두 재화 AND 결제·만족도 희귀 황금 | 기존 지갑/IAP 기반만 있음; 새 결제·보상 미구현 | [P1-007](CHECKLIST.md#p1-007) · [P3-007](CHECKLIST.md#p3-007) · [P5-006](CHECKLIST.md#p5-006) |
+| Lv.50 성장·기능별 해금 | 현재 Lv.1~10; 신규 시즌·기능 게이트 미구현 | [P3-003](CHECKLIST.md#p3-003) · [P3-006](CHECKLIST.md#p3-006) · [P6-004](CHECKLIST.md#p6-004) · [P6-007](CHECKLIST.md#p6-007) |
+| 하루 최대 2회 선택형 보상 광고 | SDK·시청·한도·검증 지급 미구현 | [P1-008](CHECKLIST.md#p1-008) · [P3-008](CHECKLIST.md#p3-008) · [P6-008](CHECKLIST.md#p6-008) |
+| 출시·통합·실기기 검수 | 최신 기획에 대한 실행 검수 미실행 | [P6-001](CHECKLIST.md#p6-001) · [P6-002](CHECKLIST.md#p6-002) · [P6-003](CHECKLIST.md#p6-003) · [P6-005](CHECKLIST.md#p6-005) · [P6-006](CHECKLIST.md#p6-006) |
+
+### 기획 문서와 미정 사항
+
+기획・기술・검수 문서와 40개 작업 원장은 존재. DEC 추천안은 사용자 확정과 구분하며 새 승인으로 간주하지 않음.
+
+- 숙련 요구량·익힘 판정·연습 인정 기준
+- 주문표·대기시간·부분 납품·만족도 산식
+- 영업일 날짜 경계·종료/복귀·세션 복구 정책
+- 복합 가격·초기 황금 0의 첫 구매 경로・Lv.50 성장/기능 해금표
+- 광고 SDK·보상량·일일 경계·로그인/검증/복구 정책
+
+[상세 기획](02_상세기획서.md) · [확정·미정 기준](00_공통기준.md#5-결정-관리) · [추천·답변 대기 결정](2.1.1_game_rules_and_decisions/00_결정취합.md)
+
+현재 단계는 코드·기획 작업 중심입니다. 실행 환경 준비와 앱·출시 검수는 별도 후속입니다.
+
+
 ## P1
 
-- [ ] [P1-001 현황·확정/미정·출시 범위 재대조](#p1-001) — 미착수 / 3시간 (개정 전 참고·재산정 필요) / 담당: 미배정
+- [ ] [P1-001 현황·확정/미정·출시 범위 재대조](#p1-001) — 검토 중 / 3시간 (개정 전 참고·재산정 필요) / 담당: 코드·기획 정적 검토
 - [ ] [P1-002 복합 가격·숙련·판매/해금 계약](#p1-002) — 미착수 / 3시간 (개정 전 참고·재산정 필요) / 담당: 미배정
 - [ ] [P1-003 경제·50레벨 이전/복구 위험 검증](#p1-003) — 미착수 / 4시간 (개정 전 참고·재산정 필요) / 담당: 미배정
 - [ ] [P1-004 Android 센서·터치 대체 위험 검증](#p1-004) — 미착수 / 4시간 (개정 전 참고·재산정 필요) / 담당: 미배정
@@ -80,15 +131,15 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 상태·담당 | 미착수 / 미배정 |
+| 상태·담당 | 검토 중 / 코드·기획 정적 검토 |
 | 요구사항 | REQ-01, REQ-02, REQ-03, REQ-04, REQ-05, REQ-06, REQ-07 |
 | 우선순위·예상 시간 | 필수 / 3시간 (개정 전 참고·재산정 필요) |
 | 예정 날짜 | 미정 ~ 미정 |
 | 산출물 | 최신 명세·코드 차이·결정 게이트·개정 전 일정의 무효 범위 |
 | 완료 조건 | 신규 요구와 코드 비교,팥 숙련/5단계/영업일/오프라인 구분; 한국어 국내Android·도구 유지 확인; 복합구매·판매만족도5개·Lv.50/기능해금확정과현재코드차이확인; 기존광고금지와선택형일2회광고예외·실제SDK/정책미변경구분 |
 | 검수 방법 | 09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록 |
-| 검증 결과 | 미실행 |
-| 구현 근거·현재 확인 | 기존 코드 기반만 확인. 최신 숙련·주문·영업·재고 명세에 맞춘 구현/검수 근거 없음 |
+| 검증 결과 | 정적 대조 및 문서·원장 검증. 게임·서버 실행/앱 테스트/빌드/실기기 검수 미실행; 정책 미정과 신규 통합 검수는 남음. |
+| 구현 근거·현재 확인 | 2026-10-16: 현재 소스와 최신 기획·DEC를 정적으로 대조해 development_snapshot 및 차이분석 갱신. 저장 v12/Lv.1~10 기반과 신규 40개 작업의 범위를 구분. 신규 게임 기능 구현 완료 근거 아님. |
 | 차단 사유 | 없음 |
 
 선행 작업: 없음

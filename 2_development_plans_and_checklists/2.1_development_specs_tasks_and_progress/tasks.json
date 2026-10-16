@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-14T20:48:56+09:00",
+  "updated_at": "2026-10-16T11:20:41+09:00",
   "planning_basis": {
     "status": "2026-10-14 최신 요구·전체 작업 재산정",
     "start_date": "2026-10-13",
@@ -41,21 +41,21 @@
       "phase": "P1",
       "name": "현황·확정/미정·출시 범위 재대조",
       "priority": "필수",
-      "owner": "미배정",
+      "owner": "코드·기획 정적 검토",
       "start_date": null,
       "end_date": null,
       "planned_day_start": null,
       "planned_day_end": null,
       "estimated_hours": 3,
       "dependencies": [],
-      "status": "미착수",
-      "implementation_evidence": "기존 코드 기반만 확인. 최신 숙련·주문·영업·재고 명세에 맞춘 구현/검수 근거 없음",
+      "status": "검토 중",
+      "implementation_evidence": "2026-10-16: 현재 소스와 최신 기획·DEC를 정적으로 대조해 development_snapshot 및 차이분석 갱신. 저장 v12/Lv.1~10 기반과 신규 40개 작업의 범위를 구분. 신규 게임 기능 구현 완료 근거 아님.",
       "deliverables": "최신 명세·코드 차이·결정 게이트·개정 전 일정의 무효 범위",
       "completion_criteria": "신규 요구와 코드 비교,팥 숙련/5단계/영업일/오프라인 구분; 한국어 국내Android·도구 유지 확인; 복합구매·판매만족도5개·Lv.50/기능해금확정과현재코드차이확인; 기존광고금지와선택형일2회광고예외·실제SDK/정책미변경구분",
       "verification_method": "09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록",
-      "verification_result": "미실행",
+      "verification_result": "정적 대조 및 문서·원장 검증. 게임·서버 실행/앱 테스트/빌드/실기기 검수 미실행; 정책 미정과 신규 통합 검수는 남음.",
       "block_reason": "",
-      "updated_at": "2026-10-14T20:48:56+09:00",
+      "updated_at": "2026-10-16T11:20:41+09:00",
       "estimate_kind": "작성자 추정",
       "acceptance_ids": [
         "AC-REQ01-701",
@@ -1788,5 +1788,187 @@
       ],
       "estimate_kind": "추가요구·미산정"
     }
-  ]
+  ],
+  "development_snapshot": {
+    "reviewed_at": "2026-10-16T11:20:41+09:00",
+    "review_type": "현재 코드·기획·DEC 정적 대조",
+    "code_commit": "3c995f3140b1137c6dece98cf8b58da457143fb3",
+    "execution_validation": "이번 갱신에서 게임·서버 실행, 앱 테스트·빌드·실기기 검수 미실행. 문서 생성·원장·링크 검증만 수행.",
+    "existing_code": [
+      {
+        "area": "저장·복구",
+        "finding": "JSON v12와 SQLite 현재/백업 스냅샷, 저장 이전·복구 코드",
+        "files": [
+          "models.dart",
+          "repository.dart"
+        ]
+      },
+      {
+        "area": "클리커 생산·경제",
+        "finding": "BigInt 탭/자동 생산, 기존 스킬과 가격 계산",
+        "files": [
+          "economy.dart",
+          "economy_config.dart",
+          "game_controller.dart"
+        ]
+      },
+      {
+        "area": "기존 레벨·미션",
+        "finding": "offline-v1의 Lv.1~10, 일일·주간·업적·환생 코드",
+        "files": [
+          "mission_config.dart",
+          "progress_state.dart",
+          "prestige_config.dart"
+        ]
+      },
+      {
+        "area": "기존 부재 생산 정산",
+        "finding": "최대 8시간·50% 정산 코드. 영업 상태와 분리된 기존 방식",
+        "files": [
+          "balance.dart",
+          "game_controller.dart",
+          "support_rules.dart"
+        ]
+      },
+      {
+        "area": "꾸미기·화면",
+        "finding": "사장님·붕어빵·가게 꾸미기 및 홈·패널 코드",
+        "files": [
+          "cosmetic_config.dart",
+          "ui/game_app.dart",
+          "ui/night_home.dart"
+        ]
+      },
+      {
+        "area": "기존 오디오",
+        "finding": "배경에 연동한 BGM과 효과음 설정·재생 코드",
+        "files": [
+          "music_config.dart",
+          "game_audio.dart",
+          "models.dart"
+        ]
+      },
+      {
+        "area": "온라인·결제 기반",
+        "finding": "카카오/Firebase 로그인·랭킹·친구·초대·유료 재화 코드. 실제 서비스 동작은 별도 검증 필요",
+        "files": [
+          "firebase_online_backend.dart",
+          "online_backend.dart",
+          "play_billing_service.dart"
+        ]
+      }
+    ],
+    "planned_work": [
+      {
+        "area": "배경·BGM 독립 선택과 굽기 음향",
+        "finding": "기존 기반만 있음",
+        "task_ids": [
+          "P2-001",
+          "P2-002",
+          "P2-003"
+        ]
+      },
+      {
+        "area": "영업 시작·종료·실제 영업일 및 저장 이전",
+        "finding": "신규 동작 미구현",
+        "task_ids": [
+          "P1-005",
+          "P1-006",
+          "P5-003"
+        ]
+      },
+      {
+        "area": "레시피·맛별 숙련·5단계 도감",
+        "finding": "신규 동작 미구현",
+        "task_ids": [
+          "P3-001",
+          "P3-002",
+          "P3-005"
+        ]
+      },
+      {
+        "area": "큰 틀 제작·센서/터치·익힘 판정",
+        "finding": "신규 동작 미구현",
+        "task_ids": [
+          "P4-001",
+          "P4-002",
+          "P4-003",
+          "P4-004",
+          "P4-005"
+        ]
+      },
+      {
+        "area": "독립 6구 생산·직접 수확",
+        "finding": "홈의 6칸 그림만 있음; 독립 제품 생산·수확 미구현",
+        "task_ids": [
+          "P5-001",
+          "P5-002"
+        ]
+      },
+      {
+        "area": "주문·대기열·손님 취향·즉석 판매",
+        "finding": "방문/부스트 기반만 있음; 새 주문·판매 미구현",
+        "task_ids": [
+          "P3-004",
+          "P4-006",
+          "P4-007"
+        ]
+      },
+      {
+        "area": "제작일별 재고·5영업일 신선도·납품",
+        "finding": "신규 동작 미구현",
+        "task_ids": [
+          "P5-004",
+          "P5-005"
+        ]
+      },
+      {
+        "area": "두 재화 AND 결제·만족도 희귀 황금",
+        "finding": "기존 지갑/IAP 기반만 있음; 새 결제·보상 미구현",
+        "task_ids": [
+          "P1-007",
+          "P3-007",
+          "P5-006"
+        ]
+      },
+      {
+        "area": "Lv.50 성장·기능별 해금",
+        "finding": "현재 Lv.1~10; 신규 시즌·기능 게이트 미구현",
+        "task_ids": [
+          "P3-003",
+          "P3-006",
+          "P6-004",
+          "P6-007"
+        ]
+      },
+      {
+        "area": "하루 최대 2회 선택형 보상 광고",
+        "finding": "SDK·시청·한도·검증 지급 미구현",
+        "task_ids": [
+          "P1-008",
+          "P3-008",
+          "P6-008"
+        ]
+      },
+      {
+        "area": "출시·통합·실기기 검수",
+        "finding": "최신 기획에 대한 실행 검수 미실행",
+        "task_ids": [
+          "P6-001",
+          "P6-002",
+          "P6-003",
+          "P6-005",
+          "P6-006"
+        ]
+      }
+    ],
+    "pending_decisions": [
+      "숙련 요구량·익힘 판정·연습 인정 기준",
+      "주문표·대기시간·부분 납품·만족도 산식",
+      "영업일 날짜 경계·종료/복귀·세션 복구 정책",
+      "복합 가격·초기 황금 0의 첫 구매 경로・Lv.50 성장/기능 해금표",
+      "광고 SDK·보상량·일일 경계·로그인/검증/복구 정책"
+    ],
+    "planning_state": "기획・기술・검수 문서와 40개 작업 원장은 존재. DEC 추천안은 사용자 확정과 구분하며 새 승인으로 간주하지 않음."
+  }
 }
