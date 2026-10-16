@@ -16,3 +16,7 @@ Flutter 앱과 관련된 도구입니다. 원칙적으로 `1_app_development/`�
 | 생성 이미지 등록 | `record_image_2.py` | 인덱스와 이미지 경로를 입력하면 `3_original_images_and_visual_references`의 생성 기록을 갱신 |
 
 기획 도구 외 이미지 제작 도구는 Pillow·numpy 등 각 파일의 import에 필요한 패키지를 사용합니다. 실행하면 그림·좌표·산출물이 바뀌는 도구가 있으므로 단순 조회 목적으로 실행하지 않습니다.
+
+## 임시 수치 변경
+
+저장소 루트에서 `python 1_app_development/tools/development_balance.py`로 단일 JSON 설정을 검증하고14번 문서를 생성합니다. `--check`는 문서 일치만 확인합니다. 게임 실행·밸런스 검수·실제 서버 상품 변경은 하지 않습니다.

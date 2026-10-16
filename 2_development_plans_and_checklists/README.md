@@ -73,4 +73,4 @@ Git으로 관리하는 문서는 이 안내에서 전체 목록을 관리한다.
 - [선행 작업 P1-001·002·007·008 검토와 복구 설계](2.1_development_specs_tasks_and_progress/12_선행기획검토와복구설계.md)
 
 - [저장 이전·구매 복구 위험 검토](2.1_development_specs_tasks_and_progress/13_저장이전과구매복구위험검토.md)
-- [밸런스 조정용 미승인 초안](2.1_development_specs_tasks_and_progress/14_밸런스조정용미승인초안.md)
+- [밸런스 조정용 미승인 초안](2.1_development_specs_tasks_and_progress/14_개발용임시수치설정.md)

@@ -103,6 +103,11 @@ def development_overview(data):
         text += f"| {clean(item['area'])} | {clean(item['finding'])} | {links} |\n"
     text += '\n### 기획 문서와 미정 사항\n\n' + snapshot['planning_state'] + '\n\n'
     text += '\n'.join('- ' + value for value in snapshot['pending_decisions']) + '\n\n'
+    numeric = snapshot.get('numeric_configuration')
+    if numeric:
+        text += ('### 개발 임시 수치\n\n'
+                 f"[설정 원본](../../{numeric['source']}) · "
+                 f"[전체 수치표]({numeric['document']})\n\n{numeric['status']}\n\n")
     text += ('[상세 기획](02_상세기획서.md) · '
              '[확정·미정 기준](00_공통기준.md#5-결정-관리) · '
              '[추천·답변 대기 결정](2.1.1_game_rules_and_decisions/00_결정취합.md)\n\n'
