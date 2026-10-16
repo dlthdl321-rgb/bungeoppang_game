@@ -145,3 +145,7 @@ main.dart의 신규 Workshop은 초기 팥·추가 슈크림/초코 미션·영�
 최신 후속 소스·미연결 조건·잔여 작업 5개 묶음: [구매·복구 후속과 남은 양](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/19_구매원자저장과복구후속.md). 실제 실행 완료와 구분합니다.
 
 최신 후속: [온라인·광고·꾸미기 연결과 검수 인계](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/20_온라인광고꾸미기연결과검수인계.md). callable은 소스에 연결했지만 기본 비활성이고 실제 서버 검증 파이프라인/광고 SDK·운영 설정과 실행 검수가 남습니다.
+
+## 손님 캐릭터·관계 신규 목표
+
+[21번 손님 기획](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/21_손님캐릭터와관계시스템.md)의8명 고정ID·표시명/개인호칭·전체 대사·친밀도·관계/선택 이벤트·후일담을 관련 기획에 반영했다. 현재 `workshop_controller.dart`의 임시 `customer_N`8종 주문·취향 관찰과 구분한다. 신규 콘텐츠·정적표정·원자 관계 저장·스토리 전체 정지는 아직 구현하지 않았다. 접수/교환 변경안은 결정 대기이며 앱 이탈 정지·KST 영업일 등 기존 확정은 유지한다.
