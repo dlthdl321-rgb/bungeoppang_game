@@ -12,6 +12,8 @@ import 'play_billing_service.dart';
 import 'repository.dart';
 import 'server_invite_repository.dart';
 import 'time_service.dart';
+import 'development_balance_asset.dart';
+import 'workshop_controller.dart';
 import 'ui/game_app.dart';
 import 'ui/pixel_sprites.dart';
 
@@ -38,10 +40,36 @@ Future<void> main() async {
           online.configured ? ServerInvitationRepository(online) : null);
   final audio = AudioplayersAudio();
   await PixelSprites.load();
+  WorkshopController? workshop;
   try {
     await controller.initialize();
-    runApp(GameApp(controller: controller, audio: audio));
+    final config = await loadDevelopmentBalance();
+    workshop = WorkshopController(config, SqliteWorkshopRepository());
+    await workshop.initialize();
+    runApp(GameApp(controller: controller, audio: audio, workshop: workshop));
   } catch (_) {
-    runApp(RecoveryApp(controller: controller, audio: audio));
+    workshop?.dispose();
+    controller.dispose();
+    await audio.dispose();
+    runApp(const _StartupFailure());
   }
+}
+
+class _StartupFailure extends StatefulWidget {
+  const _StartupFailure();
+  @override
+  State<_StartupFailure> createState() => _StartupFailureState();
+}
+class _StartupFailureState extends State<_StartupFailure> {
+  bool retrying = false;
+  @override
+  Widget build(BuildContext context) => MaterialApp(home: Scaffold(body: SafeArea(child: Center(
+    child: Column(mainAxisSize: MainAxisSize.min, children: [
+      const Text('저장을 확인하지 못했어요. 다시 시도해 주세요.'),
+      FilledButton(onPressed: retrying ? null : () async {
+        setState(() => retrying = true);
+        await main();
+      }, child: const Text('다시 읽기')),
+    ]),
+  ))));
 }

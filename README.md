@@ -43,3 +43,7 @@ Firebase 함수 개발은 `1_app_development/firebase/functions`에서 Node.js 2
 ## 폴더 관리 기준
 
 최상위 자료 분류는 `번호_이름`, 문서의 하위 분류는 `상위번호.번호_이름` 형식을 사용합니다. Flutter·Android·Xcode·Firebase가 정해진 경로로 읽는 `1_app_development` 내부의 `lib`, `assets`, `test`, `android`, `ios`, `firebase`와 도구 폴더는 호환성을 위해 이름을 유지합니다. 이미지 원본·백업 내부의 파일명과 폴더도 매니페스트와 대응하므로 보존합니다. `.git`은 Git 내부 관리 폴더입니다.
+
+## 현재 신규 게임 소스
+
+main.dart의 신규 Workshop은 초기 팥·추가 슈크림/초코 미션·영업/연습/숙련/6구/재고·손님 판매·수동50레벨·도감 저장 경로다. 구형 코인은 신규 개념이 아니며 실제 복합 결제·검증 황금/광고·친구 연동과 컴파일/실행 검수는 미완료다. 상세는 [18번 연결 범위](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/18_신규게임연결과사용자결정반영.md)를 따른다.

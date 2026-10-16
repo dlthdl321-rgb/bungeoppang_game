@@ -72,7 +72,9 @@ abstract class SoundPolicy implements GameAudio {
 
   @override
   void setCookingSources(Set<String> sources) {
-    _hasCookingSource = sources.isNotEmpty;
+    final hasSource = sources.isNotEmpty;
+    if (_hasCookingSource == hasSource) return;
+    _hasCookingSource = hasSource;
     _syncCooking();
   }
 

@@ -137,3 +137,7 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 ## 현재 작성된 오디오·공통 계산 소스
 
 독립 BGM·굽기 채널 설정을 위한 저장 v13과 임시 수치 기반 공통 계산을 작성했다. [15번 구현/검수 대기](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/15_현재환경소스구현과검수대기.md)를 따른다. 앱 실행·컴파일·Flutter/서버 테스트·빌드·실기기 검수는 미실행이며 기존 출시/실행 성공 기록을 이번 변경의 증거로 사용하지 않는다.
+
+## 현재 신규 게임 소스
+
+main.dart의 신규 Workshop은 초기 팥·추가 슈크림/초코 미션·영업/연습/숙련/6구/재고·손님 판매·수동50레벨·도감 저장 경로다. 구형 코인은 신규 개념이 아니며 실제 복합 결제·검증 황금/광고·친구 연동과 컴파일/실행 검수는 미완료다. 상세는 [18번 연결 범위](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/18_신규게임연결과사용자결정반영.md)를 따른다.

@@ -17,3 +17,7 @@ python 1_app_development/tools/planning_tasks.py render
 보상/가격표의 임시값 채움은 수치 아닌 정책 승인·런타임 연동·실제 테스트 통과를 뜻하지 않습니다. [설정 전체 표](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/14_개발용임시수치설정.md)를 확인하세요.
 
 생성 파일 development_audio_defaults.dart는 직접 수정하지 않습니다. 생성·검증 명령으로14번 표와 함께 갱신합니다.
+
+## 현재 신규 게임 소스
+
+main.dart의 신규 Workshop은 초기 팥·추가 슈크림/초코 미션·영업/연습/숙련/6구/재고·손님 판매·수동50레벨·도감 저장 경로다. 구형 코인은 신규 개념이 아니며 실제 복합 결제·검증 황금/광고·친구 연동과 컴파일/실행 검수는 미완료다. 상세는 [18번 연결 범위](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/18_신규게임연결과사용자결정반영.md)를 따른다.

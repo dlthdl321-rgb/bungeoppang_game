@@ -67,15 +67,41 @@ class DevelopmentBalance {
         !difficulties.every((r) => [0, 1, 2].contains(integer(r, 'difficulty')))) {
       throw const FormatException('숙련 난이도 목록 오류');
     }
-    if (integer(result.section('doneness'), 'reference_scale') <= 0) {
+    if (integer(result.section('doneness'), 'reference_scale') != 1000) {
       throw const FormatException('익힘 배율 오류');
     }
     for (final item in difficulties) {
       if (integer(item, 'practice_required') < integer(item, 'technique_passes_required') ||
           integer(item, 'technique_passes_required') <= 0 ||
-          integer(item, 'doneness_target_ms') <= 0) {
+          integer(item, 'doneness_target_ms') <= 0 ||
+          integer(item, 'success_doneness_min_index') != 1 || integer(item, 'success_doneness_max_index') != 3) {
         throw const FormatException('숙련 수치 오류');
       }
+    }
+    final recipes = result.section('active_recipes');
+    if (recipes.length != 3 || !recipes.keys.toSet().containsAll(['redbean','custard','cocoa'])) {
+      throw const FormatException('확정 맛 목록 오류');
+    }
+    for (final e in recipes.entries) {
+      final row = _map(e.value);
+      if (row['label'] is! String || (row['label'] as String).isEmpty ||
+          integer(row, 'difficulty') > 2 || row['initial'] is! bool ||
+          row['initial'] != (e.key == 'redbean')) throw const FormatException('맛 설정 오류');
+    }
+    final manual = result.section('manual_cooking');
+    if (integer(manual, 'checkpoint_ms') == 0 || integer(manual, 'filling_inputs') == 0 ||
+        integer(manual, 'tilt_sampling_ms') == 0 ||
+        integer(result.section('doneness'), 'reference_medium_stage_index') != 2) {
+      throw const FormatException('제작 입력/저장 수치 오류');
+    }
+    final sale = result.section('ordinary_sale');
+    if (integer(sale, 'quality_weight_permille') + integer(sale, 'freshness_weight_permille') != 1000) {
+      throw const FormatException('만족도 가중치 오류');
+    }
+    for (final key in ['quality_permille_by_doneness', 'freshness_satisfaction_permille_by_age',
+        'freshness_price_permille_by_age']) {
+      final values = result.integers('ordinary_sale', key);
+      if (values.length != 5 || values.any((v) => v > 1000)) throw const FormatException('판매 계수 오류');
     }
     final levels = result.rows('level_progression');
     if (levels.length != 50) throw const FormatException('레벨 표 누락');

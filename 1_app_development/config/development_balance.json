@@ -1,12 +1,12 @@
 {
   "metadata": {
     "schema_version": 1,
-    "revision": "development-provisional-1",
-    "status": "approved_for_provisional_planning",
+    "revision": "development-provisional-2",
+    "status": "approved_for_provisional_development",
     "release_validated": false,
     "runtime_connected": false,
-    "note": "오디오 기본값은 생성 Dart 상수로 연결. 신규 규칙은 명시적 설정 로더/공통 계산 모듈에 준비. 신규 숙련/주문/영업/복합 결제의 전체 앱 흐름과 서버 지갑에는 미연동, 출시 검수 미실행.",
-    "runtime_scope": "partial_audio_defaults_and_explicit_rule_modules"
+    "note": "신규 main→Workshop 집계/SQLite/영업·맛별 연습·6구·판매·승급·도감 소스 연결. 설정/로그인/IAP는 기존 포트 재사용, 실제 새 복합 결제·검증 황금/광고·친구 연동은 미완료. 컴파일/실행 검수 미실행.",
+    "runtime_scope": "partial_workshop_gameplay_settings_and_internal_server_contracts"
   },
   "fixed_requirements": {
     "max_level": 50,
@@ -704,7 +704,8 @@
     "tilt_sampling_ms": 100,
     "tilt_activation_degrees": 15,
     "tilt_dead_zone_degrees": 5,
-    "touch_batter_tick_ms": 50
+    "touch_batter_tick_ms": 50,
+    "checkpoint_ms": 1000
   },
   "griddle": {
     "slot_speed_permille": [
@@ -731,9 +732,7 @@
       800,
       700
     ],
-    "match_weight_permille": 500,
-    "doneness_weight_permille": 300,
-    "freshness_weight_permille": 200,
+    "freshness_weight_permille": 300,
     "stars_min": 1,
     "stars_max": 5,
     "satisfaction_threshold_permille": [
@@ -744,7 +743,28 @@
       800
     ],
     "sale_timer_margin_ms": 15000,
-    "initial_order_wait_ms": 300000
+    "initial_order_wait_ms": 300000,
+    "quality_weight_permille": 700,
+    "quality_permille_by_doneness": [
+      0,
+      600,
+      1000,
+      800,
+      0
+    ],
+    "freshness_satisfaction_permille_by_age": [
+      1000,
+      800,
+      600,
+      400,
+      200
+    ],
+    "customer_arrival_interval_ms": 15000,
+    "special_order_unlock_level": 5,
+    "specific_variant_order_unlock_level": 3,
+    "special_order_basis_points": 1000,
+    "specific_variant_basis_points": 3000,
+    "customer_archetype_count": 8
   },
   "rare_gold_sale": {
     "probability_basis_points_by_stars": [
@@ -1381,7 +1401,8 @@
     "stall_cosmetics": 8,
     "friends": 10,
     "ranking": 10,
-    "rewarded_ads": 1
+    "rewarded_ads": 1,
+    "customer_collection_ui": 3
   },
   "audio": {
     "bgm_default_percent": 40,
@@ -1412,11 +1433,39 @@
     "proposed_schema_next_version": 14
   },
   "unresolved_non_numeric_policies": [
-    "광고 업체/SDK·검증 기능·실제 데이터와 동의",
-    "계정/기기 간 로컬 재화 권위·증거 소실 시 복구",
-    "구형 사용자 Lv.50 새 시즌/영업 상태 초기값·환생 범위·기존 기능 접근 이전",
-    "일반 판매 대금 통화·부분 납품·레시피 중복 보상 방식·출시 콘텐츠 목록",
-    "6구 계속 익힘/덜 익음 수확·연습 제품 보관 및 앱 이탈 수명",
-    "만족도 입력/산식·판매 증거 신뢰 범위·추가 일일 판매황금 상한 정책·새 승급 조건 채택"
-  ]
+    "50레벨 이후 분점은 후속 콘텐츠이며 세부 기획 미확정",
+    "AdMob SDK 버전/실제 데이터·동의·SSV 서명 검증과 앱/광고단위 설정",
+    "활성 한 기기 진행의 이전 증거 검증 어댑터·서버 판매/미션 근거 검증·실제 서비스/실행 검수"
+  ],
+  "mission_gold_rewards": {
+    "daily_taps": 1,
+    "daily_production": 1,
+    "daily_purchases": 1,
+    "daily_auto": 1,
+    "daily_all": 2,
+    "weekly_taps": 2,
+    "weekly_days": 2,
+    "weekly_purchases": 2,
+    "weekly_daily_all": 3
+  },
+  "active_recipes": {
+    "redbean": {
+      "label": "팥",
+      "difficulty": 0,
+      "initial": true,
+      "acquisition_tier": 0
+    },
+    "custard": {
+      "label": "슈크림",
+      "difficulty": 1,
+      "initial": false,
+      "acquisition_tier": 1
+    },
+    "cocoa": {
+      "label": "초코",
+      "difficulty": 2,
+      "initial": false,
+      "acquisition_tier": 2
+    }
+  }
 }

@@ -10,7 +10,7 @@ import 'support_config.dart';
 // which test/premium_catalog_test.dart writes from this file.
 
 const premiumConfigVersion = 'premium-v1';
-const goldName = '황금 붕어빵';
+const goldName = '황금붕어빵력';
 const androidPackageName = 'com.todaybungeoppang.todays_bungeoppang';
 
 /// A Play Console in-app product (consumable). [referencePriceKrw] is only

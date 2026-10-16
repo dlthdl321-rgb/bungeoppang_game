@@ -63,15 +63,15 @@ CompositeQuote maximumCompositeSkill(DevelopmentBalance config, String id,
 
 /// Integer cross-products: each threshold belongs to the next stage.
 int provisionalDoneness(DevelopmentBalance config,
-    {required int elapsedMs, required int difficulty}) {
-  if (elapsedMs < 0) throw const FormatException('음수 익힘 시간');
+    {required int elapsedMs, required int difficulty, int speedPermille = 1000}) {
+  if (elapsedMs < 0 || speedPermille <= 0) throw const FormatException('익힘 시간/배율 오류');
   final target = DevelopmentBalance.integer(config.mastery(difficulty), 'doneness_target_ms');
   final scale = DevelopmentBalance.integer(config.section('doneness'), 'reference_scale');
   if (scale <= 0) throw const FormatException('익힘 배율 오류');
-  final elapsed = BigInt.from(elapsedMs) * BigInt.from(scale);
+  final elapsed = BigInt.from(elapsedMs) * BigInt.from(scale) * BigInt.from(speedPermille);
   final boundaries = config.integers('doneness', 'boundary_permille');
   for (var i = 0; i < boundaries.length; i++) {
-    if (elapsed < BigInt.from(target) * BigInt.from(boundaries[i])) return i;
+    if (elapsed < BigInt.from(target) * BigInt.from(boundaries[i]) * BigInt.from(1000)) return i;
   }
   return boundaries.length;
 }

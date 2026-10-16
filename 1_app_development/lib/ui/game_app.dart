@@ -18,12 +18,16 @@ import 'public_menus.dart';
 import 'progress_panels.dart';
 import 'ranking_panel.dart';
 import 'shop_panel.dart';
+import '../workshop_controller.dart';
+import '../cooking_session.dart';
+import 'workshop_page.dart';
 
 class GameApp extends StatefulWidget {
   final GameController controller;
   final GameAudio audio;
+  final WorkshopController? workshop;
   const GameApp(
-      {super.key, required this.controller, this.audio = const SilentAudio()});
+      {super.key, required this.controller, this.audio = const SilentAudio(), this.workshop});
   @override
   State<GameApp> createState() => _GameAppState();
 }
@@ -35,9 +39,11 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_syncAudio);
+    widget.workshop?.addListener(_syncAudio);
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     if (lifecycle != null && lifecycle != AppLifecycleState.resumed) {
       widget.audio.pauseMusic();
+      widget.workshop?.setForeground(false);
     }
     _syncAudio();
     widget.audio.init().then((_) {
@@ -50,7 +56,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   }
 
   void _welcomeBack(BigInt gain) {
-    if (!mounted || !widget.controller.welcomesBack(gain)) return;
+    if (!mounted || widget.workshop != null || !widget.controller.welcomesBack(gain)) return;
     widget.audio.play(Sfx.reward);
     showDialog(
         context: _navigatorKey.currentContext!,
@@ -64,8 +70,19 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   // Settings live in the controller; the audio follows them. Cheap no-op
   // when nothing changed, so it is fine on every controller notification.
   // An explicit music selection stays independent of background/time changes.
+  Set<String> get _cookingIds {
+    final workshop = widget.workshop;
+    if (workshop == null || !workshop.foreground || workshop.error != null) return {};
+    final state = workshop.state;
+    return {
+      if (state.session?.phase == CookingPhase.cooking) 'manual:${state.session!.id}',
+      if (state.session == null && workshop.gridVisible && state.business.permitsProducts(DateTime.now().toUtc()))
+        ...state.grid.cookingSourceIds,
+    };
+  }
   void _syncAudio() => widget.audio
     ..configure(widget.controller.state.settings)
+    ..setCookingSources(_cookingIds)
     // Night plays the night mood whatever the season.
     ..setScene(isNightTime(
                 widget.controller.state.equippedCosmetic(CosmeticSlot.time),
@@ -78,6 +95,8 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     widget.controller.removeListener(_syncAudio);
+    widget.workshop?.removeListener(_syncAudio);
+    widget.workshop?.dispose();
     widget.audio.dispose();
     widget.controller.dispose();
     super.dispose();
@@ -87,12 +106,14 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       widget.audio.resumeMusic();
+      widget.workshop?.setForeground(true);
       widget.controller.resume().then(_welcomeBack);
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       widget.audio.pauseMusic();
+      widget.workshop?.setForeground(false);
       widget.controller.leaveActive();
     }
   }
@@ -107,7 +128,8 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
       builder: (context, child) => GameAudioScope(
           audio: widget.audio,
           child: CelebrationHost(controller: widget.controller, child: child!)),
-      home: GameHome(controller: widget.controller));
+      home: widget.workshop == null ? GameHome(controller: widget.controller) :
+          WorkshopPage(controller: widget.workshop!, accountController: widget.controller));
 }
 
 /// Shown when the save cannot be loaded. Switches to [GameApp] once a
