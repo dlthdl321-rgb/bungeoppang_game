@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'pixel_sprites.dart';
 
-/// Colours of the concept art (이미지/3.2_visual_design_references_20261006):
+/// Colours of the concept art (3_original_images_and_visual_references/3.2_visual_design_references_20261006):
 /// cream panels in wooden frames, dark chocolate text, orange buttons.
 class Cozy {
   Cozy._();

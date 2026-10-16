@@ -1,6 +1,6 @@
 """Bungeoppang sprites from the concept art (stage 14).
 
-The approved concept fish (이미지/3.2_visual_design_references_20261006/
+The approved concept fish (3_original_images_and_visual_references/3.2_visual_design_references_20261006/
 01_원본전체/붕어빵선택_원본) is cut out of its iron mould by colour, then
 tools/pixelize.py turns it into the 96x72 game sprite. This script finishes
 that sprite and draws everything that has to match its silhouette:
