@@ -2,15 +2,15 @@
 
 이 문서의 Flutter·도구 명령은 `1_game_app/`에서 실행합니다. 원본 이미지·작업 결과·스토어·보관 자료는 저장소 루트의 `3_art_sources/`, `4_art_backups/`, `5_store_assets/`, `6_release_archives/`에 있습니다. [저장소 전체 구조](../README.md)를 참고하세요.
 
-**[첫 출시 언어·지역과 문구 원칙](../2_design_docs/2.1_planning/08_개발도구와안드로이드출시.md#한국어-첫-출시와-번역-준비--dec-014-확정)**: 한국어·국내 Android 먼저, 외국어·해외 대응은 후속입니다. 신규/수정 문구는 공통 관리하고 UI 이미지와 글자를 분리합니다. 구현 완료를 뜻하지 않습니다.
+**[첫 출시 언어·지역과 문구 원칙](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/08_개발도구와안드로이드출시.md#한국어-첫-출시와-번역-준비--dec-014-확정)**: 한국어·국내 Android 먼저, 외국어·해외 대응은 후속입니다. 신규/수정 문구는 공통 관리하고 UI 이미지와 글자를 분리합니다. 구현 완료를 뜻하지 않습니다.
 
-**[개발 도구·Android 우선 출시 기준](../2_design_docs/2.1_planning/08_개발도구와안드로이드출시.md)**: 사용자 확정 개발 방향. 현재 도구를 유지하며 iOS·웹은 후속으로 진행합니다. 설치·구현 완료를 뜻하지 않습니다.
+**[개발 도구·Android 우선 출시 기준](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/08_개발도구와안드로이드출시.md)**: 사용자 확정 개발 방향. 현재 도구를 유지하며 iOS·웹은 후속으로 진행합니다. 설치·구현 완료를 뜻하지 않습니다.
 
-**[신규 기획 문서 안내](../2_design_docs/2.1_planning/README.md)**: REQ-01~07 및 최신 숙련·영업·주문·재고의 구현 전 기획·기술·작업·검수. 현재 구현과 구분하며 게임 기능 완료를 뜻하지 않습니다.
+**[신규 기획 문서 안내](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/README.md)**: REQ-01~07 및 최신 숙련·영업·주문·재고의 구현 전 기획·기술·작업·검수. 현재 구현과 구분하며 게임 기능 완료를 뜻하지 않습니다.
 
 ## 자료 위치 안내
 
-문서 전체 목록과 폴더 번호 규칙은 [통합 문서 안내](../2_design_docs/README.md)에서 확인하세요.
+문서 전체 목록과 폴더 번호 규칙은 [통합 문서 안내](../2_game_planning_and_checklists/README.md)에서 확인하세요.
 
 | 찾는 자료 | 폴더 | 내용 |
 | --- | --- | --- |
@@ -22,8 +22,8 @@
 | 이미지 원본·시안 | [이미지/](../3_art_sources) | 생성 원본, 미리보기, 개발 에셋 |
 | 이미지 작업 결과 | [output/imagegen/](../4_art_backups/imagegen) | 생성·검토 결과 |
 | 스토어 이미지 | [store/](../5_store_assets) | 배너와 스플래시 |
-| 게임 기획 | [2_design_docs/2.1_planning/](../2_design_docs/2.1_planning) | 현재 기획·결정·검수 기준 |
-| 보존 문서 | [2_design_docs/2.1_planning/2.1.3_old/](../2_design_docs/2.1_planning/2.1.3_old) | 기존 구현 기준, 개인정보·출시 설정 |
+| 게임 기획 | [2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress) | 현재 기획·결정·검수 기준 |
+| 보존 문서 | [2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup) | 기존 구현 기준, 개인정보·출시 설정 |
 | ZIP 보관 파일 | [archives/](../6_release_archives) | 날짜별 백업·APK 압축파일 |
 | Firebase 서버 | [firebase/](firebase) | 서버 함수, 보안 규칙, 배포 설정 |
 | Android 설정 | [android/](android) | 빌드와 플랫폼 연동 |
@@ -31,20 +31,20 @@
 | 테스트 | [test/](test) | 기능 테스트와 비교용 화면 |
 | 개발 도구 | [tools/](tools) | 이미지·사운드 제작, 실행 스크립트 |
 
-**[마스터 문서](../2_design_docs/2.1_planning/2.1.3_old/MASTER.md)**: 기능·설정을 추가하기 전에 확인하는 기준 문서입니다(설정값, 화면 배치, 저장 규칙, 추가 작업 체크리스트).
+**[마스터 문서](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/MASTER.md)**: 기능·설정을 추가하기 전에 확인하는 기준 문서입니다(설정값, 화면 배치, 저장 규칙, 추가 작업 체크리스트).
 
 현재 게임은 `lib/`와 `assets/`, 과거 보관 파일은 `1.4_archives/`에서 찾을 수 있습니다.
 APK, 빌드 캐시, 로컬 설정은 기존 `.gitignore`에 따라 Git에 포함되지 않습니다.
 
-Flutter로 만든 세로형 붕어빵 클리커 게임입니다. 현재코드는광고·별도분석SDK없이동작합니다. 목표기획은사용자선택보상광고하루2회예외를포함하며 [광고계약](../2_design_docs/2.1_planning/11_하루2회보상형광고.md)에정리했습니다. 아직광고SDK는도입하지않았습니다. 온라인 기능(랭킹, 친구, 황금 붕어빵)은 카카오 계정으로 로그인해 Firebase 서버를 씁니다. 현금·상품·포인트는 지급하지 않습니다.
+Flutter로 만든 세로형 붕어빵 클리커 게임입니다. 현재코드는광고·별도분석SDK없이동작합니다. 목표기획은사용자선택보상광고하루2회예외를포함하며 [광고계약](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/11_하루2회보상형광고.md)에정리했습니다. 아직광고SDK는도입하지않았습니다. 온라인 기능(랭킹, 친구, 황금 붕어빵)은 카카오 계정으로 로그인해 Firebase 서버를 씁니다. 현금·상품·포인트는 지급하지 않습니다.
 
 ## 목표 기획 — 아직 미구현
 
-힐링 제작·수집·가게 운영으로 확장한다. 레시피획득→맛별연습→숙련/도감완성→6구랜덤생산→직접수확/재고→주문/취향수집. 팥도숙련후6구해금,숙련전즉석판매가능. 재고는실제영업일기준5일후소멸하고영업중앱종료에는기존8시간/50%로붕어빵력만정산한다. 자동재고수확/지급은없다. 미정수치·새납기는 [상세/결정](../2_design_docs/2.1_planning/README.md)에서구분한다.
+힐링 제작·수집·가게 운영으로 확장한다. 레시피획득→맛별연습→숙련/도감완성→6구랜덤생산→직접수확/재고→주문/취향수집. 팥도숙련후6구해금,숙련전즉석판매가능. 재고는실제영업일기준5일후소멸하고영업중앱종료에는기존8시간/50%로붕어빵력만정산한다. 자동재고수확/지급은없다. 미정수치·새납기는 [상세/결정](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/README.md)에서구분한다.
 
 ## 게임 구성 — 현재 코드 기준
 
-설정값과 공식, 화면 좌표는 [마스터 문서](../2_design_docs/2.1_planning/2.1.3_old/MASTER.md)에 모아 두었습니다. 여기서는 전체 모습만 설명합니다.
+설정값과 공식, 화면 좌표는 [마스터 문서](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/MASTER.md)에 모아 두었습니다. 여기서는 전체 모습만 설명합니다.
 
 - **홈 화면**: 야간 노점 배경 위에 굽는 판과 붕어빵이 있습니다.
   - 위쪽 HUD: 레벨 배지(누르면 레벨 미션), 보유 붕어빵, 초당·클릭당 생산, 메뉴·설정 버튼
@@ -83,7 +83,7 @@ Android 가상 기기는 `TodayBungeoppang_API35`입니다. 2026-10-05에는 AEH
 flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KEY=... --dart-define=FIREBASE_APP_ID=... --dart-define=FIREBASE_SENDER_ID=... --dart-define=FIREBASE_PROJECT_ID=...
 ```
 
-서버 설정과 배포는 [15단계 기록](../2_design_docs/2.1_planning/2.1.3_old/stage15_release_online.md)과 [16단계 기록](../2_design_docs/2.1_planning/2.1.3_old/stage16_kakao_login_ranking.md)을 참고하세요.
+서버 설정과 배포는 [15단계 기록](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/stage15_release_online.md)과 [16단계 기록](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/stage16_kakao_login_ranking.md)을 참고하세요.
 
 ## 코드 구조
 
@@ -112,7 +112,7 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 
 ## 개인정보와 Play 데이터 보안
 
-게임 저장은 기기 안에서만 합니다. 온라인 기능에 로그인하면 카카오 회원번호와(동의 시) 카카오 닉네임, 아바타 꾸미기, 순위표 점수, 친구·초대·황금 붕어빵 기록이 개발자의 Firebase 서버(서울)에 저장됩니다. 카카오 친구 목록과 카카오톡 메시지는 쓰지 않습니다. [개인정보처리방침](../2_design_docs/2.1_planning/2.1.3_old/privacy_policy.md)과 [Play Console 데이터 보안 양식 기준](../2_design_docs/2.1_planning/2.1.3_old/play_data_safety.md)을 참고하세요.
+게임 저장은 기기 안에서만 합니다. 온라인 기능에 로그인하면 카카오 회원번호와(동의 시) 카카오 닉네임, 아바타 꾸미기, 순위표 점수, 친구·초대·황금 붕어빵 기록이 개발자의 Firebase 서버(서울)에 저장됩니다. 카카오 친구 목록과 카카오톡 메시지는 쓰지 않습니다. [개인정보처리방침](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/privacy_policy.md)과 [Play Console 데이터 보안 양식 기준](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/play_data_safety.md)을 참고하세요.
 
 `test/no_tracking_sdk_test.dart`는 허용 목록 밖의 광고·분석 SDK가 의존성에 들어오거나 Google Play 서비스 라이브러리가 추가되면 실패합니다. release 병합 매니페스트가 있으면 광고 ID·측정 항목도 검사합니다.
 
@@ -132,4 +132,4 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 
 ## 문서 관리
 
-현재 기획은 [planning 안내](../2_design_docs/2.1_planning/README.md)를 따릅니다. 기존 구현 기준과 정책·온라인 설정 문서는 [old 안내](../2_design_docs/2.1_planning/2.1.3_old/README.md)에 보존하며, 나머지 과거 단계 기록·보고서·작업 프롬프트는 정리했습니다.
+현재 기획은 [planning 안내](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/README.md)를 따릅니다. 기존 구현 기준과 정책·온라인 설정 문서는 [old 안내](../2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/README.md)에 보존하며, 나머지 과거 단계 기록·보고서·작업 프롬프트는 정리했습니다.

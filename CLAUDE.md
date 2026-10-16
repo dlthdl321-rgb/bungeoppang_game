@@ -1,8 +1,8 @@
 # 오늘의 붕어빵
 
-기능이나 설정을 추가·변경하기 전에 [2_design_docs/2.1_planning/2.1.3_old/MASTER.md](2_design_docs/2.1_planning/2.1.3_old/MASTER.md)를 먼저 읽고, 그 원칙과 체크리스트를 따른다.
+기능이나 설정을 추가·변경하기 전에 [2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/MASTER.md](2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/MASTER.md)를 먼저 읽고, 그 원칙과 체크리스트를 따른다.
 
-- 설정값·공식·화면 배치·저장 형식을 바꾸면 같은 작업에서 2_design_docs/2.1_planning/2.1.3_old/MASTER.md의 해당 부분도 고친다.
+- 설정값·공식·화면 배치·저장 형식을 바꾸면 같은 작업에서 2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/MASTER.md의 해당 부분도 고친다.
 - 문서와 코드가 다르면 코드가 기준이다. 문서를 코드에 맞게 고친다.
 - 사용자에게 보이는 글은 한국어로 쓴다.
 

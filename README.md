@@ -5,7 +5,7 @@ Flutter 기반 붕어빵 게임 저장소입니다. 전체 자료를 아래 번�
 | 번호 | 폴더 | 내용 |
 | --- | --- | --- |
 | 1 | [1_game_app](1_game_app/README.md) | Flutter 소스·에셋·테스트·Android/iOS·Firebase 서버·개발 도구 |
-| 2 | [2_design_docs](2_design_docs/README.md) | 기획·결정·검수·정책·보존 문서 전체 |
+| 2 | [2_game_planning_and_checklists](2_game_planning_and_checklists/README.md) | 기획·결정·검수·정책·보존 문서 전체 |
 | 3 | [3_art_sources](3_art_sources/) | 이미지 원본·제작 자료 |
 | 4 | [4_art_backups](4_art_backups/) | 이미지 생성 결과·수정 전 백업 |
 | 5 | [5_store_assets](5_store_assets/) | 스토어 이미지 |
@@ -16,8 +16,8 @@ Flutter 기반 붕어빵 게임 저장소입니다. 전체 자료를 아래 번�
 | 하려는 작업 | 먼저 볼 곳 |
 | --- | --- |
 | 게임 실행·기능 개발 | [게임 안내](1_game_app/README.md) → `1_game_app/lib/` |
-| 목표 기능·규칙 확인 | [기획 안내](2_design_docs/2.1_planning/README.md) → 요약·상세·결정 문서 |
-| 작업 진행 상황 확인 | [체크리스트](2_design_docs/2.1_planning/CHECKLIST.md)와 [진행현황](2_design_docs/2.1_planning/진행현황.md) |
+| 목표 기능·규칙 확인 | [기획 안내](2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/README.md) → 요약·상세·결정 문서 |
+| 작업 진행 상황 확인 | [체크리스트](2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/CHECKLIST.md)와 [진행현황](2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/진행현황.md) |
 | 저장·경제·UI 테스트 | `1_game_app/test/` |
 | 서버 기능 개발 | [서버 안내](1_game_app/firebase/README.md) |
 | 그림 수정·교체 | [이미지 원본 안내](3_art_sources/README.md) → [개발 도구](1_game_app/tools/README.md) → `1_game_app/assets/` |
@@ -38,7 +38,7 @@ flutter run
 
 Firebase 함수 개발은 `1_game_app/firebase/functions`에서 Node.js 22로 `npm ci`, `npm test`를 실행합니다. 기획 작업 조회는 저장소 루트에서 `python 1_game_app/tools/planning_tasks.py list`로 실행합니다.
 
-상세 실행·온라인 설정·기능 설명은 [게임 안내](1_game_app/README.md), 문서 전체 목록은 [문서 안내](2_design_docs/README.md)를 참고하세요. 과거 기록은 현재 구현 완료를 뜻하지 않습니다.
+상세 실행·온라인 설정·기능 설명은 [게임 안내](1_game_app/README.md), 문서 전체 목록은 [문서 안내](2_game_planning_and_checklists/README.md)를 참고하세요. 과거 기록은 현재 구현 완료를 뜻하지 않습니다.
 
 ## 폴더 관리 기준
 

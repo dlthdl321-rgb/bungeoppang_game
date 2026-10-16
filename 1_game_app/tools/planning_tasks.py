@@ -9,7 +9,7 @@ import sys
 from datetime import date, datetime, timezone, timedelta
 
 STATES = ('미착수', '진행 중', '검토 중', '완료', '차단')
-ROOT = Path(__file__).resolve().parents[2] / '2_design_docs' / '2.1_planning'
+ROOT = Path(__file__).resolve().parents[2] / '2_game_planning_and_checklists' / '2.1_game_design_tasks_and_progress'
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, 'reconfigure'):
         stream.reconfigure(encoding='utf-8')
@@ -116,9 +116,9 @@ def render(root, data, today=None):
             if t['phase'] == stage:
                 checklist += f"- [{'x' if t['status'] == '완료' else ' '}] [{t['id']} {clean(t['name'])}](#{t['id'].lower()}) — {t['status']} / {estimate_label(t)} / 담당: {clean(t['owner'])}\n"
     stage_docs = {
-        'P1': '2.1.2_stages/P1_재화와저장.md', 'P2': '2.1.2_stages/P2_배경과오디오.md',
-        'P3': '2.1.2_stages/P3_레시피와해금.md', 'P4': '2.1.2_stages/P4_제작미니게임.md',
-        'P5': '2.1.2_stages/P5_6칸굽기판.md', 'P6': '2.1.2_stages/P6_통합과검수.md',
+        'P1': '2.1.2_development_phase_plans/P1_재화와저장.md', 'P2': '2.1.2_development_phase_plans/P2_배경과오디오.md',
+        'P3': '2.1.2_development_phase_plans/P3_레시피와해금.md', 'P4': '2.1.2_development_phase_plans/P4_제작미니게임.md',
+        'P5': '2.1.2_development_phase_plans/P5_6칸굽기판.md', 'P6': '2.1.2_development_phase_plans/P6_통합과검수.md',
     }
     checklist += '\n## 작업 상세\n'
     for t in tasks:

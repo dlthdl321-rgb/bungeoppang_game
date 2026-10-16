@@ -9,7 +9,7 @@
 | `추가 생성 이미지/` | 추가 이미지 원본과 목록 |
 | `추가 생성 이미지 2/` | 후속 추가 이미지·생성 진행 기록 |
 
-[이미지 제작 문서·갤러리](../2_design_docs/2.2_art/) · [이미지 적용 도구](../1_game_app/tools/README.md)
+[이미지 제작 문서·갤러리](../2_game_planning_and_checklists/2.2_art_creation_guides_and_galleries/) · [이미지 적용 도구](../1_game_app/tools/README.md)
 
 원본 파일명과 내부 폴더명은 매니페스트·제작 도구가 참조하므로 유지합니다. 게임 반영은 적용 도구와 `1_game_app/assets` 변경 내용을 확인하며 진행합니다.
 

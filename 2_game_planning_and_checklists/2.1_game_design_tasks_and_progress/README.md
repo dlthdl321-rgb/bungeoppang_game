@@ -9,7 +9,7 @@
 3. [상세 기획](02_상세기획서.md): 숙련·5단계 도감·주문·재고·영업/오프라인 계약.
 4. [기술 설계](05_기술설계.md), [저장 이전](06_저장데이터이전.md): 시간 축·모델·원자 명령.
 5. [성장 난이도](07_성장난이도.md), [복합 경제·50레벨해금](10_복합경제와50레벨해금.md), [일2회 보상광고](11_하루2회보상형광고.md), [도구·국내 Android 출시](08_개발도구와안드로이드출시.md).
-6. 단계별 [P1](2.1.2_stages/P1_재화와저장.md)·[P2](2.1.2_stages/P2_배경과오디오.md)·[P3](2.1.2_stages/P3_레시피와해금.md)·[P4](2.1.2_stages/P4_제작미니게임.md)·[P5](2.1.2_stages/P5_6칸굽기판.md)·[P6](2.1.2_stages/P6_통합과검수.md), [일정](04_2주개발일정.md).
+6. 단계별 [P1](2.1.2_development_phase_plans/P1_재화와저장.md)·[P2](2.1.2_development_phase_plans/P2_배경과오디오.md)·[P3](2.1.2_development_phase_plans/P3_레시피와해금.md)·[P4](2.1.2_development_phase_plans/P4_제작미니게임.md)·[P5](2.1.2_development_phase_plans/P5_6칸굽기판.md)·[P6](2.1.2_development_phase_plans/P6_통합과검수.md), [일정](04_2주개발일정.md).
 7. [검수 기준](09_통합검수기준.md)·[체크리스트](CHECKLIST.md)·[진행현황](진행현황.md)·[운영법](상태관리_사용법.md)·[최종 검증](최종검증보고.md).
 
 ## 문서의 기준과 현재 상태
@@ -34,9 +34,9 @@ python 1_game_app/tools/planning_tasks.py update P1-001 --status "진행 중" --
 
 ## 기존 문서와 보관 범위
 
-[개정 전 ZIP](2.1.4_archives/2026-10-14_숙련과영업_개정전.zip)은 기존 planning 원문과 원장의 보관 기록으로 유지한다.
+[개정 전 ZIP](2.1.4_previous_planning_versions/2026-10-14_숙련과영업_개정전.zip)은 기존 planning 원문과 원장의 보관 기록으로 유지한다.
 
-현재 기획 문서는 이 폴더에서 관리하고, 보존이 필요한 기존 문서 5개는 [old 안내](2.1.3_old/README.md)에 모았다. 기존 구현 기준, 개인정보처리방침, Play 데이터 보안, Firebase·카카오 설정 기록을 포함한다. old 문서는 작성 당시 기준이며 최신 기획의 구현 완료를 뜻하지 않는다. 나머지 과거 단계 기록·검증 보고서·작업 프롬프트·플레이 가이드는 삭제했다.
+현재 기획 문서는 이 폴더에서 관리하고, 보존이 필요한 기존 문서 5개는 [old 안내](2.1.3_legacy_code_policies_and_online_setup/README.md)에 모았다. 기존 구현 기준, 개인정보처리방침, Play 데이터 보안, Firebase·카카오 설정 기록을 포함한다. old 문서는 작성 당시 기준이며 최신 기획의 구현 완료를 뜻하지 않는다. 나머지 과거 단계 기록·검증 보고서·작업 프롬프트·플레이 가이드는 삭제했다.
 
 ## 폴더 번호 관리
 
@@ -44,10 +44,10 @@ python 1_game_app/tools/planning_tasks.py update P1-001 --status "진행 중" --
 
 | 번호 | 폴더 | 용도 |
 | --- | --- | --- |
-| 2.1 | `2_design_docs/2.1_planning/` | 현재 게임 기획·기술·검수·진행 관리 |
-| 2.1.1 | `2.1.1_decisions/` | 결정 취합과 세부 결정안 |
-| 2.1.2 | `2.1.2_stages/` | 단계별 실행 기획 |
-| 2.1.3 | `2.1.3_old/` | 기존 구현·정책·출시 설정 보존 문서 |
-| 2.1.4 | `2.1.4_archives/` | 개정 전 ZIP 보관본 |
+| 2.1 | `2_game_planning_and_checklists/2.1_game_design_tasks_and_progress/` | 현재 게임 기획·기술·검수·진행 관리 |
+| 2.1.1 | `2.1.1_game_rules_and_decisions/` | 결정 취합과 세부 결정안 |
+| 2.1.2 | `2.1.2_development_phase_plans/` | 단계별 실행 기획 |
+| 2.1.3 | `2.1.3_legacy_code_policies_and_online_setup/` | 기존 구현·정책·출시 설정 보존 문서 |
+| 2.1.4 | `2.1.4_previous_planning_versions/` | 개정 전 ZIP 보관본 |
 
 하위 폴더를 추가할 때는 상위 번호에 `.번호`를 붙인다. 예: 결정안 하위 분류는 `2.1.1.1_분류명`. 새 폴더는 기존 번호를 바꾸지 않고 다음 번호를 사용한다. 루트 README.md·CLAUDE.md는 저장소 진입 안내로 유지한다.

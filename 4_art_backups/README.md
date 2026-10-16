@@ -5,6 +5,6 @@
 - `imagegen/`: 이미지 생성 결과와 진행 자료.
 - `imagegen/boy_eyelashes_backup/`: 남자 캐릭터 속눈썹 수정 전 에셋·원본·메타데이터.
 
-[작업 결과 보고서](../2_design_docs/2.3_reports/) · [게임 적용 에셋](../1_game_app/assets/) · [이미지 원본](../3_art_sources/README.md)
+[작업 결과 보고서](../2_game_planning_and_checklists/2.3_art_completion_and_backup_reports/) · [게임 적용 에셋](../1_game_app/assets/) · [이미지 원본](../3_art_sources/README.md)
 
 수정 전 원본과 비교할 때 사용하며, 백업 내부 구조와 파일명은 유지합니다.
