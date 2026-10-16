@@ -115,3 +115,50 @@ bool compositeReceiptMatches(CompositeQuote quote, {
       receipt['buns'] == quote.buns.toString() &&
       receipt['gold'] == quote.gold.toString() && receipt['status'] == 'committed';
 }
+
+/// A server REVIEW outcome, not a wallet grant. `unverifiable` is final rejection;
+/// evidence still being investigated must remain `pending`.
+class RewardReviewRecord {
+  final PendingRewardEvidence evidence;
+  final String outcome;
+  RewardReviewRecord._(this.evidence, this.outcome);
+  factory RewardReviewRecord.pending(PendingRewardEvidence evidence) =>
+      RewardReviewRecord._(evidence, 'pending');
+
+  RewardReviewRecord recordServerOutcome(Map<String, dynamic> result) {
+    final next = result['outcome'];
+    if (!['pending', 'unverifiable', 'noWin', 'eligible'].contains(next) ||
+        (evidence.kind == 'rewardedAd' && next == 'noWin') ||
+        result['account'] != evidence.accountId || result['evidence'] != evidence.id ||
+        result['kind'] != evidence.kind || result['revision'] != evidence.policyRevision ||
+        result['fingerprint'] != evidence.fingerprint) {
+      throw const FormatException('보상 심사 결과 불일치');
+    }
+    if (outcome != 'pending' && outcome != next) {
+      throw const FormatException('최종 보상 심사 결과 충돌');
+    }
+    return outcome == next ? this : RewardReviewRecord._(evidence, next as String);
+  }
+
+  Map<String, dynamic> toJson() => {'schema': 1,
+    'evidence': evidence.toJson(), 'outcome': outcome};
+  factory RewardReviewRecord.fromJson(Map<String, dynamic> row) {
+    if (row['schema'] is! int || row['schema'] != 1 ||
+        row['evidence'] is! Map<String, dynamic>) {
+      throw const FormatException('보상 심사 저장 형식 오류');
+    }
+    final evidence = PendingRewardEvidence.fromJson(row['evidence'] as Map<String, dynamic>);
+    return RewardReviewRecord.pending(evidence).recordServerOutcome({
+      'account': evidence.accountId, 'evidence': evidence.id, 'kind': evidence.kind,
+      'revision': evidence.policyRevision, 'fingerprint': evidence.fingerprint,
+      'outcome': row['outcome'],
+    });
+  }
+}
+
+/// Authenticated adapter remains a separate integration. SDK callbacks and
+/// local review records cannot be converted into wallet grants through this API.
+abstract class RewardReviewBackend {
+  Future<RewardReviewRecord> submit(PendingRewardEvidence evidence);
+  Future<RewardReviewRecord> query(PendingRewardEvidence evidence);
+}

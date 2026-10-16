@@ -11,3 +11,7 @@ npm test
 Node.js 22를 사용합니다. `npm test`는 TypeScript 빌드와 서버 단위 테스트를 실행합니다. 함수 소스는 `functions/src`, 테스트는 `functions/test`, Firestore 규칙과 인덱스는 이 폴더에 있습니다.
 
 실제 배포에는 별도 Firebase·카카오·Play 설정이 필요합니다. [보존한 온라인 설정 문서](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/README.md)를 확인하세요. 문서 정리는 실제 서비스 배포를 뜻하지 않습니다.
+
+## 개발 중인 내부 계약
+
+functions/src/development_contracts.ts는 임시 공통 설정 기반 견적 검증·광고 예약/증거 재사용 방지·보상 심사 결과 저장 코드다. 공개 함수로 등록하지 않았고 실제 황금/grant 지급·업체 서명 검증도 연결하지 않았다. 새 테스트 소스는 미실행이다. [구현 경계와 후속 조건](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/17_구매저널저장과서버검증기반.md).

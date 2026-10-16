@@ -879,3 +879,7 @@ development_balance.dart/asset 로더와 development_rules.dart는 새 복합 �
 ## 18. 후속 10단계 정적 소스 보강
 
 GameState v13/기존 자산과 지갑은 유지한다. development_rules.dart의 숙련 분리 schema1 직렬화는 결과 원장과 수치/수집을 대조하며 실제 SQLite/해금 저장에는 미연결이다. development_evidence.dart는 계정별 불변 증거 대기와 견적 영수증 필드 비교만 수행한다. 서버 검증·추첨·잔액 변경은 없다. 광고 잔여 계산은 서버 예약/검증대기를 포함한 표시용 스냅샷 계산이며 시작 승인을 대신하지 않는다. game_app.dart는 초기 비활성·detached에서 오디오를 정지하고 init 완료 후 mounted를 확인한다. 실행 검수는 미실행이다. [상세 계약](../16_10단계정적개발과서버계약.md).
+
+## 19. 구매 저널·내부 서버 검증 기반
+
+GameState v13과 실제 지갑은 유지한다. development_purchase_journal.dart는 분리 schema1의 구매 의도/예약/차감/서버 결과/지급/복원을 기록한다. development_journal_repository.dart는 CAS·한 단계 전이 검사와 명시적 SQLite development_purchase_journal_v1 테이블을 제공한다. 앱 시작 시 열지 않으며 저널만 저장했다고 실제 재화가 차감된 것이 아니다. 같은 Transaction 안의 스냅샷/상품 변경 연결과 기기/백업 권위 검수가 남는다. development_evidence.dart에 불변 심사 결과/어댑터 인터페이스를 추가했다. firebase/functions/src/development_contracts.ts는 내부 서버 견적 재계산·광고 원자 예약/증거 재사용 차단·심사 결과 저장을 제공하며 index.ts/지갑/grant에는 미연결이다. [17번 상세](../17_구매저널저장과서버검증기반.md). 모든 새 테스트는 작성만 했고 실행 검수 미실행이다.

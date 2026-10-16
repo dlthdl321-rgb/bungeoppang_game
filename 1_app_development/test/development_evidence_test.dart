@@ -74,4 +74,20 @@ void main() {
     expect(() => FlavorMasteryProgress.fromJson({...progress.toJson(), 'results': {}}),
         throwsFormatException);
   });
+  test('미당첨 심사 결과도 왕복 보존하고 재추첨·계정 변경을 거부한다', () {
+    final evidence = sale('a');
+    final pending = RewardReviewRecord.pending(evidence);
+    final result = <String, dynamic>{'account': 'a', 'evidence': evidence.id,
+      'kind': evidence.kind, 'revision': evidence.policyRevision,
+      'fingerprint': evidence.fingerprint, 'outcome': 'noWin'};
+    final reviewed = pending.recordServerOutcome(result);
+    expect(reviewed.recordServerOutcome(result), same(reviewed));
+    expect(() => reviewed.recordServerOutcome({...result, 'outcome': 'eligible'}), throwsFormatException);
+    expect(() => pending.recordServerOutcome({...result, 'account': 'b'}), throwsFormatException);
+    final restored = RewardReviewRecord.fromJson(
+        jsonDecode(jsonEncode(reviewed.toJson())) as Map<String, dynamic>);
+    expect(restored.outcome, 'noWin');
+    expect(() => restored.recordServerOutcome({...result, 'outcome': 'pending'}), throwsFormatException);
+  });
+
 }
