@@ -6,7 +6,7 @@
 
 **[신규 기획 문서 안내](../README.md)**: REQ-01~07 및 최신 숙련·영업·주문·재고의 구현 전 기획·기술·작업·검수. 현재 구현과 구분하며 게임 기능 완료를 뜻하지 않습니다.
 
-기능이나 설정을 더하기 전에 먼저 확인하는 기준 문서입니다. 내용은 코드에서 직접 확인한 값입니다(2026-10-08 기준, 저장 형식 v12).
+기능이나 설정을 더하기 전에 먼저 확인하는 기준 문서입니다. 내용은 코드에서 직접 확인한 값입니다(2026-10-16 소스 기준, 저장 형식 v13; 실행 검수 미실행).
 
 - **코드와 이 문서가 다르면 코드가 맞습니다.** 그 경우 이 문서를 고쳐 주세요.
 - 설정값을 바꾸거나 기능을 추가했으면 같은 작업에서 이 문서의 해당 표도 함께 고칩니다.
@@ -107,7 +107,7 @@
 | --- | --- |
 | DB | sqflite `todays_bungeoppang.db` |
 | 테이블 | `snapshots(slot, sequence, body)`. 슬롯 `current`, `backup` |
-| 저장 형식 버전 | `GameState.formatVersion = 12` (`models.dart`) |
+| 저장 형식 버전 | `GameState.formatVersion = 13` (`models.dart`) |
 | 밸런스 버전 | `economyBalanceVersion = 3` |
 | 보조 시스템 버전 | `supportConfigVersion = 'support-v2'` (v1도 읽음) |
 | 주간 버전 | `weeklyConfigVersion = 'weekly-v1'` (다르면 읽기 실패) |
@@ -136,6 +136,7 @@
 | v10 | 꾸미기 칸: pattern, topping, skin, hair, outfit, hat, tool |
 | v11 | 꾸미기 칸: character |
 | v12 | 꾸미기 칸: lamp, time, top, bottom, shoes, accessory |
+| v13 | 독립 음악 선택·굽기 채널 설정만 추가. 구형 v1~12 파싱/자산 유지, 실제 이전·실행 검수 미실행 |
 | (버전 없음) | premium: 키가 없으면 기본값, 잘못된 값이면 오류 |
 
 ### 시간 규칙
@@ -866,3 +867,11 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 | 오디오/출시 | 독립BGM/굽기/SFX,한국어국내Android·현재도구유지·문구/이미지분리 |
 
 날짜경계·영업종료/다음날복귀·맛별연습량/실패인정·5칸등록/숙련관계·주문표/보상·6구배정/주기/익힘/대기·신선도가격등은 [DEC](../00_공통기준.md#5-결정-관리)에미정으로남겼다. 차기저장버전/세션영속은미정,이전101시간일정은새범위에사용하지않는다. 기존실제일일미션KST자정은새영업일경계의확정근거가아니다.
+
+## 17. 현재 환경 소스 변경 — 오디오 v13·공통 임시 계산
+
+v13은 오디오 설정 musicSelection/cookingSound/cookingVolume만 추가한다. v1~12 자산 파싱은 유지하고 구형 자동 배경 모드를 보존한다. 사업 운영·숙련·재고/복합 거래의 실제 저장 이전은 포함하지 않는다. 변경·다운그레이드/실제 SQLite 검수는 미실행이다.
+
+설정 화면의 배경음 선택은 배경/시간대와 독립이며 ‘배경에 맞춤’으로 기존 모드로 돌아간다. 굽기 루프는 실제 활동 소스가 있을 때만 별도 player로 출력하고 설정/음량·전경에 따라 정지한다. 실제 신규 큰 틀/6구 활동 전달은 미연결이다. 오디오 기본값은 development_balance.json에서 development_audio_defaults.dart로 생성한다. sizzle_loop.wav는 generate_cooking_sound.py로 직접 합성(CC0)했다.
+
+development_balance.dart/asset 로더와 development_rules.dart는 새 복합 견적·익힘·숙련·신선도·KST 날짜·복구 라우팅 계산의 소스를 제공한다. 실제 서버 지갑/광고/신규 게임 흐름 연결은 하지 않았다. [15번 소스 구현·검수 대기](../15_현재환경소스구현과검수대기.md)를 따른다. 테스트 코드는 작성했으나 앱 실행·컴파일/Flutter/서버 테스트·빌드·실기기는 미실행이다.

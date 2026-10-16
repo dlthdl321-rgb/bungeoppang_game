@@ -2,7 +2,8 @@ import 'achievement_config.dart';
 import 'balance.dart' show balanceVersion, upgrades, levels;
 import 'economy.dart' show autoRate;
 import 'economy_config.dart';
-import 'feedback_config.dart';
+import 'music_config.dart';
+import 'development_audio_defaults.dart';
 import 'mission_state.dart';
 import 'support_state.dart';
 import 'invite_models.dart';
@@ -45,14 +46,20 @@ const _removedFlavours = {'custard', 'cocoa', 'sweetpotato', 'matcha', 'strawber
 class GameSettings {
   bool vibration, holdToBake, reduceMotion, soundEffects, music;
   int sfxVolume, musicVolume; // Whole percents, 0..100.
+  String musicSelection;
+  bool cookingSound;
+  int cookingVolume;
   GameSettings(
       {this.vibration = true,
       this.holdToBake = false,
       this.reduceMotion = false,
       this.soundEffects = true,
       this.music = true,
-      this.sfxVolume = defaultSfxVolume,
-      this.musicVolume = defaultMusicVolume});
+      this.sfxVolume = provisionalDefaultSfxVolume,
+      this.musicVolume = provisionalDefaultBgmVolume,
+      this.musicSelection = defaultMusicSelection,
+      this.cookingSound = provisionalDefaultCookingEnabled,
+      this.cookingVolume = provisionalDefaultCookingVolume});
   Map<String, dynamic> toJson() => {
         'vibration': vibration,
         'holdToBake': holdToBake,
@@ -61,10 +68,14 @@ class GameSettings {
         'music': music,
         'sfxVolume': sfxVolume,
         'musicVolume': musicVolume,
+        'musicSelection': musicSelection,
+        'cookingSound': cookingSound,
+        'cookingVolume': cookingVolume,
       };
 
   /// Sound settings exist from v8; older saves get the defaults.
-  factory GameSettings.fromJson(Object? raw, {bool withSound = false}) {
+  factory GameSettings.fromJson(Object? raw,
+      {bool withSound = false, bool withIndependentMusic = false}) {
     final m = raw is Map ? raw : const {};
     final settings = GameSettings(
         vibration: m['vibration'] is bool ? m['vibration'] as bool : true,
@@ -82,6 +93,19 @@ class GameSettings {
     if (m['soundEffects'] is! bool || m['music'] is! bool) {
       throw const FormatException('잘못된 소리 설정');
     }
+    if (withIndependentMusic) {
+      final selection = m['musicSelection'];
+      if (selection is! String || !validMusicSelection(selection)) {
+        throw const FormatException('잘못된 배경음 선택');
+      }
+      if (m['cookingSound'] is! bool) {
+        throw const FormatException('잘못된 굽기 소리 설정');
+      }
+      settings
+        ..musicSelection = selection
+        ..cookingSound = m['cookingSound'] as bool
+        ..cookingVolume = volume('cookingVolume');
+    }
     return settings
       ..soundEffects = m['soundEffects'] as bool
       ..music = m['music'] as bool
@@ -91,7 +115,7 @@ class GameSettings {
 }
 
 class GameState {
-  static const formatVersion = 12;
+  static const formatVersion = 13;
   BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
   int level, snapshotSequence;
   Map<String, int> upgradeCounts;
@@ -330,7 +354,8 @@ class GameState {
         ownedSkins: owned,
         equippedSkin: equipped,
         tutorialDone: m['tutorialDone'] == true,
-        settings: GameSettings.fromJson(m['settings'], withSound: version >= 8),
+        settings: GameSettings.fromJson(m['settings'],
+            withSound: version >= 8, withIndependentMusic: version >= 13),
         lastSettledUtc: last.toUtc(),
         savedAutoRate: natural('savedAutoRate'),
         activeRemainder: natural('activeRemainder') % BigInt.from(1000));

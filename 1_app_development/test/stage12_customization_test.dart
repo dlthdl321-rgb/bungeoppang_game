@@ -224,7 +224,7 @@ void main() {
       }
       expect(cosmeticsOwnedCount(restored),
           cosmeticsOwnedCount(original) + 2);
-      expect(plainJson(restored)['formatVersion'], 12);
+      expect(plainJson(restored)['formatVersion'], GameState.formatVersion);
     });
 
     test('v12 저장·복원 왕복은 같다', () {
@@ -236,7 +236,7 @@ void main() {
       s.wardrobe.equipped[CosmeticSlot.character] = 'boy';
       final restored = GameState.fromJson(plainJson(s));
       expect(restored.wardrobe.toJson(), s.wardrobe.toJson());
-      expect(plainJson(restored)['formatVersion'], 12);
+      expect(plainJson(restored)['formatVersion'], GameState.formatVersion);
     });
 
     test('v12는 엄격하다: 빠진 슬롯·미보유 장착·모르는 ID는 거부', () {

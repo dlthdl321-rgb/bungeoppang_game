@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'balance.dart';
 import 'economy.dart';
 import 'models.dart';
+import 'music_config.dart';
 import 'repository.dart';
 import 'time_service.dart';
 import 'mission_config.dart';
@@ -565,6 +566,8 @@ class GameController extends ChangeNotifier {
     }
   }
 
+  Future<void> _settingsQueue = Future<void>.value();
+
   /// One save per call: sliders should call this on release, not per frame.
   Future<void> updateSettings(
       {bool? vibration,
@@ -573,18 +576,37 @@ class GameController extends ChangeNotifier {
       bool? soundEffects,
       bool? music,
       int? sfxVolume,
-      int? musicVolume}) async {
-    await _untilIdle();
-    final s = state.settings;
-    s.vibration = vibration ?? s.vibration;
-    s.holdToBake = hold ?? s.holdToBake;
-    s.reduceMotion = reduceMotion ?? s.reduceMotion;
-    s.soundEffects = soundEffects ?? s.soundEffects;
-    s.music = music ?? s.music;
-    s.sfxVolume = (sfxVolume ?? s.sfxVolume).clamp(0, 100);
-    s.musicVolume = (musicVolume ?? s.musicVolume).clamp(0, 100);
-    await save();
-    notifyListeners();
+      int? musicVolume,
+      String? musicSelection,
+      bool? cookingSound,
+      int? cookingVolume}) async {
+    final previous = _settingsQueue;
+    final done = Completer<void>();
+    _settingsQueue = done.future;
+    try {
+      await previous;
+      if (musicSelection != null && !validMusicSelection(musicSelection)) {
+        throw const FormatException('잘못된 배경음 선택');
+      }
+      await _untilIdle();
+      if (_disposed) return;
+      final before = state.copy();
+      final s = state.settings;
+      s.musicSelection = musicSelection ?? s.musicSelection;
+      s.cookingSound = cookingSound ?? s.cookingSound;
+      s.cookingVolume = (cookingVolume ?? s.cookingVolume).clamp(0, 100);
+      s.vibration = vibration ?? s.vibration;
+      s.holdToBake = hold ?? s.holdToBake;
+      s.reduceMotion = reduceMotion ?? s.reduceMotion;
+      s.soundEffects = soundEffects ?? s.soundEffects;
+      s.music = music ?? s.music;
+      s.sfxVolume = (sfxVolume ?? s.sfxVolume).clamp(0, 100);
+      s.musicVolume = (musicVolume ?? s.musicVolume).clamp(0, 100);
+      // Restore the previous settings if this one-shot save fails.
+      await _commit(before);
+    } finally {
+      done.complete();
+    }
   }
 
   Future<void> finishTutorial() async {

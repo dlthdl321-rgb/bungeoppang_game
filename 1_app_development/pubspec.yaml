@@ -34,6 +34,7 @@ flutter:
         - asset: assets/fonts/Jua-Regular.ttf
   # Synthesized by tools/generate_sounds.py (CC0 1.0); see README.
   assets:
+    - config/development_balance.json
     - assets/audio/
     # Pixel art from tools/draw_pixel_assets.py (see docs/pixel_art_prompts.md).
     - assets/images/fish/

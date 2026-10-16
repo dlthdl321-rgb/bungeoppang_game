@@ -5,7 +5,8 @@
     "status": "approved_for_provisional_planning",
     "release_validated": false,
     "runtime_connected": false,
-    "note": "2026-10-16 사용자 요청으로 숫자 임시 채움. 현재 앱에는 신규 시스템이 없어 미연동. 해당 기능 구현은 이 파일을 읽는 구조로 연결하며 수치 재작성 금지. 금액/횟수/확률 출시 확정 및 실제 테스트 통과 아님."
+    "note": "오디오 기본값은 생성 Dart 상수로 연결. 신규 규칙은 명시적 설정 로더/공통 계산 모듈에 준비. 신규 숙련/주문/영업/복합 결제의 전체 앱 흐름과 서버 지갑에는 미연동, 출시 검수 미실행.",
+    "runtime_scope": "partial_audio_defaults_and_explicit_rule_modules"
   },
   "fixed_requirements": {
     "max_level": 50,
@@ -1408,7 +1409,7 @@
     "proposed_original_backup_days": 30,
     "proposed_local_transaction_journal_min_days": 90,
     "proposed_server_receipt_min_days": 365,
-    "proposed_schema_next_version": 13
+    "proposed_schema_next_version": 14
   },
   "unresolved_non_numeric_policies": [
     "광고 업체/SDK·검증 기능·실제 데이터와 동의",

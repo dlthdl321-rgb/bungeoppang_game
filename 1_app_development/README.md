@@ -103,7 +103,7 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 
 ## 저장 및 한계
 
-- 저장 형식은 **JSON v12**입니다. SQLite 테이블과 SQL 버전 1은 유지하고, v1부터의 저장 데이터를 모두 현재 형식으로 옮깁니다(버전별 내용은 마스터 문서 3장).
+- 저장 형식은 소스상 **JSON v13**입니다(오디오 설정만 확장, 실행 검수 미실행). SQLite 테이블과 SQL 버전 1은 유지하고, v1부터의 저장 데이터를 모두 현재 형식으로 옮깁니다(버전별 내용은 마스터 문서 3장).
 - 10초마다 저장하고, 구매·레벨업·보상 수령·부스트·꾸미기·설정 변경·앱 비활성화 때 즉시 저장합니다. 프레임이나 일반 탭마다 저장하지 않습니다.
 - 현재/직전 스냅샷은 SQLite 트랜잭션으로 교체됩니다. 현재 저장을 읽지 못하면 복구 화면에서 직전 스냅샷을 올리거나(확인 후) 초기화합니다.
 - 강제 종료 시 마지막 정기 저장 이후의 일반 터치가 일부 사라질 수 있습니다.
@@ -133,3 +133,7 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 ## 문서 관리
 
 현재 기획은 [planning 안내](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/README.md)를 따릅니다. 기존 구현 기준과 정책·온라인 설정 문서는 [old 안내](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/README.md)에 보존하며, 나머지 과거 단계 기록·보고서·작업 프롬프트는 정리했습니다.
+
+## 현재 작성된 오디오·공통 계산 소스
+
+독립 BGM·굽기 채널 설정을 위한 저장 v13과 임시 수치 기반 공통 계산을 작성했다. [15번 구현/검수 대기](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/15_현재환경소스구현과검수대기.md)를 따른다. 앱 실행·컴파일·Flutter/서버 테스트·빌드·실기기 검수는 미실행이며 기존 출시/실행 성공 기록을 이번 변경의 증거로 사용하지 않는다.

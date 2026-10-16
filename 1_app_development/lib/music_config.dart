@@ -14,3 +14,25 @@ String musicMoodFor(String background) => switch (background) {
 
 /// Asset path (under assets/) of [mood]'s loop.
 String musicAsset(String mood) => 'audio/bgm_$mood.wav';
+
+/// Existing saves follow the background until the player explicitly selects a loop.
+const defaultMusicSelection = 'auto';
+const musicSelectionLabels = {
+  'auto': '배경에 맞춤',
+  'day': '포근한 낮',
+  'spring': '봄바람',
+  'dusk': '해질녘',
+  'rain': '비 오는 날',
+  'snow': '눈 오는 날',
+  'night': '조용한 밤',
+};
+
+bool validMusicSelection(String value) =>
+    value == defaultMusicSelection || musicMoods.contains(value);
+
+String selectedMusicMood(String selection, String sceneMood) {
+  if (!validMusicSelection(selection)) {
+    throw const FormatException('알 수 없는 배경음 선택');
+  }
+  return selection == defaultMusicSelection ? sceneMood : selection;
+}

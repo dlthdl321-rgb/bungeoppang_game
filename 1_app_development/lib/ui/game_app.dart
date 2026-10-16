@@ -3,6 +3,7 @@ import '../cosmetic_config.dart';
 import '../economy.dart';
 import '../game_audio.dart';
 import '../game_controller.dart';
+import '../music_config.dart';
 import 'celebration.dart';
 import 'friends_panel.dart';
 import 'avatar_painter.dart';
@@ -34,6 +35,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     widget.controller.addListener(_syncAudio);
+    _syncAudio();
     widget.audio.init().then((_) => _syncAudio());
     // A cold start settles the time away in initialize(), before this app
     // exists; greet the player once the navigator is up.
@@ -55,7 +57,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
 
   // Settings live in the controller; the audio follows them. Cheap no-op
   // when nothing changed, so it is fine on every controller notification.
-  // The music follows the equipped background's mood the same way.
+  // An explicit music selection stays independent of background/time changes.
   void _syncAudio() => widget.audio
     ..configure(widget.controller.state.settings)
     // Night plays the night mood whatever the season.
@@ -575,7 +577,7 @@ class SoundSettings extends StatefulWidget {
 }
 
 class _SoundSettingsState extends State<SoundSettings> {
-  int? _sfxDrag, _musicDrag;
+  int? _sfxDrag, _musicDrag, _cookingDrag;
 
   @override
   Widget build(BuildContext context) {
@@ -612,6 +614,30 @@ class _SoundSettingsState extends State<SoundSettings> {
           label: '배경음',
           value: s.music,
           onChanged: (v) => c.updateSettings(music: v)),
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: InputDecorator(
+          decoration: const InputDecoration(labelText: '배경음 선택'),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String>(
+              key: const Key('setting-music-selection'),
+              isExpanded: true,
+              value: s.musicSelection,
+              items: [for (final entry in musicSelectionLabels.entries)
+                DropdownMenuItem(value: entry.key, child: Text(entry.value))],
+              onChanged: (value) {
+                if (value != null) c.updateSettings(musicSelection: value);
+              },
+            ),
+          ),
+        ),
+      ),
+      CozySettingRow(
+          key: const Key('setting-cooking-sound'),
+          icon: const PixelIcon('sfx', size: 28),
+          label: '굽는 소리',
+          value: s.cookingSound,
+          onChanged: (value) => c.updateSettings(cookingSound: value)),
       CozySettingRow(
           key: const Key('setting-sfx'),
           icon: const PixelIcon('sfx', size: 28),
@@ -637,6 +663,14 @@ class _SoundSettingsState extends State<SoundSettings> {
                 _musicDrag,
                 (v) => _musicDrag = v,
                 (v) => c.updateSettings(musicVolume: v)),
+            slider(
+                'setting-cooking-volume',
+                '굽는 소리',
+                s.cookingSound,
+                s.cookingVolume,
+                _cookingDrag,
+                (value) => _cookingDrag = value,
+                (value) => c.updateSettings(cookingVolume: value)),
             slider(
                 'setting-sfx-volume',
                 '효과음',
