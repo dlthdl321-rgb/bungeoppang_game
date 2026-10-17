@@ -92,10 +92,12 @@ void main() {
     expect(await c.finishCustomerScene(), isTrue);
     expect(c.state.relationships.toJson()['followups'], isEmpty);
   });
-  test('실제 신메뉴 주문→판매→반응→선택 저장 실패/복귀→다음 방문 후일담', () async {
+  for (final storyAlreadyCompleted in [false, true]) {
+  test('기본 관계 완료=$storyAlreadyCompleted: 신메뉴→판매→선택 저장 실패/복귀→후일담', () async {
     final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
     // The random outcome is fixed in the test, not in production configuration.
     raw['customer_relationships']['choice_chance_basis_points'] = 10000;
+    if (storyAlreadyCompleted) raw['customer_story_conditions']['npc_taeo']['stage'] = 0;
     final config = DevelopmentBalance.fromJson(raw);
     final repository = Repository();
     final start = DateTime.utc(2026, 10, 1);
@@ -108,6 +110,10 @@ void main() {
     expect(await c.command(() {
       for (final npc in c.customerCatalog.ids) {
         c.state.relationships = c.state.relationships.visit('known-$npc', npc, 1, c.customerCatalog);
+      }
+      if (storyAlreadyCompleted) {
+        c.state.relationships = c.state.relationships.completeStory(
+            'npc_taeo', 'story_taeo_01', c.customerCatalog, eligible: true);
       }
     }), isTrue);
     for (var day = 2; day <= 7; day++) {
@@ -132,22 +138,28 @@ void main() {
             quantity: order.lines.single.quantity, madeOnBusinessIndex: day), keep: true);
       }), isTrue);
       expect(await c.sellToCustomer(order.id), isTrue);
-      expect(await c.acknowledgePhotoReaction(order.id), isTrue);
+      if (c.photoReactionSale != null) {
+        expect(await c.acknowledgePhotoReaction(order.id), isTrue);
+      } else {
+        expect(storyAlreadyCompleted && day < 7, isTrue);
+      }
     }
     expect(c.state.customerScene!['kind'], 'choice');
     expect(c.state.customerScene!['id'], 'choice_taeo_01');
     final affinity = c.state.relationships.affinity('npc_taeo');
+    final selection = storyAlreadyCompleted ? 'c' : 'a';
+    final gain = storyAlreadyCompleted ? 1 : 3;
     repository.fail = true;
-    expect(await c.respondToCustomer('a'), isFalse);
+    expect(await c.respondToCustomer(selection), isFalse);
     expect(c.state.relationships.affinity('npc_taeo'), affinity);
     expect(c.state.relationships.active!['choice'], isNull);
     await c.reloadAfterError();
-    expect(await c.respondToCustomer('a'), isTrue);
-    expect(c.state.relationships.affinity('npc_taeo'), affinity + 3);
+    expect(await c.respondToCustomer(selection), isTrue);
+    expect(c.state.relationships.affinity('npc_taeo'), affinity + gain);
     await c.reloadAfterError();
-    expect(c.state.relationships.active!['choice'], 'a');
-    expect(await c.respondToCustomer('a'), isTrue);
-    expect(c.state.relationships.affinity('npc_taeo'), affinity + 3);
+    expect(c.state.relationships.active!['choice'], selection);
+    expect(await c.respondToCustomer(selection), isTrue);
+    expect(c.state.relationships.affinity('npc_taeo'), affinity + gain);
     expect(await c.finishCustomerScene(), isTrue);
 
     now = start.add(const Duration(days: 7));
@@ -159,11 +171,17 @@ void main() {
     }), isTrue);
     expect(await c.welcomeCustomer(), isTrue);
     expect(c.state.customerScene!['kind'], 'followup');
+    if (selection == 'c') {
+      final visit = (c.state.relationships.toJson()['visits'] as Map)[c.state.customers.single.id] as Map;
+      expect((visit['context'] as Map)['cameraPresent'], isTrue);
+      expect((visit['context'] as Map)['photoReminder'], isTrue);
+    }
     await c.reloadAfterError();
-    expect(c.state.customerScene!['choice'], 'a');
+    expect(c.state.customerScene!['choice'], selection);
     expect(await c.finishCustomerScene(), isTrue);
     expect(c.state.relationships.toJson()['followups'], isEmpty);
-    expect(c.state.relationships.affinity('npc_taeo'), affinity + 3);
+    expect(c.state.relationships.affinity('npc_taeo'), affinity + gain);
     expect(await c.finishCustomerScene(), isFalse);
   });
+  }
 }

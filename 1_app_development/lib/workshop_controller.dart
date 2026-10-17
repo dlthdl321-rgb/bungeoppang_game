@@ -625,6 +625,7 @@ class WorkshopController extends ChangeNotifier {
     final pendingChoice = named == null ? null : pending['choice_${named.substring(4)}_01'] as String?;
     var lines = [for (var i = 0; i < kinds; i++) CustomerOrderLine(flavor: choices[i], variant: variant,
       special: special, quantity: quantities[i])];
+    var newFlavorForTaeo = false;
     if (named != null) {
       final preference = config.section('customer_order_preferences')[named] as Map<String,dynamic>;
       final served = <String>{};
@@ -639,6 +640,8 @@ class WorkshopController extends ChangeNotifier {
       }
       final flavor = preferredCustomerFlavor(named, config, owned: state.recipes,
           previouslyServed: served, firstCustomer: state.relationships.met.isEmpty);
+      newFlavorForTaeo = named == 'npc_taeo' && !served.contains(flavor) &&
+          (config.section('active_recipes')[flavor] as Map<String, dynamic>)['initial'] != true;
       lines = [CustomerOrderLine(flavor:flavor,variant:variant,special:special,
         quantity:min(DevelopmentBalance.integer(preference,'quantity'),DevelopmentBalance.integer(rule,'order_quantity_limit')))];
     }
@@ -665,7 +668,7 @@ class WorkshopController extends ChangeNotifier {
     if (named != null) {
       state.relationships = state.relationships.visit(order.id,named,state.business.businessIndex,customerCatalog,context:{
         'lines':lines.map((l)=>l.toJson()).toList(),'initialWaitMs':order.remainingMs,'working':named=='npc_eunchae' && (pendingChoice!=null || !state.relationships.stories.contains('story_eunchae_01') || random.nextInt(10000)>=DevelopmentBalance.integer(config.section('customer_relationships'),'holiday_visit_basis_points')),
-        'cameraPresent':named=='npc_taeo' && !state.relationships.stories.contains('story_taeo_01'),
+        'cameraPresent':named=='npc_taeo' && (pendingChoice=='c' || newFlavorForTaeo || !state.relationships.stories.contains('story_taeo_01')),
         'running':named=='npc_minjae' && pendingChoice==null && !state.relationships.stories.contains('story_minjae_01'),'sketchObserved':false,
         'turnedBack':named=='npc_minjae' && pendingChoice==null && state.relationships.affinity(named)>=DevelopmentBalance.integer(config.section('customer_choice_conditions')[named] as Map<String,dynamic>,'min_affinity'),
         'ownPortion':named=='npc_makrye' && pendingChoice=='a' && lines.single.quantity>=withOwnPortion,
