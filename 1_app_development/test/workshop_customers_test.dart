@@ -138,6 +138,43 @@ void main() {
     const ready=WorkshopStoryFacts(met:{'npc_sua','npc_makrye'},affinity:{'npc_sua':60,'npc_makrye':30});
     expect(eligibleCustomerStory('npc_sua',ready,config),isTrue);
   });
+  test('4영업일 소개 제한과 이전 단골 우선은 저장 복원 뒤에도 유지된다', () {
+    var p=WorkshopRelationships.empty();
+    for(var day=1;day<=4;day++) {
+      if(day>1) {
+        final familiar=p.selectNamedVisitor(day,9999,0,config,catalog)!;
+        expect(p.met,contains(familiar));
+        p=p.visit('regular-$day',familiar,day,catalog);
+      }
+      for(var i=0;i<2;i++) {
+        final next=p.selectNamedVisitor(day,9999,0,config,catalog)!;
+        expect(p.met, isNot(contains(next)));
+        p=p.visit('new-$day-$i',next,day,catalog);
+        p=WorkshopRelationships.fromJson(p.toJson(),config,catalog);
+      }
+      expect(p.introducedOnDay(day),2);
+      final additional=p.selectNamedVisitor(day,0,0,config,catalog);
+      expect(additional,isNull);
+    }
+    expect(p.met.length,8);
+  });
+  test('선택 전과 반응 중 복원·닫기·재선택은 보상과 후일담을 한 번만 유지한다', () {
+    var p=met(7).rollChoice(7,['choice_doyun_01'],0,config,catalog);
+    p=WorkshopRelationships.fromJson(p.toJson(),config,catalog);
+    expect(p.active!['choice'],isNull);
+    p=p.choose('choice_doyun_01','b',config,catalog);
+    p=WorkshopRelationships.fromJson(p.toJson(),config,catalog);
+    expect(p.active!['choice'],'b');
+    p=p.closeReaction('choice_doyun_01');
+    p=p.choose('choice_doyun_01','b',config,catalog);
+    expect(p.active,isNull);
+    expect(p.affinity('npc_doyun'),2);
+    expect(p.toJson()['followups'],{'choice_doyun_01':'b'});
+    expect(()=>p.consumeFollowup('choice_doyun_01',contextMatches:false),throwsFormatException);
+    p=p.consumeFollowup('choice_doyun_01',contextMatches:true);
+    p=WorkshopRelationships.fromJson(p.toJson(),config,catalog);
+    expect(()=>p.consumeFollowup('choice_doyun_01',contextMatches:true),throwsFormatException);
+  });
   test('친밀도 합계를 원장과 대조하고 수치 변경은 기존 지급을 다시 계산하지 않는다', () {
     final p=met(7).successfulSale('sale','visit',7,config);
     final row=p.toJson();(row['affinity'] as Map)['npc_doyun']=3;

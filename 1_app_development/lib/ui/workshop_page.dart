@@ -233,6 +233,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) => AnimatedBuilder(animation: c, builder: (context, _) {
     final s = c.state, session = s.session;
+    final firstOrderId = s.customers.isEmpty ? null : s.customers.first.id;
     final scene=s.customerScene;
     if(scene!=null) {
       final id=scene['id'] as String,npc=scene['npc'] as String;
@@ -357,7 +358,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
           const Text('태오: 와, 냄새 좋다. ……아! 또 사진 전에 먹었네.'),
           TextButton(onPressed:c.busy ? null : ()=>c.acknowledgePhotoReaction(c.photoReactionSale!),child:const Text('태오의 반응 확인')),
         ],
-        FilledButton(onPressed: s.customers.isEmpty || c.busy ? null : c.sellToFirstCustomer, child: const Text('첫 손님에게 전량 판매')),
+        FilledButton(onPressed: firstOrderId == null || c.busy ? null : () => c.sellToCustomer(firstOrderId), child: const Text('첫 손님에게 전량 판매')),
         if (s.level >= DevelopmentBalance.integer(c.config.section('feature_unlock_levels'), 'customer_collection_ui')) ...[
           const Divider(), const Text('손님 취향 도감 · 확인한 주문'),
           for(final story in s.relationships.stories) TextButton(onPressed:c.busy ? null : ()=>c.replayCustomerStory(story),child:Text('${c.customerCatalog.story(story)['event']} · 다시 보기')),

@@ -669,24 +669,24 @@ class WorkshopController extends ChangeNotifier {
     }
   });
 
-  Future<bool> sellToFirstCustomer() => command(() {
-    if (gameplayPaused || !state.business.permitsProducts(now()) || state.customers.isEmpty) throw const FormatException('판매할 손님 없음');
-    final order = state.customers.first;
-    final selected = <Map<String, int>>[];
-    final remaining = {for (final b in state.inventory.batches.values) b.id: b.quantity};
-    for (final line in order.lines) {
-      final selection = <String, int>{}; var needed = line.quantity;
-      final eligible = state.inventory.batches.values.where((b) => b.flavor == line.flavor &&
-        (line.variant == null ? b.variant >= 1 && b.variant <= 3 : b.variant == line.variant && (b.variant != 0 || line.special)) &&
-        state.business.businessIndex - b.madeOnBusinessIndex < 5).toList()..sort((a,b) => a.madeOnBusinessIndex.compareTo(b.madeOnBusinessIndex));
-      for (final batch in eligible) {
-        if (needed == 0) break;
-        final amount = min(needed, remaining[batch.id]!);
-        if (amount > 0) { selection[batch.id] = amount; needed -= amount; remaining[batch.id] = remaining[batch.id]! - amount; }
-      }
-      if (needed != 0) throw const FormatException('주문 전량의 재고가 필요해요.');
-      selected.add(selection);
+  /// Capture the displayed order before entering the command. A delayed retry
+  /// must never deliver to the next customer after the original has left.
+  Future<bool> sellToFirstCustomer() => sellToCustomer(
+      state.customers.isEmpty ? '' : state.customers.first.id);
+
+  /// Production and stock-selection UI use the same full-order sale command.
+  /// Invalid selections consume nothing; there is no exchange grace period.
+  Future<bool> sellToCustomer(String orderId,
+      {List<Map<String, int>>? selectedByLine}) => command(() {
+    if (gameplayPaused || !state.business.permitsProducts(now())) {
+      throw const FormatException('판매할 손님 없음');
     }
+    final index = state.customers.indexWhere((order) => order.id == orderId);
+    if (index < 0) throw const FormatException('이미 종료된 주문이에요.');
+    if (index != 0) throw const FormatException('맨 앞 손님의 주문부터 확인해 주세요.');
+    final order = state.customers[index];
+    final selected = selectedByLine ?? selectCustomerInventory(order, state.inventory,
+        businessIndex: state.business.businessIndex);
     final sales = CustomerSalesProgress(inventory: state.inventory, ordinaryBuns: state.buns,
       lifetimeSalesBuns: state.lifetime, sales: state.sales).sell(config, order, selectedByLine: selected,
       businessIndex: state.business.businessIndex, flavorDifficulties: {for (final f in state.recipes) f: difficulty(f)});
@@ -696,7 +696,7 @@ class WorkshopController extends ChangeNotifier {
     if (customerCatalog.contains(order.customerId)) {
       state.relationships = state.relationships.successfulSale(order.id,order.id,state.business.businessIndex,config);
     }
-    state.completedSales++; state.customers.removeAt(0);
+    state.completedSales++; state.customers.removeAt(index);
     if(customerCatalog.contains(order.customerId)) _afterNamedSale(order);
   });
   Map<String,dynamic>? _matchingFollowup(CustomerOrder order) {
