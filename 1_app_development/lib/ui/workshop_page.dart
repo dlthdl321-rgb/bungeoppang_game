@@ -61,7 +61,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
         setState(() { _sensorEnabled = false; _sensorNotice = '센서 대신 방향 버튼을 이용해 주세요.'; }); return;
       }
       if(c.gameplayPaused) { _sensorInput.reset(); return; }
-      if(c.busy || c.error != null) { _sensorInput.interrupt(); return; }
+      if(c.cookingInputBlocked) { _sensorInput.interrupt(); return; }
       final session = c.state.session;
       if (session == null || session.finished) { _sensorInput.reset(); return; }
       final next = _sensorInput.sample(session, sample.angleMillidegrees!, _sensorClock.elapsedMilliseconds);
@@ -317,7 +317,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
               TextButton(onPressed: c.busy ? null : () => c.storeResult(false), child: const Text('버리기'))])
             else ...[const Text('주문 제작품은 재고에 저장됐어요. 탄 제품은 판매할 수 없어요.'),
               FilledButton(onPressed: c.busy ? null : () => c.storeResult(true), child: const Text('결과 닫기'))],
-          ] else CookingSessionControls(key: ValueKey('${session.id}:$_sensorEnabled'), session: session, blocked: c.busy || c.error != null || c.gameplayPaused,
+          ] else CookingSessionControls(key: ValueKey('${session.id}:$_sensorEnabled'), session: session, config: c.config, blocked: c.cookingInputBlocked,
             cookingElapsedMs: s.phaseMs, onCommand: (next) => c.cookingCommand(next)),
         ],
         const Divider(), Text('6구 · 숙련한 맛 ${s.masteryAwards.length}종'),

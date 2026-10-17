@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,12 +13,15 @@ import 'package:todays_bungeoppang/workshop_controller.dart';
 class MemoryRepository implements WorkshopRepository {
   Map<String, dynamic>? saved;
   bool fail = false;
+  Completer<void>? pauseSave;
   @override
   Future<Map<String, dynamic>?> load() async => saved == null
       ? null
       : jsonDecode(jsonEncode(saved)) as Map<String, dynamic>;
   @override
   Future<void> save(Map<String, dynamic> value, int expectedSequence) async {
+    final gate = pauseSave;
+    if (gate != null) await gate.future;
     if (fail) {
       fail = false;
       throw StateError('injected save failure');
@@ -198,6 +202,47 @@ void main() {
         await controller.cookingCommand(session.flip(session.token)), isTrue);
     expect(
         await controller.cookingCommand(session.flip(session.token)), isFalse);
+  });
+  test(
+      'periodic checkpoint keeps the hold owned and queues its release without losing duration',
+      () async {
+    await controller.startPractice();
+    final session = controller.state.session!;
+    final gate = Completer<void>();
+    repository.pauseSave = gate;
+    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    expect(controller.busy, isTrue);
+    expect(controller.cookingInputBlocked, isFalse);
+    final released =
+        controller.cookingCommand(session.pour(session.token, 2500));
+    expect(controller.state.session!.phase, CookingPhase.firstBatter);
+    repository.pauseSave = null;
+    gate.complete();
+    expect(await released, isTrue);
+    expect(controller.state.session!.firstBatterMs, 2500);
+    expect(controller.state.session!.phase, CookingPhase.filling);
+  });
+  test(
+      'takeout timestamp is captured before awaiting a delayed periodic checkpoint',
+      () async {
+    final session = cooking();
+    await controller.command(() {
+      controller.state.session = session;
+      controller.state.phaseMs = 15000;
+    });
+    final gate = Completer<void>();
+    repository.pauseSave = gate;
+    await Future<void>.delayed(const Duration(milliseconds: 1200));
+    expect(controller.busy, isTrue);
+    final stamp = controller.activePhaseElapsedMs;
+    final taken =
+        controller.cookingCommand(session.takeOut(session.token, 999999));
+    await Future<void>.delayed(const Duration(milliseconds: 1000));
+    repository.pauseSave = null;
+    gate.complete();
+    expect(await taken, isTrue);
+    expect(controller.state.session!.donenessElapsedMs,
+        inInclusiveRange(stamp, stamp + 100));
   });
   test('practice entry owns a single session and cancel creates no result',
       () async {
