@@ -78,7 +78,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     final state = workshop.state;
     return {
       if (state.session?.phase == CookingPhase.cooking) 'manual:${state.session!.id}',
-      if (state.session == null && workshop.gridVisible && state.business.permitsProducts(DateTime.now().toUtc()))
+      if (state.session == null && workshop.gridVisible && state.business.permitsProducts(workshop.now()))
         ...state.grid.cookingSourceIds,
     };
   }
