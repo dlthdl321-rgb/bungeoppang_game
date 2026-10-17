@@ -8,6 +8,7 @@ import 'package:todays_bungeoppang/game_audio.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/game_events.dart';
 import 'package:todays_bungeoppang/models.dart';
+import 'package:todays_bungeoppang/music_config.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/tap_effects.dart';
@@ -443,7 +444,8 @@ void main() {
       'purchase': (0.2, 0.6),
       'reward': (0.3, 0.8),
       'levelup': (1.0, 2.0),
-      'bgm': (23.9, 24.1),
+      for (final mood in musicMoods) 'bgm_$mood': (23.9, 24.1),
+      'sizzle_loop': (3.99, 4.01),
     };
     for (final e in limits.entries) {
       final bytes = File('assets/audio/${e.key}.wav').readAsBytesSync();
