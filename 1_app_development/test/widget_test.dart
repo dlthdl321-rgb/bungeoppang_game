@@ -196,6 +196,8 @@ void main() {
         await tester.ensureVisible(find.byTooltip('설정'));
         await tester.tap(find.byTooltip('설정'));
         await tester.pumpAndSettle();
+        await tester.scrollUntilVisible(find.text('길게 눌러 굽기'), 200,
+            scrollable: find.byType(Scrollable).last);
         expect(find.text('길게 눌러 굽기'), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
