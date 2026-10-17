@@ -14,6 +14,7 @@ CLAUDE.md와 MASTER.md를 적용했다. AGENTS.md는 발견하지 못했다.
 | 2 제작·6구 | 8ffac0b | 06b7ee3 |
 | 3 주문·재고·손님 | d8ffe9a (최종 2503e41과 마지막 공백만 다름) | 97fddc6 |
 | 4 구매·광고 서버 | 81abc89 | 464fcf5 |
+| 5 타입·기존 테스트 보완 | 자체 작업 | d52b9fa, 66369c6 |
 
 MASTER.md 끝의 병렬 추가는 양쪽 설명을 보존했다. controller 저장 part/생명주기와 제작 캐시, 주문 ID 납품, UI 센서/판매 버튼을 함께 보존했다. 공통 controller 테스트의 Map fixture 타입 수정 충돌은 직원1의 명시 타입 리터럴을 유지했다. 직원2 브랜치가 이후 직원1 커밋을 적용한 것은 중복 적용하지 않는다.
 
@@ -38,6 +39,10 @@ MASTER.md 끝의 병렬 추가는 양쪽 설명을 보존했다. controller 저�
 - 한글 사용자 경로에서 Gradle wrapper 실행 경로가 `???`로 깨져 ClassNotFoundException 발생. `C:/Temp/bungeoppang-step05` junction을 앱 디렉터리에 연결해 재시도했다. junction은 저장소 산출물이 아니다.
 - Node v24.19.0/npm11.17.0. 서버 package.json 요구 Node22와 다르며 npm 설치 시 EBADENGINE 경고. Node22 운영 검증과 구분한다.
 - `flutter doctor -v`는 위 경고를 보고했다. 라이선스 동의/배포/운영 gate 활성화는 수행하지 않았다.
+
+실제 빌드 중 C: 여유 공간0.77GiB를 확인했다. 직원5 worktree 루트를 검증한 뒤 `git sparse-checkout set 1_app_development 2_development_plans_and_checklists coordination`으로 참고 이미지/보관 폴더의 이 worktree 작업 복사본만 제외했다. 여유 공간2.16GiB를 확인했다. tracked 삭제나 소스 커밋 변경은 없고 원본/다른 worktree/기존 미커밋 자료는 유지했다. 2차 worktree도 디스크 용량과 체크아웃 범위를 먼저 확인해야 한다.
+
+API35 AVD를 영어 경로 junction/별도 descriptor `C:/Temp/step05-avds/Step05Smoke`로 연결하고 `-port 5580 -read-only -no-window -no-audio -no-snapshot-load -no-snapshot-save`로 검수 전용 인스턴스를 시도했다. 최초에는 `not enough disk space`로 OS 부팅 전에 종료했다. 공간 확보 후 자동 그래픽 모드는 종료됐고, `-gpu swiftshader -feature -Vulkan` 재시도는 약6분 동안 adb에 등록되지 않았다. `adb -s emulator-5580 shell getprop sys.boot_completed`는 device not found, 전용 localhost ADB 포트 연결도 거부됐다. 설치 전에 막힌 환경 문제이며 앱 실행 실패 판정이 아니다. private AVD 이름/포트를 다시 확인해 해당 QEMU와 launcher만 종료했다. 기존 에뮬레이터 및 연결 휴대폰에 설치/초기화를 수행하지 않았다. 정상 부팅되는 별도 AVD/검수 장치를 준비한 뒤 아래 APK 설치·실행/복귀를 검수해야 한다. headless/no-audio 실행은 성공하더라도 실제 청음을 대신하지 않는다.
 
 ## 오류 구분
 
@@ -66,8 +71,17 @@ MASTER.md 끝의 병렬 추가는 양쪽 설명을 보존했다. controller 저�
 | `flutter test --no-pub --reporter expanded test/stage10_feedback_test.dart test/stage14_systems_test.dart test/widget_test.dart` | 수정 후 종료0, 53개 모두 통과. 최초 실패8개를 모두 포함한다. 360/390/412 폭과 큰 글자·설정 스크롤, 실제6곡 및 굽기 WAV를 검사 |
 | `python -X utf8 1_app_development/tools/development_balance.py --check` | 종료0, 수치·생성물/문서 일치 |
 | `python -X utf8 1_app_development/tools/customer_content.py --check` | 종료0, NPC8/대사144/관계8/선택8 생성물 일치 |
+| `GRADLE_USER_HOME=C:/GradleCache`, 영어 junction의 `android`에서 `gradlew.bat --offline --no-daemon assembleDebug` | **종료0, BUILD SUCCESSFUL in 1h 3m 37s. 430 actionable tasks(425 executed/5 up-to-date).** 앱 Dart·Kotlin/Java, 네이티브 ABI·리소스·서명·패키징 완료 |
+| `aapt dump badging .../app-debug.apk` | package com.todaybungeoppang.todays_bungeoppang, 0.1.0+1, minSdk24/targetSdk36, arm64-v8a/armeabi-v7a/x86_64 |
+| 공식 render 재실행 후 SHA256 비교 | CHECKLIST.md·진행현황.md 동일. 원장24개 UTF-8 근거 및 기존 상태값/과거 이력 보존 확인 |
 
-APK 결과는 아래 후속 기록으로 확정한다. 별도 대상 분석 통과가 기존 전체 warning/info 제거를 뜻하지 않는다. 원장/이력은 planning_tasks.py update, CHECKLIST.md·진행현황.md는 그 도구의 render로만 갱신하며 완료 상태로 일괄 승격하지 않는다.
+최종 APK 결과는 P2-003·P6-001에 공식 도구로2회 추가 보충했다(기존24개 항목 갱신+최종2개, 총26개 신규 이력). 상태값의 완료 일괄 변경은 없었다.
+
+별도 대상 분석 통과가 기존 전체 warning/info 제거를 뜻하지 않는다. 원장/이력은 planning_tasks.py update, CHECKLIST.md·진행현황.md는 그 도구의 render로만 갱신하며 완료 상태로 일괄 승격하지 않는다. 최초 한글 경로 APK 시도는 GradleWrapperMain ClassNotFound로 종료1이었다. 이후 준비 중 중단한 두 실행은 통과/코드 실패 근거로 사용하지 않고, 마지막 위 명령의 종료0을 최종 빌드 근거로 쓴다.
+
+APK: `1_app_development/build/app/outputs/flutter-apk/app-debug.apk` (191,625,869 bytes, Git에는 넣지 않은 로컬 debug 산출물).
+SHA256: `63e6b3d1d8f361050f8e3dc2efe4c2ae62cba9415a93020b66fcdb43e619b1cc`.
+기기 설치/앱 실제 실행/실기기 청음은 **미검수**다. APK 빌드 성공과 구분한다.
 
 CRLF를 보존한 기존 파일이 있어 공백 검사는 `git -c core.whitespace=cr-at-eol diff --check` 및 동일 옵션의 `--cached --check`를 사용한다. 기본 diff --check에서 CR을 trailing whitespace로 보는 경우와 실제 공백을 구분했다.
 
@@ -75,4 +89,16 @@ CRLF를 보존한 기존 파일이 있어 공백 검사는 `git -c core.whitespa
 
 Android 실제 청음, 전화/오디오 포커스 중단, Bluetooth 전환, 광고 SDK 표시·닫힘·실패, 앱 복귀/강제 종료 후 SQLite 디스크 검수는 미실행이다. 정책 단위/위젯 테스트로 대체 완료 판정하지 않는다. 실제 AdMob SDK는 미설치이며 운영 서비스는 기본 OFF다. Firebase/AdMob/서명 키 등 외부 연결은 직원4 인계와 승인 범위를 따라야 한다. 비밀값은 기록하지 않는다.
 
-직원4까지 적용했다. 2차 공통 기준은 최종 검증 후 아래에 확정한다.
+## 2차 작업 5개가 공유할 기준
+
+공통 소스 기준 커밋은 **`9d6bb97dac51e501409e8ab8ba228ecafd24c96e`**, 로컬 태그 `integration-round-01`이다. 브랜치는 `employee5/audio-integration`이다. 이 기준에는 1~4단계 전체 코드와 직원5 오디오/타입/기존 테스트 수정, 원장24개 근거·생성 문서가 포함된다. 이후 이 인계의 기준 해시/최종 빌드 결과를 보충하는 커밋은 인계·검증 원장·생성 문서만 바꾸며 앱 소스는 같다. 원본 main에는 병합하지 않았으므로 각 2차 worktree는 원래 각자 브랜치가 아닌 이 공통 기준에서 시작한다.
+
+권장 연결 지점(새 작업을 자동 시작했다는 뜻이 아님):
+
+1. 저장: pendingCookingResolution/pendingHarvestResolutions를 영속 저널·원자 확정과 연결하고 프로세스 종료 복구를 검증한다. 현재 실패 시도 캐시는 같은 controller 재읽기까지만 유지된다.
+2. 제작·입력: Android 센서/터치·전화·가림/광고 복귀를 실기기에서 확인한다. 큰 틀과6구의 기존 안정 ID/expectedCycle 계약을 유지한다.
+3. 손님·콘텐츠: sellToCustomer(orderId, selectedByLine) 계약을 유지하며 남은 연출/아트·전체 대사·실제 주문 UX를 검수한다. 관계/선택 원장의 보상1회 규칙을 유지한다.
+4. 서버: trusted evidence/cancellation fencing/epoch 보호 파이프라인, Node22·Firestore/Functions 에뮬레이터·실제 AdMob 서명/SDK를 연결한다. 로컬65개 통과를 운영 활성화 승인으로 사용하지 않는다.
+5. 통합·환경: 충분한 디스크와 정상 부팅되는 전용 AVD/검수 장치를 준비해 이 debug APK를 설치하고 앱 실행, 실제 SQLite·오디오3채널/전화/Bluetooth·광고 수명을 검수한다. 기존 warning8/info66, 일부 SDK 라이선스/CLI XML 버전 불일치, AGP Kotlin 호환 옵션 폐기 경고는 별도다. 이번 Gradle9.3.1 debug 빌드는 성공했고 Gradle10 호환 완료를 뜻하지 않는다.
+
+공통 controller/main/의존성 변경은 다시 한 담당으로 모으고 단계별 인계를 남긴다. 서버 gate OFF, 실제 배포·유료 서비스 미사용 상태를 유지했다.
