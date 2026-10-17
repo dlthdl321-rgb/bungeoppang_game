@@ -98,6 +98,8 @@ export async function reserveCompositePurchase(store: Store, config: unknown,
       assertSameCompositeIntent(intent, old);
       return receipt(old);
     }
+    const fence=await tx.get(`${base}/workshopEvidence/cancellation_${intent.transaction}`);
+    if (fence) throw new CompositePurchaseError("Purchase debit is fenced by trusted cancellation");
     const lockPath = `${base}/compositeState/pending`, ownedPath = `${base}/compositeSkills/${intent.skill}`;
     const lock = await tx.get(lockPath), ownership = await tx.get(ownedPath), wallet = await tx.get(base);
     if (lock?.transaction) throw new CompositePurchaseError("미정산 거래를 먼저 복구해야 합니다.");
@@ -142,6 +144,8 @@ export async function finishCompositePurchase(store: Store, verifier: PurchaseEv
     if (!value) return { account: context.account, transaction: intent.transaction, status: "unknown" };
     const old = decode(value, context, intent.transaction); assertSameCompositeIntent(intent, old);
     if (old.status !== "reserved") return receipt(old); // Terminal result wins over late cancel/commit.
+    const fence=await tx.get(`${base}/workshopEvidence/cancellation_${intent.transaction}`);
+    if (fence && action === "commit") throw new CompositePurchaseError("Purchase debit is fenced by trusted cancellation");
     const lockPath = `${base}/compositeState/pending`, ownedPath = `${base}/compositeSkills/${intent.skill}`;
     const lock = await tx.get(lockPath), ownership = await tx.get(ownedPath), wallet = await tx.get(base);
     if (lock?.transaction !== intent.transaction || natural(ownership?.owned ?? 0) !== intent.owned) {

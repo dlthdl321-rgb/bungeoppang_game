@@ -28,3 +28,5 @@ functions/src/development_contracts.ts는 임시 공통 설정 기반 견적 검
 ## 직원4 서버 검증 후속 (2026-10-18)
 
 구매 원장 우선 복구·신뢰된 취소 증거·실제 ECDSA SSV 검증 모듈과 기본 OFF HTTP 수신점을 추가했다. [4단계 연결 계약과 검증 근거](../../coordination/step-04.md)를 참조한다. 과거의 ‘SSV interface만 존재’ 설명보다 이 후속 소스가 최신이며, 실제 AdMob/서비스 검수와 운영 전환은 여전히 미완료다.
+
+추가 로컬 검증은 `run_emulator_checks.ps1`을 사용한다. Node22Path/FirebaseCliPath/Java21Bin을 지정하며 demo 프로젝트와127.0.0.1 전용 포트를 강제한다. 기본120초 발견 대기를 사용하고 운영 배포·활성화는 하지 않는다. 서버 서명 스냅샷 수신/발급 서버의 구분과 최신 검증 결과는 [4단계 인계](../../coordination/step-04.md)를 따른다.

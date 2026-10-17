@@ -1,11 +1,13 @@
+import { createPlayPurchases } from "./play_purchases";
+import { lazyFirestoreStore } from "./firestore_store";
+import { ProtectedPurchasePipeline, TrustedSnapshotKey } from "./protected_purchase_pipeline";
 import { AdMobSsvVerifier, AdMobKeyUnavailable } from "./admob_ssv";
 import { acceptWorkshopSsv } from "./workshop_ads";
 import { workshopFailure } from "./workshop_errors";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore, Firestore } from "firebase-admin/firestore";
+import { getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
-import { google } from "googleapis";
 import developmentBalance from "./generated/development_balance.json";
 import { WorkshopService } from "./workshop_service";
 import { signedIn } from "./auth";
@@ -14,59 +16,19 @@ import * as friends from "./friends";
 import * as invites from "./invites";
 import { KakaoAccounts, KakaoError, authKakao as checkKakao, kakaoRestApi } from "./kakao";
 import * as ranking from "./ranking";
-import { AlreadyExists, Doc, Store, Tx } from "./store";
-import { PlayPurchases, WalletError, redeemPurchase, spendGold, syncWallet } from "./wallet";
+import { AlreadyExists } from "./store";
+import { WalletError, redeemPurchase, spendGold, syncWallet } from "./wallet";
 
 // Callable endpoints for the app. authKakao turns a Kakao login into a
 // Firebase account; every other call needs that account (auth.ts). The app
 // never reads or writes Firestore itself.
 
 initializeApp();
-const db = getFirestore();
+const db = () => getFirestore();
 
-function firestoreStore(fs: Firestore): Store {
-  return {
-    run: (fn) =>
-      fs.runTransaction(async (t) => {
-        const tx: Tx = {
-          get: async (path) => (await t.get(fs.doc(path))).data() as Doc | undefined,
-          create: (path, data) => void t.create(fs.doc(path), data),
-          set: (path, data) => void t.set(fs.doc(path), data),
-        };
-        return fn(tx);
-      }),
-    list: async (collection) =>
-      (await fs.collection(collection).orderBy("__name__").get()).docs.map((d) => ({
-        id: d.id,
-        data: d.data(),
-      })),
-  };
-}
+const store = lazyFirestoreStore(db);
 
-const store = firestoreStore(db);
-
-// The function's service account needs "View financial data" and "Manage
-// orders" in Play Console (see docs/stage15_release_online.md).
-const publisher = google.androidpublisher({
-  version: "v3",
-  auth: new google.auth.GoogleAuth({ scopes: ["https://www.googleapis.com/auth/androidpublisher"] }),
-});
-
-const play: PlayPurchases = {
-  async get(productId, token) {
-    const { data } = await publisher.purchases.products.get({
-      packageName: catalog.packageName, productId, token,
-    });
-    return {
-      purchaseState: data.purchaseState ?? 1,
-      consumptionState: data.consumptionState ?? 0,
-      orderId: data.orderId ?? "",
-    };
-  },
-  async consume(productId, token) {
-    await publisher.purchases.products.consume({ packageName: catalog.packageName, productId, token });
-  },
-};
+const play = createPlayPurchases();
 
 // Custom tokens need the function's service account to hold "Service
 // Account Token Creator" (docs/stage16_kakao_login_ranking.md).
@@ -85,12 +47,12 @@ const kakaoAccounts: KakaoAccounts = {
 
 const rankingQueries: ranking.RankingQueries = {
   async top(board, limit) {
-    const snap = await db.collection(`rankings/${board}/entries`)
+    const snap = await db().collection(`rankings/${board}/entries`)
       .orderBy("score", "desc").orderBy("updatedAt", "asc").limit(limit).get();
     return snap.docs.map((d) => ({ id: d.id, data: d.data() }));
   },
   async countAbove(board, score) {
-    const snap = await db.collection(`rankings/${board}/entries`).where("score", ">", score).count().get();
+    const snap = await db().collection(`rankings/${board}/entries`).where("score", ">", score).count().get();
     return snap.data().count;
   },
 };
@@ -247,3 +209,21 @@ export const workshopAdSsv = onRequest({region:"asia-northeast3"},async(req,res)
     res.status(error instanceof AdMobKeyUnavailable || failure.retryable ? 503:400).send("verification incomplete");
   }
 });
+
+// Clients may relay signed server attestations, but cannot sign/approve saves.
+export const workshopProtectedSnapshotIngest = onCall(options,req=>workshopCall(req,async(_service,uid)=>{
+  if(process.env.WORKSHOP_PROTECTION_ENABLED!=="true") {
+    throw new HttpsError("failed-precondition","\ubcf4\ud638 \uac80\uc99d \uc5f0\uacb0\uc744 \uc900\ube44 \uc911\uc785\ub2c8\ub2e4.",{reason:"validator-disabled",retryable:false});
+  }
+  let keys:Record<string,TrustedSnapshotKey>;
+  try {
+    keys=JSON.parse(process.env.WORKSHOP_SNAPSHOT_VALIDATOR_KEYS_JSON??"");
+    if(!keys || Array.isArray(keys) || typeof keys!=="object") throw new Error();
+    return await new ProtectedPurchasePipeline(store,developmentBalance,keys,Date.now).ingest(uid,req.data);
+  } catch(error) {
+    if(error instanceof SyntaxError || error instanceof TypeError) {
+      throw new HttpsError("failed-precondition","\ubcf4\ud638 \uac80\uc99d \uc124\uc815 \ud655\uc778\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.",{reason:"validator-misconfigured",retryable:false});
+    }
+    throw error;
+  }
+}));

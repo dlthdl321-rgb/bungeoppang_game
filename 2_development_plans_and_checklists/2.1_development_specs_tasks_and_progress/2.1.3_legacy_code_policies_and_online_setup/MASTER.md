@@ -939,3 +939,9 @@ TypeScript --noEmit과 구문/링크/생성 검사는 정적 확인이며 실제
 `staff-04/server-verification`의 서버 변경은 [coordination/step-04.md](../../../coordination/step-04.md)에 인계한다. 구매 재시도는 기존 원장을 우선 복구하며, callable 취소에는 신뢰된 cancellation 증거(account/progress/epoch/transaction/fingerprint, debitFenced/localDebitRestored)가 필요하다. 클라이언트 차감 플래그나 증거 부재만으로 환불하지 않는다. 보호 파이프라인의 실제 권위·복원 검증은 운영 전 필수다.
 
 `admob_ssv.ts`와 `workshopAdSsv`는 원본 쿼리 ECDSA 검증과 고정 HTTPS 공개키/23시간 캐시를 사용한다. `WORKSHOP_ONLINE_ENABLED` 기본 OFF를 유지하며, 광고는 별도로 `WORKSHOP_AD_SSV_ENABLED`와 `WORKSHOP_ADMOB_AD_UNITS` allowlist가 필요하다. 광고 시작도 이 설정 없이 승인하지 않는다. SDK 완료 콜백은 지급 증거가 아니다. 실제 서명 요청·SDK/동의·보호 검증 파이프라인·에뮬레이터·실기기 검수 완료를 의미하지 않는다. 검증 명령/결과와 운영 설정은 위 인계 파일을 기준으로 확인한다.
+
+### 2026-10-18 직원4 추가 검증
+
+서버 보호 증거 수신은 `protected_purchase_pipeline.ts`의 서버 Ed25519 서명+계정/진행 epoch+순번/이전 digest CAS로 보완했다. 미검증 로컬 저장을 자동 승인하거나 기기에 서명키를 주지 않는다. 실제 게임 이벤트를 검증해 서명하는 발급 서버는 별도 연결이 필요하며 운영은 OFF다. 서버 홀드 전 실패는 검증된 취소 서명/잠금 확인 후 차감 없는 취소 원장으로 정산한다.
+
+Functions 발견 단계에서 Play SDK와 Firestore client를 만들지 않도록 `play_purchases.ts`/`firestore_store.ts`로 초기화를 지연했다. Node22 빌드·테스트 및 실제 Firestore/Auth/Functions 에뮬레이터 결과와 실패 이력, 기본10초 발견 제한과 로컬120초 대기의 구분은 [4단계 인계](../../../coordination/step-04.md)에 기록한다. 이 기록은 실제 서비스 서명·광고 SDK·동의·계정 설정·실기기·배포 완료가 아니다.
