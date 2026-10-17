@@ -42,6 +42,43 @@ class CustomerOrder {
   }
 }
 
+/// Deterministic oldest-first allocation shared by stored and freshly produced
+/// stock. It only selects; prepareCustomerSale rechecks the complete transaction.
+List<Map<String, int>> selectCustomerInventory(CustomerOrder order,
+    InventoryProgress inventory, {required int businessIndex}) {
+  if (businessIndex <= 0 || order.remainingMs <= 0) {
+    throw const FormatException('판매 시간/주문 상태 오류');
+  }
+  final remaining = {for (final b in inventory.batches.values) b.id: b.quantity};
+  final selected = <Map<String, int>>[];
+  for (final line in order.lines) {
+    var needed = line.quantity;
+    final eligible = inventory.batches.values.where((b) {
+      final age = businessIndex - b.madeOnBusinessIndex;
+      return b.flavor == line.flavor && age >= 0 && age < 5 &&
+          (line.variant == null ? b.variant >= 1 && b.variant <= 3 :
+           b.variant == line.variant && (b.variant != 0 || line.special));
+    }).toList()..sort((a, b) {
+      final age = a.madeOnBusinessIndex.compareTo(b.madeOnBusinessIndex);
+      return age != 0 ? age : a.id.compareTo(b.id);
+    });
+    final selection = <String, int>{};
+    for (final batch in eligible) {
+      if (needed == 0) break;
+      final available = remaining[batch.id]!;
+      final amount = needed < available ? needed : available;
+      if (amount > 0) {
+        selection[batch.id] = amount;
+        needed -= amount;
+        remaining[batch.id] = available - amount;
+      }
+    }
+    if (needed != 0) throw const FormatException('주문 전량의 재고가 필요해요.');
+    selected.add(selection);
+  }
+  return selected;
+}
+
 class SaleCommit {
   final InventoryProgress inventory;
   final SaleQualityQuote quote;

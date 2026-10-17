@@ -332,4 +332,59 @@ void main() {
     expect(controller.state.relationships.affinity('npc_doyun'),affinity);
   });
 
+  test('주문 ID 재납품은 다음 손님에게 판매하거나 재고를 소비하지 않는다', () async {
+    await controller.openBusiness();
+    await controller.command(() {
+      controller.state.inventory = controller.state.inventory.recordResult(ProductBatch(
+        id:'two-products',flavor:'redbean',variant:2,quantity:2,madeOnBusinessIndex:1),keep:true);
+      for (final id in ['first-order','next-order']) {
+        controller.state.customers.add(CustomerOrder(id:id,remainingMs:10000,
+          lines:[CustomerOrderLine(flavor:'redbean',quantity:1)]));
+      }
+    });
+    expect(await controller.sellToCustomer('next-order'),isFalse);
+    expect(await controller.sellToCustomer('first-order'),isTrue);
+    final buns=controller.state.buns;
+    expect(await controller.sellToCustomer('first-order'),isFalse);
+    expect(controller.state.buns,buns);
+    expect(controller.state.inventory.batches['two-products']!.quantity,1);
+    expect(controller.state.customers.single.id,'next-order');
+    expect(controller.state.completedSales,1);
+  });
+  test('잘못 선택한 제품은 무소비 재선택하며 대기 유예를 만들지 않는다', () async {
+    await controller.openBusiness();
+    await controller.command(() {
+      controller.state.inventory = controller.state.inventory.recordResult(ProductBatch(
+        id:'stock',flavor:'redbean',variant:2,quantity:1,madeOnBusinessIndex:1),keep:true);
+      controller.state.customers.add(CustomerOrder(id:'manual-selection',remainingMs:10000,
+        lines:[CustomerOrderLine(flavor:'redbean',quantity:1,variant:1)]));
+    });
+    final before=controller.state.inventory.toJson();
+    expect(await controller.sellToCustomer('manual-selection',selectedByLine:[{'stock':1}]),isFalse);
+    expect(controller.state.inventory.toJson(),before);
+    expect(controller.state.customers.single.remainingMs,lessThanOrEqualTo(10000));
+    expect(controller.state.sales,isEmpty);
+    expect(controller.state.pendingGold,isEmpty);
+  });
+  test('개인 대기는 장면 중 멈추고 복귀 뒤 만료된 손님만 이탈한다', () async {
+    await controller.openBusiness();await controller.welcomeCustomer();
+    await controller.command(() {
+      final first=controller.state.customers.single;
+      controller.state.customers=[CustomerOrder(id:first.id,customerId:first.customerId,
+        remainingMs:50,lines:first.lines),CustomerOrder(id:'long-wait',remainingMs:10000,lines:first.lines)];
+      controller.state.customerScene={'kind':'story','id':'story_doyun_01','npc':'npc_doyun'};
+    });
+    await Future<void>.delayed(const Duration(milliseconds:200));
+    await controller.command(() {});
+    expect(controller.state.customers.first.remainingMs,50);
+    expect(controller.state.customers.last.remainingMs,10000);
+    expect(await controller.finishCustomerScene(),isTrue);
+    await Future<void>.delayed(const Duration(milliseconds:200));
+    await controller.command(() {});
+    expect(controller.state.customers.single.id,'long-wait');
+    expect(controller.state.customers.single.remainingMs,lessThan(10000));
+    expect(controller.state.sales,isEmpty);
+    expect(controller.state.relationships.affinity('npc_doyun'),1);
+  });
+
 }
