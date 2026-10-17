@@ -341,6 +341,10 @@ class WorkshopController extends ChangeNotifier {
       : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure();
   // Retained through reloadAfterError; storage integration can persist these
   // frozen attempts alongside its command journal for process-death recovery.
+  bool _savingCheckpoint = false;
+  bool get cookingInputBlocked => gameplayPaused || error != null || (busy && !_savingCheckpoint);
+  int get activePhaseElapsedMs => state.phaseMs +
+      (gameplayPaused || state.session == null || state.session!.finished ? 0 : _clock.elapsedMilliseconds - _lastMono);
   CookingSession? _pendingCookingResult;
   final Map<String, GriddleHarvest> _pendingHarvests = {};
   CookingSession? get pendingCookingResolution => _pendingCookingResult;
@@ -362,7 +366,7 @@ class WorkshopController extends ChangeNotifier {
     if (!await command(() {})) throw StateError('신규 진행 저장 실패');
     _clock.start(); _timer = Timer.periodic(const Duration(milliseconds: 100), (_) => _tick());
   }
-  Future<bool> command(void Function() mutate) async {
+  Future<bool> command(void Function() mutate, {bool production = false}) async {
     if (busy || disposed || error != null) return false;
     _flushActive();
     busy = true; _commandIdle = Completer<void>();
@@ -375,6 +379,9 @@ class WorkshopController extends ChangeNotifier {
       state.sequence++;
       final next = state.toJson();
       WorkshopState.fromJson(next, config); // Never persist an inconsistent aggregate.
+      if (production && repository is WorkshopProductionJournal) {
+        await (repository as WorkshopProductionJournal).stageProduction(next, before['sequence'] as int);
+      }
       await repository.save(next, before['sequence'] as int);
       return true;
     } catch (e) {
@@ -393,6 +400,11 @@ class WorkshopController extends ChangeNotifier {
       if (disposed) return;
       if (saved == null) throw const FormatException('복구할 저장 기록 없음');
       state = WorkshopState.fromJson(saved, config);
+      final pending = _pendingCookingResult;
+      if (pending != null && state.flavorMasteries[pending.flavor]?.results.containsKey(pending.id) == true) {
+        _pendingCookingResult = null;
+      }
+      _pendingHarvests.removeWhere((id, _) => !state.grid.cookingSourceIds.contains(id));
       final settlement = _settleAway();
       state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
       error = null; _lastMono = _clock.elapsedMilliseconds;
@@ -441,9 +453,15 @@ class WorkshopController extends ChangeNotifier {
       unawaited(welcomeCustomer());
     }
     if (_checkpoint >= DevelopmentBalance.integer(config.section('manual_cooking'), 'checkpoint_ms')) {
-      _checkpoint = 0; unawaited(command(() {}));
+      _checkpoint = 0; unawaited(_saveCheckpoint());
     }
     if (!disposed) notifyListeners();
+  }
+  Future<void> _saveCheckpoint() async {
+    if (busy || disposed || error != null) return;
+    _savingCheckpoint = true;
+    try { await command(() {}); }
+    finally { _savingCheckpoint = false; if (!disposed) notifyListeners(); }
   }
   Future<void> setForeground(bool value) async {
     if (disposed || (value == foreground && !busy)) return;
@@ -526,19 +544,22 @@ class WorkshopController extends ChangeNotifier {
       madeOnBusinessIndex: active ? state.business.businessIndex : 0);
     state.inventory = active ? state.inventory.recordResult(batch, keep: keep) : state.inventory.recordPreparedResult(batch, keep: keep);
   }
-  Future<bool> cookingCommand(CookingSession next) => command(() {
+  Future<bool> cookingCommand(CookingSession next) async {
+    final receivedMs = activePhaseElapsedMs;
+    if (_savingCheckpoint) await _commandIdle?.future;
+    return command(() {
     final previous = state.session;
     if (gameplayPaused) throw const FormatException('제작이 일시정지됐어요.');
     if (previous == null || !isCookingSuccessor(previous, next)) throw const FormatException('지난 제작 입력');
     final manual = config.section('manual_cooking');
     if (previous.phase == CookingPhase.closing && next.phase == CookingPhase.flipping &&
-        state.phaseMs < DevelopmentBalance.integer(manual, 'lid_close_ms')) throw const FormatException('뚜껑이 닫히는 중이에요.');
+        receivedMs < DevelopmentBalance.integer(manual, 'lid_close_ms')) throw const FormatException('뚜껑이 닫히는 중이에요.');
     if (previous.phase == CookingPhase.flipping && next.phase == CookingPhase.cooking &&
-        state.phaseMs < DevelopmentBalance.integer(manual, 'flip_ms')) throw const FormatException('뒤집는 중이에요.');
+        receivedMs < DevelopmentBalance.integer(manual, 'flip_ms')) throw const FormatException('뒤집는 중이에요.');
     if (next.phase == CookingPhase.result) {
       final pending = _pendingCookingResult;
       next = pending != null && pending.id == previous.id && pending.token == previous.token + 1
-        ? pending : previous.takeOut(previous.token, state.phaseMs);
+        ? pending : previous.takeOut(previous.token, receivedMs);
       _pendingCookingResult = next;
     }
     state.session = next; state.phaseMs = 0;
@@ -553,19 +574,20 @@ class WorkshopController extends ChangeNotifier {
       }
     }
     if (next.phase == CookingPhase.canceled) state.session = null;
-  }).then((saved) {
+  }, production: next.phase == CookingPhase.result).then((saved) {
     if (saved && next.phase == CookingPhase.result && _pendingCookingResult?.id == next.id) {
       _pendingCookingResult = null;
     }
     return saved;
-  });
+    });
+  }
   Future<bool> storeResult(bool keep) => command(() {
     final session = state.session;
     if (session == null || session.phase != CookingPhase.result) throw const FormatException('확정할 제작 결과 없음');
     if (session.practice) { _recordCookingProduct(session, keep: keep); }
     else if (!state.inventory.dispositions.containsKey(session.id)) { throw const FormatException('주문 제작 저장을 확인해 주세요.'); }
     state.session = null;
-  });
+  }, production: true);
   Future<bool> startCell(int index) => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
     state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in state.recipes) if (state.masteryAwards.containsKey(f)) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
@@ -583,7 +605,7 @@ class WorkshopController extends ChangeNotifier {
       state.grid.harvest(index, config, businessIndex: state.business.businessIndex, expectedCycle: expectedCycle));
     state.grid = state.grid.applyHarvest(index, result);
     if (result.product != null) state.inventory = state.inventory.recordResult(result.product!, keep: true);
-    });
+    }, production: true);
     if (saved) _pendingHarvests.remove(frozenId);
     return saved;
   }

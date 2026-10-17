@@ -146,6 +146,11 @@ def validate(data, catalog):
             [key for key, value in recipes.items() if value['initial']] == ['redbean'], '초기/추가 맛 계약')
     require(all(0 <= row['difficulty'] <= 2 and type(row['initial']) is bool for row in recipes.values()), '맛 난이도 ID/초기 여부')
     require(data['ordinary_sale']['customer_archetype_count'] > 0, '손님 원형 개수')
+    gesture = data['manual_cooking']
+    require(all(isinstance(gesture.get(key), int) and not isinstance(gesture.get(key), bool) and gesture[key] > 0 for key in (
+        'filling_swipe_min_distance_px', 'filling_swipe_max_duration_ms',
+        'filling_swipe_dominance_permille', 'filling_rotation_degrees', 'filling_rotation_min_radius_px')), '속 넣기 제스처 설정')
+    require(gesture['filling_swipe_dominance_permille'] >= 1000, '스와이프 주축 비율')
     require(data['manual_cooking']['checkpoint_ms'] > 0 and
             data['manual_cooking']['filling_inputs'] > 0 and
             data['manual_cooking']['tilt_sampling_ms'] > 0, '제작 입력/저장 간격')
@@ -259,20 +264,20 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--check', action='store_true', help='검증 및 문서 재생성 일치 확인, 파일 변경 없음')
     args = parser.parse_args()
-    data = validate(json.loads(CONFIG.read_text()), json.loads(CATALOG.read_text()))
+    data = validate(json.loads(CONFIG.read_text(encoding='utf-8')), json.loads(CATALOG.read_text(encoding='utf-8')))
     expected = render(data)
     defaults = ROOT / '1_app_development/lib/development_audio_defaults.dart'
     expected_defaults = render_audio_defaults(data)
     expected_server = json.dumps(data, ensure_ascii=False, indent=2) + '\n'
     if args.check:
-        require(SERVER_CONFIG.exists() and SERVER_CONFIG.read_text() == expected_server, '서버 설정 재생성 필요')
-        require(defaults.exists() and defaults.read_text() == expected_defaults, '오디오 기본값 재생성 필요')
-        require(DOC.exists() and DOC.read_text() == expected, '문서와 설정 불일치: 생성 도구 실행 필요')
+        require(SERVER_CONFIG.exists() and SERVER_CONFIG.read_text(encoding='utf-8') == expected_server, '서버 설정 재생성 필요')
+        require(defaults.exists() and defaults.read_text(encoding='utf-8') == expected_defaults, '오디오 기본값 재생성 필요')
+        require(DOC.exists() and DOC.read_text(encoding='utf-8') == expected, '문서와 설정 불일치: 생성 도구 실행 필요')
     else:
         SERVER_CONFIG.parent.mkdir(parents=True, exist_ok=True)
-        SERVER_CONFIG.write_text(expected_server)
-        DOC.write_text(expected)
-        defaults.write_text(expected_defaults)
+        SERVER_CONFIG.write_text(expected_server, encoding='utf-8', newline='\n')
+        DOC.write_text(expected, encoding='utf-8', newline='\n')
+        defaults.write_text(expected_defaults, encoding='utf-8', newline='\n')
     print('임시 수치 구조·확정 요구·가격 전체·레벨 표·문서 일치 확인. 앱 실행/밸런스 검수 아님.')
 
 

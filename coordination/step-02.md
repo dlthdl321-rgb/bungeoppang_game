@@ -82,3 +82,33 @@ C:/flutter-sdk/bin/flutter.bat analyze --no-pub --no-fatal-infos lib/cooking_inp
 2. 이 브랜치를 적용하되 공통 controller의 위 세 지점과 WorkshopPage 센서 연결만 병합한다. 다른 담당의 생명주기·주문·재고 변경을 되돌리지 않는다.
 3. 주문 담당은 기존 요청/결과 인터페이스에 미판매 잔량 검증을 연결하고, 저장 담당은 고정 시도 저널을 결합한다.
 4. 위 30개 테스트와 통합 담당이 복구한 공통 회귀를 실행하고, Android 실기기·SQLite·강제 종료를 별도 검수한다. 그 뒤 원장/생성 문서 상태를 통합 담당이 갱신한다.
+
+## 후속 구현 및 검증 진행 — 2026-10-18
+
+이 절이 위 초기 인계의 미완료 항목보다 최신이다. 브랜치는 `employee2/cooking-production`, 초기 변경 커밋은 `8ffac0b`이며 직원1 저장 기반 `73fa6a5`를 `d6cbee8`로 적용했다. 다른 작업창의 파일은 수정하지 않았다.
+
+- P1-004/P4-001~004/P5-001~002: 숟가락 좌우 스와이프와 젓가락 회전을 별도 `cooking_gestures.dart`/`ui/cooking_filling_controls.dart`에 구현했다. 단계 토큰·최초 포인터·취소·입력 차단을 기존 세션 명령에 연결하며 기존 버튼 대체 입력도 유지한다. 거리/시간/방향 우세/회전각/중심 반경은 공통 임시 수치 설정의 새 5개 필드다.
+- `WorkshopProductionJournal.stageProduction(next, expectedSequence)`를 선택적 저장 포트로 추가했다. SQLite는 전체 후보 집계·기준 원문·순번을 additive `production_journal` 테이블에 먼저 기록한다. 최종 저장 트랜잭션이 저널을 제거하며 재시작은 일치하는 기준에서만 고정 후보를 재적용한다. JSON schema4/SQLite user_version4 및 구매·보상 원장은 유지한다. 최종 꺼내기/보관/6구 수확에서 사용한다.
+- 공통 controller의 자동 체크포인트가 반죽 누르기를 취소하던 문제를 수정했다. `cookingInputBlocked`를 사용하고 체크포인트 대기 전에 입력 도착 시간으로 판정한다. 공통 controller 전체 재포맷은 하지 않는다.
+- 정상 앱 컴파일을 위해 직원5의 `premium_controller.dart` transport 지역 변수 타입 좁히기 2줄 수정만 반영했다. 결제 동작 변경은 없다.
+- 실제 디스크 SQLite ffi 저널 테스트 및 Android 통합 테스트/강제 종료 호스트 도구를 추가했다. `PRODUCTION_AUDIT=true`일 때만 debug 앱 ID에 `.step02audit`를 붙여 사용자 게임 저장과 격리한다. integration_test는 개발 의존성이다.
+
+확인된 후속 검증: `flutter test --no-pub --concurrency=1 test/step02_controller_test.dart test/workshop_storage_test.dart --reporter expanded` **21개 통과**. 자동 체크포인트 중 2.5초 반죽 유지와 대기 전 꺼내기 판정 시각 고정을 포함한다. `python -X utf8 tools/development_balance.py --check` 통과. 추가 회귀와 최종 정적 검사 결과는 실행 완료 뒤 이 절에 기록한다.
+
+Android SM-S921N의 ADB 연결은 확인했으나 아직 빌드/실행/센서/손가락 검수 통과가 아니다. PC 디스크 부족 및 동시 빌드 부하로 첫 실행을 중지했다. 전용 도구는 UTF-8/ASCII 임시 경로, 별도 Gradle home, JVM 2GB 및 worker2로 재실행하도록 구성했다. 테스트용 기기 일련번호나 개인 저장 내용은 인계에 기록하지 않는다.
+
+통합 순서: 직원1 저장 기반 → 초기 `8ffac0b` → 본 후속 변경. 이미 반영된 의존 커밋은 중복 적용하지 않는다. 주문 담당은 `startOrderProduction`/`MasteryResult`/`ProductBatch`, UI 담당은 `cookingInputBlocked` 및 `harvestCell(expectedCycle: …)` 연결을 유지한다. 저장 담당은 `WorkshopProductionJournal`의 전체 집계 CAS·기준 원문 비교·저널 제거 원자성을 보존해야 한다. 외부 키·유료 서비스 설정은 필요 없다.
+
+후속 검증 추가:
+
+```powershell
+flutter test --no-pub --concurrency=1 test/step02_gestures_test.dart test/step02_production_journal_test.dart test/step02_cooking_production_test.dart test/cooking_input_test.dart test/cooking_controls_test.dart test/development_production_test.dart test/development_rules_test.dart test/workshop_controller_test.dart --reporter expanded
+flutter test --no-pub --concurrency=1 test/step02_production_journal_test.dart --reporter expanded
+flutter analyze --no-pub --no-fatal-infos lib/cooking_gestures.dart lib/ui/cooking_filling_controls.dart lib/ui/cooking_session_controls.dart lib/ui/workshop_page.dart lib/workshop_controller.dart lib/workshop_storage.dart integration_test test/step02_controller_test.dart test/step02_gestures_test.dart test/step02_production_journal_test.dart
+```
+
+첫 회귀 묶음 62개 통과. 저널 동시 저장 보호 추가 뒤 재실행에서는 PC 부하로 수확 복구 테스트가 기본30초 제한을 초과했고, 이 실행은 3통과/1실패로 기록한다. 실제 파일 IO 테스트 제한을3분으로 늘린 최종 재실행은 **4개 모두 통과**. 추가된 테스트는 대기 저널을 다른 저장자가 바꾸지 못함을 확인한다. 앞선 집중21개와 중복을 제외한 규칙/위젯/저장 검증은 총84개다. 정적 검사는 오류0/경고0/info24, 위 비실패 info 옵션에서 exit0이다. 전체 앱 무진단 검사나 Android 통과로 해석하지 않는다. 설정 검사 및 `git diff --check`도 통과했다.
+
+화면 검증 도구 `flutter test --no-pub tools/preview_step02_gestures_test.dart --reporter expanded`도 1개 통과했고 360×640 화면의 두 도구 이미지를 `build/step02-preview/`에서 확인했다. 한글/양쪽 대체 버튼/힌트가 잘리지 않음을 확인했다. 로컬 Windows 한글 폰트를 도구에서만 읽으며 앱 의존성/폰트 설정은 바꾸지 않는다. 이미지 생성은 runAsync를 사용한다. 처음 작성한 도구 실행은 이미지 비동기 완료 대기로 중단했으며 통과로 집계하지 않는다.
+
+Android 진행 기록: 분리 앱 ID 빌드는 Gradle Kotlin DSL의 기본 함수와 android/flutter 참조 해석 실패로 두 번 실패했다. 기존 builtInKotlin=false에 대응하는 앱 `org.jetbrains.kotlin.android` 플러그인 선언을 추가했으나 이것만으로 해결되지는 않았다. 공용 캐시는 지우지 않았으며 별도 캐시에서 재현/분리 중이다. Kotlin JAR들의 ZIP CRC 검사에서는 손상이 발견되지 않았다. 기기 재연결은 확인했지만 실제 설치·제작·센서 수신·손가락·강제 종료 검수는 아직 통과가 아니다.

@@ -697,6 +697,11 @@
   "manual_cooking": {
     "batter_input_passes": 2,
     "filling_inputs": 4,
+    "filling_swipe_min_distance_px": 32,
+    "filling_swipe_max_duration_ms": 800,
+    "filling_swipe_dominance_permille": 2000,
+    "filling_rotation_degrees": 360,
+    "filling_rotation_min_radius_px": 20,
     "lid_close_ms": 1000,
     "flip_ms": 1000,
     "minimum_cooling_ms": 0,

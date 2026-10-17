@@ -10,13 +10,18 @@ String _workshopGuard(Map<String,dynamic> row) => jsonEncode((row['schema'] as i
   'missionClaims':(row['missions'] as Map<String,dynamic>)['claims'],
   if(row['schema']==4) 'relationships':row['relationships'],
   if(row['schema']==4) 'customerScene':row['customerScene']} : row['purchases']);
-class SqliteWorkshopRepository implements WorkshopRepository {
+/// Optional port: freeze a complete production transaction before applying it.
+abstract interface class WorkshopProductionJournal {
+  Future<void> stageProduction(Map<String, dynamic> next, int expectedSequence);
+}
+class SqliteWorkshopRepository implements WorkshopRepository, WorkshopProductionJournal {
   Database? _database;
   SqliteWorkshopRepository();
   /// Inject an already opened database for storage integration tests.
   SqliteWorkshopRepository.withDatabase(Database database) : _database = database;
 
-  Future<Database> get database async => _database ??= await openDatabase(
+  Future<Database> get database async {
+    final db = _database ??= await openDatabase(
     path.join(await getDatabasesPath(), 'todays_bungeoppang_workshop.db'), version: 4,
     onCreate: (db, _) async {
       await db.execute('CREATE TABLE snapshots(slot TEXT PRIMARY KEY, sequence INTEGER NOT NULL, body TEXT NOT NULL)');
@@ -25,6 +30,9 @@ class SqliteWorkshopRepository implements WorkshopRepository {
     onUpgrade: (db, old, next) async {
       if (old < 2) await db.execute('CREATE TABLE purchase_guard(id INTEGER PRIMARY KEY, body TEXT NOT NULL)');
     });
+    await db.execute('CREATE TABLE IF NOT EXISTS production_journal(id INTEGER PRIMARY KEY, expected_sequence INTEGER NOT NULL, base_body TEXT NOT NULL, body TEXT NOT NULL)');
+    return db;
+  }
   @override
   Future<Map<String, dynamic>?> load() => loadValidated((_) {});
 
@@ -32,7 +40,7 @@ class SqliteWorkshopRepository implements WorkshopRepository {
   /// can precede a debit, sale or receipt and must never be replayed.
   Future<Map<String, dynamic>?> loadValidated(
       void Function(Map<String, dynamic>) validate) async {
-    return (await database).transaction((tx) async {
+    final checkpoint = await (await database).transaction((tx) async {
       final rows = await tx.query('snapshots', where: 'slot = ?', whereArgs: ['current']);
       final guards = await tx.query('purchase_guard', where: 'id = ?', whereArgs: [1]);
       final witnesses = await tx.query('purchase_guard', where: 'id = ?', whereArgs: [2]);
@@ -70,6 +78,38 @@ class SqliteWorkshopRepository implements WorkshopRepository {
           conflictAlgorithm: ConflictAlgorithm.replace);
       return recovered;
     });
+    final attempts = await (await database).query('production_journal', where: 'id = ?', whereArgs: [1]);
+    if (attempts.isEmpty) return checkpoint;
+    final attempt = attempts.single;
+    final candidate = jsonDecode(attempt['body'] as String) as Map<String, dynamic>;
+    validate(candidate);
+    if (checkpoint != null && jsonEncode(checkpoint) == attempt['body']) {
+      await (await database).delete('production_journal', where: 'id = ? AND body = ?', whereArgs: [1, attempt['body']]);
+      return checkpoint;
+    }
+    if (checkpoint == null || checkpoint['sequence'] != attempt['expected_sequence'] ||
+        jsonEncode(checkpoint) != attempt['base_body'] ||
+        candidate['sequence'] != (attempt['expected_sequence'] as int) + 1) {
+      throw const FormatException('제작 저널의 기준 저장이 일치하지 않아요.');
+    }
+    await save(candidate, attempt['expected_sequence'] as int);
+    return candidate;
+  }
+  @override
+  Future<void> stageProduction(Map<String, dynamic> next, int expectedSequence) async {
+    await (await database).transaction((tx) async {
+      final rows = await tx.query('snapshots', where: 'slot = ?', whereArgs: ['current']);
+      if (rows.length != 1 || rows.single['sequence'] != expectedSequence || next['sequence'] != expectedSequence + 1) {
+        throw const FormatException('제작 확정 순번 충돌');
+      }
+      final body = jsonEncode(next);
+      final pending = await tx.query('production_journal', where: 'id = ?', whereArgs: [1]);
+      if (pending.isNotEmpty && pending.single['body'] != body) {
+        throw const FormatException('먼저 이전 제작 결과를 복구해 주세요.');
+      }
+      await tx.insert('production_journal', {'id': 1, 'expected_sequence': expectedSequence,
+        'base_body': rows.single['body'], 'body': body}, conflictAlgorithm: ConflictAlgorithm.replace);
+    });
   }
   @override
   Future<void> save(Map<String, dynamic> next, int expectedSequence) async {
@@ -95,12 +135,19 @@ class SqliteWorkshopRepository implements WorkshopRepository {
       }
       if (next['schema'] != 4 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
       final encoded = jsonEncode(next);
+      final pending = await tx.query('production_journal', where: 'id = ?', whereArgs: [1]);
+      if (pending.isNotEmpty && (pending.single['body'] != encoded ||
+          pending.single['expected_sequence'] != expectedSequence ||
+          current.isEmpty || pending.single['base_body'] != current.single['body'])) {
+        throw const FormatException('먼저 고정된 제작 결과를 복구해 주세요.');
+      }
       await tx.insert('purchase_guard', {'id': 2, 'body': encoded}, conflictAlgorithm: ConflictAlgorithm.replace);
       await tx.insert('snapshots', {'slot': 'recovery', 'sequence': next['sequence'], 'body': encoded}, conflictAlgorithm: ConflictAlgorithm.replace);
       await tx.insert('purchase_guard', {'id': 1, 'body': _workshopGuard(next)}, conflictAlgorithm: ConflictAlgorithm.replace);
       if (current.isNotEmpty) await tx.insert('snapshots', {...current.single, 'slot': 'backup'}, conflictAlgorithm: ConflictAlgorithm.replace);
       await tx.insert('snapshots', {'slot': 'current', 'sequence': next['sequence'], 'body': encoded},
           conflictAlgorithm: ConflictAlgorithm.replace);
+      await tx.delete('production_journal', where: 'id = ? AND body = ?', whereArgs: [1, encoded]);
     });
   }
 }

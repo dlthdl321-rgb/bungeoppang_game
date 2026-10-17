@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import '../cooking_input.dart';
 import '../cooking_session.dart';
+import '../development_balance.dart';
+import '../cooking_gestures.dart';
+import 'cooking_filling_controls.dart';
 
 /// Shared touch controls. Host owns recipe permissions, atomic saving, timer
 /// pause, sound sources and inventory. Not a second game/economy controller.
 class CookingSessionControls extends StatelessWidget {
   final CookingSession session;
+  final DevelopmentBalance config;
   final bool blocked;
   final void Function(CookingSession) onCommand;
   final int cookingElapsedMs;
-  const CookingSessionControls({super.key, required this.session,
+  const CookingSessionControls({super.key, required this.session, required this.config,
       required this.blocked, required this.onCommand, required this.cookingElapsedMs});
   @override
   Widget build(BuildContext context) {
@@ -24,10 +28,9 @@ class CookingSessionControls extends StatelessWidget {
             label: session.phase == CookingPhase.firstBatter ? '첫 반죽 붓기' : '둘째 반죽 붓기',
             onFinished: (duration) => onCommand(session.pour(token, duration)));
       case CookingPhase.filling:
-        control = Wrap(spacing: 12, children: [
-          button('왼쪽으로 속 넣기', () => session.fill(token, CookingDirection.left)),
-          button('오른쪽으로 속 넣기', () => session.fill(token, CookingDirection.right)),
-        ]);
+        control = CookingFillingControls(key: ValueKey(session.id), stageToken: token,
+          blocked: blocked, rules: FillingGestureRules.fromBalance(config), expected: session.fillingSequence[session.fillingIndex],
+          onDirection: (direction) => onCommand(session.fill(token, direction)));
       case CookingPhase.closing:
         control = button('뚜껑 닫기', () => session.close(token));
       case CookingPhase.flipping:

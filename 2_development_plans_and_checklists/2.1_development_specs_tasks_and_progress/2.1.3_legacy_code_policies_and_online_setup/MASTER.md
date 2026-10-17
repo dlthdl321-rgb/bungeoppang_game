@@ -942,6 +942,8 @@ TypeScript --noEmit과 구문/링크/생성 검사는 정적 확인이며 실제
 `harvestCell(index, expectedCycle: …)`는 화면에 표시된 회차를 검증한다. `GriddleProgress.applyHarvest`는 고정 결과를 해당 칸에만 적용한다. controller의 `pendingCookingResolution`/`pendingHarvestResolutions`는 저장 실패 뒤 같은 프로세스의 reloadAfterError에서 익힘·제작일을 재판정하지 않도록 보관하는 읽기 인터페이스다. 실패 시도 중 프로세스 종료까지의 영속 보장은 아직 저장 담당의 저널 연결이 필요하다. 저장 스키마·주문/재고 원장은 변경하지 않았다.
 
 기존 확정인 덜 익음6구 수확 가능·탄 칸 직접 폐기·보유AND숙련 후보·앱 이탈/큰 틀 진입 중6구 정지를 유지한다. 시간·횟수·판정 경계는 기존 공통 임시 설정 그대로다. 실행 근거와 통합 주의사항은 저장소 루트 `coordination/step-02.md`에 기록한다. Android 센서/실제 터치·실제 SQLite/프로세스 강제 종료는 검수 완료가 아니다.
+
+직원2 추가 후속: 숟가락 스와이프/젓가락 회전은 독립 규칙·위젯으로 구현하고 공통 설정의 manual_cooking에 거리32px/시간800ms/우세2000permille/회전360도/중심 반경20px를 추가했다. 결과·보관·6구 수확은 선택적 `WorkshopProductionJournal` 포트를 사용한다. SQLite additive `production_journal`은 후보 전체 집계와 정확한 기준 원문/순번을 보관하고 최종 저장과 저널 제거를 원자 처리한다. 검증된 일치 기준에서만 재시작 시 후보를 재적용하며 schema4/user_version4를 유지한다. 위 메모리 한계 설명은 이 SQLite 구현 사용 시 해소되며 포트 미구현 저장소에는 해당하지 않는다. 자동 체크포인트 중 제작 입력을 유지하고 대기 전 수신 시각을 고정한다. 최신 검증 완료 여부는 `coordination/step-02.md` 후속 절을 따른다.
 ### 직원 1 저장·영업 수명 후속 (2026-10-18)
 
 `workshop_storage.dart`는 `workshop_controller.dart`의 part로 저장 인터페이스와 SQLite 구현을 분리한다. Workshop JSON schema4와 SQLite user_version4는 유지한다. 다음 성공 저장부터 기존 테이블에 `snapshots.recovery`와 `purchase_guard.id=2`를 추가한다. current/recovery/전체 집계 증거(id2)/기존 구매 보호(id1)/직전 backup을 하나의 SQL 트랜잭션에서 기록한다. 전체 집계 증거는 해시가 아닌 직렬화 원문이며 저장 공간을 추가로 사용한다.
