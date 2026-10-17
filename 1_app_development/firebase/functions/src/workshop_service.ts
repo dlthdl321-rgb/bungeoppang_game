@@ -1,11 +1,11 @@
 import { createHash, randomBytes } from "node:crypto";
 import { Store } from "./store";
 import { claimDevelopmentProgress, transferDevelopmentProgress } from "./active_progress";
-import { PurchaseContext, reserveCompositePurchase, finishCompositePurchase, queryCompositePurchase } from "./composite_purchases";
+import { PurchaseContext, reserveCompositePurchase, finishCompositePurchase, queryCompositePurchase, purchaseFingerprint } from "./composite_purchases";
 import { StoredWorkshopEvidence } from "./workshop_evidence";
 import { creditWorkshopMission } from "./workshop_missions";
 import { reviewAndCreditSale, querySaleReward } from "./sale_rewards";
-import { developmentAdPolicy, reserveDevelopmentAd } from "./development_contracts";
+import { developmentAdPolicy, reserveDevelopmentAd, parseCompositeIntent } from "./development_contracts";
 
 import { creditWorkshopAd } from "./workshop_ads";
 
@@ -70,6 +70,14 @@ export class WorkshopService {
     if (action === "commit") return finishCompositePurchase(this.store,this.evidence,ctx,data.intent,"commit");
     const old = await queryCompositePurchase(this.store,ctx,id(data.transaction));
     if (action === "query" || old.status === "unknown" || old.status === "committed" || old.status === "canceled") return old;
+    // Validator must fence late commits and attest rollback/no debit.
+    const cancellation=await this.store.run(tx=>tx.get(`users/${account}/workshopEvidence/cancellation_${id(data.transaction)}`));
+    if (!cancellation || cancellation.source!=="trustedServerValidation" || cancellation.verifierVersion!==1 ||
+        cancellation.account!==account || cancellation.progress!==ctx.progress || cancellation.epoch!==ctx.epoch ||
+        cancellation.transaction!==data.transaction || cancellation.fingerprint!==purchaseFingerprint(parseCompositeIntent(old,account)) ||
+        cancellation.debitFenced!==true || cancellation.localDebitRestored!==true) {
+      throw new WorkshopServiceError("Cancellation evidence required");
+    }
     return finishCompositePurchase(this.store,this.evidence,ctx,old,"cancel");
   }
   async reward(account: string,input: unknown,submit: boolean) {
