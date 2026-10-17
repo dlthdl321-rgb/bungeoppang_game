@@ -376,6 +376,7 @@ class WorkshopController extends ChangeNotifier {
   bool _purchaseBusy = false, _adPaused = false, _rewardBusy = false, _adBusy = false;
   bool get rewardBusy => _rewardBusy;
   bool get adBusy => _adBusy;
+  bool get adPaused => _adPaused;
   WorkshopOnline? get onlineGateway => purchaseGateway is WorkshopOnline ? purchaseGateway as WorkshopOnline : null;
   int get pendingRewardCount => state.pendingGold.keys.where((key) {
     final raw=state.rewardReceipts[key];return raw==null || (jsonDecode(raw) as Map)['outcome']=='pending';

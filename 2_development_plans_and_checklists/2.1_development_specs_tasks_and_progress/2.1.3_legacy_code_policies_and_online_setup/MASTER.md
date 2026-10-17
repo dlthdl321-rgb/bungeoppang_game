@@ -933,3 +933,7 @@ TypeScript --noEmit과 구문/링크/생성 검사는 정적 확인이며 실제
 ## 손님 코드 후속 — 2026-10-16
 
 현재 Workshop schema4/SQLite4는 관계 원장과 customerScene을 추가한다. customer_content.json→생성 Dart의 NPC8/대사144·관계/선택8개를 읽고 controller와 page에서 방문/무기명/친밀도/장면/도감을 연결한다. 실제 실행·타입 검사·SQLite 업그레이드는 미검증이다. 기존 schema3 구매/보상/미션 guard를 보존하고 관계/장면을 함께 보호한다. 최신 범위와 남은 작업은 [22번](../22_손님콘텐츠구현과현재환경후속.md)이다.
+
+## 직원5 오디오 수명 보완 — 2026-10-18
+
+GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광고 중 BGM/굽기/SFX를 차단한다. 스토리 중에는 굽기 소스만 비우고 독립 BGM 설정을 유지한다. 복귀는 현재 소스를 먼저 반영한다. AudioplayersAudio는 전경 이탈 시 진행 중 효과음과 늦게 시작된 효과음도 중단한다. 기본값/저장 형식은 변경하지 않았다. 검증 근거는 coordination/step-05.md에 기록한다.

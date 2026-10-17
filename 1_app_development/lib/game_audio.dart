@@ -157,6 +157,8 @@ class AudioplayersAudio extends SoundPolicy {
     Sfx.levelUp: 'audio/levelup.wav',
   };
   final _pools = <Sfx, AudioPool>{};
+  final _activeEffects = <StopFunction>{};
+  int _effectRevision = 0;
   final _music = AudioPlayer();
   final _cooking = AudioPlayer();
   bool _cookingLoaded = false;
@@ -198,7 +200,30 @@ class AudioplayersAudio extends SoundPolicy {
   @override
   void output(Sfx sfx, double volume) {
     if (!_ready || _disposed) return;
-    _pools[sfx]?.start(volume: volume).catchError((_) => () async {});
+    final pool = _pools[sfx];
+    if (pool == null) return;
+    final revision = _effectRevision;
+    pool.start(volume: volume).then((stop) async {
+      if (_disposed || !foreground || revision != _effectRevision) {
+        await stop();
+        return;
+      }
+      _activeEffects.add(stop);
+      // All bundled effects are short; bound retained stop handles.
+      Future<void>.delayed(const Duration(seconds: 5), () {
+        _activeEffects.remove(stop);
+      });
+    }).catchError((_) {});
+  }
+
+  @override
+  void pauseMusic() {
+    super.pauseMusic();
+    _effectRevision++;
+    for (final stop in _activeEffects.toList()) {
+      stop().catchError((_) {});
+    }
+    _activeEffects.clear();
   }
 
   @override
@@ -256,6 +281,8 @@ class AudioplayersAudio extends SoundPolicy {
   @override
   Future<void> dispose() async {
     _disposed = true;
+    _effectRevision++;
+    _activeEffects.clear();
     _ready = false;
     _musicRevision++;
     _cookingRevision++;
