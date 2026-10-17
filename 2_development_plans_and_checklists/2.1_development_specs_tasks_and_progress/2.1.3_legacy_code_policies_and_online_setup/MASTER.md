@@ -933,3 +933,12 @@ TypeScript --noEmit과 구문/링크/생성 검사는 정적 확인이며 실제
 ## 손님 코드 후속 — 2026-10-16
 
 현재 Workshop schema4/SQLite4는 관계 원장과 customerScene을 추가한다. customer_content.json→생성 Dart의 NPC8/대사144·관계/선택8개를 읽고 controller와 page에서 방문/무기명/친밀도/장면/도감을 연결한다. 실제 실행·타입 검사·SQLite 업그레이드는 미검증이다. 기존 schema3 구매/보상/미션 guard를 보존하고 관계/장면을 함께 보호한다. 최신 범위와 남은 작업은 [22번](../22_손님콘텐츠구현과현재환경후속.md)이다.
+
+
+## 직원2 제작·6구 후속 — 2026-10-18
+
+`cooking_sensor_input.dart`는 기존 `CookingSession` 명령을 생성하며 세션/단계마다 중립 복귀 후 새 센서 입력을 요구한다. 일시정지·입력 방식 전환은 미완료 붓기를 취소한다. 터치 반죽은 최초 포인터만 소유하며 영역 이탈·해당 포인터 취소·차단 시 확정하지 않는다. 일반 터치 버튼도 gameplayPaused 동안 차단한다.
+
+`harvestCell(index, expectedCycle: …)`는 화면에 표시된 회차를 검증한다. `GriddleProgress.applyHarvest`는 고정 결과를 해당 칸에만 적용한다. controller의 `pendingCookingResolution`/`pendingHarvestResolutions`는 저장 실패 뒤 같은 프로세스의 reloadAfterError에서 익힘·제작일을 재판정하지 않도록 보관하는 읽기 인터페이스다. 실패 시도 중 프로세스 종료까지의 영속 보장은 아직 저장 담당의 저널 연결이 필요하다. 저장 스키마·주문/재고 원장은 변경하지 않았다.
+
+기존 확정인 덜 익음6구 수확 가능·탄 칸 직접 폐기·보유AND숙련 후보·앱 이탈/큰 틀 진입 중6구 정지를 유지한다. 시간·횟수·판정 경계는 기존 공통 임시 설정 그대로다. 실행 근거와 통합 주의사항은 저장소 루트 `coordination/step-02.md`에 기록한다. Android 센서/실제 터치·실제 SQLite/프로세스 강제 종료는 검수 완료가 아니다.

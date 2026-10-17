@@ -55,7 +55,11 @@ class GriddleProgress {
     return provisionalDoneness(config, elapsedMs: cells[index].elapsedMs, speedPermille: speed,
         difficulty: cells[index].difficulty!);
   }
-  GriddleHarvest harvest(int index, DevelopmentBalance config, {required int businessIndex}) {
+  GriddleHarvest harvest(int index, DevelopmentBalance config, {required int businessIndex, int? expectedCycle}) {
+    if (index < 0 || index >= cells.length ||
+        (expectedCycle != null && cells[index].cycle != expectedCycle)) {
+      throw const FormatException('지난 6구 수확 입력');
+    }
     if (businessIndex < 0) throw const FormatException('제작 영업일 오류');
     final variant = doneness(index, config), cell = cells[index];
     final id = 'griddle:$runId:$index:${cell.cycle}';
@@ -63,6 +67,15 @@ class GriddleProgress {
         variant: variant, quantity: DevelopmentBalance.integer(config.section('griddle'), 'products_per_harvest'),
         madeOnBusinessIndex: businessIndex);
     return GriddleHarvest(_replace(index, GriddleCell._(cell.cycle, 0, 0, null, null)), product, id);
+  }
+  /// Apply one previously frozen harvest after a failed save without replacing
+  /// the other five cells or re-evaluating its doneness/business day.
+  GriddleProgress applyHarvest(int index, GriddleHarvest harvest) {
+    if (index < 0 || index >= cells.length || !cells[index].cooking ||
+        harvest.resultId != 'griddle:$runId:$index:${cells[index].cycle}') {
+      throw const FormatException('지난 6구 확정 결과');
+    }
+    return _replace(index, GriddleCell._(cells[index].cycle, 0, 0, null, null));
   }
   Set<String> get cookingSourceIds => {for (var i = 0; i < cells.length; i++)
       if (cells[i].cooking) 'griddle:$runId:$i:${cells[i].cycle}'};

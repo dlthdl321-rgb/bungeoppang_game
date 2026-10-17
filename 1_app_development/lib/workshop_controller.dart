@@ -395,6 +395,12 @@ class WorkshopController extends ChangeNotifier {
   int _lastMono = 0, _checkpoint = 0;
   WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway})
       : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure();
+  // Retained through reloadAfterError; storage integration can persist these
+  // frozen attempts alongside its command journal for process-death recovery.
+  CookingSession? _pendingCookingResult;
+  final Map<String, GriddleHarvest> _pendingHarvests = {};
+  CookingSession? get pendingCookingResolution => _pendingCookingResult;
+  Map<String, GriddleHarvest> get pendingHarvestResolutions => Map.unmodifiable(_pendingHarvests);
   String _id() => List.generate(24, (_) => 'abcdefghijklmnopqrstuvwxyz0123456789'[random.nextInt(36)]).join();
   Future<void> initialize() async {
     final saved = await repository.load();
@@ -570,7 +576,12 @@ class WorkshopController extends ChangeNotifier {
         state.phaseMs < DevelopmentBalance.integer(manual, 'lid_close_ms')) throw const FormatException('뚜껑이 닫히는 중이에요.');
     if (previous.phase == CookingPhase.flipping && next.phase == CookingPhase.cooking &&
         state.phaseMs < DevelopmentBalance.integer(manual, 'flip_ms')) throw const FormatException('뒤집는 중이에요.');
-    if (next.phase == CookingPhase.result) next = previous.takeOut(previous.token, state.phaseMs);
+    if (next.phase == CookingPhase.result) {
+      final pending = _pendingCookingResult;
+      next = pending != null && pending.id == previous.id && pending.token == previous.token + 1
+        ? pending : previous.takeOut(previous.token, state.phaseMs);
+      _pendingCookingResult = next;
+    }
     state.session = next; state.phaseMs = 0;
     if (next.phase == CookingPhase.result) {
       state.mastery = state.mastery.record(evaluateCookingResult(config, next, difficulty: difficulty(next.flavor)));
@@ -583,6 +594,11 @@ class WorkshopController extends ChangeNotifier {
       }
     }
     if (next.phase == CookingPhase.canceled) state.session = null;
+  }).then((saved) {
+    if (saved && next.phase == CookingPhase.result && _pendingCookingResult?.id == next.id) {
+      _pendingCookingResult = null;
+    }
+    return saved;
   });
   Future<bool> storeResult(bool keep) => command(() {
     final session = state.session;
@@ -595,12 +611,23 @@ class WorkshopController extends ChangeNotifier {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
     state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in state.recipes) if (state.masteryAwards.containsKey(f)) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
   });
-  Future<bool> harvestCell(int index) => command(() {
+  Future<bool> harvestCell(int index, {int? expectedCycle}) async {
+    String? frozenId;
+    final saved = await command(() {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
-    final result = state.grid.harvest(index, config, businessIndex: state.business.businessIndex);
-    state.grid = result.state;
+    if (index < 0 || index >= state.grid.cells.length) throw const FormatException('6구 칸 오류');
+    final cell = state.grid.cells[index];
+    if (expectedCycle != null && cell.cycle != expectedCycle) throw const FormatException('지난 6구 수확 입력');
+    final id = 'griddle:${state.grid.runId}:$index:${cell.cycle}';
+    frozenId = id;
+    final result = _pendingHarvests.putIfAbsent(id, () =>
+      state.grid.harvest(index, config, businessIndex: state.business.businessIndex, expectedCycle: expectedCycle));
+    state.grid = state.grid.applyHarvest(index, result);
     if (result.product != null) state.inventory = state.inventory.recordResult(result.product!, keep: true);
-  });
+    });
+    if (saved) _pendingHarvests.remove(frozenId);
+    return saved;
+  }
   Future<bool> welcomeCustomer() => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now())) throw const FormatException('영업을 시작해 주세요.');
     final rule = config.rows('level_progression')[state.level - 1];

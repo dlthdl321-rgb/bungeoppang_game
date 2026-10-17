@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../cooking_input.dart';
+import '../cooking_sensor_input.dart';
 import '../cooking_result_rules.dart';
 import '../cooking_session.dart';
 import '../cooking_tilt_source.dart';
@@ -27,59 +28,44 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   StreamSubscription<CookingTiltSample>? _sensor;
   late TiltDirectionGate _gate;
   bool _sensorEnabled = false;
-  int? _baselineAngle;
-  BatterHoldInput? _sensorBatter;
+  late CookingSensorInput _sensorInput;
+  int _sensorGeneration = 0;
   final Stopwatch _sensorClock = Stopwatch()..start();
   String? _sensorNotice;
   @override
-  void initState() { super.initState(); _gate = TiltDirectionGate.fromBalance(c.config); WidgetsBinding.instance.addObserver(this); c.addListener(_cancelPausedInput); }
+  void initState() { super.initState(); _gate = TiltDirectionGate.fromBalance(c.config); _sensorInput = CookingSensorInput(_gate); WidgetsBinding.instance.addObserver(this); c.addListener(_cancelPausedInput); }
   void _cancelPausedInput() {
     if(!c.gameplayPaused) return;
-    _sensorBatter?.cancel();_sensorBatter=null;_gate.reset();_baselineAngle=null;
+    _sensorInput.reset();
   }
   @override
   void didUpdateWidget(covariant WorkshopPage oldWidget) {
     super.didUpdateWidget(oldWidget);
     if(oldWidget.controller!=widget.controller) {
       oldWidget.controller.removeListener(_cancelPausedInput);c.addListener(_cancelPausedInput);
-      _sensorBatter?.cancel();_sensorBatter=null;_gate=TiltDirectionGate.fromBalance(c.config);_baselineAngle=null;
+      _gate=TiltDirectionGate.fromBalance(c.config);_sensorInput=CookingSensorInput(_gate);
     }
   }
   Future<void> _setSensor(bool enabled) async {
-    await _sensor?.cancel(); _sensor = null; _gate.reset();
-    _baselineAngle = null; _sensorBatter?.cancel(); _sensorBatter = null;
-    if (!mounted) return;
-    setState(() => _sensorEnabled = enabled);
+    final generation = ++_sensorGeneration;
+    final subscription = _sensor; _sensor = null;
+    _sensorInput.reset();
+    await subscription?.cancel();
+    if (!mounted || generation != _sensorGeneration) return;
+    setState(() { _sensorEnabled = enabled; _sensorNotice = null; });
     if (!enabled) return;
     _sensor = CookingTiltSource().samples(c.config).listen((sample) {
-      if (!mounted || !_sensorEnabled) return;
+      if (!mounted || !_sensorEnabled || generation != _sensorGeneration) return;
       if (!sample.available) {
+        _sensorInput.reset();
         setState(() { _sensorEnabled = false; _sensorNotice = '센서 대신 방향 버튼을 이용해 주세요.'; }); return;
       }
-      if(c.gameplayPaused) { _cancelPausedInput(); return; }
-      final angle = sample.angleMillidegrees!;
-      if (!_gate.calibrated) { _baselineAngle = angle; _gate.calibrate(angle); return; }
+      if(c.gameplayPaused) { _sensorInput.reset(); return; }
+      if(c.busy || c.error != null) { _sensorInput.interrupt(); return; }
       final session = c.state.session;
-      if (session == null || c.busy || c.error != null) { _sensorBatter?.cancel(); return; }
-      if (session.phase == CookingPhase.firstBatter || session.phase == CookingPhase.secondBatter) {
-        if (_sensorBatter?.stageToken != session.token) {
-          _sensorBatter?.cancel(); _sensorBatter = BatterHoldInput(session.token);
-        }
-        final delta = ((angle - _baselineAngle! + 180000) % 360000 - 180000).abs();
-        final input = _sensorBatter!;
-        if (delta >= _gate.activation && !input.active) {
-          input.begin(token: session.token, pointer: -2, monotonicMs: _sensorClock.elapsedMilliseconds);
-        } else if (delta <= _gate.deadZone && input.active) {
-          final duration = input.finish(token: session.token, pointer: -2, monotonicMs: _sensorClock.elapsedMilliseconds);
-          if (duration != null) unawaited(c.cookingCommand(session.pour(session.token, duration)));
-        }
-        return;
-      }
-      _sensorBatter?.cancel(); _sensorBatter = null;
-      final direction = _gate.sample(angle);
-      if (direction != null && session.phase == CookingPhase.filling) {
-        unawaited(c.cookingCommand(session.fill(session.token, direction)));
-      }
+      if (session == null || session.finished) { _sensorInput.reset(); return; }
+      final next = _sensorInput.sample(session, sample.angleMillidegrees!, _sensorClock.elapsedMilliseconds);
+      if (next != null) unawaited(c.cookingCommand(next));
     });
   }
   @override
@@ -87,7 +73,11 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     if (state != AppLifecycleState.resumed) unawaited(_setSensor(false));
   }
   @override
-  void dispose() { c.removeListener(_cancelPausedInput); _sensor?.cancel(); _sensorBatter?.cancel(); _sensorClock.stop(); _gate.reset(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
+  void dispose() { c.removeListener(_cancelPausedInput); _sensorGeneration++; _sensor?.cancel(); _sensorInput.reset(); _sensorClock.stop(); _gate.reset(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
+  VoidCallback _cellCommand(int index) {
+    final cell = c.state.grid.cells[index];
+    return cell.cooking ? () => c.harvestCell(index, expectedCycle: cell.cycle) : () => c.startCell(index);
+  }
   Future<void> _closeBusiness() async {
     c.gridVisible = false;
     try {
@@ -326,13 +316,13 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
               TextButton(onPressed: c.busy ? null : () => c.storeResult(false), child: const Text('버리기'))])
             else ...[const Text('주문 제작품은 재고에 저장됐어요. 탄 제품은 판매할 수 없어요.'),
               FilledButton(onPressed: c.busy ? null : () => c.storeResult(true), child: const Text('결과 닫기'))],
-          ] else CookingSessionControls(key: ValueKey('${session.id}:$_sensorEnabled'), session: session, blocked: c.busy || c.error != null,
+          ] else CookingSessionControls(key: ValueKey('${session.id}:$_sensorEnabled'), session: session, blocked: c.busy || c.error != null || c.gameplayPaused,
             cookingElapsedMs: s.phaseMs, onCommand: (next) => c.cookingCommand(next)),
         ],
         const Divider(), Text('6구 · 숙련한 맛 ${s.masteryAwards.length}종'),
         Wrap(spacing: 8, runSpacing: 8, children: [for (var i = 0; i < s.grid.cells.length; i++)
-          SizedBox(width: 140, child: OutlinedButton(onPressed: c.busy || session != null || !s.business.permitsProducts(DateTime.now().toUtc()) || s.masteryAwards.isEmpty ? null :
-            () => s.grid.cells[i].cooking ? c.harvestCell(i) : c.startCell(i),
+          SizedBox(width: 140, child: OutlinedButton(onPressed: c.busy || c.error != null || c.gameplayPaused || session != null || !s.business.permitsProducts(c.now()) || s.masteryAwards.isEmpty ? null :
+            _cellCommand(i),
             child: Text(s.grid.cells[i].cooking ? '${i+1}번 ${c.flavorLabel(s.grid.cells[i].flavor!)} ${provisionalDonenessLabels[s.grid.doneness(i, c.config)]}\n직접 꺼내기' : '${i+1}번 굽기 시작')))]),
         const Divider(), Text('재고 ${s.inventory.batches.values.fold<int>(0, (n,b) => n+b.quantity)}개 · 영업 전 준비품 ${s.inventory.prepared.length}묶음'),
         for (final b in s.inventory.batches.values) Text('${c.flavorLabel(b.flavor)} ${provisionalDonenessLabels[b.variant]} ${b.quantity}개 · ${s.business.businessIndex-b.madeOnBusinessIndex}영업일 경과'),

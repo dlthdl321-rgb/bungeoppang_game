@@ -43,6 +43,7 @@ class BatterHoldInput {
   int? _pointer, _startedAt, _lastAt;
   BatterHoldInput(this.stageToken);
   bool get active => _pointer != null;
+  bool ownsPointer(int pointer) => _pointer == pointer;
   void begin({required int token, required int pointer, required int monotonicMs}) {
     if (token != stageToken || active || monotonicMs < 0) {
       throw const FormatException('반죽 입력 시작 오류');
