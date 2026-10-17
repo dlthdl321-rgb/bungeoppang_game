@@ -65,7 +65,7 @@ void main() {
   setUp(() async {
     final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
     raw['ordinary_sale']['base_buns_by_difficulty'] = ['20','40','60'];
-    (raw['level_progression'][1] as Map).addAll({'season_total_buns':'10', 'additional_taps':2,
+    (raw['level_progression'][1] as Map).addAll(<String, dynamic>{'season_total_buns':'10', 'additional_taps':2,
       'additional_sales':0, 'buns_reward':'3', 'gold_reward':1});
     config = DevelopmentBalance.fromJson(raw);
     repository = Repository();

@@ -942,3 +942,10 @@ TypeScript --noEmit과 구문/링크/생성 검사는 정적 확인이며 실제
 `harvestCell(index, expectedCycle: …)`는 화면에 표시된 회차를 검증한다. `GriddleProgress.applyHarvest`는 고정 결과를 해당 칸에만 적용한다. controller의 `pendingCookingResolution`/`pendingHarvestResolutions`는 저장 실패 뒤 같은 프로세스의 reloadAfterError에서 익힘·제작일을 재판정하지 않도록 보관하는 읽기 인터페이스다. 실패 시도 중 프로세스 종료까지의 영속 보장은 아직 저장 담당의 저널 연결이 필요하다. 저장 스키마·주문/재고 원장은 변경하지 않았다.
 
 기존 확정인 덜 익음6구 수확 가능·탄 칸 직접 폐기·보유AND숙련 후보·앱 이탈/큰 틀 진입 중6구 정지를 유지한다. 시간·횟수·판정 경계는 기존 공통 임시 설정 그대로다. 실행 근거와 통합 주의사항은 저장소 루트 `coordination/step-02.md`에 기록한다. Android 센서/실제 터치·실제 SQLite/프로세스 강제 종료는 검수 완료가 아니다.
+### 직원 1 저장·영업 수명 후속 (2026-10-18)
+
+`workshop_storage.dart`는 `workshop_controller.dart`의 part로 저장 인터페이스와 SQLite 구현을 분리한다. Workshop JSON schema4와 SQLite user_version4는 유지한다. 다음 성공 저장부터 기존 테이블에 `snapshots.recovery`와 `purchase_guard.id=2`를 추가한다. current/recovery/전체 집계 증거(id2)/기존 구매 보호(id1)/직전 backup을 하나의 SQL 트랜잭션에서 기록한다. 전체 집계 증거는 해시가 아닌 직렬화 원문이며 저장 공간을 추가로 사용한다.
+
+현재 저장이 손상·누락되면 전체 집계 증거와 원문·순번이 일치하고 기존 구매 보호 및 모델 검증을 통과하는 최신 recovery만 current로 복원한다. 과거 backup은 자동 복원하지 않는다. 증거 불일치·증거 소실·구형 저장 손상은 초기화하지 않고 오류로 중단한다. 로컬 복구는 서버의 활성 진행·계정·epoch·거래 검증을 대체하지 않으며 전체 DB 삭제·변조나 파일 손상 복구를 보장하지 않는다. 기존 정상 schema1~3 이전 경로는 유지하고 구형 클리커 재화 환산은 추가하지 않는다(기존 사용자 없음 확정).
+
+복구 재읽기 동안 명령·틱을 잠그고 lifecycle 요청은 해당 작업을 기다린다. 미래 영업일에 귀속된 재고/준비품 binding은 저장 검증에서 거부한다. 영업 시작·종료, KST 명시 이어가기, 준비품 최초 귀속과 열린 영업 부재 정산 8시간/50% 규칙은 기존 구현을 유지한다. 실행 근거·통합 순서는 저장소 루트 `coordination/step-01.md`를 따른다. Android 실기기 검수는 별도다.
