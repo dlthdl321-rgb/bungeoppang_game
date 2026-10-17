@@ -933,3 +933,9 @@ TypeScript --noEmit과 구문/링크/생성 검사는 정적 확인이며 실제
 ## 손님 코드 후속 — 2026-10-16
 
 현재 Workshop schema4/SQLite4는 관계 원장과 customerScene을 추가한다. customer_content.json→생성 Dart의 NPC8/대사144·관계/선택8개를 읽고 controller와 page에서 방문/무기명/친밀도/장면/도감을 연결한다. 실제 실행·타입 검사·SQLite 업그레이드는 미검증이다. 기존 schema3 구매/보상/미션 guard를 보존하고 관계/장면을 함께 보호한다. 최신 범위와 남은 작업은 [22번](../22_손님콘텐츠구현과현재환경후속.md)이다.
+
+### 2026-10-18 직원4 서버 검증 후속
+
+`staff-04/server-verification`의 서버 변경은 [coordination/step-04.md](../../../coordination/step-04.md)에 인계한다. 구매 재시도는 기존 원장을 우선 복구하며, callable 취소에는 신뢰된 cancellation 증거(account/progress/epoch/transaction/fingerprint, debitFenced/localDebitRestored)가 필요하다. 클라이언트 차감 플래그나 증거 부재만으로 환불하지 않는다. 보호 파이프라인의 실제 권위·복원 검증은 운영 전 필수다.
+
+`admob_ssv.ts`와 `workshopAdSsv`는 원본 쿼리 ECDSA 검증과 고정 HTTPS 공개키/23시간 캐시를 사용한다. `WORKSHOP_ONLINE_ENABLED` 기본 OFF를 유지하며, 광고는 별도로 `WORKSHOP_AD_SSV_ENABLED`와 `WORKSHOP_ADMOB_AD_UNITS` allowlist가 필요하다. 광고 시작도 이 설정 없이 승인하지 않는다. SDK 완료 콜백은 지급 증거가 아니다. 실제 서명 요청·SDK/동의·보호 검증 파이프라인·에뮬레이터·실기기 검수 완료를 의미하지 않는다. 검증 명령/결과와 운영 설정은 위 인계 파일을 기준으로 확인한다.

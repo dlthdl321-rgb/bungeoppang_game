@@ -1,7 +1,10 @@
+import { AdMobSsvVerifier, AdMobKeyUnavailable } from "./admob_ssv";
+import { acceptWorkshopSsv } from "./workshop_ads";
+import { workshopFailure } from "./workshop_errors";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore, Firestore } from "firebase-admin/firestore";
-import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import { google } from "googleapis";
 import developmentBalance from "./generated/development_balance.json";
 import { WorkshopService } from "./workshop_service";
@@ -203,7 +206,8 @@ async function workshopCall(req: Parameters<typeof signedIn>[0], work: (service:
   catch (error) {
     if (error instanceof HttpsError) throw error;
     // Domain errors never disclose documents, tokens or provider data.
-    throw new HttpsError("failed-precondition", "진행·거래·검증 상태를 다시 확인해 주세요.");
+    const failure=workshopFailure(error);
+    throw new HttpsError(failure.code, "진행·거래·검증 상태를 다시 확인해 주세요.", {reason:failure.reason,retryable:failure.retryable});
   }
 }
 export const workshopProgressClaim = onCall(options,req => workshopCall(req,(s,uid) => s.claim(uid,req.data)));
@@ -213,7 +217,33 @@ export const workshopPurchaseCommit = onCall(options,req => workshopCall(req,(s,
 export const workshopPurchaseCancel = onCall(options,req => workshopCall(req,(s,uid) => s.purchase(uid,"cancel",req.data)));
 export const workshopRewardSubmit = onCall(options,req => workshopCall(req,(s,uid) => s.reward(uid,req.data,true)));
 export const workshopRewardQuery = onCall(options,req => workshopCall(req,(s,uid) => s.reward(uid,req.data,false)));
-export const workshopAdStart = onCall(options,req => workshopCall(req,(s,uid) => s.adStart(uid,req.data)));
+export const workshopAdStart = onCall(options,req => workshopCall(req,(s,uid) => {
+  if(process.env.WORKSHOP_AD_SSV_ENABLED!=="true" || !(process.env.WORKSHOP_ADMOB_AD_UNITS??"").split(",").some(x=>x.trim())) {
+    throw new HttpsError("failed-precondition","\uad11\uace0 \uac80\uc99d \uc124\uc815 \ud655\uc778\uc774 \ud544\uc694\ud569\ub2c8\ub2e4.",{reason:"ads-disabled",retryable:false});
+  }
+  return s.adStart(uid,req.data);
+}));
 export const workshopAdQuery = onCall(options,req => workshopCall(req,(s,uid) => s.adQuery(uid,req.data)));
 
 export const workshopProgressTransfer = onCall(options,req => workshopCall(req,(s,uid) => s.transfer(uid,req.data)));
+
+// Separate opt-in gate. App callbacks and callable JSON never approve ads.
+const admobVerifier = new AdMobSsvVerifier();
+export const workshopAdSsv = onRequest({region:"asia-northeast3"},async(req,res)=>{
+  if(process.env.WORKSHOP_ONLINE_ENABLED!=="true" || process.env.WORKSHOP_AD_SSV_ENABLED!=="true") {
+    res.status(503).send("disabled");return;
+  }
+  if(req.method!=="GET") {res.status(405).send("method not allowed");return;}
+  const units=new Set((process.env.WORKSHOP_ADMOB_AD_UNITS??"").split(",").map(x=>x.trim()).filter(Boolean));
+  if(!units.size) {res.status(503).send("configuration required");return;}
+  const index=req.originalUrl.indexOf("?");
+  try {
+    if(index<0) throw new Error("missing query");
+    await acceptWorkshopSsv(store,admobVerifier,req.originalUrl.slice(index+1),units,Date.now);
+    res.status(200).send("ok");
+  } catch(error) {
+    // Never echo signed query, token, provider response or account in HTTP/logs.
+    const failure=workshopFailure(error);
+    res.status(error instanceof AdMobKeyUnavailable || failure.retryable ? 503:400).send("verification incomplete");
+  }
+});
