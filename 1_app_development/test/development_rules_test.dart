@@ -9,10 +9,10 @@ import 'package:todays_bungeoppang/development_rules.dart';
 DevelopmentBalance load() {
   final raw = jsonDecode(File('config/development_balance.json').readAsStringSync())
       as Map<String, dynamic>;
-  final skill = raw['skill_purchase']['entries']['tap_1'] as Map;
+  final skill = raw['skill_purchase']['entries']['tap_1'] as Map<String, dynamic>;
   skill.addAll({'buns': '15', 'gold': 1, 'ratio_numerator': 115, 'ratio_denominator': 100});
-  (raw['skill_purchase'] as Map).addAll({'gold_step_purchase_count': 10, 'gold_step_amount': 1});
-  (raw['mastery_difficulties'][0] as Map).addAll({
+  (raw['skill_purchase'] as Map<String, dynamic>).addAll({'gold_step_purchase_count': 10, 'gold_step_amount': 1});
+  (raw['mastery_difficulties'][0] as Map<String, dynamic>).addAll({
     'practice_required': 8, 'technique_passes_required': 3, 'doneness_target_ms': 15000});
   (raw['doneness'] as Map)['boundary_permille'] = [600, 900, 1100, 1400];
   return DevelopmentBalance.fromJson(raw);

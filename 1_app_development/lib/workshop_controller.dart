@@ -21,6 +21,7 @@ import 'workshop_missions.dart';
 import 'workshop_customers.dart';
 import 'workshop_customer_events.dart';
 import 'workshop_customer_dialogue.dart';
+import 'workshop_customer_orders.dart';
 
 /// Fresh-game local production aggregate. Gold remains in the authenticated
 /// server wallet; pending claims here are never spendable gold.
@@ -626,7 +627,18 @@ class WorkshopController extends ChangeNotifier {
       special: special, quantity: quantities[i])];
     if (named != null) {
       final preference = config.section('customer_order_preferences')[named] as Map<String,dynamic>;
-      final flavor = named=='npc_doyun' && state.relationships.met.isEmpty ? 'redbean' : state.recipes.contains(preference['flavor']) ? preference['flavor'] as String : 'redbean';
+      final served = <String>{};
+      if (named == 'npc_taeo') {
+        for (final sale in state.sales.entries) {
+          final evidence = validateStoredCustomerSale(sale.key, sale.value);
+          final previous = CustomerOrder.fromJson(evidence['order'] as Map<String, dynamic>);
+          if (previous.customerId == named) {
+            served.addAll(previous.lines.map((line) => line.flavor));
+          }
+        }
+      }
+      final flavor = preferredCustomerFlavor(named, config, owned: state.recipes,
+          previouslyServed: served, firstCustomer: state.relationships.met.isEmpty);
       lines = [CustomerOrderLine(flavor:flavor,variant:variant,special:special,
         quantity:min(DevelopmentBalance.integer(preference,'quantity'),DevelopmentBalance.integer(rule,'order_quantity_limit')))];
     }
@@ -700,11 +712,15 @@ class WorkshopController extends ChangeNotifier {
     if(customerCatalog.contains(order.customerId)) _afterNamedSale(order);
   });
   Map<String,dynamic>? _matchingFollowup(CustomerOrder order) {
+    // Existing relationship scenes precede optional choice follow-ups, even
+    // when the latter is normally shown on entry rather than after the sale.
+    if (_readyCustomerStory(order.customerId) != null) return null;
     final journal=state.relationships.toJson(),visits=journal['visits'] as Map;
     final context=((visits[order.id] as Map?)?['context'] as Map?) ?? {};
     for(final e in (journal['followups'] as Map).entries) {
       final npc=order.customerId;
       if(customerCatalog.choice(e.key as String)['npc_id']!=npc) continue;
+      if (((journal['choices'] as Map)[e.key] as Map)['day'] >= state.business.businessIndex) continue;
       if(npc=='npc_makrye' && (e.value=='a' && context['ownPortion']!=true || e.value=='b' && context['onSite']!=true)) continue;
       if(npc=='npc_minjae' && context['running']!=false || npc=='npc_eunchae' && context['working']!=true || npc=='npc_taeo' && e.value=='c' && context['photoReminder']!=true) continue;
       return {'kind':'followup','id':e.key,'npc':npc,'choice':e.value};
@@ -833,8 +849,9 @@ class WorkshopController extends ChangeNotifier {
       workingVisit:context['working']==true,runningTurnedBack:context['turnedBack']==true,
       firstVisit:own.length<=1,completedStories:state.relationships.stories);
   }
-  void _afterNamedSale(CustomerOrder order) {
-    final npc=order.customerId, facts=_choiceFacts(npc,order),journal=state.relationships.toJson();
+  String? _readyCustomerStory(String npc) {
+    if (!customerCatalog.contains(npc)) return null;
+    final journal = state.relationships.toJson();
     final visits=journal['visits'] as Map;
     final success=<String,int>{};
     for(final e in (journal['actions'] as Map<String,dynamic>).entries.where((e)=>e.key.startsWith('sale:'))) {
@@ -845,21 +862,18 @@ class WorkshopController extends ChangeNotifier {
     final storyFacts=WorkshopStoryFacts(met:state.relationships.met,
       affinity:{for(final id in state.relationships.met) id:state.relationships.affinity(id)},successfulVisits:success,
       drawingConversationSeen:(journal['seenDialogue'] as List).contains('npc_seojin:seojin_waiting_01'));
-    if(!state.relationships.stories.contains(story) && eligibleCustomerStory(npc,storyFacts,config)) {
+    return !state.relationships.stories.contains(story) && eligibleCustomerStory(npc,storyFacts,config)
+        ? story : null;
+  }
+  void _afterNamedSale(CustomerOrder order) {
+    final npc=order.customerId, facts=_choiceFacts(npc,order),journal=state.relationships.toJson();
+    final story = _readyCustomerStory(npc);
+    if (story != null) {
       state.customerScene={'kind':'story','id':story,'npc':npc};return;
     }
-    final followups=journal['followups'] as Map;
-    for(final e in followups.entries) {
-      if(customerCatalog.choice(e.key as String)['npc_id']==npc) {
-        // Orders/outfits affected by an authored follow-up need generation-time
-        // reservations. Do not narrate those before that reservation exists.
-        final ctx=((visits[order.id] as Map)['context'] as Map?) ?? {};
-        if(npc=='npc_makrye' && (e.value=='a' && ctx['ownPortion']!=true || e.value=='b' && ctx['onSite']!=true)) continue;
-        if(npc=='npc_minjae' && ctx['running']!=false) continue;
-        if(npc=='npc_eunchae' && ctx['working']!=true) continue;
-        if(npc=='npc_taeo' && e.value=='c' && ctx['photoReminder']!=true) continue;
-        state.customerScene={'kind':'followup','id':e.key,'npc':npc,'choice':e.value};return;
-      }
+    final followup = _matchingFollowup(order);
+    if (followup != null) {
+      state.customerScene = followup; return;
     }
     final event='choice_${npc.substring(4)}_01';
     final candidateMatches=npc!='npc_yunha' || (order.lines.length==1 && order.lines.single.flavor=='redbean' &&
