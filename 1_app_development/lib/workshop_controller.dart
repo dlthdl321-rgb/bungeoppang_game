@@ -22,6 +22,8 @@ import 'workshop_customers.dart';
 import 'workshop_customer_events.dart';
 import 'workshop_customer_dialogue.dart';
 
+part 'workshop_storage.dart';
+
 /// Fresh-game local production aggregate. Gold remains in the authenticated
 /// server wallet; pending claims here are never spendable gold.
 class WorkshopState {
@@ -108,6 +110,10 @@ class WorkshopState {
     if (state.level < 1 || state.level > 50 || state.buns > state.lifetime ||
         state.levelStartTaps > state.taps || state.levelStartSales > state.completedSales) {
       throw const FormatException('신규 진행/재화 불일치');
+    }
+    if (state.inventory.batches.values.any((b) => b.madeOnBusinessIndex > business.businessIndex) ||
+        state.inventory.bindings.values.any((day) => day > business.businessIndex)) {
+      throw const FormatException('미래 영업일의 재고 귀속');
     }
     if ((row['schema'] as int)<3 && ['rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime'].any(row.containsKey)) throw const FormatException('구형 저장에 신규 보호 필드가 있어요.');
     if (row['schema'] == 1 && row.containsKey('purchases')) throw const FormatException('구형 저장의 구매 필드 충돌');
@@ -297,68 +303,6 @@ class WorkshopState {
   }
 }
 
-abstract class WorkshopRepository {
-  Future<Map<String, dynamic>?> load();
-  Future<void> save(Map<String, dynamic> next, int expectedSequence);
-}
-String _workshopGuard(Map<String,dynamic> row) => jsonEncode((row['schema'] as int)>=3 ? {
-  'purchases':row['purchases'],'rewardAccount':row['rewardAccount'],
-  'rewardReceipts':row['rewardReceipts'],'adAttempts':row['adAttempts'],
-  'missionClaims':(row['missions'] as Map<String,dynamic>)['claims'],
-  if(row['schema']==4) 'relationships':row['relationships'],
-  if(row['schema']==4) 'customerScene':row['customerScene']} : row['purchases']);
-class SqliteWorkshopRepository implements WorkshopRepository {
-  Database? _database;
-  Future<Database> get database async => _database ??= await openDatabase(
-    path.join(await getDatabasesPath(), 'todays_bungeoppang_workshop.db'), version: 4,
-    onCreate: (db, _) async {
-      await db.execute('CREATE TABLE snapshots(slot TEXT PRIMARY KEY, sequence INTEGER NOT NULL, body TEXT NOT NULL)');
-      await db.execute('CREATE TABLE purchase_guard(id INTEGER PRIMARY KEY, body TEXT NOT NULL)');
-    },
-    onUpgrade: (db, old, next) async {
-      if (old < 2) await db.execute('CREATE TABLE purchase_guard(id INTEGER PRIMARY KEY, body TEXT NOT NULL)');
-    });
-  @override
-  Future<Map<String, dynamic>?> load() async {
-    return (await database).transaction((tx) async {
-      final rows = await tx.query('snapshots', where: 'slot = ?', whereArgs: ['current']);
-      final guards = await tx.query('purchase_guard', where: 'id = ?', whereArgs: [1]);
-      if (rows.isEmpty) {
-        if (guards.isNotEmpty) throw const FormatException('구매 보호 기록의 진행이 누락됐어요.');
-        return null;
-      }
-      final body = jsonDecode(rows.single['body'] as String) as Map<String, dynamic>;
-      if (body['sequence'] != rows.single['sequence'] ||
-          ([2,3,4].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
-          (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('저장/구매 보호 기록 재대조가 필요해요.');
-      return body;
-    });
-  }
-  @override
-  Future<void> save(Map<String, dynamic> next, int expectedSequence) async {
-    await (await database).transaction((tx) async {
-      final current = await tx.query('snapshots', where: 'slot = ?', whereArgs: ['current']);
-      final guards = await tx.query('purchase_guard', where: 'id = ?', whereArgs: [1]);
-      if (current.isEmpty && guards.isNotEmpty) throw const FormatException('구매 보호 기록만 남은 상태');
-      if (current.isNotEmpty) {
-        final body = jsonDecode(current.single['body'] as String) as Map<String, dynamic>;
-        if (body['sequence'] != current.single['sequence'] ||
-            ([2,3,4].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
-            (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('구매 보호 기록 충돌');
-      }
-      final oldSequence = current.isEmpty ? 0 : current.single['sequence'];
-      if (oldSequence != expectedSequence || next['sequence'] != expectedSequence + 1) {
-        throw const FormatException('진행 저장 순번 충돌');
-      }
-      if (next['schema'] != 4 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
-      await tx.insert('purchase_guard', {'id': 1, 'body': _workshopGuard(next)}, conflictAlgorithm: ConflictAlgorithm.replace);
-      if (current.isNotEmpty) await tx.insert('snapshots', {...current.single, 'slot': 'backup'}, conflictAlgorithm: ConflictAlgorithm.replace);
-      await tx.insert('snapshots', {'slot': 'current', 'sequence': next['sequence'], 'body': jsonEncode(next)},
-          conflictAlgorithm: ConflictAlgorithm.replace);
-    });
-  }
-}
-
 class WorkshopController extends ChangeNotifier {
   final DevelopmentBalance config;
   final WorkshopRepository repository;
@@ -397,8 +341,12 @@ class WorkshopController extends ChangeNotifier {
   WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway})
       : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure();
   String _id() => List.generate(24, (_) => 'abcdefghijklmnopqrstuvwxyz0123456789'[random.nextInt(36)]).join();
+  Future<Map<String, dynamic>?> _loadDurable() => repository is SqliteWorkshopRepository
+      ? (repository as SqliteWorkshopRepository).loadValidated(
+          (row) { WorkshopState.fromJson(row, config); })
+      : repository.load();
   Future<void> initialize() async {
-    final saved = await repository.load();
+    final saved = await _loadDurable();
     state = saved == null ? WorkshopState.initial(now(), config, _id()) : WorkshopState.fromJson(saved, config);
     // Only server-committed grants reconstructed from the durable purchase
     // ledger can produce skill effects; legacy local purchases are not used.
@@ -432,12 +380,23 @@ class WorkshopController extends ChangeNotifier {
   }
   Future<void> reloadAfterError() async {
     if (busy || disposed) return;
-    final saved = await repository.load();
-    if (saved == null) throw const FormatException('복구할 저장 기록 없음');
-    state = WorkshopState.fromJson(saved, config);
-    final settlement = _settleAway();
-    state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
-    error = null; _lastMono = _clock.elapsedMilliseconds;
+    // Reading is part of recovery: do not let a command or lifecycle event
+    // overwrite the aggregate while its durable version is being loaded.
+    busy = true; _commandIdle = Completer<void>();
+    try {
+      final saved = await _loadDurable();
+      if (disposed) return;
+      if (saved == null) throw const FormatException('복구할 저장 기록 없음');
+      state = WorkshopState.fromJson(saved, config);
+      final settlement = _settleAway();
+      state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
+      error = null; _lastMono = _clock.elapsedMilliseconds;
+    } catch (e) {
+      error = '저장 복구 확인이 필요해요: $e';
+      rethrow;
+    } finally {
+      busy = false; _commandIdle?.complete(); _commandIdle = null;
+    }
     await command(() {});
   }
   void _advanceMemory(int ms) {
