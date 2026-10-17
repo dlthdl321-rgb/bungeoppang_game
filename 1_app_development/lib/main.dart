@@ -46,7 +46,7 @@ Future<void> main() async {
     await controller.initialize();
     final config = await loadDevelopmentBalance();
     workshop = WorkshopController(config, SqliteWorkshopRepository(),
-      purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online) : null);
+      purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online as WorkshopTransport) : null);
     await workshop.initialize();
     runApp(GameApp(controller: controller, audio: audio, workshop: workshop));
   } catch (_) {
