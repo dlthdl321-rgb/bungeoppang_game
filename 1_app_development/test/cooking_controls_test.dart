@@ -32,6 +32,38 @@ void main() {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     }
   });
+  testWidgets('반죽 영역 밖으로 이동한 포인터는 복귀 후 놓아도 확정하지 않는다', (tester) async {
+    final results = <int>[];
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Center(child: BatterHoldButton(
+      stageToken: 0, blocked: false, label: '반죽', onFinished: results.add)))));
+    final gesture = await tester.startGesture(tester.getCenter(find.byType(BatterHoldButton)));
+    await gesture.moveTo(const Offset(1, 1));
+    await gesture.moveTo(tester.getCenter(find.byType(BatterHoldButton)));
+    await gesture.up();
+    expect(results, isEmpty);
+  });
+  testWidgets('일시정지로 차단된 반죽은 늦게 놓아도 확정하지 않는다', (tester) async {
+    final results = <int>[];
+    Widget view(bool blocked) => MaterialApp(home: Scaffold(body: BatterHoldButton(
+      stageToken: 0, blocked: blocked, label: '반죽', onFinished: results.add)));
+    await tester.pumpWidget(view(false));
+    final gesture = await tester.startGesture(tester.getCenter(find.byType(BatterHoldButton)));
+    await tester.pumpWidget(view(true));
+    await tester.pumpWidget(view(false));
+    await gesture.up();
+    expect(results, isEmpty);
+  });
+  testWidgets('둘째 포인터 취소는 첫 포인터의 반죽을 취소하지 않는다', (tester) async {
+    final results = <int>[];
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: BatterHoldButton(
+      stageToken: 0, blocked: false, label: '반죽', onFinished: results.add))));
+    final point = tester.getCenter(find.byType(BatterHoldButton));
+    final first = await tester.startGesture(point, pointer: 1);
+    final second = await tester.startGesture(point, pointer: 2);
+    await second.cancel();
+    await first.up();
+    expect(results.length, 1);
+  });
   test('지원하지 않는 환경은 센서 대신 터치 대체 상태를 반환한다', () async {
     final config = DevelopmentBalance.fromJson(jsonDecode(
         File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);

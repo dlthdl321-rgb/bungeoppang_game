@@ -101,7 +101,11 @@ class _BatterHoldButtonState extends State<BatterHoldButton> with WidgetsBinding
     hint: '길게 누르거나, 화면 읽기 기능으로 두 번 활성화해 시작하고 멈출 수 있어요.',
     onTap: widget.blocked ? null : () => _input.active ? _finish(-1) : _begin(-1),
     child: Listener(onPointerDown: (event) => _begin(event.pointer),
-      onPointerUp: (event) => _finish(event.pointer), onPointerCancel: (_) => _cancel(),
+      onPointerMove: (event) {
+        if (!_input.ownsPointer(event.pointer)) return;
+        final box = context.findRenderObject() as RenderBox?;
+        if (box != null && !(Offset.zero & box.size).contains(box.globalToLocal(event.position))) _cancel();
+      }, onPointerUp: (event) => _finish(event.pointer), onPointerCancel: (event) { if (_input.ownsPointer(event.pointer)) _cancel(); },
       child: ExcludeSemantics(child: Container(
         constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
         padding: const EdgeInsets.all(12),
