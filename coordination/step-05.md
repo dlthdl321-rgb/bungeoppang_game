@@ -13,6 +13,7 @@ CLAUDE.md와 MASTER.md를 적용했다. AGENTS.md는 발견하지 못했다.
 | 1 저장·복구 | 73fa6a5 | 22e15a2 |
 | 2 제작·6구 | 8ffac0b | 06b7ee3 |
 | 3 주문·재고·손님 | d8ffe9a (최종 2503e41과 마지막 공백만 다름) | 97fddc6 |
+| 4 구매·광고 서버 | 81abc89 | 464fcf5 |
 
 MASTER.md 끝의 병렬 추가는 양쪽 설명을 보존했다. controller 저장 part/생명주기와 제작 캐시, 주문 ID 납품, UI 센서/판매 버튼을 함께 보존했다. 공통 controller 테스트의 Map fixture 타입 수정 충돌은 직원1의 명시 타입 리터럴을 유지했다. 직원2 브랜치가 이후 직원1 커밋을 적용한 것은 중복 적용하지 않는다.
 
@@ -43,14 +44,35 @@ MASTER.md 끝의 병렬 추가는 양쪽 설명을 보존했다. controller 저�
 - 기준 커밋에 이미 있던 premium_controller.dart의 OnlineBackend/WorkshopTransport 교차 인터페이스 타입 승격 오류2개: nullable transport 참조를 명시적으로 만들어 수정. 인증 계정 재확인 동작 유지.
 - 기존 development_rules_test.dart의 dynamic Map.addAll fixture 오류는 직원2·3 인계에 기록되어 있다. 전체 검증에서 재확인한다.
 - 신규 step05 테스트의 void lifecycle 메서드 await는 이번 작업 오류였으며 제거했다.
+- 기준 main.dart의 WorkshopOnline 생성 인수도 동일 교차 인터페이스 타입 승격 오류1개였으며 명시 cast로 수정했다. main 변경은 이 연결 한 줄뿐이다.
+- 전체 회귀에서 기존 stage10 자산 테스트가 제거된 bgm.wav를 참조했다. 현재 musicMoods 6곡과 실제4초 sizzle WAV의 헤더/길이를 검사하도록 보완했다.
+- 기존 설정 테스트7개는 길어진 ListView의 아래 위젯을 스크롤 전에 찾았다. stage14 저장 버튼 및 widget_test의 큰 글자6개 경우에 scrollUntilVisible을 사용한다. 화면 기능/검증 기대값은 유지했다.
 - 한글 경로 분석/테스트 최초 실행은 로딩 지연으로 중단했으므로 통과 기록이 아니다.
 
 ## 검증 확정 기록
 
-최종 명령·종료 코드·개수는 실행 완료 후 아래에 기록한다. 소스 존재를 실행 통과나 실기기 검수로 간주하지 않는다.
+소스 존재를 실행 통과나 실기기 검수로 간주하지 않는다.
+
+| 명령 | 실제 결과 |
+| --- | --- |
+| `flutter pub get --offline` | 종료0, 로컬 캐시 해석 성공 |
+| `dart analyze lib/game_audio.dart lib/ui/game_app.dart test/step05_audio_test.dart` | 종료0, No issues found |
+| `flutter test --no-pub --reporter expanded test/step05_audio_test.dart test/independent_music_test.dart` | 종료0, 8개 통과 |
+| `npm.cmd ci --ignore-scripts` | 종료0, Node22 요구 대비 Node24 경고 있음 |
+| `npm.cmd test` | 종료0, TypeScript 빌드 및 65개 서버 테스트 통과. Node24 호스트/메모리 트랜잭션/로컬 ECDSA 검증이며 Node22·실제 Firestore·실제 AdMob 검수가 아님 |
+| `dart analyze` | 최초 전체 분석 종료3: main 타입 오류1, 기존 경고8, info66. main 수정 후 아래 대상 재분석 |
+| `dart analyze lib/main.dart lib/premium_controller.dart lib/game_audio.dart lib/ui/game_app.dart test/step05_audio_test.dart` | 종료0, No issues found |
+| `flutter test --no-pub --reporter expanded` | 전체 실행 종료1, 520통과/8실패/1건너뜀. 실패8개는 위 자산/스크롤 테스트이며 아래3개 파일 재실행에 전부 포함. 전체 suite를 한 번에 최종 통과했다고 주장하지 않음 |
+| `flutter test --no-pub --reporter expanded test/stage10_feedback_test.dart test/stage14_systems_test.dart test/widget_test.dart` | 수정 후 종료0, 53개 모두 통과. 최초 실패8개를 모두 포함한다. 360/390/412 폭과 큰 글자·설정 스크롤, 실제6곡 및 굽기 WAV를 검사 |
+| `python -X utf8 1_app_development/tools/development_balance.py --check` | 종료0, 수치·생성물/문서 일치 |
+| `python -X utf8 1_app_development/tools/customer_content.py --check` | 종료0, NPC8/대사144/관계8/선택8 생성물 일치 |
+
+APK 결과는 아래 후속 기록으로 확정한다. 별도 대상 분석 통과가 기존 전체 warning/info 제거를 뜻하지 않는다. 원장/이력은 planning_tasks.py update, CHECKLIST.md·진행현황.md는 그 도구의 render로만 갱신하며 완료 상태로 일괄 승격하지 않는다.
+
+CRLF를 보존한 기존 파일이 있어 공백 검사는 `git -c core.whitespace=cr-at-eol diff --check` 및 동일 옵션의 `--cached --check`를 사용한다. 기본 diff --check에서 CR을 trailing whitespace로 보는 경우와 실제 공백을 구분했다.
 
 ## 남은 외부 검수
 
 Android 실제 청음, 전화/오디오 포커스 중단, Bluetooth 전환, 광고 SDK 표시·닫힘·실패, 앱 복귀/강제 종료 후 SQLite 디스크 검수는 미실행이다. 정책 단위/위젯 테스트로 대체 완료 판정하지 않는다. 실제 AdMob SDK는 미설치이며 운영 서비스는 기본 OFF다. Firebase/AdMob/서명 키 등 외부 연결은 직원4 인계와 승인 범위를 따라야 한다. 비밀값은 기록하지 않는다.
 
-2차 공통 기준은 직원4 적용과 최종 검증 후 확정한다. 그 전까지 이 문서는 1~3단계 통합 중간 기록이다.
+직원4까지 적용했다. 2차 공통 기준은 최종 검증 후 아래에 확정한다.
