@@ -183,3 +183,16 @@ P1-004/P4-001~004/P5-001~002 연결: NightHome의 기존 배경/큰 틀/사장�
 
 
 최종 정적 검사: 11개 대상(cooking_session/result_rules/sensor_input, session_controls/piping_bag/cooking_mold/workshop_mold/workshop_page, Android smoke, piping/home 테스트)은 오류0/경고0/info4, --no-fatal-infos에서 종료0(C:/Temp/step02-piping-static-complete.log). 새 짤주머니 APK SHA256 `AE7500D5DB5DF6EECD5C27804695E5977CAA8275D6B56E9ABDE0A95D4FF85F6F`. 로컬 빈 틀/반죽·주머니 이미지에서 완성품 미노출을 확인했고 빌드는 성공했으나 USB 부재로 이 APK는 아직 기기에 설치하지 못했다. 이전 APK가 휴대폰에 남아 있으므로 최신 수정이 실기기에 반영됐다고 안내하면 안 된다.
+
+
+## 재연결 후 Android 실행 근거 (2026-10-18)
+
+최신 짤주머니·빈 틀 구현 커밋 `019d734`의 Android 검수를 재연결 후 실행했다. `python -X utf8 tools/run_step02_device_audit.py --device <연결기기> --smoke-only --gradle-home C:/GradleCache`는 종료0/1개 통과. 근거 C:/Temp/step02-device-20261018142010/smoke.log: 빌드55.0초/설치12.2초, STEP02_PIPING_BAG_OK durationMs=1125(길게 누르기 및 SQLite에 같은 값 저장), 네이티브 센서3샘플 수신, Android SQLite 저널 재적용 모두 성공했다. --no-uninstall을 사용했고 기존 게임 패키지를 제거하지 않았다. 이는 자동 Android 입력 검수이며 실제 손가락 조작과 구분한다.
+
+검수용 자동 화면 이후 SHA256 AE7500D5DB5DF6EECD5C27804695E5977CAA8275D6B56E9ABDE0A95D4FF85F6F인 실제 main 기반 관찰 APK를 재설치해 기존 홈을 복원하는 중이다. 마지막 실제 손가락 짤주머니·빈 틀 확인 결과는 후속 기록을 따른다.
+
+
+기존 홈 관찰 APK 재설치/실행이 종료0으로 완료됐다. 실제 기기에서 큰 틀 연습을 시작해 완성 붕어빵이 없는 빈 공동과 단계 시간 표시를 확인했다(C:/Temp/step02-piping-empty-device.png). 실제 손가락의 반죽→짤주머니 양 증가→둘째 반죽은 사용자 확인을 요청한 상태다. 최신 앱 원본은 C:/Temp/step02-piping-review-019d734.apk이며 자동 검사 화면 APK와 구분한다.
+
+
+최종 사용자 실기기 확인: 최신 짤주머니·빈 틀 APK에서 '완성 붕어빵 없이 반죽부터 채워짐'과 '누르는 동안 속 양 증가·손을 놓으면 둘째 반죽 진행'에 대해 사용자가 '두 항목 모두 정상'이라고 확인했다. 방향/숟가락/젓가락을 제거한 사용자 정정 흐름의 실제 손가락 검수다. 센서 반죽은 앞선 사용자 확인, HOME5초 시간 정지/복귀는 별도 실제 기기 관찰 기록을 따른다. 6구 전체 회차를 실제 손가락으로 각각 수확하는 검수는 실시하지 않았으며 로컬 독립6칸/탄 칸/중복 수확 검사와 구분한다. 체크리스트 원장 반영은 통합 담당이 수행한다. 직원2 최신 구현 커밋은019d734, 공통 홈 선행은5d2cbd2이며 이번 기록은 후속 인계 커밋으로 제공한다.
