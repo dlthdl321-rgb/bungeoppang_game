@@ -23,13 +23,37 @@ import 'weather_layer.dart';
 /// 붕어빵 / 가게 (approved D3), a preview on top, a 3-column grid of items and
 /// an '적용' button for the picked one. Picking only previews; nothing is
 /// bought or equipped until '적용'.
+class CosmeticMenuAccess {
+  final String Function(CosmeticSlot) equipped;
+  final bool Function(CosmeticDefinition) owned, unlocked, canApply;
+  final String Function(CosmeticDefinition) price, action;
+  final Future<bool> Function(CosmeticDefinition) apply;
+  final String Function(CosmeticDefinition)? requirement;
+  const CosmeticMenuAccess({required this.equipped,required this.owned,required this.unlocked,
+    required this.canApply,required this.price,required this.action,required this.apply,this.requirement});
+}
+
+class AccessCosmeticAction extends StatelessWidget {
+  final CosmeticMenuAccess access;final CosmeticDefinition item;final VoidCallback? onDone;
+  const AccessCosmeticAction({super.key,required this.access,required this.item,this.onDone});
+  @override
+  Widget build(BuildContext context)=>CozyPanel(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+    Text(item.name,style:const TextStyle(fontWeight:FontWeight.bold)),Text(access.price(item)),
+    if(access.requirement!=null)Text(access.requirement!(item)),
+    FilledButton(key:Key('buy-cosmetic-${item.id}'),onPressed:!access.canApply(item) ? null : () async {
+      final ok=await access.apply(item);if(context.mounted && ok)onDone?.call();
+    },child:Text(access.action(item))),
+  ]));
+}
+
 class WardrobePanel extends StatefulWidget {
   final GameController controller;
   final WardrobeTab initialTab;
+  final CosmeticMenuAccess? access;
   const WardrobePanel(
       {super.key,
       required this.controller,
-      this.initialTab = WardrobeTab.hair});
+      this.initialTab = WardrobeTab.hair,this.access});
   @override
   State<WardrobePanel> createState() => _WardrobePanelState();
 }
@@ -46,7 +70,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
 
   /// What [s] shows: the picked item in its own slot, else what is worn.
   String _shown(CosmeticSlot s) =>
-      s == slot && preview != null ? preview! : c.state.equippedCosmetic(s);
+      s == slot && preview != null ? preview! : (widget.access?.equipped(s) ?? c.state.equippedCosmetic(s));
 
   @override
   Widget build(BuildContext context) {
@@ -118,15 +142,15 @@ class _WardrobePanelState extends State<WardrobePanel> {
   }
 
   Widget _tile(CosmeticDefinition d, bool selected) {
-    final worn = c.state.equippedCosmetic(slot) == d.id;
-    final unlocked = cosmeticUnlocked(c.state, d);
+    final worn = (widget.access?.equipped(slot) ?? c.state.equippedCosmetic(slot)) == d.id;
+    final unlocked = widget.access?.unlocked(d) ?? cosmeticUnlocked(c.state, d);
     final status = worn
         ? '장착 중'
         : !unlocked
-            ? 'Lv.${d.unlockLevel} 해금'
-            : c.state.ownsCosmetic(d)
+            ? widget.access!=null ? '잠김':'Lv.${d.unlockLevel} 해금'
+            : (widget.access?.owned(d) ?? c.state.ownsCosmetic(d))
                 ? '보유'
-                : d.free
+                : widget.access != null ? widget.access!.price(d) : d.free
                     ? '무료'
                     : '${d.cost} 코인';
     return Semantics(
@@ -152,7 +176,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
                   height: 52,
                   child: Opacity(
                       opacity: unlocked ? 1 : .45,
-                      child: CosmeticThumb(d, c.state.equippedCosmetic))),
+                      child: CosmeticThumb(d, widget.access?.equipped ?? c.state.equippedCosmetic))),
               const SizedBox(height: 4),
               Text(d.name,
                   textAlign: TextAlign.center,
@@ -180,8 +204,10 @@ class _WardrobePanelState extends State<WardrobePanel> {
   }
 
   Widget _apply(BuildContext context, CosmeticDefinition d) {
-    final worn = c.state.equippedCosmetic(slot) == d.id;
-    final unlocked = cosmeticUnlocked(c.state, d);
+    if(widget.access!=null) return AccessCosmeticAction(access:widget.access!,item:d,
+      onDone:(){if(mounted)setState(()=>preview=null);});
+    final worn = (widget.access?.equipped(slot) ?? c.state.equippedCosmetic(slot)) == d.id;
+    final unlocked = widget.access?.unlocked(d) ?? cosmeticUnlocked(c.state, d);
     final owned = c.state.ownsCosmetic(d);
     final current = cosmeticDefinitions
         .firstWhere((item) => item.id == c.state.equippedCosmetic(slot));
@@ -337,7 +363,10 @@ class _FitImagePainter extends CustomPainter {
 class MenuPanel extends StatelessWidget {
   final GameController controller;
   final void Function(String destination) onOpen;
-  const MenuPanel({super.key, required this.controller, required this.onOpen});
+  final Map<String,int>? rewardCounts;
+  final bool legacyDescriptions;
+  const MenuPanel({super.key, required this.controller, required this.onOpen,
+    this.rewardCounts,this.legacyDescriptions=true});
 
   @override
   Widget build(BuildContext context) {
@@ -345,7 +374,8 @@ class MenuPanel extends StatelessWidget {
     final theme = seasonThemeForMonth(DateTime.parse(weekly.week).month);
     // Rewards ready to claim, per row (daily, event, missions, achievements).
     final claimable = <String, int>{};
-    for (final g in claimableGoals(controller.state)) {
+    if(rewardCounts!=null) claimable.addAll(rewardCounts!);
+    if(rewardCounts==null) for (final g in claimableGoals(controller.state)) {
       claimable[g.destination] = (claimable[g.destination] ?? 0) + 1;
     }
     Widget fish() => const SizedBox(
@@ -375,7 +405,7 @@ class MenuPanel extends StatelessWidget {
       (
         'ranking',
         '온라인 랭킹',
-        '초당 생산·누적 생산·콤보 순위',
+        legacyDescriptions ? '초당 생산·누적 생산·콤보 순위' : null,
         const PixelIcon('leaderboard', size: 32),
         const Key('menu-ranking')
       ),
@@ -396,7 +426,7 @@ class MenuPanel extends StatelessWidget {
       (
         'event',
         '주간 도전',
-        '${theme.title} · ${weeklyCountdownLabel(weekly.week, controller.gameNow)}',
+        legacyDescriptions ? '${theme.title} · ${weeklyCountdownLabel(weekly.week, controller.gameNow)}' : null,
         const PixelIcon('weekly', size: 32),
         const Key('event-entry')
       ),
@@ -410,7 +440,7 @@ class MenuPanel extends StatelessWidget {
       (
         'friends',
         '친구',
-        '하루 한 번 서로 방문하면 황금 부스트',
+        legacyDescriptions ? '하루 한 번 서로 방문하면 황금 부스트' : null,
         const _FriendsGlyph(),
         const Key('menu-friends')
       ),
