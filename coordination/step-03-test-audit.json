@@ -1,0 +1,130 @@
+{
+  "completedFirstPartition": [
+    "composite_purchase_coordinator_test.dart",
+    "controller_test.dart",
+    "cooking_controls_test.dart",
+    "cooking_input_test.dart",
+    "customer_domain_completion_test.dart",
+    "customer_inventory_contract_test.dart",
+    "customer_story_panel_test.dart",
+    "day_night_test.dart",
+    "development_evidence_test.dart",
+    "development_production_test.dart",
+    "development_purchase_journal_test.dart",
+    "development_rules_test.dart",
+    "economy_expansion_test.dart",
+    "economy_persistence_test.dart",
+    "economy_simulation_test.dart",
+    "economy_test.dart",
+    "home_golden_test.dart",
+    "home_presentation_test.dart",
+    "independent_music_test.dart",
+    "invite_system_test.dart",
+    "invite_widget_test.dart",
+    "level_missions_test.dart",
+    "level_missions_widget_test.dart",
+    "mission_alerts_test.dart",
+    "no_tracking_sdk_test.dart",
+    "online_backend_test.dart",
+    "pixel_art_test.dart",
+    "premium_catalog_test.dart",
+    "premium_flow_test.dart",
+    "public_menus_test.dart"
+  ],
+  "remainingFinalPartition": [
+    "customer_scene_transaction_test.dart",
+    "public_menus_widget_test.dart",
+    "serialization_test.dart",
+    "skill_shop_test.dart",
+    "stage10_feedback_test.dart",
+    "stage11_endgame_test.dart",
+    "stage12_customization_test.dart",
+    "stage14_systems_test.dart",
+    "stage16_kakao_ranking_test.dart",
+    "stage17_avatar_layers_test.dart",
+    "stage7_regression_test.dart",
+    "stage7_widget_test.dart",
+    "stage8_progress_test.dart",
+    "stage8_widget_test.dart",
+    "stage9_ranking_test.dart",
+    "support_system_test.dart",
+    "support_widget_test.dart",
+    "widget_test.dart",
+    "workshop_controller_test.dart",
+    "workshop_customers_test.dart",
+    "workshop_missions_test.dart",
+    "workshop_online_test.dart",
+    "workshop_purchases_test.dart"
+  ],
+  "totalTestFiles": 53,
+  "firstPartitionLastLoading": "public_menus_widget_test.dart",
+  "note": "Incomplete file and final scene regression are rerun in final partition.",
+  "firstPartitionResult": {
+    "passed": 219,
+    "skipped": 1,
+    "failed": 0
+  },
+  "finalPartitionResult": {
+    "passed": 310,
+    "skipped": 0,
+    "failed": 8
+  },
+  "retryCases": [
+    {
+      "file": "stage10_feedback_test.dart",
+      "name": "합성 효과음 자산: WAV 22.05kHz 모노 16비트, 길이 범위"
+    },
+    {
+      "file": "stage14_systems_test.dart",
+      "name": "설정의 저장 버튼은 저장하고 닫는다"
+    },
+    {
+      "file": "widget_test.dart",
+      "name": "확대 1.5 · 360.0 모든 메뉴와 설정에 overflow 없음"
+    },
+    {
+      "file": "widget_test.dart",
+      "name": "확대 1.5 · 390.0 모든 메뉴와 설정에 overflow 없음"
+    },
+    {
+      "file": "widget_test.dart",
+      "name": "확대 1.5 · 412.0 모든 메뉴와 설정에 overflow 없음"
+    },
+    {
+      "file": "widget_test.dart",
+      "name": "확대 2.0 · 360.0 모든 메뉴와 설정에 overflow 없음"
+    },
+    {
+      "file": "widget_test.dart",
+      "name": "확대 2.0 · 390.0 모든 메뉴와 설정에 overflow 없음"
+    },
+    {
+      "file": "widget_test.dart",
+      "name": "확대 2.0 · 412.0 모든 메뉴와 설정에 overflow 없음"
+    }
+  ],
+  "testFixSourceCommit": "9d6bb97",
+  "domainCodeCommit": "088c668",
+  "retryStatus": "passed",
+  "retryPassed": 8,
+  "retryExitCode": 0,
+  "verifiedDistinctPassed": 537,
+  "skipped": 1,
+  "allRecordedFailuresResolved": true,
+  "singleUninterruptedSuitePassClaimed": false,
+  "androidDebugBuild": {
+    "exitCode": 0,
+    "result": "BUILD SUCCESSFUL",
+    "duration": "17m 17s",
+    "tasks": 430,
+    "apkBytes": 113194638,
+    "apkSha256": "B5A1CEB0AB2E4132AA0FAE518D093B0A773BB6267BA072A38C258B310E04C19F",
+    "verifiedEntries": [
+      "AndroidManifest.xml",
+      "classes.dex",
+      "lib/arm64-v8a/libflutter.so"
+    ],
+    "deviceRun": false,
+    "releaseBuild": false
+  }
+}
