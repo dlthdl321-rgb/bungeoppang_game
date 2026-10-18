@@ -13,9 +13,10 @@ class CookingSession {
   final CookingPhase phase;
   final int token, fillingIndex, wrongInputs;
   final int? firstBatterMs, secondBatterMs, donenessElapsedMs;
+  final int? fillingDurationMs;
   CookingSession._(this.id, this.flavor, this.practice, this.fillingSequence,
       this.phase, this.token, this.fillingIndex, this.wrongInputs,
-      this.firstBatterMs, this.secondBatterMs, this.donenessElapsedMs);
+      this.firstBatterMs, this.secondBatterMs, this.donenessElapsedMs, [this.fillingDurationMs]);
 
   factory CookingSession.start({required String id, required String flavor,
       required bool practice, required List<CookingDirection> fillingSequence}) {
@@ -31,7 +32,7 @@ class CookingSession {
     CookingSession._(id, flavor, practice, fillingSequence, phase, token + 1,
       fillingIndex ?? this.fillingIndex, wrongInputs ?? this.wrongInputs,
       firstBatterMs ?? this.firstBatterMs, secondBatterMs ?? this.secondBatterMs,
-      donenessElapsedMs ?? this.donenessElapsedMs);
+      donenessElapsedMs ?? this.donenessElapsedMs, fillingDurationMs);
 
   /// A stale release/direction event is ignored, rather than forwarded.
   CookingSession pour(int eventToken, int durationMs) {
@@ -50,6 +51,19 @@ class CookingSession {
     return _next(index == fillingSequence.length ? CookingPhase.secondBatter : phase,
         fillingIndex: index);
   }
+  /// Piping-bag hold. Retains the old sequence/token encoding for saved sessions,
+  /// but consumes the remaining legacy filling steps as one atomic action.
+  CookingSession squeezeFilling(int eventToken, int durationMs) {
+    if(eventToken != token || phase != CookingPhase.filling) return this;
+    if(durationMs < 0) throw const FormatException('음수 속 넣기 시간');
+    var next = this;
+    while(next.phase == CookingPhase.filling) {
+      next = next.fill(next.token, next.fillingSequence[next.fillingIndex]);
+    }
+    return CookingSession._(next.id, next.flavor, next.practice, next.fillingSequence,
+      next.phase, next.token, next.fillingIndex, next.wrongInputs,
+      next.firstBatterMs, next.secondBatterMs, next.donenessElapsedMs, durationMs);
+  }
   CookingSession close(int eventToken) => eventToken == token && phase == CookingPhase.closing
       ? _next(CookingPhase.flipping) : this;
   CookingSession flip(int eventToken) => eventToken == token && phase == CookingPhase.flipping
@@ -63,7 +77,8 @@ class CookingSession {
   Map<String, dynamic> toJson() => {'schema': 1, 'id': id, 'flavor': flavor,
     'practice': practice, 'fillingSequence': fillingSequence.map((d) => d.name).toList(),
     'phase': phase.name, 'token': token, 'fillingIndex': fillingIndex, 'wrongInputs': wrongInputs,
-    'firstBatterMs': firstBatterMs, 'secondBatterMs': secondBatterMs, 'donenessElapsedMs': donenessElapsedMs};
+    if(fillingDurationMs != null) 'fillingDurationMs': fillingDurationMs,
+      'firstBatterMs': firstBatterMs, 'secondBatterMs': secondBatterMs, 'donenessElapsedMs': donenessElapsedMs};
   factory CookingSession.fromJson(Map<String, dynamic> row) {
     final directions = row['fillingSequence'];
     if (row['schema'] is! int || row['schema'] != 1 || row['id'] is! String ||
@@ -76,12 +91,17 @@ class CookingSession {
       practice: row['practice'] as bool, fillingSequence: directions.map((d) =>
           d == 'left' ? CookingDirection.left : CookingDirection.right).toList());
     int? amount(String key) => row[key] == null ? null : DevelopmentBalance.integer(row, key);
+    final fillingMs = amount('fillingDurationMs');
     final phase = CookingPhase.values.firstWhere((p) => p.name == row['phase']);
     final token = DevelopmentBalance.integer(row, 'token');
     final index = DevelopmentBalance.integer(row, 'fillingIndex');
     final wrong = DevelopmentBalance.integer(row, 'wrongInputs');
     final first = amount('firstBatterMs'), second = amount('secondBatterMs'), elapsed = amount('donenessElapsedMs');
     final count = initial.fillingSequence.length;
+    if(fillingMs != null && (fillingMs < 0 || index != count ||
+      ![CookingPhase.secondBatter,CookingPhase.closing,CookingPhase.flipping,CookingPhase.cooking,CookingPhase.result,CookingPhase.canceled].contains(phase))) {
+      throw const FormatException('속 넣기 양 기록 불일치');
+    }
     if (index > count || (first == null && (index != 0 || wrong != 0 || second != null)) ||
         (second != null && index != count)) throw const FormatException('제작 진행 불일치');
     if (phase == CookingPhase.canceled) {
@@ -96,7 +116,7 @@ class CookingSession {
           token != expected) throw const FormatException('제작 단계/순번 불일치');
     }
     return CookingSession._(initial.id, initial.flavor, initial.practice, initial.fillingSequence,
-        phase, token, index, wrong, first, second, elapsed);
+        phase, token, index, wrong, first, second, elapsed, fillingMs);
   }
 
 }
@@ -104,11 +124,12 @@ class CookingSession {
 /// Only accept one event derivable from the current immutable session. Matching
 /// IDs/tokens alone must not replace flavor, practice context or prior inputs.
 bool isCookingSuccessor(CookingSession previous, CookingSession next) {
-  if (next.id != previous.id || next.token != previous.token + 1) return false;
+  if (next.id != previous.id || next.token <= previous.token) return false;
   final encoded = jsonEncode(next.toJson());
   final candidates = <CookingSession Function()>[
     () => previous.pour(previous.token, next.firstBatterMs ?? 0),
     () => previous.pour(previous.token, next.secondBatterMs ?? 0),
+    () => previous.squeezeFilling(previous.token, next.fillingDurationMs ?? 0),
     () => previous.fill(previous.token, CookingDirection.left),
     () => previous.fill(previous.token, CookingDirection.right),
     () => previous.close(previous.token),

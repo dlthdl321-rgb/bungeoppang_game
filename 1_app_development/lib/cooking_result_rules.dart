@@ -15,7 +15,7 @@ MasteryResult evaluateCookingResult(DevelopmentBalance config, CookingSession se
       BigInt.from(target) * BigInt.from(tolerance);
   final variant = provisionalDoneness(config, elapsedMs: session.donenessElapsedMs!, difficulty: difficulty);
   final pass = within(session.firstBatterMs!) && within(session.secondBatterMs!) &&
-      session.wrongInputs <= DevelopmentBalance.integer(row, 'wrong_filling_inputs_allowed') &&
+      (session.fillingDurationMs != null || session.wrongInputs <= DevelopmentBalance.integer(row, 'wrong_filling_inputs_allowed')) &&
       variant >= DevelopmentBalance.integer(row, 'success_doneness_min_index') &&
       variant <= DevelopmentBalance.integer(row, 'success_doneness_max_index');
   return MasteryResult(id: session.id, flavor: session.flavor, variant: variant,

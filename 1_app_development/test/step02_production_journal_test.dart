@@ -59,7 +59,7 @@ void main() {
         practice: true,
         fillingSequence: [CookingDirection.left]);
     session = session.pour(session.token, 2500);
-    session = session.fill(session.token, CookingDirection.left);
+    session = session.squeezeFilling(session.token,1450);
     session = session.pour(session.token, 2500);
     session = session.close(session.token);
     session = session.flip(session.token);
@@ -79,6 +79,7 @@ void main() {
         now: () => clock.add(const Duration(hours: 1)));
     await controller.initialize();
     expect(controller.state.session!.phase, CookingPhase.result);
+    expect(controller.state.session!.fillingDurationMs,1450);
     expect(controller.state.session!.donenessElapsedMs,
         inInclusiveRange(15000, 15999));
     expect(controller.state.mastery.practices, 1);
