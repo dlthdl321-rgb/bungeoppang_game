@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
+import 'package:todays_bungeoppang/ui/cozy_style.dart';
 import 'package:todays_bungeoppang/ui/workshop_windows.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
@@ -21,7 +22,9 @@ void main(){
       await tester.tap(finder);await tester.pumpAndSettle();
     }
     Future<void> close()async{await tester.tap(find.byTooltip('닫기').last);await tester.pumpAndSettle();}
-    await tapKey('menu-shop');expect(tester.widget<Text>(find.byKey(const Key('workshop-window-title'))).data,'상점');
+    await tapKey('menu-shop');
+    expect(tester.getBottomRight(find.byType(CozyBackButton)).dy,lessThanOrEqualTo(776));
+    expect(tester.widget<Text>(find.byKey(const Key('workshop-window-title'))).data,'상점');
     expect(find.byKey(const Key('shop-tab-gear')),findsOneWidget);
     await tapKey('shop-tab-theme');expect(tester.takeException(),isNull);await close();expect(c.gridVisible,isTrue);
     await tapKey('menu-skills');expect(find.byType(WorkshopSkillShop),findsOneWidget);

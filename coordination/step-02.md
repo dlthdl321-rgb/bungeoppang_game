@@ -218,3 +218,8 @@ P1-004/P4-001~004/P5-001~002 연결: NightHome의 기존 배경/큰 틀/사장�
 
 
 메뉴 최종 로컬 확인: `flutter test --no-pub --concurrency=1 test/step02_menu_test.dart test/step02_home_test.dart test/home_golden_test.dart --reporter expanded` 8개 모두 통과(C:/Temp/step02-menu-final-tests.log). 창11곳·일반/큰 글자·무료 아바타 적용·미리보기 불변·두 재화/구형 코인 불변·창 전환 중6구 가림·큰 틀 전체 제작·기존 홈 골든을 확인했다. 도감 레벨 잠금/기존 보유 비아바타의 해금 조건 보존을 보완한 추가2개 재실행도 모두 통과(C:/Temp/step02-menu-policy-tests.log). 처음 Android 빌드는98.8초 성공했으며 정책 보완 후 최종본을 다시 빌드해 설치한다. 직전 통과를 최종 Android 설치 근거로 쓰지 않는다.
+
+
+메뉴 복원 구현 커밋4b46daa. 정책 보완 후 Android 빌드는76.4초/설치/실행 성공했고 SHA256 396083CAAE08192B1D1F8D7701AAF5066F7F76F08473F63AE6D4E97EB2BCCDD3이다. 실제 메뉴 목록과 스킬 종류/수량/카드 표시를 확인했다(C:/Temp/step02-menu-root-device.png, step02-menu-skills-device.png). 이때 '돌아가기'가 Android 하단 탐색 영역과 겹쳐 viewPadding.bottom을 공통 창 안쪽 여백으로 반영했다. 같은2개 회귀에 돌아가기 하단 좌표 검사(360×800, bottom24 기준776 이하)를 추가해 둘 다 통과했다(C:/Temp/step02-menu-safearea-tests.log). 수정 전 화면을 최종 안전 영역 검수로 재사용하지 않는다.
+
+직후 다른 앱이 전경으로 전환되어 추가 기기 터치를 중단했다. 그 앱의 화면/내용은 프로젝트 인계에 포함하지 않는다. 꾸미기 실제 기기 화면 확인을 완료했다고 기록하지 않으며 해당 탭/미리보기/적용은 로컬 실제 controller 위젯 검수 결과를 따른다. 최종 안전 영역 APK의 설치/화면 확인은 다음 기록을 따른다.
