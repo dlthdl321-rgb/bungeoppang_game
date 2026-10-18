@@ -9,8 +9,12 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--device', required=True)
 parser.add_argument('--app', default='C:/Temp/bungeoppang-step02-analysis')
 parser.add_argument('--smoke-only', action='store_true')
+parser.add_argument('--review-only', action='store_true',
+                    help='Build and open the real app with a read-only physical-review observer')
 parser.add_argument('--gradle-home', default='C:/GradleCache')
 args = parser.parse_args()
+if args.smoke_only and args.review_only:
+    parser.error('--smoke-only and --review-only are mutually exclusive')
 app = Path(args.app).absolute()
 if not app.joinpath('pubspec.yaml').is_file() or not str(app).isascii():
     raise SystemExit('Use the ASCII junction to this Flutter application.')
@@ -20,6 +24,7 @@ env = os.environ.copy()
 env.update(PUB_CACHE='C:/PubCacheBungeoppang', GRADLE_USER_HOME=args.gradle_home,
            TEMP='C:/Temp/step02-tools', TMP='C:/Temp/step02-tools')
 env['JAVA_TOOL_OPTIONS'] = env.get('JAVA_TOOL_OPTIONS', '') + ' -Dfile.encoding=UTF-8'
+env['DEBUG'] = ''
 env['GRADLE_OPTS'] = env.get('GRADLE_OPTS', '') + ' -Dorg.gradle.jvmargs="-Xmx2g -XX:MaxMetaspaceSize=1g -XX:ReservedCodeCacheSize=256m -Dfile.encoding=UTF-8" -Dorg.gradle.workers.max=2'
 Path(env['TEMP']).mkdir(parents=True, exist_ok=True)
 flutter = 'C:/flutter-sdk/bin/flutter.bat'
@@ -30,7 +35,7 @@ logs = Path('C:/Temp') / f'step02-device-{run}'
 logs.mkdir()
 
 def command(target, *defines):
-    return [flutter, 'test', '--no-pub', target, '-d', args.device,
+    return [flutter, 'test', '--no-pub', '--no-uninstall', target, '-d', args.device,
             '--dart-define=PRODUCTION_AUDIT=true', *defines]
 
 def execute(name, cmd):
@@ -41,6 +46,17 @@ def execute(name, cmd):
     if result.returncode:
         print((logs / f'{name}.log').read_text(encoding='utf-8', errors='replace')[-10000:], flush=True)
         raise SystemExit(result.returncode)
+
+if args.review_only:
+    execute('review-build', [flutter, 'build', 'apk', '--debug', '--no-pub',
+        '--target-platform=android-arm64', '--target=tools/step02_manual_review.dart',
+        '--dart-define=PRODUCTION_AUDIT=true'])
+    apk = app / 'build/app/outputs/flutter-apk/app-debug.apk'
+    execute('review-install', [adb, '-s', args.device, 'install', '-r', str(apk)])
+    execute('review-launch', [adb, '-s', args.device, 'shell', 'am', 'start', '-n',
+        package + '/com.todaybungeoppang.todays_bungeoppang.MainActivity'])
+    print(f'REVIEW OPENED: physical touch/tilt/lifecycle still require observation; logs={logs}', flush=True)
+    raise SystemExit(0)
 
 execute('smoke', command('integration_test/step02_android_test.dart'))
 if args.smoke_only:

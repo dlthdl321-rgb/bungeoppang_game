@@ -9,6 +9,9 @@ class CookingSensorInput {
   bool _neutralRequired = true;
   BatterHoldInput? _hold;
   CookingSensorInput(this.gate);
+  bool get calibrated => gate.calibrated;
+  bool get pouring => _hold?.active ?? false;
+  bool get waitingNeutral => _neutralRequired;
 
   void interrupt() {
     _hold?.cancel();

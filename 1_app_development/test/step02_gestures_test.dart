@@ -95,4 +95,44 @@ void main() {
     await tester.tap(find.text('오른쪽으로 속 넣기'));
     expect(results, [CookingDirection.left, CookingDirection.right]);
   });
+  testWidgets('spoon rotation owns its pan inside the scrolling workshop',
+      (tester) async {
+    final results = <CookingDirection>[];
+    final scroll = ScrollController();
+    addTearDown(scroll.dispose);
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+            body: SingleChildScrollView(
+      controller: scroll,
+      child: Column(children: [
+        const SizedBox(height: 600),
+        CookingFillingControls(
+            stageToken: 0,
+            rules: rules,
+            blocked: false,
+            expected: CookingDirection.right,
+            onDirection: results.add),
+        const SizedBox(height: 700),
+      ]),
+    ))));
+    scroll.jumpTo(500);
+    await tester.pump();
+    final center =
+        tester.getCenter(find.byKey(const ValueKey('filling-gesture')));
+    final gesture = await tester.startGesture(center + const Offset(60, 0));
+    var pageMoved = false;
+    for (var i = 1; i <= 32; i++) {
+      await gesture.moveTo(center +
+          Offset(60 * math.cos(i * math.pi / 16),
+              60 * math.sin(i * math.pi / 16)));
+      await tester.pump(const Duration(milliseconds: 16));
+      pageMoved |= (scroll.offset - 500).abs() > 0.1;
+    }
+    await gesture.up();
+    expect(pageMoved, isFalse);
+    expect(results, [CookingDirection.right]);
+    await tester.dragFrom(const Offset(20, 400), const Offset(0, -80));
+    await tester.pumpAndSettle();
+    expect(scroll.offset, greaterThan(500));
+  });
 }

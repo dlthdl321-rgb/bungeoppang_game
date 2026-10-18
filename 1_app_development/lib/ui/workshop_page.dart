@@ -1,20 +1,23 @@
+import '../cooking_result_rules.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../cooking_input.dart';
 import '../cooking_sensor_input.dart';
-import '../cooking_result_rules.dart';
-import '../cooking_session.dart';
 import '../cooking_tilt_source.dart';
 import '../development_balance.dart';
 import '../development_rules.dart';
 import '../game_controller.dart';
-import '../music_config.dart';
 import '../workshop_controller.dart';
 import '../cosmetic_config.dart';
 import '../workshop_purchases.dart';
 import 'avatar_painter.dart';
-import 'cooking_session_controls.dart';
+import 'night_home.dart';
+import 'workshop_mold_stage.dart';
+import 'cozy_style.dart';
+import 'cook_cut.dart';
 import 'customer_story_panel.dart';
+import 'game_app.dart' show SoundSettings;
+import 'pixel_sprites.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -32,6 +35,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   int _sensorGeneration = 0;
   final Stopwatch _sensorClock = Stopwatch()..start();
   String? _sensorNotice;
+  String _sensorStatus = '현재 자세를 보정 중이에요';
   @override
   void initState() { super.initState(); _gate = TiltDirectionGate.fromBalance(c.config); _sensorInput = CookingSensorInput(_gate); WidgetsBinding.instance.addObserver(this); c.addListener(_cancelPausedInput); }
   void _cancelPausedInput() {
@@ -52,7 +56,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     _sensorInput.reset();
     await subscription?.cancel();
     if (!mounted || generation != _sensorGeneration) return;
-    setState(() { _sensorEnabled = enabled; _sensorNotice = null; });
+    setState(() { _sensorEnabled = enabled; _sensorNotice = null; _sensorStatus = '현재 자세를 보정 중이에요'; });
     if (!enabled) return;
     _sensor = CookingTiltSource().samples(c.config).listen((sample) {
       if (!mounted || !_sensorEnabled || generation != _sensorGeneration) return;
@@ -65,6 +69,12 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       final session = c.state.session;
       if (session == null || session.finished) { _sensorInput.reset(); return; }
       final next = _sensorInput.sample(session, sample.angleMillidegrees!, _sensorClock.elapsedMilliseconds);
+      final status = _sensorInput.pouring ? '붓는 중 · 제자리로 돌아오면 멈춰요' :
+        _sensorInput.waitingNeutral ? '처음 자세로 돌아와 주세요' : '준비 · 좌우로 기울여 주세요';
+      if (_sensorStatus != status) {
+        assert(() { debugPrint('STEP02_SENSOR $status angle=${sample.angleMillidegrees}'); return true; }());
+        setState(() => _sensorStatus = status);
+      }
       if (next != null) unawaited(c.cookingCommand(next));
     });
   }
@@ -74,10 +84,6 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   }
   @override
   void dispose() { c.removeListener(_cancelPausedInput); _sensorGeneration++; _sensor?.cancel(); _sensorInput.reset(); _sensorClock.stop(); _gate.reset(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
-  VoidCallback _cellCommand(int index) {
-    final cell = c.state.grid.cells[index];
-    return cell.cooking ? () => c.harvestCell(index, expectedCycle: cell.cycle) : () => c.startCell(index);
-  }
   Future<void> _closeBusiness() async {
     c.gridVisible = false;
     try {
@@ -184,31 +190,39 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     } finally { c.gridVisible = true; }
   }
   Future<void> _audioSettings() async {
-    c.gridVisible = false;
+    c.gridVisible=false;
     try {
-      await showModalBottomSheet<void>(context: context, isScrollControlled: true,
-        builder: (context) => AnimatedBuilder(animation: widget.accountController,
-          builder: (context, _) {
-            final account = widget.accountController, settings = account.state.settings;
-            return SafeArea(child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(mainAxisSize: MainAxisSize.min, children: [
-              const Text('배경·소리 설정'),
-              AnimatedBuilder(animation:c,builder:(context,_) => DropdownButton<String>(value:c.state.sceneTime,isExpanded:true,
-                items:[for(final item in cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.time))
-                  DropdownMenuItem(value:item.id,child:Text(item.name))],
-                onChanged:c.busy ? null : (value) {if(value!=null)c.setBackgroundTime(value);})),
-              SwitchListTile(title: const Text('배경 음악'), value: settings.music, onChanged: (v) => account.updateSettings(music: v)),
-              DropdownButton<String>(value: settings.musicSelection, isExpanded: true,
-                items: [for (final entry in musicSelectionLabels.entries)
-                  DropdownMenuItem(value: entry.key, child: Text(entry.value))],
-                onChanged: (v) { if (v != null) account.updateSettings(musicSelection: v); }),
-              _volume('배경 음악 음량', settings.musicVolume, (v) => account.updateSettings(musicVolume: v)),
-              SwitchListTile(title: const Text('굽는 소리'), value: settings.cookingSound, onChanged: (v) => account.updateSettings(cookingSound: v)),
-              _volume('굽는 소리 음량', settings.cookingVolume, (v) => account.updateSettings(cookingVolume: v)),
-              SwitchListTile(title: const Text('효과음'), value: settings.soundEffects, onChanged: (v) => account.updateSettings(soundEffects: v)),
-              _volume('효과음 음량', settings.sfxVolume, (v) => account.updateSettings(sfxVolume: v)),
-            ])));
-          }));
-    } finally { c.gridVisible = true; }
+      await showModalBottomSheet<void>(context:context,isScrollControlled:true,useSafeArea:true,
+        backgroundColor:Colors.transparent,builder:(ctx)=>SizedBox(height:MediaQuery.sizeOf(ctx).height*.92,
+          child:AnimatedBuilder(animation:widget.accountController,builder:(context,_) {
+            final account=widget.accountController,settings=account.state.settings;
+            return Padding(padding:const EdgeInsets.fromLTRB(6,12,6,10),child:Column(children:[
+              Expanded(child:Stack(clipBehavior:Clip.none,children:[
+                Positioned.fill(child:CozyFrame(child:Column(children:[
+                  const Padding(padding:EdgeInsets.all(12),child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+                    PixelIcon('settings',size:30),SizedBox(width:8),Text('설정',style:TextStyle(fontFamily:'Jua',fontSize:28,color:Cozy.ink))])),
+                  Expanded(child:ListView(padding:const EdgeInsets.all(12),children:[
+                    SoundSettings(controller:account),
+                    CozySettingRow(icon:const PixelIcon('vibration',size:28),label:'진동',value:settings.vibration,
+                      onChanged:(v)=>account.updateSettings(vibration:v)),
+                    CozySettingRow(icon:const Icon(Icons.slow_motion_video),label:'모션 줄이기',value:settings.reduceMotion,
+                      onChanged:(v)=>account.updateSettings(reduceMotion:v)),
+                    const Text('배경 시간'),
+                    AnimatedBuilder(animation:c,builder:(context,_)=>DropdownButton<String>(value:c.state.sceneTime,isExpanded:true,
+                      items:[for(final item in cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.time))
+                        DropdownMenuItem(value:item.id,child:Text(item.name))],
+                      onChanged:c.busy ? null : (value){if(value!=null)c.setBackgroundTime(value);})),
+                    FilledButton.icon(key:const Key('settings-save'),onPressed:account.busy ? null : () async {
+                      await account.save();if(ctx.mounted)Navigator.pop(ctx);
+                    },icon:const PixelIcon('save',size:28),label:const Text('저장')),
+                  ])),
+                ]))),
+                Positioned(top:-8,right:-6,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
+              ])),
+              const SizedBox(height:10),CozyBackButton(onPressed:()=>Navigator.pop(ctx)),
+            ]));
+          })));
+    } finally {c.gridVisible=true;}
   }
   Widget _mission(String scope,String id,{Map<String,dynamic>? rule}) {
     final missions=c.state.missions,key=missions.claimKey(scope,id),claimed=missions.claims.containsKey(key);
@@ -219,9 +233,58 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       trailing:TextButton(onPressed:c.busy || claimed || !missions.complete(c.config,scope,id) ? null :
         () => c.claimMission(scope,id,expectedPeriod:scope=='daily' ? missions.day:missions.week),child:Text(claimed ? '신청 완료' : '보상 신청')));
   }
-  Widget _volume(String label, int value, void Function(int) save) => _VolumeControl(label: label, value: value, save: save);
+  String _equipped(CosmeticSlot slot) => slot == CosmeticSlot.time ? c.state.sceneTime :
+    c.state.avatarEquipment[slot.name] ?? widget.accountController.state.equippedCosmetic(slot);
+  Future<void> _management() async {
+    c.gridVisible = false;
+    final initialSession = c.state.session?.id;
+    BuildContext? sheetContext;
+    void closeForCrafting() {
+      if ((c.state.session != null && c.state.session!.id != initialSession) || c.state.customerScene != null) {
+        final current = sheetContext;
+        sheetContext = null;
+        if (current != null && current.mounted) Navigator.pop(current);
+      }
+    }
+    c.addListener(closeForCrafting);
+    try {
+      await showModalBottomSheet<void>(context:context,isScrollControlled:true,builder:(context) {
+        sheetContext=context;
+        return SafeArea(child:SizedBox(height:MediaQuery.sizeOf(context).height*.88,
+          child:AnimatedBuilder(animation:c,builder:(context,_)=>_content(context,management:true))));
+      });
+    } finally {c.removeListener(closeForCrafting);c.gridVisible=true;}
+  }
+  void _open(String destination) {
+    switch(destination) {
+      case 'skills': unawaited(_shop());
+      case 'skins': unawaited(_wardrobe());
+      case 'settings': unawaited(_audioSettings());
+      default: unawaited(_management());
+    }
+  }
+  int _levelProgress() {
+    final s=c.state;
+    if(s.level>=50)return 1000;
+    final row=c.config.rows('level_progression')[s.level];
+    final total=BigInt.parse('${row['season_total_buns']}');
+    int fraction(int current,int required)=>required<=0 ? 1000 : (current*1000~/required).clamp(0,1000);
+    final values=[total==BigInt.zero ? 1000 : (s.lifetime*BigInt.from(1000)~/total).toInt().clamp(0,1000),
+      fraction(s.taps-s.levelStartTaps,DevelopmentBalance.integer(row,'additional_taps')),
+      fraction(s.completedSales-s.levelStartSales,DevelopmentBalance.integer(row,'additional_sales'))];
+    return values.reduce((a,b)=>a<b ? a:b);
+  }
+  Widget _sensorControl() => Row(mainAxisAlignment:MainAxisAlignment.center,children:[
+    Switch(value:_sensorEnabled,onChanged:_setSensor),
+    Flexible(child:Text(_sensorEnabled ? _sensorStatus : _sensorNotice ?? '기울기로 반죽·속 넣기',
+      style:const TextStyle(color:Cozy.cream,fontSize:12,shadows:[Shadow(color:Cozy.woodDark,blurRadius:4)]))),
+    if(_sensorEnabled) IconButton(tooltip:'현재 자세로 다시 보정',onPressed:()=>_setSensor(true),
+      icon:const Icon(Icons.screen_rotation,color:Cozy.cream,size:20)),
+  ]);
   @override
-  Widget build(BuildContext context) => AnimatedBuilder(animation: c, builder: (context, _) {
+  Widget build(BuildContext context) => AnimatedBuilder(animation:Listenable.merge([c,widget.accountController]),
+    builder:(context,_)=>_content(context));
+  Widget _content(BuildContext context,{bool management=false}) {
     final s = c.state, session = s.session;
     final firstOrderId = s.customers.isEmpty ? null : s.customers.first.id;
     final scene=s.customerScene;
@@ -247,9 +310,16 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       return Scaffold(appBar:AppBar(title:const Text('이웃 이야기')),
         body:SafeArea(child:SingleChildScrollView(padding:const EdgeInsets.all(16),child:content)));
     }
+    if (!management) { return NightHome(controller:widget.accountController,onOpen:_open,
+      equipped:_equipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
+        buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,
+        status:c.error!=null ? '저장 확인 필요 · 메뉴를 열어 주세요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}'),
+      centerBuilder:(fish)=>WorkshopMoldStage(controller:c,fishOnScreen:fish,sensorControl:_sensorControl()),
+      griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
+      vendor:CookCut(equipped:_equipped,taps:BigInt.from(s.taps),
+        reduceMotion:widget.accountController.state.settings.reduceMotion,greeting:s.customers.isNotEmpty)); }
     final rule = c.config.mastery(c.difficulty(s.selectedFlavor));
-    final target = DevelopmentBalance.integer(rule, 'batter_target_ms');
-    return Scaffold(appBar: AppBar(title: const Text('오늘의 붕어빵'), actions: [
+    return Scaffold(appBar: AppBar(title: const Text('가게 관리'), actions: [
       IconButton(tooltip:'스킬 상점',onPressed:_shop,icon:const Icon(Icons.shopping_cart)),
       PopupMenuButton<String>(tooltip:'게임 메뉴',onSelected:(value) {
         switch(value) {
@@ -304,27 +374,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
         if (s.level >= DevelopmentBalance.integer(c.config.section('feature_unlock_levels'), 'full_recipe_collection_ui'))
           Wrap(spacing: 8, children: [for (var i = 0; i < 5; i++) Chip(label: Text(
             '${(s.selectedFlavor == 'redbean' && i == 2) || s.mastery.discovered.contains(i) ? '●' : '○'} ${provisionalDonenessLabels[i]}'))]),
-        if (session == null) FilledButton(onPressed: c.busy || c.error != null ? null : c.startPractice, child: const Text('큰 틀 연습 시작'))
-        else ...[
-          Text('두 반죽 목표: ${target/1000}초 · 익힘 ${(DevelopmentBalance.integer(rule, 'doneness_target_ms')/1000).toStringAsFixed(1)}초 기준'),
-          if (session.phase == CookingPhase.filling) Text('다음 방향: ${session.fillingSequence[session.fillingIndex] == CookingDirection.left ? '왼쪽' : '오른쪽'}'),
-          SwitchListTile(title: const Text('기울기로 반죽·속 넣기'), subtitle: Text(_sensorNotice ?? '켜면 현재 자세로 보정해요. 기울여 붓고 중립으로 돌아오면 멈춰요. 터치도 사용할 수 있어요.'),
-            value: _sensorEnabled, onChanged: _setSensor),
-          Text('현재 단계 경과 ${(s.phaseMs/1000).toStringAsFixed(1)}초'),
-          if (session.phase == CookingPhase.result) ...[
-            Text('결과: ${provisionalDonenessLabels[evaluateCookingResult(c.config, session, difficulty: c.difficulty(session.flavor)).variant]}'),
-            if (session.practice) Wrap(spacing: 8, children: [FilledButton(onPressed: c.busy ? null : () => c.storeResult(true), child: const Text('보관')),
-              TextButton(onPressed: c.busy ? null : () => c.storeResult(false), child: const Text('버리기'))])
-            else ...[const Text('주문 제작품은 재고에 저장됐어요. 탄 제품은 판매할 수 없어요.'),
-              FilledButton(onPressed: c.busy ? null : () => c.storeResult(true), child: const Text('결과 닫기'))],
-          ] else CookingSessionControls(key: ValueKey('${session.id}:$_sensorEnabled'), session: session, config: c.config, blocked: c.cookingInputBlocked,
-            cookingElapsedMs: s.phaseMs, onCommand: (next) => c.cookingCommand(next)),
-        ],
-        const Divider(), Text('6구 · 숙련한 맛 ${s.masteryAwards.length}종'),
-        Wrap(spacing: 8, runSpacing: 8, children: [for (var i = 0; i < s.grid.cells.length; i++)
-          SizedBox(width: 140, child: OutlinedButton(onPressed: c.busy || c.error != null || c.gameplayPaused || session != null || !s.business.permitsProducts(c.now()) || s.masteryAwards.isEmpty ? null :
-            _cellCommand(i),
-            child: Text(s.grid.cells[i].cooking ? '${i+1}번 ${c.flavorLabel(s.grid.cells[i].flavor!)} ${provisionalDonenessLabels[s.grid.doneness(i, c.config)]}\n직접 꺼내기' : '${i+1}번 굽기 시작')))]),
+        const Text('큰 틀 제작과 6구 수확은 홈 화면에서 진행해요.'),
         const Divider(), Text('재고 ${s.inventory.batches.values.fold<int>(0, (n,b) => n+b.quantity)}개 · 영업 전 준비품 ${s.inventory.prepared.length}묶음'),
         for (final b in s.inventory.batches.values) Text('${c.flavorLabel(b.flavor)} ${provisionalDonenessLabels[b.variant]} ${b.quantity}개 · ${s.business.businessIndex-b.madeOnBusinessIndex}영업일 경과'),
         const Divider(), const Text('손님 주문'),
@@ -376,21 +426,5 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
         const Padding(padding: EdgeInsets.only(top:16),child:Text('황금 심사 대기는 확정 잔액에 포함되지 않아요.')),
       ]))),
     );
-  });
-}
-
-class _VolumeControl extends StatefulWidget {
-  final String label; final int value; final void Function(int) save;
-  const _VolumeControl({required this.label, required this.value, required this.save});
-  @override
-  State<_VolumeControl> createState() => _VolumeControlState();
-}
-class _VolumeControlState extends State<_VolumeControl> {
-  double? draft;
-  @override
-  void didUpdateWidget(covariant _VolumeControl oldWidget) { super.didUpdateWidget(oldWidget); if (oldWidget.value != widget.value) draft = null; }
-  @override
-  Widget build(BuildContext context) => Column(children: [Text(widget.label), Slider(
-    value: draft ?? widget.value.toDouble(), min: 0, max: 100, divisions: 100,
-    onChanged: (v) => setState(() => draft = v), onChangeEnd: (v) { setState(() => draft = null); widget.save(v.round()); })]);
+  }
 }
