@@ -32,11 +32,11 @@ void main() {
     final filling = first.pour(first.token, 2500);
     expect(input.sample(filling, -20000, 30), isNull);
     expect(input.sample(filling, 0, 40), isNull);
-    final next = input.sample(filling, -20000, 50)!;
-    expect(next.fillingIndex, 1);
-    expect(input.sample(next, 20000, 60), isNull);
-    input.sample(next, 0, 70);
-    expect(input.sample(next, 20000, 80)!.phase, CookingPhase.secondBatter);
+    expect(input.sample(filling, -20000, 50),isNull);
+    expect(input.sample(filling, 20000, 60),isNull);
+    expect(input.sample(filling, 0, 70),isNull);
+    expect(input.sample(filling, 20000, 80),isNull);
+    expect(filling.phase,CookingPhase.filling);
   });
   test(
       'pause/source reset discards hold; new session with same token cannot inherit it',

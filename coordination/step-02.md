@@ -151,3 +151,35 @@ P1-004/P4-001~004/P5-001~002 연결: NightHome의 기존 배경/큰 틀/사장�
 - `flutter analyze --no-pub --no-fatal-infos lib/ui/night_home.dart lib/ui/workshop_page.dart lib/ui/workshop_mold_stage.dart lib/ui/cooking_filling_controls.dart lib/ui/cooking_session_controls.dart lib/cooking_tilt_source.dart lib/cooking_sensor_input.dart test/step02_home_test.dart`: 오류0/경고0/info1/종료0(C:/Temp/step02-restored-analyze.log). 중괄호 스타일 info1이 남는다.
 - `flutter build apk --debug --no-pub --target-platform=android-arm64 --target=tools/step02_manual_review.dart --dart-define=PRODUCTION_AUDIT=true`:58.0초 빌드 성공(C:/Temp/step02-restored-build.log), 설치-r 및 suffix 앱 재실행 성공. 최종 APK SHA256 `E4D3408AD3EA455F5220ED86D116665BA3D119A39DB4069FC4DE22A5CD3472A3`. KGP 전환 경고는 남는다. 이후 소스 수정은 WorkshopPage EOF 공백 제거만이며 동작 변경은 없다.
 - 실기기 화면 캡처 C:/Temp/step02-restored-device.png에서 기존 상단 구성/설정 아이콘/중앙 원래 큰 틀/아래6구 및 중복 붕어빵 제거를 직접 확인했다. 실제 기울임 반죽/손가락 회전/앱 홈 복귀는 별도 재확인을 요청한 상태다. 전체 완료로 표시하지 않는다.
+
+
+홈 복원·센서 후속 구현 커밋은 `5d2cbd2`다. 2026-10-18 최신 설치본에서 사용자는 기울기 반죽이 '속 넣기로 넘어가요'라고 확인했다. 이는 사용자 실기기 조작 확인으로 기록하며, 호스트 로그에서 해당 입력 출처를 별도로 증명한 것으로 쓰지 않는다. 관찰 로그에는 첫 반죽→속 넣기 전이가 남았지만 센서별 상태 로그는 확인되지 않았다. 속 넣기 원/쓸기·스크롤 선점 및 홈5초 이탈/복귀 최종 확인은 이어서 요청했다. 최종 답변 전 확인 결과를 추가한다.
+
+
+시간 표시 누락 후속: 사용자의 '2번 복귀·시간 문제'는 후속 답변에서 '제작 시간이 아예 안 떠'로 확인됐다. 이를 시간 정지 로직 실패로 확정하지 않는다. 실제 관찰 로그는 이탈 중 filling/token2/58036ms가 고정되고 paused=true임을 확인했다. 중앙 큰 틀 위에 '현재 단계 경과 N.N초'와 일시정지 표시를 복원했다. 공통 controller/수명 로직은 변경하지 않았다. test/step02_home_test.dart에 표시 존재/12초 표시/일시정지 표시/5초 동안 불변/복귀 후 단계 보존을 추가했다. `flutter test --no-pub --concurrency=1 test/step02_home_test.dart --reporter expanded` 3개 모두 통과(C:/Temp/step02-time-display-test.log), 기존 사례를 확장한 것이므로 총 사례 수를 중복 증가시키지 않는다. 시간 표시 추가본을 빌드·설치하고 실제5초 복귀를 확인할 예정이다.
+
+
+## 최신 사용자 정정: 방향/도구 제거·짤주머니·빈 큰 틀
+
+이 절이 이전 숟가락/젓가락·방향 제스처 구현/검수 기록보다 우선한다. 사용자는 속 넣기를 '큰 틀을 길게 눌러 속 양 조절', '짤주머니로 넣는 액션'으로 지정했고 제작 중에는 틀 안에 완성 붕어빵이 없어야 한다고 확인했다. 따라서 이전 제스처 구현을 유지하거나 사용자 확정으로 다시 인용하지 않는다.
+
+변경: lib/cooking_gestures.dart, ui/cooking_filling_controls.dart, test/step02_gestures_test.dart, tools/preview_step02_gestures_test.dart를 삭제했다. ui/piping_bag_control.dart는 길게 짜기·양 표시·주머니 변형/속 줄기/단일 포인터/취소를 제공한다. ui/cooking_mold_painter.dart는 제작 중 배경의 완성품을 덮는 불투명 빈 틀과 원재료/닫힌 뚜껑을 그린다. 결과 단계에서만 FishPainter를 사용한다. 반죽 두 단계도 빈 틀 위에서 누르는 동안 양 표시를 제공한다. 기존 상단 HUD/메뉴/설정은 유지한다. 센서 속 방향 명령을 제거하고 두 반죽만 지원한다.
+
+공통 변경 최소 범위: cooking_session.dart에 선택적 fillingDurationMs와 squeezeFilling(token,durationMs)를 추가했다. 기존 세션 schema1/전체 schema4, 옛 방향 시퀀스/토큰의 저장 형식은 보존한다. 현재 세션에서 정확히 도출 가능한 전체 짤주머니 완료만 successor로 인정하고 다른 맛/반죽 기록 위조·중복·지난 토큰을 막는다. cooking_result_rules.dart는 새 짤주머니 완료에 옛 방향 실수 페널티를 부과하지 않는다. controller/저장 본체/재고 모델은 이 정정에서 변경하지 않았다. 결과·주문 담당은 결과 확정 세션의 fillingDurationMs를 읽을 수 있다. 현재 ProductBatch에는 속 양 필드가 없고 보관 후 판매 가격에 속 양을 반영하지 않는다. 해당 본체 확장이 필요하면 다음 담당이 이 포트를 연결해야 하며 임의 숨은 가격/합격 기준은 추가하지 않았다.
+
+설정: 제스처5개 수치를 삭제하고 manual_cooking.filling_capacity_ms=4000(표시100% 기준 임시값)을 추가했다. 속 양 합격 범위는 정의하지 않는다. 생성 서버JSON/14번 수치 문서를 도구로 갱신했다. 요약/상세/기술설계의 현재 조작 설명을 사용자 정정에 맞췄다. tasks.json/CHECKLIST/진행현황은 수정하지 않았다. 통합 시 다른 직원의 세션 모델/설정 변경을 보존하고 새 선택 필드를 함께 전달해야 한다.
+
+시간 표시 수정본 실기기: APK CC8B91A3F12B4C57CB6354B71B596B74428C1C8BCF671339F9FB693A8D37C24D, 빌드53.6초/설치/실행 성공. ADB로 실제 HOME5초→복귀하여 filling/token2 유지, 정지69435ms→복귀70805ms(재개 후 약1.37초) 확인, 백그라운드의 마지막3개 시간 표본 동일이었다. C:/Temp/step02-device-20261018135852/lifecycle-audit.log가 근거다. 시간 표시도 화면에서 확인했다. 이는 짤주머니 정정 전 APK 검수이며 새 짤주머니 실기기 통과로 재사용하지 않는다.
+
+최신 로컬 검증:
+- test/step02_home_test.dart + cooking_input_test.dart + step02_cooking_production_test.dart + step02_controller_test.dart + workshop_storage_test.dart:33개 통과(C:/Temp/step02-piping-tests.log).
+- test/step02_piping_test.dart:4개 통과(C:/Temp/step02-piping-focused.log). 양 누적·다중 포인터·취소·저장 왕복·위조/중복을 확인했다.
+- home+piping+home_golden+production_journal+development_rules:25개 통과(C:/Temp/step02-piping-final-tests.log), 중복 포함 실행 묶음이다.
+- workshop_controller+development_production+cooking_controls+production_journal:39개 통과(C:/Temp/step02-piping-recovery-tests.log). 저널 케이스를 짤주머니1450ms 완료로 바꿔 실제 디스크 DB 재생성 뒤에도1450ms·한 번만 결과 확정을 검증했다.
+- 중복 제외 핵심 규칙/상태/저장/위젯87개와 기존 홈 골든3개다. 제거한 제스처 테스트는 더 이상 현재 검증 수에 넣지 않는다. 시간/양 표시는 합성 UI 테스트이며 실제 손가락 완료와 구분한다.
+- python -X utf8 tools/development_balance.py 및 --check 통과. 화면 캡처 home-empty.png/home-filling.png에서 빈 틀/반죽과 주머니를 확인했다. 생성물은 build/step02-preview에 있으며 git에 넣지 않는다.
+
+최신 Android 짤주머니 앱 빌드는52.3초 성공(C:/Temp/step02-piping-build.log). 기기 연결 소실로 갱신한 Android smoke는 실행 전 'No devices connected'로 실패(C:/Temp/step02-device-20261018140938/smoke.log)했으며 통과가 아니다. 재연결을 요청했다. 새 APK 설치/실제 짤주머니/빈 틀 검수는 남는다. 키/토큰/서비스 계정/유료 서비스 설정은 필요 없다.
+
+
+최종 정적 검사: 11개 대상(cooking_session/result_rules/sensor_input, session_controls/piping_bag/cooking_mold/workshop_mold/workshop_page, Android smoke, piping/home 테스트)은 오류0/경고0/info4, --no-fatal-infos에서 종료0(C:/Temp/step02-piping-static-complete.log). 새 짤주머니 APK SHA256 `AE7500D5DB5DF6EECD5C27804695E5977CAA8275D6B56E9ABDE0A95D4FF85F6F`. 로컬 빈 틀/반죽·주머니 이미지에서 완성품 미노출을 확인했고 빌드는 성공했으나 USB 부재로 이 APK는 아직 기기에 설치하지 못했다. 이전 APK가 휴대폰에 남아 있으므로 최신 수정이 실기기에 반영됐다고 안내하면 안 된다.

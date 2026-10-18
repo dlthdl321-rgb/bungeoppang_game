@@ -1,16 +1,16 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../cooking_gestures.dart';
 import '../cooking_result_rules.dart';
 import '../cooking_session.dart';
 import '../cosmetic_config.dart';
 import '../development_balance.dart';
 import '../workshop_controller.dart';
 import 'boost_effects.dart';
-import 'cooking_filling_controls.dart';
+import 'piping_bag_control.dart';
 import 'cooking_session_controls.dart';
 import 'cozy_style.dart';
 import 'fish_painter.dart';
+import 'cooking_mold_painter.dart';
 import 'pixel_sprites.dart';
 
 /// Presentation only. All commands still pass through WorkshopController.
@@ -61,8 +61,13 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
       final rect = mapped ?? fallback;
       Widget mold(Widget interaction) => Positioned.fromRect(
           rect: rect,
-          child: Stack(fit: StackFit.expand, children: [
-            if (mapped == null) const IgnorePointer(child: CustomPaint(painter: FishPainter())),
+          child: Stack(fit: StackFit.expand, clipBehavior:Clip.none, children: [
+            if (session == null && mapped == null) const IgnorePointer(child: CustomPaint(painter: FishPainter())),
+            if (session != null) Positioned.fill(left:-rect.height*.2,right:-rect.height*.2,top:-rect.height*.2,bottom:-rect.height*.2,
+              child:IgnorePointer(child:CustomPaint(key:const Key('active-empty-mold'),painter:CookingMoldPainter(
+                phase:session.phase,hasBatter:session.firstBatterMs!=null && session.firstBatterMs!>0,
+                hasFilling:session.fillingDurationMs!=null && session.fillingDurationMs!>0 && session.secondBatterMs==null)))),
+            if(session?.phase==CookingPhase.result) const IgnorePointer(child:CustomPaint(painter:FishPainter())),
             interaction,
           ]));
       Widget action(String label, VoidCallback command) => Semantics(
@@ -87,7 +92,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 stageToken: session.token,
                 blocked: blocked,
                 label: label,
-                surfaceBuilder: (pouring) => Center(child: _caption('$label\n${pouring ? '붓는 중 · 놓으면 멈춰요' : '큰 틀을 길게 눌러 주세요'}')),
+                surfaceBuilder: (pouring) => PourAmountVisual(key:ValueKey('${session.token}:$pouring'),pouring:pouring,filling:false,capacityMs:DevelopmentBalance.integer(rule,'batter_target_ms')),
                 onFinished: (ms) =>
                     c.cookingCommand(session.pour(session.token, ms)));
           case CookingPhase.closing:
@@ -108,7 +113,10 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 child: _caption(
                     '완성 · ${provisionalDonenessLabels[result.variant]}'));
           case CookingPhase.filling:
-            control = const SizedBox.shrink();
+            control = PipingBagControl(key:ValueKey('piping:${session.id}'),onMold:true,
+              stageToken:session.token,blocked:blocked,
+              capacityMs:DevelopmentBalance.integer(c.config.section('manual_cooking'),'filling_capacity_ms'),
+              onFinished:(ms)=>c.cookingCommand(session.squeezeFilling(session.token,ms)));
           case CookingPhase.canceled:
             control = const SizedBox.shrink();
         }
@@ -143,22 +151,10 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
               else ...[
                 _caption(
                     '${c.flavorLabel(session.flavor)} ${session.practice ? '연습' : '주문 제작'} · 반죽 목표 ${DevelopmentBalance.integer(rule, 'batter_target_ms') / 1000}초'),
-                widget.sensorControl,
+                _caption('현재 단계 경과 ${(c.activePhaseElapsedMs / 1000).toStringAsFixed(1)}초${c.gameplayPaused ? ' · 일시정지' : ''}', key: const Key('workshop-phase-time')),
+            if(session.phase==CookingPhase.firstBatter || session.phase==CookingPhase.secondBatter) widget.sensorControl,
               ],
             ])),
-        if (session?.phase == CookingPhase.filling)
-          Positioned.fill(
-              top: 94,
-              bottom: 48,
-              child: CookingFillingControls(
-                  key: ValueKey('mold-fill:${session!.id}'),
-                  moldRect: rect.shift(const Offset(0, -94)),
-                  blocked: blocked,
-                  rules: FillingGestureRules.fromBalance(c.config),
-                  stageToken: session.token,
-                  expected: session.fillingSequence[session.fillingIndex],
-                  onDirection: (direction) => c
-                      .cookingCommand(session.fill(session.token, direction)))),
         if (session != null)
           Positioned(
               bottom: 0,
@@ -186,7 +182,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   }
 }
 
-Widget _caption(String text) => Text(text,
+Widget _caption(String text, {Key? key}) => Text(text, key: key,
     textAlign: TextAlign.center,
     style: const TextStyle(
         color: Cozy.cream,

@@ -5,11 +5,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
-import 'package:todays_bungeoppang/cooking_input.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
 import 'package:todays_bungeoppang/cooking_tilt_source.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/cooking_session_controls.dart';
+import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 
 void main() {
@@ -54,7 +54,6 @@ void main() {
     }
     await tester.tap(find.text('큰 틀 연습 시작'));
     await tester.pumpAndSettle();
-    final before = controller.state.session!;
     final hold = await tester
         .startGesture(tester.getCenter(find.textContaining('첫 반죽 붓기')));
     await Future<void>.delayed(const Duration(milliseconds: 2600));
@@ -63,11 +62,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.state.session!.phase, CookingPhase.filling);
     expect(controller.state.session!.firstBatterMs, greaterThanOrEqualTo(2500));
-    for (final direction in before.fillingSequence) {
-      await tester.tap(find
-          .text('${direction == CookingDirection.left ? '왼쪽' : '오른쪽'}으로 속 넣기'));
-      await tester.pumpAndSettle();
-    }
+    final squeeze=await tester.startGesture(tester.getCenter(find.byType(PipingBagControl)));
+    await Future<void>.delayed(const Duration(milliseconds:1100));
+    await tester.pump();await squeeze.up();await tester.pumpAndSettle();
+    expect(controller.state.session!.fillingDurationMs,greaterThanOrEqualTo(1000));
+    final fillingMs=controller.state.session!.fillingDurationMs;
+    final durable=await repository.load();
+    expect((durable!['session'] as Map)['fillingDurationMs'],fillingMs);
+    debugPrint('STEP02_PIPING_BAG_OK durationMs=$fillingMs');
     expect(controller.state.session!.phase, CookingPhase.secondBatter);
     final second = await tester
         .startGesture(tester.getCenter(find.textContaining('둘째 반죽 붓기')));

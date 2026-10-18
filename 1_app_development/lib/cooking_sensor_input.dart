@@ -68,8 +68,7 @@ class CookingSensorInput {
     }
     _hold?.cancel();
     _hold = null;
-    if (session.phase != CookingPhase.filling) return null;
-    final direction = gate.sample(angle);
-    return direction == null ? null : session.fill(session.token, direction);
+    // Filling is controlled by squeezing the piping bag on the mold.
+    return null;
   }
 }

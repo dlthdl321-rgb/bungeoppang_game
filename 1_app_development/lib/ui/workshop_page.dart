@@ -276,7 +276,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   }
   Widget _sensorControl() => Row(mainAxisAlignment:MainAxisAlignment.center,children:[
     Switch(value:_sensorEnabled,onChanged:_setSensor),
-    Flexible(child:Text(_sensorEnabled ? _sensorStatus : _sensorNotice ?? '기울기로 반죽·속 넣기',
+    Flexible(child:Text(_sensorEnabled ? _sensorStatus : _sensorNotice ?? '기울기로 반죽 붓기',
       style:const TextStyle(color:Cozy.cream,fontSize:12,shadows:[Shadow(color:Cozy.woodDark,blurRadius:4)]))),
     if(_sensorEnabled) IconButton(tooltip:'현재 자세로 다시 보정',onPressed:()=>_setSensor(true),
       icon:const Icon(Icons.screen_rotation,color:Cozy.cream,size:20)),
