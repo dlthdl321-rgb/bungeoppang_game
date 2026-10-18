@@ -18,10 +18,11 @@ enum ShopTab { gear, cosmetics, theme, gold }
 /// cards (picture, name, price, 구매). Buying a cosmetic also wears it.
 class ShopPanel extends StatefulWidget {
   final GameController controller;
+  final CosmeticMenuAccess? access;
 
   /// Opens another sheet (the item and coin details).
   final void Function(String destination) onOpen;
-  const ShopPanel({super.key, required this.controller, required this.onOpen});
+  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access});
   @override
   State<ShopPanel> createState() => _ShopPanelState();
 }
@@ -84,7 +85,7 @@ class _ShopPanelState extends State<ShopPanel> {
               SizedBox(width: w, child: _cosmeticCard(context, d)),
           ]);
         }),
-        if (tab == ShopTab.gear) ...[
+        if (tab == ShopTab.gear && widget.access==null) ...[
           const SizedBox(height: 8),
           OutlinedButton(
               key: const Key('support-entry'),
@@ -94,6 +95,11 @@ class _ShopPanelState extends State<ShopPanel> {
       ]));
 
   Widget _cosmeticCard(BuildContext context, CosmeticDefinition d) {
+    final access=widget.access;
+    if(access!=null) return Column(children:[
+      SizedBox(height:80,child:CosmeticThumb(d,access.equipped)),
+      AccessCosmeticAction(access:access,item:d),
+    ]);
     final s = c.state.support;
     final owned = c.state.ownsCosmetic(d);
     final unlocked = cosmeticUnlocked(c.state, d);

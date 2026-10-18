@@ -12,7 +12,8 @@ import 'ranking_panel.dart' show OnlineAccountBar;
 /// daily visit that gives a friend a 5-minute boost.
 class FriendsPanel extends StatefulWidget {
   final GameController controller;
-  const FriendsPanel({super.key, required this.controller});
+  final bool showRewardDetails;
+  const FriendsPanel({super.key, required this.controller,this.showRewardDetails=true});
   @override
   State<FriendsPanel> createState() => _FriendsPanelState();
 }
@@ -101,7 +102,7 @@ class _FriendsPanelState extends State<FriendsPanel> {
           ]),
         ),
         const SizedBox(height: 4),
-        Text(
+        if(widget.showRewardDetails) Text(
             '친구가 하루 한 번 내 가게에 들르면 ${visit.durationSeconds ~/ 60}분 동안 생산 ${visit.multiplierPermille ~/ 1000}배'),
         if (_message case final m?)
           Padding(
@@ -149,7 +150,7 @@ class _FriendsPanelState extends State<FriendsPanel> {
             ),
           ),
         const Divider(height: 28),
-        Text('초대받았나요? 친구 아이디를 입력하고 Lv.1을 달성하면, 그 친구가 손님으로 와서 '
+        if(widget.showRewardDetails) Text('초대받았나요? 친구 아이디를 입력하고 Lv.1을 달성하면, 그 친구가 손님으로 와서 '
             '${invite.durationSeconds ~/ 60}분 동안 생산 ${invite.multiplierPermille ~/ 1000}배'),
         const SizedBox(height: 6),
         _field(
