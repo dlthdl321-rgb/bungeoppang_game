@@ -945,3 +945,5 @@ TypeScript --noEmit과 구문/링크/생성 검사는 정적 확인이며 실제
 서버 보호 증거 수신은 `protected_purchase_pipeline.ts`의 서버 Ed25519 서명+계정/진행 epoch+순번/이전 digest CAS로 보완했다. 미검증 로컬 저장을 자동 승인하거나 기기에 서명키를 주지 않는다. 실제 게임 이벤트를 검증해 서명하는 발급 서버는 별도 연결이 필요하며 운영은 OFF다. 서버 홀드 전 실패는 검증된 취소 서명/잠금 확인 후 차감 없는 취소 원장으로 정산한다.
 
 Functions 발견 단계에서 Play SDK와 Firestore client를 만들지 않도록 `play_purchases.ts`/`firestore_store.ts`로 초기화를 지연했다. Node22 빌드·테스트 및 실제 Firestore/Auth/Functions 에뮬레이터 결과와 실패 이력, 기본10초 발견 제한과 로컬120초 대기의 구분은 [4단계 인계](../../../coordination/step-04.md)에 기록한다. 이 기록은 실제 서비스 서명·광고 SDK·동의·계정 설정·실기기·배포 완료가 아니다.
+
+재현 스크립트는 Windows Java의 한글 규칙 경로 문제를 ASCII 임시 규칙 사본으로 해결하고 종료 시 개별 임시 파일을 정리한다. 원본 규칙은 그대로 적용한다. 단일 스크립트로 Node22 빌드·단위73개·Auth/Firestore/Functions 통합7개 통과를 확인했다. DEBUG 환경 로그 억제 후속과 실제 Firebase 로그인 미확인 상태 등 정확한 검증 범위는 같은 인계를 따른다.

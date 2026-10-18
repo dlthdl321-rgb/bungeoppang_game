@@ -109,3 +109,13 @@ Functions 기본10초 discovery에서 실제 로드 실패를 확인했다. 표�
 - `run_emulator_checks.ps1`은 동일 빌드/테스트 명령을 재현하는 도구다. 이번 실행은 Firestore 단독 프로세스와 Auth/Functions 프로세스를 분리해 띄운 뒤 최종 7개를 함께 실행했다. 스크립트 전체를 단일 명령으로 실행했다고 기록하지 않는다.
 - 완료한 것은 서버 검증 수신/구매·광고 복구 기반 및 로컬 검증이다. **실제 게임 사실 검증·서명 발급 서버, 클라이언트 envelope 중계, Firebase/AdMob 실제 계정·SDK·공식 SSV 요청·동의/스토어·실기기·운영 전환은 미완료**다. 실제 서비스가 검증됐다고 완료 처리하거나 OFF를 켜지 않는다.
 - 최신 연결 확인에서 공식 Firebase 플러그인은 available/installed=false였다. 설치 안내를 제공했으나 설치/연결을 확인하지 못했다. 프로젝트 ID/비밀값을 사용자에게 추측해 입력하게 하지 않고 설치/연결 후 계정의 실제 프로젝트를 조회하는 지점에서 이어간다.
+
+### 중단 후 재개와 재현 스크립트 보완 (2026-10-18)
+
+- 작업 시작 기준 `cc6905a`, 브랜치 `staff-04/server-verification`. 사용자 설치 완료 보고는 받았으나 이 채팅에 Firebase 도구가 노출되지 않았고, 로컬 CLI `projects:list --json --non-interactive`는 종료1/인증 필요로 실패했다. 실제 계정·프로젝트 조회 완료로 기록하지 않는다. 사용자의 PowerShell npx.ps1 차단에는 npx.cmd 로그인 명령을 안내했으며 이번 재개 시점에도 CLI 인증은 확인되지 않았다.
+- `run_emulator_checks.ps1` 전체를 최초 실행했으나 Firestore Java가 한글 경로의 firestore.rules를 찾지 못해 실패했다. 단위73개는 통과했지만 이 시도는 통합 통과가 아니다.
+- 재현 도구를 보완했다. 원본 규칙을 Public 아래 ASCII 경로의 실행별 고유 파일로 복사하고 임시 config에서만 참조한다. 운영 firebase.json/규칙 원본/권한은 바꾸지 않는다. finally에서 이번 실행의 개별 임시 파일만 제거한다. `EmulatorScratchRoot` 인자는 ASCII 절대 경로로 검증한다. 공통 controller/모델/index.ts/스키마/의존성 변경은 없다.
+- 실제 성공 명령: 프로세스 한정 `FIREBASE_EMULATORS_PATH=C:/Users/Public/codex-workshop-step04-tools/emulators`, `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./run_emulator_checks.ps1 -Node22Path <기존 Node22 실행파일> -FirebaseCliPath <기존 CLI15.34.0 JS> -Java21Bin <기존 Temurin21 bin>`. 영구 실행 정책 변경 없음. 전체 스크립트 종료0, TypeScript 빌드 성공, 단위73/통합7 통과, 실패·건너뜀0. 통합 약95.0초. Auth/Firestore/Functions를 같은 emulators:exec에서 실행하고 정상 종료했다. 앞선 ‘스크립트 전체 미실행’ 기록은 당시 이력이며 현재는 이 실행 근거로 보완된다.
+- 성공 실행 중 부모 DEBUG 설정으로 Firebase CLI가 환경 진단 로그를 출력하는 것을 확인했다. 이후 스크립트에서 DEBUG를 프로세스 한정 해제/복원하도록 추가했다. 이 로그 억제 한 줄은 해당 통합 성공 이후 추가됐으며 별도 전체 재실행은 하지 않았다. 원본 진단 로그는 인계/커밋에 포함하지 않는다.
+- 추가 변경 파일: run_emulator_checks.ps1, firebase/README.md, 본 인계, MASTER.md의 실행 도구 설명. 통합 담당은 기존 서버 모듈 뒤에 이 로컬 검증 도구 보완을 적용한다. tasks.json/CHECKLIST.md/진행현황.md 수정 없음.
+- 남은 실제 작업은 기존과 동일하다: 실제 게임 이벤트 검증·서명 발급 권위 및 클라이언트 중계, 인증된 Firebase 프로젝트/IAM/App Check, AdMob 광고단위·공식 SSV·SDK/동의·실기기. 로그인만으로 이 항목들이 완료되지는 않는다. 운영 OFF와 미배포 상태를 유지한다.
