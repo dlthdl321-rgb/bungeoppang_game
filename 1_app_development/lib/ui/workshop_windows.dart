@@ -16,7 +16,7 @@ Future<void> showWorkshopWindow(BuildContext context,{required WorkshopControlle
   showModalBottomSheet<void>(context:context,isScrollControlled:true,useSafeArea:true,
     backgroundColor:Colors.transparent,builder:(ctx)=>SizedBox(height:MediaQuery.sizeOf(ctx).height*.92,
       child:AnimatedBuilder(animation:Listenable.merge([controller,account]),builder:(context,_)=>Padding(
-        padding:const EdgeInsets.fromLTRB(6,4,6,10),child:Column(children:[
+        padding:EdgeInsets.fromLTRB(6,4,6,10+MediaQuery.viewPaddingOf(context).bottom),child:Column(children:[
           MediaQuery.withClampedTextScaling(maxScaleFactor:1.3,child:CozyPanel(radius:16,
             child:Wrap(alignment:WrapAlignment.center,spacing:12,children:[
               Text('붕어빵력 ${compactNumber(controller.state.buns)}'),
