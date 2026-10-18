@@ -6,8 +6,6 @@ import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import io.flutter.plugin.common.EventChannel
-import kotlin.math.atan2
-import kotlin.math.roundToInt
 
 // Local motion input only. No permission, persistence, identifiers or network.
 class CookingTiltStream(context: Context) : EventChannel.StreamHandler, SensorEventListener {
@@ -53,8 +51,8 @@ class CookingTiltStream(context: Context) : EventChannel.StreamHandler, SensorEv
         if (!foreground || event.values.size < 3) return
         val x = event.values[0].toDouble()
         val y = event.values[1].toDouble()
-        if (!x.isFinite() || !y.isFinite()) return
-        val angle = (Math.toDegrees(atan2(-x, y)) * 1000).roundToInt()
-        sink?.success(mapOf("available" to true, "angleMillidegrees" to angle))
+        val z = event.values[2].toDouble()
+        if (!x.isFinite() || !y.isFinite() || !z.isFinite()) return
+        sink?.success(mapOf("available" to true, "gravityX" to x, "gravityY" to y, "gravityZ" to z))
     }
 }

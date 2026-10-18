@@ -112,3 +112,42 @@ flutter analyze --no-pub --no-fatal-infos lib/cooking_gestures.dart lib/ui/cooki
 화면 검증 도구 `flutter test --no-pub tools/preview_step02_gestures_test.dart --reporter expanded`도 1개 통과했고 360×640 화면의 두 도구 이미지를 `build/step02-preview/`에서 확인했다. 한글/양쪽 대체 버튼/힌트가 잘리지 않음을 확인했다. 로컬 Windows 한글 폰트를 도구에서만 읽으며 앱 의존성/폰트 설정은 바꾸지 않는다. 이미지 생성은 runAsync를 사용한다. 처음 작성한 도구 실행은 이미지 비동기 완료 대기로 중단했으며 통과로 집계하지 않는다.
 
 Android 진행 기록: 분리 앱 ID 빌드는 Gradle Kotlin DSL의 기본 함수와 android/flutter 참조 해석 실패로 두 번 실패했다. 기존 builtInKotlin=false에 대응하는 앱 `org.jetbrains.kotlin.android` 플러그인 선언을 추가했으나 이것만으로 해결되지는 않았다. 공용 캐시는 지우지 않았으며 별도 캐시에서 재현/분리 중이다. Kotlin JAR들의 ZIP CRC 검사에서는 손상이 발견되지 않았다. 기기 재연결은 확인했지만 실제 설치·제작·센서 수신·손가락·강제 종료 검수는 아직 통과가 아니다.
+
+후속 환경 조사: 구현·로컬 검증 커밋은 `a3c737d`다. Gradle9.3.1 공식 binary ZIP의 SHA-256 검증 및 기존 all 배포본 내 JAR 전수 비교가 일치했다. 같은 배포본의 일반 Kotlin 컴파일도 종료0이었다. 공유 캐시를 연결하지 않은 `C:/Temp/g2fresh`와 ASCII TEMP/작업 경로의 독립 Gradle Kotlin DSL 예제는 `BUILD SUCCESSFUL in 2m 57s`, 종료0으로 통과했다. 캐시 별칭/실행 환경에 따른 실패 가능성을 확인한 것이며 정확한 내부 원인을 확정하지 않았다. 프로젝트의 Gradle/AGP/Kotlin 버전은 바꾸지 않았다. 직원5 인계의 동일 Gradle 버전 APK 성공 기록은 참고만 하며 이 브랜치의 실기기 통과 근거로 사용하지 않는다.
+
+실제 앱 진입점 검수 준비: `lib/main.dart`의 `WorkshopOnline(online as WorkshopTransport)` 한 줄은 직원5의 기존 타입 수정과 동일하게 재사용했다. 공통 main의 다른 동작은 수정하지 않았다. 이미 통합된 브랜치는 이 중복 수정을 다시 적용할 필요가 없다. `flutter analyze --no-pub --no-fatal-infos lib/main.dart lib/premium_controller.dart`는 종료0/No issues found였다.
+
+`tools/step02_manual_review.dart`는 실제 main을 실행하고 제작 단계/두 반죽 시간/6구 회차와 시간/수명 이벤트만 관찰한다. 게임 상태를 주입하지 않으며 debug+PRODUCTION_AUDIT 빌드만 허용한다. `flutter analyze --no-pub --no-fatal-infos tools/step02_manual_review.dart`도 종료0/No issues found였다. 기기 도구의 `--review-only`는 별도 앱을 빌드·업데이트·실행하며 물리 검수 통과를 자동 선언하지 않는다. `python -X utf8 -m py_compile tools/run_step02_device_audit.py` 통과. 기존 main의 CRLF는 보존했고 `git -c core.whitespace=cr-at-eol diff --check`를 사용했다.
+
+Android 실측 추가: `C:/GradleCache`를 실제 Gradle home으로 사용한 별도 앱 APK 빌드는 964.8초 뒤 성공했고 설치도 성공했다. Android16/SM-S921N에서 자동 제작 입력(2.6초 실제 대기 반죽 포함)·네이티브 센서3샘플 수신·Android SQLite 저널 재적용이 종료0/1개 통과했다. 물리 손가락·실제 기울임 판정 완료와는 구분한다. KGP 전환·SDK XML 버전 경고가 남으며 경고0 빌드로 기록하지 않는다.
+
+첫 실행의 Flutter 기본 종료 정리가 audit suffix 대신 기본 앱 ID의 uninstall을 시도했고 DELETE_FAILED_INTERNAL_ERROR로 실패했다. 직후 기본 앱 ID는 pm path에서 발견되지 않았다(실행 전 설치 상태까지 확정하는 기록은 아님). 이를 확인하고 후속 호스트만 중지한 뒤 모든 Flutter test 명령에 **`--no-uninstall`을 필수로 추가**했다. 이후 재실행은 자동 제거 없이 종료0/1개 통과했다(`C:/Temp/step02-device-20261018131607/smoke.log`). 향후 직접 명령을 실행할 때도 `--dart-define=PRODUCTION_AUDIT=true --no-uninstall`을 반드시 함께 사용한다. 강제 종료 검수는 suffix 앱만 대상으로 하며 기본 앱을 제거하거나 초기화하지 않는다.
+
+강제 종료 검수 완료: 같은 디렉터리의 crash-stage.log에서 STEP02_KILL_READY를 확인한 뒤 audit 앱의 실제 프로세스를 am force-stop 했고 PID 소멸을 확인했다. stage 실행은 의도적인 VM 연결 유실로 끝났으며 Flutter 임시 리스너 정리 PathNotFoundException도 출력했다. 이 실행을 테스트 통과로 집계하지 않는다. 별도 프로세스의 crash-recover.log는 종료0/1개 통과, STEP02_FORCE_STOP_RECOVERY_OK다. 같은 DB의 결과 ID/15000ms 익힘/연습1회/빈 저널을 검증하고 controller 재생성 뒤에도 연습1회를 확인했다. 현재 네이티브 자동 검사는 제작·센서·SQLite 1개와 종료 복구 1개, 총2종 통과다.
+
+실제 페이지 구성 후속: 그리기 위젯을 SingleChildScrollView에 넣은 새 회귀에서 원 그리기 도중 페이지가 함께 움직임을 재현했다. 일반 pan 인식기만으로는 부모 vertical drag의 선점이 남아 실패했고, 그리기 영역의 EagerGestureRecognizer로 해결했다. 그리기 영역 밖의 페이지 스크롤은 별도 확인한다. 최종 `flutter test --no-pub --concurrency=1 test/step02_gestures_test.dart test/cooking_controls_test.dart --reporter expanded`는 **11개 통과**, 대상2파일 analyze는 종료0/No issues found였다. 중복 제외 규칙/상태/위젯/저장 검증은 이제85개, 화면 렌더 도구1개는 별도다.
+
+실제 main 기반 관찰 앱은 `--review-only`로 빌드67.2초/설치/실행 각각 종료0이며 STEP02_REVIEW_READY를 확인했다(`C:/Temp/step02-device-20261018132151/`). 자동 테스트용 화면과 구분한다. 현재 실제 손가락/기울임/홈 복귀는 사용자 조작과 관찰 기록을 대조 중이며 아직 최종 완료로 표시하지 않는다.
+
+
+## 사용자 실기기 피드백·기존 홈 복원 후속 (2026-10-18)
+
+기준 `a3c737d`, 브랜치 `employee2/cooking-production`. 사용자는 센서를 켜도 반죽이 진행되지 않는다고 확인했다. 이전 네이티브 샘플 수신 통과는 실제 기울임 제작 성공이 아니다. 또한 기존 홈의 중앙 큰 틀에서 제작하고 기존 상단 메뉴·설정·생산량 배치를 유지하도록 재확정했다.
+
+P1-004/P4-001~004/P5-001~002 연결: NightHome의 기존 배경/큰 틀/사장님/아래6구/하단 메뉴와 기존 상단 HUD를 재사용한다. NightHomeHeaderData는 Workshop 레벨/재화/생산량/승급 진행만 주입하고 구형 경제에는 입력하지 않는다. 독립 ui/workshop_mold_stage.dart가 배경의 원래 큰 틀 위치에 반죽/속/닫기/뒤집기/꺼내기/보관을 배치한다. 배경 속 붕어빵을 중복 렌더하지 않는다. 6구는 기존 칸 좌표에 expectedCycle 수확을 연결한다. 주문/재고/미션은 메뉴 관리 창, 주문 제작 성공 시 창을 닫고 중앙 제작으로 복귀한다. SoundSettings/Cozy를 재사용하여 소리·음량·진동·모션 줄이기/배경 시간을 연결한다. 신규 DB 초기화를 구형 계정 초기화에 잘못 연결하지 않는다.
+
+센서는 중력 X/Y/Z를 네이티브에서 전달하고 Dart의 atan2(-x,sqrt(y²+z²))로 좌우를 계산한다. X/Y만 계산한 기존식의 평평한 자세 불안정성을 보완한다. 순수 테스트는 평평한/세운 중립·좌우30도·무효 벡터·2.5초 붓기 명령을 확인한다. 보정/준비/붓는 중/중립 복귀 상태와 다시 보정을 표시한다. 이것이 실기기 원인을 최종 확정했거나 실기기 성공했다는 뜻은 아니다.
+
+공통 충돌: night_home.dart의 선택적 표현 포트, workshop_page.dart의 홈/센서/설정 연결을 조정한다. 기존 주문/재고/손님 관리 코드는 보존한다. 이번 복원에서 game_app.dart, controller/모델/저장 스키마는 수정하지 않는다. main 타입 수정은 직원5와 동일한 중복 수정이다. a3c737d 다음 본 후속을 적용하며 타 직원의 WorkshopPage 변경을 보존한다. CHECKLIST/진행현황/tasks.json은 수정하지 않는다.
+
+검증 과정: 기존 홈 골든3개 통과. 새 홈390×844/360×640 실제 controller의 연습 시작·첫 반죽→속 넣기·구형 경제 불변 확인 후 전체 제작과 설정 열기/스크롤/저장 회귀로 확장했다. 작은 화면의 방향 버튼이 취소 버튼/사장님에 가려지는 실패를 재현해 배치와 그리기 순서를 수정했다. 수정 전 실패는 통과로 집계하지 않는다. 최종 결과는 다음 기록을 따른다.
+
+첫 복원 Android APK64.0초 빌드/설치/실행 성공, SHA256 690EADC45036B449C570DDED27E38F9EF1171A519CD05EC0EEFACDCE14A11351. 실제 화면에서 중복 붕어빵을 발견하여 수정했으므로 최종본이 아니다. audit suffix 앱만 업데이트하고 데이터를 지우지 않는다. 최종 실기기 기울임·손가락·홈 복귀는 아직 미완료다. 외부 키/유료 서비스 설정은 필요 없다.
+
+
+홈 복원 최종 로컬 근거:
+- `flutter test --no-pub --concurrency=1 test/step02_home_test.dart test/home_golden_test.dart --reporter expanded`: 6개 모두 통과(C:/Temp/step02-home-ui-final.log). 390×844/360×640의 상단 메뉴/설정·소리/진동/모션·저장 후 전체 제작/보관을 실제 WorkshopController에 연결한다. 닫기/뒤집기/익힘 시간은 테스트에서 명시적으로 주입하며 실시간15초 측정으로 기록하지 않는다. 구형 GameController 경제 불변을 확인한다. 나머지3개는 기존 홈 골든 비교다.
+- `flutter test --no-pub --concurrency=1 test/step02_home_test.dart test/step02_gestures_test.dart test/cooking_controls_test.dart test/cooking_input_test.dart --reporter expanded`: 18개 모두 통과(C:/Temp/step02-restored-input-tests.log). 기존85개와 중복 제외 새3개로 제작 핵심 로컬 검증은88개, 기존 홈 골든3개는 별도다.
+- `flutter analyze --no-pub --no-fatal-infos lib/ui/night_home.dart lib/ui/workshop_page.dart lib/ui/workshop_mold_stage.dart lib/ui/cooking_filling_controls.dart lib/ui/cooking_session_controls.dart lib/cooking_tilt_source.dart lib/cooking_sensor_input.dart test/step02_home_test.dart`: 오류0/경고0/info1/종료0(C:/Temp/step02-restored-analyze.log). 중괄호 스타일 info1이 남는다.
+- `flutter build apk --debug --no-pub --target-platform=android-arm64 --target=tools/step02_manual_review.dart --dart-define=PRODUCTION_AUDIT=true`:58.0초 빌드 성공(C:/Temp/step02-restored-build.log), 설치-r 및 suffix 앱 재실행 성공. 최종 APK SHA256 `E4D3408AD3EA455F5220ED86D116665BA3D119A39DB4069FC4DE22A5CD3472A3`. KGP 전환 경고는 남는다. 이후 소스 수정은 WorkshopPage EOF 공백 제거만이며 동작 변경은 없다.
+- 실기기 화면 캡처 C:/Temp/step02-restored-device.png에서 기존 상단 구성/설정 아이콘/중앙 원래 큰 틀/아래6구 및 중복 붕어빵 제거를 직접 확인했다. 실제 기울임 반죽/손가락 회전/앱 홈 복귀는 별도 재확인을 요청한 상태다. 전체 완료로 표시하지 않는다.

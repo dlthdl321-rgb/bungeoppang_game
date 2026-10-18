@@ -8,13 +8,11 @@ import '../home_presentation.dart';
 import '../mission_alerts.dart';
 import '../missions.dart';
 import '../prestige_rules.dart';
-import '../progress_rules.dart';
 import 'bake_target.dart';
 import 'boost_effects.dart';
 import 'cook_cut.dart';
 import 'count_badge.dart';
 import 'cozy_style.dart';
-import 'fish_painter.dart';
 import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'weather_layer.dart';
@@ -22,10 +20,34 @@ import 'weather_layer.dart';
 /// Home screen laid out like the concept art (07_UI/메인UI_화면): striped
 /// awning and HUD on top, the big bungeoppang in the middle, the griddle and
 /// the vendor's cooking cut at the bottom, and a menu bar under them.
+class NightHomeHeaderData {
+  final int level, progressPermille, claimable;
+  final BigInt buns, lifetime, autoRate, tapRate;
+  final String status;
+  const NightHomeHeaderData({required this.level, required this.progressPermille,
+    required this.buns, required this.lifetime, required this.autoRate,
+    required this.tapRate, required this.status, this.claimable = 0});
+}
+
 class NightHome extends StatelessWidget {
   final GameController controller;
   final void Function(String destination) onOpen;
-  const NightHome({super.key, required this.controller, required this.onOpen});
+
+  /// Workshop supplies authoritative content while retaining the original stall.
+  final Widget? header, griddleContent, vendor;
+  final NightHomeHeaderData? headerData;
+  final Widget Function(Rect? fishOnScreen)? centerBuilder;
+  final String Function(CosmeticSlot)? equipped;
+  const NightHome(
+      {super.key,
+      required this.controller,
+      required this.onOpen,
+      this.headerData,
+    this.header,
+      this.griddleContent,
+      this.vendor,
+      this.centerBuilder,
+      this.equipped});
 
   static const cream = Cozy.cream;
 
@@ -41,7 +63,7 @@ class NightHome extends StatelessWidget {
         MediaQuery.accessibleNavigationOf(context);
     final largeText = MediaQuery.textScalerOf(context).scale(16) > 19;
     final padding = MediaQuery.paddingOf(context);
-    final e = state.equippedCosmetic;
+    final e = equipped ?? state.equippedCosmetic;
     return Scaffold(
       backgroundColor: Cozy.woodDark,
       body: RepaintBoundary(
@@ -55,16 +77,14 @@ class NightHome extends StatelessWidget {
           final griddleBottom = navBottom - 10;
           final cookBottom = griddleBottom + griddleH * .7;
           // Space under the bungeoppang: the griddle and part of the cooking cut.
-          final reserved = cookBottom + cookH * .35;
+          final reserved = centerBuilder == null ? cookBottom + cookH * .35 : griddleBottom + griddleH * .85;
           final fishArea = box.maxHeight - padding.top - reserved;
           final scroll = largeText || fishArea < 360;
           // Large text scrolls the stage, so the fish keeps its own place.
-          final stage = _stage(
-              reduce,
-              scroll
-                  ? null
-                  : NightStallPainter.bakedFishOnScreen(
-                      box.biggest, e(CosmeticSlot.background)));
+          final stage = (centerBuilder ?? (fish) => _stage(reduce, fish))(scroll && centerBuilder == null
+              ? null
+              : NightStallPainter.bakedFishOnScreen(
+                  box.biggest, e(CosmeticSlot.background)));
           return Stack(children: [
             Positioned.fill(
                 child: RepaintBoundary(
@@ -87,14 +107,15 @@ class NightHome extends StatelessWidget {
                     child: CustomPaint(
                         painter:
                             StallFramePainter(lamp: e(CosmeticSlot.lamp))))),
-            Positioned(
-                left: side,
-                width: w,
-                top: padding.top,
-                bottom: griddleBottom,
-                child: IgnorePointer(
-                    child: GuestArrivalLayer(
-                        controller: controller, reduceMotion: reduce))),
+            if (centerBuilder == null)
+              Positioned(
+                  left: side,
+                  width: w,
+                  top: padding.top,
+                  bottom: griddleBottom,
+                  child: IgnorePointer(
+                      child: GuestArrivalLayer(
+                          controller: controller, reduceMotion: reduce))),
             Positioned(
                 left: side + (w - griddleW) / 2,
                 width: griddleW,
@@ -109,8 +130,12 @@ class NightHome extends StatelessWidget {
                 width: griddleW,
                 bottom: griddleBottom,
                 height: griddleH,
-                child: GoldenGriddleLayer(
-                    controller: controller, reduceMotion: reduce)),
+                child: griddleContent ??
+                    GoldenGriddleLayer(
+                        controller: controller, reduceMotion: reduce)),
+            if (vendor != null) Positioned(
+                right: side + 8, width: cookW, bottom: cookBottom, height: cookH,
+                child: IgnorePointer(child: vendor!)),
             Positioned(
                 left: side,
                 width: w,
@@ -120,23 +145,30 @@ class NightHome extends StatelessWidget {
                     ? SingleChildScrollView(
                         key: const Key('home-scroll'),
                         child: Column(children: [
-                          _hud(),
-                          SizedBox(height: largeText ? 300 : 260, child: stage),
+                          header ?? _hud(),
+                          SizedBox(
+                              height: centerBuilder != null
+                                  ? 460
+                                  : largeText
+                                      ? 300
+                                      : 260,
+                              child: stage),
                         ]))
                     : Column(children: [
-                        _hud(),
+                        header ?? _hud(),
                         Expanded(child: stage),
                       ])),
-            Positioned(
+            if (vendor == null) Positioned(
                 right: side + 8,
                 width: cookW,
                 bottom: cookBottom,
                 height: cookH,
-                child: CookCut(
-                    equipped: e,
-                    taps: state.records.lifetimeTaps,
-                    reduceMotion: reduce,
-                    greeting: controller.guestArrivals.isNotEmpty)),
+                child: vendor ??
+                    CookCut(
+                        equipped: e,
+                        taps: state.records.lifetimeTaps,
+                        reduceMotion: reduce,
+                        greeting: controller.guestArrivals.isNotEmpty)),
             Positioned(
                 left: side, width: w, bottom: 0, child: _nav(padding.bottom)),
           ]);
@@ -162,10 +194,10 @@ class NightHome extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _rate(const Key('auto-rate'), Icons.timer_outlined, '초당',
-                          controller.currentAutoRate),
+                          headerData?.autoRate ?? controller.currentAutoRate),
                       const SizedBox(height: 4),
                       _rate(const Key('tap-rate'), Icons.touch_app_outlined,
-                          '클릭당', controller.currentTapRate),
+                          '클릭당', headerData?.tapRate ?? controller.currentTapRate),
                     ])),
           ]),
         ),
@@ -173,7 +205,7 @@ class NightHome extends StatelessWidget {
         Row(children: [
           // Claimable mission rewards wait in the menu.
           CountBadge(
-              count: claimableCount(s),
+              count: headerData?.claimable ?? claimableCount(s),
               badgeKey: const Key('menu-badge'),
               child: CozyRoundButton(
                   key: const Key('menu-menu'),
@@ -182,10 +214,11 @@ class NightHome extends StatelessWidget {
                   onPressed: () => onOpen('menu'))),
           Expanded(
               child: Column(children: [
-            if (s.prestige.stars > 0)
+            if (headerData != null) _note(const Key('workshop-status'), headerData!.status),
+            if (headerData == null && s.prestige.stars > 0)
               _note(const Key('home-prestige'),
                   '명성 별 ${s.prestige.stars} · 생산 +${(prestigePermille(s) - 1000) ~/ 10}%'),
-            if (s.achievements.equippedTitle case final title?)
+            if (headerData == null) if (s.achievements.equippedTitle case final title?)
               Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                 const PixelIcon('title', size: 16),
                 const SizedBox(width: 3),
@@ -194,8 +227,7 @@ class NightHome extends StatelessWidget {
           ])),
           CozyRoundButton(
               tooltip: '설정',
-              icon:
-                  const PixelIcon('settings', size: 28),
+              icon: const PixelIcon('settings', size: 28),
               onPressed: () => onOpen('settings')),
         ]),
       ]),
@@ -216,11 +248,12 @@ class NightHome extends StatelessWidget {
   Widget _levelBadge() {
     final s = controller.state;
     final next = activeLevelMission(s);
-    final progress = levelProgressPermille(s);
+    final progress = headerData?.progressPermille ?? levelProgressPermille(s);
+    final level = headerData?.level ?? s.level;
     return Semantics(
       button: true,
       label:
-          'Lv.${s.level} 레벨 미션 ${next == null ? '최고 레벨 달성' : '진행 ${progress ~/ 10}%'}',
+          'Lv.$level 레벨 미션 ${(headerData == null ? next == null : level >= 50) ? '최고 레벨 달성' : '진행 ${progress ~/ 10}%'}',
       excludeSemantics: true,
       onTap: () => onOpen('missions'),
       child: InkWell(
@@ -244,7 +277,7 @@ class NightHome extends StatelessWidget {
                               text: 'Lv. ',
                               style:
                                   TextStyle(fontSize: 13, color: Cozy.orange)),
-                          TextSpan(text: '${s.level}'),
+                          TextSpan(text: '$level'),
                         ]),
                         key: const Key('current-level'),
                         style: const TextStyle(
@@ -268,7 +301,7 @@ class NightHome extends StatelessWidget {
   }
 
   Widget _balance() => Semantics(
-        label: '보유 붕어빵 ${exactNumber(controller.state.buns)}개',
+        label: '보유 붕어빵 ${exactNumber(headerData?.buns ?? controller.state.buns)}개',
         onTap: () => onOpen('balance'),
         excludeSemantics: true,
         button: true,
@@ -283,7 +316,7 @@ class NightHome extends StatelessWidget {
                 child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text('보유 붕어빵',
+                      Text(headerData == null ? '보유 붕어빵' : '붕어빵력',
                           style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -294,7 +327,7 @@ class NightHome extends StatelessWidget {
                             crossAxisAlignment: CrossAxisAlignment.baseline,
                             textBaseline: TextBaseline.alphabetic,
                             children: [
-                              Text(compactNumber(controller.state.buns),
+                              Text(compactNumber(headerData?.buns ?? controller.state.buns),
                                   key: const Key('balance-value'),
                                   style: const TextStyle(
                                       fontSize: 26,
@@ -310,7 +343,7 @@ class NightHome extends StatelessWidget {
                       FittedBox(
                         fit: BoxFit.scaleDown,
                         child: Text(
-                            '누적 ${compactNumber(controller.state.lifetime)}개',
+                            '누적 ${compactNumber(headerData?.lifetime ?? controller.state.lifetime)}개',
                             key: const Key('lifetime-value'),
                             style: const TextStyle(
                                 fontSize: 10, color: Cozy.inkSoft)),
@@ -363,7 +396,8 @@ class NightHome extends StatelessWidget {
       ]);
 
   Widget _nav(double bottomInset) {
-    final claimable = claimableCount(controller.state);
+    final claimable =
+        centerBuilder == null ? claimableCount(controller.state) : 0;
     return Padding(
       padding: EdgeInsets.fromLTRB(8, 0, 8, 6 + bottomInset),
       child: SizedBox(
@@ -391,14 +425,6 @@ class NightHome extends StatelessWidget {
       ),
     );
   }
-}
-
-/// The small fish that flanks titles and labels (ui/title_fish).
-class _TitleFish extends StatelessWidget {
-  const _TitleFish();
-  @override
-  Widget build(BuildContext context) =>
-      PixelArt(PixelSprites.screenArt('title_fish'), width: 18, height: 14);
 }
 
 class _NavButton extends StatelessWidget {
