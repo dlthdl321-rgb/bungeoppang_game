@@ -22,6 +22,8 @@ import 'workshop_customers.dart';
 import 'workshop_customer_events.dart';
 import 'workshop_customer_dialogue.dart';
 
+part 'workshop_storage.dart';
+
 /// Fresh-game local production aggregate. Gold remains in the authenticated
 /// server wallet; pending claims here are never spendable gold.
 class WorkshopState {
@@ -108,6 +110,10 @@ class WorkshopState {
     if (state.level < 1 || state.level > 50 || state.buns > state.lifetime ||
         state.levelStartTaps > state.taps || state.levelStartSales > state.completedSales) {
       throw const FormatException('신규 진행/재화 불일치');
+    }
+    if (state.inventory.batches.values.any((b) => b.madeOnBusinessIndex > business.businessIndex) ||
+        state.inventory.bindings.values.any((day) => day > business.businessIndex)) {
+      throw const FormatException('미래 영업일의 재고 귀속');
     }
     if ((row['schema'] as int)<3 && ['rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime'].any(row.containsKey)) throw const FormatException('구형 저장에 신규 보호 필드가 있어요.');
     if (row['schema'] == 1 && row.containsKey('purchases')) throw const FormatException('구형 저장의 구매 필드 충돌');
@@ -297,68 +303,6 @@ class WorkshopState {
   }
 }
 
-abstract class WorkshopRepository {
-  Future<Map<String, dynamic>?> load();
-  Future<void> save(Map<String, dynamic> next, int expectedSequence);
-}
-String _workshopGuard(Map<String,dynamic> row) => jsonEncode((row['schema'] as int)>=3 ? {
-  'purchases':row['purchases'],'rewardAccount':row['rewardAccount'],
-  'rewardReceipts':row['rewardReceipts'],'adAttempts':row['adAttempts'],
-  'missionClaims':(row['missions'] as Map<String,dynamic>)['claims'],
-  if(row['schema']==4) 'relationships':row['relationships'],
-  if(row['schema']==4) 'customerScene':row['customerScene']} : row['purchases']);
-class SqliteWorkshopRepository implements WorkshopRepository {
-  Database? _database;
-  Future<Database> get database async => _database ??= await openDatabase(
-    path.join(await getDatabasesPath(), 'todays_bungeoppang_workshop.db'), version: 4,
-    onCreate: (db, _) async {
-      await db.execute('CREATE TABLE snapshots(slot TEXT PRIMARY KEY, sequence INTEGER NOT NULL, body TEXT NOT NULL)');
-      await db.execute('CREATE TABLE purchase_guard(id INTEGER PRIMARY KEY, body TEXT NOT NULL)');
-    },
-    onUpgrade: (db, old, next) async {
-      if (old < 2) await db.execute('CREATE TABLE purchase_guard(id INTEGER PRIMARY KEY, body TEXT NOT NULL)');
-    });
-  @override
-  Future<Map<String, dynamic>?> load() async {
-    return (await database).transaction((tx) async {
-      final rows = await tx.query('snapshots', where: 'slot = ?', whereArgs: ['current']);
-      final guards = await tx.query('purchase_guard', where: 'id = ?', whereArgs: [1]);
-      if (rows.isEmpty) {
-        if (guards.isNotEmpty) throw const FormatException('구매 보호 기록의 진행이 누락됐어요.');
-        return null;
-      }
-      final body = jsonDecode(rows.single['body'] as String) as Map<String, dynamic>;
-      if (body['sequence'] != rows.single['sequence'] ||
-          ([2,3,4].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
-          (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('저장/구매 보호 기록 재대조가 필요해요.');
-      return body;
-    });
-  }
-  @override
-  Future<void> save(Map<String, dynamic> next, int expectedSequence) async {
-    await (await database).transaction((tx) async {
-      final current = await tx.query('snapshots', where: 'slot = ?', whereArgs: ['current']);
-      final guards = await tx.query('purchase_guard', where: 'id = ?', whereArgs: [1]);
-      if (current.isEmpty && guards.isNotEmpty) throw const FormatException('구매 보호 기록만 남은 상태');
-      if (current.isNotEmpty) {
-        final body = jsonDecode(current.single['body'] as String) as Map<String, dynamic>;
-        if (body['sequence'] != current.single['sequence'] ||
-            ([2,3,4].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
-            (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('구매 보호 기록 충돌');
-      }
-      final oldSequence = current.isEmpty ? 0 : current.single['sequence'];
-      if (oldSequence != expectedSequence || next['sequence'] != expectedSequence + 1) {
-        throw const FormatException('진행 저장 순번 충돌');
-      }
-      if (next['schema'] != 4 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
-      await tx.insert('purchase_guard', {'id': 1, 'body': _workshopGuard(next)}, conflictAlgorithm: ConflictAlgorithm.replace);
-      if (current.isNotEmpty) await tx.insert('snapshots', {...current.single, 'slot': 'backup'}, conflictAlgorithm: ConflictAlgorithm.replace);
-      await tx.insert('snapshots', {'slot': 'current', 'sequence': next['sequence'], 'body': jsonEncode(next)},
-          conflictAlgorithm: ConflictAlgorithm.replace);
-    });
-  }
-}
-
 class WorkshopController extends ChangeNotifier {
   final DevelopmentBalance config;
   final WorkshopRepository repository;
@@ -376,6 +320,7 @@ class WorkshopController extends ChangeNotifier {
   bool _purchaseBusy = false, _adPaused = false, _rewardBusy = false, _adBusy = false;
   bool get rewardBusy => _rewardBusy;
   bool get adBusy => _adBusy;
+  bool get adPaused => _adPaused;
   WorkshopOnline? get onlineGateway => purchaseGateway is WorkshopOnline ? purchaseGateway as WorkshopOnline : null;
   int get pendingRewardCount => state.pendingGold.keys.where((key) {
     final raw=state.rewardReceipts[key];return raw==null || (jsonDecode(raw) as Map)['outcome']=='pending';
@@ -395,9 +340,19 @@ class WorkshopController extends ChangeNotifier {
   int _lastMono = 0, _checkpoint = 0;
   WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway})
       : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure();
+  // Retained through reloadAfterError; storage integration can persist these
+  // frozen attempts alongside its command journal for process-death recovery.
+  CookingSession? _pendingCookingResult;
+  final Map<String, GriddleHarvest> _pendingHarvests = {};
+  CookingSession? get pendingCookingResolution => _pendingCookingResult;
+  Map<String, GriddleHarvest> get pendingHarvestResolutions => Map.unmodifiable(_pendingHarvests);
   String _id() => List.generate(24, (_) => 'abcdefghijklmnopqrstuvwxyz0123456789'[random.nextInt(36)]).join();
+  Future<Map<String, dynamic>?> _loadDurable() => repository is SqliteWorkshopRepository
+      ? (repository as SqliteWorkshopRepository).loadValidated(
+          (row) { WorkshopState.fromJson(row, config); })
+      : repository.load();
   Future<void> initialize() async {
-    final saved = await repository.load();
+    final saved = await _loadDurable();
     state = saved == null ? WorkshopState.initial(now(), config, _id()) : WorkshopState.fromJson(saved, config);
     // Only server-committed grants reconstructed from the durable purchase
     // ledger can produce skill effects; legacy local purchases are not used.
@@ -431,12 +386,23 @@ class WorkshopController extends ChangeNotifier {
   }
   Future<void> reloadAfterError() async {
     if (busy || disposed) return;
-    final saved = await repository.load();
-    if (saved == null) throw const FormatException('복구할 저장 기록 없음');
-    state = WorkshopState.fromJson(saved, config);
-    final settlement = _settleAway();
-    state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
-    error = null; _lastMono = _clock.elapsedMilliseconds;
+    // Reading is part of recovery: do not let a command or lifecycle event
+    // overwrite the aggregate while its durable version is being loaded.
+    busy = true; _commandIdle = Completer<void>();
+    try {
+      final saved = await _loadDurable();
+      if (disposed) return;
+      if (saved == null) throw const FormatException('복구할 저장 기록 없음');
+      state = WorkshopState.fromJson(saved, config);
+      final settlement = _settleAway();
+      state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
+      error = null; _lastMono = _clock.elapsedMilliseconds;
+    } catch (e) {
+      error = '저장 복구 확인이 필요해요: $e';
+      rethrow;
+    } finally {
+      busy = false; _commandIdle?.complete(); _commandIdle = null;
+    }
     await command(() {});
   }
   void _advanceMemory(int ms) {
@@ -570,7 +536,12 @@ class WorkshopController extends ChangeNotifier {
         state.phaseMs < DevelopmentBalance.integer(manual, 'lid_close_ms')) throw const FormatException('뚜껑이 닫히는 중이에요.');
     if (previous.phase == CookingPhase.flipping && next.phase == CookingPhase.cooking &&
         state.phaseMs < DevelopmentBalance.integer(manual, 'flip_ms')) throw const FormatException('뒤집는 중이에요.');
-    if (next.phase == CookingPhase.result) next = previous.takeOut(previous.token, state.phaseMs);
+    if (next.phase == CookingPhase.result) {
+      final pending = _pendingCookingResult;
+      next = pending != null && pending.id == previous.id && pending.token == previous.token + 1
+        ? pending : previous.takeOut(previous.token, state.phaseMs);
+      _pendingCookingResult = next;
+    }
     state.session = next; state.phaseMs = 0;
     if (next.phase == CookingPhase.result) {
       state.mastery = state.mastery.record(evaluateCookingResult(config, next, difficulty: difficulty(next.flavor)));
@@ -583,6 +554,11 @@ class WorkshopController extends ChangeNotifier {
       }
     }
     if (next.phase == CookingPhase.canceled) state.session = null;
+  }).then((saved) {
+    if (saved && next.phase == CookingPhase.result && _pendingCookingResult?.id == next.id) {
+      _pendingCookingResult = null;
+    }
+    return saved;
   });
   Future<bool> storeResult(bool keep) => command(() {
     final session = state.session;
@@ -595,12 +571,23 @@ class WorkshopController extends ChangeNotifier {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
     state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in state.recipes) if (state.masteryAwards.containsKey(f)) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
   });
-  Future<bool> harvestCell(int index) => command(() {
+  Future<bool> harvestCell(int index, {int? expectedCycle}) async {
+    String? frozenId;
+    final saved = await command(() {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
-    final result = state.grid.harvest(index, config, businessIndex: state.business.businessIndex);
-    state.grid = result.state;
+    if (index < 0 || index >= state.grid.cells.length) throw const FormatException('6구 칸 오류');
+    final cell = state.grid.cells[index];
+    if (expectedCycle != null && cell.cycle != expectedCycle) throw const FormatException('지난 6구 수확 입력');
+    final id = 'griddle:${state.grid.runId}:$index:${cell.cycle}';
+    frozenId = id;
+    final result = _pendingHarvests.putIfAbsent(id, () =>
+      state.grid.harvest(index, config, businessIndex: state.business.businessIndex, expectedCycle: expectedCycle));
+    state.grid = state.grid.applyHarvest(index, result);
     if (result.product != null) state.inventory = state.inventory.recordResult(result.product!, keep: true);
-  });
+    });
+    if (saved) _pendingHarvests.remove(frozenId);
+    return saved;
+  }
   Future<bool> welcomeCustomer() => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now())) throw const FormatException('영업을 시작해 주세요.');
     final rule = config.rows('level_progression')[state.level - 1];
@@ -669,24 +656,24 @@ class WorkshopController extends ChangeNotifier {
     }
   });
 
-  Future<bool> sellToFirstCustomer() => command(() {
-    if (gameplayPaused || !state.business.permitsProducts(now()) || state.customers.isEmpty) throw const FormatException('판매할 손님 없음');
-    final order = state.customers.first;
-    final selected = <Map<String, int>>[];
-    final remaining = {for (final b in state.inventory.batches.values) b.id: b.quantity};
-    for (final line in order.lines) {
-      final selection = <String, int>{}; var needed = line.quantity;
-      final eligible = state.inventory.batches.values.where((b) => b.flavor == line.flavor &&
-        (line.variant == null ? b.variant >= 1 && b.variant <= 3 : b.variant == line.variant && (b.variant != 0 || line.special)) &&
-        state.business.businessIndex - b.madeOnBusinessIndex < 5).toList()..sort((a,b) => a.madeOnBusinessIndex.compareTo(b.madeOnBusinessIndex));
-      for (final batch in eligible) {
-        if (needed == 0) break;
-        final amount = min(needed, remaining[batch.id]!);
-        if (amount > 0) { selection[batch.id] = amount; needed -= amount; remaining[batch.id] = remaining[batch.id]! - amount; }
-      }
-      if (needed != 0) throw const FormatException('주문 전량의 재고가 필요해요.');
-      selected.add(selection);
+  /// Capture the displayed order before entering the command. A delayed retry
+  /// must never deliver to the next customer after the original has left.
+  Future<bool> sellToFirstCustomer() => sellToCustomer(
+      state.customers.isEmpty ? '' : state.customers.first.id);
+
+  /// Production and stock-selection UI use the same full-order sale command.
+  /// Invalid selections consume nothing; there is no exchange grace period.
+  Future<bool> sellToCustomer(String orderId,
+      {List<Map<String, int>>? selectedByLine}) => command(() {
+    if (gameplayPaused || !state.business.permitsProducts(now())) {
+      throw const FormatException('판매할 손님 없음');
     }
+    final index = state.customers.indexWhere((order) => order.id == orderId);
+    if (index < 0) throw const FormatException('이미 종료된 주문이에요.');
+    if (index != 0) throw const FormatException('맨 앞 손님의 주문부터 확인해 주세요.');
+    final order = state.customers[index];
+    final selected = selectedByLine ?? selectCustomerInventory(order, state.inventory,
+        businessIndex: state.business.businessIndex);
     final sales = CustomerSalesProgress(inventory: state.inventory, ordinaryBuns: state.buns,
       lifetimeSalesBuns: state.lifetime, sales: state.sales).sell(config, order, selectedByLine: selected,
       businessIndex: state.business.businessIndex, flavorDifficulties: {for (final f in state.recipes) f: difficulty(f)});
@@ -696,7 +683,7 @@ class WorkshopController extends ChangeNotifier {
     if (customerCatalog.contains(order.customerId)) {
       state.relationships = state.relationships.successfulSale(order.id,order.id,state.business.businessIndex,config);
     }
-    state.completedSales++; state.customers.removeAt(0);
+    state.completedSales++; state.customers.removeAt(index);
     if(customerCatalog.contains(order.customerId)) _afterNamedSale(order);
   });
   Map<String,dynamic>? _matchingFollowup(CustomerOrder order) {

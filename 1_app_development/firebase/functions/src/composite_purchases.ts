@@ -79,6 +79,15 @@ export async function reserveCompositePurchase(store: Store, config: unknown,
   context = { ...context };
   const intent = parseCompositeIntent(input, context.account), base = user(context);
   if (!/^(?:(tap|auto)_([1-9]|1[0-6])|cosmetic:[A-Za-z0-9_]+)$/.test(intent.skill)) throw new CompositePurchaseError("스킬 식별자 오류");
+  const prior = await store.run(async tx => {
+    await active(tx, context);
+    const row = await tx.get(transactionPath(context, intent.transaction));
+    if (!row) return undefined;
+    const old = decode(row, context, intent.transaction);
+    assertSameCompositeIntent(intent, old);
+    return receipt(old);
+  });
+  if (prior) return prior;
   const proof = { ...await verifier.verify(context, intent, "reservation") };
   checkProof(proof, context, intent, "reservation");
   return store.run(async (tx) => {
@@ -116,6 +125,15 @@ export async function finishCompositePurchase(store: Store, verifier: PurchaseEv
   context = { ...context };
   const intent = parseCompositeIntent(input, context.account), base = user(context);
   if (!/^(?:(tap|auto)_([1-9]|1[0-6])|cosmetic:[A-Za-z0-9_]+)$/.test(intent.skill)) throw new CompositePurchaseError("스킬 식별자 오류");
+  const terminal = await store.run(async tx => {
+    await active(tx, context);
+    const row = await tx.get(transactionPath(context, intent.transaction));
+    if (!row) return { account: context.account, transaction: intent.transaction, status: "unknown" };
+    const old = decode(row, context, intent.transaction);
+    assertSameCompositeIntent(intent, old);
+    return old.status === "reserved" ? undefined : receipt(old);
+  });
+  if (terminal) return terminal;
   const proof = action === "commit" ? { ...await verifier.verify(context, intent, "debit") } : undefined;
   if (proof) checkProof(proof, context, intent, "debit");
   return store.run(async (tx) => {

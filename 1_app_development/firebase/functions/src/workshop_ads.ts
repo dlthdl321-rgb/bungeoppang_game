@@ -9,7 +9,7 @@ export interface VerifiedAdMobSsv {
 }
 /** Implement with the installed AdMob specification: original signed query
  * bytes, trusted current public keys, signature/key ID and issuer checks.
- * No implementation or HTTP callback is enabled until SDK/official review. */
+ * Production implementation: admob_ssv.ts; HTTP callback remains opt-in. */
 export interface WorkshopSsvVerifier { verify(rawQuery:string):Promise<VerifiedAdMobSsv> }
 export async function creditWorkshopAd(store:Store,account:string,attempt:string,clock:()=>number):Promise<Record<string,unknown>> {
   const record=await queryDevelopmentAd(store,account,attempt);

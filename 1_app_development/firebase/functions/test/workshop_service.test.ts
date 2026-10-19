@@ -112,3 +112,53 @@ test("다른 진행 ID로 같은 일일 목표를 제출해도 계정별 지급�
   }
   assert.equal(store.docs.get("users/a")!.gold,1);
 });
+
+
+test("purchase retries recover the journal without re-reading expired evidence",async()=>{
+  const {store,service}=await setup();store.docs.set("users/a",{gold:5});
+  const proof={source:"trustedServerValidation",verifierVersion:1,account:"a",progress:context.progress,epoch:1,
+    transaction:intent.transaction,fingerprint:purchaseFingerprint(intent),snapshotDigest:"protected",availableBuns:"100",lifetimeBuns:"100"};
+  const reservation=evidencePath("a","reservation",intent.transaction),debit=evidencePath("a","debit",intent.transaction);
+  store.docs.set(reservation,{...proof,phase:"reservation"});
+  const reserved=await service.purchase("a","reserve",{...context,intent});
+  store.docs.delete(reservation);
+  assert.deepEqual(await service.purchase("a","reserve",{...context,intent}),reserved);
+  await assert.rejects(service.purchase("a","cancel",{...context,transaction:intent.transaction}));
+  assert.equal(store.docs.get("users/a")!.gold,4);
+  store.docs.set(debit,{...proof,phase:"debit"});
+  const result=await service.purchase("a","commit",{...context,intent});store.docs.delete(debit);
+  assert.deepEqual(await service.purchase("a","commit",{...context,intent}),result);
+  await assert.rejects(service.purchase("a","reserve",{...context,intent:{...intent,gold:"2"}}));
+  assert.equal(store.docs.get("users/a")!.gold,4);
+});
+
+test("trusted fenced cancellation refunds once and wins over late commit",async()=>{
+  const {store,service}=await setup();store.docs.set("users/a",{gold:5});
+  const proof={source:"trustedServerValidation",verifierVersion:1,account:"a",progress:context.progress,epoch:1,
+    transaction:intent.transaction,fingerprint:purchaseFingerprint(intent),snapshotDigest:"protected",availableBuns:"100",lifetimeBuns:"100",phase:"reservation"};
+  store.docs.set(evidencePath("a","reservation",intent.transaction),proof);
+  await service.purchase("a","reserve",{...context,intent});
+  store.docs.set(evidencePath("a","cancellation",intent.transaction),{...proof,debitFenced:true,localDebitRestored:true});
+  const result=await service.purchase("a","cancel",{...context,transaction:intent.transaction});
+  assert.equal(result.status,"canceled");
+  assert.deepEqual(await service.purchase("a","cancel",{...context,transaction:intent.transaction}),result);
+  assert.deepEqual(await service.purchase("a","commit",{...context,intent}),result);
+  assert.equal(store.docs.get("users/a")!.gold,5);
+});
+
+
+test("SSV accepted before wallet failure is recoverable by query across KST midnight",async()=>{
+  const {store,service}=await setup();
+  const start=await service.adStart("a",{attempt:"recover_0001"});
+  store.docs.set("users/a",{gold:Number.MAX_SAFE_INTEGER});
+  const verifier:WorkshopSsvVerifier={verify:async()=>({provider:"admob",transaction:"recover-proof",adUnit:"unit",customData:start.customData})};
+  await assert.rejects(acceptWorkshopSsv(store,verifier,"signed",new Set(["unit"]),()=>at+2000));
+  store.docs.set("users/a",{gold:0});
+  const later=new WorkshopService(store,config,()=>at+86400000,key);
+  const paid=await later.adQuery("a",{attempt:"recover_0001"});
+  assert.equal(paid.paid,true);assert.equal(paid.day,"2026-10-16");
+  assert.equal((await later.adQuery("a",{attempt:"recover_0001"})).paid,true);
+  assert.equal(store.docs.get("users/a")!.gold,config.rewarded_ads.gold_per_verified_view);
+  const next=await later.adStart("a",{attempt:"recover_0002"});assert.equal(next.day,"2026-10-17");
+  assert.equal((await later.adStart("a",{attempt:"recover_0001"})).day,"2026-10-16");
+});

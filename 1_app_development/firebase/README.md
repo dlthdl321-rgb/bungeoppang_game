@@ -24,3 +24,7 @@ functions/src/development_contracts.ts는 임시 공통 설정 기반 견적 검
 아직 index.ts의 공개 함수나 실제 verifier로 연결하지 않았습니다. 클라이언트의 재고/별점/차감 표식, 로그인·App Check만으로 서버 검증을 대신하면 안 됩니다. 생산/차감 보호 증거와 계정·진행·거래·고정 지문을 검증하는 운영 adapter가 필요합니다. 실제 서비스 호출·테스트·배포는 수행하지 않았습니다. 전체 소스/운영 경계는 [19번 후속 문서](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/19_구매원자저장과복구후속.md)를 따릅니다.
 
 최신 후속: [온라인·광고·꾸미기 연결과 검수 인계](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/20_온라인광고꾸미기연결과검수인계.md). callable은 소스에 연결했지만 기본 비활성이고 실제 서버 검증 파이프라인/광고 SDK·운영 설정과 실행 검수가 남습니다.
+
+## 직원4 서버 검증 후속 (2026-10-18)
+
+구매 원장 우선 복구·신뢰된 취소 증거·실제 ECDSA SSV 검증 모듈과 기본 OFF HTTP 수신점을 추가했다. [4단계 연결 계약과 검증 근거](../../coordination/step-04.md)를 참조한다. 과거의 ‘SSV interface만 존재’ 설명보다 이 후속 소스가 최신이며, 실제 AdMob/서비스 검수와 운영 전환은 여전히 미완료다.

@@ -34,6 +34,8 @@ class GameApp extends StatefulWidget {
 
 class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   final _navigatorKey = GlobalKey<NavigatorState>();
+  bool _foreground = true;
+  bool? _audioActive;
   @override
   void initState() {
     super.initState();
@@ -42,7 +44,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     widget.workshop?.addListener(_syncAudio);
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     if (lifecycle != null && lifecycle != AppLifecycleState.resumed) {
-      widget.audio.pauseMusic();
+      _foreground = false;
       widget.workshop?.setForeground(false);
     }
     _syncAudio();
@@ -76,20 +78,32 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     final state = workshop.state;
     return {
       if (state.session?.phase == CookingPhase.cooking) 'manual:${state.session!.id}',
-      if (state.session == null && workshop.gridVisible && state.business.permitsProducts(DateTime.now().toUtc()))
+      if (state.session == null && workshop.gridVisible && state.business.permitsProducts(workshop.now()))
         ...state.grid.cookingSourceIds,
     };
   }
-  void _syncAudio() => widget.audio
+  void _syncAudio() {
+    // Refresh sources before resuming: an ad can finish while backgrounded.
+    widget.audio
     ..configure(widget.controller.state.settings)
     ..setCookingSources(_cookingIds)
     // Night plays the night mood whatever the season.
     ..setScene(isNightTime(
                 widget.workshop?.state.sceneTime ?? widget.controller.state.equippedCosmetic(CosmeticSlot.time),
-                DateTime.now()) ==
+          DateTime.now()) ==
             true
         ? 'night'
         : widget.workshop!=null ? 'clear' : widget.controller.state.equippedCosmetic(CosmeticSlot.background));
+    final active = _foreground && !(widget.workshop?.adPaused ?? false);
+    if (_audioActive != active) {
+      _audioActive = active;
+      if (active) {
+        widget.audio.resumeMusic();
+      } else {
+        widget.audio.pauseMusic();
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -105,14 +119,16 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      widget.audio.resumeMusic();
+      _foreground = true;
       widget.workshop?.setForeground(true);
+      _syncAudio();
       widget.controller.resume().then(_welcomeBack);
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
-      widget.audio.pauseMusic();
+      _foreground = false;
+      _syncAudio();
       widget.workshop?.setForeground(false);
       widget.controller.leaveActive();
     }

@@ -141,6 +141,8 @@ void main() {
     await tester.tap(find.byTooltip('설정'));
     await tester.pumpAndSettle();
     final before = repo.saves;
+    await tester.scrollUntilVisible(find.byKey(const Key('settings-save')), 250,
+        scrollable: find.byType(Scrollable).last);
     await tapVisible(tester, const Key('settings-save'));
     expect(repo.saves, before + 1);
     expect(find.byKey(const Key('settings-save')), findsNothing);
