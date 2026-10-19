@@ -74,4 +74,3 @@ void main() {
     expect(stock.expire(config,8).recordPreparedResult(prepared,keep:true).batches,isEmpty);
   });
 }
-
