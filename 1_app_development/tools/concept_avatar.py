@@ -1,9 +1,9 @@
 """Cuts the vendor's paper-doll parts out of the concept sheets.
 
-Sources (이미지/3.1_original_image_package_20261007/raw/references):
-  references_015.png  여자꾸미기선택: girl base, hair, tops, bottoms, shoes, items
-  references_025.png  남자꾸미기선택: boy base, hair, tops, bottoms, shoes, items
-  references_002.png  가게꾸미기요소: aprons, tops, hats, scarf, mittens, tools
+Sources (3_original_images_and_visual_references/3.2_visual_design_references_20261006/01_원본전체):
+  여자꾸미기선택_원본_261006_1905_01.png: girl base, hair, tops, bottoms, shoes, items
+  남자꾸미기선택_원본_261006_1905_01.png: boy base, hair, tops, bottoms, shoes, items
+  가게꾸미기요소_원본_261006_1905_01.png: aprons, tops, hats, scarf, mittens, tools
 
 Hair swaps, pants and aprons are left out: the sheets' hair pieces would
 lie over the base figure's own hair, and their pants and aprons are drawn
@@ -25,7 +25,7 @@ from PIL import Image
 from scipy import ndimage
 
 ROOT = Path(__file__).resolve().parent.parent
-REF = ROOT.parent / '3_original_images_and_visual_references' / '3.1_original_image_package_20261007' / 'raw' / 'references'
+REF = ROOT.parent / '3_original_images_and_visual_references' / '3.2_visual_design_references_20261006' / '01_원본전체'
 OUT = ROOT / 'assets' / 'images' / 'avatar'
 
 CANVAS = (280, 520)  # every layer's size; one base figure with margin
@@ -33,13 +33,13 @@ CANVAS = (280, 520)  # every layer's size; one base figure with margin
 # Landmarks on each base figure, in sheet pixels: boxes are (l, t, r, b).
 MARKS = {
     # The girl sheet's right figure: the left one stands with crossed legs.
-    'girl': dict(sheet='references_015.png', box=(615, 0, 895, 520),
+    'girl': dict(sheet='여자꾸미기선택_원본_261006_1905_01.png', box=(615, 0, 895, 520),
                  tee=(710, 215, 825, 292),
                  shorts=(718, 293, 815, 348), shoes=(725, 475, 810, 502),
                  face=(728, 105, 830, 200), hair=(677, 22, 855, 200),
                  hand_l=(700, 345), hand_r=(836, 345), eyes=150, neck=200),
     # The boy sheet's right figure: the left one has eyelashes.
-    'boy': dict(sheet='references_025.png', box=(620, 0, 900, 520),
+    'boy': dict(sheet='남자꾸미기선택_원본_261006_1905_01.png', box=(620, 0, 900, 520),
                 tee=(695, 215, 838, 318),
                 shorts=(712, 310, 825, 410), shoes=(705, 468, 833, 502),
                 face=(710, 105, 830, 205), hair=(667, 15, 877, 215),
@@ -50,37 +50,37 @@ MARKS = {
 # (character or None for both, slot, id, sheet, crop box, fit)
 PARTS = [
     # Girl sheet.
-    ('girl', 'top', 'cardigan', 'references_015.png', (503, 770, 725, 920), 'top'),
-    ('girl', 'top', 'creamsweater', 'references_015.png', (786, 770, 1016, 927), 'top'),
-    ('girl', 'bottom', 'skirt', 'references_015.png', (507, 934, 717, 1072), 'bottom'),
-    ('girl', 'shoes', 'sneakers', 'references_015.png', (287, 1132, 431, 1226), 'shoes'),
-    ('girl', 'shoes', 'boots', 'references_015.png', (453, 1124, 611, 1231), 'shoes'),
-    ('girl', 'accessory', 'ribbon', 'references_015.png', (651, 1140, 775, 1231), 'ribbon'),
-    ('girl', 'accessory', 'glasses', 'references_015.png', (803, 1149, 966, 1223), 'glasses'),
-    ('girl', 'accessory', 'crossbag', 'references_015.png', (994, 1062, 1139, 1245), 'bag'),
+    ('girl', 'top', 'cardigan', '여자꾸미기선택_원본_261006_1905_01.png', (503, 770, 725, 920), 'top'),
+    ('girl', 'top', 'creamsweater', '여자꾸미기선택_원본_261006_1905_01.png', (786, 770, 1016, 927), 'top'),
+    ('girl', 'bottom', 'skirt', '여자꾸미기선택_원본_261006_1905_01.png', (507, 934, 717, 1072), 'bottom'),
+    ('girl', 'shoes', 'sneakers', '여자꾸미기선택_원본_261006_1905_01.png', (287, 1132, 431, 1226), 'shoes'),
+    ('girl', 'shoes', 'boots', '여자꾸미기선택_원본_261006_1905_01.png', (453, 1124, 611, 1231), 'shoes'),
+    ('girl', 'accessory', 'ribbon', '여자꾸미기선택_원본_261006_1905_01.png', (651, 1140, 775, 1231), 'ribbon'),
+    ('girl', 'accessory', 'glasses', '여자꾸미기선택_원본_261006_1905_01.png', (803, 1149, 966, 1223), 'glasses'),
+    ('girl', 'accessory', 'crossbag', '여자꾸미기선택_원본_261006_1905_01.png', (994, 1062, 1139, 1245), 'bag'),
     # Boy sheet.
-    ('boy', 'top', 'cardigan', 'references_025.png', (499, 729, 745, 900), 'top'),
-    ('boy', 'top', 'creamsweater', 'references_025.png', (801, 731, 1057, 895), 'top'),
-    ('boy', 'shoes', 'sneakers', 'references_025.png', (238, 1121, 401, 1225), 'shoes'),
-    ('boy', 'shoes', 'boots', 'references_025.png', (420, 1116, 609, 1229), 'shoes'),
-    ('boy', 'accessory', 'glasses', 'references_025.png', (625, 1139, 793, 1213), 'glasses'),
-    ('boy', 'accessory', 'crossbag', 'references_025.png', (1028, 1056, 1188, 1235), 'bag'),
-    (None, 'hat', 'ballcap', 'references_025.png', (811, 1121, 987, 1231), 'hat'),
+    ('boy', 'top', 'cardigan', '남자꾸미기선택_원본_261006_1905_01.png', (499, 729, 745, 900), 'top'),
+    ('boy', 'top', 'creamsweater', '남자꾸미기선택_원본_261006_1905_01.png', (801, 731, 1057, 895), 'top'),
+    ('boy', 'shoes', 'sneakers', '남자꾸미기선택_원본_261006_1905_01.png', (238, 1121, 401, 1225), 'shoes'),
+    ('boy', 'shoes', 'boots', '남자꾸미기선택_원본_261006_1905_01.png', (420, 1116, 609, 1229), 'shoes'),
+    ('boy', 'accessory', 'glasses', '남자꾸미기선택_원본_261006_1905_01.png', (625, 1139, 793, 1213), 'glasses'),
+    ('boy', 'accessory', 'crossbag', '남자꾸미기선택_원본_261006_1905_01.png', (1028, 1056, 1188, 1235), 'bag'),
+    (None, 'hat', 'ballcap', '남자꾸미기선택_원본_261006_1905_01.png', (811, 1121, 987, 1231), 'hat'),
     # Shop sheet: for both characters.
-    (None, 'outfit', 'padding', 'references_002.png', (894, 765, 1147, 938), 'top'),
-    (None, 'top', 'creamlong', 'references_002.png', (106, 775, 347, 935), 'top'),
-    (None, 'top', 'pinksweater', 'references_002.png', (368, 772, 616, 937), 'top'),
-    (None, 'top', 'sagesweater', 'references_002.png', (632, 773, 881, 937), 'top'),
-    (None, 'hat', 'bandana', 'references_002.png', (54, 944, 234, 1103), 'scarfhat'),
-    (None, 'hat', 'newsboy', 'references_002.png', (253, 955, 433, 1072), 'hat'),
-    (None, 'hat', 'beanie', 'references_002.png', (446, 950, 609, 1076), 'hat'),
-    (None, 'accessory', 'scarf', 'references_002.png', (638, 939, 792, 1088), 'scarf'),
-    (None, 'accessory', 'mittens', 'references_002.png', (833, 963, 1000, 1075), 'mittens'),
-    (None, 'accessory', 'fishpin', 'references_002.png', (1040, 972, 1186, 1063), 'pin'),
-    (None, 'shoes', 'furboots', 'references_002.png', (443, 1094, 647, 1232), 'shoes'),
-    (None, 'tool', 'tongs', 'references_002.png', (656, 1092, 823, 1241), 'tool'),
-    (None, 'tool', 'paperbag', 'references_002.png', (842, 1079, 1004, 1241), 'tool'),
-    (None, 'tool', 'fishhold', 'references_002.png', (1025, 1111, 1198, 1232), 'tool'),
+    (None, 'outfit', 'padding', '가게꾸미기요소_원본_261006_1905_01.png', (894, 765, 1147, 938), 'top'),
+    (None, 'top', 'creamlong', '가게꾸미기요소_원본_261006_1905_01.png', (106, 775, 347, 935), 'top'),
+    (None, 'top', 'pinksweater', '가게꾸미기요소_원본_261006_1905_01.png', (368, 772, 616, 937), 'top'),
+    (None, 'top', 'sagesweater', '가게꾸미기요소_원본_261006_1905_01.png', (632, 773, 881, 937), 'top'),
+    (None, 'hat', 'bandana', '가게꾸미기요소_원본_261006_1905_01.png', (54, 944, 234, 1103), 'scarfhat'),
+    (None, 'hat', 'newsboy', '가게꾸미기요소_원본_261006_1905_01.png', (253, 955, 433, 1072), 'hat'),
+    (None, 'hat', 'beanie', '가게꾸미기요소_원본_261006_1905_01.png', (446, 950, 609, 1076), 'hat'),
+    (None, 'accessory', 'scarf', '가게꾸미기요소_원본_261006_1905_01.png', (638, 939, 792, 1088), 'scarf'),
+    (None, 'accessory', 'mittens', '가게꾸미기요소_원본_261006_1905_01.png', (833, 963, 1000, 1075), 'mittens'),
+    (None, 'accessory', 'fishpin', '가게꾸미기요소_원본_261006_1905_01.png', (1040, 972, 1186, 1063), 'pin'),
+    (None, 'shoes', 'furboots', '가게꾸미기요소_원본_261006_1905_01.png', (443, 1094, 647, 1232), 'shoes'),
+    (None, 'tool', 'tongs', '가게꾸미기요소_원본_261006_1905_01.png', (656, 1092, 823, 1241), 'tool'),
+    (None, 'tool', 'paperbag', '가게꾸미기요소_원본_261006_1905_01.png', (842, 1079, 1004, 1241), 'tool'),
+    (None, 'tool', 'fishhold', '가게꾸미기요소_원본_261006_1905_01.png', (1025, 1111, 1198, 1232), 'tool'),
 ]
 
 

@@ -19,7 +19,7 @@ import 'pixel_sprites.dart';
 import 'support_panels.dart';
 import 'weather_layer.dart';
 
-/// The concept art's wardrobe (07_UI/꾸미기): tabs 헤어 / 의상 / 소품 /
+/// The concept art's wardrobe (3.5_completed_game_mockups/꾸미기): tabs 헤어 / 의상 / 소품 /
 /// 붕어빵 / 가게 (approved D3), a preview on top, a 3-column grid of items and
 /// an '적용' button for the picked one. Picking only previews; nothing is
 /// bought or equipped until '적용'.

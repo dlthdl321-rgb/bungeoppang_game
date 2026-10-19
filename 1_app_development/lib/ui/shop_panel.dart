@@ -10,11 +10,11 @@ import 'pixel_sprites.dart';
 import 'public_menus.dart';
 import 'support_panels.dart';
 
-/// Shop tabs of the concept art (07_UI/상점): gear (griddle, tongs), the
+/// Shop tabs of the concept art (3.5_completed_game_mockups/상점): gear (griddle, tongs), the
 /// vendor and pastry cosmetics, and stall themes.
 enum ShopTab { gear, cosmetics, theme, gold }
 
-/// The concept art's shop (07_UI/상점): tabs 장비 / 꾸미기 / 테마 and item
+/// The concept art's shop (3.5_completed_game_mockups/상점): tabs 장비 / 꾸미기 / 테마 and item
 /// cards (picture, name, price, 구매). Buying a cosmetic also wears it.
 class ShopPanel extends StatefulWidget {
   final GameController controller;

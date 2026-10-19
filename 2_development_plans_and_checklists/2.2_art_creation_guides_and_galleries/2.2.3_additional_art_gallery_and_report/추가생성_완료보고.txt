@@ -3,7 +3,7 @@
 전체 358장
 남자 속눈썹 수정 142/142장 완료
 수정 대기 0장: eyelashes_pending.json
-수정 전 원본: output/4.1_image_generation_workfiles/4.1.1_before_character_eyelash_edits
+수정 전 원본(속눈썹이 있는 남자 이미지): 이미지 정리 때 삭제했습니다. 수정 후 이미지만 3_original_images_and_visual_references/3.3_additional_character_and_background_images/에 남아 있습니다.
 수정 이미지 원본 크기 유지 확인 완료
 프롬프트 문서 1~14절 및 조리 동작 반복 누락 점검 완료
 PNG 무결성 확인 완료

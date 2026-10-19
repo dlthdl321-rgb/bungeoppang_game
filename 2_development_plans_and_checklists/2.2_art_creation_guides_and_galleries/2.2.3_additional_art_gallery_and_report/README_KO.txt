@@ -4,7 +4,7 @@
 수정 대기 0장: eyelashes_pending.json
 전체 목록·해시·크기: manifest.json
 전체 미리보기: gallery.html
-수정 전 원본: output/4.1_image_generation_workfiles/4.1.1_before_character_eyelash_edits
+수정 전 원본(속눈썹이 있는 남자 이미지): 이미지 정리 때 삭제했습니다. 수정 후 이미지만 3_original_images_and_visual_references/3.3_additional_character_and_background_images/에 남아 있습니다.
 배경 6종의 실제 생성 해상도는 약 832 x 1891이며 목표 1080 x 2456에는 미달합니다.
 RAW 원본입니다. 배경 제거 및 레이어 추출·애니메이션 정렬은 별도 작업입니다.
 

@@ -4,16 +4,23 @@
 
 | 위치 | 무엇을 찾을 때 보는가 |
 | --- | --- |
-| `3.1_original_image_package_20261007/` | 날짜별 원본 패키지와 매니페스트 |
+| `3.1_original_image_package_20261007/` | 날짜별 원본 패키지 매니페스트 (이미지는 3.2·3.5와 같아 정리됨) |
 | `3.2_visual_design_references_20261006/` | 초기 개발 시안과 화면 구성 자료 |
 | `3.3_additional_character_and_background_images/` | 추가 이미지 원본과 목록 |
 | `3.4_additional_image_generation_batches/` | 후속 추가 이미지·생성 진행 기록 |
+| `3.5_completed_game_mockups/` | **게임 완성 시안** — 메인·클리커·조리 화면, 메뉴·설정·스킬·꾸미기·상점 화면, 서브 UI 5종, UI 없는 장사 화면, 스토어 소개 배너(`feature_graphic.png`) |
 
 [이미지 제작 문서·갤러리](../2_development_plans_and_checklists/2.2_art_creation_guides_and_galleries/) · [이미지 적용 도구](../1_app_development/tools/README.md)
 
-원본 파일명과 내부 폴더명은 매니페스트·제작 도구가 참조하므로 유지합니다. 게임 반영은 적용 도구와 `1_app_development/assets` 변경 내용을 확인하며 진행합니다.
+원본 파일명은 매니페스트·제작 도구가 참조하므로 유지합니다. 게임 반영은 적용 도구와 `1_app_development/assets` 변경 내용을 확인하며 진행합니다.
 
-동일 바이트의 중복 `raw/`·`preview/` 복사본은 제거했습니다. 표준 원본과 미리보기는 `3.1_original_image_package_20261007/raw/`·`preview/`에서 확인합니다. 초기 시안 폴더의 중복 매니페스트도 표준 패키지의 `manifest.json`으로 통합했습니다. 이름이 다른 시안 원본과 수정 전 백업은 제작 이력을 위해 유지합니다.
+### 중복 정리 (2026-10-19)
+
+- `bungeoppang-step-01`~`05` 작업 폴더의 이미지는 모두 이 저장소에 같은 파일이 있어, 작업 폴더의 원본 자료(3·4·5번 폴더) 이미지를 지우고 이곳 한 곳에 모았습니다.
+- 바이트가 같은 이미지는 한 장만 남겼습니다. `3.1_…/raw/`·`preview/` 이미지는 `3.2_…`의 이름 붙은 파일과 같아 3.2 쪽을 남겼습니다. 파일명 대응표는 `3.1_…/manifest.json`의 `previous_path`에 있습니다.
+- `3.2_…/04_조리프레임/`의 6컷은 게임 에셋 `1_app_development/assets/images/cook/girl_1~6.png`과 같아 게임 에셋만 남겼습니다.
+- 게임 빌드·테스트가 읽는 `1_app_development/` 안의 이미지(앱 아이콘, iOS 아이콘, 테스트 골든 등)는 서로 같아도 지우지 않았습니다.
+- 남자 캐릭터의 속눈썹 수정 전 이미지(속눈썹이 있는 버전)는 지웠습니다. 수정 후 이미지는 `3.3_…/avatar/boy/`·`cook/boy_*`에 있습니다.
 
 ## 손님 8명 신규 아트 제작 기준
 

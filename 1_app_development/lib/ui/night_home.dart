@@ -19,7 +19,7 @@ import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'weather_layer.dart';
 
-/// Home screen laid out like the concept art (07_UI/메인UI_화면): striped
+/// Home screen laid out like the concept art (3.5_completed_game_mockups/메인UI_화면): striped
 /// awning and HUD on top, the big bungeoppang in the middle, the griddle and
 /// the vendor's cooking cut at the bottom, and a menu bar under them.
 class NightHome extends StatelessWidget {

@@ -10,7 +10,7 @@ import 'pixel_sprites.dart';
 import 'weather_layer.dart';
 
 /// The vendor's cooking cut: a small framed window at the bottom right of
-/// the home screen (07_UI/메인UI_화면).
+/// the home screen (3.5_completed_game_mockups/메인UI_화면).
 ///
 /// A character with concept cooking frames ([PixelSprites.cookFrames])
 /// loops them (준비 → 반죽 → 닫기 → 굽기 → 꺼내기 → 포장) and shows 꺼내기

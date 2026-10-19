@@ -6,9 +6,8 @@ Flutter 기반 붕어빵 게임 저장소입니다. 폴더명은 제품 이름�
 | --- | --- | --- |
 | 1 | [1_app_development](1_app_development/README.md) | Flutter 소스·에셋·테스트·Android/iOS·Firebase 서버·개발 도구 |
 | 2 | [2_development_plans_and_checklists](2_development_plans_and_checklists/README.md) | 기획·결정·검수·정책·보존 문서 전체 |
-| 3 | [3_original_images_and_visual_references](3_original_images_and_visual_references/) | 이미지 원본·제작 자료 |
-| 4 | [4_image_generation_results_and_backups](4_image_generation_results_and_backups/) | 이미지 생성 결과·수정 전 백업 |
-| 5 | [5_app_store_submission_images](5_app_store_submission_images/) | 스토어 이미지 |
+| 3 | [3_original_images_and_visual_references](3_original_images_and_visual_references/README.md) | 이미지 원본·제작 자료·게임 완성 시안 |
+| 4 | [4_image_generation_results_and_backups](4_image_generation_results_and_backups/README.md) | 이미지 생성 작업 기록 |
 | 6 | [6_previous_builds_and_project_archives](6_previous_builds_and_project_archives/) | 과거 ZIP·APK 보관 자료 |
 
 ## 작업별로 어디부터 보는가
@@ -21,8 +20,8 @@ Flutter 기반 붕어빵 게임 저장소입니다. 폴더명은 제품 이름�
 | 저장·경제·UI 테스트 | `1_app_development/test/` |
 | 서버 기능 개발 | [서버 안내](1_app_development/firebase/README.md) |
 | 그림 수정·교체 | [이미지 원본 안내](3_original_images_and_visual_references/README.md) → [개발 도구](1_app_development/tools/README.md) → `1_app_development/assets/` |
-| 과거 그림과 비교 | [작업 결과·백업](4_image_generation_results_and_backups/README.md) |
-| 출시 이미지 준비 | [스토어 자료](5_app_store_submission_images/README.md) |
+| 이미지 생성 작업 기록 | [작업 기록](4_image_generation_results_and_backups/README.md) |
+| 완성 시안·출시 이미지 | [게임 완성 시안](3_original_images_and_visual_references/3.5_completed_game_mockups/) (스플래시·아이콘은 `1_app_development/assets/images/app/`) |
 | 과거 버전 확인 | [ZIP·APK 보관](6_previous_builds_and_project_archives/README.md) |
 
 ## 개발 시작

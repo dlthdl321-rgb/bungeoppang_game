@@ -1,6 +1,6 @@
 # 오늘의 붕어빵
 
-이 문서의 Flutter·도구 명령은 `1_app_development/`에서 실행합니다. 원본 이미지·작업 결과·스토어·보관 자료는 저장소 루트의 `3_original_images_and_visual_references/`, `4_image_generation_results_and_backups/`, `5_app_store_submission_images/`, `6_previous_builds_and_project_archives/`에 있습니다. [저장소 전체 구조](../README.md)를 참고하세요.
+이 문서의 Flutter·도구 명령은 `1_app_development/`에서 실행합니다. 원본 이미지·완성 시안·작업 결과·보관 자료는 저장소 루트의 `3_original_images_and_visual_references/`, `4_image_generation_results_and_backups/`, `6_previous_builds_and_project_archives/`에 있습니다. [저장소 전체 구조](../README.md)를 참고하세요.
 
 **[첫 출시 언어·지역과 문구 원칙](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/08_개발도구와안드로이드출시.md#한국어-첫-출시와-번역-준비--dec-014-확정)**: 한국어·국내 Android 먼저, 외국어·해외 대응은 후속입니다. 신규/수정 문구는 공통 관리하고 UI 이미지와 글자를 분리합니다. 구현 완료를 뜻하지 않습니다.
 
@@ -20,8 +20,8 @@
 | 음악·효과음 | [assets/audio/](assets/audio) | 배경 음악과 효과음 |
 | 글꼴·라이선스 | [assets/fonts/](assets/fonts) | 글꼴과 이용 조건 |
 | 이미지 원본·시안 | [이미지/](../3_original_images_and_visual_references) | 생성 원본, 미리보기, 개발 에셋 |
-| 이미지 작업 결과 | [output/4.1_image_generation_workfiles/](../4_image_generation_results_and_backups/4.1_image_generation_workfiles) | 생성·검토 결과 |
-| 스토어 이미지 | [store/](../5_app_store_submission_images) | 배너와 스플래시 |
+| 이미지 작업 결과 | [4_image_generation_results_and_backups/](../4_image_generation_results_and_backups/README.md) | 화면별 생성·검토 결과 |
+| 게임 완성 시안 | [3.5_completed_game_mockups/](../3_original_images_and_visual_references/3.5_completed_game_mockups) | 화면 완성 시안과 스토어 소개 배너 |
 | 게임 기획 | [2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress) | 현재 기획·결정·검수 기준 |
 | 보존 문서 | [2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup) | 기존 구현 기준, 개인정보·출시 설정 |
 | ZIP 보관 파일 | [archives/](../6_previous_builds_and_project_archives) | 날짜별 백업·APK 압축파일 |

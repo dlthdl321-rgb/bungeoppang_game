@@ -1,7 +1,7 @@
 """The centre bungeoppang at the concept's own resolution.
 
 Cuts the fish out of its iron mould in the approved concept (붕어빵선택,
-raw/references/references_010.png) by colour and writes it, unshrunk, to
+3.2_visual_design_references_20261006/01_원본전체) by colour and writes it, unshrunk, to
 assets/images/fish/redbean.png on a 4:3 canvas laid out like the 96x72
 sprite (the fish fills ~77% of the width, centred), so FishPainter,
 BakeTarget's mould alignment and the 96x72 topping overlays still line up.
@@ -18,8 +18,8 @@ from PIL import Image
 from scipy import ndimage as nd
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = (ROOT.parent / '3_original_images_and_visual_references' / '3.1_original_image_package_20261007' / 'raw'
-       / 'references' / 'references_010.png')
+SRC = (ROOT.parent / '3_original_images_and_visual_references' / '3.2_visual_design_references_20261006'
+       / '01_원본전체' / '붕어빵선택_원본_261006_1905_01.png')
 OUT = ROOT / 'assets' / 'images' / 'fish' / 'redbean.png'
 FILL = .77  # fish width / canvas width, as in the 96x72 sprite
 

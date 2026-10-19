@@ -1,6 +1,6 @@
 """Griddle (stove) sprites from the concept art (stage 14).
 
-Cuts the six-cavity gas griddle out of 07_UI's cooking screen concept
+Cuts the six-cavity gas griddle out of the completed cooking screen mockup
 (조리컷가스화면) by removing the wood around it, keeps it at the concept's resolution on a
 2:1 stove canvas, and recolours only its metal for the other stoves:
 
@@ -17,8 +17,8 @@ from PIL import Image
 from scipy import ndimage as nd
 
 ROOT = Path(__file__).resolve().parent.parent
-CONCEPT = (ROOT.parent / "3_original_images_and_visual_references/3.2_visual_design_references_20261006/01_원본전체"
-           / "조리컷가스화면_원본_261006_1905_01.png")
+CONCEPT = (ROOT.parent / "3_original_images_and_visual_references/3.5_completed_game_mockups"
+           / "조리컷가스화면_화면_261006_1905_01.png")
 STOVE = ROOT / "assets/images/stove"
 SIZE = (80, 40)
 

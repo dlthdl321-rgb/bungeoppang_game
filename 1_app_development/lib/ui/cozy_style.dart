@@ -80,7 +80,7 @@ class CozyRoundButton extends StatelessWidget {
       );
 }
 
-/// The app theme in the concept UI's look (07_UI): the rounded Jua font,
+/// The app theme in the concept UI's look (3.5_completed_game_mockups): the rounded Jua font,
 /// dark chocolate text, cream surfaces with wooden borders and orange
 /// buttons, chips and toggles.
 ThemeData cozyTheme() {

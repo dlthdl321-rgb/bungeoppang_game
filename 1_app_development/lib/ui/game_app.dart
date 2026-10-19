@@ -310,7 +310,7 @@ class _GameHomeState extends State<GameHome> {
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      // A sub-window like the concept UI (07_UI): the balance on top, a
+      // A sub-window like the concept UI (3.5_completed_game_mockups): the balance on top, a
       // wooden-framed cream panel with the title between little fish and a
       // red X at its corner, and a '돌아가기' button under it.
       builder: (ctx) => SizedBox(
@@ -442,10 +442,10 @@ class _GameHomeState extends State<GameHome> {
         _ => _entryPreview(destination),
       };
 
-  /// Settings in the concept art's look (07_UI/설정): a cream panel,
+  /// Settings in the concept art's look (3.5_completed_game_mockups/설정): a cream panel,
   /// orange ON / grey OFF toggles and a '저장' button. Every change is
   /// already saved when made; '저장' writes once more and closes.
-  /// Settings like the concept (07_UI/설정): the sub-window frame, a row per
+  /// Settings like the concept (3.5_completed_game_mockups/설정): the sub-window frame, a row per
   /// option with an icon and an ON/OFF pill, the volume sliders and a big
   /// orange '저장'. Every change is already saved when made; '저장' writes
   /// once more and closes.
