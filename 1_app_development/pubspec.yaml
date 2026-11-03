@@ -59,3 +59,6 @@ flutter:
     - assets/images/avatar/boy/
     # Eye and mouth frames laid over the vendor's face (tools/avatar_layers.py).
     - assets/images/parts/
+    # Home stage: mold-free backgrounds and the big mold (tools/make_home_stage_art.py).
+    - assets/images/bg_clean/
+    - assets/images/mold/

@@ -628,30 +628,53 @@
 | orange | `#FBAF5A` | 강조·진행 막대 |
 | orangeDeep | `#E39E57` | 강조 테두리·테마 기준색 |
 | brick | `#AC3613` | 닫기 버튼·배지 |
+| honeyLight·honey·honeyDeep | `#FFD054`·`#FDBE38`·`#FEB432` | 주 버튼·선택된 탭의 노란 면(위→아래), 슬라이더 채운 부분, `FilledButton` 바탕 |
+| amber | `#F07D0C` | 노란 버튼·선택 탭 아래 경계, 탭 꼭지 |
+| tangerine | `#FD9607` | ON 토글 |
+| tan | `#E9B47E` | 카드 안쪽 연한 선, 고르지 않은 탭·비활성 버튼 테두리 |
+| peach·peachEdge | `#FDD09C`·`#F0B47A` | 효과 칩 바탕·테두리, 크림 버튼 아래 경계 |
+| taupe | `#8A6E62` | OFF 토글, 슬라이더 빈 부분 |
+| knob | `#FFF6E8` | 토글·슬라이더 손잡이 |
+| shadow·shadowDeep | 검정 33%·40% | 패널·창 그림자 |
+
+버튼·탭·칩·토글·슬라이더 색은 `3.5_completed_game_mockups/서브UI5종`에서 뽑았습니다. 근거는 `coordination/visual-00-gap.md`와 `coordination/visual-02.md`에 있습니다.
 
 **공통 위젯**
 
 | 위젯 | 모양 |
 | --- | --- |
-| CozyPanel | 반경 12, 나무 테두리 |
-| CozyRoundButton | 48 원형 |
+| CozyPanel | 반경 12. 나무 테두리 2 + 안쪽 연한 선(tan) 1.5 |
+| CozyRoundButton | 48 원형(나무 테두리 2 포함), 눌림 |
 | CozyFrame | 반경 18/14 |
-| CozyCloseButton | 44 정사각형, 벽돌색 |
-| CozyBackButton | 높이 48 이상, '돌아가기' |
+| CozyCloseButton | 44 정사각형(짙은 테두리 1.5 + 크림 테두리 3 + 벽돌색), 눌림 |
+| CozyBackButton | 높이 48 이상(여백 3 포함 54), '돌아가기', 아래 경계(peachEdge), 눌림, Key `sheet-back` |
 | CozySettingRow | 설정 한 줄 |
-| CozyOnOff | 84×36 켜기/끄기 |
+| CozyOnOff | 84×36 켜기/끄기(tangerine/taupe, knob 손잡이) |
+| CozyPrimaryButton | 주 버튼. 최소 높이 44, 짙은 나무 테두리 2 + 노란 그라데이션 + amber 아래 경계 3, Jua 18. `onPressed`가 null이면 creamDeep 면에 흐린 글자 |
+| CozyButton | 보조 버튼. CozyPrimaryButton과 같은 모양에 크림 면 + peachEdge 아래 경계 |
+| CozyChip | 효과 칩. peach 바탕 + peachEdge 테두리, 반경 8, Jua 14 |
+| CozyTabBar·CozyTab | 같은 폭 탭 한 줄, 높이 44. 선택 탭은 노란 면 + 아래 꼭지, 나머지는 크림. 각 탭의 Key는 `CozyTab.key`로 탭 대상에 붙음 |
+| CozyMenuRow | 메뉴 줄. 최소 높이 64, 아이콘 48, 제목 Jua 22, 오른쪽 `>` |
+| CozyPressable | 위 버튼들이 쓰는 눌림 처리. 누르는 동안 2px 내려감 |
+| CozyMotion | 모션 줄이기 전달. `GameApp`이 설정의 모션 줄이기 값으로 앱 전체를 감쌈. 켜져 있거나 기기 애니메이션 끄기면 눌림·토글 이동을 하지 않음 |
+| 슬라이더(테마) | `CozySliderTrackShape`·`CozySliderThumbShape`. 두께 12, 짙은 테두리, 눈금 없음, 손잡이 반지름 12 |
 
 **글자 크기**
 
 | 쓰는 곳 | 크기 |
 | --- | --- |
 | 시트 제목 | Jua 28 |
+| 메뉴 줄 제목(CozyMenuRow) | Jua 22 |
 | 하단 내비 글자 | Jua 21 |
 | 잔액 표시 | Jua 20 |
-| 메뉴 줄 제목 | 18 굵게 |
+| 주 버튼·탭 | Jua 18 |
+| 메뉴 줄 제목(현재 MenuPanel) | 18 굵게 |
+| 칩 | Jua 14 |
 | 보조 글자 | 12 |
 
 간격은 4·6·8·10·12·16을 씁니다. 패널 안쪽 여백은 보통 16입니다.
+
+2026-10-24 비주얼 조정 2단계에서 공통 위젯의 모양과 테마(FilledButton·Switch·Slider·Chip 색)를 바꾸고 새 위젯을 추가했습니다. 화면 배치는 바꾸지 않았고, 새 위젯은 아직 화면에 쓰이지 않습니다(3단계부터 적용).
 
 ---
 

@@ -36,7 +36,9 @@ class NightHome extends StatelessWidget {
   /// Workshop supplies authoritative content while retaining the original stall.
   final Widget? header, griddleContent, vendor;
   final NightHomeHeaderData? headerData;
-  final Widget Function(Rect? fishOnScreen)? centerBuilder;
+  /// Workshop's own centre stage. [cleanCounter] tells whether the
+  /// background shows without its baked mold, so the stage draws the mold.
+  final Widget Function(Rect? fishOnScreen, bool cleanCounter)? centerBuilder;
   final String Function(CosmeticSlot)? equipped;
   const NightHome(
       {super.key,
@@ -81,10 +83,16 @@ class NightHome extends StatelessWidget {
           final fishArea = box.maxHeight - padding.top - reserved;
           final scroll = largeText || fishArea < 360;
           // Large text scrolls the stage, so the fish keeps its own place.
-          final stage = (centerBuilder ?? (fish) => _stage(reduce, fish))(scroll && centerBuilder == null
+          final night = isNightTime(e(CosmeticSlot.time), DateTime.now());
+          final cleanCounter = centerBuilder != null &&
+              PixelSprites.hasCleanBackground(e(CosmeticSlot.background), night);
+          final fishRect = scroll && centerBuilder == null
               ? null
               : NightStallPainter.bakedFishOnScreen(
-                  box.biggest, e(CosmeticSlot.background)));
+                  box.biggest, e(CosmeticSlot.background));
+          final stage = centerBuilder != null
+              ? centerBuilder!(fishRect, cleanCounter)
+              : _stage(reduce, fishRect);
           return Stack(children: [
             Positioned.fill(
                 child: RepaintBoundary(
@@ -92,10 +100,10 @@ class NightHome extends StatelessWidget {
                         key: const Key('stall-scene'),
                         painter: NightStallPainter(
                             background: e(CosmeticSlot.background),
-                            night: isNightTime(
-                                e(CosmeticSlot.time), DateTime.now()),
+                            night: night,
                             stove: null,
-                            decoration: e(CosmeticSlot.decoration))))),
+                            decoration: e(CosmeticSlot.decoration),
+                            cleanCounter: cleanCounter)))),
             Positioned.fill(
                 child: IgnorePointer(
                     child: RepaintBoundary(

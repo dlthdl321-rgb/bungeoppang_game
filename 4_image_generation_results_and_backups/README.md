@@ -5,6 +5,9 @@
 | 폴더 | 내용 |
 | --- | --- |
 | `4.9_work_records/4.9.1_inspection_sheets/` | 남자 캐릭터 속눈썹 수정 후 검수용 모아보기 이미지 (`eyelash_results_*.jpg`) |
+| `4.9_work_records/4.9.1_inspection_sheets/home_stage_20261022/` | 홈 화면 시안 적용 후 게임 캡처 (영업 준비·영업 중·주문 도착·조리 단계, `00_overview.png`는 모아보기) |
+| `4.9_work_records/4.9.1_inspection_sheets/visual_00_current_20261024/` | 비주얼 조정 전 현재 화면 캡처 (홈과 창 15종 390×844, `90`·`91`은 모아보기, `92`는 골든 3장과 메인 시안 비교). 조사 결과는 `coordination/visual-00-gap.md` |
+| `4.9_work_records/4.9.1_inspection_sheets/visual_02_tokens_20261024/` | 비주얼 조정 2단계 공통 위젯 견본·시안 비교·창 전후·HUD 골든 차이. 기록은 `coordination/visual-02.md` |
 | `4.9_work_records/4.9.2_scripts_and_jobs/` | 생성·수정 작업 스크립트와 작업 목록·결과 JSON |
 | `4.9_work_records/4.9.3_generation_metadata/` | 생성 프롬프트·매니페스트 |
 

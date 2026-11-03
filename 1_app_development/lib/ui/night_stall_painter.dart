@@ -27,12 +27,17 @@ class NightStallPainter extends CustomPainter {
 
   /// The vendor behind the counter, or null for an empty stall.
   final AvatarLook? avatar;
+
+  /// Prefer the copy of [background] without the baked mold (the home
+  /// stage then draws its own; see PixelSprites.hasCleanBackground).
+  final bool cleanCounter;
   const NightStallPainter(
       {this.background = 'clear',
       this.night,
       this.stove = 'iron',
       this.decoration = 'none',
-      this.avatar});
+      this.avatar,
+      this.cleanCounter = false});
 
   static const sceneSize = Size(180, 400);
 
@@ -126,7 +131,8 @@ class NightStallPainter extends CustomPainter {
     canvas.save();
     canvas.translate(origin.dx, origin.dy);
     canvas.scale(scale);
-    final (image, darken) = PixelSprites.sceneBackground(background, night);
+    final (image, darken) =
+        PixelSprites.sceneBackground(background, night, clean: cleanCounter);
     _drawBackground(canvas, image);
     if (darken) {
       // No night picture yet: the day one under a deep blue night wash.
@@ -172,7 +178,8 @@ class NightStallPainter extends CustomPainter {
       night != oldDelegate.night ||
       stove != oldDelegate.stove ||
       decoration != oldDelegate.decoration ||
-      avatar != oldDelegate.avatar;
+      avatar != oldDelegate.avatar ||
+      cleanCounter != oldDelegate.cleanCounter;
 }
 
 /// The stall's frame from the concept art: a striped awning across the top

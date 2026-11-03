@@ -363,7 +363,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       equipped:_equipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
         buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts().values.fold<int>(0,(a,b)=>a+b),
         status:c.error!=null ? '저장 확인 필요 · 메뉴를 열어 주세요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}'),
-      centerBuilder:(fish)=>WorkshopMoldStage(controller:c,fishOnScreen:fish,sensorControl:_sensorControl()),
+      centerBuilder:(fish,clean)=>WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,sensorControl:_sensorControl()),
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
       vendor:CookCut(equipped:_equipped,taps:BigInt.from(s.taps),
         reduceMotion:widget.accountController.state.settings.reduceMotion,greeting:s.customers.isNotEmpty)); }

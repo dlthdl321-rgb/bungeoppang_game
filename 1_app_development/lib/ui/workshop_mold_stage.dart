@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../cooking_result_rules.dart';
 import '../cooking_session.dart';
@@ -9,20 +11,28 @@ import 'boost_effects.dart';
 import 'piping_bag_control.dart';
 import 'cooking_session_controls.dart';
 import 'cozy_style.dart';
-import 'fish_painter.dart';
-import 'cooking_mold_painter.dart';
 import 'pixel_sprites.dart';
 
 /// Presentation only. All commands still pass through WorkshopController.
+///
+/// With [cleanCounter] (a background without the baked mold) the stage
+/// follows the 메인UI mockup: while the stall is open the bungeoppang floats
+/// with no mold; before opening, and for [orderFlash] after a new order
+/// arrives, it sits in the iron mold. Otherwise the baked art shows.
 class WorkshopMoldStage extends StatefulWidget {
   final WorkshopController controller;
   final Rect? fishOnScreen;
+  final bool cleanCounter;
   final Widget sensorControl;
   const WorkshopMoldStage(
       {super.key,
       required this.controller,
       required this.fishOnScreen,
+      this.cleanCounter = false,
       required this.sensorControl});
+
+  /// How long a new order shows the fish back in its mold.
+  static const orderFlash = Duration(milliseconds: 2500);
   @override
   State<WorkshopMoldStage> createState() => _WorkshopMoldStageState();
 }
@@ -30,7 +40,37 @@ class WorkshopMoldStage extends StatefulWidget {
 class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   Offset _origin = Offset.zero;
   ScrollPosition? _scroll;
+  Set<String> _seenOrders = {};
+  Timer? _flash;
   void _scrolled() { if (mounted) setState(() {}); }
+  @override
+  void initState() {
+    super.initState();
+    _seenOrders = _orderIds();
+    widget.controller.addListener(_ordersChanged);
+  }
+  @override
+  void didUpdateWidget(covariant WorkshopMoldStage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller.removeListener(_ordersChanged);
+      widget.controller.addListener(_ordersChanged);
+      _seenOrders = _orderIds();
+    }
+  }
+  Set<String> _orderIds() =>
+      {for (final o in widget.controller.state.customers) o.id};
+  void _ordersChanged() {
+    final ids = _orderIds();
+    final arrived = ids.difference(_seenOrders).isNotEmpty;
+    _seenOrders = ids;
+    if (!arrived || !widget.controller.state.business.open) return;
+    _flash?.cancel();
+    _flash = Timer(WorkshopMoldStage.orderFlash, () {
+      if (mounted) setState(() => _flash = null);
+    });
+    if (mounted) setState(() {});
+  }
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -39,7 +79,12 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
     _scroll?.addListener(_scrolled);
   }
   @override
-  void dispose() { _scroll?.removeListener(_scrolled); super.dispose(); }
+  void dispose() {
+    _flash?.cancel();
+    widget.controller.removeListener(_ordersChanged);
+    _scroll?.removeListener(_scrolled);
+    super.dispose();
+  }
   @override
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -59,15 +104,32 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
           height: math.min(box.maxHeight * .42, 190));
       final mapped = widget.fishOnScreen?.shift(-_origin);
       final rect = mapped ?? fallback;
+      final clean = widget.cleanCounter || mapped == null;
+      // Idle: float while open, sit in the mold before opening or on a new order.
+      final floating = session == null && clean &&
+          s.business.open && _flash == null;
+      final String? idleMold = session != null || floating
+          ? null
+          : clean ? 'empty' : null;
       Widget mold(Widget interaction) => Positioned.fromRect(
           rect: rect,
           child: Stack(fit: StackFit.expand, clipBehavior:Clip.none, children: [
-            if (session == null && mapped == null) const IgnorePointer(child: CustomPaint(painter: FishPainter())),
-            if (session != null) Positioned.fill(left:-rect.height*.2,right:-rect.height*.2,top:-rect.height*.2,bottom:-rect.height*.2,
-              child:IgnorePointer(child:CustomPaint(key:const Key('active-empty-mold'),painter:CookingMoldPainter(
-                phase:session.phase,hasBatter:session.firstBatterMs!=null && session.firstBatterMs!>0,
-                hasFilling:session.fillingDurationMs!=null && session.fillingDurationMs!>0 && session.secondBatterMs==null)))),
-            if(session?.phase==CookingPhase.result) const IgnorePointer(child:CustomPaint(painter:FishPainter())),
+            if (floating)
+              Positioned.fill(
+                  top: -rect.height * .75, bottom: rect.height * .75,
+                  child: const IgnorePointer(
+                      key: Key('floating-fish'),
+                      child: CustomPaint(painter: FloatingFishPainter()))),
+            if (idleMold != null)
+              IgnorePointer(child: CustomPaint(
+                  key: const Key('idle-mold'),
+                  painter: WorkshopMoldArt(idleMold, withFish: true))),
+            if (session != null)
+              IgnorePointer(child: CustomPaint(
+                  key: const Key('active-empty-mold'),
+                  painter: WorkshopMoldArt(moldFor(session),
+                      withFish: session.phase == CookingPhase.result,
+                      cover: !clean))),
             interaction,
           ]));
       Widget action(String label, VoidCallback command) => Semantics(
@@ -76,7 +138,10 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
           child: InkWell(
               key: const Key('workshop-mold-action'),
               onTap: blocked ? null : command,
-              child: Center(child: _caption(label))));
+              child: session == null
+                  ? Align(alignment: const Alignment(0, 1.25),
+                      child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))
+                  : Center(child: _caption(label))));
       final Widget control;
       if (session == null) {
         control = action('큰 틀 연습 시작', c.startPractice);
@@ -181,6 +246,108 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
     });
   }
 }
+
+/// The mold picture for [session]'s step (PixelSprites.moldNames).
+String moldFor(CookingSession session) {
+  final poured = (session.firstBatterMs ?? 0) > 0;
+  final filled = (session.fillingDurationMs ?? 0) > 0;
+  final topped = (session.secondBatterMs ?? 0) > 0;
+  switch (session.phase) {
+    case CookingPhase.flipping:
+    case CookingPhase.cooking:
+      return 'closed';
+    case CookingPhase.result:
+      return 'empty';
+    default:
+      if (topped || session.phase == CookingPhase.closing) return 'batter_top';
+      if (filled) return 'filling_${session.flavor}';
+      return poured ? 'batter' : 'empty';
+  }
+}
+
+/// Draws one of the big mold pictures so its fish cavity covers the canvas
+/// (the baked fish's place), with fish/redbean.png in it when [withFish].
+/// [cover] grows it a little to hide a background's baked mold.
+class WorkshopMoldArt extends CustomPainter {
+  final String name;
+  final bool withFish, cover;
+  const WorkshopMoldArt(this.name, {this.withFish = false, this.cover = false});
+
+  /// The fish body inside the mold canvas, and where fish/redbean.png sits
+  /// (tools/make_home_stage_art.py).
+  static const fishRect = Rect.fromLTRB(215, 174, 984, 706);
+  static const fishAt = Offset(100, 66);
+  static final _smooth = Paint()..filterQuality = FilterQuality.medium;
+
+  /// Scale and origin that put [fishRect] centred in [size].
+  static (double, Offset) fit(Size size, double grow) {
+    final k = math.min(size.width / fishRect.width, size.height / fishRect.height) * grow;
+    return (k, size.center(Offset.zero) - fishRect.center * k);
+  }
+
+  static void drawAt(Canvas c, ui.Image? image, Offset at, double k, Offset origin) {
+    if (image == null) return;
+    c.drawImageRect(image,
+        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+        Rect.fromLTWH(origin.dx + at.dx * k, origin.dy + at.dy * k,
+            image.width * k, image.height * k),
+        _smooth);
+  }
+
+  @override
+  void paint(Canvas c, Size size) {
+    final (k, origin) = fit(size, cover ? 1.12 : 1);
+    drawAt(c, PixelSprites.mold(name), Offset.zero, k, origin);
+    if (withFish) drawAt(c, PixelSprites.fish('redbean', 'scales'), fishAt, k, origin);
+  }
+
+  @override
+  bool shouldRepaint(covariant WorkshopMoldArt old) =>
+      old.name != name || old.withFish != withFish || old.cover != cover;
+}
+
+/// The mockup's floating bungeoppang: no mold, a little larger, with
+/// sparkles around it.
+class FloatingFishPainter extends CustomPainter {
+  const FloatingFishPainter();
+  static const _sparkles = [
+    Offset(.06, .30), Offset(.94, .20), Offset(.88, .80), Offset(.12, .88),
+    Offset(.50, .00), Offset(.99, .55),
+  ];
+
+  @override
+  void paint(Canvas c, Size size) {
+    final (k, origin) = WorkshopMoldArt.fit(size, 1.08);
+    WorkshopMoldArt.drawAt(c, PixelSprites.fish('redbean', 'scales'),
+        WorkshopMoldArt.fishAt, k, origin);
+    final sparkle = PixelSprites.fx('sparkle');
+    if (sparkle == null) return;
+    for (var i = 0; i < _sparkles.length; i++) {
+      final s = size.shortestSide * (i.isEven ? .16 : .10);
+      final p = Offset(_sparkles[i].dx * size.width, _sparkles[i].dy * size.height);
+      PixelSprites.draw(c, sparkle, Rect.fromCenter(center: p, width: s, height: s));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant FloatingFishPainter old) => false;
+}
+
+/// The mockup's cream "터치해서 굽기" pill under the fish.
+Widget _pill(String text) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+    decoration: BoxDecoration(
+        color: Cozy.cream,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: Cozy.woodLight, width: 2),
+        boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 4, offset: Offset(0, 2))]),
+    child: Row(mainAxisSize: MainAxisSize.min, children: [
+      const PixelIcon('bun', size: 18),
+      const SizedBox(width: 6),
+      Text(text, style: const TextStyle(color: Cozy.ink, fontWeight: FontWeight.bold, fontSize: 15)),
+      const SizedBox(width: 6),
+      const PixelIcon('bun', size: 18),
+    ]));
 
 Widget _caption(String text, {Key? key}) => Text(text, key: key,
     textAlign: TextAlign.center,

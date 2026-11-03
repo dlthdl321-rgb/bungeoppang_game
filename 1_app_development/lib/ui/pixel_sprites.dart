@@ -90,6 +90,19 @@ class PixelSprites {
   static const cookCharacters = ['girl'];
   static const cookFrameCount = 6;
 
+  /// The big iron mold of the home stage, one picture per cooking step
+  /// (assets/images/mold, tools/make_home_stage_art.py). Each is drawn
+  /// around fish/redbean.png, so the fish fits its cavity.
+  static const moldNames = [
+    'empty',
+    'batter',
+    'filling_redbean',
+    'filling_custard',
+    'filling_cocoa',
+    'batter_top',
+    'closed',
+  ];
+
   static final _images = <String, ui.Image>{};
   static Future<void>? _loading;
   static final _paint = Paint()
@@ -213,7 +226,10 @@ class PixelSprites {
     yield* seasonBanners.map((n) => 'assets/images/event/$n.png');
     for (final bg in _slot(CosmeticSlot.background)) {
       yield 'assets/images/bg/${bg.id}_night.png';
+      yield _cleanPath(bg.id);
+      yield _cleanPath('${bg.id}_night');
     }
+    yield* moldNames.map((n) => 'assets/images/mold/$n.png');
     for (final c in cookCharacters) {
       for (var i = 1; i <= cookFrameCount; i++) {
         yield 'assets/images/cook/${c}_$i.png';
@@ -325,18 +341,45 @@ class PixelSprites {
 
   /// The picture for [background] by day or at [night], and whether it is
   /// the day picture standing in for a missing night one (draw it darkened).
-  static (ui.Image?, bool) sceneBackground(String background, bool? night) {
+  ///
+  /// With [clean], the copy without the baked mold (assets/images/bg_clean)
+  /// is used when that picture has one; see [hasCleanBackground].
+  static (ui.Image?, bool) sceneBackground(String background, bool? night,
+      {bool clean = false}) {
+    ui.Image? pick(String id, ui.Image? baked) =>
+        (clean ? _images[_cleanPath(id)] : null) ?? baked;
     if (night == null) {
-      return (cosmetic(CosmeticSlot.background, background), false);
+      return (pick(background, cosmetic(CosmeticSlot.background, background)), false);
     }
-    final day = cosmetic(CosmeticSlot.background, dayBackground(background));
-    if (!night) return (day, false);
+    final dayId = dayBackground(background);
+    final day = cosmetic(CosmeticSlot.background, dayId);
+    if (!night) return (pick(dayId, day), false);
     final id = nightBackground(background);
     final own = cosmeticDefinitions.any((d) => d.id == id)
         ? cosmetic(CosmeticSlot.background, id)
         : _images['assets/images/bg/$id.png'];
-    return own != null ? (own, false) : (day, true);
+    if (own != null) return (pick(id, own), false);
+    // The darkened day stand-in only goes clean if the day picture is.
+    return (pick(dayId, day), true);
   }
+
+  static String _cleanPath(String id) => 'assets/images/bg_clean/$id.png';
+
+  /// Whether the picture [sceneBackground] shows has a copy without the
+  /// baked mold and bungeoppang, so the stage can draw its own.
+  static bool hasCleanBackground(String background, bool? night) {
+    if (night == null) return _images.containsKey(_cleanPath(background));
+    final dayId = dayBackground(background);
+    if (!night) return _images.containsKey(_cleanPath(dayId));
+    final id = nightBackground(background);
+    final own = cosmeticDefinitions.any((d) => d.id == id)
+        ? cosmetic(CosmeticSlot.background, id)
+        : _images['assets/images/bg/$id.png'];
+    return _images.containsKey(_cleanPath(own != null ? id : dayId));
+  }
+
+  /// One of [moldNames].
+  static ui.Image? mold(String name) => _images['assets/images/mold/$name.png'];
 
   /// One of [fxNames].
   static ui.Image? fx(String name) => _images['assets/images/fx/$name.png'];

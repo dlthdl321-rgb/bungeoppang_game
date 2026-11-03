@@ -143,7 +143,13 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
       // Above the navigator so celebrations show over sheets and dialogs.
       builder: (context, child) => GameAudioScope(
           audio: widget.audio,
-          child: CelebrationHost(controller: widget.controller, child: child!)),
+          child: ListenableBuilder(
+              listenable: widget.controller,
+              builder: (context, child) => CozyMotion(
+                  reduce: widget.controller.state.settings.reduceMotion,
+                  child: child!),
+              child: CelebrationHost(
+                  controller: widget.controller, child: child!))),
       home: widget.workshop == null ? GameHome(controller: widget.controller) :
           WorkshopPage(controller: widget.workshop!, accountController: widget.controller));
 }
