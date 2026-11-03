@@ -2033,5 +2033,18 @@
       "flavor": "custard",
       "quantity": 1
     }
+  },
+  "server_validation": {
+    "max_taps_per_second": 15,
+    "slack_buns": "2000",
+    "slack_taps": 300,
+    "slack_sales": 3,
+    "first_checkpoint_max_lifetime": "1000000",
+    "first_checkpoint_max_taps": 100000,
+    "first_checkpoint_max_sales": 2000,
+    "mission_claim_grace_days": 3
+  },
+  "welcome_reward": {
+    "gold": 10
   }
 }

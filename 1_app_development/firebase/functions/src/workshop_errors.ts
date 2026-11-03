@@ -8,10 +8,12 @@ import { WorkshopEvidenceError } from "./workshop_evidence";
 import { WorkshopServiceError } from "./workshop_service";
 import { WorkshopAdError } from "./workshop_ads";
 import { AlreadyExists } from "./store";
+import { PlausibilityError } from "./plausibility_validator";
 /** Stable, non-sensitive callable contract. Unknown infrastructure failures are retryable. */
 export function workshopFailure(error: unknown) {
   if (error instanceof AlreadyExists) return {code:"aborted" as const,reason:"transaction-retry",retryable:true};
   if (error instanceof WorkshopEvidenceError) return {code:"failed-precondition" as const,reason:"evidence-required",retryable:false};
+  if (error instanceof PlausibilityError) return {code:"failed-precondition" as const,reason:error.final ? "progress-rejected":"progress-check-later",retryable:!error.final};
   if (error instanceof WorkshopServiceError) return {code:"failed-precondition" as const,reason:"request-or-evidence-required",retryable:false};
   if (error instanceof ProtectedPurchaseError || error instanceof CompositePurchaseError || error instanceof DevelopmentContractError || error instanceof WorkshopAdError || error instanceof ActiveProgressError || error instanceof EarnedGoldError || error instanceof SaleRewardError) {
     return {code:"failed-precondition" as const,reason:"state-check-required",retryable:false};

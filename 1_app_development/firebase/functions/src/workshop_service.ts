@@ -8,6 +8,7 @@ import { reviewAndCreditSale, querySaleReward } from "./sale_rewards";
 import { developmentAdPolicy, reserveDevelopmentAd, parseCompositeIntent } from "./development_contracts";
 
 import { creditWorkshopAd } from "./workshop_ads";
+import { PlausibilityError, PlausibilityValidator } from "./plausibility_validator";
 
 type Row = Record<string,unknown>;
 export class WorkshopServiceError extends Error {}
@@ -29,12 +30,19 @@ function canonical(value: unknown): unknown {
 export function rewardFingerprint(account: string, progress: string, claim: string, kind: string, payload: Row): string {
   return JSON.stringify([account,progress,claim,kind,canonical(payload)]);
 }
-/** Source-wired authenticated handlers. No client endpoint writes trusted
- * evidence. Enabling requires the trusted validation pipeline and deployment. */
+export interface WorkshopServiceOptions {
+  /** Writes trustedServerValidation evidence from bounded client snapshots. */
+  validator?: PlausibilityValidator;
+  /** Server-wallet gold credited once per account on the first progress claim. */
+  welcomeGold?: number;
+}
+/** Authenticated handlers. Without a validator no client call writes trusted
+ * evidence; with one, evidence comes only from server-side bound checks. */
 export class WorkshopService {
   private readonly evidence: StoredWorkshopEvidence;
   constructor(private readonly store: Store, private readonly config: unknown,
-      private readonly clock: () => number, private readonly saleKey: Uint8Array) {
+      private readonly clock: () => number, private readonly saleKey: Uint8Array,
+      private readonly options: WorkshopServiceOptions = {}) {
     this.evidence = new StoredWorkshopEvidence(store);
   }
   private account(account:string):void {
@@ -43,7 +51,22 @@ export class WorkshopService {
   async claim(account: string, input: unknown) {
     this.account(account);
     const data = object(input);
-    return this.storeProgress(account,id(data.progress));
+    const result = await this.storeProgress(account,id(data.progress));
+    await this.welcome(account);
+    return result;
+  }
+  /** Idempotent by its fixed ledger id; never derived from client input. */
+  private async welcome(account: string) {
+    const gold = this.options.welcomeGold ?? 0;
+    if (!Number.isSafeInteger(gold) || gold <= 0) return;
+    await this.store.run(async tx => {
+      const path=`users/${account}/ledger/welcome_v1`,old=await tx.get(path),wallet=await tx.get(`users/${account}`);
+      if (old) return;
+      const balance=wallet?.gold ?? 0;
+      if (typeof balance!=="number" || !Number.isSafeInteger(balance) || balance<0 || !Number.isSafeInteger(balance+gold)) throw new WorkshopServiceError("황금 지갑 손상");
+      tx.set(`users/${account}`,{...wallet,gold:balance+gold});
+      tx.create(path,{type:"welcomeGold",account,gold,delta:gold,atMs:this.clock()});
+    });
   }
   async transfer(account:string,input:unknown) {
     this.account(account);
@@ -65,9 +88,21 @@ export class WorkshopService {
   }
   async purchase(account: string,action: "reserve"|"query"|"commit"|"cancel",input: unknown) {
     this.account(account);
-    const ctx = this.context(account,input),data = object(input);
+    const ctx = this.context(account,input),data = object(input),validator=this.options.validator;
+    if (validator && (action === "reserve" || action === "commit")) {
+      const intent=parseCompositeIntent(data.intent,account);
+      const current=await queryCompositePurchase(this.store,ctx,intent.transaction);
+      // Only an open step needs new evidence; terminal/held results replay as-is.
+      if (action === "reserve" ? current.status === "unknown" : current.status === "reserved") {
+        await validator.purchase(ctx,intent,action === "reserve" ? "reservation":"debit",data.snapshot);
+      }
+    }
     if (action === "reserve") return reserveCompositePurchase(this.store,this.config,this.evidence,ctx,data.intent);
     if (action === "commit") return finishCompositePurchase(this.store,this.evidence,ctx,data.intent,"commit");
+    if (validator && action === "cancel") {
+      const tombstone=await validator.cancellation(ctx,id(data.transaction),data.intent);
+      if (tombstone) return queryCompositePurchase(this.store,ctx,id(data.transaction));
+    }
     const old = await queryCompositePurchase(this.store,ctx,id(data.transaction));
     if (action === "query" || old.status === "unknown" || old.status === "committed" || old.status === "canceled") return old;
     // Validator must fence late commits and attest rollback/no debit.
@@ -128,6 +163,19 @@ export class WorkshopService {
         if (previous.account!==account || previous.claimId!==claim || previous.kind!=="mission" || previous.fingerprint!==fingerprint ||
             typeof previous.gold!=="number" || !Number.isSafeInteger(previous.gold) || previous.gold<=0) throw new WorkshopServiceError("미션 지급 원장 재대조 필요");
         return finish({...resultBase,outcome:"eligible",gold:previous.gold,receiptId:`mission_${digest}`});
+      }
+    }
+    const validator=this.options.validator;
+    if (validator && data.snapshot !== undefined) {
+      const ctx=this.context(account,input);
+      if (ctx.progress !== progress) throw new WorkshopServiceError("보상 진행 불일치");
+      try {
+        if (kind === "sale") await validator.sale(ctx,claim,payload,fingerprint,data.snapshot);
+        else await validator.mission(ctx,claim,payload,fingerprint,data.snapshot);
+      } catch (error) {
+        if (!(error instanceof PlausibilityError)) throw error;
+        if (!error.final) return { ...resultBase,outcome:"pending",gold:0,receiptId:"" };
+        return finish({ ...resultBase,outcome:"unverifiable",gold:0,receiptId:`${kind}_${digest}` });
       }
     }
     if (kind === "sale") {

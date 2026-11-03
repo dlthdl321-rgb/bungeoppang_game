@@ -165,6 +165,11 @@ def validate(data, catalog):
     require(all(1 <= level <= 50 for level in data['feature_unlock_levels'].values()), '기능 레벨 범위')
     for key in ('manual_practice', 'core_business', 'core_sales', 'mastery_progress', 'six_slot_access'):
         require(data['feature_unlock_levels'][key] == 1, '핵심 진행의 추가 성장 잠금 금지')
+    check = data['server_validation']
+    require(check['max_taps_per_second'] > 0 and check['mission_claim_grace_days'] >= 1 and
+            all(re.fullmatch(r'0|[1-9][0-9]*', check[k]) for k in ('slack_buns', 'first_checkpoint_max_lifetime')),
+            '서버 타당성 검증 한도')
+    require(0 <= data['welcome_reward']['gold'] <= 1000, '환영 황금 범위')
     return data
 
 

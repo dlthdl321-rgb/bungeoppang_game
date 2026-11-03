@@ -10,6 +10,7 @@ import { getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import developmentBalance from "./generated/development_balance.json";
 import { WorkshopService } from "./workshop_service";
+import { PlausibilityValidator } from "./plausibility_validator";
 import { signedIn } from "./auth";
 import { catalog } from "./catalog";
 import * as friends from "./friends";
@@ -149,8 +150,8 @@ export const rankingTop = onCall(options, (req) =>
   handle(() => ranking.top(store, rankingQueries, signedIn(req), req.data ?? {})));
 
 
-// Prepared source only. Default OFF; never enable without the server evidence
-// validation pipeline, secret binding and integration/security review.
+// Default OFF. WORKSHOP_ONLINE_ENABLED=true turns on the plausibility
+// validator (plausibility_validator.ts) and the one-time welcome gold.
 function workshopService(): WorkshopService {
   if (process.env.WORKSHOP_ONLINE_ENABLED !== "true") {
     throw new HttpsError("failed-precondition", "신규 게임 온라인 검증 연결을 준비 중입니다.");
@@ -160,7 +161,10 @@ function workshopService(): WorkshopService {
   if (key.length < 32 || key.toString("base64") !== encoded) {
     throw new HttpsError("failed-precondition", "판매 보상 서버 설정 확인이 필요합니다.");
   }
-  return new WorkshopService(store,developmentBalance,Date.now,key);
+  return new WorkshopService(store,developmentBalance,Date.now,key,{
+    validator:new PlausibilityValidator(store,developmentBalance,Date.now),
+    welcomeGold:developmentBalance.welcome_reward.gold,
+  });
 }
 async function workshopCall(req: Parameters<typeof signedIn>[0], work: (service: WorkshopService, uid: string) => Promise<unknown>) {
   const uid = signedIn(req);

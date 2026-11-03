@@ -7,6 +7,7 @@ import { getAuth } from "firebase-admin/auth";
 import config from "../../src/generated/development_balance.json";
 import { lazyFirestoreStore } from "../../src/firestore_store";
 import { WorkshopService } from "../../src/workshop_service";
+import { PlausibilityValidator } from "../../src/plausibility_validator";
 import { ProtectedEvent, ProtectedPurchasePipeline } from "../../src/protected_purchase_pipeline";
 import { acceptWorkshopSsv, WorkshopSsvVerifier } from "../../src/workshop_ads";
 
@@ -109,4 +110,28 @@ test("unreserved approval cancellation creates a durable no-charge tombstone",as
   assert.equal(result.status,"canceled");
   assert.deepEqual(await service.purchase(account,"reserve",{...context,intent:quote}),result);
   assert.equal((await db.doc(`users/${account}`).get()).data()!.gold,5);
+});
+
+test("plausibility validator: welcome gold, purchase, mission and retries on real Firestore",async()=>{
+  const account="emu_plausible",now={ms:at};
+  const checked=new WorkshopService(store,config,()=>now.ms,new Uint8Array(32).fill(3),{
+    validator:new PlausibilityValidator(store,config,()=>now.ms),welcomeGold:config.welcome_reward.gold});
+  await Promise.all(Array.from({length:3},()=>checked.claim(account,{progress})));
+  assert.equal((await db.doc(`users/${account}`).get()).data()!.gold,config.welcome_reward.gold);
+  const quote=intent(account),snap=(buns:string)=>({buns,lifetimeBuns:"40",level:1,taps:40,sales:0});
+  const reserved=await Promise.all(Array.from({length:3},()=>checked.purchase(account,"reserve",{...context,intent:quote,snapshot:snap("40")})));
+  assert.ok(reserved.every(x=>x.status==="reserved"));
+  now.ms+=1000;
+  const committed=await Promise.all(Array.from({length:3},()=>checked.purchase(account,"commit",{...context,intent:quote,snapshot:snap("25")})));
+  assert.ok(committed.every(x=>x.status==="committed" && x.receiptId===committed[0].receiptId));
+  assert.equal((await db.doc(`users/${account}/compositeSkills/tap_1`).get()).data()!.owned,1);
+  const row=config.mission_targets.daily.taps,day=new Date(now.ms+540*60000).toISOString().slice(0,10);
+  const payload={requirements:{taps:{metric:row.metric,target:row.target}},scope:"daily",period:day,goal:"taps",
+    revision:config.metadata.revision,gold:config.mission_gold_rewards.daily_taps,progress:{taps:"50"}};
+  const claim={...context,claim:`${progress}:mission:daily:${day}:taps`,kind:"mission",payload,snapshot:{...snap("25"),taps:50}};
+  const paid=await Promise.allSettled(Array.from({length:3},()=>checked.reward(account,claim,true)));
+  const final=await checked.reward(account,claim,false);
+  assert.equal(final.outcome,"eligible");
+  assert.ok(paid.every(x=>x.status==="rejected" || x.value.outcome==="eligible"));
+  assert.equal((await db.doc(`users/${account}`).get()).data()!.gold,config.welcome_reward.gold-1+config.mission_gold_rewards.daily_taps);
 });
