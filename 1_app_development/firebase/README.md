@@ -32,3 +32,5 @@ functions/src/development_contracts.ts는 임시 공통 설정 기반 견적 검
 추가 로컬 검증은 `run_emulator_checks.ps1`을 사용한다. Node22Path/FirebaseCliPath/Java21Bin을 지정하며 demo 프로젝트와127.0.0.1 전용 포트를 강제한다. 기본120초 발견 대기를 사용하고 운영 배포·활성화는 하지 않는다. 서버 서명 스냅샷 수신/발급 서버의 구분과 최신 검증 결과는 [4단계 인계](../../coordination/step-04.md)를 따른다.
 
 Windows 한글 경로에서 Java가 규칙 경로를 손상시키는 경우를 위해, 스크립트는 규칙 원본을 ASCII 임시 경로에 그대로 복사하고 종료 시 임시 규칙/설정 파일만 삭제한다. 기본 임시 경로는 Public 아래 `codex-workshop-step04-tools`이며 `EmulatorScratchRoot`로 ASCII 경로를 지정할 수 있다. PowerShell이 ps1을 차단하면 검토된 이 로컬 스크립트에 한해 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File ./run_emulator_checks.ps1` 뒤에 위 인자를 지정한다. 영구 실행 정책은 바꾸지 않는다. 부모 프로세스의 DEBUG도 검증 프로세스에서만 해제하고 복원한다.
+
+로컬 검증 도구는 `setup_local_tools.ps1`로 준비한다. Node 22.23.3(nodejs.org 공식 zip, SHA256 대조)과 Firebase CLI 15.34.0을 git에서 제외된 `local_tools/`에 받고, `run_emulator_checks.ps1`에 넘길 경로를 출력한다. Java 21과 Firestore 에뮬레이터 jar는 한글 경로 문제 때문에 `C:\Users\Public\codex-workshop-step04-tools`에 둔다.

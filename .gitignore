@@ -53,3 +53,6 @@ app.*.map.json
 1_app_development/android/.gradle/
 1_app_development/android/.kotlin/
 1_app_development/android/local.properties
+
+# Local server-check tools (setup_local_tools.ps1)
+1_app_development/firebase/local_tools/
