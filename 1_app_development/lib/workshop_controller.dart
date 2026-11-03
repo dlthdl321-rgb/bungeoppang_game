@@ -304,7 +304,7 @@ class WorkshopState {
   }
 }
 
-class WorkshopController extends ChangeNotifier {
+class WorkshopController extends ChangeNotifier implements WorkshopProgressSource {
   final DevelopmentBalance config;
   final WorkshopRepository repository;
   final DateTime Function() now;
@@ -340,7 +340,14 @@ class WorkshopController extends ChangeNotifier {
   final Stopwatch _clock = Stopwatch();
   int _lastMono = 0, _checkpoint = 0;
   WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway})
-      : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure();
+      : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure() {
+    onlineGateway?.source = this;
+  }
+  @override
+  Map<String,dynamic> progressSnapshot() => {'buns':state.buns.toString(),'lifetimeBuns':state.lifetime.toString(),
+    'level':state.level,'taps':state.taps,'sales':state.completedSales};
+  @override
+  PurchaseJournal? purchaseJournal(String transaction) => state.purchases.journals[transaction];
   // Retained through reloadAfterError; storage integration can persist these
   // frozen attempts alongside its command journal for process-death recovery.
   bool _savingCheckpoint = false;

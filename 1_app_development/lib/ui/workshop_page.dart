@@ -215,7 +215,11 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     final current=rule==null ? '' : '${missions.progress(scope,rule['metric'] as String)}/${rule['target']} · ';
     return ListTile(title:Text(caption),subtitle:Text('$current황금붕어빵력 $gold · 서버 검증 후 지급'),
       trailing:TextButton(onPressed:c.busy || claimed || !missions.complete(c.config,scope,id) ? null :
-        () => c.claimMission(scope,id,expectedPeriod:scope=='daily' ? missions.day:missions.week),child:Text(claimed ? '신청 완료' : '보상 신청')));
+        () async {
+          final ok=await c.claimMission(scope,id,expectedPeriod:scope=='daily' ? missions.day:missions.week);
+          // Already signed in: hand the claim to server verification right away.
+          if(ok && widget.accountController.online.signedIn && await c.syncRewards()) await widget.accountController.refreshWorkshopWallet();
+        },child:Text(claimed ? '신청 완료' : '보상 신청')));
   }
   String _equipped(CosmeticSlot slot) => slot == CosmeticSlot.time ? c.state.sceneTime :
     c.state.avatarEquipment[slot.name] ?? widget.accountController.state.equippedCosmetic(slot);

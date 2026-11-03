@@ -8,8 +8,15 @@ abstract class WorkshopTransport {
   String get authenticatedAccount;
   Future<Map<String,dynamic>> callWorkshop(String name, Map<String,dynamic> data);
 }
+/// Progress totals the server's plausibility validator bounds by server time
+/// (firebase/functions/src/plausibility_validator.ts). Not proof by itself.
+abstract class WorkshopProgressSource {
+  Map<String,dynamic> progressSnapshot();
+  PurchaseJournal? purchaseJournal(String transaction);
+}
 class WorkshopOnline implements WorkshopPurchaseGateway {
   final WorkshopTransport transport;
+  WorkshopProgressSource? source;
   String? _account, _progress;
   int? _epoch;
   WorkshopOnline(this.transport);
@@ -34,7 +41,7 @@ class WorkshopOnline implements WorkshopPurchaseGateway {
     if (_account != authenticatedAccount || _account == null || _progress == null || _epoch == null) {
       throw const FormatException('활성 진행을 먼저 확인해 주세요.');
     }
-    return {'progress':_progress,'epoch':_epoch};
+    return {'progress':_progress,'epoch':_epoch,if(source!=null)'snapshot':source!.progressSnapshot()};
   }
   void _accountMatches(String account) {
     if (account != authenticatedAccount) throw const FormatException('원래 계정으로 확인해 주세요.');
@@ -57,7 +64,8 @@ class WorkshopOnline implements WorkshopPurchaseGateway {
   @override
   Future<Map<String,dynamic>> cancel(String accountId,String transactionId) {
     _accountMatches(accountId);
-    return _call('workshopPurchaseCancel',{..._context(),'transaction':transactionId});
+    final intent=source?.purchaseJournal(transactionId);
+    return _call('workshopPurchaseCancel',{..._context(),'transaction':transactionId,if(intent!=null)'intent':intent.toJson()});
   }
   Future<Map<String,dynamic>> reward(String claim,String kind,Map<String,dynamic> payload,{bool query=false}) =>
       _call(query ? 'workshopRewardQuery' : 'workshopRewardSubmit',

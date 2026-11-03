@@ -130,5 +130,47 @@ void main() {
     expect(c.state.purchases.owned,isEmpty);
     expect(await c.setBackgroundTime('forest'),isFalse);
   });
-
+  test('서버 타당성 검증용 진행 스냅샷을 보상 제출과 함께 보낸다',() async {
+    final transport=_Recording();
+    final c=WorkshopController(config,Repository(),purchaseGateway:WorkshopOnline(transport));
+    addTearDown(c.dispose);await c.initialize();
+    for (var i=0;i<40;i++) { c.tap(); }
+    await c.command(() {
+      c.state.level=2;c.state.claimedLevels.add(2);
+      c.state.pendingGold['level:2']=jsonEncode({'level':2,'gold':1,'revision':config.revision});
+    });
+    expect(await c.syncRewards(),isTrue,reason:c.notice);
+    expect(transport.sent['workshopRewardSubmit']!['snapshot'],
+      {'buns':'40','lifetimeBuns':'40','level':2,'taps':40,'sales':0});
+  });
+  test('서버가 거절한 예약은 원래 구매 의도를 보낸 취소 확인으로 무과금 정리된다',() async {
+    final transport=_Recording(),gateway=WorkshopOnline(transport);
+    final c=WorkshopController(config,Repository(),purchaseGateway:gateway);
+    addTearDown(c.dispose);await c.initialize();
+    expect(gateway.source,same(c));
+    await c.command(() {c.state.buns=BigInt.from(40);c.state.lifetime=BigInt.from(40);});
+    expect(await c.purchaseSkill(gateway,'tap_1'),isFalse);
+    final transaction=c.state.purchases.journals.keys.single;
+    expect(await c.recoverPurchase(gateway,transaction,cancel:true),isTrue);
+    expect(transport.sent['workshopPurchaseCancel']!['intent']['transaction'],transaction);
+    expect(c.state.purchases.journals[transaction]!.settled,isTrue);
+    expect(c.state.buns,BigInt.from(40));expect(c.state.purchases.owned,isEmpty);
+  });
+}
+class _Recording extends Transport {
+  final Map<String,Map<String,dynamic>> sent={};
+  @override
+  Future<Map<String,dynamic>> callWorkshop(String name,Map<String,dynamic> data) async {
+    sent[name]=data;
+    final unknown={'account':authenticatedAccount,'transaction':data['transaction'],'status':'unknown'};
+    if(name=='workshopPurchaseReserve') throw Exception('progress-rejected');
+    if(name=='workshopPurchaseQuery') return unknown;
+    if(name=='workshopPurchaseCancel') {
+      final intent=data['intent'] as Map<String,dynamic>?;
+      if(intent==null) return unknown;
+      return {for(final k in ['account','transaction','revision','skill','owned','quantity','buns','gold'])k:intent[k],
+        'status':'canceled','receiptId':'canceled_tombstone','grantId':''};
+    }
+    return super.callWorkshop(name,data);
+  }
 }

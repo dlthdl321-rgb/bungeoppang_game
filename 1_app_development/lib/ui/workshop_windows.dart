@@ -58,7 +58,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop>{
       Wrap(spacing:8,children:[for(final mode in [(PurchaseMode.one,'1개'),(PurchaseMode.ten,'10개'),(PurchaseMode.maximum,'최대')])
         ChoiceChip(key:Key('quantity-${mode.$1.name}'),label:Text(mode.$2),selected:mode.$1==_mode,onSelected:(_)=>setState(()=>_mode=mode.$1))]),
       Expanded(child:ListView(key:ValueKey('skills-${_kind.name}'),padding:const EdgeInsets.all(12),children:[
-        if(c.purchaseGateway==null) const Text('서버 구매 검증 연결을 준비 중이에요. 지금은 구매할 수 없어요.'),
+        if(c.purchaseGateway==null) const Text('스킬 구매는 온라인 연결(카카오 로그인)이 있는 빌드에서만 할 수 있어요.'),
         if(c.notice!=null)Text(c.notice!),if(c.error!=null)Text(c.error!),
         for(final journal in c.state.purchases.journals.values.where((j)=>!j.settled)) CozyPanel(child:Column(children:[
           Text('구매 확인 대기: ${journal.quote.skillId}'),Wrap(children:[
