@@ -201,6 +201,7 @@
 - 스킬 id는 `tap_1`~`tap_16`, `auto_1`~`auto_16`입니다.
 - 4단계부터의 id는 목록 순서로 자동으로 붙습니다. **중간에 끼워 넣거나 순서를 바꾸면 안 됩니다.**
 - 목표 밸런스는 Lv.10까지 약 21~22일입니다(`test/economy_simulation_test.dart`).
+- 신규 Workshop 경로: 스킬은 붕어빵력+황금붕어빵력 두 재화 가격(`skill_purchase`, 모든 스킬 황금 1 이상). 신규 사용자는 서버 환영 황금(`welcome_reward.gold` = 10)으로 초반 스킬을 산다. Lv.1~5 승급은 스킬 없이도 가능하며, 탭 2회/초·1분 1판매 기준 30분 안에 Lv.5에 도달하는지 `test/workshop_progression_simulation_test.dart`가 확인한다([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)).
 
 ---
 
@@ -464,6 +465,7 @@
 - 상점에 보이는 가격은 Play가 지역에 맞게 주는 가격입니다.
 - 결제 흐름: `buyGoldPack`(로그인 필요) → Play 결제 → 서버 `walletRedeem`이 Play API로 확인하고 소모 처리 → 지급. 앱에서는 자동 소모하지 않습니다(`autoConsume: false`).
 - 사용할 때는 요청마다 20자 무작위 id를 붙여 `walletSpend`를 부릅니다. 같은 id는 한 번만 처리됩니다.
+- 신규 Workshop의 황금 획득: 환영 황금(계정당 1회, `ledger/welcome_v1`), 일일·주간 미션, 희귀 판매 추첨. 모두 서버 지갑에서만 늘어나고 앱은 로컬 황금을 만들지 않습니다([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)).
 
 ---
 
@@ -502,6 +504,9 @@
 | profileSet | 이름과 외형 등록 |
 | friendAdd / friendList / friendVisit / visitsFetch | 친구와 방문 |
 | rankingSubmit / rankingTop | 랭킹 |
+| workshopProgressClaim | 활성 진행 등록 + 환영 황금(계정당 1회) |
+| workshopPurchaseReserve / Commit / Query / Cancel | 신규 스킬·아바타 두 재화 구매. 예약·확정 전에 타당성 검증기가 진행 스냅샷을 확인 |
+| workshopRewardSubmit / Query | 미션·판매 황금. 타당성 검증 후 서버 지갑 지급 |
 
 ### 랭킹 (`lib/ranking_config.dart` ↔ `functions/src/ranking.ts`, 테스트가 일치 여부를 확인)
 
@@ -874,7 +879,8 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 | 문제 | 내용 |
 | --- | --- |
 | **릴리스 빌드가 debug 키로 서명됨** | `android/app/build.gradle.kts`의 release `signingConfig`가 debug입니다. Play에 올리기 전에 업로드 키를 설정해야 합니다. |
-| 서버 App Check 꺼짐 | 모든 서버 함수가 `enforceAppCheck: false`입니다. |
+| 서버 App Check 꺼짐 | 모든 서버 함수가 `enforceAppCheck: false`입니다. (7단계에서 처리) |
+| 붕어빵력은 타당성 검증만 함 | 서버는 붕어빵력을 재생하지 못하고 시간·보유 스킬 기준 상한만 확인합니다. 조작된 앱은 상한 안에서 붕어빵력을 부풀릴 수 있습니다. 황금은 서버 지갑에서만 움직입니다. |
 | 노점 부품 그림 없음 | `assets/images/stall/`에 `awning`, `post`, `postlamp`, `counter`(`_snow`) 파일이 없어서 해당 층이 그려지지 않습니다. 현재 있는 것은 `postlamp_lilac/mint/rose`뿐입니다. |
 | 온라인은 Android 전용 | iOS에서는 오프라인으로만 동작합니다. |
 
@@ -1043,3 +1049,22 @@ Functions 발견 단계에서 Play SDK와 Firestore client를 만들지 않도�
 ## 직원5 오디오 수명 보완 — 2026-10-18
 
 GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광고 중 BGM/굽기/SFX를 차단한다. 스토리 중에는 굽기 소스만 비우고 독립 BGM 설정을 유지한다. 복귀는 현재 소스를 먼저 반영한다. AudioplayersAudio는 전경 이탈 시 진행 중 효과음과 늦게 시작된 효과음도 중단한다. 기본값/저장 형식은 변경하지 않았다. 검증 근거는 coordination/step-05.md에 기록한다.
+
+## 23. 서버 타당성 검증과 환영 황금 — 2026-11-03
+
+[23번 가출시 작업](../23_가출시우선작업프롬프트.md) 2단계. 사용자 결정: 검증 방식은 **서버 타당성 검증**, 초반 황금은 **서버 환영 황금**. 19~22장의 "신뢰된 검증 증거 발급자 미연결" 상태를 해소한다.
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 진행 스냅샷 | 앱이 구매·보상 호출마다 `snapshot = {buns, lifetimeBuns, level, taps, sales}`를 함께 보냄 | `lib/workshop_online.dart` `WorkshopProgressSource`, `WorkshopController.progressSnapshot` |
+| 서버 체크포인트 | `users/{uid}/workshopPlausibility/{progress}`에 직전 확인 값과 서버 시각 저장. 증거 기록과 같은 트랜잭션 | `functions/src/plausibility_validator.ts` |
+| 상한 공식 | 누적 붕어빵력 증가 ≤ 탭 증가×서버 기준 탭 생산 + 경과초×서버 기준 자동 생산 + 판매 증가×최대 판매가 + 승급 보상 + 여유분. 탭 증가 ≤ 경과초×15+여유. 판매 증가 ≤ 경과시간/손님 간격+여유. 감소·레벨 조건 미달은 확정 거절 | 같은 파일 `advance` |
+| 첫 확인 | 체크포인트가 없으면 누적 100만·탭 10만·판매 2000 이하만 허용 | `server_validation.first_checkpoint_*` |
+| 구매 | 예약: 붕어빵력 ≥ 가격. 확정: 예약 이후 붕어빵력 증가가 누적 증가를 넘지 않아야 함(차감 반영 확인). 거절된 예약은 `취소 확인`으로 무과금 취소 기록(tombstone)을 남겨 정리. 예약된 구매 취소는 황금 반환·스킬 미지급 | `PlausibilityValidator.purchase/cancellation` |
+| 미션 | 설정 revision·목표·보상량 일치, 기간은 서버 KST 기준 최근 3일(`mission_claim_grace_days`) 안, 진행량 ≤ 스냅샷 누적/서버 보유 스킬 수/자동 생산. 실패는 `unverifiable`(지급 0) 확정 | `missionGold/missionPlausible` |
+| 판매 | 증거 형식(주문 id·별점 1~5·제품) 확인, 검증한 판매 수 ≤ 스냅샷 판매 수. 이후 기존 서버 추첨·일일 상한 | `PlausibilityValidator.sale`, `sale_rewards.ts` |
+| 환영 황금 | 첫 `workshopProgressClaim`에서 계정당 1회 `welcome_reward.gold`(10) 지급 | `WorkshopService.welcome` |
+| 켜는 조건 | 운영 함수는 `WORKSHOP_ONLINE_ENABLED=true`와 `WORKSHOP_SALE_DRAW_KEY_BASE64`가 있어야 검증기·환영 황금이 켜짐. 배포·운영값은 7단계 | `functions/src/index.ts` |
+| 앱 표시 | Firebase 설정 없는 빌드: 스킬 상점에 "온라인 연결(카카오 로그인)이 있는 빌드에서만" 안내. 미션 보상 신청 시 로그인 상태면 바로 서버 확인 | `lib/ui/workshop_windows.dart`, `lib/ui/workshop_page.dart` |
+
+설정 원본은 `config/development_balance.json`의 `server_validation`·`welcome_reward`이며 `tools/development_balance.py`로 서버 사본·14번 문서를 다시 만든다. 테스트: `functions/test/plausibility_validator.test.ts`(11개), 에뮬레이터 `test/emulator/workshop.integration.ts` 마지막 항목, Dart `test/workshop_online_test.dart`·`test/workshop_progression_simulation_test.dart`.
