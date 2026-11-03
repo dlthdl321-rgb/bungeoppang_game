@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/premium_config.dart';
-import 'package:todays_bungeoppang/support_config.dart';
 
 const catalogPath = 'firebase/functions/src/catalog.json';
 

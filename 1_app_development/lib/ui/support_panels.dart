@@ -4,7 +4,6 @@ import '../game_controller.dart';
 import '../support_config.dart';
 import '../support_rules.dart';
 import '../support_state.dart';
-import 'pixel_sprites.dart';
 
 String rewardLabel(RewardDefinition r) => '코인 ${r.coins}개';
 String remainingLabel(int ms) {

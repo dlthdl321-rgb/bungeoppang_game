@@ -1,7 +1,6 @@
 import 'models.dart';
 import 'economy_config.dart';
 import 'mission_config.dart';
-import 'cosmetic_config.dart';
 
 const balanceVersion = economyBalanceVersion;
 const maxUpgradeCount = skillCountLimit;

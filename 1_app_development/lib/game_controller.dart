@@ -183,6 +183,8 @@ class GameController extends ChangeNotifier {
   /// Levels up by itself once every goal is met; the levelUp event shows the
   /// reward banner. The level advances synchronously, so the "미션 달성"
   /// notice never sees the level as claimable.
+  // Kept for re-enabling; the call in tick() is off (manual level-up).
+  // ignore: unused_element
   void _autoLevelUp(int nowMs) {
     if (_autoLeveling || !canClaimLevel(state)) return;
     if (_autoLevelRetryMs case final retry? when nowMs < retry) return;

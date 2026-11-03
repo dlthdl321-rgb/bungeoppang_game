@@ -3,7 +3,6 @@ import '../economy.dart';
 import '../game_controller.dart';
 import '../mission_config.dart';
 import '../missions.dart';
-import '../support_config.dart';
 import '../prestige_rules.dart';
 import 'pixel_sprites.dart';
 import 'support_panels.dart';
