@@ -67,7 +67,7 @@ class WorkshopState {
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
   }
-  Map<String, dynamic> toJson() => {'schema': 4, 'sequence': sequence, 'level': level,
+  Map<String, dynamic> toJson() => {'schema': 5, 'sequence': sequence, 'level': level,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
     'levelStartTaps': levelStartTaps, 'levelStartSales': levelStartSales, 'arrivalMs': arrivalMs,
     'selectedFlavor': selectedFlavor,'sceneTime':sceneTime, 'recipes': recipes.toList()..sort(),
@@ -91,7 +91,7 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2, 3, 4].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || ![1, 2, 3, 4, 5].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
     if ((row['schema'] as int) < 4 && (row.containsKey('relationships') || row.containsKey('customerScene'))) throw const FormatException('구형 관계 저장 충돌');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
@@ -121,7 +121,7 @@ class WorkshopState {
     if ((row['schema'] as int) >= 2) state.purchases = WorkshopPurchases.fromJson(object('purchases'), config);
     state.purchases.available(state.buns);
     if((row['schema'] as int)>=3) state.missions=WorkshopMissions.fromJson(object('missions'));
-    if (row['schema'] == 4) {
+    if ((row['schema'] as int) >= 4) {
       state.relationships = WorkshopRelationships.fromJson(object('relationships'),config,WorkshopCustomerCatalog.bundled());
       if (state.relationships.day > business.businessIndex) throw const FormatException('미래 관계 영업일');
     }
@@ -178,29 +178,38 @@ class WorkshopState {
     state.customers = [for (final c in row['customers'] as List)
       if (c is Map<String, dynamic>) CustomerOrder.fromJson(c) else throw const FormatException('손님 목록 오류')];
     if (state.customers.map((c) => c.id).toSet().length != state.customers.length) throw const FormatException('손님 ID 중복');
+    if ((row['schema'] as int) < 5 && state.customers.any((c) => c.deliveries.isNotEmpty)) throw const FormatException('구형 저장의 부분 판매 충돌');
     var salesBuns = BigInt.zero;
     final consumed = <String, BigInt>{};
+    void sold(Map<String, dynamic> product) {
+      final id = product['batch'] as String;
+      final originalRaw = state.inventory.dispositions[id];
+      if (originalRaw == null) throw const FormatException('생산 근거 없는 판매');
+      final original = jsonDecode(originalRaw) as List;
+      final batch = ProductBatch.fromJson(original[1] as Map<String, dynamic>);
+      if (original[0] != true || !state.recipes.contains(batch.flavor) || product['flavor'] != batch.flavor ||
+          product['variant'] != batch.variant || product['madeOnBusinessIndex'] !=
+          (state.inventory.bindings[id] ?? batch.madeOnBusinessIndex)) throw const FormatException('생산/판매 제품 불일치');
+      consumed[id] = (consumed[id] ?? BigInt.zero) + BigInt.from(product['quantity'] as int);
+      final remaining = state.inventory.batches[id]?.quantity ?? 0;
+      if (consumed[id]! + BigInt.from(remaining) > BigInt.from(batch.quantity)) throw const FormatException('생산량보다 많은 재고/판매');
+    }
     for (final e in object('sales').entries) {
       if (e.value is! String) throw const FormatException('판매 원장 형식 오류');
       final evidence = validateStoredCustomerSale(e.key, e.value as String);
       if ((evidence['businessIndex'] as int) > state.business.businessIndex) throw const FormatException('미래 영업일의 판매');
-      for (final item in evidence['products'] as List) {
-        final product = item as Map<String, dynamic>, id = product['batch'] as String;
-        final originalRaw = state.inventory.dispositions[id];
-        if (originalRaw == null) throw const FormatException('생산 근거 없는 판매');
-        final original = jsonDecode(originalRaw) as List;
-        final batch = ProductBatch.fromJson(original[1] as Map<String, dynamic>);
-        if (original[0] != true || !state.recipes.contains(batch.flavor) || product['flavor'] != batch.flavor ||
-            product['variant'] != batch.variant || product['madeOnBusinessIndex'] !=
-            (state.inventory.bindings[id] ?? batch.madeOnBusinessIndex)) throw const FormatException('생산/판매 제품 불일치');
-        consumed[id] = (consumed[id] ?? BigInt.zero) + BigInt.from(product['quantity'] as int);
-        final remaining = state.inventory.batches[id]?.quantity ?? 0;
-        if (consumed[id]! + BigInt.from(remaining) > BigInt.from(batch.quantity)) throw const FormatException('생산량보다 많은 재고/판매');
-      }
+      for (final item in evidence['products'] as List) { sold(item as Map<String, dynamic>); }
       salesBuns += DevelopmentBalance.decimal(evidence, 'ordinaryBuns');
       state.sales[e.key] = e.value as String;
     }
-    if (row['schema'] == 4) {
+    // Partial deliveries of waiting customers: consumed stock, already paid.
+    for (final delivery in state.customers.expand((c) => c.deliveries)) {
+      if (delivery.soldOnBusinessIndex > state.business.businessIndex) throw const FormatException('미래 영업일의 부분 판매');
+      sold(delivery.toJson());
+      salesBuns += delivery.ordinaryBuns;
+    }
+    if (state.customers.any((c) => state.sales.containsKey(c.id))) throw const FormatException('끝난 주문이 대기 중이에요.');
+    if ((row['schema'] as int) >= 4) {
       final relation = state.relationships.toJson(), visits = relation['visits'] as Map;
       final npcs = WorkshopCustomerCatalog.bundled();
       for (final customer in state.customers.where((c) => npcs.contains(c.customerId))) {
@@ -278,7 +287,7 @@ class WorkshopState {
         state.avatarEquipment[e.key]=e.value as String;
       }
     }
-    if (row['schema']==4) {
+    if ((row['schema'] as int)>=4) {
       if(!row.containsKey('customerScene')) throw const FormatException('대화 복원 상태 누락');
       final scene=row['customerScene'];
       final active=state.relationships.active;
@@ -700,12 +709,31 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     }
   });
 
+  /// How many products the sale button would hand over to [order] now.
+  int saleReadyCount(CustomerOrder order) {
+    if (gameplayPaused || !state.business.permitsProducts(now())) return 0;
+    try {
+      return selectCustomerInventory(order, state.inventory, businessIndex: state.business.businessIndex, partial: true)
+          .fold(0, (n, line) => n + line.values.fold(0, (a, b) => a + b));
+    } on FormatException { return 0; }
+  }
+  /// The wait [order] started with, for the queue's time ring.
+  int initialWaitMs(CustomerOrder order) {
+    final context = ((state.relationships.toJson()['visits'] as Map)[order.id] as Map?)?['context'] as Map?;
+    final initial = context?['initialWaitMs'];
+    return initial is int && initial > 0 ? initial
+        : DevelopmentBalance.integer(config.rows('level_progression')[state.level - 1], 'order_wait_ms');
+  }
+
   /// Capture the displayed order before entering the command. A delayed retry
   /// must never deliver to the next customer after the original has left.
   Future<bool> sellToFirstCustomer() => sellToCustomer(
       state.customers.isEmpty ? '' : state.customers.first.id);
 
-  /// Production and stock-selection UI use the same full-order sale command.
+  /// Production and stock-selection UI use the same sale command. Without
+  /// [selectedByLine] it hands over the matching stock, oldest first: short
+  /// stock is a partial sale (ordinary buns now, no sale count), and the
+  /// product that fills the order completes the sale (DEC-017/023/007).
   /// Invalid selections consume nothing; there is no exchange grace period.
   Future<bool> sellToCustomer(String orderId,
       {List<Map<String, int>>? selectedByLine}) => command(() {
@@ -717,10 +745,20 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (index != 0) throw const FormatException('맨 앞 손님의 주문부터 확인해 주세요.');
     final order = state.customers[index];
     final selected = selectedByLine ?? selectCustomerInventory(order, state.inventory,
-        businessIndex: state.business.businessIndex);
-    final sales = CustomerSalesProgress(inventory: state.inventory, ordinaryBuns: state.buns,
-      lifetimeSalesBuns: state.lifetime, sales: state.sales).sell(config, order, selectedByLine: selected,
-      businessIndex: state.business.businessIndex, flavorDifficulties: {for (final f in state.recipes) f: difficulty(f)});
+        businessIndex: state.business.businessIndex, partial: true);
+    final difficulties = {for (final f in state.recipes) f: difficulty(f)};
+    final progress = CustomerSalesProgress(inventory: state.inventory, ordinaryBuns: state.buns,
+      lifetimeSalesBuns: state.lifetime, sales: state.sales);
+    final handed = selected.fold(0, (n, line) => n + line.values.fold(0, (a, b) => a + b));
+    if (handed < order.remainingQuantity) {
+      final (partial, next) = progress.deliver(config, order, selectedByLine: selected,
+        businessIndex: state.business.businessIndex, flavorDifficulties: difficulties);
+      state.inventory = partial.inventory; state.buns = partial.ordinaryBuns; state.lifetime = partial.lifetimeSalesBuns;
+      state.customers[index] = next;
+      return;
+    }
+    final sales = progress.sell(config, order, selectedByLine: selected,
+      businessIndex: state.business.businessIndex, flavorDifficulties: difficulties);
     state.inventory = sales.inventory; state.buns = sales.ordinaryBuns; state.lifetime = sales.lifetimeSalesBuns;
     state.sales..clear()..addAll(sales.sales);
     state.pendingGold['sale:${order.id}'] = sales.sales[order.id]!;

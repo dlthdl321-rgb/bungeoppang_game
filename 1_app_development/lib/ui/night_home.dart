@@ -39,6 +39,9 @@ class NightHome extends StatelessWidget {
   /// Workshop's own centre stage. [cleanCounter] tells whether the
   /// background shows without its baked mold, so the stage draws the mold.
   final Widget Function(Rect? fishOnScreen, bool cleanCounter)? centerBuilder;
+  /// Workshop's sale counter: left of the cooking cut, just above the
+  /// griddle's first row of cells.
+  final Widget? counter;
   final String Function(CosmeticSlot)? equipped;
   const NightHome(
       {super.key,
@@ -49,6 +52,7 @@ class NightHome extends StatelessWidget {
       this.griddleContent,
       this.vendor,
       this.centerBuilder,
+      this.counter,
       this.equipped});
 
   static const cream = Cozy.cream;
@@ -166,6 +170,11 @@ class NightHome extends StatelessWidget {
                         header ?? _hud(),
                         Expanded(child: stage),
                       ])),
+            if (counter != null) Positioned(
+                left: side + 8,
+                width: w - 16 - (vendor == null ? 0 : cookW + 8),
+                bottom: griddleBottom + griddleH * .66,
+                child: counter!),
             if (vendor == null) Positioned(
                 right: side + 8,
                 width: cookW,

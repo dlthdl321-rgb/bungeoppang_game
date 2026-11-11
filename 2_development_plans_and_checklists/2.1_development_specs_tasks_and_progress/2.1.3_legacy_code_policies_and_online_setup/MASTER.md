@@ -123,6 +123,14 @@
 - 환생 별이 누적 생산으로 가능한 수보다 많음
 - 목록에 없는 업적·주간 id
 
+**신규 Workshop 진행 저장**(`lib/workshop_controller.dart` `WorkshopState`, 실제 진입 경로)
+
+| 항목 | 값 |
+| --- | --- |
+| DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
+| JSON 저장 형식 | `schema` 5. 1~4를 읽고 5로 저장 |
+| schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
+
 **버전별 이전:** 모두 `GameState.fromJson` 안에서 처리합니다.
 
 | 버전 | 바뀐 내용 |
@@ -536,6 +544,32 @@
 
 > README의 홈 화면 설명(왼쪽 위 미션 버튼, 오른쪽 세로 메뉴, 아래 레벨 카드)은 예전 구조입니다. 현재 구조는 아래와 같습니다.
 
+### Workshop 홈 (실제 진입 경로, `lib/ui/workshop_page.dart`)
+
+`main.dart` → `GameApp` → `WorkshopPage`가 `NightHome`에 Workshop 내용을 넣어 그립니다. 아래 "홈 화면"의 층 구성(배경·굽는 판·HUD·하단 내비)은 같고, 다음이 다릅니다.
+
+| 요소 | 위치·크기 | 키 | 파일 |
+| --- | --- | --- | --- |
+| 큰 틀 무대 | HUD 아래 중앙. 배경에 그려진 붕어빵 자리에 맞춤 | `workshop-center-stage` | `ui/workshop_mold_stage.dart` |
+| 손님 줄 | 무대 왼쪽, 폭 64, 위 48·아래 56 여백. 맨 앞이 위. 배지 52(남은 시간 고리, 맨 앞은 노란 면) + "N번" + 맛 첫 글자·수량. 영업 중이고 줄이 차지 않았으면 아래에 '맞이' 버튼 | `customer-N`, `customer-welcome` | `ui/workshop_counter.dart` `WorkshopCustomerQueue` |
+| 판매 카운터 | 왼쪽 8, 폭 = w − 16 − (조리 컷 폭 + 8), 아래 = 굽는 판 바닥 + 굽는 판 높이×0.66(6구 첫 줄 바로 위). 큰 틀 제작 중에는 숨김 | `sale-counter` | `WorkshopSaleCounter` |
+| 손님 창 | 손님 배지를 누르면 뜨는 작은 창: 주문 줄(드린 수/주문 수), 대사, '이웃 이야기 확인', 맛별 '주문 제작'(누르면 창을 닫고 큰 틀 시작) | `customer-card` | `WorkshopCustomerCard` |
+| 재고 창 | 카운터 글자를 누르면 뜨는 작은 창: 오래된 순 묶음(맛·익힘·개수·경과 영업일), 준비품 | `stock-card` | `WorkshopStockList` |
+
+**판매 카운터:** 1줄 제목(Jua 15), 1줄 설명(12, 안내 문구가 있으면 벽돌색으로 대신), 오른쪽에 다음 행동 버튼 하나(최대 폭 104, 높이 44). 상태 순서:
+
+| 상태 | 제목 / 설명 | 버튼 |
+| --- | --- | --- |
+| 저장 오류 | 저장 확인이 필요해요 | 다시 확인 (`counter-reload`) |
+| 영업 전·새 영업일 | 오늘 영업 준비 / 새 영업일이 밝았어요, 재고·준비품 | 영업 시작 / 이어서 영업 (`business-open`) |
+| 태오 사진 반응 | 태오 대사 | 반응 확인 (`photo-reaction`) |
+| 손님 없음 | 마지막 판매 한마디 또는 '손님을 기다리는 중이에요', 재고 | 영업 종료 (`business-close`) |
+| 맨 앞 손님 | 이름 (남은 초) / "팥 1/2, 재고 3" | 드릴 재고가 있으면 'N개 먼저 판매' 또는 '판매 완료'(`sale-button`), 없으면 '맛 제작'(`order-produce`) |
+
+**메뉴 창 아래:** 황금붕어빵력 심사 대기 건수(`menu-pending-gold`), '로그인·보상 확인'(`menu-sync`), 영업 중이면 '영업 종료'(`menu-close-business`). 예전 "가게 관리" 시트는 없앴습니다. 레시피(슈크림·초코) 미션 받기는 레벨 미션 창, 맛별 연습·손기술 진행과 손님 취향 기록·이야기 다시 보기는 도감 창으로 옮겼습니다.
+
+골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`).
+
 ### 기준
 
 - 따로 정한 디자인 해상도는 없습니다. 콘텐츠 폭 `w = min(화면폭, 560)`이고 태블릿에서는 가운데 정렬합니다. 크기는 `w`에 대한 비율로 정합니다.
@@ -586,7 +620,7 @@
 
 ### 패널(시트)
 
-- 모든 패널은 `GameHome._open(id)`(`lib/ui/game_app.dart`)로 엽니다. 화면 높이 92%의 바텀시트입니다.
+- 구형 GameHome(도달하지 않는 코드)에서는 모든 패널을 `GameHome._open(id)`(`lib/ui/game_app.dart`)로 엽니다. Workshop 홈은 `WorkshopPage._open(id)`가 `showWorkshopWindow`(`lib/ui/workshop_windows.dart`)로 같은 모양의 창을 엽니다. 화면 높이 92%의 바텀시트입니다.
 - 시트 구성: 위에 잔액 표시, 그 아래 제목 프레임, 오른쪽 위 닫기 버튼, 아래 돌아가기 버튼.
 - 잔액 표시는 shop과 skins 패널에서 코인, 나머지에서는 붕어빵입니다.
 
@@ -679,7 +713,7 @@
 
 간격은 4·6·8·10·12·16을 씁니다. 패널 안쪽 여백은 보통 16입니다.
 
-2026-10-24 비주얼 조정 2단계에서 공통 위젯의 모양과 테마(FilledButton·Switch·Slider·Chip 색)를 바꾸고 새 위젯을 추가했습니다. 화면 배치는 바꾸지 않았고, 새 위젯은 아직 화면에 쓰이지 않습니다(3단계부터 적용).
+2026-10-24 비주얼 조정 2단계에서 공통 위젯의 모양과 테마(FilledButton·Switch·Slider·Chip 색)를 바꾸고 새 위젯을 추가했습니다. 화면 배치는 바꾸지 않았고, 새 위젯은 아직 화면에 쓰이지 않습니다(3단계부터 적용). 2026-11-09 가출시 3단계의 판매 카운터·손님 창·메뉴 아래 버튼에서 `CozyPrimaryButton`·`CozyButton`을 처음 씁니다(높이 40~44, Jua 15~16).
 
 ---
 
@@ -941,7 +975,7 @@ GameState v13과 실제 지갑은 유지한다. development_purchase_journal.dar
 
 초기 팥 미디엄만, 슈크림/초코는 지정 미션 조건으로 각각 획득 가능하고 상점은 준비 중이다. 맛별 숙련5종/횟수/손기술 AND, 당시 revision/요구량의 숙련 확정 기록을 보존한다. 보유 AND 숙련한 맛만6구 후보, 직접 수확·탄 칸 폐기. 앱 이탈·가려진6구 정지, 고객 전경 시간 계속, KST 실제 영업일/준비품1회 귀속·5영업일 소멸이다.
 
-전량 손님 판매는 재고·붕어빵력/누적·판매ID·황금 대기를 함께 저장한다. 별점은 품질·신선도이며 일반 대금에 다시 곱하지 않는다. 미션·판매·광고 황금은 서버 검증 전 로컬 잔액을 올리지 않는다. 수동 승급은 현재 레벨 추가 탭/판매 기준선을 갱신하고50 이후 분점은 후속이다. 같은 손님의 명시 맛/익힘만 영구 관찰하며 실패·취소로 삭제하지 않는다.
+손님 판매는 재고·붕어빵력/누적을 함께 저장하고, 주문을 다 채운 판매에서만 판매ID·황금 대기를 함께 저장한다(부분 판매는 24장). 별점은 품질·신선도이며 일반 대금에 다시 곱하지 않는다. 미션·판매·광고 황금은 서버 검증 전 로컬 잔액을 올리지 않는다. 수동 승급은 현재 레벨 추가 탭/판매 기준선을 갱신하고50 이후 분점은 후속이다. 같은 손님의 명시 맛/익힘만 영구 관찰하며 실패·취소로 삭제하지 않는다.
 
 실제 새 스킬/꾸미기 복합 결제·검증 황금·SDK/SSV·신규 친구/랭킹 연결은 미완료이고 현재 신규 자동 생산율은0이다. 비영 생산율8시간/50% 계산 소스는 별도로 있다. AdMob 공식 문서 접근은 HTTP403으로 차단돼 검증 구현을 추정하지 않았다. SDK/추적 의존성과 현 개인정보 문구는 변경하지 않았다. 앱 실행·컴파일/테스트/빌드/실기기 미실행이다. [18번 상세](../18_신규게임연결과사용자결정반영.md).
 
@@ -1026,7 +1060,7 @@ Workshop의 기존 홈 하단 상점/스킬/꾸미기와 메뉴 목적지를 개
 
 별도 브랜치 `codex/employee3-domain`의 P3-004, P4-006~007, P5-004~005 구현·검증과 제작/저장 연결 계약은 [3단계 인계](../../../coordination/step-03.md)를 따른다. 위2026-10-16의 실행 미검증 기록과 구분한다. 자동 원장/체크리스트/진행현황은 이번 작업에서 수정하지 않았다.
 
-- `selectCustomerInventory`는 오래된 묶음 우선·같은 날짜 ID 순으로 전량 배정하고, `sellToCustomer(orderId, selectedByLine: ...)`가 현재 주문·전량·신선도를 재검증한다. 판매 버튼은 표시한 주문 ID를 캡처해 종료된 주문의 입력이 다음 손님으로 넘어가지 않는다.
+- `selectCustomerInventory`는 오래된 묶음 우선·같은 날짜 ID 순으로 남은 요구량을 배정하고(`partial: true`면 모자라도 있는 만큼), `sellToCustomer(orderId, selectedByLine: ...)`가 현재 주문·수량·신선도를 재검증한다. 부분 판매·완료 규칙은 24장. 판매 버튼은 표시한 주문 ID를 캡처해 종료된 주문의 입력이 다음 손님으로 넘어가지 않는다.
 - `preferredCustomerFlavor`는 태오의 실제 보유 미경험 신메뉴를 주문에 반영한다. 기본 관계 완료가 이후 신메뉴 사건을 영구 차단하지 않으며 C 선택 후일담은 실제 촬영 맥락과 함께 생성한다. 기본 관계→선택 후일담→새 선택의 우선순위를 입장/판매 후에 함께 적용한다.
 - 접수·교환·소개와 관계 수치/상한·영업일·저장 schema4는 유지한다. 날씨/동행·표정/복장 아트 범위를 새로 확정하지 않는다. 로컬 판매 근거는 서버 황금 지급 권한이 아니다.
 - 호스트 테스트는 전체53개 파일을 분할 대조하고 기존 실패8건을 최신 테스트로 재실행해 고유537개 통과를 확인했다. 릴리즈 manifest가 필요한1개는 미실행이다. 단일 전체 명령 종료0이나 실기기/실제 SQLite 이전 검수 완료를 뜻하지 않는다. 최신 도메인 분석은 error0·warning0, 전체 분석은 error0·기존 warning8이며 수치/콘텐츠 생성물 검사도 통과했다. Android 빌드의 최종 결과 및 남은 외부 검수는 인계 파일에 별도 기록한다.
@@ -1068,3 +1102,19 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 앱 표시 | Firebase 설정 없는 빌드: 스킬 상점에 "온라인 연결(카카오 로그인)이 있는 빌드에서만" 안내. 미션 보상 신청 시 로그인 상태면 바로 서버 확인 | `lib/ui/workshop_windows.dart`, `lib/ui/workshop_page.dart` |
 
 설정 원본은 `config/development_balance.json`의 `server_validation`·`welcome_reward`이며 `tools/development_balance.py`로 서버 사본·14번 문서를 다시 만든다. 테스트: `functions/test/plausibility_validator.test.ts`(11개), 에뮬레이터 `test/emulator/workshop.integration.ts` 마지막 항목, Dart `test/workshop_online_test.dart`·`test/workshop_progression_simulation_test.dart`.
+
+## 24. 판매 루프 홈 화면과 부분 판매 — 2026-11-09
+
+[23번 가출시 작업](../23_가출시우선작업프롬프트.md) 3단계. 사용자 선택: 홈 배치 **B안(왼쪽 세로 손님 줄 + 굽는 판 위 판매 카운터)**. 화면 배치는 10장 "Workshop 홈".
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 부분 판매 | 판매 버튼은 맨 앞 손님 주문의 남은 요구량을 오래된 재고부터 있는 만큼 고름. 다 못 채우면 그 제품의 일반 대금만 바로 받고 주문에 `deliveries`로 기록(판매 당시 영업일·익힘·나이·대금 고정). 판매 횟수·판매 ID·황금 심사 대기·친밀도는 만들지 않음 | `development_orders.dart` `CustomerDelivery`, `CustomerSalesProgress.deliver`, `WorkshopController.sellToCustomer` |
+| 주문 완료 | 남은 요구가 0이 되는 판매에서 판매 1회(DEC-017/023/007). 별점은 앞서 드린 제품과 이번 제품을 판매 당시 값으로 개수 가중(DEC-018/022). 증거 `ordinaryBuns`는 전체 합, 이번에 받는 대금은 이번 제품분만 | `prepareCustomerSale` |
+| 대금 반올림 | 제품 1개 단위로 반올림하므로 나눠 팔아도 합계가 같음 | `development_sale_quality.dart` |
+| 판매 증거 | 주문(`order`)에는 납품 기록을 넣지 않음. 다른 영업일에 먼저 드린 제품은 `soldOnBusinessIndex`를 붙이고 `age`는 그날 기준. 서버는 제품 목록을 검사하지 않아 변경 없음 | `validateStoredCustomerSale` |
+| 미완료 종료 | 영업 종료·시간 초과로 손님이 떠나면 받은 대금은 남고 횟수·황금 기회는 없음 | `closeBusiness`, `_advanceMemory` |
+| 저장 | JSON schema 5. 읽을 때 납품 기록의 생산 근거·소비량·대금(누적 이하)을 판매 원장과 함께 대조 | `WorkshopState.fromJson` |
+| 같은 묶음 | 이미 드린 묶음은 같은 주문 줄에 다시 고르지 않음(증거 지문 중복 방지) | `selectCustomerInventory`, `_handOver` |
+
+테스트: `test/partial_sale_test.dart`(규칙 4·컨트롤러 5), `test/workshop_counter_test.dart`(위젯 3·골든 3). 새 화면 문구에는 Jua에 없는 `·`·`…`를 쓰지 않았고(쉼표·괄호·흐림 처리), 기존 문구의 글자 깨짐은 5단계에서 다룹니다. 네임드 손님 그림은 assets에 없어 이름 첫 글자 배지로 대신합니다.

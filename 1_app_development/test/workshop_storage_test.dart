@@ -146,7 +146,7 @@ void main() {
       final migrated=WorkshopState.fromJson((await load())!,config).toJson()..['sequence']=2;
       await repository.save(migrated,1);
       expect((await load())!['buns'],'17');
-      expect((await load())!['schema'],4);
+      expect((await load())!['schema'],5);
       await db.update('snapshots',{'body':'broken'},where:'slot = ?',whereArgs:['current']);
       expect(await load(),migrated);
     });

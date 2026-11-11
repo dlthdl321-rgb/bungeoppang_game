@@ -9,7 +9,6 @@ import '../game_controller.dart';
 import '../workshop_controller.dart';
 import '../cosmetic_config.dart';
 import '../workshop_purchases.dart';
-import 'avatar_painter.dart';
 import 'night_home.dart';
 import 'workshop_mold_stage.dart';
 import 'cozy_style.dart';
@@ -22,6 +21,7 @@ import '../economy.dart';
 import 'public_menus.dart';
 import 'shop_panel.dart';
 import 'workshop_windows.dart';
+import 'workshop_counter.dart';
 import 'friends_panel.dart';
 import 'ranking_panel.dart';
 import 'progress_panels.dart' show SharePanel;
@@ -125,7 +125,6 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     final walletMessage=await account.refreshWorkshopWallet();
     if (mounted && walletMessage!=null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(walletMessage)));
   }
-  AvatarLook get _look => AvatarLook.of((slot) => c.state.avatarEquipment[slot.name] ?? defaultCosmetics[slot]!);
   CosmeticMenuAccess get _cosmetics {
     final account=widget.accountController,catalog=c.config.section('avatar_catalog');
     bool avatar(CosmeticDefinition d)=>catalog[d.id] is Map<String,dynamic> && (catalog[d.id] as Map)['slot']==d.slot.name;
@@ -223,25 +222,28 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   }
   String _equipped(CosmeticSlot slot) => slot == CosmeticSlot.time ? c.state.sceneTime :
     c.state.avatarEquipment[slot.name] ?? widget.accountController.state.equippedCosmetic(slot);
-  Future<void> _management() async {
+  /// A small window over the stall; it closes itself when a story scene starts.
+  Future<void> _popup(Key key,Widget child) async {
     _enterWindow();
-    final initialSession = c.state.session?.id;
-    BuildContext? sheetContext;
-    void closeForCrafting() {
-      if ((c.state.session != null && c.state.session!.id != initialSession) || c.state.customerScene != null) {
-        final current = sheetContext;
-        sheetContext = null;
-        if (current != null && current.mounted) Navigator.pop(current);
-      }
+    BuildContext? popupContext;
+    void closeForScene() {
+      final current=popupContext;
+      if (c.state.customerScene != null && current != null && current.mounted) { popupContext=null; Navigator.pop(current); }
     }
-    c.addListener(closeForCrafting);
+    c.addListener(closeForScene);
     try {
-      await showWorkshopWindow(context,controller:c,account:widget.accountController,title:'가게 관리',content:(ctx){
-        sheetContext=ctx;
-        return _content(ctx,management:true);
+      await showDialog<void>(context:context,builder:(ctx){
+        popupContext=ctx;
+        return Dialog(key:key,backgroundColor:Colors.transparent,insetPadding:const EdgeInsets.all(16),
+          child:Stack(clipBehavior:Clip.none,children:[
+            CozyPanel(padding:const EdgeInsets.fromLTRB(16,14,16,14),child:SingleChildScrollView(child:child)),
+            Positioned(top:-10,right:-8,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
+          ]));
       });
-    } finally {c.removeListener(closeForCrafting);_leaveWindow();}
+    } finally {c.removeListener(closeForScene);_leaveWindow();}
   }
+  Future<void> _customerCard(String orderId)=>_popup(const Key('customer-card'),WorkshopCustomerCard(controller:c,orderId:orderId));
+  Future<void> _stock()=>_popup(const Key('stock-card'),WorkshopStockList(controller:c));
   Map<String,int> _rewardCounts(){
     final m=c.state.missions;
     int ready(String scope)=>[...m.goals(c.config,scope).keys,if(scope=='daily')'all'].where((id)=>
@@ -251,9 +253,15 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   Future<void> _menu()=>_window('메뉴',(ctx)=>Column(children:[
     Expanded(child:MenuPanel(controller:widget.accountController,legacyDescriptions:false,rewardCounts:_rewardCounts(),
       onOpen:(destination){Navigator.pop(ctx);_open(destination);})),
-    Padding(padding:const EdgeInsets.all(8),child:Wrap(spacing:8,children:[
-      FilledButton.icon(key:const Key('menu-management'),onPressed:(){Navigator.pop(ctx);_open('management');},icon:const Icon(Icons.storefront),label:const Text('주문·재고·영업 관리')),
-      TextButton(onPressed:_syncOnline,child:const Text('로그인·보상 확인')),
+    Padding(padding:const EdgeInsets.all(8),child:Column(children:[
+      Text('황금붕어빵력 심사 대기 ${c.pendingRewardCount}건. 확정 잔액에는 아직 포함되지 않아요.',
+        key:const Key('menu-pending-gold'),style:const TextStyle(fontSize:12,color:Cozy.inkSoft),textAlign:TextAlign.center),
+      const SizedBox(height:6),
+      Wrap(alignment:WrapAlignment.center,spacing:8,runSpacing:6,children:[
+        CozyButton(key:const Key('menu-sync'),onPressed:c.rewardBusy || c.adBusy ? null : _syncOnline,label:'로그인·보상 확인',minHeight:40,fontSize:15),
+        if(c.state.business.open)CozyButton(key:const Key('menu-close-business'),minHeight:40,fontSize:15,
+          onPressed:c.busy ? null : (){Navigator.pop(ctx);_closeBusiness();},label:'영업 종료'),
+      ]),
     ])),
   ]));
   void _open(String destination) {
@@ -274,7 +282,6 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       case 'event': unawaited(_window('주간 도전',(_)=>_missions('weekly')));
       case 'missions': unawaited(_window('레벨 미션',(_)=>_levelMissions()));
       case 'gold': unawaited(_goldPacks());
-      default: unawaited(_management());
     }
   }
   Widget _records()=>ListView(key:const Key('records-scroll'),padding:const EdgeInsets.all(16),children:[
@@ -292,10 +299,26 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       Wrap(spacing:6,children:[for(var i=0;i<5;i++)Chip(label:Text('${c.state.flavorMasteries[flavor]?.discovered.contains(i)==true || (flavor=='redbean' && i==2) ? '●':'○'} ${provisionalDonenessLabels[i]}'))]),
       Text(c.state.masteryAwards.containsKey(flavor) ? '숙련 완료 · 6구 생산 가능':'연습 중'),
     ],
-    if(c.state.tasteObservations.isNotEmpty)const Divider(),
-    if(c.state.level>=DevelopmentBalance.integer(c.config.section('feature_unlock_levels'),'customer_collection_ui'))
-    for(final customer in c.state.tasteObservations.entries)ListTile(title:Text(c.customerName(customer.key)),
-      subtitle:Text(customer.value.entries.map((e)=>'${c.flavorLabel(e.key)} ${e.value.map((v)=>provisionalDonenessLabels[v]).join('/')}').join(', '))),
+    for(final flavor in c.state.recipes)Builder(builder:(context){
+      final m=c.state.flavorMasteries[flavor]!,rule=c.config.mastery(c.difficulty(flavor));
+      return Text('${c.flavorLabel(flavor)} 연습 ${m.practices}/${rule['practice_required']}, 손기술 ${m.techniquePasses}/${rule['technique_passes_required']}, 연습 익힘 ${m.practiceDiscovered.length}/5',
+        key:Key('mastery-$flavor'));
+    }),
+    if(c.state.level>=DevelopmentBalance.integer(c.config.section('feature_unlock_levels'),'customer_collection_ui'))...[
+      if(c.state.tasteObservations.isNotEmpty || c.state.relationships.stories.isNotEmpty)const Divider(),
+      for(final story in c.state.relationships.stories)CozyButton(key:Key('replay-$story'),minHeight:40,fontSize:15,
+        onPressed:c.busy ? null : (){Navigator.pop(context);c.replayCustomerStory(story);},
+        label:'${c.customerCatalog.story(story)['event']} (다시 보기)'),
+      for(final customer in c.state.tasteObservations.entries)
+        if(c.customerCatalog.contains(customer.key))CustomerRecordCard(
+          catalog:c.customerCatalog,npcId:customer.key,met:c.state.relationships.met.contains(customer.key),
+          completedStories:c.state.relationships.stories,
+          stageLabel:const ['첫 만남','낯익은 손님','동네 단골','가까운 이웃'][c.state.relationships.stage(customer.key,c.config)],
+          observedPreferences:[for(final e in customer.value.entries)
+            '${c.flavorLabel(e.key)} ${e.value.map((v)=>provisionalDonenessLabels[v]).join('/')}'])
+        else ListTile(title:Text(c.customerName(customer.key)),
+          subtitle:Text(customer.value.entries.map((e)=>'${c.flavorLabel(e.key)} ${e.value.map((v)=>provisionalDonenessLabels[v]).join('/')}').join(', '))),
+    ],
   ]);
   Widget _achievements()=>ListView(padding:const EdgeInsets.all(16),children:[
     for(final flavor in c.state.recipes)CozyPanel(child:ListTile(leading:const PixelIcon('achievements'),title:Text('${c.flavorLabel(flavor)} 숙련'),
@@ -315,6 +338,16 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       '추가 판매 ${c.state.completedSales-c.state.levelStartSales}/${c.config.rows('level_progression')[c.state.level]['additional_sales']}'),
     if(c.state.level==50)const Text('최고 레벨에 도달했어요.'),
     FilledButton(onPressed:c.busy || !c.canLevelUp ? null:c.levelUp,child:const Text('승급')),
+    for(final flavor in ['custard','cocoa'])
+      if(!c.state.recipes.contains(flavor))Builder(builder:(context){
+        final tier=DevelopmentBalance.integer(c.config.section('active_recipes')[flavor] as Map<String,dynamic>,'acquisition_tier');
+        final requirement=c.config.rows('additional_recipe_acquisition_tiers').firstWhere((r)=>r['tier']==tier);
+        final ready=c.state.level>=DevelopmentBalance.integer(requirement,'unlock_level') &&
+          c.state.completedSales>=DevelopmentBalance.integer(requirement,'mission_sales');
+        return ListTile(key:Key('recipe-mission-$flavor'),title:Text('${c.flavorLabel(flavor)} 레시피 미션'),
+          subtitle:Text('Lv.${requirement['unlock_level']}, 판매 ${c.state.completedSales}/${requirement['mission_sales']}회'),
+          trailing:FilledButton(onPressed:c.busy || !ready ? null : ()=>c.claimRecipeFromMission(flavor),child:const Text('받기')));
+      }),
   ]);
   int _levelProgress() {
     final s=c.state;
@@ -337,9 +370,8 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   @override
   Widget build(BuildContext context) => AnimatedBuilder(animation:Listenable.merge([c,widget.accountController]),
     builder:(context,_)=>_content(context));
-  Widget _content(BuildContext context,{bool management=false}) {
-    final s = c.state, session = s.session;
-    final firstOrderId = s.customers.isEmpty ? null : s.customers.first.id;
+  Widget _content(BuildContext context) {
+    final s = c.state;
     final scene=s.customerScene;
     if(scene!=null) {
       final id=scene['id'] as String,npc=scene['npc'] as String;
@@ -363,106 +395,18 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       return Scaffold(appBar:AppBar(title:const Text('이웃 이야기')),
         body:SafeArea(child:SingleChildScrollView(padding:const EdgeInsets.all(16),child:content)));
     }
-    if (!management) { return NightHome(controller:widget.accountController,onOpen:_open,
+    return NightHome(controller:widget.accountController,onOpen:_open,
       equipped:_equipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
         buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts().values.fold<int>(0,(a,b)=>a+b),
-        status:c.error!=null ? '저장 확인 필요 · 메뉴를 열어 주세요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}'),
-      centerBuilder:(fish,clean)=>WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,sensorControl:_sensorControl()),
+        status:c.error!=null ? '저장 확인 필요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}'),
+      centerBuilder:(fish,clean)=>Stack(children:[
+        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,sensorControl:_sensorControl())),
+        // Below the flavor row, clear of the counter strip.
+        Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
+      ]),
+      counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock,onCloseBusiness:_closeBusiness),
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
       vendor:CookCut(equipped:_equipped,taps:BigInt.from(s.taps),
-        reduceMotion:widget.accountController.state.settings.reduceMotion,greeting:s.customers.isNotEmpty)); }
-    final rule = c.config.mastery(c.difficulty(s.selectedFlavor));
-    return Scaffold(backgroundColor:Colors.transparent,
-      body: SafeArea(child: SingleChildScrollView(padding: const EdgeInsets.all(16), child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        ExcludeSemantics(child: Image.asset(isNightTime(s.sceneTime,DateTime.now())==true ? 'assets/images/bg/clear_night.png':'assets/images/bg/clear.png', height: 120, fit: BoxFit.cover, filterQuality: FilterQuality.none)),
-        Semantics(label:'현재 사장님 아바타',child:SizedBox(height:140,child:CustomPaint(painter:AvatarPainter(_look)))),
-        Text('Lv.${s.level} · 붕어빵력 ${s.buns}', style: Theme.of(context).textTheme.titleLarge),
-        Text('누적 ${s.lifetime} · 판매 ${s.completedSales}회'),
-        AnimatedBuilder(animation: widget.accountController, builder: (context, _) =>
-          Text('황금붕어빵력 ${widget.accountController.state.premium.gold} · 심사 대기 ${c.pendingRewardCount}건')),
-        if (c.error != null) ...[Text(c.error!), FilledButton(onPressed: () => c.reloadAfterError(), child: const Text('저장 다시 확인'))],
-        if (c.notice != null) Text(c.notice!),
-        if (widget.accountController.error != null) Text(widget.accountController.error!),
-        Wrap(spacing: 8, children: [
-          FilledButton(onPressed: c.busy || c.error != null ? null : c.openBusiness,
-            child: Text(!s.business.open ? '영업 시작' : s.business.needsContinuation(DateTime.now().toUtc()) ? '새 영업일 이어가기' : '영업 중')),
-          TextButton(onPressed: s.business.open && !c.busy ? _closeBusiness : null, child: const Text('영업 종료')),
-          TextButton(onPressed: c.busy || c.error != null ? null : c.tap, child: const Text('붕어빵력 모으기')),
-          TextButton(onPressed: c.canLevelUp && !c.busy ? c.levelUp : null, child: const Text('승급')),
-        ]),
-        if (s.level < 50) Text('다음 승급: 누적 ${c.config.rows('level_progression')[s.level]['season_total_buns']} · '
-          '추가 탭 ${s.taps-s.levelStartTaps}/${c.config.rows('level_progression')[s.level]['additional_taps']} · '
-          '추가 판매 ${s.completedSales-s.levelStartSales}/${c.config.rows('level_progression')[s.level]['additional_sales']}'),
-        if (s.level == 50) const Text('최고 레벨에 도달했어요. 분점은 후속 콘텐츠로 준비 중이에요.'),
-        const Divider(), Text('${c.flavorLabel(s.selectedFlavor)} 큰 틀 연습', style: Theme.of(context).textTheme.titleMedium),
-        const Text('처음에는 팥 미디엄 레시피만 보유해요. 연습은 구매 없이 시작할 수 있어요.'),
-        DropdownButton<String>(value: s.selectedFlavor, isExpanded: true,
-          items: [for (final flavor in s.recipes) DropdownMenuItem(value: flavor, child: Text(c.flavorLabel(flavor)))],
-          onChanged: session != null || c.busy ? null : (flavor) { if (flavor != null) c.selectFlavor(flavor); }),
-        for (final flavor in ['custard','cocoa'])
-          if (!s.recipes.contains(flavor)) Builder(builder: (context) {
-            final tier = DevelopmentBalance.integer(c.config.section('active_recipes')[flavor] as Map<String, dynamic>, 'acquisition_tier');
-            final requirement = c.config.rows('additional_recipe_acquisition_tiers').firstWhere((r) => r['tier'] == tier);
-            return ListTile(title: Text('${c.flavorLabel(flavor)} 레시피 미션'),
-              subtitle: Text('Lv.${requirement['unlock_level']} · 판매 ${requirement['mission_sales']}회'),
-              trailing: TextButton(onPressed: c.busy ? null : () => c.claimRecipeFromMission(flavor), child: const Text('받기')));
-          }),
-        Text('연습 ${s.mastery.practices}/${rule['practice_required']} · 손기술 ${s.mastery.techniquePasses}/${rule['technique_passes_required']} · 연습 익힘 ${s.mastery.practiceDiscovered.length}/5'),
-        if (s.level >= DevelopmentBalance.integer(c.config.section('feature_unlock_levels'), 'full_recipe_collection_ui'))
-          Wrap(spacing: 8, children: [for (var i = 0; i < 5; i++) Chip(label: Text(
-            '${(s.selectedFlavor == 'redbean' && i == 2) || s.mastery.discovered.contains(i) ? '●' : '○'} ${provisionalDonenessLabels[i]}'))]),
-        const Text('큰 틀 제작과 6구 수확은 홈 화면에서 진행해요.'),
-        const Divider(), Text('재고 ${s.inventory.batches.values.fold<int>(0, (n,b) => n+b.quantity)}개 · 영업 전 준비품 ${s.inventory.prepared.length}묶음'),
-        for (final b in s.inventory.batches.values) Text('${c.flavorLabel(b.flavor)} ${provisionalDonenessLabels[b.variant]} ${b.quantity}개 · ${s.business.businessIndex-b.madeOnBusinessIndex}영업일 경과'),
-        const Divider(), const Text('손님 주문'),
-        TextButton(onPressed: c.busy ? null : c.welcomeCustomer, child: const Text('손님 맞이')),
-        for (var i = 0; i < s.customers.length; i++) ...[Text('${i+1}번 · ${c.customerName(s.customers[i].customerId)} · ${s.customers[i].lines.map((line) =>
-          '${c.flavorLabel(line.flavor)} ${line.variant == null ? '(일반 익힘)' : provisionalDonenessLabels[line.variant!]} ${line.quantity}개').join(', ')} · '
-          '남은 ${(s.customers[i].remainingMs/1000).ceil()}초'),
-          if(c.customerOrderSpeech(s.customers[i])!=null) Text(c.customerOrderSpeech(s.customers[i])!),
-          if(c.customerWaitingAction(s.customers[i])!=null) Text(c.customerWaitingAction(s.customers[i])!),
-          Text(c.waitingLine(s.customers[i])),
-          if(c.customerDelaySpeech(s.customers[i])!=null) Text(c.customerDelaySpeech(s.customers[i])!),
-          if(c.customerCatalog.contains(s.customers[i].customerId) && c.customerConversation(s.customers[i])!=c.waitingLine(s.customers[i])) Text(c.customerConversation(s.customers[i])),
-          if(c.customerCatalog.contains(s.customers[i].customerId)) TextButton(
-            onPressed:c.busy ? null : ()=>c.observeWaiting(s.customers[i].id),child:const Text('이웃 이야기 확인')),
-          Wrap(children: [for (final flavor in s.customers[i].lines.map((l) => l.flavor).toSet())
-            TextButton(onPressed: c.busy || session != null || c.gameplayPaused ? null :
-              () => c.startOrderProduction(s.customers[i].id, flavor), child: Text('${c.flavorLabel(flavor)} 주문 제작'))]),
-        ],
-        if(c.lastSaleFeedback!=null) Text(c.lastSaleFeedback!),
-        if(c.photoReactionSale!=null) ...[
-          const Text('태오: 와, 냄새 좋다. ……아! 또 사진 전에 먹었네.'),
-          TextButton(onPressed:c.busy ? null : ()=>c.acknowledgePhotoReaction(c.photoReactionSale!),child:const Text('태오의 반응 확인')),
-        ],
-        FilledButton(onPressed: firstOrderId == null || c.busy ? null : () => c.sellToCustomer(firstOrderId), child: const Text('첫 손님에게 전량 판매')),
-        if (s.level >= DevelopmentBalance.integer(c.config.section('feature_unlock_levels'), 'customer_collection_ui')) ...[
-          const Divider(), const Text('손님 취향 도감 · 확인한 주문'),
-          for(final story in s.relationships.stories) TextButton(onPressed:c.busy ? null : ()=>c.replayCustomerStory(story),child:Text('${c.customerCatalog.story(story)['event']} · 다시 보기')),
-          for (final customer in s.tasteObservations.entries)
-            if (c.customerCatalog.contains(customer.key)) CustomerRecordCard(
-              catalog:c.customerCatalog,npcId:customer.key,met:s.relationships.met.contains(customer.key),
-              completedStories:s.relationships.stories,
-              stageLabel:const ['첫 만남','낯익은 손님','동네 단골','가까운 이웃'][s.relationships.stage(customer.key,c.config)],
-              observedPreferences:[for(final e in customer.value.entries)
-                '${c.flavorLabel(e.key)} ${e.value.map((v) => provisionalDonenessLabels[v]).join('/')}'],
-            ) else Text('${c.customerName(customer.key)}: '
-              '${customer.value.entries.map((e) => '${c.flavorLabel(e.key)} ${e.value.map((v) => provisionalDonenessLabels[v]).join('/')}').join(', ')}'),
-        ],
-        const Divider(),const Text('일일·주간 미션'),
-        Text('일일 ${s.missions.day} · 주간 ${s.missions.week}'),
-        const Text('손님 판매로도 희귀 황금 보상을 받을 수 있어요. 구매·자동 생산 목표도 포함돼요.'),
-        for(final e in s.missions.goals(c.config,'daily').entries) _mission('daily',e.key,rule:e.value as Map<String,dynamic>),
-        _mission('daily','all'),
-        for(final e in s.missions.goals(c.config,'weekly').entries) _mission('weekly',e.key,rule:e.value as Map<String,dynamic>),
-        const Divider(),const Text('황금 보상 확인'),
-        Text('판매·승급·미션 심사 대기 ${c.pendingRewardCount}건 · 광고 기록 ${s.adAttempts.length}건'),
-        TextButton(onPressed:c.rewardBusy || c.adBusy ? null : _syncOnline,child:const Text('로그인·심사 및 잔액 다시 확인')),
-        const FilledButton(onPressed:null,child:Text('선택형 보상광고 · 하루 최대 2회')),
-        const Text('광고 연결을 준비 중이에요. 시청 완료만으로 지급하지 않고 서버 검증 후 황금 잔액에 반영해요.'),
-        const Padding(padding: EdgeInsets.only(top:16),child:Text('황금 심사 대기는 확정 잔액에 포함되지 않아요.')),
-      ]))),
-    );
+        reduceMotion:widget.accountController.state.settings.reduceMotion,greeting:s.customers.isNotEmpty));
   }
 }
