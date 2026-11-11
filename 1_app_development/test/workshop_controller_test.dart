@@ -222,8 +222,8 @@ void main() {
   test('schema1은 구매 없는 schema4로 읽되 신규 구매 누락은 초기화하지 않는다', () {
     final legacy = controller.state.toJson();
     legacy['schema'] = 1;
-    for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime','relationships','customerScene']) { legacy.remove(key); }
-    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 5);
+    for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime','relationships','customerScene','tutorial']) { legacy.remove(key); }
+    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 6);
     final corrupted = controller.state.toJson()..remove('purchases');
     expect(() => WorkshopState.fromJson(corrupted, config), throwsFormatException);
   });
@@ -309,10 +309,10 @@ void main() {
     expect(restored.sales.length,1);
   });
   test('schema3 보상·구매를 유지하여 최신 schema로 읽고 관계 누락은 새 기본값으로 덮지 않는다', () {
-    final old=controller.state.toJson()..remove('relationships')..remove('customerScene');old['schema']=3;
+    final old=controller.state.toJson()..remove('relationships')..remove('customerScene')..remove('tutorial');old['schema']=3;
     final restored=WorkshopState.fromJson(old,config);
     expect(restored.purchases.toJson(),controller.state.purchases.toJson());
-    expect(restored.toJson()['schema'],5);
+    expect(restored.toJson()['schema'],6);
     final bad=controller.state.toJson()..remove('relationships');
     expect(()=>WorkshopState.fromJson(bad,config),throwsFormatException);
     old['relationships']={};expect(()=>WorkshopState.fromJson(old,config),throwsFormatException);

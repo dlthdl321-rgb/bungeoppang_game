@@ -24,6 +24,11 @@ const levelUpNamesShown = 3;
 /// not capped like the reward). Shorter absences still pay out silently.
 const offlineWelcomeAfter = Duration(hours: 24);
 
+/// Workshop welcome-back card (가게 복귀 안내): shown when the player comes
+/// back after at least this long away, measured on the business clock.
+/// Shorter absences settle silently.
+const workshopWelcomeBackAfter = Duration(hours: 2);
+
 /// After a failed automatic level-up save, wait this long before retrying.
 const autoLevelRetryMs = 10000;
 

@@ -14,6 +14,7 @@ import 'development_inventory.dart';
 import 'development_orders.dart';
 import 'development_rules.dart';
 import 'development_purchase_journal.dart';
+import 'feedback_config.dart';
 import 'workshop_purchases.dart';
 import 'workshop_online.dart';
 import 'workshop_ads.dart';
@@ -25,12 +26,26 @@ import 'workshop_customer_orders.dart';
 
 part 'workshop_storage.dart';
 
+const workshopTutorialStates = {'cook', 'sell', 'done', 'skipped'};
+
+/// What happened while the app was away, for the welcome-back card. Sales
+/// and customer timers only run in the foreground, so only production is shown.
+class WorkshopAwayReport {
+  final Duration away;
+  final BigInt buns;
+  final bool open;
+  final int waiting;
+  const WorkshopAwayReport({required this.away, required this.buns, required this.open, required this.waiting});
+}
+
 /// Fresh-game local production aggregate. Gold remains in the authenticated
 /// server wallet; pending claims here are never spendable gold.
 class WorkshopState {
   int sequence = 0, level = 1, taps = 0, completedSales = 0, phaseMs = 0,
       levelStartTaps = 0, levelStartSales = 0, arrivalMs = 0;
   String selectedFlavor = 'redbean',sceneTime='scenetime';
+  /// First-run guide: `cook` → `sell` → `done`, or `skipped` (schema 6).
+  String tutorial = 'cook';
   final Set<String> recipes = {'redbean'};
   final Set<String> recipeMissions = {};
   final Map<String, Map<String, dynamic>> masteryAwards = {};
@@ -41,6 +56,7 @@ class WorkshopState {
     else { masteryAwards[selectedFlavor] = value; }
   }
   bool get mastered => masteryAward != null;
+  bool get tutorialActive => tutorial == 'cook' || tutorial == 'sell';
   BigInt buns = BigInt.zero, lifetime = BigInt.zero;
   WorkshopPurchases purchases = WorkshopPurchases.empty();
   String? rewardAccount;
@@ -67,7 +83,7 @@ class WorkshopState {
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
   }
-  Map<String, dynamic> toJson() => {'schema': 5, 'sequence': sequence, 'level': level,
+  Map<String, dynamic> toJson() => {'schema': 6, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
     'levelStartTaps': levelStartTaps, 'levelStartSales': levelStartSales, 'arrivalMs': arrivalMs,
     'selectedFlavor': selectedFlavor,'sceneTime':sceneTime, 'recipes': recipes.toList()..sort(),
@@ -91,7 +107,7 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2, 3, 4, 5].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
     if ((row['schema'] as int) < 4 && (row.containsKey('relationships') || row.containsKey('customerScene'))) throw const FormatException('구형 관계 저장 충돌');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
@@ -179,6 +195,15 @@ class WorkshopState {
       if (c is Map<String, dynamic>) CustomerOrder.fromJson(c) else throw const FormatException('손님 목록 오류')];
     if (state.customers.map((c) => c.id).toSet().length != state.customers.length) throw const FormatException('손님 ID 중복');
     if ((row['schema'] as int) < 5 && state.customers.any((c) => c.deliveries.isNotEmpty)) throw const FormatException('구형 저장의 부분 판매 충돌');
+    // Saves from before the guide existed already played: never re-run it.
+    if ((row['schema'] as int) < 6) {
+      if (row.containsKey('tutorial')) throw const FormatException('구형 저장의 안내 필드 충돌');
+      state.tutorial = 'done';
+    } else {
+      if (!workshopTutorialStates.contains(row['tutorial'])) throw const FormatException('첫 실행 안내 저장 오류');
+      state.tutorial = row['tutorial'] as String;
+      if (state.tutorialActive && state.completedSales > 0) throw const FormatException('판매 뒤 안내 진행 상태 오류');
+    }
     var salesBuns = BigInt.zero;
     final consumed = <String, BigInt>{};
     void sold(Map<String, dynamic> product) {
@@ -341,6 +366,20 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   BusinessSettlement _settleAway() => storyPaused
       ? state.business.settleActive(now(),bunsPerSecond:autoRate,elapsedMs:0)
       : state.business.settle(config,now(),bunsPerSecond:autoRate,offline:true);
+  /// Shown once by the page after a long absence, then dismissed.
+  WorkshopAwayReport? awayReport;
+  /// Minimum absence that earns the welcome-back card.
+  Duration welcomeBackAfter = workshopWelcomeBackAfter;
+  WorkshopAwayReport? _settleAwayInto() {
+    final from = state.business.settledUtc, open = state.business.open;
+    final settlement = _settleAway();
+    state.business = settlement.state;
+    state.buns += settlement.buns; state.lifetime += settlement.buns;
+    final away = state.business.settledUtc.difference(from);
+    return away < welcomeBackAfter ? null
+        : WorkshopAwayReport(away: away, buns: settlement.buns, open: open, waiting: state.customers.length);
+  }
+  void dismissAwayReport() { awayReport = null; if (!disposed) notifyListeners(); }
   BigInt get tapRate => state.purchases.rate(config, 'tap');
   BigInt get autoRate => state.purchases.rate(config, 'auto');
   Completer<void>? _commandIdle;
@@ -377,11 +416,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     state = saved == null ? WorkshopState.initial(now(), config, _id()) : WorkshopState.fromJson(saved, config);
     // Only server-committed grants reconstructed from the durable purchase
     // ledger can produce skill effects; legacy local purchases are not used.
-    final settlement = _settleAway();
-    state.business = settlement.state;
-    state.buns += settlement.buns; state.lifetime += settlement.buns;
+    final report = saved == null ? null : _settleAwayInto();
     error = null;
     if (!await command(() {})) throw StateError('신규 진행 저장 실패');
+    awayReport = report;
     _clock.start(); _timer = Timer.periodic(const Duration(milliseconds: 100), (_) => _tick());
   }
   Future<bool> command(void Function() mutate, {bool production = false}) async {
@@ -491,11 +529,8 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     await _commandIdle?.future;
     if (disposed || generation != _lifecycleGeneration) return;
     if (value) {
-      await command(() {
-        final settlement = _settleAway();
-        state.business = settlement.state;
-        state.buns += settlement.buns; state.lifetime += settlement.buns;
-      });
+      WorkshopAwayReport? report;
+      if (await command(() { report = _settleAwayInto(); }) && report != null) awayReport = report;
       if (disposed || generation != _lifecycleGeneration) return;
       foreground = true; _lastMono = _clock.elapsedMilliseconds;
       notifyListeners();
@@ -605,7 +640,12 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (session.practice) { _recordCookingProduct(session, keep: keep); }
     else if (!state.inventory.dispositions.containsKey(session.id)) { throw const FormatException('주문 제작 저장을 확인해 주세요.'); }
     state.session = null;
+    if (state.tutorial == 'cook' && (keep || !session.practice)) state.tutorial = 'sell';
   }, production: true);
+  Future<bool> skipTutorial() => command(() {
+    if (!state.tutorialActive) throw const FormatException('진행 중인 안내가 없어요.');
+    state.tutorial = 'skipped';
+  });
   Future<bool> startCell(int index) => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
     state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in state.recipes) if (state.masteryAwards.containsKey(f)) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
@@ -766,7 +806,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       state.relationships = state.relationships.successfulSale(order.id,order.id,state.business.businessIndex,config);
     }
     state.completedSales++; state.customers.removeAt(index);
-    if(customerCatalog.contains(order.customerId)) _afterNamedSale(order);
+    // The guide's first sale stays free of story, follow-up and choice scenes.
+    if (state.tutorialActive) { state.tutorial = 'done'; }
+    else if(customerCatalog.contains(order.customerId)) { _afterNamedSale(order); }
   });
   Map<String,dynamic>? _matchingFollowup(CustomerOrder order) {
     // Existing relationship scenes precede optional choice follow-ups, even
@@ -936,7 +978,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final candidateMatches=npc!='npc_yunha' || (order.lines.length==1 && order.lines.single.flavor=='redbean' &&
       order.lines.single.quantity==DevelopmentBalance.integer(config.section('customer_choice_conditions')[npc] as Map<String,dynamic>,'candidate_redbean_quantity'));
     if(!eligibleCustomerChoice(facts,config,candidateOrderMatches:candidateMatches)) return;
-    state.relationships=state.relationships.rollChoice(state.business.businessIndex,[event],random.nextInt(10000),config,customerCatalog,anotherStoryToday:
+    state.relationships=state.relationships.rollChoice(state.business.businessIndex,[event],random.nextInt(10000),config,customerCatalog,tutorial:state.tutorialActive,anotherStoryToday:
       (journal['storyDays'] as Map).values.contains(state.business.businessIndex) || (journal['followupDays'] as Map).values.contains(state.business.businessIndex));
     if(state.relationships.active!=null) {
       final orderIds=['a','b','c']..shuffle(random);

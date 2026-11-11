@@ -74,7 +74,7 @@
 2. `withOnline = Android && firebaseConfigured`. 온라인이면 `KakaoSdk.init` 후 `FirebaseOnlineBackend.create()`. 아니면 `NoOnlineBackend`·`NoRankingService`·`NoBillingService`.
 3. `GameController(SqliteGameRepository(), SystemTimeService(), …)` 생성.
 4. `PixelSprites.load()`로 이미지를 미리 읽음.
-5. `controller.initialize()` → `runApp(GameApp)`. 저장 데이터가 손상되면 `RecoveryApp`.
+5. `controller.initialize()` → 설정 파일 → `WorkshopController.initialize()` → `runApp(GameApp)`. 셋 중 하나라도 읽지 못하면 두 DB를 닫고 `SaveRecoveryApp`(`ui/save_recovery.dart`, 3장 "저장 손상 대처").
 
 `initialize()`는 저장을 읽고, `resume()`으로 오프라인 생산을 정산하고, 100ms 틱 타이머와 10초 자동 저장 타이머를 시작합니다.
 
@@ -128,8 +128,19 @@
 | 항목 | 값 |
 | --- | --- |
 | DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
-| JSON 저장 형식 | `schema` 5. 1~4를 읽고 5로 저장 |
+| JSON 저장 형식 | `schema` 6. 1~5를 읽고 6으로 저장 |
 | schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
+| schema 6 (2026-11-11) | 첫 실행 안내 `tutorial`: `cook` → `sell` → `done`, 또는 `skipped`. 새 설치는 `cook`. schema 5 이하는 `done`으로 올리고, 그 버전에 `tutorial`이 있으면 거절. 판매 기록이 있는데 `cook`/`sell`이면 거절 |
+
+**저장 손상 대처** (`lib/main.dart` `_start`, `lib/ui/save_recovery.dart`, `lib/save_quarantine.dart`)
+
+| 단계 | 동작 |
+| --- | --- |
+| 실패 위치 | 계정 저장(`account`) → 게임 설정 파일(`config`) → 가게 진행 저장(`workshop`) 순서로 읽고, 실패한 곳을 화면과 복사 내용에 표시 |
+| 복구 시도 | 처음 화면에는 '복구 시도'와 '오류 내용 복사'만. 계정 저장은 `restoreBackup()` 뒤 다시 읽고, 가게 저장은 다시 읽을 때 최신 증거 복구본으로 되돌아감(「직원 1 저장·영업 수명 후속」 절). 실패하면 시도 횟수를 올려 같은 화면 |
+| 처음부터 시작 | 복구 시도가 한 번 이상 실패한 뒤에만 보임. 두 번 확인. 실패한 DB 파일(과 `-wal`/`-shm`/`-journal`)을 지우지 않고 `<이름>.damaged-YYYYMMDD-HHMMSS[-N].db`로 옮긴 뒤 새로 시작. 가게 저장 실패면 가게 DB만, 계정 저장 실패면 계정 DB만 옮김 |
+| 설정 파일 오류 | 앱에 들어 있는 파일이라 '처음부터 시작'을 두지 않고 업데이트·재설치 안내 |
+| 오류 내용 복사 | 위치·시각(UTC)·복구 시도 횟수·오류 문장을 클립보드로 |
 
 **버전별 이전:** 모두 `GameState.fromJson` 안에서 처리합니다.
 
@@ -159,7 +170,8 @@
 | 시간 경과 처리 | `observeSupport` 한 곳에서 일·주 넘김과 기록 갱신 | `support_rules.dart` |
 | 오프라인 최대 | 8시간 (`maxOfflineMs`) | `balance.dart` |
 | 오프라인 효율 | 접속 중 생산의 50%. 일일 생산 목표에는 안 셈(`dailyOfflineCounts = false`) | `support_rules.dart` |
-| 돌아오기 환영 창 | 24시간 이상 떠나 있었고 획득량이 있을 때 | `offlineWelcomeAfter` |
+| 돌아오기 환영 창 | 24시간 이상 떠나 있었고 획득량이 있을 때(구형 홈) | `offlineWelcomeAfter` |
+| Workshop 복귀 안내 | 영업 시계로 2시간 이상 비웠다가 돌아왔을 때 한 번(앱 다시 열기·백그라운드 복귀 모두). 비운 시간, 영업 중이면 쌓인 붕어빵력(오프라인 효율·상한 함께 표시), 닫혀 있으면 쌓이지 않았다는 문구, 기다리는 손님 수. 판매·손님 시간은 앱이 앞에 있을 때만 흐르므로 판매 수는 없음 | `workshopWelcomeBackAfter`, `WorkshopController.awayReport`, `ui/workshop_guide.dart` `WorkshopWelcomeBackCard` |
 
 ---
 
@@ -569,6 +581,18 @@
 **메뉴 창 아래:** 황금붕어빵력 심사 대기 건수(`menu-pending-gold`), '로그인·보상 확인'(`menu-sync`), 영업 중이면 '영업 종료'(`menu-close-business`). 예전 "가게 관리" 시트는 없앴습니다. 레시피(슈크림·초코) 미션 받기는 레벨 미션 창, 맛별 연습·손기술 진행과 손님 취향 기록·이야기 다시 보기는 도감 창으로 옮겼습니다.
 
 골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`).
+
+**첫 실행 안내** (`lib/workshop_tutorial.dart` 단계 계산, `lib/ui/workshop_guide.dart` `WorkshopTutorialOverlay`): 홈 위에 겹친 층. 대상 위젯을 꿀색 고리로 두르고 작은 카드(“첫 영업 안내 N/7”, 한 줄 설명, '건너뛰기')를 띄움. 카드만 터치를 받고 게임은 그대로 조작됨. 저장하는 것은 `tutorial` 값뿐이고 단계는 매 프레임 상태에서 계산.
+
+| 단계 | 조건 | 대상 키 |
+| --- | --- | --- |
+| 1 | `cook`, 큰 틀 비어 있음 | `workshop-mold` |
+| 2~6 | 연습 굽기 단계: 반죽 붓기 → 짤주머니 → 두 번째 반죽·뚜껑 → 뒤집기 → 꺼내기·보관 | `workshop-mold`, 결과는 `mold-store` |
+| 7 | `sell`: 영업 시작 → 첫 손님 기다리기 → 판매(재고 없으면 주문 제작) | `business-open`, `sale-counter`, `sale-button`, `order-produce` |
+
+카드 위치: 큰 틀 단계는 무대(`workshop-center-stage`) 바로 아래, 그 밖에는 대상의 넓은 쪽. 왼쪽 72(손님 줄 피함)·오른쪽 12. 어떤 글자 크기에서도 하단 메뉴(`home-nav`) 위 6에서 멈추도록 위로 밀어 올림. 이야기 장면 중에는 숨김. 연습 결과를 보관하거나 주문 제작 결과를 닫으면 `sell`, 첫 판매 완료(주문을 다 채운 판매)면 `done`. 안내 중 첫 판매는 네임드 손님이어도 이야기·후일담·선택 장면을 붙이지 않고, 손님 맞이에서도 선택 장면을 굴리지 않음.
+
+**복귀 카드:** 3장 "Workshop 복귀 안내". 화면이 그려진 뒤 대화상자로 띄우고, 떠 있는 동안 6구를 멈춤(다른 창과 같음). 닫으면 보고를 지움.
 
 ### 기준
 
@@ -1118,3 +1142,18 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 같은 묶음 | 이미 드린 묶음은 같은 주문 줄에 다시 고르지 않음(증거 지문 중복 방지) | `selectCustomerInventory`, `_handOver` |
 
 테스트: `test/partial_sale_test.dart`(규칙 4·컨트롤러 5), `test/workshop_counter_test.dart`(위젯 3·골든 3). 새 화면 문구에는 Jua에 없는 `·`·`…`를 쓰지 않았고(쉼표·괄호·흐림 처리), 기존 문구의 글자 깨짐은 5단계에서 다룹니다. 네임드 손님 그림은 assets에 없어 이름 첫 글자 배지로 대신합니다.
+
+## 25. 첫 실행 안내·복귀 안내·저장 손상 대처 — 2026-11-11
+
+[23번 가출시 작업](../23_가출시우선작업프롬프트.md) 4단계. 화면은 10장 "첫 실행 안내"·"복귀 카드", 저장은 3장 schema 6·"저장 손상 대처"·"Workshop 복귀 안내".
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 첫 실행 안내 | 7단계, 실제 홈 위 고리+카드, 건너뛰기 저장 | `workshop_tutorial.dart`, `ui/workshop_guide.dart`, `WorkshopController.skipTutorial`·`storeResult`·`sellToCustomer` |
+| 첫 손님 | 안내 중에는 선택 장면을 굴리지 않고(`rollChoice(tutorial:)`), 첫 판매 뒤 이야기 장면도 붙이지 않음 | `WorkshopController.welcomeCustomer`·`sellToCustomer` |
+| 복귀 안내 | 2시간 이상 부재 뒤 돌아오면 카드 한 장(사용자 결정 2026-11-11). 자리 비운 동안 판매는 없다는 현재 규칙 유지(자동 판매 도입 안 함) | `feedback_config.dart` `workshopWelcomeBackAfter`, `WorkshopAwayReport` |
+| 저장 손상 | 복구 시도 → 실패 후 '처음부터 시작'(두 번 확인, 손상 파일은 이름 바꿔 보관) + 오류 내용 복사 | `main.dart` `_start`, `ui/save_recovery.dart`, `save_quarantine.dart`, `SqliteGameRepository`/`SqliteWorkshopRepository`의 `defaultPath`·`close` |
+| 구형 안내 | 구형 `GameHome`의 안내는 클리커용 대화상자 한 장(“붕어빵을 눌러 굽고…”)이라 재사용하지 않음. 5단계 구형 UI 정리 대상 | `ui/game_app.dart` `_GameHomeState` |
+
+테스트: `test/workshop_guide_test.dart` 12개(새 설치→안내 완료 360x640·390x844, 건너뛰기·재시작, 안내 중 네임드 손님 장면 없음, schema 이전, 복귀 보고·카드·홈 표시, 손상 파일 보관, 복구 화면 두 번 확인·복사·설정 오류·재시도 실패).
+

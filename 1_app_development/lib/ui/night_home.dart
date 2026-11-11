@@ -416,6 +416,7 @@ class NightHome extends StatelessWidget {
     final claimable =
         centerBuilder == null ? claimableCount(controller.state) : 0;
     return Padding(
+      key: const Key('home-nav'),
       padding: EdgeInsets.fromLTRB(8, 0, 8, 6 + bottomInset),
       child: SizedBox(
         height: navHeight - 6,

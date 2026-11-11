@@ -130,7 +130,7 @@ void main() {
   for (final schema in [1,2,3]) {
     test('Workshop schema$schema preserves supported state and adopts latest recovery on save', () async {
       final old={...first,'schema':schema,'buns':'17','lifetime':'17'};
-      old.remove('relationships'); old.remove('customerScene');
+      old.remove('relationships'); old.remove('customerScene'); old.remove('tutorial');
       if (schema<3) {
         for (final key in ['rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime']) { old.remove(key); }
       }
@@ -146,7 +146,7 @@ void main() {
       final migrated=WorkshopState.fromJson((await load())!,config).toJson()..['sequence']=2;
       await repository.save(migrated,1);
       expect((await load())!['buns'],'17');
-      expect((await load())!['schema'],5);
+      expect((await load())!['schema'],6);
       await db.update('snapshots',{'body':'broken'},where:'slot = ?',whereArgs:['current']);
       expect(await load(),migrated);
     });

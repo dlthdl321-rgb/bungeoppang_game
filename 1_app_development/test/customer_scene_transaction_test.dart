@@ -65,6 +65,8 @@ void main() {
     await c.initialize();
     expect(await c.openBusiness(), isTrue);
     expect(await c.command(() {
+      // A returning player: the first-run guide is already behind them.
+      c.state.tutorial = 'done';
       c.state.relationships = WorkshopRelationships.empty()
           .visit('prior', 'npc_doyun', 1, c.customerCatalog)
           .rollChoice(1, ['choice_doyun_01'], 0, config, c.customerCatalog)

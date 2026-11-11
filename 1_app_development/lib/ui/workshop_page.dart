@@ -22,6 +22,8 @@ import 'public_menus.dart';
 import 'shop_panel.dart';
 import 'workshop_windows.dart';
 import 'workshop_counter.dart';
+import 'workshop_guide.dart';
+import '../workshop_tutorial.dart';
 import 'friends_panel.dart';
 import 'ranking_panel.dart';
 import 'progress_panels.dart' show SharePanel;
@@ -42,6 +44,25 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   int _sensorGeneration = 0;
   final Stopwatch _sensorClock = Stopwatch()..start();
   int _windowCount=0;
+  final _homeKey=GlobalKey();
+  bool _awayShowing=false;
+  /// The welcome-back card, once per report, after the frame that noticed it.
+  void _showAwayReport() {
+    final report=c.awayReport;
+    if(report==null || _awayShowing) return;
+    _awayShowing=true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if(!mounted) return;
+      _enterWindow();
+      try {
+        await showDialog<void>(context:context,builder:(_)=>WorkshopWelcomeBackCard(report:report,config:c.config,
+          reduceMotion:widget.accountController.state.settings.reduceMotion));
+      } finally {
+        _leaveWindow();_awayShowing=false;
+        if(c.awayReport==report) c.dismissAwayReport();
+      }
+    });
+  }
   void _enterWindow(){_windowCount++;c.gridVisible=false;}
   void _leaveWindow(){_windowCount--;c.gridVisible=_windowCount==0;}
   Future<void> _window(String title,Widget Function(BuildContext) content) async {
@@ -371,6 +392,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   Widget build(BuildContext context) => AnimatedBuilder(animation:Listenable.merge([c,widget.accountController]),
     builder:(context,_)=>_content(context));
   Widget _content(BuildContext context) {
+    _showAwayReport();
     final s = c.state;
     final scene=s.customerScene;
     if(scene!=null) {
@@ -395,7 +417,8 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       return Scaffold(appBar:AppBar(title:const Text('이웃 이야기')),
         body:SafeArea(child:SingleChildScrollView(padding:const EdgeInsets.all(16),child:content)));
     }
-    return NightHome(controller:widget.accountController,onOpen:_open,
+    final step=workshopTutorialStep(s,ready:s.customers.isEmpty ? 0 : c.saleReadyCount(s.customers.first));
+    final home=NightHome(key:_homeKey,controller:widget.accountController,onOpen:_open,
       equipped:_equipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
         buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts().values.fold<int>(0,(a,b)=>a+b),
         status:c.error!=null ? '저장 확인 필요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}'),
@@ -408,5 +431,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
       vendor:CookCut(equipped:_equipped,taps:BigInt.from(s.taps),
         reduceMotion:widget.accountController.state.settings.reduceMotion,greeting:s.customers.isNotEmpty));
+    return Stack(children:[home,if(step!=null)Positioned.fill(child:WorkshopTutorialOverlay(step:step,home:_homeKey,
+      onSkip:c.busy || c.error!=null ? null : c.skipTutorial))]);
   }
 }

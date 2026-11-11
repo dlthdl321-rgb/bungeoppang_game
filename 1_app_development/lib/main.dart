@@ -10,6 +10,7 @@ import 'online_backend.dart';
 import 'online_ranking.dart';
 import 'play_billing_service.dart';
 import 'repository.dart';
+import 'save_quarantine.dart';
 import 'server_invite_repository.dart';
 import 'time_service.dart';
 import 'development_balance_asset.dart';
@@ -17,6 +18,7 @@ import 'workshop_controller.dart';
 import 'workshop_online.dart';
 import 'ui/game_app.dart';
 import 'ui/pixel_sprites.dart';
+import 'ui/save_recovery.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,7 +32,14 @@ Future<void> main() async {
   final online = withOnline
       ? await FirebaseOnlineBackend.create()
       : const NoOnlineBackend();
-  final controller = GameController(SqliteGameRepository(), SystemTimeService(),
+  await _start(online);
+}
+
+/// Reads the saves and runs the game, or the recovery screen when a read
+/// fails. Retrying and starting over both come back here.
+Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
+  final accounts = SqliteGameRepository(), workshops = SqliteWorkshopRepository();
+  final controller = GameController(accounts, SystemTimeService(),
       ranking: online.configured
           ? ServerRankingService(online)
           : const NoRankingService(),
@@ -42,36 +51,42 @@ Future<void> main() async {
   final audio = AudioplayersAudio();
   await PixelSprites.load();
   WorkshopController? workshop;
+  var stage = SaveStage.account;
   try {
     await controller.initialize();
+    stage = SaveStage.config;
     final config = await loadDevelopmentBalance();
-    workshop = WorkshopController(config, SqliteWorkshopRepository(),
+    stage = SaveStage.workshop;
+    workshop = WorkshopController(config, workshops,
       purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online as WorkshopTransport) : null);
     await workshop.initialize();
     runApp(GameApp(controller: controller, audio: audio, workshop: workshop));
-  } catch (_) {
+  } catch (e) {
     workshop?.dispose();
     controller.dispose();
     await audio.dispose();
-    runApp(const _StartupFailure());
+    await accounts.close();
+    await workshops.close();
+    final failed = stage;
+    runApp(SaveRecoveryApp(
+        failure: SaveFailure(failed, '$e', DateTime.now()),
+        attempts: attempts,
+        onRetry: () async {
+          // The account store keeps a previous snapshot; the workshop store
+          // already falls back to its latest witnessed checkpoint on read.
+          if (failed == SaveStage.account) {
+            try { await accounts.restoreBackup(); } catch (_) {}
+            await accounts.close();
+          }
+          await _start(online, attempts: attempts + 1);
+        },
+        onStartFresh: failed == SaveStage.config ? null : () async {
+          await setAsideDatabaseFile(
+              failed == SaveStage.account
+                  ? await SqliteGameRepository.defaultPath()
+                  : await SqliteWorkshopRepository.defaultPath(),
+              DateTime.now());
+          await _start(online);
+        }));
   }
-}
-
-class _StartupFailure extends StatefulWidget {
-  const _StartupFailure();
-  @override
-  State<_StartupFailure> createState() => _StartupFailureState();
-}
-class _StartupFailureState extends State<_StartupFailure> {
-  bool retrying = false;
-  @override
-  Widget build(BuildContext context) => MaterialApp(home: Scaffold(body: SafeArea(child: Center(
-    child: Column(mainAxisSize: MainAxisSize.min, children: [
-      const Text('저장을 확인하지 못했어요. 다시 시도해 주세요.'),
-      FilledButton(onPressed: retrying ? null : () async {
-        setState(() => retrying = true);
-        await main();
-      }, child: const Text('다시 읽기')),
-    ]),
-  ))));
 }

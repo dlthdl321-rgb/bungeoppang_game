@@ -19,10 +19,13 @@ class SqliteWorkshopRepository implements WorkshopRepository, WorkshopProduction
   SqliteWorkshopRepository();
   /// Inject an already opened database for storage integration tests.
   SqliteWorkshopRepository.withDatabase(Database database) : _database = database;
+  static Future<String> defaultPath() async => path.join(await getDatabasesPath(), 'todays_bungeoppang_workshop.db');
+  /// Release the file so the recovery screen can set a damaged one aside.
+  Future<void> close() async { final db = _database; _database = null; await db?.close(); }
 
   Future<Database> get database async {
     final db = _database ??= await openDatabase(
-    path.join(await getDatabasesPath(), 'todays_bungeoppang_workshop.db'), version: 4,
+    await defaultPath(), version: 4,
     onCreate: (db, _) async {
       await db.execute('CREATE TABLE snapshots(slot TEXT PRIMARY KEY, sequence INTEGER NOT NULL, body TEXT NOT NULL)');
       await db.execute('CREATE TABLE purchase_guard(id INTEGER PRIMARY KEY, body TEXT NOT NULL)');
@@ -47,7 +50,7 @@ class SqliteWorkshopRepository implements WorkshopRepository, WorkshopProduction
       Map<String, dynamic> decode(Map<String, Object?> record) {
         final body = jsonDecode(record['body'] as String) as Map<String, dynamic>;
         if (body['sequence'] != record['sequence'] ||
-            ([2,3,4,5].contains(body['schema']) &&
+            ([2,3,4,5,6].contains(body['schema']) &&
                 (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
             (body['schema'] == 1 && guards.isNotEmpty) ||
             (witnesses.isNotEmpty && witnesses.single['body'] != record['body'])) {
@@ -122,7 +125,7 @@ class SqliteWorkshopRepository implements WorkshopRepository, WorkshopProduction
       if (current.isNotEmpty) {
         final body = jsonDecode(current.single['body'] as String) as Map<String, dynamic>;
         if (body['sequence'] != current.single['sequence'] ||
-            ([2,3,4,5].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
+            ([2,3,4,5,6].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
             (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('구매 보호 기록 충돌');
       }
       final oldSequence = current.isEmpty ? 0 : current.single['sequence'];
@@ -133,7 +136,7 @@ class SqliteWorkshopRepository implements WorkshopRepository, WorkshopProduction
       if (witnesses.isNotEmpty && (current.isEmpty || witnesses.single['body'] != current.single['body'])) {
         throw const FormatException('최신 저장 증거 충돌');
       }
-      if (next['schema'] != 5 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
+      if (next['schema'] != 6 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
       final encoded = jsonEncode(next);
       final pending = await tx.query('production_journal', where: 'id = ?', whereArgs: [1]);
       if (pending.isNotEmpty && (pending.single['body'] != encoded ||

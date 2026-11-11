@@ -160,10 +160,10 @@ void main() {
     test('schema4 저장은 최신 schema로 읽고, schema4에 납품 기록이 있으면 거절한다', () async {
       await controller.command(() => controller.state.customers.add(order()));
       await stock('first');
-      final schema4 = controller.state.toJson()..['schema'] = 4;
-      expect(WorkshopState.fromJson(schema4, config).toJson()['schema'], 5);
+      final schema4 = controller.state.toJson()..['schema'] = 4..remove('tutorial');
+      expect(WorkshopState.fromJson(schema4, config).toJson()['schema'], 6);
       expect(await controller.sellToCustomer('order'), isTrue);
-      final forged = controller.state.toJson()..['schema'] = 4;
+      final forged = controller.state.toJson()..['schema'] = 4..remove('tutorial');
       expect(() => WorkshopState.fromJson(forged, config), throwsFormatException);
     });
 

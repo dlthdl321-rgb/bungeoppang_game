@@ -113,7 +113,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
           : clean ? 'empty' : null;
       Widget mold(Widget interaction) => Positioned.fromRect(
           rect: rect,
-          child: Stack(fit: StackFit.expand, clipBehavior:Clip.none, children: [
+          child: Stack(key: const Key('workshop-mold'), fit: StackFit.expand, clipBehavior:Clip.none, children: [
             if (floating)
               Positioned.fill(
                   top: -rect.height * .75, bottom: rect.height * .75,
@@ -229,6 +229,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                   child: Wrap(spacing: 8, children: [
                 if (session.phase == CookingPhase.result) ...[
                   FilledButton(
+                      key: const Key('mold-store'),
                       onPressed: blocked ? null : () => c.storeResult(true),
                       child: Text(session.practice ? '보관' : '결과 닫기')),
                   if (session.practice)

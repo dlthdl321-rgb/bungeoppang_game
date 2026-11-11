@@ -18,6 +18,8 @@ void main() {
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
     final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18));
     await c.initialize();
+    // A player past the first-run guide (workshop_guide_test covers the guide).
+    await c.command(() => c.state.tutorial = 'done');
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
     await tester.pump();
     return c;

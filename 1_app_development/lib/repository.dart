@@ -60,8 +60,18 @@ class MemoryGameRepository implements GameRepository {
 
 class SqliteGameRepository implements GameRepository {
   Database? _db;
+  static Future<String> defaultPath() async =>
+      join(await getDatabasesPath(), 'todays_bungeoppang.db');
+
+  /// Release the file so the recovery screen can set a damaged one aside.
+  Future<void> close() async {
+    final d = _db;
+    _db = null;
+    await d?.close();
+  }
+
   Future<Database> get db async => _db ??= await openDatabase(
-      join(await getDatabasesPath(), 'todays_bungeoppang.db'),
+      await defaultPath(),
       version: 1,
       onCreate: (d, _) => d.execute(
           'CREATE TABLE snapshots(slot TEXT PRIMARY KEY, sequence INTEGER NOT NULL, body TEXT NOT NULL)'));
