@@ -150,6 +150,8 @@ def validate(data, catalog):
     require(0 < manual['paint_brush_width_permille'] <= 1000 and
             0 < manual['batter_min_coverage_permille'] <= 1000 and
             manual['paint_overflow_amount_permille'] >= 1000, '짤주머니 색칠 기준(붓 굵기·덮은 면적·넘침)')
+    require(0 < manual['flip_turn_degrees'] <= 720 and 0 <= manual['flip_dead_zone_permille'] < 500 and
+            manual['flip_ms'] > 0, '원 그려 뒤집기 기준(필요 각도·중심 무시 반경·연출 시간)')
     require(not any(k in manual for k in ('filling_capacity_ms', 'touch_batter_tick_ms', 'tilt_sampling_ms',
                                           'tilt_activation_degrees', 'tilt_dead_zone_degrees')) and
             not any(k in row for row in data['mastery_difficulties']

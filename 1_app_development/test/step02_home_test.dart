@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -8,6 +9,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cooking_result_rules.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
+import 'package:todays_bungeoppang/ui/flip_circle_control.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/ui/night_home.dart';
@@ -24,6 +26,20 @@ Future<void> paintMold(WidgetTester tester) async {
     final y = box.top + box.height * (.3 + row * .1);
     await gesture.moveTo(Offset(box.left + box.width * .2, y));
     await gesture.moveTo(Offset(box.left + box.width * .8, y));
+  }
+  await gesture.up();
+  await tester.pump();
+}
+
+/// Draws one circle around the flipping mold and lifts (24번 6단계).
+Future<void> drawFlipCircle(WidgetTester tester) async {
+  final box = tester.getRect(find.byType(FlipCircleControl));
+  final r = box.width * .55;
+  Offset at(double a) => box.center + Offset(math.sin(a * math.pi / 180), -math.cos(a * math.pi / 180)) * r;
+  final gesture = await tester.startGesture(box.center + Offset(0, -box.height * .3));
+  for (var a = 0.0; a <= 345; a += 15) {
+    await gesture.moveTo(at(a));
+    await tester.pump();
   }
   await gesture.up();
   await tester.pump();
@@ -107,12 +123,23 @@ void main() {
       expect(c.state.session!.filling,isNotNull);
       await paintMold(tester);
       expect(c.state.session!.phase,CookingPhase.closing);
-      for(final phase in [CookingPhase.flipping,CookingPhase.cooking,CookingPhase.result]) {
+      Future<void> step(CookingPhase phase) async {
         await c.command(()=>c.state.phaseMs=15000);await tester.pump();
         await tester.ensureVisible(find.byKey(const Key('workshop-mold-action')));
         await tester.tap(find.byKey(const Key('workshop-mold-action')));await tester.pump();
         expect(c.state.session!.phase,phase);
       }
+      await step(CookingPhase.flipping);
+      // Flipping has no button: a tap does nothing, a circle flips (24번 6단계).
+      expect(find.byKey(const Key('workshop-mold-action')),findsNothing);
+      expect(find.text('틀 둘레로 원을 한 바퀴 그려 뒤집어요'),findsOneWidget);
+      await c.command(()=>c.state.phaseMs=15000);await tester.pump();
+      await tester.tap(find.byType(FlipCircleControl));await tester.pump(const Duration(seconds:2));
+      expect(c.state.session!.phase,CookingPhase.flipping);
+      await drawFlipCircle(tester);
+      await tester.pump(const Duration(milliseconds:1100));await tester.pump();
+      expect(c.state.session!.phase,CookingPhase.cooking);
+      await step(CookingPhase.result);
       // The result names why the batter failed (G6), e.g. '반죽 부족'.
       final caption=tester.widget<Text>(find.byKey(const Key('mold-result-caption'))).data!;
       expect(caption,startsWith('완성 · '));

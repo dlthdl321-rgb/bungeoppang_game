@@ -88,6 +88,23 @@ void main() {
     });
   }
 
+  // 24번 6단계: 제작 단계 안내 글이 '제작 취소' 버튼(누르는 영역 48)과 겹치지 않음.
+  for (final size in const [Size(360, 640), Size(360, 800), Size(390, 844), Size(412, 915)]) {
+    testWidgets('단계 안내 글은 제작 취소 버튼 4 위 ${size.width.toInt()}x${size.height.toInt()}', (tester) async {
+      final c = await mount(tester, size);
+      expect(await c.startPractice(), isTrue);
+      await tester.pump();
+      await tester.pump();
+      final caption = tester.getRect(find
+          .ancestor(of: find.byKey(const Key('piping-amount')), matching: find.byType(Container))
+          .first);
+      final cancel = tester.getRect(find.widgetWithText(TextButton, '제작 취소'));
+      expect(caption.bottom, lessThanOrEqualTo(cancel.top - 4 + .5));
+      expect(caption.bottom, lessThanOrEqualTo(tester.getRect(find.byKey(const Key('workshop-mold'))).bottom));
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
   testWidgets('빈 굽는 판: 영업 준비 중 칸 없음, 영업 중 굽는 칸만 붕어빵', (tester) async {
     final c = await mount(tester, const Size(390, 844));
     for (final id in ['iron', 'copper', 'castiron', 'golden']) {

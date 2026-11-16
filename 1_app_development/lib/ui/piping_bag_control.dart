@@ -10,7 +10,7 @@ import 'pixel_sprites.dart';
 import 'workshop_mold_stage.dart' show WorkshopMoldArt;
 
 /// Temporary paste colors of the fillings, until painted textures arrive
-/// (필요한그림목록 3번).
+/// (25번 필요한 그림 3번).
 const fillingPasteColors = {
   'redbean': Color(0xff642b27),
   'custard': Color(0xffe8b84a),
@@ -64,7 +64,7 @@ void paintMoldLayer(Canvas canvas, Size size, double grow, MoldPaintLayer layer,
   canvas.drawPath(thick, Paint()..color = const Color(0x1f3b1a08));
   if (!layer.overflow) return;
   // Spilled paste hangs over the fish's lower edge where it was painted
-  // (temporary drawing, 필요한그림목록 4번).
+  // (temporary drawing, 25번 필요한 그림 4번).
   final drip = Paint()..color = paste;
   for (var c = 2; c < m.cols; c += 5) {
     for (var r = m.rows - 1; r >= 0; r--) {
@@ -96,11 +96,15 @@ class MoldPaintControl extends StatefulWidget {
   /// [WorkshopMoldArt.fit] grow of the mold under this control.
   final double grow;
 
+  /// How far the caption sits above the bottom, clear of the stage's
+  /// '제작 취소' button (WorkshopMoldStage).
+  final double captionLift;
+
   /// Gets the stroke and the cells it painted (kept on screen, G2).
   final void Function(PaintAmount paint, Uint8List cells) onFinished;
   const MoldPaintControl({super.key, required this.stageToken, required this.blocked,
       required this.filling, required this.flavor, required this.config,
-      required this.onFinished, this.grow = 1, this.reduceMotion = false,
+      required this.onFinished, this.grow = 1, this.captionLift = 0, this.reduceMotion = false,
       this.vibration = false});
   @override
   State<MoldPaintControl> createState() => MoldPaintControlState();
@@ -255,7 +259,9 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
                         _finger,
                         paste,
                         widget.reduceMotion ? 0 : _lean))),
-            Align(
+            Padding(
+                padding: EdgeInsets.only(bottom: widget.captionLift),
+                child: Align(
                 alignment: Alignment.bottomCenter,
                 child: IgnorePointer(
                     child: Container(
@@ -267,7 +273,7 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
                             key: const Key('piping-amount'),
                             textAlign: TextAlign.center,
                             style: const TextStyle(
-                                color: Cozy.cream, fontWeight: FontWeight.bold, fontSize: 13))))),
+                                color: Cozy.cream, fontWeight: FontWeight.bold, fontSize: 13)))))),
           ]),
         ),
       ),
@@ -299,7 +305,7 @@ class _Stroke extends Drag {
 }
 
 /// The live stroke and the piping bag at the finger (a temporary drawing,
-/// 필요한그림목록 2번). The bag's tip sits on the finger; its body leans up
+/// 25번 필요한 그림 2번). The bag's tip sits on the finger; its body leans up
 /// and right so the finger does not hide the paste.
 class _LivePainter extends CustomPainter {
   final MoldPaintLayer? layer;

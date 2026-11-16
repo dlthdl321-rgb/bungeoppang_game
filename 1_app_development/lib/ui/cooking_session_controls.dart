@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../cooking_session.dart';
 import '../development_balance.dart';
+import 'flip_circle_control.dart';
 import 'piping_bag_control.dart';
 
 /// Shared touch controls. Host owns recipe permissions, atomic saving, timer
@@ -46,7 +47,18 @@ class CookingSessionControls extends StatelessWidget {
       case CookingPhase.closing:
         control = button('뚜껑 닫기', () => session.close(token));
       case CookingPhase.flipping:
-        control = button('뒤집기', () => session.flip(token));
+        control = SizedBox(
+            width: 260,
+            height: 180,
+            child: FlipCircleControl(
+                stageToken: token,
+                blocked: blocked,
+                config: config,
+                mold: const SizedBox.expand(),
+                onFlip: () async {
+                  onCommand(session.flip(token));
+                  return true;
+                }));
       case CookingPhase.cooking:
         control = button('꺼내기', () => session.takeOut(token, cookingElapsedMs));
       case CookingPhase.result:

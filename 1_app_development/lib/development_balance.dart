@@ -117,6 +117,11 @@ class DevelopmentBalance {
         integer(manual, 'paint_overflow_amount_permille') < 1000) {
       throw const FormatException('짤주머니 색칠 수치 오류');
     }
+    final turn = integer(manual, 'flip_turn_degrees');
+    if (turn == 0 || turn > 720 || integer(manual, 'flip_dead_zone_permille') >= 500 ||
+        integer(manual, 'flip_ms') == 0) {
+      throw const FormatException('원 그려 뒤집기 수치 오류');
+    }
     if (integer(manual, 'checkpoint_ms') == 0 || integer(manual, 'filling_inputs') == 0 ||
         integer(result.section('doneness'), 'reference_medium_stage_index') != 2) {
       throw const FormatException('제작 입력/저장 수치 오류');

@@ -698,7 +698,9 @@
     "checkpoint_ms": 1000,
     "paint_brush_width_permille": 140,
     "batter_min_coverage_permille": 900,
-    "paint_overflow_amount_permille": 1300
+    "paint_overflow_amount_permille": 1300,
+    "flip_turn_degrees": 320,
+    "flip_dead_zone_permille": 150
   },
   "griddle": {
     "slot_speed_permille": [

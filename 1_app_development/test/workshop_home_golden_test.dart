@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
+import 'package:todays_bungeoppang/ui/flip_circle_control.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
@@ -87,6 +90,32 @@ void main() {
     await tester.pump();
     expect(c.activePhaseElapsedMs, 0);
     await shoot(tester, 'baking_390x844');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  // 24번 6단계: 원 그려 뒤집기 도중(반 바퀴), 가장 작은 화면.
+  testWidgets('원 그려 뒤집기 도중 골든 360x640', (tester) async {
+    final c = await mount(tester, const Size(360, 640));
+    expect(await c.startPractice(), isTrue);
+    var s = c.state.session!;
+    s = s.pour(s.token, PaintAmount.even);
+    s = s.squeezeFilling(s.token, PaintAmount.even);
+    s = s.pour(s.token, PaintAmount.even);
+    s = s.close(s.token);
+    final flipping = s;
+    await c.command(() => c.state.session = flipping);
+    await tester.pump();
+    final box = tester.getRect(find.byType(FlipCircleControl));
+    final r = box.width * .55;
+    Offset at(double a) => box.center + Offset(math.sin(a * math.pi / 180), -math.cos(a * math.pi / 180)) * r;
+    // Starts on the mold (in the dead zone, ignored), then circles.
+    final gesture = await tester.startGesture(box.center + Offset(0, -box.height * .3));
+    for (var a = 0.0; a <= 180; a += 15) {
+      await gesture.moveTo(at(a));
+      await tester.pump();
+    }
+    await shoot(tester, 'flipping_360x640');
+    await gesture.up();
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

@@ -13,6 +13,7 @@ import '../feedback_config.dart';
 import '../game_audio.dart';
 import '../workshop_controller.dart';
 import 'boost_effects.dart';
+import 'flip_circle_control.dart';
 import 'piping_bag_control.dart';
 import 'cozy_style.dart';
 import 'pixel_sprites.dart';
@@ -49,6 +50,9 @@ class WorkshopMoldStage extends StatefulWidget {
   @override
   State<WorkshopMoldStage> createState() => _WorkshopMoldStageState();
 }
+
+/// The '제작 취소' TextButton's height (Material minimum tap target).
+const _cancelHeight = 48.0;
 
 class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   Offset _origin = Offset.zero;
@@ -101,11 +105,17 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
           widget.counterTop == null ? null : widget.counterTop! - _origin.dy;
       final rect = mapped ?? fallback;
       final clean = widget.cleanCounter || mapped == null;
+      // The step caption at the mold's bottom stays clear of the
+      // '제작 취소' button (48 tall at the stage's bottom) and 4 above it.
+      final captionLift = math.max(0.0, rect.bottom - (box.maxHeight - _cancelHeight) + 4);
       // The clicker fish floats with no mold, above the mold's place.
       final floating = clicker && clean;
       final String? idleMold = session != null || floating
           ? null
           : clean ? 'empty' : null;
+      Widget activeMold(CookingSession session) => IgnorePointer(child: CustomPaint(
+          key: const Key('active-empty-mold'),
+          painter: paintedMoldFor(session, _kept, c.config, clean: clean)));
       Widget mold(Widget interaction) => Positioned.fromRect(
           rect: rect,
           child: Stack(key: const Key('workshop-mold'), fit: StackFit.expand, clipBehavior:Clip.none, children: [
@@ -113,10 +123,8 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
               IgnorePointer(child: CustomPaint(
                   key: const Key('idle-mold'),
                   painter: WorkshopMoldArt(idleMold, withFish: true))),
-            if (session != null)
-              IgnorePointer(child: CustomPaint(
-                  key: const Key('active-empty-mold'),
-                  painter: paintedMoldFor(session, _kept, c.config, clean: clean))),
+            // While flipping the control turns the mold itself.
+            if (session != null && session.phase != CookingPhase.flipping) activeMold(session),
             interaction,
           ]));
       Widget action(String label, VoidCallback command) => Semantics(
@@ -158,6 +166,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 flavor: session.flavor,
                 config: c.config,
                 grow: clean ? 1 : 1.12,
+                captionLift: captionLift,
                 reduceMotion: widget.reduceMotion,
                 vibration: widget.vibration,
                 onFinished: (paint, cells) {
@@ -170,8 +179,24 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
             control = action(
                 '뚜껑 닫기', () => c.cookingCommand(session.close(session.token)));
           case CookingPhase.flipping:
-            control = action(
-                '뒤집기', () => c.cookingCommand(session.flip(session.token)));
+            // Draw a circle around the mold (24번 6단계, DEC-034). The flip
+            // shows for flip_ms before the command, so the controller's
+            // flip_ms check always passes; a margin covers clock drift.
+            control = FlipCircleControl(
+                key: ValueKey('mold-flip:${session.id}'),
+                stageToken: session.token,
+                blocked: blocked,
+                config: c.config,
+                grow: clean ? 1 : 1.12,
+                captionLift: captionLift,
+                reduceMotion: widget.reduceMotion,
+                vibration: widget.vibration,
+                mold: activeMold(session),
+                onFlip: () async {
+                  final wait = DevelopmentBalance.integer(manual, 'flip_ms') - c.activePhaseElapsedMs;
+                  if (wait > 0) await Future<void>.delayed(Duration(milliseconds: wait));
+                  return c.cookingCommand(session.flip(session.token));
+                });
           case CookingPhase.cooking:
             control = action(
                 '꺼내기 · ${(c.activePhaseElapsedMs / 1000).toStringAsFixed(1)}초',

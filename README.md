@@ -20,7 +20,7 @@ Flutter 기반 붕어빵 게임 저장소입니다. 폴더명은 제품 이름�
 | 저장·경제·UI 테스트 | `1_app_development/test/` |
 | 서버 기능 개발 | [서버 안내](1_app_development/firebase/README.md) |
 | 그림 수정·교체 | [이미지 원본 안내](3_original_images_and_visual_references/README.md) → [개발 도구](1_app_development/tools/README.md) → `1_app_development/assets/` |
-| 새로 필요한 그림 | [필요한 그림 목록](2_development_plans_and_checklists/2.2_art_creation_guides_and_galleries/2.2.6_required_art_list/필요한그림목록.md) (임시 그림·생성 프롬프트) |
+| 새로 필요한 그림 | [필요한 그림 목록](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/25_필요한그림프롬프트.md) (임시 그림·생성 프롬프트) |
 | 이미지 생성 작업 기록 | [작업 기록](4_image_generation_results_and_backups/README.md) |
 | 완성 시안·출시 이미지 | [게임 완성 시안](3_original_images_and_visual_references/3.5_completed_game_mockups/) (스플래시·아이콘은 `1_app_development/assets/images/app/`) |
 | 과거 버전 확인 | [ZIP·APK 보관](6_previous_builds_and_project_archives/README.md) |
