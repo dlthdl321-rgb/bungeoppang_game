@@ -23,21 +23,21 @@ class GriddleProgress {
   final List<GriddleCell> cells;
   GriddleProgress._(this.runId, List<GriddleCell> cells) : cells = List.unmodifiable(cells);
   factory GriddleProgress.empty(String runId, DevelopmentBalance config) {
-    if (runId.isEmpty) throw const FormatException('6구 실행 식별자 누락');
+    if (runId.isEmpty) throw const FormatException('숙련된 붕어빵 제작 식별자 누락');
     final count = DevelopmentBalance.integer(config.section('fixed_requirements'), 'griddle_slots');
     final delay = DevelopmentBalance.integer(config.section('griddle'), 'reinsertion_delay_ms');
     return GriddleProgress._(runId, List.generate(count, (_) => GriddleCell._(0, 0, delay, null, null)));
   }
   GriddleProgress _replace(int index, GriddleCell cell) {
-    if (index < 0 || index >= cells.length) throw const FormatException('6구 칸 오류');
+    if (index < 0 || index >= cells.length) throw const FormatException('숙련된 붕어빵 틀 칸 오류');
     final next = cells.toList(); next[index] = cell; return GriddleProgress._(runId, next);
   }
   GriddleProgress start(int index, DevelopmentBalance config, {
       required Map<String, int> ownedAndMastered, required String Function(List<String>) choose}) {
-    if (index < 0 || index >= cells.length) throw const FormatException('6구 칸 오류');
+    if (index < 0 || index >= cells.length) throw const FormatException('숙련된 붕어빵 틀 칸 오류');
     final cell = cells[index], candidates = ownedAndMastered.keys.toList()..sort();
     if (cell.cooking || candidates.isEmpty || cell.idleMs < DevelopmentBalance.integer(
-        config.section('griddle'), 'reinsertion_delay_ms')) throw const FormatException('6구 투입 불가');
+        config.section('griddle'), 'reinsertion_delay_ms')) throw const FormatException('숙련된 붕어빵 틀에 넣을 수 없어요');
     final flavor = choose(List.unmodifiable(candidates));
     if (!ownedAndMastered.containsKey(flavor)) throw const FormatException('잠긴 맛 배정');
     final difficulty = ownedAndMastered[flavor]!;
@@ -45,7 +45,7 @@ class GriddleProgress {
     return _replace(index, GriddleCell._(cell.cycle + 1, 0, 0, flavor, difficulty));
   }
   GriddleProgress advanceActive(int elapsedMs) {
-    if (elapsedMs < 0) throw const FormatException('음수 6구 경과');
+    if (elapsedMs < 0) throw const FormatException('숙련된 붕어빵 경과 시간 오류');
     return GriddleProgress._(runId, [for (final c in cells) GriddleCell._(c.cycle,
       c.elapsedMs + (c.cooking ? elapsedMs : 0), c.idleMs + (c.cooking ? 0 : elapsedMs), c.flavor, c.difficulty)]);
   }
@@ -58,7 +58,7 @@ class GriddleProgress {
   GriddleHarvest harvest(int index, DevelopmentBalance config, {required int businessIndex, int? expectedCycle}) {
     if (index < 0 || index >= cells.length ||
         (expectedCycle != null && cells[index].cycle != expectedCycle)) {
-      throw const FormatException('지난 6구 수확 입력');
+      throw const FormatException('지난 숙련된 붕어빵 수확 입력');
     }
     if (businessIndex < 0) throw const FormatException('제작 영업일 오류');
     final variant = doneness(index, config), cell = cells[index];
@@ -73,7 +73,7 @@ class GriddleProgress {
   GriddleProgress applyHarvest(int index, GriddleHarvest harvest) {
     if (index < 0 || index >= cells.length || !cells[index].cooking ||
         harvest.resultId != 'griddle:$runId:$index:${cells[index].cycle}') {
-      throw const FormatException('지난 6구 확정 결과');
+      throw const FormatException('지난 숙련된 붕어빵 확정 결과');
     }
     return _replace(index, GriddleCell._(cells[index].cycle, 0, 0, null, null));
   }
@@ -87,11 +87,11 @@ class GriddleProgress {
     final raw = row['cells'];
     if (row['schema'] is! int || row['schema'] != 1 || row['runId'] is! String ||
         (row['runId'] as String).isEmpty || raw is! List || raw.length != 6) {
-      throw const FormatException('6구 저장 형식 오류');
+      throw const FormatException('숙련된 붕어빵 저장 형식 오류');
     }
     final cells = <GriddleCell>[];
     for (final value in raw) {
-      if (value is! Map<String, dynamic>) throw const FormatException('6구 칸 저장 오류');
+      if (value is! Map<String, dynamic>) throw const FormatException('숙련된 붕어빵 틀 칸 저장 오류');
       final flavor = value['flavor'], difficulty = value['difficulty'];
       final cycle = DevelopmentBalance.integer(value, 'cycle');
       final elapsed = DevelopmentBalance.integer(value, 'elapsedMs');

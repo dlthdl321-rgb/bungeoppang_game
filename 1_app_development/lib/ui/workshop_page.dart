@@ -95,7 +95,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       if (!mounted || !_sensorEnabled || generation != _sensorGeneration) return;
       if (!sample.available) {
         _sensorInput.reset();
-        setState(() { _sensorEnabled = false; _sensorNotice = '큰 틀을 길게 눌러 반죽을 부어 주세요.'; }); return;
+        setState(() { _sensorEnabled = false; _sensorNotice = '스페셜 붕어빵 틀을 길게 눌러 반죽을 부어 주세요.'; }); return;
       }
       if(c.gameplayPaused) { _sensorInput.reset(); return; }
       if(c.cookingInputBlocked) { _sensorInput.interrupt(); return; }
@@ -122,7 +122,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     try {
       final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
         title: const Text('오늘 영업을 끝낼까요?'),
-        content: const Text('대기 손님은 돌아가고 진행 중인 큰 틀 제작은 취소돼요. 보관한 재고와 숙련 기록은 남고, 6구는 멈춘 상태로 보관돼요.'),
+        content: const Text('대기 손님은 돌아가고 진행 중인 스페셜 붕어빵 제작은 취소돼요. 보관한 재고와 숙련 기록은 남고, 숙련된 붕어빵 제작은 멈춘 상태로 보관돼요.'),
         actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('계속 영업')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('영업 종료'))]));
       if (confirmed == true) await c.closeBusiness();
@@ -315,7 +315,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     else for(final flavor in c.state.recipes) ...[
       Text(c.flavorLabel(flavor),style:Theme.of(context).textTheme.titleLarge),
       Wrap(spacing:6,children:[for(var i=0;i<5;i++)Chip(label:Text('${c.state.flavorMasteries[flavor]?.discovered.contains(i)==true || (flavor=='redbean' && i==2) ? '●':'○'} ${provisionalDonenessLabels[i]}'))]),
-      Text(c.state.masteryAwards.containsKey(flavor) ? '숙련 완료 · 6구 생산 가능':'연습 중'),
+      Text(c.state.masteryAwards.containsKey(flavor) ? '숙련 완료 · 숙련된 붕어빵 제작 가능':'연습 중'),
     ],
     for(final flavor in c.state.recipes)Builder(builder:(context){
       final m=c.state.flavorMasteries[flavor]!,rule=c.config.mastery(c.difficulty(flavor));

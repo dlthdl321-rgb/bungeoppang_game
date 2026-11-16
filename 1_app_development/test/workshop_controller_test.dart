@@ -73,7 +73,7 @@ void main() {
     await controller.initialize();
   });
   tearDown(() => controller.dispose());
-  test('신규 게임은 팥 미숙련·6구 미투입·재화0이며 코인 필드가 없다', () {
+  test('신규 게임은 팥 미숙련·숙련된 붕어빵 미투입·재화0이며 코인 필드가 없다', () {
     expect(controller.state.buns, BigInt.zero);
     expect(controller.state.mastery.complete(config), isFalse);
     expect(controller.state.grid.cookingSourceIds, isEmpty);

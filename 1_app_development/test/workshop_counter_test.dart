@@ -89,7 +89,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('손님 배지와 재고 버튼은 작은 창을 열고, 주문 제작은 창을 닫고 큰 틀을 시작한다', (tester) async {
+  testWidgets('손님 배지와 재고 버튼은 작은 창을 열고, 주문 제작은 창을 닫고 스페셜 붕어빵 제작을 시작한다', (tester) async {
     final c = await mount(tester, const Size(390, 844));
     await c.openBusiness();
     await queue(c);

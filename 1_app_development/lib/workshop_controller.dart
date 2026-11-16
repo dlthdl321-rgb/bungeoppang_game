@@ -169,7 +169,7 @@ class WorkshopState {
     }
     for (final cell in state.grid.cells) {
       if (cell.cooking && (!state.masteryAwards.containsKey(cell.flavor) || !state.recipes.contains(cell.flavor) ||
-          cell.difficulty != (catalog[cell.flavor] as Map)['difficulty'])) throw const FormatException('잠긴 맛의 6구 저장');
+          cell.difficulty != (catalog[cell.flavor] as Map)['difficulty'])) throw const FormatException('잠긴 맛의 숙련된 붕어빵 저장');
     }
     for (final flavor in row['recipeMissions'] as List) {
       if (flavor is! String || flavor == 'redbean' || !state.recipes.contains(flavor) || !state.recipeMissions.add(flavor)) throw const FormatException('레시피 미션 기록 오류');
@@ -647,16 +647,16 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     state.tutorial = 'skipped';
   });
   Future<bool> startCell(int index) => command(() {
-    if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
+    if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업 중, 스페셜 붕어빵을 만들지 않을 때만 쓸 수 있어요.');
     state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in state.recipes) if (state.masteryAwards.containsKey(f)) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
   });
   Future<bool> harvestCell(int index, {int? expectedCycle}) async {
     String? frozenId;
     final saved = await command(() {
-    if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
-    if (index < 0 || index >= state.grid.cells.length) throw const FormatException('6구 칸 오류');
+    if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업 중, 스페셜 붕어빵을 만들지 않을 때만 쓸 수 있어요.');
+    if (index < 0 || index >= state.grid.cells.length) throw const FormatException('숙련된 붕어빵 틀 칸 오류');
     final cell = state.grid.cells[index];
-    if (expectedCycle != null && cell.cycle != expectedCycle) throw const FormatException('지난 6구 수확 입력');
+    if (expectedCycle != null && cell.cycle != expectedCycle) throw const FormatException('지난 숙련된 붕어빵 수확 입력');
     final id = 'griddle:${state.grid.runId}:$index:${cell.cycle}';
     frozenId = id;
     final result = _pendingHarvests.putIfAbsent(id, () =>

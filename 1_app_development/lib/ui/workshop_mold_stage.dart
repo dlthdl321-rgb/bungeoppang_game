@@ -144,7 +144,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                   : Center(child: _caption(label))));
       final Widget control;
       if (session == null) {
-        control = action('큰 틀 연습 시작', c.startPractice);
+        control = action('스페셜 붕어빵 제작 시작', c.startPractice);
       } else {
         switch (session.phase) {
           case CookingPhase.firstBatter:
@@ -391,7 +391,7 @@ class WorkshopGriddleLayer extends StatelessWidget {
               final grade = cell.cooking ? s.grid.doneness(i, c.config) : null;
               final label = cell.cooking
                   ? '${i + 1}번 ${c.flavorLabel(cell.flavor!)} ${provisionalDonenessLabels[grade!]} · ${grade == 4 ? '폐기' : '수확'}'
-                  : '${i + 1}번 굽기 시작';
+                  : '숙련된 붕어빵 틀 ${i + 1}번 칸 굽기 시작';
               return Positioned.fromRect(
                   rect: Rect.fromCenter(
                       center: center,
@@ -415,15 +415,21 @@ class WorkshopGriddleLayer extends StatelessWidget {
                                       ? (grade == 4
                                           ? Colors.black87
                                           : Colors.brown.withValues(alpha: .75))
-                                      : Colors.black26,
+                                      : enabled
+                                          ? Cozy.cream.withValues(alpha: .18)
+                                          : Colors.black26,
+                                  // An empty cell has no words: a soft cream rim marks it as tappable.
+                                  border: !cell.cooking && enabled
+                                      ? Border.all(color: Cozy.cream.withValues(alpha: .7), width: 1.5)
+                                      : null,
                                   borderRadius: BorderRadius.circular(12)),
-                              child: Text(
-                                  cell.cooking
-                                      ? '${i + 1} ${provisionalDonenessLabels[grade!]}\n${grade == 4 ? '폐기' : '수확'}'
-                                      : '${i + 1} 시작',
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                      fontSize: 10, color: Cozy.cream))))));
+                              child: cell.cooking
+                                  ? Text(
+                                      '${i + 1} ${provisionalDonenessLabels[grade!]}\n${grade == 4 ? '폐기' : '수확'}',
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                          fontSize: 10, color: Cozy.cream))
+                                  : null))));
             })
         ]);
       });

@@ -41,7 +41,7 @@ class PourAmountVisualState extends State<PourAmountVisual> {
       Align(alignment:Alignment.bottomCenter,child:Container(
         padding:const EdgeInsets.symmetric(horizontal:8,vertical:4),
         decoration:BoxDecoration(color:Cozy.woodDark.withValues(alpha:.9),borderRadius:BorderRadius.circular(8)),
-        child:Text(widget.pouring ? '${widget.filling ? '속' : '반죽'} 양 ${(amount*100).toStringAsFixed(0)}% · 놓으면 마무리' : widget.filling ? '짤주머니를 길게 눌러 속을 짜 주세요' : '큰 틀을 길게 눌러 반죽을 부어 주세요',
+        child:Text(widget.pouring ? '${widget.filling ? '속' : '반죽'} 양 ${(amount*100).toStringAsFixed(0)}% · 놓으면 마무리' : widget.filling ? '짤주머니를 길게 눌러 속을 짜 주세요' : '스페셜 붕어빵 틀을 길게 눌러 반죽을 부어 주세요',
           key:const Key('piping-amount'),textAlign:TextAlign.center,
           style:const TextStyle(color:Cozy.cream,fontWeight:FontWeight.bold,fontSize:13)))),
     ]);

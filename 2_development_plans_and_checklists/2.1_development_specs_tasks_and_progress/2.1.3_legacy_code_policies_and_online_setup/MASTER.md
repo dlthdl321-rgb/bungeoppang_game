@@ -562,10 +562,11 @@
 
 | 요소 | 위치·크기 | 키 | 파일 |
 | --- | --- | --- | --- |
-| 큰 틀 무대 | HUD 아래 중앙. 배경에 그려진 붕어빵 자리에 맞춤 | `workshop-center-stage` | `ui/workshop_mold_stage.dart` |
+| 스페셜 붕어빵 무대 | HUD 아래 중앙. 배경에 그려진 붕어빵 자리에 맞춤. 세션이 없으면 '스페셜 붕어빵 제작 시작' | `workshop-center-stage` | `ui/workshop_mold_stage.dart` |
 | 손님 줄 | 무대 왼쪽, 폭 64, 위 48·아래 56 여백. 맨 앞이 위. 배지 52(남은 시간 고리, 맨 앞은 노란 면) + "N번" + 맛 첫 글자·수량. 영업 중이고 줄이 차지 않았으면 아래에 '맞이' 버튼 | `customer-N`, `customer-welcome` | `ui/workshop_counter.dart` `WorkshopCustomerQueue` |
-| 판매 카운터 | 왼쪽 8, 폭 = w − 16 − (조리 컷 폭 + 8), 아래 = 굽는 판 바닥 + 굽는 판 높이×0.66(6구 첫 줄 바로 위). 큰 틀 제작 중에는 숨김 | `sale-counter` | `WorkshopSaleCounter` |
-| 손님 창 | 손님 배지를 누르면 뜨는 작은 창: 주문 줄(드린 수/주문 수), 대사, '이웃 이야기 확인', 맛별 '주문 제작'(누르면 창을 닫고 큰 틀 시작) | `customer-card` | `WorkshopCustomerCard` |
+| 판매 카운터 | 왼쪽 8, 폭 = w − 16 − (조리 컷 폭 + 8), 아래 = 굽는 판 바닥 + 굽는 판 높이×0.66(숙련된 붕어빵 틀 첫 줄 바로 위). 스페셜 붕어빵 제작 중에는 숨김 | `sale-counter` | `WorkshopSaleCounter` |
+| 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음·숙련한 맛 있음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면 검은 반투명 면만. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
+| 손님 창 | 손님 배지를 누르면 뜨는 작은 창: 주문 줄(드린 수/주문 수), 대사, '이웃 이야기 확인', 맛별 '주문 제작'(누르면 창을 닫고 스페셜 붕어빵 제작 시작) | `customer-card` | `WorkshopCustomerCard` |
 | 재고 창 | 카운터 글자를 누르면 뜨는 작은 창: 오래된 순 묶음(맛·익힘·개수·경과 영업일), 준비품 | `stock-card` | `WorkshopStockList` |
 
 **판매 카운터:** 1줄 제목(Jua 15), 1줄 설명(12, 안내 문구가 있으면 벽돌색으로 대신), 오른쪽에 다음 행동 버튼 하나(최대 폭 104, 높이 44). 상태 순서:
@@ -586,19 +587,19 @@
 
 **상점·꾸미기(Workshop):** 파는 것은 아바타 카탈로그(`avatar_catalog`)뿐. 그 밖의 구형 꾸미기(화로·배경·장식·등불·무늬·토핑)는 가지고 있을 때만 보임(`CosmeticMenuAccess.listed`). 품목이 하나도 없는 상점 탭(지금은 테마)은 숨기고 충전 탭은 항상 둠. 충전 탭에는 구형 클리커 부스트 줄을 두지 않음(`GoldChargeTab(legacyBoost: false)`). 로그인 전에는 '로그인하면 충전할 수 있어요', 상품을 불러오는 동안 가격 자리에 '불러오는 중'.
 
-골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1), 메뉴 창, 영업 준비, 큰 틀 제작 중.
+골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1), 메뉴 창, 영업 준비, 스페셜 붕어빵 제작 중.
 
 **첫 실행 안내** (`lib/workshop_tutorial.dart` 단계 계산, `lib/ui/workshop_guide.dart` `WorkshopTutorialOverlay`): 홈 위에 겹친 층. 대상 위젯을 꿀색 고리로 두르고 작은 카드(“첫 영업 안내 N/7”, 한 줄 설명, '건너뛰기')를 띄움. 카드만 터치를 받고 게임은 그대로 조작됨. 저장하는 것은 `tutorial` 값뿐이고 단계는 매 프레임 상태에서 계산.
 
 | 단계 | 조건 | 대상 키 |
 | --- | --- | --- |
-| 1 | `cook`, 큰 틀 비어 있음 | `workshop-mold` |
+| 1 | `cook`, 스페셜 붕어빵 틀 비어 있음 | `workshop-mold` |
 | 2~6 | 연습 굽기 단계: 반죽 붓기 → 짤주머니 → 두 번째 반죽·뚜껑 → 뒤집기 → 꺼내기·보관 | `workshop-mold`, 결과는 `mold-store` |
 | 7 | `sell`: 영업 시작 → 첫 손님 기다리기 → 판매(재고 없으면 주문 제작) | `business-open`, `sale-counter`, `sale-button`, `order-produce` |
 
-카드 위치: 큰 틀 단계는 무대(`workshop-center-stage`) 바로 아래, 그 밖에는 대상의 넓은 쪽. 왼쪽 72(손님 줄 피함)·오른쪽 12. 어떤 글자 크기에서도 하단 메뉴(`home-nav`) 위 6에서 멈추도록 위로 밀어 올림. 이야기 장면 중에는 숨김. 연습 결과를 보관하거나 주문 제작 결과를 닫으면 `sell`, 첫 판매 완료(주문을 다 채운 판매)면 `done`. 안내 중 첫 판매는 네임드 손님이어도 이야기·후일담·선택 장면을 붙이지 않고, 손님 맞이에서도 선택 장면을 굴리지 않음.
+카드 위치: 스페셜 붕어빵 제작 단계는 무대(`workshop-center-stage`) 바로 아래, 그 밖에는 대상의 넓은 쪽. 왼쪽 72(손님 줄 피함)·오른쪽 12. 어떤 글자 크기에서도 하단 메뉴(`home-nav`) 위 6에서 멈추도록 위로 밀어 올림. 이야기 장면 중에는 숨김. 연습 결과를 보관하거나 주문 제작 결과를 닫으면 `sell`, 첫 판매 완료(주문을 다 채운 판매)면 `done`. 안내 중 첫 판매는 네임드 손님이어도 이야기·후일담·선택 장면을 붙이지 않고, 손님 맞이에서도 선택 장면을 굴리지 않음.
 
-**복귀 카드:** 3장 "Workshop 복귀 안내". 화면이 그려진 뒤 대화상자로 띄우고, 떠 있는 동안 6구를 멈춤(다른 창과 같음). 닫으면 보고를 지움.
+**복귀 카드:** 3장 "Workshop 복귀 안내". 화면이 그려진 뒤 대화상자로 띄우고, 떠 있는 동안 숙련된 붕어빵 제작을 멈춤(다른 창과 같음). 닫으면 보고를 지움.
 
 ### 기준
 
@@ -988,7 +989,7 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 
 v13은 오디오 설정 musicSelection/cookingSound/cookingVolume만 추가한다. v1~12 자산 파싱은 유지하고 구형 자동 배경 모드를 보존한다. 사업 운영·숙련·재고/복합 거래의 실제 저장 이전은 포함하지 않는다. 변경·다운그레이드/실제 SQLite 검수는 미실행이다.
 
-설정 화면의 배경음 선택은 배경/시간대와 독립이며 ‘배경에 맞춤’으로 기존 모드로 돌아간다. 굽기 루프는 실제 활동 소스가 있을 때만 별도 player로 출력하고 설정/음량·전경에 따라 정지한다. 실제 신규 큰 틀/6구 활동 전달은 미연결이다. 오디오 기본값은 development_balance.json에서 development_audio_defaults.dart로 생성한다. sizzle_loop.wav는 generate_cooking_sound.py로 직접 합성(CC0)했다.
+설정 화면의 배경음 선택은 배경/시간대와 독립이며 ‘배경에 맞춤’으로 기존 모드로 돌아간다. 굽기 루프는 실제 활동 소스가 있을 때만 별도 player로 출력하고 설정/음량·전경에 따라 정지한다. 실제 신규 스페셜 붕어빵/숙련된 붕어빵 제작 활동 전달은 미연결이다. 오디오 기본값은 development_balance.json에서 development_audio_defaults.dart로 생성한다. sizzle_loop.wav는 generate_cooking_sound.py로 직접 합성(CC0)했다.
 
 development_balance.dart/asset 로더와 development_rules.dart는 새 복합 견적·익힘·숙련·신선도·KST 날짜·복구 라우팅 계산의 소스를 제공한다. 실제 서버 지갑/광고/신규 게임 흐름 연결은 하지 않았다. [15번 소스 구현·검수 대기](../15_현재환경소스구현과검수대기.md)를 따른다. 테스트 코드는 작성했으나 앱 실행·컴파일/Flutter/서버 테스트·빌드·실기기는 미실행이다.
 
@@ -1192,14 +1193,23 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 
 | 항목 | 결정 | 구현 단계 |
 | --- | --- | --- |
-| 용어 | 큰 틀 제작 → 스페셜 붕어빵 제작, 6구 제작 → 숙련된 붕어빵 제작. 코드 이름·Key는 그대로 (DEC-039) | 2 |
+| 용어 | 큰 틀 제작 → 스페셜 붕어빵 제작, 6구 제작 → 숙련된 붕어빵 제작. 코드 이름·Key는 그대로 (DEC-039). **2단계 구현 완료**: 화면·안내·튜토리얼·오류 글 적용, 숙련된 붕어빵 틀 빈 칸 글자 제거(강조 면·테두리만) | 2 |
 | 영업 준비 중 | 스페셜 붕어빵 틀로 연습 제작만. '+붕어빵력' 버튼 없음. 숙련된 붕어빵 틀은 빈 틀(칸 글자·터치 없음) (DEC-035·036) | 3 |
 | 영업 중 | 틀 없이 큰 붕어빵 = 클리커(`c.tap`·탭 효과, 1초 15번 초과분은 효과만, `server_validation.max_taps_per_second`). 손님 창 '주문 제작' 동안만 틀이 나오고 클리커 탭은 막힘. 연습 제작은 명령에서도 거부. `orderFlash` 없앰 (DEC-035·036) | 3 |
 | 제작 중 영업 시작 | 거부. `openBusiness`에서도 막고 '스페셜 붕어빵을 다 만든 뒤 영업을 시작해요' (DEC-035) | 3 |
 | 튜토리얼 | 흐름 유지. 7단계 손님 기다리기에 '손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요'. `cook` 단계에서 이미 영업 중이면 주문 제작 안내. schema 6 유지 (DEC-037) | 3 |
-| 홈 배치 | 6구 폭 = 화면 폭 − 16, 비율 유지. 판매 카운터 윗변 = 배경 왼쪽 빨간 체크 행주 윗변 (DEC-038) | 4 |
+| 홈 배치 | 숙련된 붕어빵 틀(6구) 폭 = 화면 폭 − 16, 비율 유지. 판매 카운터 윗변 = 배경 왼쪽 빨간 체크 행주 윗변 (DEC-038) | 4 |
 | 짤주머니 색칠 | 첫 반죽·속·둘째 반죽 모두 드래그 색칠. 한 단계 = 한 번의 이어진 붓질(손 떼면 확정), 포인터 하나, 틀 밖 무시. 붓 굵기 = `fishRect` 폭의 14% (DEC-031) | 5 |
 | 덧칠 | 격자 칸을 떠났다 다시 들어올 때마다 한 겹. 덮은 면적과 덧칠 포함 양을 따로 계산 (DEC-032) | 5 |
 | 품질 판정 | 반죽 두 번 각각 덮은 면적 ≥ 90% 그리고 덧칠 포함 양 ≤ 130%(초과는 넘침·실패) + 익힘이 `success_doneness_min_index`~`max_index` 안. 속은 판정 없이 양·넘침만 표시 (DEC-031) | 5 |
 | 기울기 센서 | 삭제: 스위치·센서 코드·테스트·`tilt_*` 설정 3개 (DEC-033) | 5 |
 | 원 그려 뒤집기 | 누적 320도, 양방향, 거꾸로 돌면 감소, 틀 중심에서 틀 폭 15% 안쪽 무시, 손 떼면 0도·원위치. 연출은 `flip_ms` 1000과 맞춤. 1060행의 예전 회전 360도/중심 20px 설정을 대신함 (DEC-034) | 6 |
+
+**용어 대응표 (2단계, 2026-11-16):**
+
+| 플레이어 용어 | 코드 이름 |
+| --- | --- |
+| 스페셜 붕어빵(틀·제작) | 큰 틀: `state.session`(`CookingSession`), `WorkshopMoldStage`, `Key('workshop-mold')`, `startPractice`·`startOrderProduction` |
+| 숙련된 붕어빵(틀·제작) | 6구: `state.grid`(`GriddleProgress`), `WorkshopGriddleLayer`, `Key('workshop-cell-N')`, `startCell`·`harvestCell` |
+
+개발용 메모·설정 note는 '숙련된 붕어빵(6구)'처럼 옛 이름을 괄호로 함께 적는다. 날짜가 붙은 옛 기록 절(962~1092행 부근)은 당시 용어 그대로 둔다.

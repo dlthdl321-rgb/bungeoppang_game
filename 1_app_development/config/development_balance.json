@@ -5,7 +5,7 @@
     "status": "approved_for_provisional_development",
     "release_validated": false,
     "runtime_connected": false,
-    "note": "신규 main→Workshop 집계/SQLite/영업·맛별 연습·6구·판매·승급·도감 소스 연결. 설정/로그인/IAP는 기존 포트 재사용, 실제 새 복합 결제·검증 황금/광고·친구 연동은 미완료. 컴파일/실행 검수 미실행.",
+    "note": "신규 main→Workshop 집계/SQLite/영업·맛별 연습·숙련된 붕어빵(6구)·판매·승급·도감 소스 연결. 설정/로그인/IAP는 기존 포트 재사용, 실제 새 복합 결제·검증 황금/광고·친구 연동은 미완료. 컴파일/실행 검수 미실행.",
     "runtime_scope": "partial_workshop_gameplay_settings_and_internal_server_contracts"
   },
   "fixed_requirements": {

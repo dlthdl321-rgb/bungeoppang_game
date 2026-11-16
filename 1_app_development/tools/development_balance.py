@@ -121,7 +121,7 @@ def validate(data, catalog):
     require(data['doneness']['reference_scale'] == 1000, '익힘 천분율 단위')
     require(data['doneness']['reference_medium_stage_index'] == 2, '확정 미디엄 인덱스')
     require(len(data['griddle']['slot_speed_permille']) == 6 and
-            all(v > 0 for v in data['griddle']['slot_speed_permille']), '6구 속도 누락')
+            all(v > 0 for v in data['griddle']['slot_speed_permille']), '숙련된 붕어빵(6구) 속도 누락')
     sale = data['ordinary_sale']
     require(len(sale['freshness_price_permille_by_age']) == 5, '재고 나이0~4 가격 누락')
     probs = data['rare_gold_sale']['probability_basis_points_by_stars']
@@ -194,7 +194,7 @@ def render(data):
 - 원본: [development_balance.json](../../1_app_development/config/development_balance.json). 모든 조정은 이 파일에서 한다.
 - 검증·문서 갱신: 저장소 루트에서 `python 1_app_development/tools/development_balance.py`.
 - 재생성 확인: `python 1_app_development/tools/development_balance.py --check`.
-- 신규 main의 Workshop에는 영업·맛별 연습·재고/6구·손님 판매·승급·도감 소스를 연결했다. 실제 복합 결제·황금/광고 검증·친구 연동은 미완료다. 오디오 기본값만 생성 Dart 상수로 연결하며 공통 계산은 명시적 설정 로더를 사용한다. 전체 게임 흐름·서버 지갑 연동은 아니다. 기존 앱·서버 가격/IAP·의존성은 바꾸지 않았다.
+- 신규 main의 Workshop에는 영업·맛별 연습·재고/숙련된 붕어빵(6구)·손님 판매·승급·도감 소스를 연결했다. 실제 복합 결제·황금/광고 검증·친구 연동은 미완료다. 오디오 기본값만 생성 Dart 상수로 연결하며 공통 계산은 명시적 설정 로더를 사용한다. 전체 게임 흐름·서버 지갑 연동은 아니다. 기존 앱·서버 가격/IAP·의존성은 바꾸지 않았다.
 - 향후 해당 기능 구현 시 같은 원본을 읽고 클라이언트/서버 견적의 revision을 확인한다. 상수를 별도로 복사하지 않는다. 서버 구매가격은 서버 배포본이 권위이며 클라이언트가 보낸 가격을 신뢰하지 않는다.
 - `fixed_requirements`는 사용자 확정 조건이다. 일반 밸런스 조정과 구분하며 별도 승인 없이 바꾸지 않는다.
 - 수치 아닌 미결정은 마지막 목록에 남긴다. 이 값들이 해당 정책의 자동 승인이나 구현/실기기 검수를 대신하지 않는다.

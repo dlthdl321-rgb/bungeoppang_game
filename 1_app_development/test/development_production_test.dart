@@ -60,7 +60,7 @@ void main() {
     ((damaged['batches'] as Map)['result-1'] as Map)['madeOnBusinessIndex'] = 6;
     expect(() => InventoryProgress.fromJson(damaged), throwsFormatException);
   });
-  test('6구는 보유/숙련 맛만 배정하고 꺼내기 전에는 제품을 만들지 않는다', () {
+  test('숙련된 붕어빵은 보유/숙련 맛만 배정하고 꺼내기 전에는 제품을 만들지 않는다', () {
     var grid = GriddleProgress.empty('run-1', config);
     expect(() => grid.start(0, config, ownedAndMastered: {}, choose: (ids) => 'redbean'), throwsFormatException);
     grid = grid.start(0, config, ownedAndMastered: {'redbean': 0}, choose: (ids) => ids.single);

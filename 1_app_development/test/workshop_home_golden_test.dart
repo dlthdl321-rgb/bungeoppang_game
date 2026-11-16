@@ -76,7 +76,7 @@ void main() {
     });
   }
 
-  testWidgets('영업 준비와 큰 틀 제작 중 골든 390x844', (tester) async {
+  testWidgets('영업 준비와 스페셜 붕어빵 제작 중 골든 390x844', (tester) async {
     final c = await mount(tester, const Size(390, 844));
     await shoot(tester, 'ready_390x844');
     await c.startPractice();

@@ -39,7 +39,7 @@ void main() {
                     child: controller.state.session == null
                         ? FilledButton(
                             onPressed: controller.startPractice,
-                            child: const Text('큰 틀 연습 시작'))
+                            child: const Text('스페셜 붕어빵 제작 시작'))
                         : CookingSessionControls(
                             session: controller.state.session!,
                             config: config,
@@ -52,7 +52,7 @@ void main() {
       });
       await tester.pumpAndSettle();
     }
-    await tester.tap(find.text('큰 틀 연습 시작'));
+    await tester.tap(find.text('스페셜 붕어빵 제작 시작'));
     await tester.pumpAndSettle();
     final hold = await tester
         .startGesture(tester.getCenter(find.textContaining('첫 반죽 붓기')));
