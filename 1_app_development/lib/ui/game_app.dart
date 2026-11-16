@@ -369,7 +369,7 @@ class _GameHomeState extends State<GameHome> {
                                                   .first]!,
                                               textAlign: TextAlign.center,
                                               style: const TextStyle(
-                                                  fontFamily: 'Jua',
+                                                  fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
                                                   fontSize: 28,
                                                   color: Cozy.ink))),
                                       const SizedBox(width: 8),
@@ -418,7 +418,7 @@ class _GameHomeState extends State<GameHome> {
                 ? '코인 ${compactNumber(c.state.support.coins)}개'
                 : '${compactNumber(c.state.buns)}개',
             style: const TextStyle(
-                fontFamily: 'Jua', fontSize: 20, color: Cozy.ink)),
+                fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20, color: Cozy.ink)),
       ]),
     );
   }
@@ -500,7 +500,7 @@ class _GameHomeState extends State<GameHome> {
                                 SizedBox(width: 8),
                                 Text('설정',
                                     style: TextStyle(
-                                        fontFamily: 'Jua',
+                                        fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
                                         fontSize: 28,
                                         color: Cozy.ink)),
                                 SizedBox(width: 8),
@@ -542,7 +542,7 @@ class _GameHomeState extends State<GameHome> {
                                     style: FilledButton.styleFrom(
                                         minimumSize: const Size.fromHeight(56),
                                         textStyle: const TextStyle(
-                                            fontFamily: 'Jua', fontSize: 24)),
+                                            fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 24)),
                                     onPressed: c.busy
                                         ? null
                                         : () async {
@@ -704,7 +704,7 @@ class _SoundSettingsState extends State<SoundSettings> {
             const Row(children: [
               PixelIcon('volume', size: 26),
               SizedBox(width: 8),
-              Text('음량', style: TextStyle(fontFamily: 'Jua', fontSize: 20)),
+              Text('음량', style: TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20)),
             ]),
             slider(
                 'setting-music-volume',

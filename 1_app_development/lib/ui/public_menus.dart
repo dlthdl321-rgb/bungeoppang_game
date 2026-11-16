@@ -29,8 +29,14 @@ class CosmeticMenuAccess {
   final String Function(CosmeticDefinition) price, action;
   final Future<bool> Function(CosmeticDefinition) apply;
   final String Function(CosmeticDefinition)? requirement;
+
+  /// Items this build shows at all; items nobody can buy yet stay out of
+  /// the wardrobe and the shop instead of reading '판매 준비 중'.
+  final bool Function(CosmeticDefinition) listed;
   const CosmeticMenuAccess({required this.equipped,required this.owned,required this.unlocked,
-    required this.canApply,required this.price,required this.action,required this.apply,this.requirement});
+    required this.canApply,required this.price,required this.action,required this.apply,this.requirement,
+    this.listed=_always});
+  static bool _always(CosmeticDefinition _)=>true;
 }
 
 class AccessCosmeticAction extends StatelessWidget {
@@ -131,7 +137,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
             const gap = 8.0;
             final w = (box.maxWidth - gap * 2) / 3;
             return Wrap(spacing: gap, runSpacing: gap, children: [
-              for (final d in cosmeticDefinitions.where((d) => d.slot == slot))
+              for (final d in cosmeticDefinitions.where((d) => d.slot == slot && (widget.access?.listed(d) ?? true)))
                 SizedBox(width: w, child: _tile(d, d.id == picked.id)),
             ]);
           }),
@@ -365,8 +371,12 @@ class MenuPanel extends StatelessWidget {
   final void Function(String destination) onOpen;
   final Map<String,int>? rewardCounts;
   final bool legacyDescriptions;
+
+  /// Destinations left out of this build's menu (the soft launch hides the
+  /// online ranking, friends and sharing: DEC-029).
+  final Set<String> hidden;
   const MenuPanel({super.key, required this.controller, required this.onOpen,
-    this.rewardCounts,this.legacyDescriptions=true});
+    this.rewardCounts,this.legacyDescriptions=true,this.hidden=const {}});
 
   @override
   Widget build(BuildContext context) {
@@ -458,6 +468,7 @@ class MenuPanel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Column(children: [
         for (final (dest, title, subtitle, icon, key) in rows)
+          if (!hidden.contains(dest))
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
             child: Material(

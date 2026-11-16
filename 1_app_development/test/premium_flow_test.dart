@@ -203,14 +203,14 @@ void main() {
     c.dispose();
   });
 
-  test('온라인 설정이 없으면 모든 온라인 명령이 준비 중으로 끝난다', () async {
+  test('온라인 설정이 없으면 모든 온라인 명령이 연결 불가로 끝난다', () async {
     final t = FakeTime();
     final c = GameController(MemoryGameRepository(), t);
     await c.initialize();
-    expect(await c.addFriend('BBAAAAAAAA'), '온라인 기능을 준비 중이에요');
+    expect(await c.addFriend('BBAAAAAAAA'), '지금은 온라인에 연결할 수 없어요');
     expect(await c.spendGold(PremiumKind.boost, BoostKind.bought.name),
-        '온라인 기능을 준비 중이에요');
-    expect(await c.buyGoldPack('gold_60'), '온라인 기능을 준비 중이에요');
+        '지금은 온라인에 연결할 수 없어요');
+    expect(await c.buyGoldPack('gold_60'), '지금은 온라인에 연결할 수 없어요');
     expect(await c.goldPacks(), isEmpty);
     await c.syncOnline(); // no-op, no throw
     c.dispose();

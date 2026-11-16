@@ -187,13 +187,13 @@ void main() {
       expect(await c.addFriend('BBAAAAAAAA'), '로그인하지 못했어요. 잠시 후 다시 해 주세요');
     });
 
-    test('키가 없는 빌드는 온라인 기능이 준비 중이고 게임은 그대로', () async {
+    test('키가 없는 빌드는 온라인에 연결할 수 없고 게임은 그대로', () async {
       clock = FakeTime()..now = now;
       c = GameController(MemoryGameRepository(), clock);
       await c.initialize();
       await c.refreshRanking();
       expect(c.rankingStatus.configured, isFalse);
-      expect(await c.signInOnline(), '온라인 기능을 준비 중이에요');
+      expect(await c.signInOnline(), '지금은 온라인에 연결할 수 없어요');
       expect(await c.loadRanking(rankingBestAutoRate), isNull);
       c.tap();
       expect(c.state.lifetime, BigInt.one);
@@ -289,7 +289,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('키가 없는 빌드는 랭킹과 친구가 준비 중으로 표시', (tester) async {
+  testWidgets('키가 없는 빌드는 랭킹과 친구가 연결 불가로 표시', (tester) async {
     await mountGame(tester, const Size(390, 844));
     await tapVisible(tester, const Key('menu-menu'));
     await tapVisible(tester, const Key('menu-ranking'));

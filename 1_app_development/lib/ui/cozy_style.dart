@@ -7,6 +7,10 @@ import 'pixel_sprites.dart';
 /// 3.5_completed_game_mockups/서브UI5종 (coordination/visual-00-gap.md).
 class Cozy {
   Cozy._();
+
+  /// Jua lacks punctuation such as `·`, `…`, `→`, `●○`; these come from a
+  /// small symbol cut (tools/build_symbol_font.py) instead of a box.
+  static const fontFallback = <String>['BungeoSymbols'];
   static const cream = Color(0xfffef1d6);
   static const creamDeep = Color(0xfffee6bc);
   static const wood = Color(0xff7d3419);
@@ -220,12 +224,12 @@ ThemeData cozyTheme() {
       borderRadius: BorderRadius.circular(12), side: wood);
   return ThemeData(
     useMaterial3: true,
-    fontFamily: 'Jua',
+    fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
     colorScheme: scheme,
     scaffoldBackgroundColor: Cozy.cream,
     splashFactory: InkRipple.splashFactory,
     textTheme: const TextTheme()
-        .apply(bodyColor: Cozy.ink, displayColor: Cozy.ink, fontFamily: 'Jua'),
+        .apply(bodyColor: Cozy.ink, displayColor: Cozy.ink, fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback),
     filledButtonTheme: FilledButtonThemeData(
         style: ButtonStyle(
             backgroundColor: WidgetStateProperty.resolveWith((states) =>
@@ -237,7 +241,7 @@ ThemeData cozyTheme() {
                     ? Cozy.inkSoft
                     : Cozy.ink),
             textStyle: const WidgetStatePropertyAll(
-                TextStyle(fontFamily: 'Jua', fontSize: 16)),
+                TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 16)),
             shape: WidgetStateProperty.resolveWith((states) =>
                 RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -249,7 +253,7 @@ ThemeData cozyTheme() {
             backgroundColor: Cozy.cream,
             foregroundColor: Cozy.ink,
             side: wood,
-            textStyle: const TextStyle(fontFamily: 'Jua', fontSize: 16),
+            textStyle: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 16),
             shape: shape)),
     textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(foregroundColor: Cozy.wood)),
@@ -257,7 +261,7 @@ ThemeData cozyTheme() {
         backgroundColor: Cozy.cream,
         selectedColor: Cozy.honey,
         side: const BorderSide(color: Cozy.woodLight, width: 1.5),
-        labelStyle: const TextStyle(fontFamily: 'Jua', color: Cozy.ink),
+        labelStyle: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, color: Cozy.ink),
         checkmarkColor: Cozy.ink,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
     cardTheme: CardThemeData(
@@ -298,13 +302,13 @@ ThemeData cozyTheme() {
         tickMarkShape: SliderTickMarkShape.noTickMark,
         valueIndicatorColor: Cozy.woodDark,
         valueIndicatorTextStyle:
-            const TextStyle(fontFamily: 'Jua', color: Cozy.cream)),
+            const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, color: Cozy.cream)),
     progressIndicatorTheme:
         const ProgressIndicatorThemeData(color: Cozy.orangeDeep),
     listTileTheme: const ListTileThemeData(textColor: Cozy.ink),
     snackBarTheme: const SnackBarThemeData(
         backgroundColor: Cozy.woodDark,
-        contentTextStyle: TextStyle(fontFamily: 'Jua', color: Cozy.cream)),
+        contentTextStyle: TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, color: Cozy.cream)),
   );
 }
 
@@ -506,7 +510,7 @@ class CozyBackButton extends StatelessWidget {
                   SizedBox(width: 8),
                   Text('돌아가기',
                       style: TextStyle(
-                          fontFamily: 'Jua', fontSize: 20, color: Cozy.ink)),
+                          fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20, color: Cozy.ink)),
                 ]),
               ),
             ),
@@ -559,7 +563,7 @@ class CozySettingRow extends StatelessWidget {
                           children: [
                         Text(label,
                             style: const TextStyle(
-                                fontFamily: 'Jua', fontSize: 20)),
+                                fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20)),
                         if (subtitle case final text?)
                           Text(text,
                               style: const TextStyle(
@@ -596,7 +600,7 @@ class CozyOnOff extends StatelessWidget {
             child: Text(value ? 'ON' : 'OFF',
                 textScaler: TextScaler.noScaling,
                 style: const TextStyle(
-                    fontFamily: 'Jua', fontSize: 16, color: Colors.white))));
+                    fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 16, color: Colors.white))));
     return AnimatedContainer(
       duration: CozyMotion.reduceOf(context)
           ? Duration.zero
@@ -677,7 +681,7 @@ class _CozyButtonFace extends StatelessWidget {
                 if (icon case final icon?) ...[icon, const SizedBox(width: 6)],
                 Text(label,
                     style: TextStyle(
-                        fontFamily: 'Jua',
+                        fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
                         fontSize: fontSize,
                         color: enabled ? Cozy.ink : Cozy.inkSoft)),
               ]),
@@ -765,7 +769,7 @@ class CozyChip extends StatelessWidget {
               child: Text(label,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                      fontFamily: 'Jua', fontSize: 14, color: Cozy.ink))),
+                      fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 14, color: Cozy.ink))),
         ]),
       );
 }
@@ -845,7 +849,7 @@ class CozyTabBar<T> extends StatelessWidget {
                     ],
                     Text(tab.label,
                         style: const TextStyle(
-                            fontFamily: 'Jua', fontSize: 18, color: Cozy.ink)),
+                            fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 18, color: Cozy.ink)),
                   ]),
                 ),
               ),
@@ -939,7 +943,7 @@ class CozyMenuRow extends StatelessWidget {
                       children: [
                     Text(title,
                         style: const TextStyle(
-                            fontFamily: 'Jua', fontSize: 22, color: Cozy.ink)),
+                            fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 22, color: Cozy.ink)),
                     if (subtitle case final text?)
                       Text(text,
                           key: subtitleKey,

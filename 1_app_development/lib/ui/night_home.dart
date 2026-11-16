@@ -481,7 +481,7 @@ class _NavButton extends StatelessWidget {
                     const SizedBox(width: 4),
                     Text(label,
                         style: const TextStyle(
-                            color: Cozy.ink, fontFamily: 'Jua', fontSize: 21)),
+                            color: Cozy.ink, fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 21)),
                   ]),
                 ),
               ),
@@ -517,7 +517,7 @@ class _ComboLabel extends StatelessWidget {
       Text('$combo 콤보!',
           key: const Key('combo-label'),
           style: TextStyle(
-              fontFamily: 'Jua',
+              fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
               color: color,
               fontSize: combo >= 50
                   ? 40

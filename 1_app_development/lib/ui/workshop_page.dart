@@ -24,9 +24,6 @@ import 'workshop_windows.dart';
 import 'workshop_counter.dart';
 import 'workshop_guide.dart';
 import '../workshop_tutorial.dart';
-import 'friends_panel.dart';
-import 'ranking_panel.dart';
-import 'progress_panels.dart' show SharePanel;
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -154,7 +151,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       c.state.lifetime>=DevelopmentBalance.decimal(catalog[d.id] as Map<String,dynamic>,'unlock_total'):cosmeticUnlocked(account.state,d));
     String price(CosmeticDefinition d){
       if(owned(d))return '보유 중';
-      if(!avatar(d))return '판매 준비 중';
+      if(!avatar(d))return '판매하지 않아요';
       final quote=quoteWorkshopProduct(c.config,'cosmetic:${d.id}',owned:0,quantity:1);
       return '붕어빵력 ${compactNumber(quote.buns)} + 황금붕어빵력 ${compactNumber(quote.gold)}';
     }
@@ -165,9 +162,11 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       final q=quoteWorkshopProduct(c.config,'cosmetic:${d.id}',owned:0,quantity:1);
       return q.affordable(c.state.purchases.available(c.state.buns),BigInt.from(account.state.premium.gold));
     }
+    // Only the avatar catalog is for sale; other old cosmetics show once owned.
     return CosmeticMenuAccess(equipped:_equipped,owned:owned,unlocked:unlocked,canApply:canApply,price:price,
+      listed:(d)=>avatar(d) || owned(d),
       requirement:(d)=>avatar(d) ? '해금 Lv.${(catalog[d.id] as Map)['unlock_level']} · 누적 ${(catalog[d.id] as Map)['unlock_total']}' : '',
-      action:(d)=>_equipped(d.slot)==d.id ? '장착 중':!unlocked(d) ? '잠김':owned(d) ? '적용':!avatar(d) ? '준비 중':'구매하고 적용',
+      action:(d)=>_equipped(d.slot)==d.id ? '장착 중':!unlocked(d) ? '잠김':owned(d) ? '적용':!avatar(d) ? '살 수 없음':'구매하고 적용',
       apply:(d) async {
         if(!canApply(d))return false;
         if(d.slot==CosmeticSlot.time)return c.setBackgroundTime(d.id);
@@ -273,6 +272,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
   }
   Future<void> _menu()=>_window('메뉴',(ctx)=>Column(children:[
     Expanded(child:MenuPanel(controller:widget.accountController,legacyDescriptions:false,rewardCounts:_rewardCounts(),
+      hidden:const {'ranking','friends','share'},
       onOpen:(destination){Navigator.pop(ctx);_open(destination);})),
     Padding(padding:const EdgeInsets.all(8),child:Column(children:[
       Text('황금붕어빵력 심사 대기 ${c.pendingRewardCount}건. 확정 잔액에는 아직 포함되지 않아요.',
@@ -293,9 +293,6 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       case 'skins': case 'skins:avatar': unawaited(_wardrobe());
       case 'skins:stall': unawaited(_wardrobe(tab:WardrobeTab.stall));
       case 'settings': unawaited(_audioSettings());
-      case 'ranking': unawaited(_window('온라인 랭킹',(_)=>RankingPanel(controller:widget.accountController)));
-      case 'friends': unawaited(_window('친구',(_)=>FriendsPanel(controller:widget.accountController,showRewardDetails:false)));
-      case 'share': unawaited(_window('게임 공유',(_)=>SharePanel(controller:widget.accountController)));
       case 'records': case 'balance': unawaited(_window('생산 기록',(_)=>_records()));
       case 'achievements:collection': unawaited(_window('도감',(_)=>_collection()));
       case 'achievements': unawaited(_window('업적',(_)=>_achievements()));

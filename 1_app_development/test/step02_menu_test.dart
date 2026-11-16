@@ -25,8 +25,16 @@ void main(){
     await tapKey('menu-shop');
     expect(tester.getBottomRight(find.byType(CozyBackButton)).dy,lessThanOrEqualTo(776));
     expect(tester.widget<Text>(find.byKey(const Key('workshop-window-title'))).data,'상점');
+    // The window's base covers the home's bottom menu: nothing peeks out beside '돌아가기'.
+    expect(tester.getTopLeft(find.byKey(const Key('workshop-window-base'))).dy,
+      lessThanOrEqualTo(tester.getTopLeft(find.byKey(const Key('home-nav'))).dy));
+    expect(tester.getSize(find.byKey(const Key('workshop-window-base'))).width,360);
     expect(find.byKey(const Key('shop-tab-gear')),findsOneWidget);
-    await tapKey('shop-tab-theme');expect(tester.takeException(),isNull);await close();expect(c.gridVisible,isTrue);
+    // Stall themes are not on sale in the soft launch: no empty tab, no '판매 준비 중'.
+    expect(find.byKey(const Key('shop-tab-theme')),findsNothing);
+    await tapKey('shop-tab-gold');expect(find.textContaining('부스트'),findsNothing);
+    expect(find.textContaining('준비 중'),findsNothing);
+    expect(tester.takeException(),isNull);await close();expect(c.gridVisible,isTrue);
     await tapKey('menu-skills');expect(find.byType(WorkshopSkillShop),findsOneWidget);
     await tapKey('kind-auto');await tapKey('quantity-ten');await tapKey('quantity-maximum');
     expect(find.byKey(const Key('skill-auto_1')),findsOneWidget);await close();
@@ -37,15 +45,20 @@ void main(){
     await tester.tap(apply);await tester.pumpAndSettle();expect(c.state.avatarEquipment['character'],'boy');
     await close();
     for(final route in [('menu-collection','도감'),('menu-achievements','업적'),('menu-records','생산 기록'),
-      ('menu-ranking','온라인 랭킹'),('menu-theme','꾸미기'),('menu-daily','일일 미션'),('event-entry','주간 도전'),
-      ('menu-missions','레벨 미션'),('menu-friends','친구'),('menu-share','게임 공유')]){
+      ('menu-theme','꾸미기'),('menu-daily','일일 미션'),('event-entry','주간 도전'),
+      ('menu-missions','레벨 미션')]){
       await tapKey('menu-menu');expect(c.gridVisible,isFalse);
       await tapKey(route.$1);
       expect(tester.widget<Text>(find.byKey(const Key('workshop-window-title'))).data,route.$2);
       if(route.$1=='menu-collection')expect(find.textContaining('맛 도감은 Lv.'),findsOneWidget);
       expect(c.gridVisible,isFalse,reason:'switching windows must keep the grid paused');
+      if(route.$1=='menu-theme')expect(find.textContaining('준비 중'),findsNothing);
       expect(tester.takeException(),isNull);await close();expect(c.gridVisible,isTrue);
     }
+    // Out of the soft launch (DEC-029): no online ranking, friends or sharing.
+    await tapKey('menu-menu');
+    for(final key in ['menu-ranking','menu-friends','menu-share']){expect(find.byKey(Key(key)),findsNothing);}
+    await close();
     expect(account.state.buns,oldLegacy);expect(account.state.support.coins,coins);expect(c.state.buns,oldBuns);
     await tester.pumpWidget(const SizedBox.shrink());
   });

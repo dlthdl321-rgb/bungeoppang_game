@@ -79,7 +79,7 @@ class _FriendsPanelState extends State<FriendsPanel> {
         if (!online)
           const Padding(
               padding: EdgeInsets.only(bottom: 8),
-              child: Text('온라인 기능을 준비 중이에요', key: Key('friends-offline')))
+              child: Text('지금은 온라인에 연결할 수 없어요', key: Key('friends-offline')))
         else ...[
           OnlineAccountBar(
               controller: c, guide: '카카오 계정으로 로그인하면 친구를 추가하고 서로 방문할 수 있어요.'),

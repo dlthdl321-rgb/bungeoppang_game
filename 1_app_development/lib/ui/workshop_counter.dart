@@ -30,7 +30,7 @@ String? missingFlavor(WorkshopController c, CustomerOrder order) {
   return null;
 }
 
-const _captionStyle = TextStyle(fontFamily: 'Jua', fontSize: 13, color: Cozy.cream, shadows: [
+const _captionStyle = TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 13, color: Cozy.cream, shadows: [
   Shadow(color: Cozy.woodDark, blurRadius: 4),
   Shadow(color: Cozy.woodDark, offset: Offset(1, 1)),
 ]);
@@ -105,7 +105,7 @@ class WorkshopCustomerQueue extends StatelessWidget {
                     decoration: BoxDecoration(shape: BoxShape.circle, color: i == 0 ? Cozy.honeyLight : Cozy.cream,
                         border: Border.all(color: Cozy.wood, width: 2)),
                     child: Text(name.characters.first,
-                        style: const TextStyle(fontFamily: 'Jua', fontSize: 20, color: Cozy.ink)),
+                        style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20, color: Cozy.ink)),
                   ),
                 ),
               ),
@@ -201,7 +201,7 @@ class WorkshopSaleCounter extends StatelessWidget {
                 onTap: onOpenStock,
                 child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
                   Text(title, key: const Key('counter-title'), maxLines: 1, softWrap: false, overflow: TextOverflow.fade,
-                      style: const TextStyle(fontFamily: 'Jua', fontSize: 15, color: Cozy.ink)),
+                      style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 15, color: Cozy.ink)),
                   Text(c.notice ?? detail, key: const Key('counter-order'), maxLines: 1, softWrap: false, overflow: TextOverflow.fade,
                       style: TextStyle(fontSize: 12, color: c.notice == null ? Cozy.inkSoft : Cozy.brick)),
                 ]),
@@ -240,11 +240,11 @@ class WorkshopCustomerCard extends StatelessWidget {
         ].whereType<String>().toList();
         return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text('${index + 1}번 ${c.customerName(order.customerId)}',
-              style: const TextStyle(fontFamily: 'Jua', fontSize: 22, color: Cozy.ink)),
+              style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 22, color: Cozy.ink)),
           Text('남은 ${(order.remainingMs / 1000).ceil()}초', style: const TextStyle(fontSize: 12, color: Cozy.inkSoft)),
           const SizedBox(height: 8),
           for (var i = 0; i < order.lines.length; i++)
-            Text(orderLineLabel(c, order, i), style: const TextStyle(fontFamily: 'Jua', fontSize: 17, color: Cozy.ink)),
+            Text(orderLineLabel(c, order, i), style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 17, color: Cozy.ink)),
           const SizedBox(height: 8),
           for (final line in words)
             Padding(padding: const EdgeInsets.only(bottom: 4), child: Text(line)),
@@ -280,7 +280,7 @@ class WorkshopStockList extends StatelessWidget {
               ? a.madeOnBusinessIndex.compareTo(b.madeOnBusinessIndex) : a.id.compareTo(b.id));
         return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           Text('재고 ${batches.fold<int>(0, (n, b) => n + b.quantity)}개',
-              style: const TextStyle(fontFamily: 'Jua', fontSize: 22, color: Cozy.ink)),
+              style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 22, color: Cozy.ink)),
           if (s.inventory.prepared.isNotEmpty)
             Text('영업 전 준비품 ${s.inventory.prepared.length}묶음. 영업을 시작하면 재고에 들어가요.',
                 style: const TextStyle(fontSize: 12, color: Cozy.inkSoft)),
@@ -291,7 +291,7 @@ class WorkshopStockList extends StatelessWidget {
               padding: const EdgeInsets.only(bottom: 4),
               child: Row(children: [
                 Expanded(child: Text('${c.flavorLabel(b.flavor)} ${provisionalDonenessLabels[b.variant]}',
-                    style: const TextStyle(fontFamily: 'Jua', fontSize: 17, color: Cozy.ink))),
+                    style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 17, color: Cozy.ink))),
                 Text('${b.quantity}개, ${s.business.businessIndex - b.madeOnBusinessIndex}영업일 경과'),
               ]),
             ),

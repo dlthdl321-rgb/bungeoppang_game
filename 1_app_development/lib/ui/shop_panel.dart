@@ -49,16 +49,26 @@ class _ShopPanelState extends State<ShopPanel> {
         _ => ShopTab.cosmetics,
       };
 
-  static Iterable<CosmeticDefinition> _catalog(ShopTab t) =>
+  Iterable<CosmeticDefinition> _catalog(ShopTab t) =>
       cosmeticDefinitions
-          .where((d) => d.collectible && d.slot.shown && _tabOf(d.slot) == t);
+          .where((d) => d.collectible && d.slot.shown && _tabOf(d.slot) == t &&
+              (widget.access?.listed(d) ?? true));
+
+  /// Tabs with something in them; a tab with nothing for sale is left out.
+  List<ShopTab> get _tabs => [
+        for (final t in ShopTab.values)
+          if (t == ShopTab.gold || _catalog(t).isNotEmpty) t
+      ];
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
+  Widget build(BuildContext context) {
+    final tabs = _tabs;
+    final tab = tabs.contains(this.tab) ? this.tab : tabs.first;
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Wrap(spacing: 6, runSpacing: 4, children: [
-          for (final t in ShopTab.values)
+          for (final t in tabs)
             ChoiceChip(
                 key: Key('shop-tab-${t.name}'),
                 avatar: PixelIcon(switch (t) {
@@ -70,12 +80,12 @@ class _ShopPanelState extends State<ShopPanel> {
                 label: Text(_label(t)),
                 selected: t == tab,
                 selectedColor: Cozy.orange,
-                onSelected: (_) => setState(() => tab = t)),
+                onSelected: (_) => setState(() => this.tab = t)),
         ]),
         const SizedBox(height: 8),
         saveError(c),
         if (tab == ShopTab.gold)
-          GoldChargeTab(controller: c)
+          GoldChargeTab(controller: c, legacyBoost: widget.access == null)
         else
         LayoutBuilder(builder: (context, box) {
           const gap = 8.0;
@@ -93,6 +103,7 @@ class _ShopPanelState extends State<ShopPanel> {
               child: const Text('코인 · 부스트 보기')),
         ],
       ]));
+  }
 
   Widget _cosmeticCard(BuildContext context, CosmeticDefinition d) {
     final access=widget.access;

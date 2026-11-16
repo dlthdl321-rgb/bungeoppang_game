@@ -82,7 +82,7 @@ extension PremiumCommands on GameController {
   Future<String?> spendGold(PremiumKind kind, String itemId) async {
     final price = goldPrice(kind, itemId);
     if (price == null) return '살 수 없는 항목이에요';
-    if (!online.configured) return '온라인 기능을 준비 중이에요';
+    if (!online.configured) return '지금은 온라인에 연결할 수 없어요';
     if (state.premium.gold < price) return '$goldName이 부족해요';
     try {
       if (await _requireSignIn() case final error?) return error;

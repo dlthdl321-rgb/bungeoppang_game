@@ -15,7 +15,7 @@ extension OnlineCommands on GameController {
   /// Logs in with Kakao, then syncs and sends my ranking scores. Null on
   /// success and also when the player backs out (no message for that).
   Future<String?> signInOnline() async {
-    if (!online.configured) return '온라인 기능을 준비 중이에요';
+    if (!online.configured) return '지금은 온라인에 연결할 수 없어요';
     if (online.signedIn || _signingIn) return null;
     _signingIn = true;
     _notifyChanged();
@@ -47,7 +47,7 @@ extension OnlineCommands on GameController {
 
   /// Logs in first when needed (Kakao's screen opens). Null once signed in.
   Future<String?> _requireSignIn() async {
-    if (!online.configured) return '온라인 기능을 준비 중이에요';
+    if (!online.configured) return '지금은 온라인에 연결할 수 없어요';
     if (online.signedIn) return null;
     final error = await signInOnline();
     return error ?? (online.signedIn ? null : onlineSignInNeeded);

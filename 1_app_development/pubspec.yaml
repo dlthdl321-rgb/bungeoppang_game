@@ -30,11 +30,15 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   # Rounded Korean display font like the concept UI (SIL OFL 1.1,
-  # assets/fonts/Jua-OFL.txt).
+  # assets/fonts/Jua-OFL.txt). BungeoSymbols: the punctuation Jua lacks, cut from
+  # Noto Sans KR by tools/build_symbol_font.py (SIL OFL 1.1, BungeoSymbols-OFL.txt).
   fonts:
     - family: Jua
       fonts:
         - asset: assets/fonts/Jua-Regular.ttf
+    - family: BungeoSymbols
+      fonts:
+        - asset: assets/fonts/BungeoSymbols-Regular.ttf
   # Synthesized by tools/generate_sounds.py (CC0 1.0); see README.
   assets:
     - config/development_balance.json

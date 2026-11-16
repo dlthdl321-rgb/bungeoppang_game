@@ -38,7 +38,7 @@ class _OnlineAccountBarState extends State<OnlineAccountBar> {
   @override
   Widget build(BuildContext context) {
     if (!c.online.configured) {
-      return const Text('온라인 기능을 준비 중이에요', key: Key('online-unavailable'));
+      return const Text('지금은 온라인에 연결할 수 없어요', key: Key('online-unavailable'));
     }
     if (c.online.signedIn) {
       return CozyPanel(
@@ -149,7 +149,7 @@ class _RankingPanelState extends State<RankingPanel> {
     if (!status.configured) {
       return const Padding(
           padding: EdgeInsets.all(16),
-          child: Text('온라인 랭킹을 준비 중이에요', key: Key('ranking-unavailable')));
+          child: Text('지금은 온라인 랭킹에 연결할 수 없어요', key: Key('ranking-unavailable')));
     }
     if (!status.authenticated) {
       return SingleChildScrollView(
@@ -236,7 +236,7 @@ class _RankingPanelState extends State<RankingPanel> {
                   fit: BoxFit.scaleDown,
                   child: Text('${e.rank}',
                       style: const TextStyle(
-                          fontFamily: 'Jua', fontSize: 20, color: Cozy.wood)))),
+                          fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20, color: Cozy.wood)))),
           SizedBox(
               width: 32,
               height: 37,

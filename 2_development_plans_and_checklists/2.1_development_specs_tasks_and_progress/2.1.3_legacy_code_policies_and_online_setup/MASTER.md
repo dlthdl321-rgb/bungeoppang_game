@@ -580,7 +580,13 @@
 
 **메뉴 창 아래:** 황금붕어빵력 심사 대기 건수(`menu-pending-gold`), '로그인·보상 확인'(`menu-sync`), 영업 중이면 '영업 종료'(`menu-close-business`). 예전 "가게 관리" 시트는 없앴습니다. 레시피(슈크림·초코) 미션 받기는 레벨 미션 창, 맛별 연습·손기술 진행과 손님 취향 기록·이야기 다시 보기는 도감 창으로 옮겼습니다.
 
-골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`).
+**메뉴 창 목록(Workshop):** 도감 · 업적 · 통계 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션. 온라인 랭킹·친구·공유는 가출시 범위 밖이라 `MenuPanel(hidden:)`으로 뺌(DEC-029, 2026-11-16 5단계).
+
+**Workshop 창**(`showWorkshopWindow`, `lib/ui/workshop_windows.dart`, 키 `workshop-window`): 위 안전 영역 아래 화면 전체 높이. 위에서부터 잔액 알약, 제목 프레임(닫기 버튼), 내용. 맨 아래 짙은 나무색 받침(`workshop-window-base`, 화면 폭 전체, 위 테두리 wood 2, 최소 높이 = `NightHome.navHeight` 66, 아래 여백 10 + 안전 영역) 가운데에 '돌아가기'. 받침이 홈 하단 메뉴를 완전히 덮어 버튼 옆으로 메뉴가 비치지 않음.
+
+**상점·꾸미기(Workshop):** 파는 것은 아바타 카탈로그(`avatar_catalog`)뿐. 그 밖의 구형 꾸미기(화로·배경·장식·등불·무늬·토핑)는 가지고 있을 때만 보임(`CosmeticMenuAccess.listed`). 품목이 하나도 없는 상점 탭(지금은 테마)은 숨기고 충전 탭은 항상 둠. 충전 탭에는 구형 클리커 부스트 줄을 두지 않음(`GoldChargeTab(legacyBoost: false)`). 로그인 전에는 '로그인하면 충전할 수 있어요', 상품을 불러오는 동안 가격 자리에 '불러오는 중'.
+
+골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1), 메뉴 창, 영업 준비, 큰 틀 제작 중.
 
 **첫 실행 안내** (`lib/workshop_tutorial.dart` 단계 계산, `lib/ui/workshop_guide.dart` `WorkshopTutorialOverlay`): 홈 위에 겹친 층. 대상 위젯을 꿀색 고리로 두르고 작은 카드(“첫 영업 안내 N/7”, 한 줄 설명, '건너뛰기')를 띄움. 카드만 터치를 받고 게임은 그대로 조작됨. 저장하는 것은 `tutorial` 값뿐이고 단계는 매 프레임 상태에서 계산.
 
@@ -644,7 +650,7 @@
 
 ### 패널(시트)
 
-- 구형 GameHome(도달하지 않는 코드)에서는 모든 패널을 `GameHome._open(id)`(`lib/ui/game_app.dart`)로 엽니다. Workshop 홈은 `WorkshopPage._open(id)`가 `showWorkshopWindow`(`lib/ui/workshop_windows.dart`)로 같은 모양의 창을 엽니다. 화면 높이 92%의 바텀시트입니다.
+- 구형 GameHome(도달하지 않는 코드)에서는 모든 패널을 `GameHome._open(id)`(`lib/ui/game_app.dart`)로 엽니다. 구형은 화면 높이 92%의 바텀시트입니다. Workshop 홈은 `WorkshopPage._open(id)`가 `showWorkshopWindow`(`lib/ui/workshop_windows.dart`)로 같은 모양의 창을 엽니다. 전체 높이이고 바닥 받침이 하단 메뉴를 덮습니다(위 "Workshop 창").
 - 시트 구성: 위에 잔액 표시, 그 아래 제목 프레임, 오른쪽 위 닫기 버튼, 아래 돌아가기 버튼.
 - 잔액 표시는 shop과 skins 패널에서 코인, 나머지에서는 붕어빵입니다.
 
@@ -678,6 +684,8 @@
 ## 11. 디자인 토큰
 
 파일: `lib/ui/cozy_style.dart`. 글꼴은 Jua입니다(`assets/fonts/Jua-Regular.ttf`, OFL).
+
+**기호 대체 글꼴:** Jua에는 `·` `…` `‘’` `→` `「」` `—` `×` `●○` 같은 문장 부호·기호가 없습니다. 이 글자들은 `BungeoSymbols`(`assets/fonts/BungeoSymbols-Regular.ttf`, 약 36KB)로 그립니다. Noto Sans KR(OFL)에서 굵기 600으로 기호 범위만 잘라 이름을 바꾼 글꼴이고, 라이선스는 `BungeoSymbols-OFL.txt`입니다. 다시 만들 때는 `python tools/build_symbol_font.py <NotoSansKR[wght].ttf>`. 코드에서는 `fontFamily: 'Jua'`를 쓰는 모든 곳(테마·`TextTheme`·직접 지정한 `TextStyle`)에 `fontFamilyFallback: Cozy.fontFallback`을 함께 씁니다. 새 `TextStyle`에 Jua를 지정할 때도 같이 넣어야 합니다(버튼 테마처럼 기본 글자 모양을 물려받지 않는 곳이 있음). `test/font_coverage_test.dart`가 `lib/`와 `config/development_balance.json`의 모든 글자가 두 글꼴 중 하나에 있는지 확인합니다.
 
 | 이름 | 색 | 용도 |
 | --- | --- | --- |
@@ -813,7 +821,7 @@
 | 테스트 | `flutter test` |
 | 실행 | `flutter run` |
 | 디버그 APK | `flutter build apk --debug` |
-| 골든 다시 만들기(의도한 홈 화면 변경 후에만) | `flutter test --update-goldens test/home_golden_test.dart` |
+| 골든 다시 만들기(의도한 홈 화면 변경 후에만) | `flutter test --update-goldens test/workshop_home_golden_test.dart`(실제 홈), 구형은 `test/home_golden_test.dart` |
 | 서버 가격표 다시 만들기 | `UPDATE_PREMIUM_CATALOG=1 flutter test test/premium_catalog_test.dart` |
 | 서버 배포 | `firebase deploy --only functions` (`firebase/` 폴더) |
 | 에뮬레이터 | `tools/run_android_emulator.ps1` |
@@ -941,6 +949,7 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 | 붕어빵력은 타당성 검증만 함 | 서버는 붕어빵력을 재생하지 못하고 시간·보유 스킬 기준 상한만 확인합니다. 조작된 앱은 상한 안에서 붕어빵력을 부풀릴 수 있습니다. 황금은 서버 지갑에서만 움직입니다. |
 | 노점 부품 그림 없음 | `assets/images/stall/`에 `awning`, `post`, `postlamp`, `counter`(`_snow`) 파일이 없어서 해당 층이 그려지지 않습니다. 현재 있는 것은 `postlamp_lilac/mint/rose`뿐입니다. |
 | 온라인은 Android 전용 | iOS에서는 오프라인으로만 동작합니다. |
+| 도달하지 않는 구형 UI가 남아 있음 | `ui/game_app.dart`의 `GameHome`, `ui/skill_shop.dart`, `ui/level_missions.dart`, `ui/invite_panel.dart`, `lib/composite_purchase_coordinator.dart`. 앱은 `WorkshopPage`로만 들어가며 release 빌드에서는 빠집니다. 지우면 이 화면을 띄우는 구형 위젯 테스트 약 49개도 지우고 `mountGame`(`test/widget_test.dart`)이 `GameHome`을 거치지 않게 고쳐야 합니다. 가출시 뒤에 정리(2026-11-16 사용자 결정). |
 
 ---
 
@@ -1156,4 +1165,21 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 구형 안내 | 구형 `GameHome`의 안내는 클리커용 대화상자 한 장(“붕어빵을 눌러 굽고…”)이라 재사용하지 않음. 5단계 구형 UI 정리 대상 | `ui/game_app.dart` `_GameHomeState` |
 
 테스트: `test/workshop_guide_test.dart` 12개(새 설치→안내 완료 360x640·390x844, 건너뛰기·재시작, 안내 중 네임드 손님 장면 없음, schema 이전, 복귀 보고·카드·홈 표시, 손상 파일 보관, 복구 화면 두 번 확인·복사·설정 오류·재시도 실패).
+
+## 26. 화면 마감 — 2026-11-16
+
+[23번 가출시 작업](../23_가출시우선작업프롬프트.md) 5단계. 화면은 10장 "메뉴 창 목록"·"Workshop 창"·"상점·꾸미기", 글꼴은 11장 "기호 대체 글꼴".
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 범위 밖 메뉴 | 온라인 랭킹·친구·공유를 Workshop 메뉴에서 뺌(공유는 문구가 구형이고 스토어 주소가 없어 8단계 뒤 다시 판단) | `MenuPanel.hidden`, `WorkshopPage._menu` |
+| 팔지 않는 꾸미기 | '판매 준비 중'·'준비 중' 대신 목록에서 뺌. 빈 상점 탭 숨김 | `CosmeticMenuAccess.listed`, `ShopPanel._tabs` |
+| 충전 탭 | 구형 부스트 줄과 "이미 쓴 부스트" 안내 뺌, '로그인하면 충전할 수 있어요', '불러오는 중'/'구매할 수 없음' | `GoldChargeTab.legacyBoost` |
+| 온라인 연결 실패 문구 | '온라인 기능을 준비 중이에요' → '지금은 온라인에 연결할 수 없어요'(랭킹: '지금은 온라인 랭킹에 연결할 수 없어요') | `online_controller.dart`, `premium_controller.dart`, `ui/friends_panel.dart`, `ui/ranking_panel.dart` |
+| Lv.50 | 코드에 분점 '준비 중' 문구 없음. 레벨 미션 창은 '최고 레벨에 도달했어요.' 그대로 | `WorkshopPage._levelMissions` |
+| 기호 글자 깨짐 | 문구 교체 대신 대체 글꼴(146곳의 `·` 등 9종 → 이제 0) | 11장 |
+| 창과 하단 메뉴 겹침 | 창을 전체 높이로 하고 바닥 받침이 하단 메뉴를 덮음(사용자 선택) | `showWorkshopWindow` |
+| 구형 UI | 남김(사용자 결정). 15장 "도달하지 않는 구형 UI" | |
+
+테스트: 신규 `font_coverage_test.dart` 1개, `workshop_home_golden_test.dart` 5개(골든 10장). `step02_menu_test`는 숨긴 메뉴·빈 테마 탭·창 받침 위치를 확인하도록 고침. `premium_flow_test`·`stage9_ranking_test`는 바뀐 연결 실패 문구로 고침.
 

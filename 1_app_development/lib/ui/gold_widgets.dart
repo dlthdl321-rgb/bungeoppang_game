@@ -60,7 +60,11 @@ class GoldPriceButton extends StatelessWidget {
 /// 10-minute boost for gold and the legally required purchase notes.
 class GoldChargeTab extends StatefulWidget {
   final GameController controller;
-  const GoldChargeTab({super.key, required this.controller});
+
+  /// The old clicker's bought boost. The workshop has no such boost, so its
+  /// shop leaves the row (and the note about spent boosts) out.
+  final bool legacyBoost;
+  const GoldChargeTab({super.key, required this.controller, this.legacyBoost = true});
   @override
   State<GoldChargeTab> createState() => _GoldChargeTabState();
 }
@@ -84,15 +88,16 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
         Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(notice, key: const Key('gold-notice'))),
-      if (!c.online.configured)
+      if (!c.online.signedIn)
         const Padding(
             padding: EdgeInsets.only(top: 6),
-            child: Text('결제를 준비 중이에요', key: Key('gold-offline'))),
+            child: Text('로그인하면 충전할 수 있어요', key: Key('gold-offline'))),
       const SizedBox(height: 8),
       FutureBuilder<List<StoreProduct>>(
           future: _packs,
           builder: (context, snap) {
             final packs = {for (final p in snap.data ?? const []) p.id: p};
+            final loading = snap.connectionState != ConnectionState.done;
             return Column(children: [
               for (final p in goldProducts)
                 Padding(
@@ -118,14 +123,14 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
                                         SnackBar(content: Text(error)));
                                   }
                                 },
-                          child: Text(packs[p.id]?.price ?? '준비 중')),
+                          child: Text(packs[p.id]?.price ?? (loading ? '불러오는 중' : '구매할 수 없음'))),
                     ]),
                   ),
                 ),
             ]);
           }),
       const SizedBox(height: 4),
-      CozyPanel(
+      if (widget.legacyBoost) CozyPanel(
         padding: const EdgeInsets.all(10),
         child: Row(children: [
           Expanded(
@@ -142,14 +147,14 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
         ]),
       ),
       const SizedBox(height: 10),
-      const Text(
+      Text(
           '· 결제는 Google Play로 처리돼요. 구매 후 사용하지 않은 $goldName은 '
           '구매일로부터 7일 안에 청약철회를 요청할 수 있어요.\n'
           '· 미성년자는 법정대리인의 동의 없이 결제하면 취소될 수 있어요.\n'
           '· $goldName은 로그인한 카카오 계정에 보관되고, 다시 설치해도 꾸미기와 '
-          '스킬 해금은 돌아와요. 이미 쓴 부스트는 돌아오지 않아요.',
-          key: Key('gold-terms'),
-          style: TextStyle(color: Cozy.inkSoft, fontSize: 11)),
+          '스킬 해금은 돌아와요.${widget.legacyBoost ? ' 이미 쓴 부스트는 돌아오지 않아요.' : ''}',
+          key: const Key('gold-terms'),
+          style: const TextStyle(color: Cozy.inkSoft, fontSize: 11)),
     ]);
   }
 }
