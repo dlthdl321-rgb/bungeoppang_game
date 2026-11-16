@@ -230,6 +230,9 @@ class PixelSprites {
       yield _cleanPath('${bg.id}_night');
     }
     yield* moldNames.map((n) => 'assets/images/mold/$n.png');
+    for (final stove in _slot(CosmeticSlot.stove)) {
+      yield _emptyStovePath(stove.id);
+    }
     for (final c in cookCharacters) {
       for (var i = 1; i <= cookFrameCount; i++) {
         yield 'assets/images/cook/${c}_$i.png';
@@ -376,6 +379,25 @@ class PixelSprites {
         ? cosmetic(CosmeticSlot.background, id)
         : _images['assets/images/bg/$id.png'];
     return _images.containsKey(_cleanPath(own != null ? id : dayId));
+  }
+
+  /// [stove] without its six baked bungeoppang, at the same size and cavity
+  /// positions (assets/images/stove_empty). Temporary art painted by
+  /// tools/empty_griddle.py until drawn empty griddles arrive (24번 4단계):
+  /// replacing the file is enough. Null when that stove has none.
+  static ui.Image? emptyStove(String stove) => _images[_emptyStovePath(stove)];
+
+  static String _emptyStovePath(String id) =>
+      'assets/images/stove_empty/$id.png';
+
+  /// The asset path of an image loaded by [load], or null (for example to
+  /// tell which background picture [sceneBackground] picked).
+  static String? pathOf(ui.Image? image) {
+    if (image == null) return null;
+    for (final e in _images.entries) {
+      if (identical(e.value, image)) return e.key;
+    }
+    return null;
   }
 
   /// One of [moldNames].

@@ -32,12 +32,17 @@ import 'tap_effects.dart';
 class WorkshopMoldStage extends StatefulWidget {
   final WorkshopController controller;
   final Rect? fishOnScreen;
+
+  /// The sale counter's top on screen (NightHome.centerBuilder), or null.
+  /// The practice start button sits 4 above it (24번 4단계).
+  final double? counterTop;
   final bool cleanCounter, reduceMotion, vibration;
   final Widget sensorControl;
   const WorkshopMoldStage(
       {super.key,
       required this.controller,
       required this.fishOnScreen,
+      this.counterTop,
       this.cleanCounter = false,
       this.reduceMotion = false,
       this.vibration = false,
@@ -86,6 +91,8 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
           width: math.min(box.maxWidth * .78, 330),
           height: math.min(box.maxHeight * .42, 190));
       final mapped = widget.fishOnScreen?.shift(-_origin);
+      final counterLocal =
+          widget.counterTop == null ? null : widget.counterTop! - _origin.dy;
       final rect = mapped ?? fallback;
       final clean = widget.cleanCounter || mapped == null;
       // The clicker fish floats with no mold, above the mold's place.
@@ -115,8 +122,16 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
               key: const Key('workshop-mold-action'),
               onTap: blocked ? null : command,
               child: session == null
-                  ? Align(alignment: const Alignment(0, 1.25),
-                      child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))
+                  ? counterLocal == null
+                      ? Align(alignment: const Alignment(0, 1.25),
+                          child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))
+                      // The counter's top is on the towel (DEC-038): the
+                      // button's bottom stays 4 above it.
+                      : Stack(clipBehavior: Clip.none, children: [
+                          Positioned(left: 0, right: 0,
+                              bottom: rect.bottom - (counterLocal - 4),
+                              child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))),
+                        ])
                   : Center(child: _caption(label))));
       final Widget control;
       if (session == null) {
@@ -492,6 +507,17 @@ Widget _caption(String text, {Key? key}) => Text(text, key: key,
           Shadow(color: Cozy.woodDark, blurRadius: 5),
           Shadow(color: Cozy.woodDark, offset: Offset(1, 1))
         ]));
+
+/// The griddle cavities that show a bungeoppang in the art: the cooking
+/// cells while open, none before opening (the empty griddle, DEC-035).
+Set<int> workshopGriddleFilled(WorkshopController c) {
+  final s = c.state;
+  if (!s.business.permitsProducts(c.now())) return const {};
+  return {
+    for (var i = 0; i < s.grid.cells.length; i++)
+      if (s.grid.cells[i].cooking) i
+  };
+}
 
 class WorkshopGriddleLayer extends StatelessWidget {
   final WorkshopController controller;

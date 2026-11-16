@@ -38,10 +38,18 @@ class NightHome extends StatelessWidget {
   final NightHomeHeaderData? headerData;
   /// Workshop's own centre stage. [cleanCounter] tells whether the
   /// background shows without its baked mold, so the stage draws the mold.
-  final Widget Function(Rect? fishOnScreen, bool cleanCounter)? centerBuilder;
-  /// Workshop's sale counter: left of the cooking cut, just above the
-  /// griddle's first row of cells.
+  /// [counterTop] is the sale counter's top on screen (null when the
+  /// background has no measured towel), so the stage keeps clear of it.
+  final Widget Function(Rect? fishOnScreen, bool cleanCounter, double? counterTop)?
+      centerBuilder;
+  /// Workshop's sale counter: left of the cooking cut, its top on the red
+  /// check towel of the background (DEC-038).
   final Widget? counter;
+
+  /// Null draws the stove art as it is. Otherwise the empty griddle with a
+  /// bungeoppang only in these cavities (Workshop: the cooking cells; empty
+  /// before opening). See GriddlePainter.filled.
+  final Set<int>? griddleFilled;
   final String Function(CosmeticSlot)? equipped;
   const NightHome(
       {super.key,
@@ -53,6 +61,7 @@ class NightHome extends StatelessWidget {
       this.vendor,
       this.centerBuilder,
       this.counter,
+      this.griddleFilled,
       this.equipped});
 
   static const cream = Cozy.cream;
@@ -77,7 +86,15 @@ class NightHome extends StatelessWidget {
         child: LayoutBuilder(builder: (context, box) {
           final w = math.min(box.maxWidth, maxWidth);
           final side = (box.maxWidth - w) / 2;
-          final griddleW = w * .94, griddleH = griddleW * 40 / 88;
+          final workshop = centerBuilder != null;
+          final stove = PixelSprites.cosmetic(
+              CosmeticSlot.stove, e(CosmeticSlot.stove));
+          // Workshop: the griddle art spans the screen less 8 at each side
+          // (DEC-038); its box has the art's own shape, so the art fills it.
+          final griddleW = workshop ? w - 16 : w * .94;
+          final griddleH = workshop
+              ? griddleW * (stove?.height ?? 40) / (stove?.width ?? 80)
+              : griddleW * 40 / 88;
           final cookW = w * .32, cookH = w * .27;
           final navBottom = navHeight + padding.bottom;
           final griddleBottom = navBottom - 10;
@@ -90,12 +107,18 @@ class NightHome extends StatelessWidget {
           final night = isNightTime(e(CosmeticSlot.time), DateTime.now());
           final cleanCounter = centerBuilder != null &&
               PixelSprites.hasCleanBackground(e(CosmeticSlot.background), night);
+          // The sale counter's top sits on the background's towel (DEC-038).
+          final towelTop = counter == null
+              ? null
+              : NightStallPainter.towelTopOnScreen(
+                  box.biggest, e(CosmeticSlot.background), night,
+                  clean: cleanCounter);
           final fishRect = scroll && centerBuilder == null
               ? null
               : NightStallPainter.bakedFishOnScreen(
                   box.biggest, e(CosmeticSlot.background));
           final stage = centerBuilder != null
-              ? centerBuilder!(fishRect, cleanCounter)
+              ? centerBuilder!(fishRect, cleanCounter, towelTop)
               : _stage(reduce, fishRect);
           return Stack(children: [
             Positioned.fill(
@@ -136,7 +159,8 @@ class NightHome extends StatelessWidget {
                 child: IgnorePointer(
                     child: CustomPaint(
                         key: const Key('griddle'),
-                        painter: GriddlePainter(e(CosmeticSlot.stove))))),
+                        painter: GriddlePainter(e(CosmeticSlot.stove),
+                            filled: griddleFilled)))),
             Positioned(
                 left: side + (w - griddleW) / 2,
                 width: griddleW,
@@ -173,7 +197,10 @@ class NightHome extends StatelessWidget {
             if (counter != null) Positioned(
                 left: side + 8,
                 width: w - 16 - (vendor == null ? 0 : cookW + 8),
-                bottom: griddleBottom + griddleH * .66,
+                top: towelTop,
+                // A background without a measured towel: just above the
+                // griddle's first row of cells, as before.
+                bottom: towelTop == null ? griddleBottom + griddleH * .66 : null,
                 child: counter!),
             if (vendor == null) Positioned(
                 right: side + 8,

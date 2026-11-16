@@ -48,6 +48,8 @@ flutter:
     - assets/images/bg/
     - assets/images/stall/
     - assets/images/stove/
+    # Temporary empty griddles (tools/empty_griddle.py, 24번 4단계).
+    - assets/images/stove_empty/
     - assets/images/icons/
     - assets/images/topping/
     - assets/images/skills/

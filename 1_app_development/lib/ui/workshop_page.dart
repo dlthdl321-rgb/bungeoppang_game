@@ -419,8 +419,8 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       equipped:_equipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
         buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts().values.fold<int>(0,(a,b)=>a+b),
         status:c.error!=null ? '저장 확인 필요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}'),
-      centerBuilder:(fish,clean)=>Stack(children:[
-        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,
+      centerBuilder:(fish,clean,counterTop)=>Stack(children:[
+        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,
           reduceMotion:widget.accountController.state.settings.reduceMotion,
           vibration:widget.accountController.state.settings.vibration,sensorControl:_sensorControl())),
         // Below the flavor row, clear of the counter strip.
@@ -428,6 +428,9 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       ]),
       counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock,onCloseBusiness:_closeBusiness),
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
+      // The griddle art is empty; only cooking cells show a bungeoppang, and
+      // none before opening (24번 4단계).
+      griddleFilled:workshopGriddleFilled(c),
       vendor:CookCut(equipped:_equipped,taps:BigInt.from(s.taps),
         reduceMotion:widget.accountController.state.settings.reduceMotion,greeting:s.customers.isNotEmpty));
     return Stack(children:[home,if(step!=null)Positioned.fill(child:WorkshopTutorialOverlay(step:step,home:_homeKey,
