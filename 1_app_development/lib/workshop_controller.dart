@@ -386,9 +386,16 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   int _lifecycleGeneration = 0;
   Timer? _timer;
   final Stopwatch _clock = Stopwatch();
+  /// Monotonic milliseconds for the phase clock, active settlement and the
+  /// clicker tap limit. Tests may pass a fake to keep pictures deterministic.
+  final int Function()? _monotonicMs;
+  int get _mono => _monotonicMs?.call() ?? _clock.elapsedMilliseconds;
   int _lastMono = 0, _checkpoint = 0;
-  WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway})
-      : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure() {
+  /// Monotonic times of clicker taps counted in the last second (DEC-036).
+  final List<int> _clickerTaps = [];
+  WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway,
+      int Function()? monotonicMs})
+      : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure(), _monotonicMs = monotonicMs {
     onlineGateway?.source = this;
   }
   @override
@@ -401,7 +408,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   bool _savingCheckpoint = false;
   bool get cookingInputBlocked => gameplayPaused || error != null || (busy && !_savingCheckpoint);
   int get activePhaseElapsedMs => state.phaseMs +
-      (gameplayPaused || state.session == null || state.session!.finished ? 0 : _clock.elapsedMilliseconds - _lastMono);
+      (gameplayPaused || state.session == null || state.session!.finished ? 0 : _mono - _lastMono);
   CookingSession? _pendingCookingResult;
   final Map<String, GriddleHarvest> _pendingHarvests = {};
   CookingSession? get pendingCookingResolution => _pendingCookingResult;
@@ -463,7 +470,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       _pendingHarvests.removeWhere((id, _) => !state.grid.cookingSourceIds.contains(id));
       final settlement = _settleAway();
       state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
-      error = null; _lastMono = _clock.elapsedMilliseconds;
+      error = null; _lastMono = _mono;
     } catch (e) {
       error = '저장 복구 확인이 필요해요: $e';
       rethrow;
@@ -489,7 +496,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     _checkpoint += ms;
   }
   void _flushActive() {
-    final at = _clock.elapsedMilliseconds;
+    final at = _mono;
     if (foreground && !busy && error == null) {
       final settlement = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:storyPaused ? 0 : at-_lastMono);
       state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
@@ -525,19 +532,21 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (!value && !busy) _flushActive();
     // Remain paused while waiting for an in-flight durable command. Resume
     // MUST settle the away interval before foreground command flushing.
-    foreground = false; _lastMono = _clock.elapsedMilliseconds;
+    foreground = false; _lastMono = _mono;
     await _commandIdle?.future;
     if (disposed || generation != _lifecycleGeneration) return;
     if (value) {
       WorkshopAwayReport? report;
       if (await command(() { report = _settleAwayInto(); }) && report != null) awayReport = report;
       if (disposed || generation != _lifecycleGeneration) return;
-      foreground = true; _lastMono = _clock.elapsedMilliseconds;
+      foreground = true; _lastMono = _mono;
       notifyListeners();
     } else { await command(() {}); }
   }
   Future<bool> openBusiness() => command(() {
     if(storyPaused) throw const FormatException('대화를 먼저 마쳐 주세요.');
+    // DEC-035: a special bungeoppang in the mold must be finished first.
+    if(state.session != null) throw const FormatException('스페셜 붕어빵을 다 만든 뒤 영업을 시작해요.');
     state.business = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
     state.business = state.business.beginOrContinue(state.business.settledUtc);
     state.inventory = state.inventory.expire(config, state.business.businessIndex).acceptPrepared(state.business.businessIndex);
@@ -551,12 +560,28 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (state.session?.finished != true) { state.session = null; state.phaseMs = 0; }
   });
   void tap() {
-    if (busy || !foreground || disposed || error != null) return;
+    if (busy || !foreground || disposed || error != null || state.session != null) return;
     _flushActive();
     if (gameplayPaused) return;
     state.buns += tapRate; state.lifetime += tapRate; state.taps++;
     state.missions=state.missions.observe(now(),taps:1,production:tapRate,autoPeak:autoRate);
     notifyListeners();
+  }
+  /// The big bungeoppang clicker while open (DEC-036): the [tap] path, only
+  /// in business with no special bungeoppang in the mold, and at most
+  /// `server_validation.max_taps_per_second` counted taps in any second.
+  /// Returns the buns earned, or null when the tap only shows its effect.
+  BigInt? clickerTap() {
+    if (busy || !foreground || disposed || error != null || gameplayPaused) return null;
+    if (state.session != null || !state.business.permitsProducts(now())) return null;
+    final at = _mono;
+    _clickerTaps.removeWhere((t) => at - t >= 1000);
+    if (_clickerTaps.length >= DevelopmentBalance.integer(config.section('server_validation'), 'max_taps_per_second')) return null;
+    final before = state.taps;
+    tap();
+    if (state.taps == before) return null;
+    _clickerTaps.add(at);
+    return tapRate;
   }
   int difficulty(String flavor) => DevelopmentBalance.integer(config.section('active_recipes')[flavor] as Map<String, dynamic>, 'difficulty');
   String flavorLabel(String flavor) => (config.section('active_recipes')[flavor] as Map)['label'] as String;
@@ -583,7 +608,11 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       fillingSequence: List.generate(count, (i) => i.isEven ? CookingDirection.left : CookingDirection.right));
     state.phaseMs = 0;
   }
-  Future<bool> startPractice() => command(() => _startCooking(state.selectedFlavor, practice: true));
+  /// Practice only before opening (DEC-035); in business the mold makes orders.
+  Future<bool> startPractice() => command(() {
+    if (state.business.open) throw const FormatException('연습 제작은 영업 준비 중에만 할 수 있어요.');
+    _startCooking(state.selectedFlavor, practice: true);
+  });
   Future<bool> startOrderProduction(String orderId, String flavor) => command(() {
     if (!state.business.permitsProducts(now()) || !state.customers.any((c) => c.id == orderId &&
         c.remainingMs > 0 && c.lines.any((l) => l.flavor == flavor))) throw const FormatException('진행 중인 손님 주문을 확인해 주세요.');

@@ -214,10 +214,12 @@ void main() {
     final buns = controller.state.buns;
     controller.tap();
     expect(controller.state.buns, buns);
-    expect(await controller.startPractice(), isFalse);
+    // In business the mold makes orders only (24번 3단계).
+    final order = controller.state.customers.single, flavor = order.lines.first.flavor;
+    expect(await controller.startOrderProduction(order.id, flavor), isFalse);
     expect(controller.state.customers.single.toJson(), customer);
     controller.setAdPaused(false);
-    expect(await controller.startPractice(), isTrue);
+    expect(await controller.startOrderProduction(order.id, flavor), isTrue);
   });
   test('schema1은 구매 없는 schema4로 읽되 신규 구매 누락은 초기화하지 않는다', () {
     final legacy = controller.state.toJson();

@@ -35,7 +35,11 @@ void main() {
     await loadFonts(tester);
     final config = DevelopmentBalance.fromJson(
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
-    final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18));
+    // A still monotonic clock: the phase time ('현재 단계 경과') and wait
+    // rings do not follow the real stopwatch, so a busy machine cannot
+    // change the picture.
+    final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18),
+        monotonicMs: () => 0);
     await c.initialize();
     await c.command(() => c.state.tutorial = 'done');
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
@@ -48,7 +52,7 @@ void main() {
     await c.openBusiness();
     await c.command(() => c.state.inventory = c.state.inventory.recordResult(ProductBatch(id: 'one',
         flavor: 'redbean', variant: 2, quantity: 1, madeOnBusinessIndex: c.state.business.businessIndex), keep: true));
-    // Last: a later command would age the wait rings by real elapsed ms.
+    // Last, so no later command touches the wait rings.
     await c.command(() => c.state.customers
       ..add(CustomerOrder(id: 'first', customerId: 'anonymous_first', remainingMs: 100000,
           lines: [CustomerOrderLine(flavor: 'redbean', quantity: 2)]))
@@ -79,10 +83,9 @@ void main() {
   testWidgets('영업 준비와 스페셜 붕어빵 제작 중 골든 390x844', (tester) async {
     final c = await mount(tester, const Size(390, 844));
     await shoot(tester, 'ready_390x844');
-    await c.startPractice();
-    // The phase clock follows real elapsed time; pin it for the picture.
-    await c.command(() => c.state.phaseMs = 0);
+    expect(await c.startPractice(), isTrue);
     await tester.pump();
+    expect(c.activePhaseElapsedMs, 0);
     await shoot(tester, 'baking_390x844');
     await tester.pumpWidget(const SizedBox.shrink());
   });

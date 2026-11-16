@@ -16,7 +16,9 @@ void main() {
     final account = await mountGame(tester, size, reduced: true);
     final config = DevelopmentBalance.fromJson(
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
-    final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18));
+    // A still monotonic clock keeps the wait rings off the real stopwatch.
+    final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18),
+        monotonicMs: () => 0);
     await c.initialize();
     // A player past the first-run guide (workshop_guide_test covers the guide).
     await c.command(() => c.state.tutorial = 'done');

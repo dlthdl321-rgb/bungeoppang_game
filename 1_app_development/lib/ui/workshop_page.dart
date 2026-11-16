@@ -420,7 +420,9 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
         buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts().values.fold<int>(0,(a,b)=>a+b),
         status:c.error!=null ? '저장 확인 필요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}'),
       centerBuilder:(fish,clean)=>Stack(children:[
-        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,sensorControl:_sensorControl())),
+        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,
+          reduceMotion:widget.accountController.state.settings.reduceMotion,
+          vibration:widget.accountController.state.settings.vibration,sensorControl:_sensorControl())),
         // Below the flavor row, clear of the counter strip.
         Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
       ]),

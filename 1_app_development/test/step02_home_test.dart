@@ -60,7 +60,9 @@ void main() {
       await tester.scrollUntilVisible(find.byKey(const Key('settings-save')),200,scrollable:find.byType(Scrollable).last);
       await tester.tap(find.byKey(const Key('settings-save')));await tester.pumpAndSettle();
       expect(find.byKey(const Key('griddle')),findsOneWidget);
-      expect(find.byKey(const Key('workshop-cell-5')),findsOneWidget);
+      // Before opening the griddle is an empty picture with no cells (24번 3단계).
+      expect(find.byKey(const Key('griddle-idle')),findsOneWidget);
+      expect(find.byKey(const Key('workshop-cell-5')),findsNothing);
       final oldBuns=account.state.buns;
       await tester.ensureVisible(find.byKey(const Key('workshop-mold-action')));
       await tester.tap(find.byKey(const Key('workshop-mold-action')));

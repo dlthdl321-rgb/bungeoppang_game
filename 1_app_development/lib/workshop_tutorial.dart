@@ -37,13 +37,23 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
     };
   }
   if (s.tutorial == 'cook') {
-    return const WorkshopTutorialStep(1, '스페셜 붕어빵 틀을 눌러 굽기 연습을 시작해요.', 'workshop-mold', below: _stage);
+    if (!s.business.open) {
+      return const WorkshopTutorialStep(1, '스페셜 붕어빵 틀을 눌러 굽기 연습을 시작해요.', 'workshop-mold', below: _stage);
+    }
+    // Opened before the first bake: practice is closed in business
+    // (DEC-035), so the first bungeoppang is an order (DEC-037).
+    if (s.customers.isEmpty) {
+      return const WorkshopTutorialStep(1, '영업 중에는 손님 주문을 받아 구워요. 손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요.', 'workshop-clicker');
+    }
+    return ready > 0
+        ? const WorkshopTutorialStep(1, '구운 붕어빵을 손님에게 판매해요.', 'sale-button')
+        : const WorkshopTutorialStep(1, '손님 주문은 주문 제작으로 바로 구워요.', 'order-produce');
   }
   if (!s.business.open) {
     return const WorkshopTutorialStep(7, "'영업 시작'을 눌러 가게 문을 열어요.", 'business-open');
   }
   if (s.customers.isEmpty) {
-    return const WorkshopTutorialStep(7, '첫 손님을 기다려요. 손님은 왼쪽 줄에 서요.', 'sale-counter');
+    return const WorkshopTutorialStep(7, '첫 손님을 기다려요. 손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요.', 'workshop-clicker');
   }
   return ready > 0
       ? const WorkshopTutorialStep(7, '구운 붕어빵을 손님에게 판매해요.', 'sale-button')
