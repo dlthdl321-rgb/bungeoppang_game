@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,6 +9,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/cooking_session_controls.dart';
+import 'package:todays_bungeoppang/ui/flip_circle_control.dart';
 import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 
@@ -83,8 +85,20 @@ void main() {
     await controller.command(() {
       controller.state.phaseMs = 1000;
     });
-    await tester.tap(find.text('뒤집기'));
+    // Draw one circle around the mold to flip it (24번 6단계).
+    final flipBox = tester.getRect(find.byType(FlipCircleControl));
+    final radius = flipBox.width * .55;
+    final circle = await tester
+        .startGesture(flipBox.center + Offset(0, -flipBox.height * .3));
+    for (var a = 0.0; a <= 345; a += 15) {
+      final rad = a * math.pi / 180;
+      await circle.moveTo(
+          flipBox.center + Offset(math.sin(rad), -math.cos(rad)) * radius);
+      await tester.pump();
+    }
+    await circle.up();
     await tester.pumpAndSettle();
+    expect(controller.state.session!.phase, CookingPhase.cooking);
     await controller.command(() {
       controller.state.phaseMs = 15000;
     });

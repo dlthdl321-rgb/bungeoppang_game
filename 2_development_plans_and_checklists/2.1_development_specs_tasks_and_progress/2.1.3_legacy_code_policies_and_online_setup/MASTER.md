@@ -912,7 +912,7 @@
 2. 릴리스 빌드는 추가로 `GRADLE_USER_HOME=C:\GradleCache`, `PUB_CACHE=C:\PubCacheBungeoppang`을 지정합니다.
 3. `processDebugResources`가 `Unable to delete directory … .ap_`(다른 프로세스가 사용 중)로 실패하면 방금 만든 파일의 일시적 잠금입니다. 코드를 고치지 말고 같은 명령을 다시 실행합니다(2026-11-03 재실행으로 통과).
 
-**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-03 기준 `flutter analyze`는 error·warning 0(info만 남음), `flutter test`는 595개 통과·1개 건너뜀(release 매니페스트가 있어야 하는 `no_tracking_sdk_test` 1개)입니다.
+**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(24번 7단계) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 691개 통과·1개 건너뜀(release 매니페스트가 있어야 하는 `no_tracking_sdk_test` 1개, 약 6분 30초), 서버 `npm test`는 84개 통과입니다.
 
 **온라인 빌드:**
 ```
@@ -933,6 +933,7 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 | 꾸미기·그림 | public_menus(_widget), stage12_customization, pixel_art, stage14_systems, day_night, stage17_avatar_layers |
 | 온라인 | online_backend, stage9_ranking, stage16_kakao_ranking, premium_catalog, premium_flow, invite_system, invite_widget |
 | 화면 | widget_test(공용 `mountGame`, `FixedTime`), home_golden, stage7_widget, stage8_widget |
+| Workshop 제작·홈(24번) | cooking_paint, cooking_controls, cooking_flip, flip_circle_control, workshop_two_molds, workshop_home_layout, workshop_home_golden, step02_home, workshop_full_flow(새 설치~주문 제작 통합 흐름) |
 | 규칙 | no_tracking_sdk |
 
 ---
@@ -1269,7 +1270,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 
 ## 27. 제작 조작·화면·용어 변경 결정 — 2026-11-16
 
-[24번 작업](../24_제작조작화면용어변경프롬프트.md) 1단계 기록. 결정 원문은 [00_결정취합.md](../2.1.1_game_rules_and_decisions/00_결정취합.md) 「2026-11-16 제작 조작·화면·용어 변경」(DEC-031~039). 2단계(용어), 3단계(두 틀 규칙), 4단계(홈 배치·빈 굽는 판), 5단계(짤주머니 색칠·센서 삭제), 6단계(원 그려 뒤집기)를 구현했습니다. 각 항목은 표의 단계에서 구현하며, 구현할 때 10장·설정값·저장 절을 함께 고칩니다. 수치는 모두 `manual_cooking` 개발용 임시값입니다.
+[24번 작업](../24_제작조작화면용어변경프롬프트.md) 1단계 기록. 결정 원문은 [00_결정취합.md](../2.1.1_game_rules_and_decisions/00_결정취합.md) 「2026-11-16 제작 조작·화면·용어 변경」(DEC-031~039). 2단계(용어), 3단계(두 틀 규칙), 4단계(홈 배치·빈 굽는 판), 5단계(짤주머니 색칠·센서 삭제), 6단계(원 그려 뒤집기)를 구현했고, 7단계(통합 검수)에서 전체 흐름을 호스트 테스트로 확인했습니다. 실기기 검수는 대기입니다. 각 항목은 표의 단계에서 구현하며, 구현할 때 10장·설정값·저장 절을 함께 고칩니다. 수치는 모두 `manual_cooking` 개발용 임시값입니다.
 
 | 항목 | 결정 | 구현 단계 |
 | --- | --- | --- |
@@ -1301,3 +1302,5 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 **5단계 기록 (짤주머니 색칠, 2026-11-17):** 규칙·설정값은 10장 "짤주머니 색칠"·"제작 설정값", 저장은 3장 Workshop 표의 `session` 행. 설계 갈림길 G1~G8은 사용자가 모두 추천안으로 확정(00_결정취합 DEC-040). 새 파일: `lib/cooking_paint.dart`(순수 계산), `lib/generated/fish_cavity_mask.dart`·`tools/fish_cavity_mask.py`(마스크 생성). 지운 파일: `lib/cooking_sensor_input.dart`, `lib/cooking_tilt_source.dart`, Android `CookingTiltStream.kt`. 테스트: `test/cooking_paint_test.dart`(마스크·면적·덧칠·떨림·빈틈·넘침·판정·저장 이전 17개), `test/cooking_controls_test.dart`(색칠 위젯 11개: 손 떼면 확정, 속 넘침, 칠 0, 틀 밖, 단계 변경, 앱 비활성, 차단, 포인터 취소, 두 번째 손가락, 화면 읽기, 진동), `test/step02_home_test.dart`(실제 홈에서 세 단계 문지르기 → 결과 글). 시뮬레이션: 가로 지그재그 줄 간격(붓 지름 대비) 100%·90%·80%에서 덮음 100%, 양 약 101%·108%·125%. 새로 필요한 그림(짤주머니, 속 칠 질감, 반죽 넘침)은 [필요한 그림 목록](../25_필요한그림프롬프트.md) 2~4번이고 지금은 코드로 그린 임시 그림입니다.
 
 **6단계 기록 (원 그려 뒤집기, 2026-11-17):** 규칙·설정값은 10장 "원 그려 뒤집기"·"제작 설정값". 새 파일: `lib/cooking_flip.dart`(순수 각도 누적), `lib/ui/flip_circle_control.dart`(조작·연출·임시 고리). 결정 해석(추천안으로 진행): "틀 폭" = 틀 그림 캔버스 폭(1200px, 붕어빵 홈 폭 769px가 아님), 320도에 닿는 순간 손을 떼기 전에도 바로 뒤집음, 화면 읽기는 두 번 활성화로 뒤집기, 손 뗀 뒤 원위치는 연출 없이 즉시. 함께 고친 것: 5단계 짤주머니 안내 글이 '제작 취소' 버튼의 누르는 영역(48)과 4.6(412x915)~19.3px(360 폭) 겹치고, 360 폭에서는 안내 글 상자 아래 5px가 '제작 취소' 글자 위에 덮여 있던 문제(그 부분을 누르면 칠 대신 취소 버튼이 눌림) → 두 조작의 안내 글을 버튼 윗변 − 4까지 올림(`captionLift`). 테스트: `test/cooking_flip_test.dart`(설정값·한 바퀴·반시계·반 바퀴 부족·중심 맴돌기·중심 가로지르기·방향 바꾸기·짧은 쪽·취소·다 그린 뒤 고정·잘못된 설정 11개), `test/flip_circle_control_test.dart`(탭으로 안 뒤집힘, 원 → `flip_ms` 뒤 한 번, 반시계, 손 떼면 0도, 중심 맴돌기, 두 번째 손가락, 취소·단계 변경·앱 비활성, 연출 중 차단, 명령 거부, 화면 읽기, 모션 줄이기, 진동 12개), `test/step02_home_test.dart`(실제 홈에서 탭으로 안 뒤집히고 원을 그리면 cooking), `test/workshop_home_layout_test.dart`(4개 해상도 안내 글·제작 취소 간격). 새로 필요한 그림(안내 고리·화살표)은 [25번 필요한 그림](../25_필요한그림프롬프트.md) 5번.
+
+**7단계 기록 (통합 검수, 2026-11-17):** 새 `test/workshop_full_flow_test.dart`가 새 설치 → 안내 → 영업 준비 중 스페셜 붕어빵 연습(실제 화면 색칠 세 번·원 그려 뒤집기) → 보관 → 영업 시작 → 숙련된 붕어빵 칸 굽기·수확 → 판매(안내 끝) → 클리커 탭 → 손님 창 '주문 제작'(틀 나옴·클리커 막힘·칸 멈춤 → '결과 닫기' 뒤 클리커 복귀) → 판매를 한 흐름으로 확인합니다. 숙련에 필요한 나머지 연습 7회만 명령으로 채우고, 시간은 가짜 단조 시계로 넘깁니다. 기기용 `integration_test/step02_android_test.dart`는 없어진 '뒤집기' 버튼 대신 원을 그리도록 고쳤습니다(기기 실행은 아직). **상태 구분:** 1~7단계 규칙은 Windows 호스트 테스트(분석·전체 테스트·골든·서버 테스트)로 실행 검수 완료, **실기기 검수는 대기**입니다. debug APK는 25번 그림 21장을 게임에 넣은 뒤 만들고, 실기기 확인표(색칠 반응, 손가락 가림, 작은 화면 원 그리기, 칸 누르기, 매대·행주, 새 그림 등)는 [24번 문서 7단계](../24_제작조작화면용어변경프롬프트.md) 아래에 있습니다. 확인표에서 '진행 불가'로 보고된 문제만 7단계 할 일 4로 고칩니다.

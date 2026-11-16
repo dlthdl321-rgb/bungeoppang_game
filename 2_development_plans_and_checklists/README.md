@@ -64,6 +64,7 @@ Git으로 관리하는 문서는 이 안내에서 전체 목록을 관리한다.
 - [2.2_art_creation_guides_and_galleries/2.2.3_additional_art_gallery_and_report/gallery.html](<2.2_art_creation_guides_and_galleries/2.2.3_additional_art_gallery_and_report/gallery.html>)
 - [2.2_art_creation_guides_and_galleries/2.2.3_additional_art_gallery_and_report/추가생성_완료보고.txt](<2.2_art_creation_guides_and_galleries/2.2.3_additional_art_gallery_and_report/추가생성_완료보고.txt>)
 - [2.2_art_creation_guides_and_galleries/2.2.5_mockup_visual_update_prompts/README.md](<2.2_art_creation_guides_and_galleries/2.2.5_mockup_visual_update_prompts/README.md>)
+- [2.1_development_specs_tasks_and_progress/24_제작조작화면용어변경프롬프트.md](<2.1_development_specs_tasks_and_progress/24_제작조작화면용어변경프롬프트.md>): 제작 조작(짤주머니 색칠·원 그려 뒤집기)·화면 배치·용어 변경 단계별 프롬프트와 결과, 7단계 아래 실기기 확인표
 - [2.1_development_specs_tasks_and_progress/25_필요한그림프롬프트.md](<2.1_development_specs_tasks_and_progress/25_필요한그림프롬프트.md>): 아직 그린 그림이 없어 임시 그림으로 대신하는 그림 목록과 생성 프롬프트. 새로 필요한 그림은 여기에 추가
 - [2.3_art_completion_and_backup_reports/2.3.1_generated_art_completion_records/eyelash_completed.txt](<2.3_art_completion_and_backup_reports/2.3.1_generated_art_completion_records/eyelash_completed.txt>)
 - [2.3_art_completion_and_backup_reports/2.3.1_generated_art_completion_records/eyelash_completed_verified.txt](<2.3_art_completion_and_backup_reports/2.3.1_generated_art_completion_records/eyelash_completed_verified.txt>)
