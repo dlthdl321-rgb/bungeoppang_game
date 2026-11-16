@@ -8,8 +8,10 @@ import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
+import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/ui/flip_circle_control.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
+import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'widget_test.dart' show mountGame;
@@ -116,6 +118,60 @@ void main() {
     }
     await shoot(tester, 'flipping_360x640');
     await gesture.up();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  // 25번 그림 적용: 속을 짜는 도중(짤주머니 짜는 중, 130% 넘어 흘러내림 방울).
+  testWidgets('속 색칠 도중 골든 390x844', (tester) async {
+    final c = await mount(tester, const Size(390, 844));
+    expect(await c.startPractice(), isTrue);
+    var s = c.state.session!;
+    s = s.pour(s.token, PaintAmount.even);
+    final filling = s;
+    await c.command(() => c.state.session = filling);
+    await tester.pump();
+    final box = tester.getRect(find.byType(MoldPaintControl));
+    final gesture = await tester.startGesture(box.center);
+    // Back and forth over the whole fish, again and again: over 130%.
+    for (var pass = 0; pass < 2; pass++) {
+      for (var row = 0; row < 8; row++) {
+        final y = box.top + box.height * (.22 + row * .065);
+        await gesture.moveTo(Offset(box.left + box.width * .15, y));
+        await gesture.moveTo(Offset(box.left + box.width * .85, y));
+      }
+    }
+    await gesture.moveTo(box.center + Offset(box.width * .1, 0));
+    await tester.pump();
+    expect(find.textContaining('넘쳤어요'), findsOneWidget);
+    await shoot(tester, 'filling_390x844');
+    await gesture.up();
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  // 25번 그림 적용: 영업 중 숙련된 붕어빵 틀 1·4번 칸만 굽는 중(빈 판 위 붕어빵).
+  testWidgets('영업 중 굽는 칸 골든 390x844', (tester) async {
+    final c = await mount(tester, const Size(390, 844));
+    await c.openBusiness();
+    await c.command(() {
+      final rule = c.config.mastery(0);
+      var mastery = c.state.mastery;
+      final count = DevelopmentBalance.integer(rule, 'practice_required') + 5;
+      for (var i = 0; i < count; i++) {
+        mastery = mastery.record(MasteryResult(id: 'practice-$i', flavor: 'redbean',
+            variant: i < 5 ? i : 2, completed: true, practice: true, techniquePassed: i >= 5));
+      }
+      c.state.mastery = mastery;
+      c.state.masteryAward = {
+        'revision': c.config.revision,
+        'resultId': 'practice-0',
+        'practiceRequired': DevelopmentBalance.integer(rule, 'practice_required'),
+        'techniqueRequired': DevelopmentBalance.integer(rule, 'technique_passes_required'),
+      };
+    });
+    expect(await c.startCell(1), isTrue);
+    expect(await c.startCell(4), isTrue);
+    await tester.pump();
+    await shoot(tester, 'griddle_390x844');
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

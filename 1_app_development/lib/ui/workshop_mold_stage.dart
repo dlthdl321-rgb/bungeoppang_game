@@ -298,6 +298,7 @@ CustomPainter paintedMoldFor(CookingSession session, Map<CookingPhase, Uint8List
     return cells == null
         ? MoldPaintLayer(image: picture)
         : MoldPaintLayer(image: image, color: color, cells: cells,
+            drip: step == CookingPhase.filling ? session.flavor : 'batter',
             overflow: paint != null && paintOverflowed(config, paint));
   }
   return _PaintedMoldArt([

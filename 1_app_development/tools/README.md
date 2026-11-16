@@ -10,7 +10,8 @@ Flutter 앱과 관련된 도구입니다. 원칙적으로 `1_app_development/`�
 | 픽셀 그림 생성 | `draw_pixel_assets.py` | `1_app_development`에서 실행. 기존 에셋을 갱신하므로 변경 내용을 확인 |
 | 아바타 조각·좌표 관리 | `avatar_layers.py` | `1_app_development`에서 `python tools/avatar_layers.py --help` |
 | 원본 이미지 적용 | `apply_extra_art.py`, `concept_*.py` | `3_original_images_and_visual_references`의 원본을 읽고 앱 에셋을 갱신 |
-| 임시 빈 굽는 판 | `empty_griddle.py` | `1_app_development`에서 `python tools/empty_griddle.py --preview`. `assets/images/stove`에서 붕어빵을 지운 `assets/images/stove_empty` 4종을 만듦(그린 그림이 오면 파일만 교체, [필요한 그림 목록](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/25_필요한그림프롬프트.md)) |
+| 25번 그림 적용 | `apply_25_art.py` | `1_app_development`에서 `python tools/apply_25_art.py <25_generated 폴더> --preview`. 생성 원본(읽기만)을 줄여 `assets/images/stove_empty`(빈 굽는 판 4종, 원래 화로에 맞춘 배율·위치 `STOVE_FIT`, `--measure`로 다시 잼)·`stove_fish`(원래 화로의 붕어빵만)·`cook/piping_bag_*`·`fx/overflow_*`·`fx/flip_ring*`을 만듦. 미리보기 `build/apply_25_art_preview.png` |
+| 임시 빈 굽는 판(예전) | `empty_griddle.py` | 그린 그림으로 대체됨. 실행하면 `build/stove_empty_temp`에만 씀(에셋을 덮어쓰지 않음). 붕어빵 마스크 함수는 `apply_25_art.py`가 씀 |
 | 행주 윗변 측정 | `towel_top.py` | `1_app_development`에서 `python tools/towel_top.py`. 배경별 빨간 체크 행주 윗변 행을 출력, `NightStallPainter.towelTops`에 옮김 |
 | 화면 캡처 검증 | `preview_*_test.dart` | `1_app_development`에서 `flutter test tools/해당파일.dart` |
 | Android 에뮬레이터 실행 | `run_android_emulator.ps1` | Windows 전용. `1_app_development` 기준 APK 경로 사용 |

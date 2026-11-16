@@ -44,7 +44,9 @@ const griddleCavities = [
 /// The bungeoppang in each cavity of the stove art as fractions of the
 /// sprite (all four stoves, measured with tools/empty_griddle.py's fish
 /// masks). The two rows meet at .6085. GriddlePainter cuts a cooking cell's
-/// bungeoppang from the full art with these over the empty griddle.
+/// bungeoppang with these from the stove's fish-only layer (or the full
+/// art) over the empty griddle. The drawn empty griddles' fish hollows sit
+/// within a few pixels of these and of [griddleCavities] (25번 1번).
 const griddleFishClips = [
   Rect.fromLTRB(.188, .430, .380, .6085),
   Rect.fromLTRB(.406, .430, .596, .6085),

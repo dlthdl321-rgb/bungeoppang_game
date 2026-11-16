@@ -1,10 +1,12 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../cooking_flip.dart';
 import '../development_balance.dart';
 import 'cozy_style.dart';
+import 'pixel_sprites.dart';
 import 'workshop_mold_stage.dart' show WorkshopMoldArt;
 
 /// The flipping step on the special bungeoppang mold (24번 6단계, DEC-034):
@@ -258,9 +260,13 @@ class _Turn extends Drag {
 }
 
 /// The guide ring around the mold and the honey arc of the swept turn
-/// (a temporary drawing, 25번 필요한 그림 5번). Idle, two arrowheads on the ring
-/// show the circling motion.
+/// (25번 필요한 그림 5번: fx/flip_ring.png with its two clockwise arrowheads,
+/// and fx/flip_ring_fill.png cut to the swept angle from 12 o'clock). When
+/// those pictures are missing it draws them (arrowheads only while idle).
 class _RingPainter extends CustomPainter {
+  /// Ring radius in the 512x512 ring pictures (centre at the middle).
+  static const pictureRadius = 236.0;
+  static final _smooth = Paint()..filterQuality = FilterQuality.medium;
   final double progress, grow;
   final bool counter, idle;
   _RingPainter(this.progress, this.counter, this.grow, {required this.idle});
@@ -270,6 +276,30 @@ class _RingPainter extends CustomPainter {
     final centre = size.center(Offset.zero);
     // Around the mold body, within the stage's height on small screens.
     final r = 400 * k;
+    final ring = PixelSprites.fx('flip_ring'), fill = PixelSprites.fx('flip_ring_fill');
+    if (ring != null && fill != null) {
+      void draw(ui.Image image) {
+        final s = r / pictureRadius;
+        canvas.drawImageRect(
+            image,
+            Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+            Rect.fromCenter(center: centre, width: image.width * s, height: image.height * s),
+            _smooth);
+      }
+      draw(ring);
+      if (progress <= 0) return;
+      canvas.save();
+      if (progress < 1) {
+        final sweep = progress * 2 * math.pi * (counter ? -1 : 1);
+        canvas.clipPath(Path()
+          ..moveTo(centre.dx, centre.dy)
+          ..arcTo(Rect.fromCircle(center: centre, radius: r * 1.3), -math.pi / 2, sweep, false)
+          ..close());
+      }
+      draw(fill);
+      canvas.restore();
+      return;
+    }
     final guide = Paint()
       ..color = Cozy.cream.withValues(alpha: .45)
       ..style = PaintingStyle.stroke

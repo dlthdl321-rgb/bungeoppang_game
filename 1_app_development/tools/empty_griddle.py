@@ -1,6 +1,11 @@
 """Temporary empty griddles (24번 4단계): the stove sprites without their six
 baked bungeoppang.
 
+Superseded (2026-11-17): the game now ships drawn empty griddles fitted by
+tools/apply_25_art.py, which also reuses this file's fish masks for
+assets/images/stove_fish. This tool now writes its temporary art to
+build/stove_empty_temp, so running it no longer overwrites the drawn art.
+
 The stove art (assets/images/stove/<id>.png) has a bungeoppang in every
 cavity. Until real empty art is drawn, this tool paints each bungeoppang over
 with the dark cavity floor, keeping a faint fish-shaped hollow, and writes
@@ -22,7 +27,7 @@ from scipy import ndimage as nd
 
 ROOT = Path(__file__).resolve().parent.parent
 STOVE = ROOT / "assets/images/stove"
-OUT = ROOT / "assets/images/stove_empty"
+OUT = ROOT / "build/stove_empty_temp"
 NAMES = ["iron", "copper", "castiron", "golden"]
 
 
@@ -93,7 +98,7 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--preview", action="store_true")
     args = p.parse_args()
-    OUT.mkdir(exist_ok=True)
+    OUT.mkdir(parents=True, exist_ok=True)
     load = lambda n: np.asarray(Image.open(STOVE / f"{n}.png").convert("RGBA")).astype(float)
     iron_seeds = seeds(load("iron"))
     sheets = []

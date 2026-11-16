@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui' as ui;
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,8 +10,9 @@ import 'cozy_style.dart';
 import 'pixel_sprites.dart';
 import 'workshop_mold_stage.dart' show WorkshopMoldArt;
 
-/// Temporary paste colors of the fillings, until painted textures arrive
-/// (25번 필요한 그림 3번).
+/// Paste colors of the fillings: the painted filling cells are this flat
+/// color until the filling textures arrive (25번 필요한 그림 3번), and the
+/// drawn drips/bag fall back to it.
 const fillingPasteColors = {
   'redbean': Color(0xff642b27),
   'custard': Color(0xffe8b84a),
@@ -21,14 +23,26 @@ Color fillingPasteColor(String flavor) => fillingPasteColors[flavor] ?? fillingP
 
 /// What one painted layer reveals: a mold picture ([image], e.g. 'batter')
 /// or a flat paste [color]. [cells] are [MoldPaint.layers]; null draws the
-/// whole [image] (a step finished in an earlier run of the app).
+/// whole [image] (a step finished in an earlier run of the app). [drip] is
+/// the paste of the spilled drips (`fx/overflow_<drip>.png`): 'batter' or a
+/// flavor.
 class MoldPaintLayer {
   final String? image;
   final Color? color;
   final Uint8List? cells;
   final bool overflow;
-  const MoldPaintLayer({this.image, this.color, this.cells, this.overflow = false});
+  final String drip;
+  const MoldPaintLayer({this.image, this.color, this.cells, this.overflow = false,
+      this.drip = 'batter'});
 }
+
+/// Smooth sampling for drawn art shown smaller than its pixels (the piping
+/// bag and the drips), so its fine dots do not break up.
+final _downscalePaint = Paint()..filterQuality = FilterQuality.medium;
+
+void _drawArt(Canvas canvas, ui.Image image, Rect dst) => canvas.drawImageRect(
+    image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+    dst, _downscalePaint);
 
 /// Draws [layer] over the mold, with the same fit as [WorkshopMoldArt].
 void paintMoldLayer(Canvas canvas, Size size, double grow, MoldPaintLayer layer,
@@ -58,13 +72,27 @@ void paintMoldLayer(Canvas canvas, Size size, double grow, MoldPaintLayer layer,
     WorkshopMoldArt.drawAt(canvas, image, Offset.zero, k, origin);
     canvas.restore();
   } else {
-    canvas.drawPath(path, Paint()..color = paste);
+    // A filling texture (mold/paint_<flavor>.png, 256x256 seamless tile in
+    // mold-picture pixels, 25번 필요한 그림 3번) when shipped; else flat color.
+    final texture = PixelSprites.fillingTexture(layer.drip);
+    final fill = Paint()..color = paste;
+    if (texture != null) {
+      fill.shader = ImageShader(texture, TileMode.repeated, TileMode.repeated,
+          (Matrix4.identity()
+                ..translateByDouble(origin.dx, origin.dy, 0, 1)
+                ..scaleByDouble(k, k, 1, 1))
+              .storage,
+          filterQuality: FilterQuality.none);
+    }
+    canvas.drawPath(path, fill);
   }
   // Overpainted cells are a little darker (DEC-032).
   canvas.drawPath(thick, Paint()..color = const Color(0x1f3b1a08));
   if (!layer.overflow) return;
   // Spilled paste hangs over the fish's lower edge where it was painted
-  // (temporary drawing, 25번 필요한 그림 4번).
+  // (fx/overflow_<paste>.png, 25번 필요한 그림 4번: its top centre on the
+  // edge; a drawn drop when the picture is missing).
+  final art = PixelSprites.fx('overflow_${layer.drip}');
   final drip = Paint()..color = paste;
   for (var c = 2; c < m.cols; c += 5) {
     for (var r = m.rows - 1; r >= 0; r--) {
@@ -72,6 +100,12 @@ void paintMoldLayer(Canvas canvas, Size size, double grow, MoldPaintLayer layer,
       if (!m.inFish(i)) continue;
       if (cells[i] == 0) break;
       final x = top.dx + (c + .5) * side, y = top.dy + (r + 1) * side;
+      if (art != null) {
+        final w = side * 2.4;
+        _drawArt(canvas, art,
+            Rect.fromLTWH(x - w / 2, y - side * .3, w, w * art.height / art.width));
+        break;
+      }
       canvas.drawRRect(RRect.fromRectAndRadius(
           Rect.fromLTWH(x - side * .45, y - side * .3, side * .9, side * 1.6),
           Radius.circular(side * .45)), drip);
@@ -115,6 +149,7 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
   _Stroke? _stroke;
   Offset? _finger;
   double _lean = 0;
+  bool _squeeze = false;
   bool _overflowBuzzed = false;
 
   /// The stroke being painted, for tests.
@@ -179,6 +214,11 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
     final local = box.globalToLocal(global);
     final at = _toMask(local);
     paint.moveTo(at.dx, at.dy);
+    // Squeezing while over the fish (the paste goes in), plain outside.
+    final m = FishCavityMask.standard;
+    final col = (at.dx / m.cell).floor(), row = (at.dy / m.cell).floor();
+    _squeeze = col >= 0 && row >= 0 && col < m.cols && row < m.rows &&
+        m.inFish(row * m.cols + col);
     if (!widget.reduceMotion && _finger != null) {
       _lean = ((local.dx - _finger!.dx) * .02).clamp(-.25, .25);
     }
@@ -253,12 +293,15 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
                                 image: widget.filling ? null : 'batter',
                                 color: widget.filling ? paste : null,
                                 cells: paint.layers,
+                                drip: widget.filling ? widget.flavor : 'batter',
                                 overflow: paintOverflowed(widget.config, paint.amount)),
                         paint?.version ?? -1,
                         widget.grow,
                         _finger,
                         paste,
-                        widget.reduceMotion ? 0 : _lean))),
+                        widget.reduceMotion ? 0 : _lean,
+                        PixelSprites.pipingBag(widget.filling ? widget.flavor : 'batter',
+                            squeeze: _squeeze)))),
             Padding(
                 padding: EdgeInsets.only(bottom: widget.captionLift),
                 child: Align(
@@ -304,16 +347,19 @@ class _Stroke extends Drag {
   }
 }
 
-/// The live stroke and the piping bag at the finger (a temporary drawing,
-/// 25번 필요한 그림 2번). The bag's tip sits on the finger; its body leans up
-/// and right so the finger does not hide the paste.
+/// The live stroke and the piping bag at the finger ([bag], 25번 필요한 그림
+/// 2번; a drawn bag when the picture is missing). The paste under the
+/// nozzle ([PixelSprites.pipingBagTip]) sits on the finger; the body leans
+/// up and right so the finger does not hide the paste.
 class _LivePainter extends CustomPainter {
   final MoldPaintLayer? layer;
   final int version;
   final double grow, lean;
   final Offset? finger;
   final Color paste;
-  _LivePainter(this.layer, this.version, this.grow, this.finger, this.paste, this.lean);
+  final ui.Image? bag;
+  _LivePainter(this.layer, this.version, this.grow, this.finger, this.paste, this.lean,
+      this.bag);
   @override
   void paint(Canvas canvas, Size size) {
     if (layer != null) paintMoldLayer(canvas, size, grow, layer!);
@@ -322,6 +368,16 @@ class _LivePainter extends CustomPainter {
     final w = math.min(size.width * .2, 64.0), h = math.min(size.height * .45, 92.0);
     canvas.save();
     canvas.translate(at.dx, at.dy);
+    final art = this.bag;
+    if (art != null) {
+      // About 64x96 on screen, pointing down, then leaned up-right.
+      final k = w / art.width;
+      canvas.rotate(.45 + lean);
+      _drawArt(canvas, art, Rect.fromLTWH(-PixelSprites.pipingBagTip.dx * k,
+          -PixelSprites.pipingBagTip.dy * k, art.width * k, art.height * k));
+      canvas.restore();
+      return;
+    }
     canvas.rotate(math.pi + .45 + lean);
     // Drawn tip-first: the tip at the origin, the bag body behind it.
     final bag = Path()
@@ -343,5 +399,5 @@ class _LivePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _LivePainter old) => old.version != version ||
       old.finger != finger || old.layer?.overflow != layer?.overflow ||
-      old.paste != paste || old.lean != lean || old.grow != grow;
+      old.paste != paste || old.lean != lean || old.grow != grow || old.bag != bag;
 }

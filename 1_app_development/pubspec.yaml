@@ -48,8 +48,10 @@ flutter:
     - assets/images/bg/
     - assets/images/stall/
     - assets/images/stove/
-    # Temporary empty griddles (tools/empty_griddle.py, 24번 4단계).
+    # Drawn empty griddles and the stoves' baked fish alone
+    # (tools/apply_25_art.py, 25번 필요한 그림 1번).
     - assets/images/stove_empty/
+    - assets/images/stove_fish/
     - assets/images/icons/
     - assets/images/topping/
     - assets/images/skills/

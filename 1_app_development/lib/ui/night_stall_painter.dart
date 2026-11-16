@@ -286,7 +286,9 @@ class GriddlePainter extends CustomPainter {
   /// Null draws the stove art as it is (a bungeoppang in every cavity).
   /// Otherwise the empty griddle ([PixelSprites.emptyStove]) with a
   /// bungeoppang only in these cavities (indices into griddleCavities), cut
-  /// from the full art at the same place (24번 4단계).
+  /// at the same place (24번 4단계) from the stove's fish-only layer
+  /// ([PixelSprites.stoveFish]), so the drawn hollow stays around it; from
+  /// the full art when that layer is missing.
   final Set<int>? filled;
   const GriddlePainter(this.stove, {this.filled});
 
@@ -304,13 +306,14 @@ class GriddlePainter extends CustomPainter {
       return;
     }
     _draw(canvas, empty, dst, scale);
+    final fish = PixelSprites.stoveFish(stove) ?? image;
     for (final i in filled!) {
       if (i < 0 || i >= griddleFishClips.length) continue;
       final f = griddleFishClips[i];
       canvas.save();
       canvas.clipRect(Rect.fromLTRB(dst.left + f.left * w,
           dst.top + f.top * h, dst.left + f.right * w, dst.top + f.bottom * h));
-      _draw(canvas, image, dst, scale);
+      _draw(canvas, fish, dst, scale);
       canvas.restore();
     }
   }

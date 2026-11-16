@@ -67,7 +67,23 @@ class PixelSprites {
     'fairy_up',
     'fairy_down',
     'butter_glow',
+    // Special bungeoppang making (25번 필요한 그림 4·5번, tools/apply_25_art.py):
+    // a 32x48 spilled drip per paste (top centre on the fish's edge) and the
+    // 512x512 flip guide ring and its full honey ring (centre 256, radius 236).
+    'overflow_batter',
+    'overflow_redbean',
+    'overflow_custard',
+    'overflow_cocoa',
+    'flip_ring',
+    'flip_ring_fill',
   ];
+
+  /// Piping bags in assets/images/cook (128x192, 25번 필요한 그림 2번):
+  /// `piping_bag_<paste>` and the squeezing `piping_bag_<paste>_squeeze`,
+  /// paste = batter or a flavor. The paste under the nozzle touches
+  /// [pipingBagTip], where the finger is.
+  static const pipingPastes = ['batter', 'redbean', 'custard', 'cocoa'];
+  static const pipingBagTip = Offset(64, 188);
 
   /// Screen art in assets/images/ui: the wardrobe preview's stall interior
   /// (120x72), the offline reward bag (64x48) and the small fish beside
@@ -232,6 +248,14 @@ class PixelSprites {
     yield* moldNames.map((n) => 'assets/images/mold/$n.png');
     for (final stove in _slot(CosmeticSlot.stove)) {
       yield _emptyStovePath(stove.id);
+      yield _stoveFishPath(stove.id);
+    }
+    for (final flavor in fillingTextureFlavors) {
+      yield _fillingTexturePath(flavor);
+    }
+    for (final paste in pipingPastes) {
+      yield 'assets/images/cook/piping_bag_$paste.png';
+      yield 'assets/images/cook/piping_bag_${paste}_squeeze.png';
     }
     for (final c in cookCharacters) {
       for (var i = 1; i <= cookFrameCount; i++) {
@@ -382,13 +406,36 @@ class PixelSprites {
   }
 
   /// [stove] without its six baked bungeoppang, at the same size and cavity
-  /// positions (assets/images/stove_empty). Temporary art painted by
-  /// tools/empty_griddle.py until drawn empty griddles arrive (24번 4단계):
-  /// replacing the file is enough. Null when that stove has none.
+  /// positions (assets/images/stove_empty): drawn art fitted onto the stove
+  /// by tools/apply_25_art.py (25번 필요한 그림 1번). Null when that stove
+  /// has none.
   static ui.Image? emptyStove(String stove) => _images[_emptyStovePath(stove)];
 
   static String _emptyStovePath(String id) =>
       'assets/images/stove_empty/$id.png';
+
+  /// Only the six baked bungeoppang of [stove], the rest transparent, at
+  /// the stove's size (assets/images/stove_fish, tools/apply_25_art.py).
+  /// GriddlePainter lays a cooking cell's fish over [emptyStove] from it.
+  static ui.Image? stoveFish(String stove) => _images[_stoveFishPath(stove)];
+
+  static String _stoveFishPath(String id) => 'assets/images/stove_fish/$id.png';
+
+  /// Filling textures (`assets/images/mold/paint_<flavor>.png`, 256x256
+  /// seamless tiles, 25번 필요한 그림 3번). Not shipped yet: loaded only when
+  /// the files are added, and the painted filling stays a flat color
+  /// (fillingPasteColors) until then.
+  static const fillingTextureFlavors = ['redbean', 'custard', 'cocoa'];
+
+  static String _fillingTexturePath(String flavor) =>
+      'assets/images/mold/paint_$flavor.png';
+
+  static ui.Image? fillingTexture(String flavor) =>
+      _images[_fillingTexturePath(flavor)];
+
+  /// The piping bag for [paste] ([pipingPastes]), squeezing or not.
+  static ui.Image? pipingBag(String paste, {bool squeeze = false}) =>
+      _images['assets/images/cook/piping_bag_$paste${squeeze ? '_squeeze' : ''}.png'];
 
   /// The asset path of an image loaded by [load], or null (for example to
   /// tell which background picture [sceneBackground] picked).

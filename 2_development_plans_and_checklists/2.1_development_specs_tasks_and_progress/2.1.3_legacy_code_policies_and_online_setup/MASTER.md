@@ -566,7 +566,7 @@
 | 스페셜 붕어빵 무대 | HUD 아래 중앙. 배경에 그려진 붕어빵 자리에 맞춤. 영업 상태별(DEC-035, 아래 "두 틀 규칙"): 영업 준비 중 빈 틀 + 맛 선택 + '스페셜 붕어빵 제작 시작'(버튼 아래끝 = 판매 카운터 윗변 − 4, 24번 4단계. 행주 값이 없는 배경이면 예전처럼 틀 아래 경계에 걸침), 영업 중 세션이 없으면 틀 없이 떠 있는 큰 붕어빵(클리커, 틀 자리에서 틀 높이×0.75 위), 제작 세션 중에는 틀과 단계 조작. 새 영업일 이어서 영업 전에는 빈 틀만 | `workshop-center-stage`, `workshop-mold-action`, `workshop-clicker` | `ui/workshop_mold_stage.dart` `WorkshopMoldStage`·`WorkshopClicker` |
 | 손님 줄 | 무대 왼쪽, 폭 64, 위 48·아래 56 여백. 맨 앞이 위. 배지 52(남은 시간 고리, 맨 앞은 노란 면) + "N번" + 맛 첫 글자·수량. 영업 중이고 줄이 차지 않았으면 아래에 '맞이' 버튼 | `customer-N`, `customer-welcome` | `ui/workshop_counter.dart` `WorkshopCustomerQueue` |
 | 판매 카운터 | 왼쪽 8, 폭 = w − 16 − (조리 컷 폭 + 8), **위 = 배경 왼쪽 빨간 체크 행주의 윗변**(DEC-038, 아래 "행주 윗변"), 높이는 내용대로. 행주 값이 없는 배경(장면 크기 픽셀 그림·새 배경)이면 예전처럼 아래 = 굽는 판 바닥 + 굽는 판 높이×0.66. 스페셜 붕어빵 제작 중에는 숨김 | `sale-counter` | `WorkshopSaleCounter` |
-| 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 굽는 판 폭 = w − 16(왼쪽 8), 높이 = 폭 × 그림 높이/폭(941×470), 그림이 상자를 꽉 채워 칸 위치·터치 영역도 같은 비율로 커짐(DEC-038). 바탕은 **빈 굽는 판 그림**(`assets/images/stove_empty/<화로>.png`, 임시 그림)이고, 굽는 칸에만 원래 그림(`stove/<화로>.png`)의 붕어빵을 그 칸 자리(`griddleFishClips`)에서 잘라 겹쳐 그림(`GriddlePainter(filled:)`, `workshopGriddleFilled`). 영업 준비 중(새 영업일 이어서 영업 전 포함)에는 칸을 하나도 그리지 않음: 빈 굽는 판 그림만, 글자·면·터치 없음(`griddle-idle`). 영업 중 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음·숙련한 맛 있음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면 검은 반투명 면만. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
+| 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 굽는 판 폭 = w − 16(왼쪽 8), 높이 = 폭 × 그림 높이/폭(941×470), 그림이 상자를 꽉 채워 칸 위치·터치 영역도 같은 비율로 커짐(DEC-038). 바탕은 **빈 굽는 판 그림**(`assets/images/stove_empty/<화로>.png`, 25번 1번 생성 그림을 `tools/apply_25_art.py`로 원래 화로 위치에 맞춤: 칸이 붕어빵 모양 홈)이고, 굽는 칸에만 원래 그림의 붕어빵만 남긴 층(`stove_fish/<화로>.png`, 없으면 `stove/<화로>.png`)을 그 칸 자리(`griddleFishClips`)에서 잘라 겹쳐 그림(`GriddlePainter(filled:)`, `workshopGriddleFilled`). 홈 중심과 `griddleCavities` 차이는 그림 px로 가로 −9~+3, 세로 −3~+1(25번 1번). 영업 준비 중(새 영업일 이어서 영업 전 포함)에는 칸을 하나도 그리지 않음: 빈 굽는 판 그림만, 글자·면·터치 없음(`griddle-idle`). 영업 중 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음·숙련한 맛 있음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면 검은 반투명 면만. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
 | 손님 창 | 손님 배지를 누르면 뜨는 작은 창: 주문 줄(드린 수/주문 수), 대사, '이웃 이야기 확인', 맛별 '주문 제작'(영업 중·세션 없을 때만. 누르면 창을 닫고 그 주문 하나를 만드는 동안만 스페셜 붕어빵 틀이 나옴. 결과를 닫으면 다시 클리커). 카운터의 '맛 제작'(`order-produce`)도 같은 주문 제작 | `customer-card`, `customer-produce-<맛>` | `WorkshopCustomerCard` |
 | 재고 창 | 카운터 글자를 누르면 뜨는 작은 창: 오래된 순 묶음(맛·익힘·개수·경과 영업일), 준비품 | `stock-card` | `WorkshopStockList` |
 
@@ -590,9 +590,9 @@
 | 양 | 덮은 면적 = 1겹 이상 칸 ÷ 1,081, 덧칠 포함 양 = 겹 합계 ÷ 1,081 (모두 permille 정수, `PaintAmount(coverage, amount)`) |
 | 입력 | 첫 포인터 하나만(두 번째 손가락 무시). 누르자마자 제스처를 차지해(`ImmediateMultiDragGestureRecognizer`) 큰 글씨 홈이 스크롤되지 않음. 틀 밖으로 나가도 취소하지 않고 양에만 넣지 않음. **손을 떼면 그 단계 확정**. 칠이 0이면(틀 밖만 문지름) 확정하지 않음(G3). 포인터 취소·차단(`cookingInputBlocked`, 일시정지)·단계 토큰 변경·앱 비활성은 칠을 버림 |
 | 화면 읽기 | 두 번 활성화 = '고르게 칠하기': 덮음 100%·양 100%로 확정(G4, 이 경로는 반죽 성공) |
-| 칠 표시 | 반죽은 칠한 칸 모양으로 `mold/batter.png`(둘째 반죽은 `mold/batter_top.png`)를 드러냄. 속은 맛 색 임시 칠(팥 `#642B27`, 슈크림 `#E8B84A`, 초코 `#4A2C1D`). 2겹 이상 칸은 조금 진하게, 130%를 넘으면 붕어빵 아래 가장자리에 흘러내림 방울 |
+| 칠 표시 | 반죽은 칠한 칸 모양으로 `mold/batter.png`(둘째 반죽은 `mold/batter_top.png`)를 드러냄. 속은 맛 색 임시 칠(팥 `#642B27`, 슈크림 `#E8B84A`, 초코 `#4A2C1D`); `mold/paint_<맛>.png`(256×256 심리스 질감, 25번 3번, 아직 없음)가 들어오면 그 질감을 반복해 채움(`ImageShader`, 질감 1px = 틀 그림 1px). 2겹 이상 칸은 조금 진하게, 130%를 넘으면 칠한 열 5칸마다 붕어빵 아래 가장자리에 흘러내림 방울 `fx/overflow_<반죽·맛>.png`(32×48, 폭 = 칸×2.4, 위 가운데가 가장자리) |
 | 확정 뒤 (G2) | 이번 세션의 칠한 칸 모양을 메모리에 남겨 뚜껑을 닫을 때까지 보임(`paintedMoldFor`). 저장하지 않으므로 앱을 다시 켜면 단계 그림(`moldFor`) 전체로 보임 |
-| 짤주머니 | 세 단계 모두 손가락을 따라감. 꼭지 끝이 손가락, 몸통은 오른쪽 위. 꼭지의 반죽은 크림색, 속은 맛 색. 임시 그리기(25번 필요한 그림 2번) |
+| 짤주머니 | 세 단계 모두 손가락을 따라감. `cook/piping_bag_<반죽·맛>[_squeeze].png`(128×192, 25번 2번)의 꼭지 끝 내용물 점 (64, 188)이 손가락, 화면 폭 = min(조작 상자 폭×0.2, 64), 오른쪽 위로 0.45rad 기울임(+움직임 기울기). 손가락이 붕어빵 마스크 칸 위면 짜는 중 그림, 밖이면 빈 그림 |
 | 안내 글(`piping-amount`) | 틀 아래쪽 가운데. 아래끝 = 무대 아래 '제작 취소' 버튼(누르는 영역 48) 윗변 − 4(필요할 때만 올림, `captionLift`, 24번 6단계에서 버튼과 겹치던 것을 고침). 대기 '틀 위를 문질러 반죽을 부어 주세요' / '틀 위를 문질러 속을 짜 주세요'. 반죽 칠하는 중 '반죽 덮음 85% · 양 112% · 손을 떼면 마무리'(G5), 속 '속 양 72% · 손을 떼면 마무리'. 130% 초과면 끝에 ' · 넘쳤어요'. 위 캡션 '팥 연습 · 반죽 목표 90% 이상 덮기 · 130% 넘으면 넘침' |
 | 결과 글 (G6) | '완성 · 미디엄 · 반죽 넘침' / '… · 반죽 부족'(`batterFailureLabel`, 넘침이 우선, `mold-result-caption`) |
 | 모션 줄이기 | 짤주머니가 손가락을 따라가는 것은 직접 조작이라 그대로. 움직임에 따라 짤주머니가 기우는 연출만 끔. 판정 같음 |
@@ -607,7 +607,7 @@
 | 각도 | 틀 중심(= `WorkshopMoldArt.fishRect` 중심 = 조작 상자 중심) 둘레로 손가락이 쓸고 간 각도를 부호와 함께 더함(화면 시계 방향 +). 거꾸로 돌면 줄고, 어느 방향이든 절댓값이 `flip_turn_degrees`(320) 이상이면 뒤집힘. 한 번의 움직임은 짧은 쪽(±180도 이내)으로 셈 |
 | 중심 무시 | 틀 중심에서 틀 그림 폭(1200px 캔버스 × 화면 배율) × `flip_dead_zone_permille`(150) = 15% 안쪽 점은 무시하고, 그다음 바깥 점부터 다시 셈(중심에서 맴돌기·중심을 가로지르기는 0도). 반지름 360 폭 화면 약 57px, 390 폭 약 61px |
 | 입력 | 짤주머니와 같음: 첫 포인터 하나만, 누르자마자 제스처를 차지해 큰 글씨 홈이 스크롤되지 않음, 시작은 틀(조작 상자) 위에서, 그 뒤는 틀 밖으로 나가도 계속 셈. **320도 전에 손을 떼면 0도로 초기화·틀 원위치**. 포인터 취소·차단(`cookingInputBlocked`, 일시정지)·단계 토큰 변경·앱 비활성도 0도로 되돌림 |
-| 그리는 동안 | 닫힌 틀 그림(`active-empty-mold`)이 누적 각도만큼 틀 중심을 축으로 따라 돎. 틀 둘레에 크림색 안내 고리(반지름 = 틀 그림 400px × 배율)와 시계 방향 화살촉 2개(그리기 전), 12시에서 시작해 진행 비율만큼 차는 꿀색 호. 임시 그리기(25번 필요한 그림 5번) |
+| 그리는 동안 | 닫힌 틀 그림(`active-empty-mold`)이 누적 각도만큼 틀 중심을 축으로 따라 돎. 틀 둘레에 안내 고리 `fx/flip_ring.png`(512×512, 반지름 236 → 화면 반지름 = 틀 그림 400px × 배율, 오른쪽 위·왼쪽 아래 시계 방향 화살촉 포함)와, 12시에서 시작해 진행 비율만큼 부채꼴로 잘라 보이는 꿀색 고리 `fx/flip_ring_fill.png`(25번 5번) |
 | 다 그리면 | 바로 뒤집힘 연출을 `flip_ms`(1000) 동안 보이고(그린 각도는 한 바퀴로 마저 돌며 틀이 긴 축으로 뒤집혀 살짝 들림), 연출이 끝나면 `flip` 명령을 보냄. 명령이 거부되면 0도·원위치로 돌아가 다시 그림. 연출 중 차단·일시정지·앱 비활성이면 보내지 않고 원위치 |
 | `flip_ms`와의 관계 | 컨트롤러는 뒤집기 단계 경과(`activePhaseElapsedMs`, 일시정지 제외)가 `flip_ms` 미만인 `flip`을 '뒤집는 중이에요.'로 거부(`workshop_controller.dart` `cookingCommand`). 명령은 원을 그린 시간 + 연출 `flip_ms` 뒤에 가므로 늘 통과. 시계 차이 대비로 보내기 직전 경과가 `flip_ms`보다 작으면 모자란 만큼 더 기다림(`WorkshopMoldStage`). 서버는 제작 값을 받지 않음 |
 | 안내 글(`flip-caption`) | 대기 '틀 둘레로 원을 한 바퀴 그려 뒤집어요', 그리는 중 '뒤집기 56% · 손을 떼면 처음부터', 연출 중 '뒤집는 중…'. 위치는 짤주머니 안내 글과 같음(제작 취소 버튼 4 위) |
@@ -666,7 +666,7 @@
 
 **상점·꾸미기(Workshop):** 파는 것은 아바타 카탈로그(`avatar_catalog`)뿐. 그 밖의 구형 꾸미기(화로·배경·장식·등불·무늬·토핑)는 가지고 있을 때만 보임(`CosmeticMenuAccess.listed`). 품목이 하나도 없는 상점 탭(지금은 테마)은 숨기고 충전 탭은 항상 둠. 충전 탭에는 구형 클리커 부스트 줄을 두지 않음(`GoldChargeTab(legacyBoost: false)`). 로그인 전에는 '로그인하면 충전할 수 있어요', 상품을 불러오는 동안 가격 자리에 '불러오는 중'.
 
-골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%). 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄이 카운터 위, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
+골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%), 그리고 25번 그림 적용 때 더한 `workshop_home_filling_390x844`(속을 짜는 도중, 넘침·짜는 중 짤주머니)와 `workshop_home_griddle_390x844`(영업 중 1·4번 칸만 굽는 중). 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄이 카운터 위, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
 
 **첫 실행 안내** (`lib/workshop_tutorial.dart` 단계 계산, `lib/ui/workshop_guide.dart` `WorkshopTutorialOverlay`): 홈 위에 겹친 층. 대상 위젯을 꿀색 고리로 두르고 작은 카드(“첫 영업 안내 N/7”, 한 줄 설명, '건너뛰기')를 띄움. 카드만 터치를 받고 게임은 그대로 조작됨. 저장하는 것은 `tutorial` 값뿐이고 단계는 매 프레임 상태에서 계산.
 
@@ -839,14 +839,16 @@
 | 붕어빵 | `fish/redbean.png`, 무늬는 `fish/redbean@<pattern>.png` |
 | 토핑 | `topping/<id>.png` |
 | 배경 | `bg/<id>.png`, 밤 `bg/<id>_night.png` |
-| 화로 | `stove/<id>.png` |
+| 화로 | `stove/<id>.png`, 빈 굽는 판 `stove_empty/<id>.png`·붕어빵만 `stove_fish/<id>.png`(941×470, `tools/apply_25_art.py`) |
 | 장식 | `deco/<id>.png` (위치는 `night_stall_painter.dart` `decorationAt`) |
 | 등불 | `stall/postlamp_<색>.png` (id는 `<색>lamp`) |
 | 아바타 | `avatar/<girl·boy>/base.png`, `avatar/<character>/<slot>_<id>.png` (여백을 잘라내고 위치는 `avatarTrimOffsets`), 앞/뒤 조각 `_front`·`_back` |
 | 얼굴 부분 | `parts/<character>_<front·side>_<eyes·mouth>_<frame>.png` (위치는 `avatarPartPivots`, `avatarFaceAnchors`) |
 | 스킬 | `skills/tap_N.png`, `skills/auto_N.png` |
 | 아이콘 | `icons/<name>.png` (이름을 `iconNames`에 등록) |
-| 효과 | `fx/minifish, sparkle, fairy_up, fairy_down, butter_glow` |
+| 효과 | `fx/minifish, sparkle, fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
+| 짤주머니 | `cook/piping_bag_<batter·redbean·custard·cocoa>[_squeeze].png`(128×192, 손가락 점 (64, 188), `pipingPastes`) |
+| 속 칠 질감 | `mold/paint_<redbean·custard·cocoa>.png`(256×256 심리스, 아직 없음 — 있으면 불러 씀) |
 | 화면 장식 | `ui/wardrobe_bg, offline, title_fish` |
 | 이벤트 배너 | `event/spring·summer·autumn·winter` |
 | 조리 장면 | `cook/girl_1~6.png` (700ms 간격 반복) |
@@ -909,10 +911,10 @@
 
 **한글 경로 문제:** 셰이더 도구와 Kotlin 데몬이 한글 경로에서 실패합니다.
 1. `subst B: "<프로젝트 경로>"`로 영문 드라이브를 만들고 `B:`에서 실행합니다.
-2. 릴리스 빌드는 추가로 `GRADLE_USER_HOME=C:\GradleCache`, `PUB_CACHE=C:\PubCacheBungeoppang`을 지정합니다.
+2. 릴리스·debug APK 빌드는 추가로 `GRADLE_USER_HOME=C:\GradleCache`, `PUB_CACHE=C:\PubCacheBungeoppang`을 지정합니다(2026-11-17 debug APK도 이것 없이는 Gradle 데몬·`jni` CMake가 한글 사용자 폴더에서 실패). 빌드 뒤 기본 캐시로 `flutter pub get`을 다시 실행해 테스트 환경을 되돌립니다.
 3. `processDebugResources`가 `Unable to delete directory … .ap_`(다른 프로세스가 사용 중)로 실패하면 방금 만든 파일의 일시적 잠금입니다. 코드를 고치지 말고 같은 명령을 다시 실행합니다(2026-11-03 재실행으로 통과).
 
-**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(24번 7단계) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 691개 통과·1개 건너뜀(release 매니페스트가 있어야 하는 `no_tracking_sdk_test` 1개, 약 6분 30초), 서버 `npm test`는 84개 통과입니다.
+**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(25번 그림 적용) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 693개 통과·1개 건너뜀(release 매니페스트가 있어야 하는 `no_tracking_sdk_test` 1개, 약 6분 30초), 서버 `npm test`는 84개 통과입니다.
 
 **온라인 빌드:**
 ```
@@ -1297,10 +1299,12 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 
 **3단계 기록 (두 틀 규칙, 2026-11-16):** 화면·명령 규칙은 10장 "두 틀 규칙", 안내는 10장 "첫 실행 안내" 표. 테스트 `test/workshop_two_molds_test.dart`(컨트롤러 5·화면 3: 영업 준비/영업 중 평소/주문 제작 세 상태의 두 틀 표시·입력, 연습 거부·주문 허용, 제작 중 영업 시작 거부, 클리커 상한, 주문 제작 중 탭 거부, 결과를 닫으면 클리커 복귀, `cook` 단계 영업 중 안내). 남은 점이던 "굽는 판 그림에 붕어빵 6개가 그려져 있음"은 4단계에서 임시 빈 굽는 판 그림으로 해결.
 
-**4단계 기록 (홈 배치·빈 굽는 판, 2026-11-16):** 배치는 10장 Workshop 홈 표·"행주 윗변"·층 5. 겹침 점검(사용자 결정): 카운터가 시작 버튼을 16~19px 가려 버튼을 올림(A). 남는 작은 겹침은 받아들임: 360 폭에서 카운터 아래끝이 굽는 판 왼쪽 경첩 끝을 6.8px 가림(칸과는 5px 떨어짐). 조리 컷과 굽는 판 그림은 겹치지 않음(그림 투명도로 잰 최소 간격 360x640·360x800 20.5px, 390x844 22.7px, 412x915 24.0px). 굽는 판 아래가 하단 메뉴 뒤로 10px 들어가는 것은 예전 그대로. **빈 굽는 판 그림은 임시 그림**입니다: `assets/images/stove_empty/{iron,copper,castiron,golden}.png`(941×470, `tools/empty_griddle.py`가 원본의 붕어빵을 칸 바닥색 홈으로 칠함). 그린 그림이 오면 같은 크기·칸 위치로 파일만 바꿉니다. 필요한 그림과 생성 프롬프트는 [필요한 그림 목록](../25_필요한그림프롬프트.md)에 있고, 앞으로 새로 필요한 그림도 그 파일에 추가합니다.
+**4단계 기록 (홈 배치·빈 굽는 판, 2026-11-16):** 배치는 10장 Workshop 홈 표·"행주 윗변"·층 5. 겹침 점검(사용자 결정): 카운터가 시작 버튼을 16~19px 가려 버튼을 올림(A). 남는 작은 겹침은 받아들임: 360 폭에서 카운터 아래끝이 굽는 판 왼쪽 경첩 끝을 6.8px 가림(칸과는 5px 떨어짐). 조리 컷과 굽는 판 그림은 겹치지 않음(그림 투명도로 잰 최소 간격 360x640·360x800 20.5px, 390x844 22.7px, 412x915 24.0px). 굽는 판 아래가 하단 메뉴 뒤로 10px 들어가는 것은 예전 그대로. 당시 빈 굽는 판 그림은 임시 그림(`tools/empty_griddle.py`)이었고, 2026-11-17 생성 그림으로 바꿨습니다(아래 "25번 그림 적용"). 필요한 그림과 생성 프롬프트는 [필요한 그림 목록](../25_필요한그림프롬프트.md)에 있고, 앞으로 새로 필요한 그림도 그 파일에 추가합니다.
 
 **5단계 기록 (짤주머니 색칠, 2026-11-17):** 규칙·설정값은 10장 "짤주머니 색칠"·"제작 설정값", 저장은 3장 Workshop 표의 `session` 행. 설계 갈림길 G1~G8은 사용자가 모두 추천안으로 확정(00_결정취합 DEC-040). 새 파일: `lib/cooking_paint.dart`(순수 계산), `lib/generated/fish_cavity_mask.dart`·`tools/fish_cavity_mask.py`(마스크 생성). 지운 파일: `lib/cooking_sensor_input.dart`, `lib/cooking_tilt_source.dart`, Android `CookingTiltStream.kt`. 테스트: `test/cooking_paint_test.dart`(마스크·면적·덧칠·떨림·빈틈·넘침·판정·저장 이전 17개), `test/cooking_controls_test.dart`(색칠 위젯 11개: 손 떼면 확정, 속 넘침, 칠 0, 틀 밖, 단계 변경, 앱 비활성, 차단, 포인터 취소, 두 번째 손가락, 화면 읽기, 진동), `test/step02_home_test.dart`(실제 홈에서 세 단계 문지르기 → 결과 글). 시뮬레이션: 가로 지그재그 줄 간격(붓 지름 대비) 100%·90%·80%에서 덮음 100%, 양 약 101%·108%·125%. 새로 필요한 그림(짤주머니, 속 칠 질감, 반죽 넘침)은 [필요한 그림 목록](../25_필요한그림프롬프트.md) 2~4번이고 지금은 코드로 그린 임시 그림입니다.
 
 **6단계 기록 (원 그려 뒤집기, 2026-11-17):** 규칙·설정값은 10장 "원 그려 뒤집기"·"제작 설정값". 새 파일: `lib/cooking_flip.dart`(순수 각도 누적), `lib/ui/flip_circle_control.dart`(조작·연출·임시 고리). 결정 해석(추천안으로 진행): "틀 폭" = 틀 그림 캔버스 폭(1200px, 붕어빵 홈 폭 769px가 아님), 320도에 닿는 순간 손을 떼기 전에도 바로 뒤집음, 화면 읽기는 두 번 활성화로 뒤집기, 손 뗀 뒤 원위치는 연출 없이 즉시. 함께 고친 것: 5단계 짤주머니 안내 글이 '제작 취소' 버튼의 누르는 영역(48)과 4.6(412x915)~19.3px(360 폭) 겹치고, 360 폭에서는 안내 글 상자 아래 5px가 '제작 취소' 글자 위에 덮여 있던 문제(그 부분을 누르면 칠 대신 취소 버튼이 눌림) → 두 조작의 안내 글을 버튼 윗변 − 4까지 올림(`captionLift`). 테스트: `test/cooking_flip_test.dart`(설정값·한 바퀴·반시계·반 바퀴 부족·중심 맴돌기·중심 가로지르기·방향 바꾸기·짧은 쪽·취소·다 그린 뒤 고정·잘못된 설정 11개), `test/flip_circle_control_test.dart`(탭으로 안 뒤집힘, 원 → `flip_ms` 뒤 한 번, 반시계, 손 떼면 0도, 중심 맴돌기, 두 번째 손가락, 취소·단계 변경·앱 비활성, 연출 중 차단, 명령 거부, 화면 읽기, 모션 줄이기, 진동 12개), `test/step02_home_test.dart`(실제 홈에서 탭으로 안 뒤집히고 원을 그리면 cooking), `test/workshop_home_layout_test.dart`(4개 해상도 안내 글·제작 취소 간격). 새로 필요한 그림(안내 고리·화살표)은 [25번 필요한 그림](../25_필요한그림프롬프트.md) 5번.
 
-**7단계 기록 (통합 검수, 2026-11-17):** 새 `test/workshop_full_flow_test.dart`가 새 설치 → 안내 → 영업 준비 중 스페셜 붕어빵 연습(실제 화면 색칠 세 번·원 그려 뒤집기) → 보관 → 영업 시작 → 숙련된 붕어빵 칸 굽기·수확 → 판매(안내 끝) → 클리커 탭 → 손님 창 '주문 제작'(틀 나옴·클리커 막힘·칸 멈춤 → '결과 닫기' 뒤 클리커 복귀) → 판매를 한 흐름으로 확인합니다. 숙련에 필요한 나머지 연습 7회만 명령으로 채우고, 시간은 가짜 단조 시계로 넘깁니다. 기기용 `integration_test/step02_android_test.dart`는 없어진 '뒤집기' 버튼 대신 원을 그리도록 고쳤습니다(기기 실행은 아직). **상태 구분:** 1~7단계 규칙은 Windows 호스트 테스트(분석·전체 테스트·골든·서버 테스트)로 실행 검수 완료, **실기기 검수는 대기**입니다. debug APK는 25번 그림 21장을 게임에 넣은 뒤 만들고, 실기기 확인표(색칠 반응, 손가락 가림, 작은 화면 원 그리기, 칸 누르기, 매대·행주, 새 그림 등)는 [24번 문서 7단계](../24_제작조작화면용어변경프롬프트.md) 아래에 있습니다. 확인표에서 '진행 불가'로 보고된 문제만 7단계 할 일 4로 고칩니다.
+**7단계 기록 (통합 검수, 2026-11-17):** 새 `test/workshop_full_flow_test.dart`가 새 설치 → 안내 → 영업 준비 중 스페셜 붕어빵 연습(실제 화면 색칠 세 번·원 그려 뒤집기) → 보관 → 영업 시작 → 숙련된 붕어빵 칸 굽기·수확 → 판매(안내 끝) → 클리커 탭 → 손님 창 '주문 제작'(틀 나옴·클리커 막힘·칸 멈춤 → '결과 닫기' 뒤 클리커 복귀) → 판매를 한 흐름으로 확인합니다. 숙련에 필요한 나머지 연습 7회만 명령으로 채우고, 시간은 가짜 단조 시계로 넘깁니다. 기기용 `integration_test/step02_android_test.dart`는 없어진 '뒤집기' 버튼 대신 원을 그리도록 고쳤습니다(기기 실행은 아직). **상태 구분:** 1~7단계 규칙은 Windows 호스트 테스트(분석·전체 테스트·골든·서버 테스트)로 실행 검수 완료, **실기기 검수는 대기**입니다. debug APK는 25번 그림 18장(1·2·4·5번)을 넣은 뒤 2026-11-17에 만들었고(`B:\1_app_development\build\app\outputs\flutter-apk\app-debug.apk`, 3번 속 칠 질감은 다시 생성 대기), 실기기 확인표(색칠 반응, 손가락 가림, 작은 화면 원 그리기, 칸 누르기, 매대·행주, 새 그림 등)는 [24번 문서 7단계](../24_제작조작화면용어변경프롬프트.md) 아래에 있습니다. 확인표에서 '진행 불가'로 보고된 문제만 7단계 할 일 4로 고칩니다.
+
+**25번 그림 적용 (2026-11-17):** [25번 필요한 그림](../25_필요한그림프롬프트.md) 1·2·4·5번(18장)을 게임에 넣었습니다. 생성 원본 `4_image_generation_results_and_backups/25_generated/`는 읽기만 하고 `1_app_development`에서 `python tools/apply_25_art.py <원본 폴더> --preview`가 줄여 넣습니다(투명도 곱한 Lanczos 축소, 투명도 정리로 할로 없음). 빈 굽는 판 4종은 칸이 붕어빵 모양 홈으로 바뀌어, 굽는 칸은 원래 화로의 붕어빵만 남긴 층(`assets/images/stove_fish`)을 겹치도록 `GriddlePainter`를 고쳤고 칸 좌표(`griddleCavities`·`griddleFishClips`)는 오차가 작아 그대로입니다(10장 Workshop 홈 표). 짤주머니·흘러내림·뒤집기 고리는 코드 임시 그리기를 그림으로 바꿨고(그림이 없으면 예전 그리기), 뒤집기 고리 생성본의 반대 방향 화살촉은 도구에서 보정했습니다. 3번 속 칠 질감은 적용하지 않았고 `ImageShader` 경로만 준비했습니다(`PixelSprites.fillingTexture`, 파일이 없으면 맛 색). 예전 임시 빈 판 도구 `empty_griddle.py`는 이제 `build/stove_empty_temp`에만 씁니다. 골든 2장 추가(`workshop_home_filling_390x844`, `workshop_home_griddle_390x844`). 저장 형식 변경 없음.
