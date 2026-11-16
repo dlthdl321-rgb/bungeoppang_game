@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import '../cooking_paint.dart';
 import '../cooking_result_rules.dart';
 import '../cooking_session.dart';
 import '../cosmetic_config.dart';
@@ -13,7 +14,6 @@ import '../game_audio.dart';
 import '../workshop_controller.dart';
 import 'boost_effects.dart';
 import 'piping_bag_control.dart';
-import 'cooking_session_controls.dart';
 import 'cozy_style.dart';
 import 'pixel_sprites.dart';
 import 'tap_effects.dart';
@@ -37,7 +37,6 @@ class WorkshopMoldStage extends StatefulWidget {
   /// The practice start button sits 4 above it (24번 4단계).
   final double? counterTop;
   final bool cleanCounter, reduceMotion, vibration;
-  final Widget sensorControl;
   const WorkshopMoldStage(
       {super.key,
       required this.controller,
@@ -45,8 +44,7 @@ class WorkshopMoldStage extends StatefulWidget {
       this.counterTop,
       this.cleanCounter = false,
       this.reduceMotion = false,
-      this.vibration = false,
-      required this.sensorControl});
+      this.vibration = false});
 
   @override
   State<WorkshopMoldStage> createState() => _WorkshopMoldStageState();
@@ -54,6 +52,11 @@ class WorkshopMoldStage extends StatefulWidget {
 
 class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   Offset _origin = Offset.zero;
+
+  /// Cells painted by this session's finished piping steps, shown until the
+  /// mold closes (G2). Memory only: after a restart the whole pictures show.
+  String? _keptId;
+  final Map<CookingPhase, Uint8List> _kept = {};
   ScrollPosition? _scroll;
   void _scrolled() { if (mounted) setState(() {}); }
   @override
@@ -78,8 +81,11 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
     });
     final c = widget.controller, s = c.state, session = s.session;
     final blocked = c.cookingInputBlocked;
-    final rule =
-        c.config.mastery(c.difficulty(session?.flavor ?? s.selectedFlavor));
+    if (session?.id != _keptId) {
+      _keptId = session?.id;
+      _kept.clear();
+    }
+    final manual = c.config.section('manual_cooking');
     // In business (and not waiting to continue a new day) the idle mold is
     // the clicker; before opening it is the practice mold.
     final inBusiness = s.business.permitsProducts(c.now());
@@ -110,9 +116,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
             if (session != null)
               IgnorePointer(child: CustomPaint(
                   key: const Key('active-empty-mold'),
-                  painter: WorkshopMoldArt(moldFor(session),
-                      withFish: session.phase == CookingPhase.result,
-                      cover: !clean))),
+                  painter: paintedMoldFor(session, _kept, c.config, clean: clean))),
             interaction,
           ]));
       Widget action(String label, VoidCallback command) => Semantics(
@@ -144,17 +148,24 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
         switch (session.phase) {
           case CookingPhase.firstBatter:
           case CookingPhase.secondBatter:
-            final label = session.phase == CookingPhase.firstBatter
-                ? '첫 반죽 붓기'
-                : '둘째 반죽 붓기';
-            control = BatterHoldButton(
-                key: ValueKey('mold-batter:${session.id}'),
+          case CookingPhase.filling:
+            final phase = session.phase;
+            control = MoldPaintControl(
+                key: ValueKey('mold-paint:${session.id}'),
                 stageToken: session.token,
                 blocked: blocked,
-                label: label,
-                surfaceBuilder: (pouring) => PourAmountVisual(key:ValueKey('${session.token}:$pouring'),pouring:pouring,filling:false,capacityMs:DevelopmentBalance.integer(rule,'batter_target_ms')),
-                onFinished: (ms) =>
-                    c.cookingCommand(session.pour(session.token, ms)));
+                filling: phase == CookingPhase.filling,
+                flavor: session.flavor,
+                config: c.config,
+                grow: clean ? 1 : 1.12,
+                reduceMotion: widget.reduceMotion,
+                vibration: widget.vibration,
+                onFinished: (paint, cells) {
+                  _kept[phase] = cells;
+                  c.cookingCommand(phase == CookingPhase.filling
+                      ? session.squeezeFilling(session.token, paint)
+                      : session.pour(session.token, paint));
+                });
           case CookingPhase.closing:
             control = action(
                 '뚜껑 닫기', () => c.cookingCommand(session.close(session.token)));
@@ -169,14 +180,11 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
           case CookingPhase.result:
             final result = evaluateCookingResult(c.config, session,
                 difficulty: c.difficulty(session.flavor));
+            final why = batterFailureLabel(c.config, session);
             control = Center(
                 child: _caption(
-                    '완성 · ${provisionalDonenessLabels[result.variant]}'));
-          case CookingPhase.filling:
-            control = PipingBagControl(key:ValueKey('piping:${session.id}'),onMold:true,
-              stageToken:session.token,blocked:blocked,
-              capacityMs:DevelopmentBalance.integer(c.config.section('manual_cooking'),'filling_capacity_ms'),
-              onFinished:(ms)=>c.cookingCommand(session.squeezeFilling(session.token,ms)));
+                    '완성 · ${provisionalDonenessLabels[result.variant]}${why == null ? '' : ' · $why'}',
+                    key: const Key('mold-result-caption')));
           case CookingPhase.canceled:
             control = const SizedBox.shrink();
         }
@@ -217,9 +225,8 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 ])
               else if (session != null) ...[
                 _caption(
-                    '${c.flavorLabel(session.flavor)} ${session.practice ? '연습' : '주문 제작'} · 반죽 목표 ${DevelopmentBalance.integer(rule, 'batter_target_ms') / 1000}초'),
+                    '${c.flavorLabel(session.flavor)} ${session.practice ? '연습' : '주문 제작'} · 반죽 목표 ${DevelopmentBalance.integer(manual, 'batter_min_coverage_permille') ~/ 10}% 이상 덮기 · ${DevelopmentBalance.integer(manual, 'paint_overflow_amount_permille') ~/ 10}% 넘으면 넘침'),
                 _caption('현재 단계 경과 ${(c.activePhaseElapsedMs / 1000).toStringAsFixed(1)}초${c.gameplayPaused ? ' · 일시정지' : ''}', key: const Key('workshop-phase-time')),
-            if(session.phase==CookingPhase.firstBatter || session.phase==CookingPhase.secondBatter) widget.sensorControl,
               ],
             ])),
         if (session != null)
@@ -250,11 +257,58 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   }
 }
 
+/// The open mold of [session] with each finished piping step on it: the
+/// cells painted in this run of the app ([kept], G2), or the whole step
+/// picture when the cells are gone (a restart, or an older hold-time save).
+/// Once the lid closes the step pictures take over (moldFor).
+CustomPainter paintedMoldFor(CookingSession session, Map<CookingPhase, Uint8List> kept,
+    DevelopmentBalance config, {required bool clean}) {
+  if (session.phase.index > CookingPhase.closing.index) {
+    return WorkshopMoldArt(moldFor(session),
+        withFish: session.phase == CookingPhase.result, cover: !clean);
+  }
+  MoldPaintLayer layer(CookingPhase step, String picture, PaintAmount? paint,
+      {String? image, Color? color}) {
+    final cells = kept[step];
+    return cells == null
+        ? MoldPaintLayer(image: picture)
+        : MoldPaintLayer(image: image, color: color, cells: cells,
+            overflow: paint != null && paintOverflowed(config, paint));
+  }
+  return _PaintedMoldArt([
+    if (session.firstBatterDone)
+      layer(CookingPhase.firstBatter, 'batter', session.firstBatter, image: 'batter'),
+    if (session.fillingSqueezed)
+      layer(CookingPhase.filling, 'filling_${session.flavor}', session.filling,
+          color: fillingPasteColor(session.flavor)),
+    if (session.secondBatterDone)
+      layer(CookingPhase.secondBatter, 'batter_top', session.secondBatter, image: 'batter_top'),
+  ], '${session.id}:${session.token}:${kept.length}', clean: clean);
+}
+
+class _PaintedMoldArt extends CustomPainter {
+  final List<MoldPaintLayer> layers;
+  final String signature;
+  final bool clean;
+  _PaintedMoldArt(this.layers, this.signature, {required this.clean});
+  @override
+  void paint(Canvas canvas, Size size) {
+    WorkshopMoldArt('empty', cover: !clean).paint(canvas, size);
+    for (final layer in layers) {
+      paintMoldLayer(canvas, size, clean ? 1 : 1.12, layer);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PaintedMoldArt old) =>
+      old.signature != signature || old.clean != clean;
+}
+
 /// The mold picture for [session]'s step (PixelSprites.moldNames).
 String moldFor(CookingSession session) {
-  final poured = (session.firstBatterMs ?? 0) > 0;
-  final filled = (session.fillingDurationMs ?? 0) > 0;
-  final topped = (session.secondBatterMs ?? 0) > 0;
+  final poured = session.firstBatterDone;
+  final filled = session.fillingSqueezed;
+  final topped = session.secondBatterDone;
   switch (session.phase) {
     case CookingPhase.flipping:
     case CookingPhase.cooking:

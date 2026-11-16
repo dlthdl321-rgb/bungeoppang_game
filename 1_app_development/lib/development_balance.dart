@@ -111,8 +111,13 @@ class DevelopmentBalance {
           row['initial'] != (e.key == 'redbean')) throw const FormatException('맛 설정 오류');
     }
     final manual = result.section('manual_cooking');
+    final brush = integer(manual, 'paint_brush_width_permille');
+    final coverage = integer(manual, 'batter_min_coverage_permille');
+    if (brush == 0 || brush > 1000 || coverage == 0 || coverage > 1000 ||
+        integer(manual, 'paint_overflow_amount_permille') < 1000) {
+      throw const FormatException('짤주머니 색칠 수치 오류');
+    }
     if (integer(manual, 'checkpoint_ms') == 0 || integer(manual, 'filling_inputs') == 0 ||
-        integer(manual, 'tilt_sampling_ms') == 0 ||
         integer(result.section('doneness'), 'reference_medium_stage_index') != 2) {
       throw const FormatException('제작 입력/저장 수치 오류');
     }

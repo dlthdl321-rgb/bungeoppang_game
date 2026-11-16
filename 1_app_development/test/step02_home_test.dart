@@ -5,13 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todays_bungeoppang/cooking_input.dart';
+import 'package:todays_bungeoppang/cooking_result_rules.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
-import 'package:todays_bungeoppang/cooking_sensor_input.dart';
-import 'package:todays_bungeoppang/cooking_tilt_source.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
-import 'package:todays_bungeoppang/ui/cooking_session_controls.dart';
 import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/ui/night_home.dart';
 import 'package:todays_bungeoppang/ui/bake_target.dart';
@@ -19,25 +16,20 @@ import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'widget_test.dart' show mountGame;
 
+/// Rubs across the mold paint control in a few rows and lifts (24번 5단계).
+Future<void> paintMold(WidgetTester tester) async {
+  final box = tester.getRect(find.byType(MoldPaintControl));
+  final gesture = await tester.startGesture(box.center);
+  for (var row = 0; row < 5; row++) {
+    final y = box.top + box.height * (.3 + row * .1);
+    await gesture.moveTo(Offset(box.left + box.width * .2, y));
+    await gesture.moveTo(Offset(box.left + box.width * .8, y));
+  }
+  await gesture.up();
+  await tester.pump();
+}
+
 void main() {
-  test('gravity projection stays neutral upright/flat and produces a full batter command', () {
-    int angle(num x,num y,num z)=>CookingTiltSample.fromEvent({'available':true,'gravityX':x,'gravityY':y,'gravityZ':z}).angleMillidegrees!;
-    expect(angle(0,9.8,0),0);
-    expect(angle(0,0,9.8),0);
-    expect(angle(-4.9,0,8.487),closeTo(30000,2));
-    expect(angle(4.9,8.487,0),closeTo(-30000,2));
-    expect(CookingTiltSample.fromEvent({'available':true,'gravityX':0,'gravityY':0,'gravityZ':0}).available,isFalse);
-    expect(CookingTiltSample.fromEvent({'available':true,'gravityX':double.nan,'gravityY':0,'gravityZ':1}).available,isFalse);
-    final input=CookingSensorInput(TiltDirectionGate(activation:15000,deadZone:5000));
-    final session=CookingSession.start(id:'flat',flavor:'redbean',practice:true,fillingSequence:[CookingDirection.left]);
-    expect(input.sample(session,angle(0,0,9.8),0),isNull);
-    expect(input.sample(session,angle(0,0,9.8),100),isNull);
-    expect(input.sample(session,angle(-4.9,0,8.487),200),isNull);
-    expect(input.pouring,isTrue);
-    final next=input.sample(session,angle(0,0,9.8),2700)!;
-    expect(next.phase,CookingPhase.filling);
-    expect(next.firstBatterMs,2500);
-  });
   for(final size in [const Size(390,844),const Size(360,640)]) {
     testWidgets('original stall hosts real Workshop commands at $size', (tester) async {
       final account=await mountGame(tester,size,reduced:true);
@@ -88,11 +80,10 @@ void main() {
       await c.setForeground(true);await tester.pump();
       expect(c.state.session?.phase,CookingPhase.firstBatter);
       expect(account.state.buns,oldBuns);
-      final hold=await tester.startGesture(tester.getCenter(find.byType(BatterHoldButton)));
-      await tester.pump(const Duration(milliseconds:2500));
-      await hold.up();await tester.pump();
+      await paintMold(tester);
       expect(c.state.session?.phase,CookingPhase.filling);
-      expect(find.byType(PipingBagControl),findsOneWidget);
+      expect(c.state.session!.firstBatter!.coverage,greaterThan(0));
+      expect(find.byType(MoldPaintControl),findsOneWidget);
       expect(tester.takeException(),isNull);
       if(size.height==844) {
         await tester.runAsync(() async {
@@ -110,14 +101,11 @@ void main() {
       }
       expect(find.text('숟가락'),findsNothing);
       expect(find.text('왼쪽으로 속 넣기'),findsNothing);
-      final squeeze=await tester.startGesture(tester.getCenter(find.byType(PipingBagControl)));
-      await tester.pump(const Duration(milliseconds:800));
       expect(find.byKey(const Key('piping-amount')),findsOneWidget);
-      await squeeze.up();await tester.pump();
+      await paintMold(tester);
       expect(c.state.session!.phase,CookingPhase.secondBatter);
-      expect(c.state.session!.fillingDurationMs,isNotNull);
-      final second=await tester.startGesture(tester.getCenter(find.byType(BatterHoldButton)));
-      await tester.pump(const Duration(milliseconds:2500));await second.up();await tester.pump();
+      expect(c.state.session!.filling,isNotNull);
+      await paintMold(tester);
       expect(c.state.session!.phase,CookingPhase.closing);
       for(final phase in [CookingPhase.flipping,CookingPhase.cooking,CookingPhase.result]) {
         await c.command(()=>c.state.phaseMs=15000);await tester.pump();
@@ -125,6 +113,11 @@ void main() {
         await tester.tap(find.byKey(const Key('workshop-mold-action')));await tester.pump();
         expect(c.state.session!.phase,phase);
       }
+      // The result names why the batter failed (G6), e.g. '반죽 부족'.
+      final caption=tester.widget<Text>(find.byKey(const Key('mold-result-caption'))).data!;
+      expect(caption,startsWith('완성 · '));
+      final why=batterFailureLabel(c.config,c.state.session!);
+      expect(caption,why==null ? isNot(contains('반죽')) : endsWith(' · $why'));
       await tester.tap(find.text('보관'));await tester.pump();
       expect(c.state.session,isNull);
       expect(account.state.buns,oldBuns);

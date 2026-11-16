@@ -654,8 +654,6 @@
       "practice_required": 8,
       "technique_passes_required": 3,
       "doneness_target_ms": 15000,
-      "batter_target_ms": 2500,
-      "batter_tolerance_permille": 150,
       "wrong_filling_inputs_allowed": 0,
       "success_doneness_min_index": 1,
       "success_doneness_max_index": 3
@@ -665,8 +663,6 @@
       "practice_required": 12,
       "technique_passes_required": 4,
       "doneness_target_ms": 18000,
-      "batter_target_ms": 2500,
-      "batter_tolerance_permille": 150,
       "wrong_filling_inputs_allowed": 0,
       "success_doneness_min_index": 1,
       "success_doneness_max_index": 3
@@ -676,8 +672,6 @@
       "practice_required": 16,
       "technique_passes_required": 5,
       "doneness_target_ms": 21000,
-      "batter_target_ms": 2500,
-      "batter_tolerance_permille": 150,
       "wrong_filling_inputs_allowed": 0,
       "success_doneness_min_index": 1,
       "success_doneness_max_index": 3
@@ -701,12 +695,10 @@
     "flip_ms": 1000,
     "minimum_cooling_ms": 0,
     "products_per_completed_result": 1,
-    "tilt_sampling_ms": 100,
-    "tilt_activation_degrees": 15,
-    "tilt_dead_zone_degrees": 5,
-    "touch_batter_tick_ms": 50,
     "checkpoint_ms": 1000,
-    "filling_capacity_ms": 4000
+    "paint_brush_width_permille": 140,
+    "batter_min_coverage_permille": 900,
+    "paint_overflow_amount_permille": 1300
   },
   "griddle": {
     "slot_speed_permille": [

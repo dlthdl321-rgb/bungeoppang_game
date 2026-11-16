@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
+import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
@@ -36,11 +37,11 @@ void main() {
   /// Runs the open session through to its result.
   Future<void> bake(WorkshopController c) async {
     var session = c.state.session!;
-    expect(await c.cookingCommand(session.pour(session.token, 2500)), isTrue);
+    expect(await c.cookingCommand(session.pour(session.token, PaintAmount.even)), isTrue);
     session = c.state.session!;
-    expect(await c.cookingCommand(session.squeezeFilling(session.token, 1500)), isTrue);
+    expect(await c.cookingCommand(session.squeezeFilling(session.token, const PaintAmount(720, 830))), isTrue);
     session = c.state.session!;
-    expect(await c.cookingCommand(session.pour(session.token, 2500)), isTrue);
+    expect(await c.cookingCommand(session.pour(session.token, PaintAmount.even)), isTrue);
     await c.command(() => c.state.phaseMs = DevelopmentBalance.integer(manual, 'lid_close_ms'));
     session = c.state.session!;
     expect(await c.cookingCommand(session.close(session.token)), isTrue);

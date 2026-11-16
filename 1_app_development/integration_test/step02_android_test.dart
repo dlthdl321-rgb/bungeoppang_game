@@ -6,7 +6,6 @@ import 'package:integration_test/integration_test.dart';
 import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
-import 'package:todays_bungeoppang/cooking_tilt_source.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/cooking_session_controls.dart';
 import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
@@ -15,7 +14,7 @@ import 'package:todays_bungeoppang/workshop_controller.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   testWidgets(
-      'Android production touch, native sensor and durable SQLite replay',
+      'Android production painting touch and durable SQLite replay',
       (tester) async {
     final config = DevelopmentBalance.fromJson(jsonDecode(
             await rootBundle.loadString('config/development_balance.json'))
@@ -54,28 +53,28 @@ void main() {
     }
     await tester.tap(find.text('스페셜 붕어빵 제작 시작'));
     await tester.pumpAndSettle();
-    final hold = await tester
-        .startGesture(tester.getCenter(find.textContaining('첫 반죽 붓기')));
-    await Future<void>.delayed(const Duration(milliseconds: 2600));
-    await tester.pump();
-    await hold.up();
-    await tester.pumpAndSettle();
+    // Rub across the mold like painting (24번 5단계).
+    Future<void> paint() async {
+      final box = tester.getRect(find.byType(MoldPaintControl));
+      final gesture = await tester.startGesture(box.center);
+      for (var row = 0; row < 5; row++) {
+        final y = box.top + box.height * (.3 + row * .1);
+        await gesture.moveTo(Offset(box.left + box.width * .15, y));
+        await gesture.moveTo(Offset(box.left + box.width * .85, y));
+      }
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
+    await paint();
     expect(controller.state.session!.phase, CookingPhase.filling);
-    expect(controller.state.session!.firstBatterMs, greaterThanOrEqualTo(2500));
-    final squeeze=await tester.startGesture(tester.getCenter(find.byType(PipingBagControl)));
-    await Future<void>.delayed(const Duration(milliseconds:1100));
-    await tester.pump();await squeeze.up();await tester.pumpAndSettle();
-    expect(controller.state.session!.fillingDurationMs,greaterThanOrEqualTo(1000));
-    final fillingMs=controller.state.session!.fillingDurationMs;
-    final durable=await repository.load();
-    expect((durable!['session'] as Map)['fillingDurationMs'],fillingMs);
-    debugPrint('STEP02_PIPING_BAG_OK durationMs=$fillingMs');
+    expect(controller.state.session!.firstBatter!.coverage, greaterThan(0));
+    await paint();
+    final filling = controller.state.session!.filling!;
+    final durable = await repository.load();
+    expect((durable!['session'] as Map)['fillingAmount'], filling.amount);
+    debugPrint('STEP02_PIPING_BAG_OK coverage=${filling.coverage} amount=${filling.amount}');
     expect(controller.state.session!.phase, CookingPhase.secondBatter);
-    final second = await tester
-        .startGesture(tester.getCenter(find.textContaining('둘째 반죽 붓기')));
-    await tester.pump(const Duration(milliseconds: 100));
-    await second.up();
-    await tester.pumpAndSettle();
+    await paint();
     await controller.command(() {
       controller.state.phaseMs = 1000;
     });
@@ -93,17 +92,6 @@ void main() {
     await tester.pumpAndSettle();
     expect(controller.state.session!.phase, CookingPhase.result);
     expect(await controller.storeResult(false), isTrue);
-
-    final samples = await CookingTiltSource()
-        .samples(config)
-        .take(3)
-        .timeout(const Duration(seconds: 15))
-        .toList();
-    expect(samples, isNotEmpty);
-    expect(samples.first.available, isTrue,
-        reason:
-            'Device must expose gravity or accelerometer for this sensor audit');
-    debugPrint('STEP02_NATIVE_SENSOR_OK samples=${samples.length}');
 
     // Stage a complete result transaction, recreate controller and open the same
     // Android SQLite file. No user game database or inventory is used here.

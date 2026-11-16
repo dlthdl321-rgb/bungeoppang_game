@@ -2,8 +2,8 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cooking_input.dart';
-import 'package:todays_bungeoppang/cooking_sensor_input.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
+import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/cooking_result_rules.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_griddle.dart';
@@ -19,44 +19,6 @@ void main() {
       flavor: 'redbean',
       practice: true,
       fillingSequence: [CookingDirection.left, CookingDirection.right]);
-  CookingSensorInput sensor() =>
-      CookingSensorInput(TiltDirectionGate(activation: 15000, deadZone: 5000));
-
-  test('touch stage change cannot carry a held sensor gesture into filling',
-      () {
-    final input = sensor();
-    final first = start();
-    input.sample(first, 0, 0);
-    input.sample(first, 0, 1);
-    input.sample(first, 20000, 10);
-    final filling = first.pour(first.token, 2500);
-    expect(input.sample(filling, -20000, 30), isNull);
-    expect(input.sample(filling, 0, 40), isNull);
-    expect(input.sample(filling, -20000, 50),isNull);
-    expect(input.sample(filling, 20000, 60),isNull);
-    expect(input.sample(filling, 0, 70),isNull);
-    expect(input.sample(filling, 20000, 80),isNull);
-    expect(filling.phase,CookingPhase.filling);
-  });
-  test(
-      'pause/source reset discards hold; new session with same token cannot inherit it',
-      () {
-    final input = sensor();
-    final first = start();
-    input.sample(first, 0, 0);
-    input.sample(first, 0, 1);
-    input.sample(first, 20000, 10);
-    expect(input.sample(start('new'), 0, 20), isNull);
-    expect(input.sample(start('new'), 0, 30), isNull);
-    input.sample(first, 20000, 40);
-    input.reset();
-    expect(input.sample(first, 0, 100000), isNull);
-    expect(input.sample(first, 0, 100001), isNull);
-    input.sample(first, 20000, 100010);
-    final next = input.sample(first, 0, 102510)!;
-    expect(next.firstBatterMs, 2500);
-    expect(isCookingSuccessor(first, next), isTrue);
-  });
   test(
       'all doneness boundaries use first integer millisecond in next stage for every slot',
       () {
@@ -116,12 +78,11 @@ void main() {
       () {
     var session = start();
     final rule = config.mastery(0);
-    final batter = DevelopmentBalance.integer(rule, 'batter_target_ms');
-    session = session.pour(session.token, batter);
+    session = session.pour(session.token, const PaintAmount(930, 1250));
     for (final direction in session.fillingSequence) {
       session = session.fill(session.token, direction);
     }
-    session = session.pour(session.token, batter);
+    session = session.pour(session.token, const PaintAmount(900, 1300));
     session = session.close(session.token);
     session = session.flip(session.token);
     session = session.takeOut(

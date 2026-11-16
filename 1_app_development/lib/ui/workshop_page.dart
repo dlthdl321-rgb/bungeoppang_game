@@ -1,9 +1,6 @@
 import '../cooking_result_rules.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../cooking_input.dart';
-import '../cooking_sensor_input.dart';
-import '../cooking_tilt_source.dart';
 import '../development_balance.dart';
 import '../game_controller.dart';
 import '../workshop_controller.dart';
@@ -32,14 +29,8 @@ class WorkshopPage extends StatefulWidget {
   @override
   State<WorkshopPage> createState() => _WorkshopPageState();
 }
-class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver {
+class _WorkshopPageState extends State<WorkshopPage> {
   WorkshopController get c => widget.controller;
-  StreamSubscription<CookingTiltSample>? _sensor;
-  late TiltDirectionGate _gate;
-  bool _sensorEnabled = false;
-  late CookingSensorInput _sensorInput;
-  int _sensorGeneration = 0;
-  final Stopwatch _sensorClock = Stopwatch()..start();
   int _windowCount=0;
   final _homeKey=GlobalKey();
   bool _awayShowing=false;
@@ -67,56 +58,6 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     try {await showWorkshopWindow(context,controller:c,account:widget.accountController,title:title,content:content);}
     finally {_leaveWindow();}
   }
-  String? _sensorNotice;
-  String _sensorStatus = '현재 자세를 보정 중이에요';
-  @override
-  void initState() { super.initState(); _gate = TiltDirectionGate.fromBalance(c.config); _sensorInput = CookingSensorInput(_gate); WidgetsBinding.instance.addObserver(this); c.addListener(_cancelPausedInput); }
-  void _cancelPausedInput() {
-    if(!c.gameplayPaused) return;
-    _sensorInput.reset();
-  }
-  @override
-  void didUpdateWidget(covariant WorkshopPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if(oldWidget.controller!=widget.controller) {
-      oldWidget.controller.removeListener(_cancelPausedInput);c.addListener(_cancelPausedInput);
-      _gate=TiltDirectionGate.fromBalance(c.config);_sensorInput=CookingSensorInput(_gate);
-    }
-  }
-  Future<void> _setSensor(bool enabled) async {
-    final generation = ++_sensorGeneration;
-    final subscription = _sensor; _sensor = null;
-    _sensorInput.reset();
-    await subscription?.cancel();
-    if (!mounted || generation != _sensorGeneration) return;
-    setState(() { _sensorEnabled = enabled; _sensorNotice = null; _sensorStatus = '현재 자세를 보정 중이에요'; });
-    if (!enabled) return;
-    _sensor = CookingTiltSource().samples(c.config).listen((sample) {
-      if (!mounted || !_sensorEnabled || generation != _sensorGeneration) return;
-      if (!sample.available) {
-        _sensorInput.reset();
-        setState(() { _sensorEnabled = false; _sensorNotice = '스페셜 붕어빵 틀을 길게 눌러 반죽을 부어 주세요.'; }); return;
-      }
-      if(c.gameplayPaused) { _sensorInput.reset(); return; }
-      if(c.cookingInputBlocked) { _sensorInput.interrupt(); return; }
-      final session = c.state.session;
-      if (session == null || session.finished) { _sensorInput.reset(); return; }
-      final next = _sensorInput.sample(session, sample.angleMillidegrees!, _sensorClock.elapsedMilliseconds);
-      final status = _sensorInput.pouring ? '붓는 중 · 제자리로 돌아오면 멈춰요' :
-        _sensorInput.waitingNeutral ? '처음 자세로 돌아와 주세요' : '준비 · 좌우로 기울여 주세요';
-      if (_sensorStatus != status) {
-        assert(() { debugPrint('STEP02_SENSOR $status angle=${sample.angleMillidegrees}'); return true; }());
-        setState(() => _sensorStatus = status);
-      }
-      if (next != null) unawaited(c.cookingCommand(next));
-    });
-  }
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) unawaited(_setSensor(false));
-  }
-  @override
-  void dispose() { c.removeListener(_cancelPausedInput); _sensorGeneration++; _sensor?.cancel(); _sensorInput.reset(); _sensorClock.stop(); _gate.reset(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
   Future<void> _closeBusiness() async {
     _enterWindow();
     try {
@@ -378,13 +319,6 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       fraction(s.completedSales-s.levelStartSales,DevelopmentBalance.integer(row,'additional_sales'))];
     return values.reduce((a,b)=>a<b ? a:b);
   }
-  Widget _sensorControl() => Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-    Switch(value:_sensorEnabled,onChanged:_setSensor),
-    Flexible(child:Text(_sensorEnabled ? _sensorStatus : _sensorNotice ?? '기울기로 반죽 붓기',
-      style:const TextStyle(color:Cozy.cream,fontSize:12,shadows:[Shadow(color:Cozy.woodDark,blurRadius:4)]))),
-    if(_sensorEnabled) IconButton(tooltip:'현재 자세로 다시 보정',onPressed:()=>_setSensor(true),
-      icon:const Icon(Icons.screen_rotation,color:Cozy.cream,size:20)),
-  ]);
   @override
   Widget build(BuildContext context) => AnimatedBuilder(animation:Listenable.merge([c,widget.accountController]),
     builder:(context,_)=>_content(context));
@@ -422,7 +356,7 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       centerBuilder:(fish,clean,counterTop)=>Stack(children:[
         Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,
           reduceMotion:widget.accountController.state.settings.reduceMotion,
-          vibration:widget.accountController.state.settings.vibration,sensorControl:_sensorControl())),
+          vibration:widget.accountController.state.settings.vibration)),
         // Below the flavor row, clear of the counter strip.
         Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
       ]),

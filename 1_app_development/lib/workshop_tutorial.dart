@@ -24,9 +24,9 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
   final session = s.session;
   if (session != null) {
     return switch (session.phase) {
-      CookingPhase.firstBatter => const WorkshopTutorialStep(2, '스페셜 붕어빵 틀을 길게 누르고 있으면 반죽이 부어져요. 알맞을 때 손을 떼요.', 'workshop-mold', below: _stage),
-      CookingPhase.filling => const WorkshopTutorialStep(3, '짤주머니를 눌러 속을 짜 넣어요.', 'workshop-mold', below: _stage),
-      CookingPhase.secondBatter => const WorkshopTutorialStep(4, '반죽을 한 번 더 부어 속을 덮어요.', 'workshop-mold', below: _stage),
+      CookingPhase.firstBatter => const WorkshopTutorialStep(2, '틀 위를 문질러 반죽을 칠하듯 부어요. 붕어빵 모양을 고르게 덮고 손을 떼요.', 'workshop-mold', below: _stage),
+      CookingPhase.filling => const WorkshopTutorialStep(3, '틀 위를 문질러 속을 짜 넣어요.', 'workshop-mold', below: _stage),
+      CookingPhase.secondBatter => const WorkshopTutorialStep(4, '반죽을 한 번 더 문질러 속을 덮어요.', 'workshop-mold', below: _stage),
       CookingPhase.closing => const WorkshopTutorialStep(4, '뚜껑을 닫아요.', 'workshop-mold', below: _stage),
       CookingPhase.flipping => const WorkshopTutorialStep(5, '틀을 뒤집어 반대쪽도 구워요.', 'workshop-mold', below: _stage),
       CookingPhase.cooking => const WorkshopTutorialStep(6, '노릇하게 익었다 싶을 때 꺼내요.', 'workshop-mold', below: _stage),

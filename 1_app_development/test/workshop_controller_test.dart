@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cooking_input.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
+import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
@@ -54,8 +55,8 @@ class Gateway implements WorkshopPurchaseGateway {
 CookingSession cookingFixture() {
   var s = CookingSession.start(id: 'practice-result', flavor: 'redbean', practice: true,
       fillingSequence: [CookingDirection.left]);
-  s = s.pour(s.token, 2500); s = s.fill(s.token, CookingDirection.left);
-  s = s.pour(s.token, 2500); s = s.close(s.token); return s.flip(s.token);
+  s = s.pour(s.token, PaintAmount.even); s = s.fill(s.token, CookingDirection.left);
+  s = s.pour(s.token, PaintAmount.even); s = s.close(s.token); return s.flip(s.token);
 }
 void main() {
   late DevelopmentBalance config;

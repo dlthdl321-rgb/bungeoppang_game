@@ -130,6 +130,7 @@
 | DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
 | JSON 저장 형식 | `schema` 6. 1~5를 읽고 6으로 저장 |
 | schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
+| 제작 세션 `session` (CookingSession schema 1, 24번 5단계 G1) | 짤주머니 세 단계의 칠한 양을 **추가 필드**로 저장: `firstBatterCoverage`·`firstBatterAmount`, `fillingCoverage`·`fillingAmount`, `secondBatterCoverage`·`secondBatterAmount`(permille, 단계를 마치면 둘 다 있음, 0 < 덮음 ≤ 1000, 덮음 ≤ 양 ≤ 9000). 예전 `firstBatterMs`·`secondBatterMs`·`fillingDurationMs`는 읽기만 하고 새로 쓰지 않음(같은 단계에 두 종류가 함께 있으면 거절). 단계 완료 = 둘 중 하나가 있음. 예전 저장·진행 중 세션은 그대로 이어서 하고, ms로 끝난 반죽 단계는 손기술 실패. Workshop schema 6·`user_version` 4·생산 저널 형식 변경 없음 |
 | schema 6 (2026-11-11) | 첫 실행 안내 `tutorial`: `cook` → `sell` → `done`, 또는 `skipped`. 새 설치는 `cook`. schema 5 이하는 `done`으로 올리고, 그 버전에 `tutorial`이 있으면 거절. 판매 기록이 있는데 `cook`/`sell`이면 거절 |
 
 **저장 손상 대처** (`lib/main.dart` `_start`, `lib/ui/save_recovery.dart`, `lib/save_quarantine.dart`)
@@ -579,6 +580,41 @@
 
 명령에서도 막음: `startPractice`는 영업 중(새 영업일 이어서 영업 전 포함) '연습 제작은 영업 준비 중에만 할 수 있어요.', `openBusiness`는 스페셜 붕어빵 세션(결과 대기 포함)이 있으면 '스페셜 붕어빵을 다 만든 뒤 영업을 시작해요.'(이어서 영업도 같음). `startOrderProduction`은 영업 중 그대로 허용. 클리커 탭 상한은 컨트롤러의 단조 시계로 센 최근 1초 기록(저장하지 않음)이며, 구형 `tap()` 경로 자체에는 상한이 없음. 저장 형식(schema 6) 변경 없음.
 
+**짤주머니 색칠 (DEC-031~033, 24번 5단계, 사용자 확정 G1~G8):** 첫 반죽·속·둘째 반죽은 스페셜 붕어빵 틀 위를 색칠하듯 문지르는 조작입니다(`lib/ui/piping_bag_control.dart` `MoldPaintControl`, 계산은 `lib/cooking_paint.dart` `MoldPaint`).
+
+| 항목 | 규칙 |
+| --- | --- |
+| 마스크 | `fish/redbean.png`의 불투명 부분(알파 > 128)을 틀 그림(1200×880) (100, 66)에 놓고 `WorkshopMoldArt.fishRect`(215,174~984,706)를 16px 칸으로 나눈 49×34 격자. 칸 면적 절반 이상이 붕어빵이면 마스크 칸(**1,081칸**). 생성: `1_app_development`에서 `python tools/fish_cavity_mask.py`(`--check`로 확인) → `lib/generated/fish_cavity_mask.dart` |
+| 붓 | 지름 = 붕어빵 폭(769) × `paint_brush_width_permille`(140) = 107.7(틀 그림 px, 390 폭 화면에서 약 37px). 포인터 이동마다 직전 점에서 반 칸(8px) 간격으로 찍어 빠르게 휘둘러도 빈틈 없음 |
+| 덧칠 (DEC-032) | 칸 중심이 붓 반지름 안에 새로 들어오면 그 칸에 한 겹. 머무는 동안은 다시 세지 않음. 붓 중심이 **반지름 + 1칸**보다 멀어져야 떠난 것으로 봄(떨림 여유, G7). 칸당 최대 9겹. 마스크 밖은 세지 않음 |
+| 양 | 덮은 면적 = 1겹 이상 칸 ÷ 1,081, 덧칠 포함 양 = 겹 합계 ÷ 1,081 (모두 permille 정수, `PaintAmount(coverage, amount)`) |
+| 입력 | 첫 포인터 하나만(두 번째 손가락 무시). 누르자마자 제스처를 차지해(`ImmediateMultiDragGestureRecognizer`) 큰 글씨 홈이 스크롤되지 않음. 틀 밖으로 나가도 취소하지 않고 양에만 넣지 않음. **손을 떼면 그 단계 확정**. 칠이 0이면(틀 밖만 문지름) 확정하지 않음(G3). 포인터 취소·차단(`cookingInputBlocked`, 일시정지)·단계 토큰 변경·앱 비활성은 칠을 버림 |
+| 화면 읽기 | 두 번 활성화 = '고르게 칠하기': 덮음 100%·양 100%로 확정(G4, 이 경로는 반죽 성공) |
+| 칠 표시 | 반죽은 칠한 칸 모양으로 `mold/batter.png`(둘째 반죽은 `mold/batter_top.png`)를 드러냄. 속은 맛 색 임시 칠(팥 `#642B27`, 슈크림 `#E8B84A`, 초코 `#4A2C1D`). 2겹 이상 칸은 조금 진하게, 130%를 넘으면 붕어빵 아래 가장자리에 흘러내림 방울 |
+| 확정 뒤 (G2) | 이번 세션의 칠한 칸 모양을 메모리에 남겨 뚜껑을 닫을 때까지 보임(`paintedMoldFor`). 저장하지 않으므로 앱을 다시 켜면 단계 그림(`moldFor`) 전체로 보임 |
+| 짤주머니 | 세 단계 모두 손가락을 따라감. 꼭지 끝이 손가락, 몸통은 오른쪽 위. 꼭지의 반죽은 크림색, 속은 맛 색. 임시 그리기(필요한그림목록 2번) |
+| 안내 글(`piping-amount`) | 대기 '틀 위를 문질러 반죽을 부어 주세요' / '틀 위를 문질러 속을 짜 주세요'. 반죽 칠하는 중 '반죽 덮음 85% · 양 112% · 손을 떼면 마무리'(G5), 속 '속 양 72% · 손을 떼면 마무리'. 130% 초과면 끝에 ' · 넘쳤어요'. 위 캡션 '팥 연습 · 반죽 목표 90% 이상 덮기 · 130% 넘으면 넘침' |
+| 결과 글 (G6) | '완성 · 미디엄 · 반죽 넘침' / '… · 반죽 부족'(`batterFailureLabel`, 넘침이 우선, `mold-result-caption`) |
+| 모션 줄이기 | 짤주머니가 손가락을 따라가는 것은 직접 조작이라 그대로. 움직임에 따라 짤주머니가 기우는 연출만 끔. 판정 같음 |
+| 진동(설정 켜짐) | 단계 확정 때 `selectionClick` 1회, 한 붓질에서 130%를 처음 넘는 순간 `mediumImpact` 1회 |
+| 판정 (DEC-031) | 반죽 두 번 각각 덮은 면적 ≥ `batter_min_coverage_permille`(900) 그리고 양 ≤ `paint_overflow_amount_permille`(1300) + 익힘 `success_doneness_min_index`~`max_index`. 속은 판정 안 함(양·넘침만 표시). 예전 길게 누르기로 끝난 반죽 단계(저장의 `firstBatterMs`·`secondBatterMs`)는 손기술 실패(G1) |
+| 센서 (DEC-033) | 기울기 센서 삭제: 스위치, `cooking_sensor_input.dart`·`cooking_tilt_source.dart`·`TiltDirectionGate`·`BatterHoldInput`·`BatterHoldButton`, Android `CookingTiltStream.kt`와 채널, `tilt_*` 설정 3개 |
+
+**제작 설정값(`config/development_balance.json` `manual_cooking`, 개발용 임시값, 24번 5단계 기준):**
+
+| 설정 | 값 | 뜻 |
+| --- | --- | --- |
+| `paint_brush_width_permille` | 140 | 붓 지름 = 붕어빵 폭(`fishRect`)의 14% |
+| `batter_min_coverage_permille` | 900 | 반죽 덮은 면적 하한 |
+| `paint_overflow_amount_permille` | 1300 | 덧칠 포함 양이 이보다 크면 넘침(반죽 실패) |
+| `lid_close_ms` / `flip_ms` | 1000 / 1000 | 뚜껑 닫힘·뒤집기 뒤 다음 단계까지 최소 시간(컨트롤러 검사) |
+| `filling_inputs` | 4 | 옛 속 방향 순서 길이(저장 토큰 호환용, 화면에 안 보임) |
+| `batter_input_passes` | 2 | 반죽 두 번 구조 기록용(코드에서 읽지 않음, G6에서 유지) |
+| `checkpoint_ms` | 1000 | 제작 중 저장 간격 |
+| `products_per_completed_result`, `minimum_cooling_ms` | 1, 0 | 결과 1개당 재고 수, 식힘 시간 |
+
+삭제(24번 5단계): `mastery_difficulties[*].batter_target_ms`·`batter_tolerance_permille`, `manual_cooking.filling_capacity_ms`·`touch_batter_tick_ms`·`tilt_sampling_ms`·`tilt_activation_degrees`·`tilt_dead_zone_degrees`. `tools/development_balance.py`가 다시 생기지 않게 검사하고, 서버 생성본(`firebase/functions/src/generated/development_balance.json`)과 14번 문서를 같은 도구로 다시 만듭니다. 서버 코드는 제작 값을 읽지 않으며 `metadata.revision`은 `development-provisional-3` 그대로입니다(G8).
+
 **행주 윗변 (DEC-038, 24번 4단계):** 판매 카운터 윗변은 배경 왼쪽 빨간 체크 행주의 윗변이고 그 위로는 카운터가 보이지 않습니다. 값은 배경 그림마다 다르며 `NightStallPainter.towelTops`(그림 파일 → 원본 y)에 둡니다. 출처: `1_app_development/assets/images/bg/<id>.png`·`bg_clean/clear.png`(모두 335×762)에서 28~40열을 천(빨강·크림 체크, 주황 나무 제외)이 60% 이상 덮는 첫 행. 측정 도구 `python tools/towel_top.py`(`1_app_development`에서).
 
 | 그림 | 원본 y | 그림 | 원본 y |
@@ -619,7 +655,7 @@
 | 단계 | 조건 | 대상 키 |
 | --- | --- | --- |
 | 1 | `cook`, 스페셜 붕어빵 틀 비어 있음 | `workshop-mold` |
-| 2~6 | 연습 굽기 단계: 반죽 붓기 → 짤주머니 → 두 번째 반죽·뚜껑 → 뒤집기 → 꺼내기·보관 | `workshop-mold`, 결과는 `mold-store` |
+| 2~6 | 연습 굽기 단계: 반죽 문지르기('틀 위를 문질러 반죽을 칠하듯 부어요. 붕어빵 모양을 고르게 덮고 손을 떼요.') → 속('틀 위를 문질러 속을 짜 넣어요.') → 둘째 반죽('반죽을 한 번 더 문질러 속을 덮어요.')·뚜껑 → 뒤집기 → 꺼내기·보관 | `workshop-mold`, 결과는 `mold-store` |
 | 1(영업 중) | `cook`인데 이미 영업 중(DEC-037): 손님 없으면 '영업 중에는 손님 주문을 받아 구워요. 손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요.', 손님이 있으면 판매할 재고가 있으면 판매, 없으면 '손님 주문은 주문 제작으로 바로 구워요.' 주문 제작 결과를 닫으면 `sell` | `workshop-clicker`, `sale-button`, `order-produce` |
 | 7 | `sell`: 영업 시작 → 첫 손님 기다리기('첫 손님을 기다려요. 손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요.') → 판매(재고 없으면 주문 제작) | `business-open`, `workshop-clicker`, `sale-button`, `order-produce` |
 
@@ -1103,7 +1139,7 @@ TypeScript --noEmit과 구문/링크/생성 검사는 정적 확인이며 실제
 
 ### 직원2 사용자 조작 정정: 짤주머니·빈 큰 틀 (2026-10-18, 위 도구/방향 기록보다 우선)
 
-> **2026-11-16 사용자 결정으로 대체됨.** 길게 누르기 짤주머니·센서·'뒤집기' 버튼 규칙은 [27장](#27-제작-조작화면용어-변경-결정--2026-11-16)(DEC-031~039)의 색칠 드래그·원 그려 뒤집기·센서 삭제로 바뀝니다. 아래는 현재 코드가 바뀌기 전까지의 기록입니다. 빈 틀 위에 단계별 상태를 그리는 마지막 문단은 유지합니다.
+> **2026-11-16 사용자 결정으로 대체됨.** 길게 누르기 짤주머니·센서·'뒤집기' 버튼 규칙은 [27장](#27-제작-조작화면용어-변경-결정--2026-11-16)(DEC-031~039)의 색칠 드래그·원 그려 뒤집기·센서 삭제로 바뀝니다. **짤주머니 색칠과 센서 삭제는 24번 5단계에서 구현했습니다**(10장 "짤주머니 색칠"). 아래 길게 누르기·`fillingDurationMs`·`filling_capacity_ms` 설명은 옛 기록이며, `fillingDurationMs`는 옛 저장을 읽을 때만 씁니다. 빈 틀 위에 단계별 상태를 그리는 마지막 문단은 유지합니다.
 
 사용자는 좌우 속 넣기와 숟가락/젓가락을 요청하지 않았다고 정정하고, 큰 틀을 길게 눌러 양을 조절하는 짤주머니 액션을 지정했다. 신규 화면에서 방향 버튼/원 그리기/쓸기/도구 선택을 제거하고 관련 제스처 모듈·테스트·임시 설정5개를 삭제한다. 센서는 두 반죽에만 적용한다. 짤주머니는 최초 포인터의 누른 시간을 속 양으로 기록하며 취소/영역 이탈/일시정지 시 확정하지 않는다. filling_capacity_ms=4000은 양 표시100% 기준의 공통 임시 수치이며 손기술 성공 범위나 판매 가격 규칙이 아니다.
 
@@ -1215,7 +1251,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 
 ## 27. 제작 조작·화면·용어 변경 결정 — 2026-11-16
 
-[24번 작업](../24_제작조작화면용어변경프롬프트.md) 1단계 기록. 결정 원문은 [00_결정취합.md](../2.1.1_game_rules_and_decisions/00_결정취합.md) 「2026-11-16 제작 조작·화면·용어 변경」(DEC-031~039). 2단계(용어), 3단계(두 틀 규칙), 4단계(홈 배치·빈 굽는 판)는 구현했고 나머지는 결정만 기록했습니다. 각 항목은 표의 단계에서 구현하며, 구현할 때 10장·설정값·저장 절을 함께 고칩니다. 수치는 모두 `manual_cooking` 개발용 임시값입니다.
+[24번 작업](../24_제작조작화면용어변경프롬프트.md) 1단계 기록. 결정 원문은 [00_결정취합.md](../2.1.1_game_rules_and_decisions/00_결정취합.md) 「2026-11-16 제작 조작·화면·용어 변경」(DEC-031~039). 2단계(용어), 3단계(두 틀 규칙), 4단계(홈 배치·빈 굽는 판), 5단계(짤주머니 색칠·센서 삭제)는 구현했고 나머지는 결정만 기록했습니다. 각 항목은 표의 단계에서 구현하며, 구현할 때 10장·설정값·저장 절을 함께 고칩니다. 수치는 모두 `manual_cooking` 개발용 임시값입니다.
 
 | 항목 | 결정 | 구현 단계 |
 | --- | --- | --- |
@@ -1225,10 +1261,10 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 제작 중 영업 시작 | 거부. `openBusiness`에서도 막고 '스페셜 붕어빵을 다 만든 뒤 영업을 시작해요' (DEC-035). **3단계 구현 완료** | 3 |
 | 튜토리얼 | 흐름 유지. 7단계 손님 기다리기에 '손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요'. `cook` 단계에서 이미 영업 중이면 주문 제작 안내. schema 6 유지 (DEC-037). **3단계 구현 완료** | 3 |
 | 홈 배치 | 숙련된 붕어빵 틀(6구) 폭 = 화면 폭 − 16, 비율 유지. 판매 카운터 윗변 = 배경 왼쪽 빨간 체크 행주 윗변 (DEC-038). **4단계 구현 완료**(10장 "행주 윗변", 층 5): 영업 준비 중 '스페셜 붕어빵 제작 시작' 버튼을 카운터 윗변 − 4로 올림(사용자 선택 A). 빈 굽는 판 임시 그림 | 4 |
-| 짤주머니 색칠 | 첫 반죽·속·둘째 반죽 모두 드래그 색칠. 한 단계 = 한 번의 이어진 붓질(손 떼면 확정), 포인터 하나, 틀 밖 무시. 붓 굵기 = `fishRect` 폭의 14% (DEC-031) | 5 |
-| 덧칠 | 격자 칸을 떠났다 다시 들어올 때마다 한 겹. 덮은 면적과 덧칠 포함 양을 따로 계산 (DEC-032) | 5 |
-| 품질 판정 | 반죽 두 번 각각 덮은 면적 ≥ 90% 그리고 덧칠 포함 양 ≤ 130%(초과는 넘침·실패) + 익힘이 `success_doneness_min_index`~`max_index` 안. 속은 판정 없이 양·넘침만 표시 (DEC-031) | 5 |
-| 기울기 센서 | 삭제: 스위치·센서 코드·테스트·`tilt_*` 설정 3개 (DEC-033) | 5 |
+| 짤주머니 색칠 | 첫 반죽·속·둘째 반죽 모두 드래그 색칠. 한 단계 = 한 번의 이어진 붓질(손 떼면 확정), 포인터 하나, 틀 밖 무시. 붓 굵기 = `fishRect` 폭의 14% (DEC-031). **5단계 구현 완료**(10장 "짤주머니 색칠") | 5 |
+| 덧칠 | 격자 칸을 떠났다 다시 들어올 때마다 한 겹. 덮은 면적과 덧칠 포함 양을 따로 계산 (DEC-032). **5단계 구현 완료**: 16px 칸 1,081개, 떠남 = 반지름 + 1칸 | 5 |
+| 품질 판정 | 반죽 두 번 각각 덮은 면적 ≥ 90% 그리고 덧칠 포함 양 ≤ 130%(초과는 넘침·실패) + 익힘이 `success_doneness_min_index`~`max_index` 안. 속은 판정 없이 양·넘침만 표시 (DEC-031). **5단계 구현 완료** | 5 |
+| 기울기 센서 | 삭제: 스위치·센서 코드·테스트·`tilt_*` 설정 3개 (DEC-033). **5단계 삭제 완료**(Android 채널 포함) | 5 |
 | 원 그려 뒤집기 | 누적 320도, 양방향, 거꾸로 돌면 감소, 틀 중심에서 틀 폭 15% 안쪽 무시, 손 떼면 0도·원위치. 연출은 `flip_ms` 1000과 맞춤. 1060행의 예전 회전 360도/중심 20px 설정을 대신함 (DEC-034) | 6 |
 
 **용어 대응표 (2단계, 2026-11-16):**
@@ -1243,3 +1279,5 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 **3단계 기록 (두 틀 규칙, 2026-11-16):** 화면·명령 규칙은 10장 "두 틀 규칙", 안내는 10장 "첫 실행 안내" 표. 테스트 `test/workshop_two_molds_test.dart`(컨트롤러 5·화면 3: 영업 준비/영업 중 평소/주문 제작 세 상태의 두 틀 표시·입력, 연습 거부·주문 허용, 제작 중 영업 시작 거부, 클리커 상한, 주문 제작 중 탭 거부, 결과를 닫으면 클리커 복귀, `cook` 단계 영업 중 안내). 남은 점이던 "굽는 판 그림에 붕어빵 6개가 그려져 있음"은 4단계에서 임시 빈 굽는 판 그림으로 해결.
 
 **4단계 기록 (홈 배치·빈 굽는 판, 2026-11-16):** 배치는 10장 Workshop 홈 표·"행주 윗변"·층 5. 겹침 점검(사용자 결정): 카운터가 시작 버튼을 16~19px 가려 버튼을 올림(A). 남는 작은 겹침은 받아들임: 360 폭에서 카운터 아래끝이 굽는 판 왼쪽 경첩 끝을 6.8px 가림(칸과는 5px 떨어짐). 조리 컷과 굽는 판 그림은 겹치지 않음(그림 투명도로 잰 최소 간격 360x640·360x800 20.5px, 390x844 22.7px, 412x915 24.0px). 굽는 판 아래가 하단 메뉴 뒤로 10px 들어가는 것은 예전 그대로. **빈 굽는 판 그림은 임시 그림**입니다: `assets/images/stove_empty/{iron,copper,castiron,golden}.png`(941×470, `tools/empty_griddle.py`가 원본의 붕어빵을 칸 바닥색 홈으로 칠함). 그린 그림이 오면 같은 크기·칸 위치로 파일만 바꿉니다. 필요한 그림과 생성 프롬프트는 [필요한 그림 목록](../../2.2_art_creation_guides_and_galleries/2.2.6_required_art_list/필요한그림목록.md)에 있고, 앞으로 새로 필요한 그림도 그 파일에 추가합니다.
+
+**5단계 기록 (짤주머니 색칠, 2026-11-17):** 규칙·설정값은 10장 "짤주머니 색칠"·"제작 설정값", 저장은 3장 Workshop 표의 `session` 행. 설계 갈림길 G1~G8은 사용자가 모두 추천안으로 확정(00_결정취합 DEC-040). 새 파일: `lib/cooking_paint.dart`(순수 계산), `lib/generated/fish_cavity_mask.dart`·`tools/fish_cavity_mask.py`(마스크 생성). 지운 파일: `lib/cooking_sensor_input.dart`, `lib/cooking_tilt_source.dart`, Android `CookingTiltStream.kt`. 테스트: `test/cooking_paint_test.dart`(마스크·면적·덧칠·떨림·빈틈·넘침·판정·저장 이전 17개), `test/cooking_controls_test.dart`(색칠 위젯 11개: 손 떼면 확정, 속 넘침, 칠 0, 틀 밖, 단계 변경, 앱 비활성, 차단, 포인터 취소, 두 번째 손가락, 화면 읽기, 진동), `test/step02_home_test.dart`(실제 홈에서 세 단계 문지르기 → 결과 글). 시뮬레이션: 가로 지그재그 줄 간격(붓 지름 대비) 100%·90%·80%에서 덮음 100%, 양 약 101%·108%·125%. 새로 필요한 그림(짤주머니, 속 칠 질감, 반죽 넘침)은 [필요한 그림 목록](../../2.2_art_creation_guides_and_galleries/2.2.6_required_art_list/필요한그림목록.md) 2~4번이고 지금은 코드로 그린 임시 그림입니다.

@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import 'package:sqflite/sqflite.dart';
 import 'package:todays_bungeoppang/cooking_input.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
+import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/cooking_result_rules.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
@@ -42,9 +43,9 @@ void main() {
           flavor: 'redbean',
           practice: true,
           fillingSequence: [CookingDirection.left]);
-      session = session.pour(session.token, 2500);
+      session = session.pour(session.token, PaintAmount.even);
       session = session.fill(session.token, CookingDirection.left);
-      session = session.pour(session.token, 2500);
+      session = session.pour(session.token, PaintAmount.even);
       session = session.close(session.token);
       session = session.flip(session.token);
       await controller.command(() {

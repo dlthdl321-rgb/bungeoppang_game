@@ -113,7 +113,7 @@ def validate(data, catalog):
     require(data['skill_purchase']['gold_step_purchase_count'] > 0, '황금 가격 회차 분모')
     for row in data['mastery_difficulties']:
         require(row['practice_required'] >= row['technique_passes_required'] > 0, '숙련량 관계')
-        require(row['doneness_target_ms'] > 0 and row['batter_target_ms'] > 0, '시간 기준 양수')
+        require(row['doneness_target_ms'] > 0, '시간 기준 양수')
         require(row['success_doneness_min_index'] == 1 and row['success_doneness_max_index'] == 3, '손기술 일반 판매 익힘')
     boundaries = data['doneness']['boundary_permille']
     require(len(boundaries) == 4 and all(a < b for a, b in zip([0] + boundaries, boundaries)),
@@ -146,10 +146,15 @@ def validate(data, catalog):
             [key for key, value in recipes.items() if value['initial']] == ['redbean'], '초기/추가 맛 계약')
     require(all(0 <= row['difficulty'] <= 2 and type(row['initial']) is bool for row in recipes.values()), '맛 난이도 ID/초기 여부')
     require(data['ordinary_sale']['customer_archetype_count'] > 0, '손님 원형 개수')
-    require(data['manual_cooking']['filling_capacity_ms'] > 0, '짤주머니 양 표시 기준')
-    require(data['manual_cooking']['checkpoint_ms'] > 0 and
-            data['manual_cooking']['filling_inputs'] > 0 and
-            data['manual_cooking']['tilt_sampling_ms'] > 0, '제작 입력/저장 간격')
+    manual = data['manual_cooking']
+    require(0 < manual['paint_brush_width_permille'] <= 1000 and
+            0 < manual['batter_min_coverage_permille'] <= 1000 and
+            manual['paint_overflow_amount_permille'] >= 1000, '짤주머니 색칠 기준(붓 굵기·덮은 면적·넘침)')
+    require(not any(k in manual for k in ('filling_capacity_ms', 'touch_batter_tick_ms', 'tilt_sampling_ms',
+                                          'tilt_activation_degrees', 'tilt_dead_zone_degrees')) and
+            not any(k in row for row in data['mastery_difficulties']
+                    for k in ('batter_target_ms', 'batter_tolerance_permille')), '삭제한 시간·센서 설정(24번 5단계)')
+    require(manual['checkpoint_ms'] > 0 and manual['filling_inputs'] > 0, '제작 입력/저장 간격')
     sale = data['ordinary_sale']
     require(sale['customer_arrival_interval_ms'] > 0 and
             0 <= sale['special_order_basis_points'] <= 10000 and
@@ -205,7 +210,7 @@ def render(data):
 
 스킬 n회차는 `ceil(base × (numerator/denominator)^n)`, 황금은 `base_gold + floor(n/gold_step_purchase_count) × gold_step_amount`. 묶음은 개별 올림 후 합산하고 최대 구매는 두 잔액을 함께 확인한다. 현재 스킬 기본 비용/효과를 임시 seed로 보존했고, 신규 황금 비용과 모든 꾸미기/부스트 두 비용은 각각 명시했다. 추가 레시피 표는 획득 순번용이며 가상의 새 맛/출시 콘텐츠 수를 확정하지 않는다.
 
-만족도는 사용자 답변으로 품질·신선도 기반, 일반 대금에 별점 재곱셈 없음으로 확정했다. 가중치·경계는 임시값이다. 미디엄은 인덱스2이며 손기술은 두 반죽·일반 판매 익힘 조건(짤주머니 속 양은 별도 기록)을 사용한다. 덜 익음 특별 주문 판매는 별개다. 신규 게임은 붕어빵력·황금붕어빵력 두 재화이며 구형 코인은 신규 개념이 아니다. 일반 대금은 붕어빵력/누적 합산·전량 판매, 미션 황금 서버 검증·수동 승급·명시 종료 정책도 후속 답변으로 확정했다. 추가 맛은 슈크림/초코만 확정하며 후속 미정/외부 조건은 마지막 목록을 따른다.
+만족도는 사용자 답변으로 품질·신선도 기반, 일반 대금에 별점 재곱셈 없음으로 확정했다. 가중치·경계는 임시값이다. 미디엄은 인덱스2이며 손기술은 두 반죽의 칠한 면적(덮은 면적 `batter_min_coverage_permille` 이상, 덧칠 포함 양 `paint_overflow_amount_permille` 이하)과 일반 판매 익힘 조건을 사용한다(짤주머니 속은 양·넘침만 표시, 24번 5단계). 덜 익음 특별 주문 판매는 별개다. 신규 게임은 붕어빵력·황금붕어빵력 두 재화이며 구형 코인은 신규 개념이 아니다. 일반 대금은 붕어빵력/누적 합산·전량 판매, 미션 황금 서버 검증·수동 승급·명시 종료 정책도 후속 답변으로 확정했다. 추가 맛은 슈크림/초코만 확정하며 후속 미정/외부 조건은 마지막 목록을 따른다.
 
 광고 soft timeout은 대기 UI/재조회 시점이다. 시간 초과만으로 예약을 해제·환불·미당첨 확정하거나 늦은 콜백을 재지급하지 않는다. 검증 window와 보관일은 개발 비교용 목표일 뿐 업체 증거/법정 의무를 대체하지 않는다. 보관일을 개인정보/결제기록의 법정 기간보다 줄이는 근거로 사용하지 않는다. 제안 schema_next_version도 실제 포맷 이전 승인/구현이 아니다.
 
