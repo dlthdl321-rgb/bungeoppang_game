@@ -422,9 +422,9 @@ class PixelSprites {
   static String _stoveFishPath(String id) => 'assets/images/stove_fish/$id.png';
 
   /// Filling textures (`assets/images/mold/paint_<flavor>.png`, 256x256
-  /// seamless tiles, 25번 필요한 그림 3번). Not shipped yet: loaded only when
-  /// the files are added, and the painted filling stays a flat color
-  /// (fillingPasteColors) until then.
+  /// seamless tiles, 25번 필요한 그림 3번, tools/apply_25_art.py). The
+  /// painted filling falls back to a flat color (fillingPasteColors) when
+  /// one is missing.
   static const fillingTextureFlavors = ['redbean', 'custard', 'cocoa'];
 
   static String _fillingTexturePath(String flavor) =>

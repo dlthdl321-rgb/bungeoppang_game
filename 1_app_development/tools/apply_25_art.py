@@ -1,4 +1,4 @@
-"""Fits the drawn art of 25번 필요한 그림 (1·2·4·5번) into the game's assets.
+"""Fits the drawn art of 25번 필요한 그림 (1~5번) into the game's assets.
 
 The generated pictures are bigger than the game needs and their transparent
 background is soft (inside alpha about 250, faint haze around). This tool
@@ -10,6 +10,7 @@ snaps the alpha so there is no halo:
     python tools/apply_25_art.py <25_generated folder>            # write all
     python tools/apply_25_art.py <25_generated folder> --preview  # + sheet
     python tools/apply_25_art.py <25_generated folder> --measure  # re-fit stoves
+    python tools/apply_25_art.py <25_generated folder> --only textures --preview
 
 Run it in 1_app_development. Outputs:
 
@@ -31,6 +32,14 @@ Run it in 1_app_development. Outputs:
   (256, 256), radius 236. The generated guide ring has both arrowheads
   pointing the same screen way (the lower-left one runs counter-clockwise),
   so its lower-left half is the upper-right half turned 180 degrees.
+* assets/images/mold/paint_<flavor>.png (256x256, opaque): the filling
+  textures from mold_textures_v2/ (1254x1254, dots 6-12 source pixels).
+  Box-averaged down (each output pixel 4.9 source pixels), then made
+  seamless: the tile rolled by half its size takes over near each edge,
+  and the switch follows the least-different path (image quilting, 1 px
+  feather), first left/right then top/bottom. Last, a few flat colors per
+  flavor (no dither) so the dots stay crisp. paintMoldLayer tiles it at
+  fillingTextureScale mold pixels per texture pixel.
 """
 import argparse
 import sys
@@ -282,6 +291,97 @@ def rings(src):
     return made
 
 
+# ------------------------------------------------------------ textures
+
+FLAVORS = ["redbean", "custard", "cocoa"]
+TEXTURE_SIZE = 256
+TEXTURE_COLORS = {"redbean": 40, "custard": 28, "cocoa": 32}
+
+
+def _cut_path(cost):
+    """Least-cost top-to-bottom path through [cost] (rows x cols), one
+    column per row, moving at most one column between rows."""
+    h, w = cost.shape
+    acc = cost.copy()
+    for y in range(1, h):
+        prev = acc[y - 1]
+        left = np.r_[np.inf, prev[:-1]]
+        right = np.r_[prev[1:], np.inf]
+        acc[y] += np.minimum(np.minimum(left, prev), right)
+    path = np.empty(h, int)
+    path[-1] = int(np.argmin(acc[-1]))
+    for y in range(h - 2, -1, -1):
+        x = path[y + 1]
+        lo, hi = max(0, x - 1), min(w, x + 2)
+        path[y] = lo + int(np.argmin(acc[y, lo:hi]))
+    return path
+
+
+def _seamless_x(a, band):
+    """Left matches right: the half-rolled tile (its edges are neighbours
+    in the original) near the edges, switched to [a] along least-different
+    paths inside [band] (columns from each edge)."""
+    n = a.shape[1]
+    b = np.roll(a, n // 2, axis=1)
+    diff = np.abs(a - b).sum(2)
+    lo, hi = band
+    use_b = np.zeros(a.shape[:2])
+    left = _cut_path(diff[:, lo:hi]) + lo
+    right = _cut_path(diff[:, n - hi:n - lo]) + n - hi
+    xs = np.arange(n)[None, :]
+    use_b[(xs < left[:, None]) | (xs > right[:, None])] = 1
+    # 1 px feather across the cut.
+    soft = (use_b + np.roll(use_b, 1, 1) + np.roll(use_b, -1, 1) + 2 * use_b) / 5
+    soft[:, :lo] = 1
+    soft[:, n - lo:] = 1
+    return a * (1 - soft[..., None]) + b * soft[..., None]
+
+
+def seam_ratio(a):
+    """Edge step (left-right, top-bottom wrap) over the mean neighbour step."""
+    a = a.astype(float)
+    inner = (np.abs(np.diff(a, axis=1)).mean() + np.abs(np.diff(a, axis=0)).mean()) / 2
+    return (np.abs(a[:, 0] - a[:, -1]).mean() / inner,
+            np.abs(a[0] - a[-1]).mean() / inner)
+
+
+def textures(src):
+    made = {}
+    for f in FLAVORS:
+        img = Image.open(src / "mold_textures_v2" / f"paint_{f}.png").convert("RGB")
+        before = seam_ratio(np.asarray(img))
+        small = img.resize((TEXTURE_SIZE, TEXTURE_SIZE), Image.BOX)
+        a = np.asarray(small).astype(float)
+        mid = seam_ratio(a)
+        band = (6, 40)
+        a = _seamless_x(a, band)
+        a = _seamless_x(a.transpose(1, 0, 2), band).transpose(1, 0, 2)
+        out = Image.fromarray(a.round().clip(0, 255).astype(np.uint8), "RGB")
+        out = out.quantize(TEXTURE_COLORS[f], method=Image.Quantize.MEDIANCUT,
+                           dither=Image.Dither.NONE).convert("RGB")
+        after = seam_ratio(np.asarray(out))
+        out.save(IMAGES / "mold" / f"paint_{f}.png")
+        made[f"mold/paint_{f}"] = out
+        print(f"  paint_{f}: seam (left-right, top-bottom) / inner step "
+              f"source {before[0]:.1f},{before[1]:.1f} -> 256 {mid[0]:.1f},{mid[1]:.1f}"
+              f" -> seamless {after[0]:.1f},{after[1]:.1f}")
+    return made
+
+
+def texture_preview(made, path):
+    """Each texture 2x2 tiled (seams cross the middle) at 2x, nearest."""
+    keys = [k for k in made if k.startswith("mold/paint_")]
+    n = TEXTURE_SIZE
+    sheet = Image.new("RGB", (len(keys) * (4 * n + 8), 4 * n), (40, 34, 30))
+    for i, k in enumerate(keys):
+        t = Image.new("RGB", (2 * n, 2 * n))
+        for x in (0, n):
+            for y in (0, n):
+                t.paste(made[k], (x, y))
+        sheet.paste(t.resize((4 * n, 4 * n), Image.NEAREST), (i * (4 * n + 8), 0))
+    sheet.save(path)
+
+
 def preview(made, path):
     """Every output at 2x (nearest) on dark and light backing."""
     tiles = []
@@ -311,24 +411,41 @@ def main():
     p.add_argument("--preview", action="store_true")
     p.add_argument("--measure", action="store_true",
                    help="re-measure STOVE_FIT (slow, a few minutes)")
+    steps = ["stoves", "bags", "drips", "rings", "textures"]
+    p.add_argument("--only", choices=steps, action="append",
+                   help="run only these steps (repeatable)")
     args = p.parse_args()
     src = args.source.resolve()
+    run = args.only or steps
     made = {}
-    print("stoves")
-    made.update(stoves(src, args.measure))
-    print("piping bags")
-    made.update(bags(src))
-    print("drips")
-    made.update(drips(src))
-    print("rings")
-    made.update(rings(src))
+    if "stoves" in run:
+        print("stoves")
+        made.update(stoves(src, args.measure))
+    if "bags" in run:
+        print("piping bags")
+        made.update(bags(src))
+    if "drips" in run:
+        print("drips")
+        made.update(drips(src))
+    if "rings" in run:
+        print("rings")
+        made.update(rings(src))
+    if "textures" in run:
+        print("filling textures")
+        made.update(textures(src))
     for key, img in made.items():
         print(f"  {key}.png {img.size}")
     if args.preview:
-        out = ROOT / "build" / "apply_25_art_preview.png"
-        out.parent.mkdir(exist_ok=True)
-        preview(made, out)
-        print("preview", out.relative_to(ROOT).as_posix())
+        (ROOT / "build").mkdir(exist_ok=True)
+        art = {k: v for k, v in made.items() if not k.startswith("mold/paint_")}
+        if art:
+            out = ROOT / "build" / "apply_25_art_preview.png"
+            preview(art, out)
+            print("preview", out.relative_to(ROOT).as_posix())
+        if len(art) < len(made):
+            out = ROOT / "build" / "apply_25_texture_preview.png"
+            texture_preview(made, out)
+            print("preview", out.relative_to(ROOT).as_posix())
 
 
 if __name__ == "__main__":

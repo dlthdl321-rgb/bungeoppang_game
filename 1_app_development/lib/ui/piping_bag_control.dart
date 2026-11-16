@@ -10,9 +10,9 @@ import 'cozy_style.dart';
 import 'pixel_sprites.dart';
 import 'workshop_mold_stage.dart' show WorkshopMoldArt;
 
-/// Paste colors of the fillings: the painted filling cells are this flat
-/// color until the filling textures arrive (25번 필요한 그림 3번), and the
-/// drawn drips/bag fall back to it.
+/// Paste colors of the fillings: the painted filling cells fall back to
+/// this flat color when a filling texture (25번 필요한 그림 3번) is
+/// missing, and so do the drawn drips/bag.
 const fillingPasteColors = {
   'redbean': Color(0xff642b27),
   'custard': Color(0xffe8b84a),
@@ -44,6 +44,12 @@ void _drawArt(Canvas canvas, ui.Image image, Rect dst) => canvas.drawImageRect(
     image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
     dst, _downscalePaint);
 
+/// Mold-picture pixels per filling-texture pixel. The fish is 769 mold
+/// pixels wide (about 270 screen pixels on a 390-wide screen, k 0.35), so
+/// one 256 tile is about 180 screen pixels (two thirds of the fish), a
+/// texture pixel about 0.7 and a red bean about 10-12 screen pixels.
+const fillingTextureScale = 2.0;
+
 /// Draws [layer] over the mold, with the same fit as [WorkshopMoldArt].
 void paintMoldLayer(Canvas canvas, Size size, double grow, MoldPaintLayer layer,
     {FishCavityMask? mask}) {
@@ -72,15 +78,17 @@ void paintMoldLayer(Canvas canvas, Size size, double grow, MoldPaintLayer layer,
     WorkshopMoldArt.drawAt(canvas, image, Offset.zero, k, origin);
     canvas.restore();
   } else {
-    // A filling texture (mold/paint_<flavor>.png, 256x256 seamless tile in
-    // mold-picture pixels, 25번 필요한 그림 3번) when shipped; else flat color.
+    // The filling texture (mold/paint_<flavor>.png, 256x256 seamless tile,
+    // 25번 필요한 그림 3번), [fillingTextureScale] mold-picture pixels per
+    // texture pixel; flat color when the picture is missing.
     final texture = PixelSprites.fillingTexture(layer.drip);
     final fill = Paint()..color = paste;
     if (texture != null) {
+      final t = k * fillingTextureScale;
       fill.shader = ImageShader(texture, TileMode.repeated, TileMode.repeated,
           (Matrix4.identity()
                 ..translateByDouble(origin.dx, origin.dy, 0, 1)
-                ..scaleByDouble(k, k, 1, 1))
+                ..scaleByDouble(t, t, 1, 1))
               .storage,
           filterQuality: FilterQuality.none);
     }
@@ -365,12 +373,14 @@ class _LivePainter extends CustomPainter {
     if (layer != null) paintMoldLayer(canvas, size, grow, layer!);
     final at = finger;
     if (at == null) return;
-    final w = math.min(size.width * .2, 64.0), h = math.min(size.height * .45, 92.0);
+    // 64 wide (art 128x192 at half size, the bag itself about 43x92) on
+    // the usual mold (262 wide at 390x844); narrower only on a tiny mold.
+    final w = math.min(size.width * .3, 64.0), h = math.min(size.height * .45, 92.0);
     canvas.save();
     canvas.translate(at.dx, at.dy);
     final art = this.bag;
     if (art != null) {
-      // About 64x96 on screen, pointing down, then leaned up-right.
+      // [w] x 1.5w on screen, pointing down, then leaned up-right.
       final k = w / art.width;
       canvas.rotate(.45 + lean);
       _drawArt(canvas, art, Rect.fromLTWH(-PixelSprites.pipingBagTip.dx * k,
