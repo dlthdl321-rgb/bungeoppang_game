@@ -38,7 +38,7 @@ if ("$boot".Trim() -ne '1') { throw 'Emulator did not finish booting within 3 mi
 
 & $adb -s $serial install -r $apk.FullName
 if ($LASTEXITCODE -ne 0) { throw 'APK installation failed.' }
-& $adb -s $serial shell am force-stop com.todaybungeoppang.todays_bungeoppang
-& $adb -s $serial shell am start -n com.todaybungeoppang.todays_bungeoppang/.MainActivity
+& $adb -s $serial shell am force-stop com.todaybungeoppang.app
+& $adb -s $serial shell am start -n com.todaybungeoppang.app/.MainActivity
 if ($LASTEXITCODE -ne 0) { throw 'Activity launch failed.' }
 Write-Host "Launch complete: $($apk.Name)"

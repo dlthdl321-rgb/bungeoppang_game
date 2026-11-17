@@ -9,5 +9,6 @@
 | [Play 데이터 보안](play_data_safety.md) | 스토어 데이터 보안 양식 작성 기준 |
 | [15단계 온라인 출시 설정](stage15_release_online.md) | Firebase·결제·출시 설정 기록 |
 | [16단계 카카오 로그인 설정](stage16_kakao_login_ranking.md) | 카카오 콘솔·로그인·랭킹 설정 기록 |
+| [업로드 키와 release 빌드](release_signing.md) | 업로드 키 만들기·key.properties·AAB 빌드·실기기 release 설치(23번 6단계, 현재 기준) |
 
 일반 개발 안내와 작업 규칙은 루트의 README.md와 CLAUDE.md에 유지한다. 다른 과거 단계 기록·보고서·프롬프트·플레이 가이드는 삭제했다. planning의 기존 기획·결정·원장·이력·ZIP 보관본은 유지한다.

@@ -91,7 +91,7 @@
    - 앱 콘텐츠 → 데이터 삭제: 계정 삭제 요청 방법(이메일)을 입력한다.
    - 결제 프로필(판매자 계정)을 만든다.
 2. **Firebase**
-   - 프로젝트를 만들고 Android 앱(`com.todaybungeoppang.todays_bungeoppang`, SHA-1 등록)을 추가한다. Android 앱 설정 값(API 키, 앱 ID, 발신자 ID, 프로젝트 ID)을 확인한다(4번에서 사용).
+   - 프로젝트를 만들고 Android 앱(`com.todaybungeoppang.app`, SHA-1 등록 — 2026-11-17 옛 이름 `com.todaybungeoppang.todays_bungeoppang`에서 변경)을 추가한다. Android 앱 설정 값(API 키, 앱 ID, 발신자 ID, 프로젝트 ID)을 확인한다(4번에서 사용).
    - 로그인 설정(카카오 앱 ID, 커스텀 토큰 권한)은 [16단계 기록](stage16_kakao_login_ranking.md)의 콘솔 작업을 따른다.
    - Firestore를 서울 리전(`asia-northeast3`)으로 만든다.
    - Blaze 요금제로 바꾼다. Functions와 외부 API 호출에 필요하다.

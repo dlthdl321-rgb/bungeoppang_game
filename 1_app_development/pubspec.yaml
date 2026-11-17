@@ -1,6 +1,8 @@
 name: todays_bungeoppang
 description: 오늘의 붕어빵 - 오프라인 모바일 클리커 시제품
 publish_to: none
+# 버전 규칙(23번 6단계): 이름+번호. 번호(versionCode)는 Play에 올릴 때마다 +1, 한 번 쓴 번호는 다시 못 쓴다.
+# 이름(versionName)은 가출시 동안 0.1.x(고친 빌드마다 x+1), 정식 출시는 1.0.0. 예: 0.1.0+1 → 0.1.1+2 → 0.1.2+3.
 version: 0.1.0+1
 
 environment:

@@ -1,4 +1,4 @@
-package com.todaybungeoppang.todays_bungeoppang
+package com.todaybungeoppang.app
 
 import io.flutter.embedding.android.FlutterActivity
 

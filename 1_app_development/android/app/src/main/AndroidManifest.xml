@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Online test release (DEC-027): Firebase Auth/Functions, Kakao login and
+         Play Billing need the network. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="오늘의 붕어빵"
         android:icon="@mipmap/ic_launcher">

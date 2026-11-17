@@ -63,3 +63,10 @@ app.*.map.json
 /ios/
 /firebase/
 /build/
+
+# Play upload key and its passwords (23번 6단계). Keep the keystore outside the
+# repository (e.g. C:\keys\); these patterns catch accidental copies.
+key.properties
+*.jks
+*.keystore
+*.aab

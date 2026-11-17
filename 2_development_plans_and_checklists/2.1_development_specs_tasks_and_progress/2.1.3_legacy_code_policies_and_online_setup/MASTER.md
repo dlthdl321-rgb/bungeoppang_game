@@ -893,8 +893,11 @@
 | 항목 | 값 |
 | --- | --- |
 | 도구 | Flutter 3.47.5 / Dart 3.13.4, JDK 17, Android SDK 36 |
-| 패키지 이름 | `com.todaybungeoppang.todays_bungeoppang` |
-| 앱 버전 | `pubspec.yaml` `version: 0.1.0+1` |
+| 패키지 이름(applicationId·namespace) | `com.todaybungeoppang.app` (2026-11-17 23번 6단계에서 `com.todaybungeoppang.todays_bungeoppang`에서 변경. Play에 올린 뒤에는 못 바꿈. Dart 패키지 이름 `todays_bungeoppang`은 그대로) |
+| SDK | minSdk 24 · targetSdk 36 · compileSdk 36 (Flutter 3.47.5 기본값, `build.gradle.kts`가 `flutter.*`를 따름) |
+| 앱 버전 | `pubspec.yaml` `version: 0.1.0+1`. `+` 뒤 versionCode는 Play 업로드마다 +1(재사용 불가), versionName은 가출시 동안 `0.1.x`, 정식 출시 `1.0.0` |
+| release 서명 | `android/key.properties`(커밋 금지)의 업로드 키로만 서명. 파일이 없거나 항목·키 파일이 없으면 release 작업(`flutter build appbundle/apk --release`, `flutter run --release`)이 "Release build stopped (release 빌드 중단)" 오류로 멈춤. debug 키로 대체하지 않음. debug·profile은 키 없이 빌드됨. 키 만들기·빌드·설치: [release_signing.md](release_signing.md) |
+| 권한(메인 매니페스트) | `INTERNET`(온라인 가출시, DEC-027). 병합 결과는 23번 6단계 결과 표 |
 
 **자주 쓰는 명령**
 
@@ -904,6 +907,8 @@
 | 테스트 | `flutter test` |
 | 실행 | `flutter run` |
 | 디버그 APK | `flutter build apk --debug` |
+| Play 업로드용 AAB | `flutter build appbundle --release` (key.properties 필요) |
+| 실기기 확인용 release APK | `flutter build apk --release` → `adb install build\app\outputs\flutter-apk\app-release.apk` |
 | 골든 다시 만들기(의도한 홈 화면 변경 후에만) | `flutter test --update-goldens test/workshop_home_golden_test.dart`(실제 홈), 구형은 `test/home_golden_test.dart` |
 | 서버 가격표 다시 만들기 | `UPDATE_PREMIUM_CATALOG=1 flutter test test/premium_catalog_test.dart` |
 | 서버 배포 | `firebase deploy --only functions` (`firebase/` 폴더) |
@@ -911,10 +916,11 @@
 
 **한글 경로 문제:** 셰이더 도구와 Kotlin 데몬이 한글 경로에서 실패합니다.
 1. `subst B: "<프로젝트 경로>"`로 영문 드라이브를 만들고 `B:`에서 실행합니다.
-2. 릴리스·debug APK 빌드는 추가로 `GRADLE_USER_HOME=C:\GradleCache`, `PUB_CACHE=C:\PubCacheBungeoppang`을 지정합니다(2026-11-17 debug APK도 이것 없이는 Gradle 데몬·`jni` CMake가 한글 사용자 폴더에서 실패). 빌드 뒤 기본 캐시로 `flutter pub get`을 다시 실행해 테스트 환경을 되돌립니다.
+2. 릴리스·debug APK 빌드는 추가로 `GRADLE_USER_HOME=D:\DevMoved\GradleCache`, `PUB_CACHE=C:\PubCacheBungeoppang`을 지정합니다(2026-11-17 debug APK도 이것 없이는 Gradle 데몬·`jni` CMake가 한글 사용자 폴더에서 실패). 빌드 뒤 기본 캐시로 `flutter pub get`을 다시 실행해 테스트 환경을 되돌립니다.
+   `C:\GradleCache`는 `D:\DevMoved\GradleCache`로 가는 정션이다. 정션 경로를 Gradle 홈으로 쓰면 `*.gradle.kts`를 고친 뒤 다시 컴파일할 때 `Unresolved reference 'println'`·`'orEmpty'`처럼 Kotlin 표준 함수를 전부 못 찾고 실패한다(스크립트를 안 고치면 예전 컴파일 결과를 재사용해서 성공하므로 늦게 드러남). 2026-11-17 23번 6단계에서 확인, 실제 경로로 바꾸면 통과.
 3. `processDebugResources`가 `Unable to delete directory … .ap_`(다른 프로세스가 사용 중)로 실패하면 방금 만든 파일의 일시적 잠금입니다. 코드를 고치지 말고 같은 명령을 다시 실행합니다(2026-11-03 재실행으로 통과).
 
-**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(25번 그림 적용, 속 칠 질감 적용 뒤 다시 확인) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 693개 통과·1개 건너뜀(release 매니페스트가 있어야 하는 `no_tracking_sdk_test` 1개, 약 6분 30초), 서버 `npm test`는 84개 통과입니다.
+**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 6단계, 패키지 이름 변경·release 서명 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 694개 통과·건너뜀 0(약 12분). `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 84개 통과입니다.
 
 **온라인 빌드:**
 ```
@@ -1024,11 +1030,10 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 
 ## 15. 알려진 문제
 
-2026-10-08에 확인한 것입니다. 해결하면 이 목록에서 지워 주세요.
+2026-10-08에 확인한 것입니다. 해결하면 이 목록에서 지워 주세요. (2026-11-17: "릴리스 빌드가 debug 키로 서명됨"은 23번 6단계에서 업로드 키 서명·키 없으면 빌드 중단으로 해소해 지움.)
 
 | 문제 | 내용 |
 | --- | --- |
-| **릴리스 빌드가 debug 키로 서명됨** | `android/app/build.gradle.kts`의 release `signingConfig`가 debug입니다. Play에 올리기 전에 업로드 키를 설정해야 합니다. |
 | 서버 App Check 꺼짐 | 모든 서버 함수가 `enforceAppCheck: false`입니다. (7단계에서 처리) |
 | 붕어빵력은 타당성 검증만 함 | 서버는 붕어빵력을 재생하지 못하고 시간·보유 스킬 기준 상한만 확인합니다. 조작된 앱은 상한 안에서 붕어빵력을 부풀릴 수 있습니다. 황금은 서버 지갑에서만 움직입니다. |
 | 노점 부품 그림 없음 | `assets/images/stall/`에 `awning`, `post`, `postlamp`, `counter`(`_snow`) 파일이 없어서 해당 층이 그려지지 않습니다. 현재 있는 것은 `postlamp_lilac/mint/rose`뿐입니다. |
@@ -1308,3 +1313,11 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 **7단계 기록 (통합 검수, 2026-11-17):** 새 `test/workshop_full_flow_test.dart`가 새 설치 → 안내 → 영업 준비 중 스페셜 붕어빵 연습(실제 화면 색칠 세 번·원 그려 뒤집기) → 보관 → 영업 시작 → 숙련된 붕어빵 칸 굽기·수확 → 판매(안내 끝) → 클리커 탭 → 손님 창 '주문 제작'(틀 나옴·클리커 막힘·칸 멈춤 → '결과 닫기' 뒤 클리커 복귀) → 판매를 한 흐름으로 확인합니다. 숙련에 필요한 나머지 연습 7회만 명령으로 채우고, 시간은 가짜 단조 시계로 넘깁니다. 기기용 `integration_test/step02_android_test.dart`는 없어진 '뒤집기' 버튼 대신 원을 그리도록 고쳤습니다(기기 실행은 아직). **상태 구분:** 1~7단계 규칙은 Windows 호스트 테스트(분석·전체 테스트·골든·서버 테스트)로 실행 검수 완료, **실기기 검수는 대기**입니다. debug APK는 25번 그림 18장(1·2·4·5번)을 넣은 뒤 2026-11-17에 만들었고(`B:\1_app_development\build\app\outputs\flutter-apk\app-debug.apk`), 같은 날 3번 속 칠 질감을 넣고 다시 빌드), 실기기 확인표(색칠 반응, 손가락 가림, 작은 화면 원 그리기, 칸 누르기, 매대·행주, 새 그림 등)는 [24번 문서 7단계](../24_제작조작화면용어변경프롬프트.md) 아래에 있습니다. 확인표에서 '진행 불가'로 보고된 문제만 7단계 할 일 4로 고칩니다.
 
 **25번 그림 적용 (2026-11-17):** [25번 필요한 그림](../25_필요한그림프롬프트.md) 1·2·4·5번(18장)을 게임에 넣었습니다. 생성 원본 `4_image_generation_results_and_backups/25_generated/`는 읽기만 하고 `1_app_development`에서 `python tools/apply_25_art.py <원본 폴더> --preview`가 줄여 넣습니다(투명도 곱한 Lanczos 축소, 투명도 정리로 할로 없음). 빈 굽는 판 4종은 칸이 붕어빵 모양 홈으로 바뀌어, 굽는 칸은 원래 화로의 붕어빵만 남긴 층(`assets/images/stove_fish`)을 겹치도록 `GriddlePainter`를 고쳤고 칸 좌표(`griddleCavities`·`griddleFishClips`)는 오차가 작아 그대로입니다(10장 Workshop 홈 표). 짤주머니·흘러내림·뒤집기 고리는 코드 임시 그리기를 그림으로 바꿨고(그림이 없으면 예전 그리기), 뒤집기 고리 생성본의 반대 방향 화살촉은 도구에서 보정했습니다. 3번 속 칠 질감은 처음엔 `ImageShader` 경로만 준비했고(`PixelSprites.fillingTexture`, 파일이 없으면 맛 색), 같은 날 다시 생성한 v2(`25_generated/mold_textures_v2`, 1254×1254)를 `apply_25_art.py --only textures`로 256×256으로 줄이고(상자 평균, 맛마다 28~40색) 네 변 이음매를 보정해(반 장 밀어 돌린 질감과 최소 오차 경계로 갈아탐) 넣었습니다. 타일 배율 `fillingTextureScale` = 2(질감 1px = 틀 그림 2px, 배율 1·2·3을 세 맛 화면으로 비교). 이때 짤주머니 화면 폭을 min(조작 상자 폭×0.2, 64) → ×0.3으로 바꿔 390×844에서 52 → 64px(25번 2번의 의도 크기)로 키웠습니다. `workshop_home_filling_390x844` 골든 다시 만듦. 예전 임시 빈 판 도구 `empty_griddle.py`는 이제 `build/stove_empty_temp`에만 씁니다. 골든 2장 추가(`workshop_home_filling_390x844`, `workshop_home_griddle_390x844`). 저장 형식 변경 없음.
+
+## 28. 흥행 개선 결정 — 2026-11-17
+
+[26번 흥행 개선 작업](../26_흥행개선단계별프롬프트.md)의 결정 기록. 결정 원문은 [00_결정취합.md](../2.1.1_game_rules_and_decisions/00_결정취합.md) 「2026-11-17 흥행 개선」. **아직 구현하지 않았고**, 지금 코드와 `config/development_balance.json`은 8장·23장 설명 그대로(모든 스킬 황금 1 이상)입니다. 구현할 때 이 장과 8장·23장·스킬 표를 함께 고칩니다.
+
+| 항목 | 결정 | DEC | 구현 단계 |
+| --- | --- | --- | --- |
+| 스킬 황금 조건 | 황금 재화·손님 희귀 황금·미션 황금·IAP 유지. 탭·자동 스킬 1~4단계는 붕어빵력만(몇 번을 사도 황금 0, 10번마다 +1 증가도 없음). 5~16단계는 지금 황금 가격 유지 | DEC-041 | 26번 3단계 |

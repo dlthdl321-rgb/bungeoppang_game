@@ -1,6 +1,6 @@
 {
   "version": "premium-v1",
-  "packageName": "com.todaybungeoppang.todays_bungeoppang",
+  "packageName": "com.todaybungeoppang.app",
   "products": [
     {
       "id": "gold_60",

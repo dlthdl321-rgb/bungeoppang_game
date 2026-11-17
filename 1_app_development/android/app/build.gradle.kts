@@ -1,4 +1,5 @@
 import java.util.Base64
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -19,8 +20,29 @@ val dartDefines: Map<String, String> =
         .associate { it[0] to it.getOrElse(1) { "" } }
 val kakaoNativeAppKey = dartDefines["KAKAO_NATIVE_APP_KEY"].orEmpty()
 
+// Release builds are signed only with the Play upload key described in
+// android/key.properties (never committed; see android/.gitignore and
+// 2_development_plans_and_checklists/.../2.1.3_legacy_code_policies_and_online_setup/
+// release_signing.md). Without it a release build
+// stops with an error instead of silently falling back to the debug key, so a
+// debug-signed AAB can never be uploaded by mistake.
+val keyPropertiesFile = rootProject.file("key.properties")
+val keyProperties = Properties().apply {
+    if (keyPropertiesFile.exists()) keyPropertiesFile.inputStream().use { load(it) }
+}
+val uploadKeyProblem: String? = when {
+    !keyPropertiesFile.exists() ->
+        "android/key.properties not found (key.properties 파일이 없습니다)"
+    listOf("storeFile", "storePassword", "keyAlias", "keyPassword")
+        .any { keyProperties.getProperty(it).isNullOrBlank() } ->
+        "android/key.properties needs storeFile, storePassword, keyAlias and keyPassword (네 항목이 모두 있어야 합니다)"
+    !file(keyProperties.getProperty("storeFile")).exists() ->
+        "keystore not found: storeFile=${keyProperties.getProperty("storeFile")} (키 파일이 없습니다; use forward slashes, e.g. C:/keys/bungeoppang-upload.jks)"
+    else -> null
+}
+
 android {
-    namespace = "com.todaybungeoppang.todays_bungeoppang"
+    namespace = "com.todaybungeoppang.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -30,10 +52,9 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.todaybungeoppang.todays_bungeoppang"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        // Fixed for good once the first build is uploaded to Google Play.
+        applicationId = "com.todaybungeoppang.app"
+        // Flutter 3.47.5 defaults: minSdk 24, targetSdk 36, compileSdk 36.
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
@@ -46,6 +67,17 @@ android {
             kakaoNativeAppKey.ifEmpty { "-not-configured" }
     }
 
+    signingConfigs {
+        if (uploadKeyProblem == null) {
+            create("release") {
+                storeFile = file(keyProperties.getProperty("storeFile"))
+                storePassword = keyProperties.getProperty("storePassword")
+                keyAlias = keyProperties.getProperty("keyAlias")
+                keyPassword = keyProperties.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         getByName("debug") {
             // Device audits never replace a player's installed game or database.
@@ -54,10 +86,23 @@ android {
             }
         }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Upload key only. No debug-key fallback (see uploadKeyProblem).
+            signingConfig = signingConfigs.findByName("release")
         }
+    }
+}
+
+// Debug/profile builds do not need the upload key; any task of the release
+// variant (flutter build apk/appbundle --release, flutter run --release) does.
+gradle.taskGraph.whenReady {
+    val problem = uploadKeyProblem ?: return@whenReady
+    if (allTasks.any { it.project == project && it.name.contains("Release") }) {
+        throw GradleException(
+            "Release build stopped (release 빌드 중단): $problem. " +
+                "Release builds are never signed with the debug key (debug 키로 대신 서명하지 않습니다). " +
+                "See (만드는 법) 2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/" +
+                "2.1.3_legacy_code_policies_and_online_setup/release_signing.md"
+        )
     }
 }
 

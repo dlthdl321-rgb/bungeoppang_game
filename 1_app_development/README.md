@@ -70,7 +70,7 @@ flutter test
 flutter run
 ```
 
-이 Windows 환경에서는 한글 경로에서 Flutter 셰이더 도구와 Kotlin 데몬이 실패했으므로 영문 경로 또는 영문 드라이브 매핑에서 실행해야 합니다. 예: `subst B: "프로젝트 절대경로"` 후 `B:`에서 실행합니다. `android/gradle.properties`는 Kotlin 인프로세스 컴파일을 사용하도록 설정되어 있습니다. release 빌드는 Gradle·Pub 캐시도 영문 경로여야 합니다: `$env:GRADLE_USER_HOME='C:\GradleCache'; $env:PUB_CACHE='C:\PubCacheBungeoppang'` 후 `flutter pub get`, `flutter build apk --release`. 기본 Pub 캐시(한글 사용자 폴더)에서는 오디오 패키지가 가져오는 `jni`의 CMake 빌드가 실패합니다.
+이 Windows 환경에서는 한글 경로에서 Flutter 셰이더 도구와 Kotlin 데몬이 실패했으므로 영문 경로 또는 영문 드라이브 매핑에서 실행해야 합니다. 예: `subst B: "프로젝트 절대경로"` 후 `B:`에서 실행합니다. `android/gradle.properties`는 Kotlin 인프로세스 컴파일을 사용하도록 설정되어 있습니다. release 빌드는 Gradle·Pub 캐시도 영문 경로여야 합니다: `$env:GRADLE_USER_HOME='D:\DevMoved\GradleCache'; $env:PUB_CACHE='C:\PubCacheBungeoppang'` 후 `flutter pub get`, `flutter build appbundle --release`(또는 `apk --release`). `C:\GradleCache`는 `D:\DevMoved\GradleCache`로 가는 정션이라 그 경로로는 빌드 스크립트(`*.gradle.kts`)를 고친 뒤 다시 컴파일할 때 `Unresolved reference 'println'`처럼 표준 함수를 모두 못 찾습니다(2026-11-17 확인). release 서명은 업로드 키가 있어야 하며 만드는 법은 `2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/release_signing.md`에 있습니다. 기본 Pub 캐시(한글 사용자 폴더)에서는 오디오 패키지가 가져오는 `jni`의 CMake 빌드가 실패합니다.
 
 debug APK는 `flutter build apk --debug`로 다시 만들 수 있습니다. 생성 위치는 `build/app/outputs/flutter-apk/app-debug.apk`입니다.
 
