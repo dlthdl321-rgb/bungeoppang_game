@@ -38,16 +38,18 @@ void main() {
     await c.initialize();
   });
   tearDown(() => c.dispose());
-  test('KST boundary requires explicit continuation and counts actual days only', () async {
+  test('KST boundary turns an open business over once by itself and counts actual days only (26번 5-1단계)', () async {
     await c.openBusiness();
     expect(c.state.business.acceptedDay, '2026-10-17');
     await c.setForeground(false);
     at = at.add(const Duration(days:8,seconds:2));
     await c.setForeground(true);
     expect(c.state.business.open, isTrue);
-    expect(c.state.business.businessIndex, 1);
-    expect(c.state.business.needsContinuation(at), isTrue);
-    expect(c.state.business.permitsProducts(at), isFalse);
+    // Eight midnights passed while away: the business day advances once (S5-1-Q3).
+    expect(c.state.business.businessIndex, 2);
+    expect(c.state.business.acceptedDay, '2026-10-26');
+    expect(c.state.business.needsContinuation(at), isFalse);
+    expect(c.state.business.permitsProducts(at), isTrue);
     await c.openBusiness();
     expect(c.state.business.businessIndex, 2);
     await c.closeBusiness(); await c.openBusiness();
@@ -80,7 +82,8 @@ void main() {
     c.dispose(); at=at.add(const Duration(hours:3));
     c=WorkshopController(config,repository,now:()=>at); await c.initialize();
     expect(c.state.business.open, isTrue);
-    expect(c.state.business.businessIndex, 1);
+    // Midnight passed while away: the open business is on the next day (5-1단계).
+    expect(c.state.business.businessIndex, 2);
     expect(c.state.customers.map((x)=>x.toJson()).toList(), customers);
     expect(c.state.phaseMs, phase);
     expect(c.state.session, isNotNull);

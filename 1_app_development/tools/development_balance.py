@@ -57,7 +57,7 @@ def validate(data, catalog):
     require(relationship['choice_chance_basis_points'] <= 10000 and
             relationship['delay_threshold_permille'] <= 1000, '손님 관계 비율 범위 오류')
     for key in ('affinity_cap', 'ordinary_daily_cap', 'choice_daily_cap', 'recent_dialogue_limit',
-                'return_gap_business_days', 'new_npcs_daily_limit', 'visits_per_npc_business_day',
+                'return_gap_business_days', 'new_npcs_daily_limit',
                 'choice_first_business_day', 'choice_gap_business_days', 'choice_skip_retry_business_days'):
         require(relationship[key] > 0, f'손님 관계 양수 설정: {key}')
     for key in ('sale_affinity', 'corrected_sale_affinity', 'automatic_dialogue_affinity'):
@@ -76,7 +76,17 @@ def validate(data, catalog):
         preference = data['customer_order_preferences'][npc_id]
         require(preference['flavor'] in data['active_recipes'] and preference['quantity'] > 0, '손님 주문 성향 오류')
     require(relationship['new_npcs_daily_limit'] == 2, '확정 신규 손님 일일 소개 한도 변경')
-    require(relationship['anonymous_visit_basis_points'] <= 10000 and relationship['holiday_visit_basis_points'] <= 10000 and relationship['own_portion_extra_quantity'] > 0, '손님 방문 비율/수량 오류')
+    require(relationship['holiday_visit_basis_points'] <= 10000 and relationship['own_portion_extra_quantity'] > 0, '손님 방문 비율/수량 오류')
+    # 26번 5-1단계: 실제 시간 손님 간격(일반·네임드)과 자리 수. 무기명 확률·하루 1회·줄 상한은 없앴다.
+    require('anonymous_visit_basis_points' not in relationship and 'visits_per_npc_business_day' not in relationship and
+            not any('max_queue' in row for row in data['level_progression']), '없앤 손님 방문 설정')
+    arrivals = data['customer_arrivals']
+    for kind in ('regular', 'named'):
+        require(0 < arrivals[f'{kind}_min_ms'] <= arrivals[f'{kind}_max_ms'] and arrivals[f'{kind}_slots'] > 0,
+                '손님 방문 간격/자리 오류')
+    notices = data['customer_notifications']
+    require(0 <= notices['quiet_start_minute'] < 1440 and 0 <= notices['quiet_end_minute'] < 1440 and
+            notices['regular_max_notices'] > 0 and notices['preview_horizon_ms'] > 0, '손님 알림 설정 오류')
     entries = data['skill_purchase']['entries']
     require(set(entries) == {f'{kind}_{i}' for kind in ('tap', 'auto') for i in range(1, 17)},
             '기존 32개 스킬 누락/가상 ID 추가')
@@ -139,7 +149,7 @@ def validate(data, catalog):
     totals = [int(v['season_total_buns']) for v in rows]
     require(all(a < b for a, b in zip(totals, totals[1:])), '누적 목표 단조 증가')
     for v in rows:
-        require(v['order_wait_ms'] > 0 and v['max_queue'] > 0 and
+        require(v['order_wait_ms'] > 0 and
                 v['order_quantity_limit'] >= v['order_flavor_limit'] >= 1, '주문 임시 표 관계')
     recipes = data['active_recipes']
     require(set(recipes) == {'redbean', 'custard', 'cocoa'} and
@@ -229,9 +239,9 @@ def render(data):
     for group in ('cosmetic_purchase', 'boost_purchase'):
         for key, v in data[group].items():
             text += f"| {group} | {key} | {v['buns']} | {v['gold']} |\n"
-    text += '\n## 4. Lv.1~50 임시 표\n\n| Lv | 시즌 누적 붕어빵력 | 구간 탭 | 구간 판매 | 주문 맛 상한 | 주문 수량 상한 | 대기 ms | 줄 상한 |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n'
+    text += '\n## 4. Lv.1~50 임시 표\n\n| Lv | 시즌 누적 붕어빵력 | 구간 탭 | 구간 판매 | 주문 맛 상한 | 주문 수량 상한 | 대기 ms |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n'
     for v in data['level_progression']:
-        text += '| ' + ' | '.join(str(v[k]) for k in ('level', 'season_total_buns', 'additional_taps', 'additional_sales', 'order_flavor_limit', 'order_quantity_limit', 'order_wait_ms', 'max_queue')) + ' |\n'
+        text += '| ' + ' | '.join(str(v[k]) for k in ('level', 'season_total_buns', 'additional_taps', 'additional_sales', 'order_flavor_limit', 'order_quantity_limit', 'order_wait_ms')) + ' |\n'
     text += '\n## 5. 나머지 설정 전체\n\n| 설정 경로 | 임시값/확정값 |\n| --- | --- |\n'
     excluded = {'metadata', 'cosmetic_purchase', 'unresolved_non_numeric_policies', 'avatar_catalog', 'mission_targets'}
     for key, val in data.items():

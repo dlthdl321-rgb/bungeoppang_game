@@ -16,6 +16,7 @@ import 'time_service.dart';
 import 'development_balance_asset.dart';
 import 'workshop_controller.dart';
 import 'workshop_online.dart';
+import 'customer_notifier.dart';
 import 'ui/game_app.dart';
 import 'ui/pixel_sprites.dart';
 import 'ui/save_recovery.dart';
@@ -60,7 +61,10 @@ Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
     workshop = WorkshopController(config, workshops,
       purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online as WorkshopTransport) : null);
     await workshop.initialize();
-    runApp(GameApp(controller: controller, audio: audio, workshop: workshop));
+    runApp(GameApp(controller: controller, audio: audio, workshop: workshop,
+        notifier: defaultTargetPlatform == TargetPlatform.android
+            ? (!kReleaseMode && _noticeSelfTest ? _SelfTestNotifier(LocalCustomerNotifier()) : LocalCustomerNotifier())
+            : null));
   } catch (e) {
     workshop?.dispose();
     controller.dispose();
@@ -89,4 +93,23 @@ Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
           await _start(online);
         }));
   }
+}
+
+/// Debug builds made with `--dart-define=CUSTOMER_NOTICE_SELFTEST=true` add
+/// one test notice a minute after the app goes to the background, so the
+/// device notification path (permission, receivers, inexact alarm) can be
+/// checked on an emulator without waiting for a real guest (26번 5-1단계).
+const _noticeSelfTest = bool.fromEnvironment('CUSTOMER_NOTICE_SELFTEST');
+
+class _SelfTestNotifier implements CustomerNotifier {
+  final CustomerNotifier inner;
+  _SelfTestNotifier(this.inner);
+  @override
+  Future<void> schedule(List<PlannedNotice> notices) => inner.schedule([...notices,
+    PlannedNotice(id: 999, at: DateTime.now().toUtc().add(const Duration(minutes: 1)), title: customerNoticeTitle,
+        body: '[시험] $regularNoticeBody')]);
+  @override
+  Future<void> cancelAll() => inner.cancelAll();
+  @override
+  Future<bool> requestPermission() => inner.requestPermission();
 }

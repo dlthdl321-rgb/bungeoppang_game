@@ -23,13 +23,13 @@ void main() {
   final config = DevelopmentBalance.fromJson(
       jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
   final manual = config.section('manual_cooking');
-  final arrival = DevelopmentBalance.integer(config.section('ordinary_sale'), 'customer_arrival_interval_ms');
 
   testWidgets('새 설치부터 주문 제작 뒤 클리커 복귀까지 한 흐름', (tester) async {
     final account = await mountGame(tester, const Size(390, 844), reduced: true);
     var mono = 0;
+    var clock = DateTime.utc(2026, 10, 18);
     final c = WorkshopController(config, MemoryRepository(),
-        now: () => DateTime.utc(2026, 10, 18), random: Random(24), monotonicMs: () => mono);
+        now: () => clock, random: Random(24), monotonicMs: () => mono);
     await c.initialize();
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
     await tester.pump();
@@ -48,6 +48,12 @@ void main() {
       mono += ms;
       await tester.pump(const Duration(milliseconds: 100));
       await tester.pump();
+    }
+    /// 26번 5-1단계: after the guide the next regular guest comes in real
+    /// time, 1~15 minutes later. Move the wall clock to that arrival.
+    Future<void> nextGuest() async {
+      clock = DateTime.fromMillisecondsSinceEpoch(c.state.regularClock.nextAt!, isUtc: true);
+      await elapse(100);
     }
     /// Bakes the open special bungeoppang in the mold through the real
     /// controls: paint three times, close, draw a circle, take out.
@@ -137,7 +143,7 @@ void main() {
     expect(c.state.grid.cells[0].cooking, isFalse);
     expect(c.state.inventory.toJson().toString(), isNot(stockBefore));
 
-    // 첫 손님(도착 간격이 지나 자동 입장) → 안내대로 판매.
+    // 첫 손님 도윤(안내 중에는 바로 입장) → 안내대로 판매.
     expect(c.state.customers, isNotEmpty);
     expect(c.state.customerScene, isNull);
     await tester.pump();
@@ -148,7 +154,7 @@ void main() {
     expect(key('tutorial-card'), findsNothing);
 
     // 둘째 손님에게는 남은 재고(보관한 연습 붕어빵과 수확분 중 남은 1개)를 판다.
-    await elapse(arrival);
+    await nextGuest();
     expect(c.state.customers, hasLength(1));
     expect(c.state.customerScene, isNull);
     expect(c.saleReadyCount(c.state.customers.first), 1);
@@ -163,7 +169,7 @@ void main() {
     expect(c.state.buns, greaterThanOrEqualTo(buns + c.tapRate));
 
     // 6. 손님 창 '주문 제작': 틀이 나왔다가 결과를 닫으면 클리커로 돌아옴.
-    await elapse(arrival);
+    await nextGuest();
     expect(c.state.customers, hasLength(1));
     expect(c.saleReadyCount(c.state.customers.first), 0, reason: '재고가 없어 주문 제작이 필요');
     expect(c.state.customerScene, isNull);

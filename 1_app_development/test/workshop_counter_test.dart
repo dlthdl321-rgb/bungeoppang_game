@@ -48,7 +48,8 @@ void main() {
     await tester.tap(find.byKey(const Key('business-open')));
     await tester.pump();
     expect(c.state.business.open, isTrue);
-    expect(find.byKey(const Key('customer-welcome')), findsOneWidget);
+    // 26번 5-1단계: after the first-run guide guests come in real time; no '맞이' button (S5-1-Q2).
+    expect(find.byKey(const Key('customer-welcome')), findsNothing);
     expect(find.byKey(const Key('business-close')), findsOneWidget);
 
     await queue(c);

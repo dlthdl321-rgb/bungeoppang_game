@@ -73,9 +73,11 @@ void main() {
           .choose('choice_doyun_01', 'a', config, c.customerCatalog)
           .closeReaction('choice_doyun_01');
     }), isTrue);
+    // 26번 5-1단계: 열어 둔 가게에는 실제 시간 손님이 오므로 하루를 넘기기 전에 닫는다.
+    expect(await c.closeBusiness(), isTrue);
     now = now.add(const Duration(days: 1));
     expect(await c.openBusiness(), isTrue);
-    expect(await c.welcomeCustomer(), isTrue);
+    expect(await c.welcomeCustomer(visitor: 'npc_doyun'), isTrue);
     final order = c.state.customers.single;
     expect(order.customerId, 'npc_doyun');
     expect(c.state.customerScene, isNull);
@@ -87,9 +89,10 @@ void main() {
     expect(c.state.customerScene!['kind'], 'story');
     expect(await c.finishCustomerScene(), isTrue);
     expect(c.state.relationships.toJson()['followups'], {'choice_doyun_01': 'a'});
+    expect(await c.closeBusiness(), isTrue);
     now = now.add(const Duration(days: 1));
     expect(await c.openBusiness(), isTrue);
-    expect(await c.welcomeCustomer(), isTrue);
+    expect(await c.welcomeCustomer(visitor: 'npc_doyun'), isTrue);
     expect(c.state.customerScene!['kind'], 'followup');
     expect(await c.finishCustomerScene(), isTrue);
     expect(c.state.relationships.toJson()['followups'], isEmpty);
@@ -119,6 +122,8 @@ void main() {
       }
     }), isTrue);
     for (var day = 2; day <= 7; day++) {
+      // 26번 5-1단계: 열린 가게엔 실제 시간 손님이 오므로 날을 넘기기 전에 닫는다.
+      if (c.state.business.open) expect(await c.closeBusiness(), isTrue);
       now = start.add(Duration(days: day - 1));
       expect(await c.openBusiness(), isTrue);
       expect(await c.command(() {
@@ -130,7 +135,7 @@ void main() {
           c.state.flavorMasteries['custard'] = FlavorMasteryProgress(flavor: 'custard', difficulty: 1);
         }
       }), isTrue);
-      expect(await c.welcomeCustomer(), isTrue);
+      expect(await c.welcomeCustomer(visitor: 'npc_taeo'), isTrue, reason: '${c.notice} ${c.error} ${c.state.customers.map((o) => o.customerId)}');
       final order = c.state.customers.single;
       expect(order.customerId, 'npc_taeo');
       expect(order.lines.single.flavor, day == 7 ? 'custard' : 'redbean');
@@ -164,6 +169,7 @@ void main() {
     expect(c.state.relationships.affinity('npc_taeo'), affinity + gain);
     expect(await c.finishCustomerScene(), isTrue);
 
+    if (c.state.business.open) expect(await c.closeBusiness(), isTrue);
     now = start.add(const Duration(days: 7));
     expect(await c.openBusiness(), isTrue);
     expect(await c.command(() {
@@ -171,7 +177,7 @@ void main() {
         c.state.relationships = c.state.relationships.visit('day-8-$npc', npc, 8, c.customerCatalog);
       }
     }), isTrue);
-    expect(await c.welcomeCustomer(), isTrue);
+    expect(await c.welcomeCustomer(visitor: 'npc_taeo'), isTrue);
     expect(c.state.customerScene!['kind'], 'followup');
     if (selection == 'c') {
       final visit = (c.state.relationships.toJson()['visits'] as Map)[c.state.customers.single.id] as Map;

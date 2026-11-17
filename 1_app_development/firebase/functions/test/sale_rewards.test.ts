@@ -1,4 +1,6 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { test } from "node:test";
 import { creditVerifiedEarnedGold } from "../src/earned_gold";
@@ -78,4 +80,14 @@ test("일반 검증 지급 코어와 판매 지급 코어는 동일 earned ID를
   const repeated = await creditVerifiedEarnedGold(store,{ verify:async () => ({ account:"a",claimId:"sale_0001",kind:"sale",
     revision:receipt.revision,fingerprint:receipt.fingerprint,gold:receipt.gold }) },"a","sale_0001",at);
   assert.equal(repeated.added,0); assert.equal(repeated.gold,1);
+});
+test("26번 5-1단계: 서버 생성본의 희귀 황금 확률은 앱과 같은 3배(3·6·9·12·15%)이고 서버 정책 검사를 통과한다", async () => {
+  const generated = JSON.parse(readFileSync(join(__dirname, "..", "..", "src", "generated", "development_balance.json"), "utf8"));
+  const app = JSON.parse(readFileSync(join(__dirname, "..", "..", "..", "..", "config", "development_balance.json"), "utf8"));
+  assert.deepEqual(generated.rare_gold_sale, app.rare_gold_sale);
+  assert.deepEqual(generated.rare_gold_sale.probability_basis_points_by_stars, [300,600,900,1200,1500]);
+  assert.equal(generated.rare_gold_sale.daily_gold_cap, 10);
+  const store = new MemoryStore();
+  const result = await reviewAndCreditSale(store,verifier,generated,key,"a","sale_0001",() => at);
+  assert.ok(["eligible","noWin"].includes(result.outcome));
 });

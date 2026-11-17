@@ -761,13 +761,27 @@
     "specific_variant_basis_points": 3000,
     "customer_archetype_count": 8
   },
+  "customer_arrivals": {
+    "regular_min_ms": 60000,
+    "regular_max_ms": 900000,
+    "named_min_ms": 1800000,
+    "named_max_ms": 10800000,
+    "regular_slots": 3,
+    "named_slots": 1
+  },
+  "customer_notifications": {
+    "quiet_start_minute": 1320,
+    "quiet_end_minute": 480,
+    "regular_max_notices": 3,
+    "preview_horizon_ms": 86400000
+  },
   "rare_gold_sale": {
     "probability_basis_points_by_stars": [
-      100,
-      200,
       300,
-      400,
-      500
+      600,
+      900,
+      1200,
+      1500
     ],
     "gold_per_award": 1,
     "daily_gold_cap": 10,
@@ -792,8 +806,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 2,
@@ -804,8 +817,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 3,
@@ -816,8 +828,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 4,
@@ -828,8 +839,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 5,
@@ -840,8 +850,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 6,
@@ -852,8 +861,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 7,
@@ -864,8 +872,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 8,
@@ -876,8 +883,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 9,
@@ -888,8 +894,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 10,
@@ -900,8 +905,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 11,
@@ -912,8 +916,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 12,
@@ -924,8 +927,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 13,
@@ -936,8 +938,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 14,
@@ -948,8 +949,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 15,
@@ -960,8 +960,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 16,
@@ -972,8 +971,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 17,
@@ -984,8 +982,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 18,
@@ -996,8 +993,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 19,
@@ -1008,8 +1004,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 20,
@@ -1020,8 +1015,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 21,
@@ -1032,8 +1026,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 22,
@@ -1044,8 +1037,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 23,
@@ -1056,8 +1048,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 24,
@@ -1068,8 +1059,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 25,
@@ -1080,8 +1070,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 26,
@@ -1092,8 +1081,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 27,
@@ -1104,8 +1092,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 28,
@@ -1116,8 +1103,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 29,
@@ -1128,8 +1114,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 30,
@@ -1140,8 +1125,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 31,
@@ -1152,8 +1136,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 32,
@@ -1164,8 +1147,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 33,
@@ -1176,8 +1158,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 34,
@@ -1188,8 +1169,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 35,
@@ -1200,8 +1180,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 36,
@@ -1212,8 +1191,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 37,
@@ -1224,8 +1202,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 38,
@@ -1236,8 +1213,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 39,
@@ -1248,8 +1224,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 40,
@@ -1260,8 +1235,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 41,
@@ -1272,8 +1246,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 42,
@@ -1284,8 +1257,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 43,
@@ -1296,8 +1268,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 44,
@@ -1308,8 +1279,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 45,
@@ -1320,8 +1290,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 46,
@@ -1332,8 +1301,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 47,
@@ -1344,8 +1312,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 48,
@@ -1356,8 +1323,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 49,
@@ -1368,8 +1334,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 50,
@@ -1380,8 +1345,7 @@
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     }
   ],
   "feature_unlock_levels": {
@@ -1893,7 +1857,6 @@
     "recent_dialogue_limit": 3,
     "return_gap_business_days": 3,
     "new_npcs_daily_limit": 2,
-    "visits_per_npc_business_day": 1,
     "delay_threshold_permille": 700,
     "choice_first_business_day": 7,
     "choice_gap_business_days": 5,
@@ -1905,7 +1868,6 @@
       "c": 1,
       "wave": 0
     },
-    "anonymous_visit_basis_points": 3000,
     "own_portion_extra_quantity": 1,
     "holiday_visit_basis_points": 3000,
     "friendly_dialogue_stage": 2,

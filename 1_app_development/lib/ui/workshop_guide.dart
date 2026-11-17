@@ -181,9 +181,12 @@ class WorkshopWelcomeBackCard extends StatelessWidget {
                 const Text('가게 문이 닫혀 있어서 쌓인 붕어빵력은 없어요. 영업 중일 때만 자동 생산이 쌓여요.',
                     key: Key('welcome-back-closed'), textAlign: TextAlign.center),
               const SizedBox(height: 8),
+              if (report.arrivals > 0)
+                Text('자리 비운 동안 손님 ${report.arrivals}명이 왔어요.',
+                    key: const Key('welcome-back-arrivals'), textAlign: TextAlign.center),
               Text(report.waiting > 0
                   ? '판매는 가게에 계실 때만 해요. 기다리던 손님 ${report.waiting}명은 그대로 있어요.'
-                  : '판매는 가게에 계실 때만 해요. 손님도 그때 찾아와요.',
+                  : '판매는 가게에 계실 때만 해요.',
                   key: const Key('welcome-back-sales'), textAlign: TextAlign.center, style: small),
               const SizedBox(height: 12),
               CozyPrimaryButton(key: const Key('welcome-back-close'), minHeight: 44,

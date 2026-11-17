@@ -49,6 +49,11 @@ class GameSettings {
   String musicSelection;
   bool cookingSound;
   int cookingVolume;
+  /// Customer notifications (26번 5-1단계): regular guests off, named
+  /// neighbors on, quiet 22:00~08:00 on, and whether the one-time question
+  /// after the first-run guide was answered. Saves without them get these
+  /// defaults; the save format stays v13.
+  bool notifyRegularGuests, notifyNamedGuests, quietNightNotices, notificationPromptDone;
   GameSettings(
       {this.vibration = true,
       this.holdToBake = false,
@@ -59,7 +64,11 @@ class GameSettings {
       this.musicVolume = provisionalDefaultBgmVolume,
       this.musicSelection = defaultMusicSelection,
       this.cookingSound = provisionalDefaultCookingEnabled,
-      this.cookingVolume = provisionalDefaultCookingVolume});
+      this.cookingVolume = provisionalDefaultCookingVolume,
+      this.notifyRegularGuests = false,
+      this.notifyNamedGuests = true,
+      this.quietNightNotices = true,
+      this.notificationPromptDone = false});
   Map<String, dynamic> toJson() => {
         'vibration': vibration,
         'holdToBake': holdToBake,
@@ -71,16 +80,29 @@ class GameSettings {
         'musicSelection': musicSelection,
         'cookingSound': cookingSound,
         'cookingVolume': cookingVolume,
+        'notifyRegularGuests': notifyRegularGuests,
+        'notifyNamedGuests': notifyNamedGuests,
+        'quietNightNotices': quietNightNotices,
+        'notificationPromptDone': notificationPromptDone,
       };
 
   /// Sound settings exist from v8; older saves get the defaults.
   factory GameSettings.fromJson(Object? raw,
       {bool withSound = false, bool withIndependentMusic = false}) {
     final m = raw is Map ? raw : const {};
+    bool flag(String key, bool fallback) {
+      final v = m[key];
+      if (v != null && v is! bool) throw FormatException('잘못된 $key');
+      return v as bool? ?? fallback;
+    }
     final settings = GameSettings(
         vibration: m['vibration'] is bool ? m['vibration'] as bool : true,
         holdToBake: m['holdToBake'] == true,
-        reduceMotion: m['reduceMotion'] == true);
+        reduceMotion: m['reduceMotion'] == true,
+        notifyRegularGuests: flag('notifyRegularGuests', false),
+        notifyNamedGuests: flag('notifyNamedGuests', true),
+        quietNightNotices: flag('quietNightNotices', true),
+        notificationPromptDone: flag('notificationPromptDone', false));
     if (!withSound) return settings;
     int volume(String key) {
       final v = m[key];

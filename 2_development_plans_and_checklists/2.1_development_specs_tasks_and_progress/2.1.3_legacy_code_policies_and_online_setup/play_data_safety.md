@@ -15,6 +15,7 @@
 | 광고 ID | 없음 | 병합 매니페스트에 `AD_ID` 없음(테스트로 검사) |
 | 그 밖의 권한 | `ACCESS_NETWORK_STATE`, `com.android.vending.BILLING`, `WAKE_LOCK`, `READ_GSERVICES`, `c2dm.permission.RECEIVE` | 2026-10-07 release 빌드 병합 매니페스트. 뒤의 세 개는 Firebase SDK(설치 ID·서버 통신)가 넣음. 푸시 알림 기능은 쓰지 않음 |
 | Firebase 설치 ID | Firebase SDK가 기기별 설치 ID를 만들어 서버 호출에 씀 | 양식의 '기기 또는 기타 ID'에 해당하는지 제출 전 확인 |
+| 손님 알림 (2026-11-18, 26번 5-1단계) | `flutter_local_notifications`로 **기기 안에서만** 예약. 서버 푸시·Firebase Messaging 없음, 수집·전송하는 데이터 없음 → **데이터 보안 양식 답변은 바뀌지 않음**. 새 권한 `POST_NOTIFICATIONS`·`RECEIVE_BOOT_COMPLETED`(플러그인이 `VIBRATE`도 넣음), 정확한 알람 권한 없음 | `test/no_tracking_sdk_test.dart`. release 병합 매니페스트 권한 표는 23번 6단계 검사를 다시 돌려 갱신 |
 
 `test/no_tracking_sdk_test.dart`는 허용 목록 밖의 Firebase·결제 패키지와 광고·분석 SDK·광고 ID가 들어오면 실패합니다.
 
@@ -58,3 +59,4 @@
 - 서버에 새 정보를 저장하는 기능을 추가할 때(`firebase/functions/src`)
 - Firebase 다른 제품(Analytics, Crashlytics, Messaging 등)을 넣을 때: 테스트가 막으므로 의도한 경우에만 허용 목록과 이 문서를 함께 고칩니다.
 - 공유 문구에 사용자별 값을 더 넣을 때
+- 손님 알림을 서버 푸시로 바꿀 때(지금은 기기 안 예약만이라 양식 변화 없음)

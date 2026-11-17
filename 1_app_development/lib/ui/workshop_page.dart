@@ -21,11 +21,15 @@ import 'workshop_windows.dart';
 import 'workshop_counter.dart';
 import 'workshop_guide.dart';
 import '../workshop_tutorial.dart';
+import '../customer_notifier.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
   final GameController accountController;
-  const WorkshopPage({super.key, required this.controller, required this.accountController});
+  /// Customer notifications (26번 5-1단계); null keeps the question card
+  /// and permission requests away (tests, platforms without notifications).
+  final CustomerNotifier? notifier;
+  const WorkshopPage({super.key, required this.controller, required this.accountController, this.notifier});
   @override
   State<WorkshopPage> createState() => _WorkshopPageState();
 }
@@ -50,6 +54,47 @@ class _WorkshopPageState extends State<WorkshopPage> {
         if(c.awayReport==report) c.dismissAwayReport();
       }
     });
+  }
+  bool _noticeAsking=false;
+  static const noticeDeniedText='휴대폰 설정에서 이 앱의 알림을 허용해야 받을 수 있어요.';
+  /// After the first-run guide, once: may we tell the player when guests
+  /// come while the app is off? Either answer is remembered (5-1단계).
+  void _askNotifications() {
+    final account=widget.accountController,s=c.state,notifier=widget.notifier;
+    if(notifier==null || _noticeAsking || _windowCount>0 || _awayShowing || s.tutorialActive || s.completedSales==0 ||
+        s.customerScene!=null || account.state.settings.notificationPromptDone) {
+      return;
+    }
+    _noticeAsking=true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if(!mounted){_noticeAsking=false;return;}
+      _enterWindow();
+      try {
+        final accept=await showDialog<bool>(context:context,barrierDismissible:false,builder:(ctx)=>AlertDialog(
+          key:const Key('notice-prompt'),
+          title:const Text('손님 알림'),
+          content:const Text('손님이 찾아오면 알려 드릴까요? 앱을 꺼 둬도 단골손님이 오면 알림으로 알려 드려요.'),
+          actions:[TextButton(key:const Key('notice-later'),onPressed:()=>Navigator.pop(ctx,false),child:const Text('나중에')),
+            FilledButton(key:const Key('notice-accept'),onPressed:()=>Navigator.pop(ctx,true),child:const Text('알림 받기'))]));
+        final granted=accept==true && await notifier.requestPermission();
+        // Without permission (or 'later') both kinds stay off; turning one
+        // on in the settings asks again.
+        await account.updateSettings(notificationPromptDone:true,
+          notifyNamedGuests:granted ? null : false,notifyRegularGuests:granted ? null : false);
+        if(accept==true && !granted && mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text(noticeDeniedText)));
+        }
+      } finally {_leaveWindow();_noticeAsking=false;}
+    });
+  }
+  /// A notification switch: turning one on asks for the permission first.
+  Future<void> _setNotice({bool? regular,bool? named,bool? quiet}) async {
+    final account=widget.accountController,notifier=widget.notifier;
+    if((regular==true || named==true) && notifier!=null && !await notifier.requestPermission()) {
+      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text(noticeDeniedText)));
+      return;
+    }
+    await account.updateSettings(notifyRegularGuests:regular,notifyNamedGuests:named,quietNightNotices:quiet);
   }
   void _enterWindow(){_windowCount++;c.gridVisible=false;}
   void _leaveWindow(){_windowCount--;c.gridVisible=_windowCount==0;}
@@ -157,6 +202,13 @@ class _WorkshopPageState extends State<WorkshopPage> {
         onChanged:(v)=>account.updateSettings(vibration:v)),
       CozySettingRow(icon:const Icon(Icons.slow_motion_video),label:'모션 줄이기',value:settings.reduceMotion,
         onChanged:(v)=>account.updateSettings(reduceMotion:v)),
+      // 26번 5-1단계: device-only notices when guests come while the app is off.
+      CozySettingRow(key:const Key('settings-notify-regular'),icon:const Icon(Icons.notifications_none),label:'일반 손님 알림',
+        subtitle:'앱을 꺼 둔 동안 손님이 오면 알려요',value:settings.notifyRegularGuests,onChanged:(v)=>_setNotice(regular:v)),
+      CozySettingRow(key:const Key('settings-notify-named'),icon:const Icon(Icons.notifications_active_outlined),label:'단골 손님 알림',
+        subtitle:'이름 있는 손님이 오면 알려요',value:settings.notifyNamedGuests,onChanged:(v)=>_setNotice(named:v)),
+      CozySettingRow(key:const Key('settings-quiet-night'),icon:const Icon(Icons.bedtime_outlined),label:'밤 알림 끄기 (밤 10시~아침 8시)',
+        value:settings.quietNightNotices,onChanged:(v)=>_setNotice(quiet:v)),
       const Text('배경 시간'),
       DropdownButton<String>(value:c.state.sceneTime,isExpanded:true,
         items:[for(final item in cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.time))
@@ -324,6 +376,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     builder:(context,_)=>_content(context));
   Widget _content(BuildContext context) {
     _showAwayReport();
+    _askNotifications();
     final s = c.state;
     final scene=s.customerScene;
     if(scene!=null) {

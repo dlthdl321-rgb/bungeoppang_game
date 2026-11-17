@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
@@ -50,7 +51,12 @@ class _Result {
 /// A new player tapping 2 times/s and selling one order per minute, claiming
 /// daily missions (server pays the configured gold) and buying the cheapest
 /// affordable skill whenever both currencies allow.
-Future<_Result> _play(DevelopmentBalance config, {required int welcome, int minutes = 60}) async {
+///
+/// 26번 5-1단계: guests now come 1~15 minutes apart in real time (8 minutes
+/// on average), so [saleEvery] sells only every that many minutes and
+/// [target] is the level to reach.
+Future<_Result> _play(DevelopmentBalance config, {required int welcome, int minutes = 60, int saleEvery = 1,
+    int target = 5}) async {
   final server = _Server(welcome);
   var clock = DateTime.utc(2026, 11, 3, 1);
   final c = WorkshopController(config, Repository(), now: () => clock, random: Random(3), purchaseGateway: server);
@@ -61,6 +67,7 @@ Future<_Result> _play(DevelopmentBalance config, {required int welcome, int minu
     for (var minute = 1; minute <= minutes; minute++) {
       for (var i = 0; i < 120; i++) { c.tap(); }
       clock = clock.add(const Duration(minutes: 1));
+      if (minute % saleEvery == 0) {
       final id = 'sale_$minute';
       await c.command(() {
         c.state.inventory = c.state.inventory.recordResult(ProductBatch(id: 'batch_$minute', flavor: 'redbean', variant: 2,
@@ -68,6 +75,7 @@ Future<_Result> _play(DevelopmentBalance config, {required int welcome, int minu
         c.state.customers.insert(0, CustomerOrder(id: id, remainingMs: 60000, lines: [CustomerOrderLine(flavor: 'redbean', quantity: 1)]));
       });
       expect(await c.sellToCustomer(id), isTrue, reason: '분 $minute 판매');
+      }
       for (final goal in ['taps', 'production']) {
         final key = c.state.missions.claimKey('daily', goal);
         if (!c.state.missions.claims.containsKey(key) && c.state.missions.complete(config, 'daily', goal) &&
@@ -84,7 +92,7 @@ Future<_Result> _play(DevelopmentBalance config, {required int welcome, int minu
           skills++;
         }
       }
-      if (c.state.level >= 5) return _Result(c.state.level, minute, skills, server.gold);
+      if (c.state.level >= target) return _Result(c.state.level, minute, skills, server.gold);
     }
     return _Result(c.state.level, minutes, skills, server.gold);
   } finally { c.dispose(); }
@@ -107,6 +115,16 @@ void main() {
     final result = await _play(config, welcome: 0);
     expect(result.level, 5);
     expect(result.minutes, lessThanOrEqualTo(30));
+  });
+  test('5-1단계 실제 시간 손님(평균 8분에 한 명)에서도 Lv.5·Lv.10까지 막히지 않는다', () async {
+    final welcome = DevelopmentBalance.integer(config.section('welcome_reward'), 'gold');
+    final lv5 = await _play(config, welcome: welcome, minutes: 600, saleEvery: 8);
+    final lv10 = await _play(config, welcome: welcome, minutes: 1200, saleEvery: 8, target: 10);
+    debugPrint('5-1 시뮬레이션: Lv.5 ${lv5.minutes}분, Lv.10 ${lv10.minutes}분 (탭 2/초, 8분마다 판매)');
+    expect(lv5.level, 5);
+    expect(lv5.minutes, lessThanOrEqualTo(40));
+    expect(lv10.level, 10);
+    expect(lv10.minutes, lessThanOrEqualTo(90));
   });
   test('Lv.1~5 승급 조건은 스킬 구매를 요구하지 않는다', () {
     for (final row in config.rows('level_progression').take(5)) {

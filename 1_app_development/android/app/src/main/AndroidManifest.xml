@@ -2,6 +2,12 @@
     <!-- Online test release (DEC-027): Firebase Auth/Functions, Kakao login and
          Play Billing need the network. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- 26번 5-1단계: device-only customer notifications (no server push).
+         POST_NOTIFICATIONS is asked at run time on Android 13+ after the
+         first-run guide; RECEIVE_BOOT_COMPLETED keeps the schedule after a
+         reboot. No exact-alarm permission: inexact timing may be minutes late. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:label="오늘의 붕어빵"
         android:icon="@mipmap/ic_launcher">
@@ -27,6 +33,17 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <!-- flutter_local_notifications: shows the scheduled customer
+             notifications and restores them after a reboot or an update. -->
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" />
+        <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+                <action android:name="android.intent.action.QUICKBOOT_POWERON" />
+                <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
+            </intent-filter>
+        </receiver>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
