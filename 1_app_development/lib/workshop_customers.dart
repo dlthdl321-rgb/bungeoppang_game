@@ -110,7 +110,7 @@ class WorkshopRelationships {
       .where((v) => (v as Map)['npc'] == npc).fold<int>(0,(n,v) => ((v as Map)['day'] as int) > n ? v['day'] as int : n);
   int introducedOnDay(int businessDay) => met.where((npc) => (_data['visits'] as Map).values
       .where((v) => (v as Map)['npc'] == npc).every((v) => (v as Map)['day'] >= businessDay) && visitsOnDay(npc,businessDay)>0).length;
-  /// The named customer for a named-clock arrival (26번 5-1단계, DEC-TBD-5-1):
+  /// The named customer for a named-clock arrival (26번 5-1단계, DEC-055):
   /// the very first guest is 도윤; an unmet neighbor is introduced while
   /// fewer than `new_npcs_daily_limit` were introduced on [businessDay];
   /// otherwise a met neighbor other than [lastVisitor] (the one just before),

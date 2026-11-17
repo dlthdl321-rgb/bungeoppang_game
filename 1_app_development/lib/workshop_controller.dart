@@ -487,7 +487,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         from: state.business.settledUtc.millisecondsSinceEpoch, horizonMs: horizon.inMilliseconds, nameAt: _namedFor);
   }
   /// What opening the business does at the start of a business day; at KST
-  /// midnight ([next]) an open business turns over by itself (DEC-TBD-5-1).
+  /// midnight ([next]) an open business turns over by itself (DEC-054).
   void _startBusinessDay({bool next = false}) {
     state.business = next ? state.business.nextDay() : state.business.beginOrContinue(state.business.settledUtc);
     state.inventory = state.inventory.expire(config, state.business.businessIndex).acceptPrepared(state.business.businessIndex);
