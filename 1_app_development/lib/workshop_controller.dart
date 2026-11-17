@@ -1315,8 +1315,12 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     _purchaseBusy = true;
     try {
       final account = gateway.authenticatedAccount;
+      if (account.isEmpty) {
+        // Signed out is not a stuck purchase: say plainly that login is needed.
+        notice = skill.startsWith('cosmetic:') ? '카카오 로그인 후 살 수 있어요.' : '카카오 로그인 후 레벨업할 수 있어요.';
+        return false;
+      }
       if (state.rewardAccount != null && state.rewardAccount != account) throw const FormatException('원래 보상 계정으로 확인해 주세요.');
-      if (account.isEmpty) throw const FormatException('로그인 후 구매할 수 있어요.');
       await gateway.requireActiveProgress(state.grid.runId);
       if (disposed || gateway.authenticatedAccount != account) return false;
       final quote = quoteWorkshopProduct(config, skill, owned: state.purchases.owned[skill] ?? 0, quantity: quantity);

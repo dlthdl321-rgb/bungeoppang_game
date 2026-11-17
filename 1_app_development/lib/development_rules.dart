@@ -29,9 +29,13 @@ CompositeQuote quoteCompositeSkill(DevelopmentBalance config, String id,
   final step = DevelopmentBalance.integer(purchase, 'gold_step_purchase_count');
   final increment = DevelopmentBalance.integer(purchase, 'gold_step_amount');
   final initialGold = DevelopmentBalance.integer(row, 'gold');
+  // DEC-041: a skill whose base gold is 0 stays free of gold at every count
+  // (no +increment every [step] purchases either).
   for (var n = owned; n < owned + quantity; n++) {
     buns += (numerator + denominator - BigInt.one) ~/ denominator;
-    gold += BigInt.from(initialGold) + BigInt.from(n ~/ step) * BigInt.from(increment);
+    if (initialGold > 0) {
+      gold += BigInt.from(initialGold) + BigInt.from(n ~/ step) * BigInt.from(increment);
+    }
     numerator *= num;
     denominator *= den;
   }

@@ -32,6 +32,19 @@ test("두 비용 견적은 계정·정수·10진 문자열을 검사한다", () 
   assert.throws(() => parseCompositeIntent({ ...value, gold: "01" }, "a"));
   assert.throws(() => parseCompositeIntent({ ...value, buns: "0" }, "a"));
   assert.throws(() => assertSameCompositeIntent(parsed, { ...parsed, owned: 1 }));
+  // DEC-041: a skill may cost 0 gold, a cosmetic never.
+  assert.equal(parseCompositeIntent({ ...value, gold: "0" }, "a").gold, "0");
+  assert.throws(() => parseCompositeIntent({ ...value, skill: "cosmetic:short", gold: "0" }, "a"));
+});
+
+test("기본 황금 0인 스킬은 10번마다 늘어나는 황금도 붙지 않는다 (DEC-041)", () => {
+  const config = { metadata: { revision: "draft" }, skill_purchase: {
+    max_owned_per_skill: 1000, gold_step_purchase_count: 10, gold_step_amount: 1,
+    entries: { tap_1: { buns: "15", gold: 0, ratio_numerator: 115, ratio_denominator: 100 } } } };
+  const value = { account: "a", transaction: "purchase_1", revision: "draft", skill: "tap_1",
+    owned: 10, quantity: 1, buns: "61", gold: "0" };
+  assert.deepEqual(validateDevelopmentCompositeQuote(config, value, "a", 10), value);
+  assert.throws(() => validateDevelopmentCompositeQuote(config, { ...value, gold: "1" }, "a", 10));
 });
 
 test("한 계정2회 예약, 다른 기기는 같은 한도, 자정 재시도는 원래 날짜", async () => {

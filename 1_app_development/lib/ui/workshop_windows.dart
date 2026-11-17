@@ -62,6 +62,13 @@ class WorkshopSkillShop extends StatefulWidget {
 }
 class _WorkshopSkillShopState extends State<WorkshopSkillShop>{
   UpgradeKind _kind=UpgradeKind.tap;PurchaseMode _mode=PurchaseMode.one;
+  /// Leading tiers whose tap and auto skills cost no gold (DEC-041: 4).
+  static int _freeTiers(WorkshopController c){
+    var tier=0;
+    while(tier<16 && DevelopmentBalance.integer(c.config.skill('tap_${tier+1}'),'gold')==0 &&
+        DevelopmentBalance.integer(c.config.skill('auto_${tier+1}'),'gold')==0){tier++;}
+    return tier;
+  }
   @override
   Widget build(BuildContext context){
     final c=widget.controller,account=widget.account;
@@ -72,7 +79,18 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop>{
       Wrap(spacing:8,children:[for(final mode in [(PurchaseMode.one,'1개'),(PurchaseMode.ten,'10개'),(PurchaseMode.maximum,'최대')])
         ChoiceChip(key:Key('quantity-${mode.$1.name}'),label:Text(mode.$2),selected:mode.$1==_mode,onSelected:(_)=>setState(()=>_mode=mode.$1))]),
       Expanded(child:ListView(key:ValueKey('skills-${_kind.name}'),padding:const EdgeInsets.all(12),children:[
-        if(c.purchaseGateway==null) const Text('스킬 구매는 온라인 연결(카카오 로그인)이 있는 빌드에서만 할 수 있어요.'),
+        if(c.purchaseGateway==null) const Text('스킬 구매는 온라인 연결(카카오 로그인)이 있는 빌드에서만 할 수 있어요.')
+        else if(!account.online.signedIn) CozyPanel(key:const Key('skill-sign-in'),child:Column(children:[
+          const Text('카카오 로그인 후 레벨업할 수 있어요.',textAlign:TextAlign.center),
+          const SizedBox(height:6),
+          FilledButton(key:const Key('skill-sign-in-button'),onPressed:account.signingIn ? null : () async {
+            final message=await account.signInOnline();
+            if(message!=null && context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(message)));
+          },child:const Text('카카오 로그인')),
+        ])),
+        if(_freeTiers(c)>0)Text(_freeTiers(c)>=16 ? '모든 스킬은 붕어빵력만으로 레벨업해요.'
+            : '1~${_freeTiers(c)}단계 스킬은 붕어빵력만으로 레벨업해요. 황금붕어빵력은 ${_freeTiers(c)+1}단계부터 필요해요.',
+          key:const Key('skill-gold-note'),textAlign:TextAlign.center,style:const TextStyle(color:Cozy.inkSoft,fontSize:13)),
         if(c.notice!=null)Text(c.notice!),if(c.error!=null)Text(c.error!),
         for(final journal in c.state.purchases.journals.values.where((j)=>!j.settled)) CozyPanel(child:Column(children:[
           Text('구매 확인 대기: ${journal.quote.skillId}'),Wrap(children:[
@@ -95,12 +113,12 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop>{
               Row(children:[PixelImage(PixelSprites.skill(id),size:48),const SizedBox(width:12),Expanded(child:Text(skill.name))]),
               Text('$owned/$cap · ${_kind==UpgradeKind.tap ? '클릭당':'초당'} ${compactNumber(_kind==UpgradeKind.tap ? c.tapRate:c.autoRate)}'),
               Text('구매 후 ${_kind==UpgradeKind.tap ? '클릭당':'초당'} ${compactNumber((_kind==UpgradeKind.tap ? c.tapRate:c.autoRate)+DevelopmentBalance.decimal(rule,'effect')*BigInt.from(q.quantity))}',key:Key('after-$id')),
-              Text(unlocked ? owned>=cap ? '최대 강화':'붕어빵력과 황금붕어빵력이 모두 필요해요.':'누적 ${rule['unlock_total']} 해금'),
+              Text(unlocked ? owned>=cap ? '최대 강화':q.gold==BigInt.zero ? '붕어빵력만 있으면 돼요.':'붕어빵력과 황금붕어빵력이 모두 필요해요.':'누적 ${rule['unlock_total']} 해금'),
               FilledButton(key:Key('buy-$id'),onPressed:!enabled ? null : () async {
                 await c.purchaseSkill(c.purchaseGateway!,id,quantity:q.quantity);await account.refreshWorkshopWallet();
-              },child:Text('${q.quantity}개 · 붕어빵력 ${compactNumber(q.buns)} + 황금 ${compactNumber(q.gold)}')),
+              },child:Text('${q.quantity}개 · 붕어빵력 ${compactNumber(q.buns)}${q.gold==BigInt.zero ? '':' + 황금 ${compactNumber(q.gold)}'}')),
               TextButton(onPressed:()=>showDialog<void>(context:context,builder:(ctx)=>AlertDialog(title:Text(skill.name),
-                content:SelectableText('구매 수량 ${q.quantity}개\n붕어빵력 ${q.buns}\n황금붕어빵력 ${q.gold}'),
+                content:SelectableText('구매 수량 ${q.quantity}개\n붕어빵력 ${q.buns}${q.gold==BigInt.zero ? '':'\n황금붕어빵력 ${q.gold}'}'),
                 actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('확인'))])),child:const Text('자세히 보기')),
             ])));
         }),

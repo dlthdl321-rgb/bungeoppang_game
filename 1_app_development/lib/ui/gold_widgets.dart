@@ -92,6 +92,13 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
         const Padding(
             padding: EdgeInsets.only(top: 6),
             child: Text('로그인하면 충전할 수 있어요', key: Key('gold-offline'))),
+      if (!widget.legacyBoost)
+        const Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: Text('$goldName 쓰는 곳: 꾸미기(옷·모자·머리·도구)와 높은 단계 스킬. '
+                '낮은 단계 스킬은 붕어빵력만으로 레벨업해요.',
+                key: Key('gold-uses'),
+                style: TextStyle(color: Cozy.inkSoft, fontSize: 13))),
       const SizedBox(height: 8),
       FutureBuilder<List<StoreProduct>>(
           future: _packs,
@@ -151,8 +158,9 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
           '· 결제는 Google Play로 처리돼요. 구매 후 사용하지 않은 $goldName은 '
           '구매일로부터 7일 안에 청약철회를 요청할 수 있어요.\n'
           '· 미성년자는 법정대리인의 동의 없이 결제하면 취소될 수 있어요.\n'
-          '· $goldName은 로그인한 카카오 계정에 보관되고, 다시 설치해도 꾸미기와 '
-          '스킬 해금은 돌아와요.${widget.legacyBoost ? ' 이미 쓴 부스트는 돌아오지 않아요.' : ''}',
+          '${widget.legacyBoost ? '· $goldName은 로그인한 카카오 계정에 보관되고, 다시 설치해도 꾸미기와 '
+              '스킬 해금은 돌아와요. 이미 쓴 부스트는 돌아오지 않아요.'
+              : '· $goldName 잔액은 로그인한 카카오 계정에 보관돼요.'}',
           key: const Key('gold-terms'),
           style: const TextStyle(color: Cozy.inkSoft, fontSize: 11)),
     ]);

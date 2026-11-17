@@ -17,7 +17,9 @@ class PurchaseJournal {
   factory PurchaseJournal.start(String accountId, String transactionId, CompositeQuote quote) {
     if (accountId.isEmpty || transactionId.isEmpty || quote.revision.isEmpty ||
         quote.skillId.isEmpty || quote.quantity <= 0 || quote.owned < 0 ||
-        quote.buns <= BigInt.zero || quote.gold <= BigInt.zero) {
+        quote.buns <= BigInt.zero || quote.gold.isNegative ||
+        // DEC-041: skills may cost no gold; cosmetics always cost some.
+        (quote.skillId.startsWith('cosmetic:') && quote.gold == BigInt.zero)) {
       throw const FormatException('구매 의도 오류');
     }
     return PurchaseJournal._(accountId, transactionId, quote, 0,
