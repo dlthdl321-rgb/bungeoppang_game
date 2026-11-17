@@ -16,6 +16,7 @@ Flutter 앱과 관련된 도구입니다. 원칙적으로 `1_app_development/`�
 | 화면 캡처 검증 | `preview_*_test.dart` | `1_app_development`에서 `flutter test tools/해당파일.dart` |
 | Android 에뮬레이터 실행 | `run_android_emulator.ps1` | Windows 전용. `1_app_development` 기준 APK 경로 사용 |
 | 카카오 키 해시 계산 | `kakao_key_hash.ps1 -Sha1 "AA:BB:…"` | SHA-1 지문을 카카오 콘솔용 키 해시로 바꿈(23번 7단계, `online_setup.md` 8-2) |
+| 녹화 영상 피드백 정리 | `video_feedback.py` | 저장소 루트에서 `python 1_app_development/tools/video_feedback.py <영상> [출력 폴더]`. 말 받아쓰기(시간 포함) `transcript.md`, 말한 구간 장면 사진 `frames/`, 10초 간격 사진 `overview/`를 만듦. 필요: `pip install --user faster-whisper imageio-ffmpeg`. 영상·결과물은 커밋하지 않음 |
 | 추가 이미지 작업 목록 | `build_image_jobs_2.py` | `python tools/build_image_jobs_2.py --prompt 문서경로`로 입력 문서를 명시 |
 | 생성 이미지 등록 | `record_image_2.py` | 인덱스와 이미지 경로를 입력하면 `3_original_images_and_visual_references`의 생성 기록을 갱신 |
 
