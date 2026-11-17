@@ -87,7 +87,9 @@ def validate(data, catalog):
         for key, price in group.items():
             require(isinstance(price['buns'], str) and re.fullmatch(r'[1-9][0-9]*', price['buns']),
                     f'{key}: 붕어빵력 비용은 양수 10진 문자열')
-            require(type(price['gold']) is int and price['gold'] > 0, f'{key}: 황금 비용 필요')
+            # DEC-041: skills may cost 0 gold; cosmetics and boosts always cost gold.
+            minimum = 0 if group is entries else 1
+            require(type(price['gold']) is int and price['gold'] >= minimum, f'{key}: 황금 비용 필요')
     expected_goals = {'daily': {'taps', 'production', 'purchases', 'auto'}, 'weekly': {'taps', 'days', 'purchases', 'dailyAll'}}
     require(data['mission_gold_rewards']['daily_all'] > 0, '전체 일일 보상')
     for scope, expected in expected_goals.items():
@@ -210,7 +212,7 @@ def render(data):
 
 금액 buns/effect는 BigInt용 10진 문자열, gold/횟수/ms/각도는 정수다. permille은1000분율, basis_points는10000분율이다. 동일 결과의 재시도는 카운터/지급을 늘리지 않는다.
 
-스킬 n회차는 `ceil(base × (numerator/denominator)^n)`, 황금은 `base_gold + floor(n/gold_step_purchase_count) × gold_step_amount`. 묶음은 개별 올림 후 합산하고 최대 구매는 두 잔액을 함께 확인한다. 현재 스킬 기본 비용/효과를 임시 seed로 보존했고, 신규 황금 비용과 모든 꾸미기/부스트 두 비용은 각각 명시했다. 추가 레시피 표는 획득 순번용이며 가상의 새 맛/출시 콘텐츠 수를 확정하지 않는다.
+스킬 n회차는 `ceil(base × (numerator/denominator)^n)`, 황금은 `base_gold + floor(n/gold_step_purchase_count) × gold_step_amount`(단 base_gold가 0이면 몇 번째든 0, DEC-041). 묶음은 개별 올림 후 합산하고 최대 구매는 두 잔액을 함께 확인한다. 현재 스킬 기본 비용/효과를 임시 seed로 보존했고, 신규 황금 비용과 모든 꾸미기/부스트 두 비용은 각각 명시했다. 추가 레시피 표는 획득 순번용이며 가상의 새 맛/출시 콘텐츠 수를 확정하지 않는다.
 
 만족도는 사용자 답변으로 품질·신선도 기반, 일반 대금에 별점 재곱셈 없음으로 확정했다. 가중치·경계는 임시값이다. 미디엄은 인덱스2이며 손기술은 두 반죽의 칠한 면적(덮은 면적 `batter_min_coverage_permille` 이상, 덧칠 포함 양 `paint_overflow_amount_permille` 이하)과 일반 판매 익힘 조건을 사용한다(짤주머니 속은 양·넘침만 표시, 24번 5단계). 덜 익음 특별 주문 판매는 별개다. 신규 게임은 붕어빵력·황금붕어빵력 두 재화이며 구형 코인은 신규 개념이 아니다. 일반 대금은 붕어빵력/누적 합산·전량 판매, 미션 황금 서버 검증·수동 승급·명시 종료 정책도 후속 답변으로 확정했다. 추가 맛은 슈크림/초코만 확정하며 후속 미정/외부 조건은 마지막 목록을 따른다.
 

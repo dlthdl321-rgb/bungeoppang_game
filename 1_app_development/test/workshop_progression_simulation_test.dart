@@ -15,7 +15,7 @@ import 'workshop_controller_test.dart' show Repository;
 /// reserve and grants only on commit (firebase/functions workshop_service.ts).
 class _Server implements WorkshopPurchaseGateway {
   final int welcome;
-  int gold = 0;
+  int gold = 0, spent = 0;
   bool _claimed = false;
   final Map<String, Map<String, dynamic>> _receipts = {};
   _Server(this.welcome);
@@ -30,6 +30,7 @@ class _Server implements WorkshopPurchaseGateway {
     final cost = int.parse(intent.quote.gold.toString());
     if (cost > gold) throw Exception('황금붕어빵력 부족');
     gold -= cost;
+    spent += cost;
     return _receipts[intent.transactionId] = {...intent.toJson(), 'status': 'reserved'};
   }
   @override
@@ -43,23 +44,27 @@ class _Server implements WorkshopPurchaseGateway {
 }
 
 class _Result {
-  final int level, minutes, skills, gold;
-  _Result(this.level, this.minutes, this.skills, this.gold);
+  final int level, minutes, skills, gold, goldSpentOnSkills;
+  /// Level when lifetime first reached tap_5 / auto_5 unlock (null if never).
+  final int? tap5Level, auto5Level;
+  _Result(this.level, this.minutes, this.skills, this.gold, this.goldSpentOnSkills, this.tap5Level, this.auto5Level);
 }
 
 /// A new player tapping 2 times/s and selling one order per minute, claiming
 /// daily missions (server pays the configured gold) and buying the cheapest
-/// affordable skill whenever both currencies allow.
-Future<_Result> _play(DevelopmentBalance config, {required int welcome, int minutes = 60}) async {
+/// affordable unlocked skill (up to 3 a minute) whenever both currencies allow.
+Future<_Result> _play(DevelopmentBalance config, {required int welcome, int target = 5, int minutes = 60, int tapsPerMinute = 120}) async {
   final server = _Server(welcome);
   var clock = DateTime.utc(2026, 11, 3, 1);
   final c = WorkshopController(config, Repository(), now: () => clock, random: Random(3), purchaseGateway: server);
   await c.initialize();
+  final ids = [for (final kind in ['tap', 'auto']) for (var i = 1; i <= 16; i++) '${kind}_$i'];
+  int? tap5, auto5;
   try {
     await c.openBusiness();
     var skills = 0;
     for (var minute = 1; minute <= minutes; minute++) {
-      for (var i = 0; i < 120; i++) { c.tap(); }
+      for (var i = 0; i < tapsPerMinute; i++) { c.tap(); }
       clock = clock.add(const Duration(minutes: 1));
       final id = 'sale_$minute';
       await c.command(() {
@@ -76,17 +81,23 @@ Future<_Result> _play(DevelopmentBalance config, {required int welcome, int minu
         }
       }
       while (c.canLevelUp) { expect(await c.levelUp(), isTrue); }
-      for (final id in ['tap_1', 'auto_1']) {
-        final q = quoteCompositeSkill(config, id, owned: c.state.purchases.owned[id] ?? 0, quantity: 1);
-        if (c.state.lifetime >= DevelopmentBalance.decimal(config.skill(id), 'unlock_total') &&
-            q.affordable(c.state.purchases.available(c.state.buns), BigInt.from(server.gold))) {
-          expect(await c.purchaseSkill(server, id), isTrue, reason: c.notice);
-          skills++;
+      tap5 ??= c.state.lifetime >= DevelopmentBalance.decimal(config.skill('tap_5'), 'unlock_total') ? c.state.level : null;
+      auto5 ??= c.state.lifetime >= DevelopmentBalance.decimal(config.skill('auto_5'), 'unlock_total') ? c.state.level : null;
+      for (var buy = 0; buy < 3; buy++) {
+        CompositeQuote? best;
+        for (final id in ids) {
+          final q = quoteCompositeSkill(config, id, owned: c.state.purchases.owned[id] ?? 0, quantity: 1);
+          if (c.state.lifetime >= DevelopmentBalance.decimal(config.skill(id), 'unlock_total') &&
+              q.affordable(c.state.purchases.available(c.state.buns), BigInt.from(server.gold)) &&
+              (best == null || q.buns < best.buns)) { best = q; }
         }
+        if (best == null) break;
+        expect(await c.purchaseSkill(server, best.skillId), isTrue, reason: c.notice);
+        skills++;
       }
-      if (c.state.level >= 5) return _Result(c.state.level, minute, skills, server.gold);
+      if (c.state.level >= target) return _Result(c.state.level, minute, skills, server.gold, server.spent, tap5, auto5);
     }
-    return _Result(c.state.level, minutes, skills, server.gold);
+    return _Result(c.state.level, minutes, skills, server.gold, server.spent, tap5, auto5);
   } finally { c.dispose(); }
 }
 
@@ -95,19 +106,36 @@ void main() {
   setUp(() => config = DevelopmentBalance.fromJson(
       jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>));
 
-  test('신규 사용자는 서버 환영 황금으로 스킬을 사며 Lv.5까지 막힘 없이 진행한다', () async {
-    final welcome = DevelopmentBalance.integer(config.section('welcome_reward'), 'gold');
-    expect(welcome, greaterThan(0));
-    final result = await _play(config, welcome: welcome);
-    expect(result.level, 5);
-    expect(result.minutes, lessThanOrEqualTo(30));
-    expect(result.skills, greaterThanOrEqualTo(welcome ~/ 2), reason: '환영 황금이 초반 스킬 구매로 이어져야 함');
+  test('황금이 0인 서버로도 스킬을 사며 Lv.10까지 막힘 없이 진행한다 (DEC-041)', () async {
+    final result = await _play(config, welcome: 0, target: 10);
+    expect(result.level, 10);
+    expect(result.minutes, lessThanOrEqualTo(15));
+    expect(result.skills, greaterThan(10), reason: '1~4단계 스킬은 붕어빵력만으로 살 수 있어야 함');
+    expect(result.goldSpentOnSkills, 0);
   });
-  test('환영 황금이 없어도 Lv.5 승급 자체는 스킬 없이 막히지 않는다', () async {
+  test('환영 황금이 없어도 Lv.5 승급 자체는 30분 안에 막히지 않는다', () async {
     final result = await _play(config, welcome: 0);
     expect(result.level, 5);
     expect(result.minutes, lessThanOrEqualTo(30));
   });
+  test('환영 황금은 초반 스킬에 쓰이지 않고 꾸미기에 쓸 만큼 남는다', () async {
+    final welcome = DevelopmentBalance.integer(config.section('welcome_reward'), 'gold');
+    final result = await _play(config, welcome: welcome, target: 10);
+    expect(result.level, 10);
+    expect(result.goldSpentOnSkills, 0);
+    expect(result.gold, greaterThanOrEqualTo(welcome));
+    final catalog = config.section('avatar_catalog');
+    final cheapest = catalog.keys.where((id) => (catalog[id] as Map)['free'] == false)
+        .map((id) => quoteWorkshopProduct(config, 'cosmetic:$id', owned: 0, quantity: 1).gold)
+        .reduce((a, b) => a < b ? a : b);
+    expect(cheapest, greaterThan(BigInt.zero), reason: '꾸미기는 계속 황금이 필요');
+    expect(BigInt.from(welcome) >= cheapest, isTrue, reason: '환영 황금으로 꾸미기 하나 이상');
+  });
+  test('5단계 스킬(첫 황금 스킬)은 Lv.15 이후에 열린다', () async {
+    final result = await _play(config, welcome: 0, target: 20);
+    expect(result.tap5Level, inInclusiveRange(15, 25));
+    expect(result.auto5Level, inInclusiveRange(15, 25));
+  }, timeout: const Timeout(Duration(minutes: 3)));
   test('Lv.1~5 승급 조건은 스킬 구매를 요구하지 않는다', () {
     for (final row in config.rows('level_progression').take(5)) {
       expect(row.keys.where((k) => k.contains('skill') || k.contains('purchase')), isEmpty);

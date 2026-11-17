@@ -81,8 +81,13 @@ class _WorkshopPageState extends State<WorkshopPage> {
     if (!mounted) return;
     await c.recoverAds();
     if (!mounted) return;
+    final before=account.state.premium.gold;
     final walletMessage=await account.refreshWorkshopWallet();
-    if (mounted && walletMessage!=null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(walletMessage)));
+    if (!mounted) return;
+    final gained=account.state.premium.gold-before;
+    // Welcome gold (and other server gold) lands here: point it at 꾸미기.
+    final note=walletMessage ?? (gained>0 ? '황금붕어빵력 $gained개를 받았어요. 꾸미기에서 써 보세요.' : null);
+    if (note!=null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(note)));
   }
   CosmeticMenuAccess get _cosmetics {
     final account=widget.accountController,catalog=c.config.section('avatar_catalog');

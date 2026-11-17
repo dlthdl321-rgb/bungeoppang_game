@@ -30,12 +30,19 @@ void main(){
       lessThanOrEqualTo(tester.getTopLeft(find.byKey(const Key('home-nav'))).dy));
     expect(tester.getSize(find.byKey(const Key('workshop-window-base'))).width,360);
     expect(find.byKey(const Key('shop-tab-gear')),findsOneWidget);
+    // 26번 3단계: the workshop shop opens on 꾸미기, where gold buys avatar items.
+    expect(tester.widget<ChoiceChip>(find.byKey(const Key('shop-tab-cosmetics'))).selected,isTrue);
     // Stall themes are not on sale in the soft launch: no empty tab, no '판매 준비 중'.
     expect(find.byKey(const Key('shop-tab-theme')),findsNothing);
     await tapKey('shop-tab-gold');expect(find.textContaining('부스트'),findsNothing);
+    expect(find.byKey(const Key('gold-uses')),findsOneWidget);
+    expect(find.textContaining('스킬 해금'),findsNothing);
     expect(find.textContaining('준비 중'),findsNothing);
     expect(tester.takeException(),isNull);await close();expect(c.gridVisible,isTrue);
     await tapKey('menu-skills');expect(find.byType(WorkshopSkillShop),findsOneWidget);
+    // DEC-041: tiers 1~4 cost no gold, so the button shows no '+ 황금 0'.
+    expect(find.byKey(const Key('skill-gold-note')),findsOneWidget);
+    expect(find.descendant(of:find.byKey(const Key('buy-tap_1')),matching:find.textContaining('황금')),findsNothing);
     await tapKey('kind-auto');await tapKey('quantity-ten');await tapKey('quantity-maximum');
     expect(find.byKey(const Key('skill-auto_1')),findsOneWidget);await close();
     await tapKey('menu-skins');expect(find.byKey(const Key('cosmetic-category-hair')),findsOneWidget);

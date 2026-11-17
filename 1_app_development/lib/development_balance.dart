@@ -41,7 +41,7 @@ class DevelopmentBalance {
     for (final kind in ['tap', 'auto']) {
       for (var i = 1; i <= 16; i++) {
         final row = _map(entries['${kind}_$i']);
-        if (decimal(row, 'buns') <= BigInt.zero || integer(row, 'gold') <= 0 ||
+        if (decimal(row, 'buns') <= BigInt.zero || integer(row, 'gold') < 0 ||
             decimal(row, 'effect') <= BigInt.zero ||
             integer(row, 'ratio_denominator') <= 0 ||
             integer(row, 'ratio_numerator') < integer(row, 'ratio_denominator')) {

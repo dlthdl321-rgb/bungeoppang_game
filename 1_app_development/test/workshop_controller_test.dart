@@ -183,6 +183,15 @@ void main() {
     expect(controller.state.buns, BigInt.from(85));
     expect(controller.tapRate, BigInt.from(2));
   });
+  test('로그인 전 레벨업은 미정산 거래 없이 로그인 안내만 남긴다 (26번 3단계)', () async {
+    await controller.command(() { controller.state.buns = BigInt.from(100); controller.state.lifetime = BigInt.from(100); });
+    final gateway = Gateway()..authenticatedAccount = '';
+    expect(await controller.purchaseSkill(gateway, 'tap_1'), isFalse);
+    expect(controller.notice, '카카오 로그인 후 레벨업할 수 있어요.');
+    expect(controller.state.purchases.journals, isEmpty);
+    expect(gateway.reservations, 0);
+    expect(controller.state.buns, BigInt.from(100));
+  });
   test('구매 계정을 바꿔도 기존 지갑의 미정산 거래를 다른 계정으로 이전하지 않는다', () async {
     await controller.command(() { controller.state.buns = BigInt.from(100); controller.state.lifetime = BigInt.from(100); });
     final gateway = Gateway()..loseCommit = true;

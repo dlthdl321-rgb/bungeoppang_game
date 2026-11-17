@@ -45,8 +45,10 @@ export function parseCompositeIntent(value: unknown, authenticatedUid: string): 
     owned: natural(row.owned), quantity: natural(row.quantity),
     buns: decimal(row.buns), gold: decimal(row.gold),
   };
+  // DEC-041: a skill may cost 0 gold (tiers 1~4); a cosmetic always costs gold.
   if (result.account !== authenticatedUid || !authenticatedUid ||
-      result.quantity === 0 || BigInt(result.buns) === 0n || BigInt(result.gold) === 0n) {
+      result.quantity === 0 || BigInt(result.buns) === 0n ||
+      (BigInt(result.gold) === 0n && result.skill.startsWith("cosmetic:"))) {
     return fail("계정 또는 유상 견적 불일치");
   }
   return result;
@@ -227,13 +229,14 @@ export function validateDevelopmentCompositeQuote(config: unknown, input: unknow
   const num = natural(row.ratio_numerator), den = natural(row.ratio_denominator);
   const step = natural(purchase.gold_step_purchase_count), increment = natural(purchase.gold_step_amount);
   const initialGold = natural(row.gold), base = BigInt(decimal(row.buns));
-  if (!den || num < den || !step || !initialGold || base === 0n) return fail("서버 가격 설정 오류");
+  if (!den || num < den || !step || base === 0n) return fail("서버 가격 설정 오류");
   let numerator = base * BigInt(num) ** BigInt(owned);
   let denominator = BigInt(den) ** BigInt(owned);
   let buns = 0n, gold = 0n;
   for (let n = owned; n < owned + requested.quantity; n++) {
     buns += (numerator + denominator - 1n) / denominator;
-    gold += BigInt(initialGold) + BigInt(Math.floor(n / step)) * BigInt(increment);
+    // DEC-041: base gold 0 means no gold at any count (no step increment).
+    if (initialGold > 0) gold += BigInt(initialGold) + BigInt(Math.floor(n / step)) * BigInt(increment);
     numerator *= BigInt(num);
     denominator *= BigInt(den);
   }

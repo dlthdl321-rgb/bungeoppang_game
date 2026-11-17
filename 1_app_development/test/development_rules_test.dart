@@ -28,6 +28,48 @@ void main() {
     expect(DevelopmentBalance.fromJson(raw).revision, isNotEmpty);
   });
 
+  test('DEC-041: 실제 설정의 1~4단계 스킬은 몇 번째든 황금 0, 5단계부터 황금 가격 유지', () {
+    final real = DevelopmentBalance.fromJson(jsonDecode(File('config/development_balance.json').readAsStringSync())
+        as Map<String, dynamic>);
+    for (final kind in ['tap', 'auto']) {
+      for (var tier = 1; tier <= 4; tier++) {
+        for (final owned in [0, 9, 10, 500, 990]) {
+          expect(quoteCompositeSkill(real, '${kind}_$tier', owned: owned, quantity: 10).gold, BigInt.zero,
+              reason: '${kind}_$tier owned $owned');
+        }
+      }
+      // 5단계: 기본 2 + 10번마다 1. 9·10번째 → 2 + 3.
+      expect(quoteCompositeSkill(real, '${kind}_5', owned: 9, quantity: 2).gold, BigInt.from(5));
+    }
+    final purchase = real.section('skill_purchase');
+    final step = DevelopmentBalance.integer(purchase, 'gold_step_purchase_count');
+    expect(DevelopmentBalance.integer(purchase, 'gold_step_amount'), greaterThan(0));
+    expect(step, greaterThan(0));
+    final max = maximumCompositeSkill(real, 'tap_1', owned: 0,
+        availableBuns: BigInt.from(1000), availableGold: BigInt.zero);
+    expect(max.quantity, greaterThan(0), reason: '황금 없이 최대 구매');
+    expect(max.gold, BigInt.zero);
+  });
+
+  test('스킬 황금 0은 허용하고 음수·꾸미기/부스트 0은 거부한다', () {
+    Map<String, dynamic> raw() => jsonDecode(File('config/development_balance.json').readAsStringSync())
+        as Map<String, dynamic>;
+    final negative = raw();
+    (negative['skill_purchase']['entries']['tap_5'] as Map)['gold'] = -1;
+    expect(() => DevelopmentBalance.fromJson(negative), throwsFormatException);
+    final freeLate = raw();
+    (freeLate['skill_purchase']['entries']['tap_16'] as Map)['gold'] = 0;
+    expect(DevelopmentBalance.fromJson(freeLate).revision, isNotEmpty);
+    final cosmetic = raw();
+    ((cosmetic['cosmetic_purchase'] as Map).values.first as Map)['gold'] = 0;
+    expect(() => DevelopmentBalance.fromJson(cosmetic), throwsFormatException);
+    final boost = raw();
+    if ((boost['boost_purchase'] as Map).isNotEmpty) {
+      ((boost['boost_purchase'] as Map).values.first as Map)['gold'] = 0;
+      expect(() => DevelopmentBalance.fromJson(boost), throwsFormatException);
+    }
+  });
+
   test('두 재화 묶음과 최대구매는 경계 잔액을 함께 확인한다', () {
     final quote = quoteCompositeSkill(config, 'tap_1', owned: 0, quantity: 2);
     expect(quote.buns, BigInt.from(33));

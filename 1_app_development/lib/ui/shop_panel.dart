@@ -28,7 +28,9 @@ class ShopPanel extends StatefulWidget {
 }
 
 class _ShopPanelState extends State<ShopPanel> {
-  ShopTab tab = ShopTab.gear;
+  /// The workshop opens on 꾸미기, where gold buys avatar items (26번 3단계);
+  /// the old clicker keeps 장비 first.
+  late ShopTab tab = widget.access == null ? ShopTab.gear : ShopTab.cosmetics;
   GameController get c => widget.controller;
 
   static String _label(ShopTab t) => switch (t) {

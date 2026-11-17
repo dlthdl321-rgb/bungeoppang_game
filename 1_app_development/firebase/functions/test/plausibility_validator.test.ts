@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import config from "../src/generated/development_balance.json";
+import generatedConfig from "../src/generated/development_balance.json";
+import { withPaidTap1 } from "./paid_skill_fixture";
+// 결제 흐름 검사용: tap_1만 황금 1(실제 설정은 DEC-041로 0).
+const config = withPaidTap1(generatedConfig);
 import { MemoryStore } from "../src/store";
 import { WorkshopService } from "../src/workshop_service";
 import { PlausibilityValidator } from "../src/plausibility_validator";

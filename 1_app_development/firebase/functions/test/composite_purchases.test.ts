@@ -2,11 +2,14 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-const config = JSON.parse(readFileSync(resolve(__dirname, "../../../../config/development_balance.json"), "utf8"));
+import { withPaidTap1 } from "./paid_skill_fixture";
+const realConfig = JSON.parse(readFileSync(resolve(__dirname, "../../../../config/development_balance.json"), "utf8"));
+// 결제 흐름 검사용: tap_1만 황금 1(실제 설정은 DEC-041로 0).
+const config = withPaidTap1(realConfig);
 import { claimDevelopmentProgress } from "../src/active_progress";
 import { PurchaseContext, PurchaseEvidenceVerifier, purchaseFingerprint,
   reserveCompositePurchase, finishCompositePurchase, queryCompositePurchase } from "../src/composite_purchases";
-import { CompositeIntent } from "../src/development_contracts";
+import { CompositeIntent, validateDevelopmentCompositeQuote } from "../src/development_contracts";
 import { MemoryStore } from "../src/store";
 
 const ctx: PurchaseContext = { account: "a", progress: "progress_0001", epoch: 1 };
@@ -69,4 +72,30 @@ test("알 수 없는 거래 조회는 환불/취소를 만들지 않고 동일 I
   assert.deepEqual(await queryCompositePurchase(store, ctx, intent().transaction),
     { account:"a", transaction:intent().transaction, status:"unknown" });
   assert.equal(store.docs.get("users/a")!.gold, 5);
+});
+
+// 26번 3단계(DEC-041): 실제 설정은 1~4단계 스킬이 황금 0, 5단계부터 그대로 유료.
+test("실제 설정: 1~4단계 스킬은 몇 번째든 황금 0, 5단계는 기존 황금 가격", () => {
+  const base = { account: "a", transaction: "transaction_0009", revision: realConfig.metadata.revision };
+  const free = { ...base, skill: "tap_1", owned: 10, quantity: 1, buns: "61", gold: "0" };
+  assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, free, "a", 10), free);
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig, { ...free, gold: "1" }, "a", 10));
+  const bundle = { ...base, skill: "tap_1", owned: 0, quantity: 12, buns: "439", gold: "0" };
+  assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, bundle, "a", 0), bundle);
+  for (const id of ["tap_1", "tap_2", "tap_3", "tap_4", "auto_1", "auto_2", "auto_3", "auto_4"]) {
+    assert.equal(realConfig.skill_purchase.entries[id].gold, 0, id);
+  }
+  const paid = { ...base, skill: "tap_5", owned: 9, quantity: 2, buns: "756344", gold: "5" };
+  assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, paid, "a", 9), paid);
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig, { ...paid, gold: "0" }, "a", 9));
+});
+test("실제 설정: 황금 0 스킬은 지갑을 건드리지 않고 예약·확정된다", async () => {
+  const store = await setup();
+  const value = { ...intent("transaction_0010"), gold: "0" };
+  const reserved = await reserveCompositePurchase(store, realConfig, verifier, ctx, value);
+  assert.equal(reserved.status, "reserved");
+  assert.equal(store.docs.get("users/a")!.gold, 5);
+  assert.equal((await finishCompositePurchase(store, verifier, ctx, value, "commit")).status, "committed");
+  assert.equal(store.docs.get("users/a")!.gold, 5);
+  assert.equal(store.docs.get("users/a/compositeSkills/tap_1")!.owned, 1);
 });

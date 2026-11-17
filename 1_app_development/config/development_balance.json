@@ -39,7 +39,7 @@
     "entries": {
       "tap_1": {
         "buns": "15",
-        "gold": 1,
+        "gold": 0,
         "effect": "1",
         "unlock_total": "0",
         "ratio_numerator": 115,
@@ -47,7 +47,7 @@
       },
       "tap_2": {
         "buns": "250",
-        "gold": 1,
+        "gold": 0,
         "effect": "8",
         "unlock_total": "500",
         "ratio_numerator": 118,
@@ -55,7 +55,7 @@
       },
       "tap_3": {
         "buns": "4000",
-        "gold": 1,
+        "gold": 0,
         "effect": "60",
         "unlock_total": "10000",
         "ratio_numerator": 120,
@@ -63,7 +63,7 @@
       },
       "tap_4": {
         "buns": "10000",
-        "gold": 1,
+        "gold": 0,
         "effect": "600",
         "unlock_total": "10000",
         "ratio_numerator": 115,
@@ -167,7 +167,7 @@
       },
       "auto_1": {
         "buns": "50",
-        "gold": 1,
+        "gold": 0,
         "effect": "1",
         "unlock_total": "0",
         "ratio_numerator": 115,
@@ -175,7 +175,7 @@
       },
       "auto_2": {
         "buns": "600",
-        "gold": 1,
+        "gold": 0,
         "effect": "10",
         "unlock_total": "1000",
         "ratio_numerator": 118,
@@ -183,7 +183,7 @@
       },
       "auto_3": {
         "buns": "8000",
-        "gold": 1,
+        "gold": 0,
         "effect": "100",
         "unlock_total": "20000",
         "ratio_numerator": 120,
@@ -191,7 +191,7 @@
       },
       "auto_4": {
         "buns": "20000",
-        "gold": 1,
+        "gold": 0,
         "effect": "1000",
         "unlock_total": "20000",
         "ratio_numerator": 115,
