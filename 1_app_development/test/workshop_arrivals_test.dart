@@ -240,6 +240,11 @@ void main() {
       for (var i = 0; i < 30 && c.state.customers.isEmpty; i++) {
         await Future<void>.delayed(const Duration(milliseconds: 50));
       }
+      // The arrival command may still be saving (busy) right after the
+      // customer shows up; wait so the next command is not refused.
+      for (var i = 0; i < 40 && c.busy; i++) {
+        await Future<void>.delayed(const Duration(milliseconds: 50));
+      }
       expect(c.state.customers.single.customerId, 'npc_doyun');
       final order = c.state.customers.single;
       expect(await c.command(() {
