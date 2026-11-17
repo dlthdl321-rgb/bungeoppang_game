@@ -70,3 +70,10 @@ key.properties
 *.jks
 *.keystore
 *.aab
+
+# Online build keys passed with --dart-define-from-file (23번 7단계). Only the
+# empty example is committed; the real online.json stays on this PC.
+/1_app_development/dart_defines/*
+!/1_app_development/dart_defines/online.example.json
+# Which Firebase project this PC deploys to (firebase_local.cmd use --add).
+/1_app_development/firebase/.firebaserc

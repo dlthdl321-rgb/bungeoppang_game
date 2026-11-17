@@ -15,6 +15,7 @@ Flutter 앱과 관련된 도구입니다. 원칙적으로 `1_app_development/`�
 | 행주 윗변 측정 | `towel_top.py` | `1_app_development`에서 `python tools/towel_top.py`. 배경별 빨간 체크 행주 윗변 행을 출력, `NightStallPainter.towelTops`에 옮김 |
 | 화면 캡처 검증 | `preview_*_test.dart` | `1_app_development`에서 `flutter test tools/해당파일.dart` |
 | Android 에뮬레이터 실행 | `run_android_emulator.ps1` | Windows 전용. `1_app_development` 기준 APK 경로 사용 |
+| 카카오 키 해시 계산 | `kakao_key_hash.ps1 -Sha1 "AA:BB:…"` | SHA-1 지문을 카카오 콘솔용 키 해시로 바꿈(23번 7단계, `online_setup.md` 8-2) |
 | 추가 이미지 작업 목록 | `build_image_jobs_2.py` | `python tools/build_image_jobs_2.py --prompt 문서경로`로 입력 문서를 명시 |
 | 생성 이미지 등록 | `record_image_2.py` | 인덱스와 이미지 경로를 입력하면 `3_original_images_and_visual_references`의 생성 기록을 갱신 |
 

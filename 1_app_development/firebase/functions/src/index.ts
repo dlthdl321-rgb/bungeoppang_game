@@ -12,6 +12,7 @@ import developmentBalance from "./generated/development_balance.json";
 import { WorkshopService } from "./workshop_service";
 import { PlausibilityValidator } from "./plausibility_validator";
 import { signedIn } from "./auth";
+import { callableOptions, functionsRegion } from "./callable_options";
 import { catalog } from "./catalog";
 import * as friends from "./friends";
 import * as invites from "./invites";
@@ -98,7 +99,8 @@ async function handle<T>(work: () => Promise<T>): Promise<T> {
   }
 }
 
-const options = { region: "asia-northeast3", enforceAppCheck: false };
+// App Check is enforced on every callable (callable_options.ts).
+const options = callableOptions();
 
 // Set in functions/.env (not committed): KAKAO_APP_ID=<카카오 앱 ID>.
 export const authKakao = onCall(options, (req) =>
@@ -195,7 +197,7 @@ export const workshopProgressTransfer = onCall(options,req => workshopCall(req,(
 
 // Separate opt-in gate. App callbacks and callable JSON never approve ads.
 const admobVerifier = new AdMobSsvVerifier();
-export const workshopAdSsv = onRequest({region:"asia-northeast3"},async(req,res)=>{
+export const workshopAdSsv = onRequest({region:functionsRegion},async(req,res)=>{
   if(process.env.WORKSHOP_ONLINE_ENABLED!=="true" || process.env.WORKSHOP_AD_SSV_ENABLED!=="true") {
     res.status(503).send("disabled");return;
   }

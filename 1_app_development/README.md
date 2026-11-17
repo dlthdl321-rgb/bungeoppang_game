@@ -77,13 +77,14 @@ debug APK는 `flutter build apk --debug`로 다시 만들 수 있습니다. 생�
 Android 가상 기기는 `TodayBungeoppang_API35`입니다. 2026-10-05에는 AEHD 2.2가 사용 가능한 것으로 확인됐습니다. `tools/run_android_emulator.ps1`은 현재 빌드 경로의 APK만 선택하고 대상 AVD를 확인합니다. 부팅 제한 시간은 3분이며 사용자 기기에는 설치하지 않습니다. 설치/실행 검증의 실제 결과는 재현 감사 보고서를 참고하세요.
 
 
-온라인 기능을 켜려면 키 5개를 dart-define으로 넘깁니다. 하나라도 없으면 랭킹·친구가 "준비 중"으로 표시되고 게임은 오프라인으로 동작합니다. 키는 저장소에 넣지 않습니다.
+온라인 기능을 켜려면 키 파일 `dart_defines/online.json`을 만들어 빌드에 넘깁니다(`online.example.json`을 복사해 채움, git에서 제외됨). 필수 키 5개 중 하나라도 비면 게임은 오프라인으로 동작합니다. 키는 저장소에 넣지 않습니다.
 
 ```
-flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KEY=... --dart-define=FIREBASE_APP_ID=... --dart-define=FIREBASE_SENDER_ID=... --dart-define=FIREBASE_PROJECT_ID=...
+flutter run --dart-define-from-file=dart_defines/online.json
+flutter build appbundle --release --dart-define-from-file=dart_defines/online.json
 ```
 
-서버 설정과 배포는 [15단계 기록](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/stage15_release_online.md)과 [16단계 기록](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/stage16_kakao_login_ranking.md)을 참고하세요.
+운영 Firebase·카카오·Play 결제·App Check 설정과 서버 배포는 [온라인 운영 설정](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/online_setup.md)(23번 7단계, 초보자용)을 따릅니다.
 
 ## 코드 구조
 

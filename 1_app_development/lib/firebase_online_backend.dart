@@ -1,6 +1,8 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'invite_models.dart';
@@ -8,11 +10,10 @@ import 'online_backend.dart';
 import 'workshop_online.dart';
 
 // Firebase project settings, passed at build time so they stay out of the
-// repository (docs/stage15_release_online.md):
-//   flutter build appbundle --dart-define=FIREBASE_API_KEY=...
-//     --dart-define=FIREBASE_APP_ID=... --dart-define=FIREBASE_SENDER_ID=...
-//     --dart-define=FIREBASE_PROJECT_ID=...
-//     --dart-define=KAKAO_NATIVE_APP_KEY=...
+// repository. They live in dart_defines/online.json (gitignored; copy
+// dart_defines/online.example.json) and go in with
+//   flutter build appbundle --release --dart-define-from-file=dart_defines/online.json
+// (2.1.3_legacy_code_policies_and_online_setup/online_setup.md).
 // Without them the app runs with NoOnlineBackend (online features hidden).
 // The Kakao key also goes into the Android manifest (build.gradle.kts).
 const kakaoNativeAppKey = String.fromEnvironment('KAKAO_NATIVE_APP_KEY');
@@ -20,6 +21,9 @@ const _apiKey = String.fromEnvironment('FIREBASE_API_KEY');
 const _appId = String.fromEnvironment('FIREBASE_APP_ID');
 const _senderId = String.fromEnvironment('FIREBASE_SENDER_ID');
 const _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
+// Optional. A debug token registered in the Firebase console (App Check →
+// 앱 → 디버그 토큰 관리) so debug builds pass App Check without reading logcat.
+const _appCheckDebugToken = String.fromEnvironment('APP_CHECK_DEBUG_TOKEN');
 const firebaseConfigured = _apiKey != '' &&
     _appId != '' &&
     _senderId != '' &&
@@ -47,11 +51,28 @@ class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
               appId: _appId,
               messagingSenderId: _senderId,
               projectId: _projectId));
+      await _activateAppCheck(app);
       return FirebaseOnlineBackend._(FirebaseAuth.instanceFor(app: app),
           FirebaseFunctions.instanceFor(app: app, region: functionsRegion));
     } catch (_) {
       return const NoOnlineBackend();
     }
+  }
+
+  /// The server refuses callables without an App Check token
+  /// (firebase/functions/src/callable_options.ts). Play builds prove
+  /// themselves with Play Integrity; debug builds use a debug token that has
+  /// to be registered in the Firebase console. A failure here does not stop
+  /// the game: calls are refused and the app shows its offline messages.
+  static Future<void> _activateAppCheck(FirebaseApp app) async {
+    try {
+      await FirebaseAppCheck.instanceFor(app: app).activate(
+          providerAndroid: kDebugMode
+              ? AndroidDebugProvider(
+                  debugToken:
+                      _appCheckDebugToken == '' ? null : _appCheckDebugToken)
+              : const AndroidPlayIntegrityProvider());
+    } catch (_) {}
   }
 
   @override

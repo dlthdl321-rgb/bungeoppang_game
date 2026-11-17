@@ -109,7 +109,7 @@ D:\DevMoved\flutter-sdk\bin\flutter.bat build appbundle --release
 - `GRADLE_USER_HOME`은 **`D:\DevMoved\GradleCache`(실제 폴더)** 로 쓴다. `C:\GradleCache`는 이 폴더로 연결된 바로가기(정션)인데, 그 경로로 쓰면 빌드 스크립트를 고친 뒤 `Unresolved reference 'println'` 같은 오류가 쏟아진다(2026-11-17 확인).
 - 시간이 오래 걸린다(처음 10분 이상). `√ Built build\app\outputs\bundle\release\app-release.aab`가 나오면 성공.
 - 결과 파일: 탐색기에서 `1_app_development\build\app\outputs\bundle\release\app-release.aab`.
-- 온라인 기능을 켜는 빌드는 7단계에서 정하는 `--dart-define` 값을 함께 넘긴다.
+- 위 명령은 온라인 기능이 꺼진 빌드다. Play에 올릴 온라인 빌드는 마지막 줄 끝에 ` --dart-define-from-file=dart_defines/online.json`을 붙인다(키 파일 만들기는 [online_setup.md](online_setup.md) 3장, 7-1).
 
 **잘 됐는지 확인 (업로드 키로 서명됐는지):**
 

@@ -60,6 +60,8 @@
 
 ## 직접 하셔야 하는 콘솔 작업
 
+> 2026-11-17: 현재 기준 순서·키 해시 값·서버 설정은 [온라인 운영 설정](online_setup.md)(23번 7단계)을 따른다. 아래는 당시 기록이다.
+
 1. **카카오 개발자 콘솔**: 앱 추가 → 네이티브 앱 키, 앱 ID 확인. 플랫폼 Android에 패키지명 `com.todaybungeoppang.app`(2026-11-17 변경)과 키 해시 3개(디버그 키, 업로드 키, Play Console 앱 서명 키) 등록. 카카오 로그인 활성화, 동의항목 '닉네임' 선택 동의.
 2. **Firebase / Google Cloud**: `firebase/functions/.env`에 `KAKAO_APP_ID=<앱 ID>`(커밋 금지). Functions 실행 서비스 계정에 `roles/iam.serviceAccountTokenCreator`(없으면 `createCustomToken` 실패). `firebase deploy --only functions,firestore`로 함수·규칙·인덱스 배포. Authentication의 게임 로그인 제공업체는 꺼도 된다.
 3. **Play Console**: 게임 서비스 프로젝트(리더보드)는 쓰지 않는다. 인앱 상품은 그대로. 데이터 보안 양식을 [기준 문서](play_data_safety.md)대로 다시 제출.

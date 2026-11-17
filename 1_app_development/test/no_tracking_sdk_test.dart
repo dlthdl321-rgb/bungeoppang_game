@@ -7,6 +7,8 @@ import 'package:flutter_test/flutter_test.dart';
 // Functions) and sells 황금 붕어빵 through Google Play Billing; those exact
 // packages are allowed, nothing else in their families. Since stage 16 it
 // logs in with the Kakao SDK (kakao_flutter_sdk_user: login only).
+// Since plan 23 stage 7 the server enforces Firebase App Check, so the app
+// attests itself with firebase_app_check (Play Integrity; no ads or analytics).
 const _allowed = <String>{
   'firebase_core',
   'firebase_core_platform_interface',
@@ -17,6 +19,9 @@ const _allowed = <String>{
   'cloud_functions',
   'cloud_functions_platform_interface',
   'cloud_functions_web',
+  'firebase_app_check',
+  'firebase_app_check_platform_interface',
+  'firebase_app_check_web',
   '_flutterfire_internals',
   'in_app_purchase',
   'in_app_purchase_android',

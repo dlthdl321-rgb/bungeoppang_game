@@ -41,13 +41,13 @@
 
 | 원칙 | 내용 | 지키는 곳 |
 | --- | --- | --- |
-| 광고·추적 SDK 금지 | ads, admob, analytics, crashlytics, sentry 등 금지. Firebase는 core/auth/functions만 허용. 카카오는 로그인용만 | `test/no_tracking_sdk_test.dart` |
+| 광고·추적 SDK 금지 | ads, admob, analytics, crashlytics, sentry 등 금지. Firebase는 core/auth/functions/app_check만 허용(app_check는 23번 7단계, Play Integrity). 카카오는 로그인용만 | `test/no_tracking_sdk_test.dart` |
 | 현실 보상 없음 | 현금·상품·포인트를 지급하지 않음. 공유에도 보상 없음 | README |
 | 경제는 BigInt | 가격·생산·보상은 BigInt로 계산하고, 배율은 정수 천분율(‰)로 계산(`effectScale` = 1000). double 금지. 저장할 때는 10진 문자열 | `economy.dart`, `config_values.dart` |
 | 코인은 원장으로만 | 모든 코인 변동은 `support.transact(id, …)`/`grantReward`로. id가 중복 지급을 막는 키(`daily:<day>:<id>`, `weekly:<week>:<id>`, `achievement:<id>`, `level:<n>`) | `support_rules.dart` |
 | 저장은 원자적으로 | 중요한 명령은 `before = state.copy()` → 변경 → `_commit`. 저장 실패 시 되돌림. 프레임·탭마다 저장 금지 | `game_controller.dart` |
 | 시간은 게임 시계로 | `DateTime.now()` 대신 `gameNow`/`observedUtc` 사용. 기기 시계를 되돌려도 지난 날짜·주는 다시 열리지 않음 | `support_state.dart` |
-| 키 커밋 금지 | 카카오·Firebase 키를 저장소에 넣지 않음 | `test/stage16_kakao_ranking_test.dart` |
+| 키 커밋 금지 | 카카오·Firebase 키를 저장소에 넣지 않음. 앱 키는 `dart_defines/online.json`, 서버 설정은 `firebase/functions/.env`(둘 다 gitignore, 견본만 커밋) | `test/stage16_kakao_ranking_test.dart`, `test/online_setup_test.dart` |
 | 테스트 기준 유지 | 테스트 목표나 골든 허용치를 낮추지 않음 | README |
 | 개발자 전용 기능 | 초대 시뮬레이터 등은 `developerTools`(= `!kReleaseMode`)일 때만 | `game_controller.dart` |
 
@@ -492,8 +492,34 @@
 
 ## 9. 온라인: 로그인·랭킹·친구·초대
 
-- 온라인 기능은 **Android 빌드에 키 5개가 모두 들어 있을 때만** 켜집니다. 아니면 오프라인 게임으로 동작합니다.
+- 온라인 기능은 **Android 빌드에 키 5개가 모두 들어 있을 때만** 켜집니다. 아니면 오프라인 게임으로 동작합니다. 키는 `--dart-define-from-file=dart_defines/online.json`으로 넣습니다(13장 "온라인 빌드").
 - 서버 지역은 `asia-northeast3`(서울), 런타임은 Node 22입니다.
+- 운영 설정(Firebase·카카오·Play 결제·App Check)을 처음부터 하는 순서는 [online_setup.md](online_setup.md)(23번 7단계, 초보자용)입니다.
+
+### App Check (23번 7단계)
+
+| 쪽 | 내용 | 위치 |
+| --- | --- | --- |
+| 서버 | 모든 callable이 `enforceAppCheck: true`. `functions/.env`의 `APP_CHECK_ENFORCED=false`일 때만 끔(값이 없거나 다른 값이면 켬 — 설정을 잊으면 막히는 쪽). 배포할 때 읽히므로 바꾸면 재배포. HTTP `workshopAdSsv`는 AdMob이 부르는 곳이라 대상 아님 | `functions/src/callable_options.ts`, `index.ts` |
+| 앱 | `FirebaseOnlineBackend.create`가 Firebase 초기화 직후 `FirebaseAppCheck.activate`. debug 빌드(`kDebugMode`)는 `AndroidDebugProvider`(선택 dart-define `APP_CHECK_DEBUG_TOKEN`으로 콘솔에 등록한 토큰 사용), 그 외 `AndroidPlayIntegrityProvider`. 실패해도 게임은 계속되고 서버 호출만 거절됨 | `lib/firebase_online_backend.dart` `_activateAppCheck` |
+| 결과 | Play에서 받은 앱과 등록된 debug 토큰만 서버를 부를 수 있음. 직접 설치한 release APK는 Play Integrity를 통과하지 못할 수 있음 → 확인용으로 잠깐 끌 때는 online_setup.md 14장 | |
+
+### 서버 운영 설정 (`functions/.env`, 커밋 금지)
+
+| 이름 | 운영값 | 뜻 |
+| --- | --- | --- |
+| `KAKAO_APP_ID` | 카카오 앱 ID(숫자) | `authKakao`가 다른 앱 토큰을 거절 |
+| `WORKSHOP_ONLINE_ENABLED` | **`true`** (23번 7단계: DEC-027 온라인 가출시라 켬) | 타당성 검증·환영 황금·스킬 구매·미션/판매 황금 |
+| `WORKSHOP_SALE_DRAW_KEY_BASE64` | 32바이트 난수 base64(`firebase/make_server_env.ps1`이 생성, 이후 바꾸지 않음) | 판매 황금 추첨 키 |
+| `WORKSHOP_AD_SSV_ENABLED` | `false` | 광고 가출시 제외(DEC-028) |
+| `WORKSHOP_PROTECTION_ENABLED` | `false` | 서명 스냅샷 대신 타당성 검증 사용(23장) |
+| `APP_CHECK_ENFORCED` | `true` | 위 App Check |
+
+견본은 `functions/.env.example`. 에뮬레이터 검사(`run_emulator_checks.ps1`)는 실행 동안만 `functions/.env.local`을 만들어 테스트 값(온라인 끔·App Check 켬·카카오 ID 없음)으로 `.env`를 덮고 끝나면 지운다(에뮬레이터는 `.env`를 프로세스 환경보다 우선함).
+
+### 서버가 Google에 요청할 때 쓰는 계정
+
+2세대 함수는 Compute Engine 기본 서비스 계정(`프로젝트번호-compute@developer.gserviceaccount.com`)으로 실행된다(15단계 문서의 `@appspot`은 1세대 기준). 이 계정에 필요한 것: 프로젝트 IAM `서비스 계정 토큰 생성자`(카카오 커스텀 토큰), Play Console 앱 권한 `재무 데이터 보기`·`주문 및 구독 관리`(`walletRedeem`의 Play Developer API 구매 확인·소모), Google Cloud API `IAM Service Account Credentials API`·`Google Play Android Developer API` 사용 설정.
 
 ### 로그인
 
@@ -911,7 +937,7 @@
 | 실기기 확인용 release APK | `flutter build apk --release` → `adb install build\app\outputs\flutter-apk\app-release.apk` |
 | 골든 다시 만들기(의도한 홈 화면 변경 후에만) | `flutter test --update-goldens test/workshop_home_golden_test.dart`(실제 홈), 구형은 `test/home_golden_test.dart` |
 | 서버 가격표 다시 만들기 | `UPDATE_PREMIUM_CATALOG=1 flutter test test/premium_catalog_test.dart` |
-| 서버 배포 | `firebase deploy --only functions` (`firebase/` 폴더) |
+| 서버 배포 | `firebase_local.cmd deploy --only "functions,firestore"` (`firebase/` 폴더, [online_setup.md](online_setup.md) 4장) |
 | 에뮬레이터 | `tools/run_android_emulator.ps1` |
 
 **한글 경로 문제:** 셰이더 도구와 Kotlin 데몬이 한글 경로에서 실패합니다.
@@ -920,14 +946,16 @@
    `C:\GradleCache`는 `D:\DevMoved\GradleCache`로 가는 정션이다. 정션 경로를 Gradle 홈으로 쓰면 `*.gradle.kts`를 고친 뒤 다시 컴파일할 때 `Unresolved reference 'println'`·`'orEmpty'`처럼 Kotlin 표준 함수를 전부 못 찾고 실패한다(스크립트를 안 고치면 예전 컴파일 결과를 재사용해서 성공하므로 늦게 드러남). 2026-11-17 23번 6단계에서 확인, 실제 경로로 바꾸면 통과.
 3. `processDebugResources`가 `Unable to delete directory … .ap_`(다른 프로세스가 사용 중)로 실패하면 방금 만든 파일의 일시적 잠금입니다. 코드를 고치지 말고 같은 명령을 다시 실행합니다(2026-11-03 재실행으로 통과).
 
-**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 6단계, 패키지 이름 변경·release 서명 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 694개 통과·건너뜀 0(약 12분). `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 84개 통과입니다.
+**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 7단계, App Check·키 파일 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 698개 통과·건너뜀 0(약 7~12분). `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 86개 통과, 에뮬레이터 통합 8개 통과입니다.
 
-**온라인 빌드:**
+**온라인 빌드:** 키는 `1_app_development/dart_defines/online.json`(gitignore. `online.example.json`을 복사해 채움. 키 6개: `FIREBASE_API_KEY`·`FIREBASE_APP_ID`·`FIREBASE_SENDER_ID`·`FIREBASE_PROJECT_ID`·`KAKAO_NATIVE_APP_KEY`·선택 `APP_CHECK_DEBUG_TOKEN`)에 두고 파일째 넘깁니다.
 ```
-flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KEY=... \
-  --dart-define=FIREBASE_APP_ID=... --dart-define=FIREBASE_SENDER_ID=... --dart-define=FIREBASE_PROJECT_ID=...
+flutter run --dart-define-from-file=dart_defines/online.json
+flutter build appbundle --release --dart-define-from-file=dart_defines/online.json
 ```
-- 키가 하나라도 없으면 오프라인으로 동작합니다.
+- 키가 하나라도 없으면(`APP_CHECK_DEBUG_TOKEN` 제외) 오프라인으로 동작합니다.
+- 파일로 넘긴 값도 Gradle의 `dart-defines`로 전달되어 카카오 로그인 scheme(`kakao<네이티브 앱 키>`)이 매니페스트에 들어갑니다(2026-11-17 가짜 키 파일로 release 빌드해 병합 매니페스트에서 확인).
+- 서버 배포는 `firebase/firebase_local.cmd`(저장소 안 `local_tools`의 Node 22·Firebase CLI 실행)로 `firebase_local.cmd deploy --only "functions,firestore"`. 순서와 콘솔 작업은 [online_setup.md](online_setup.md).
 - Gradle flavor는 없습니다. Play Games용 playGames/noPlayGames 구분은 16단계에서 없어졌습니다.
 
 **테스트 지도**
@@ -939,7 +967,7 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 | 미션·보조 | level_missions(_widget), mission_alerts, support_system, support_widget |
 | 진행·환생 | stage8_progress, stage11_endgame |
 | 꾸미기·그림 | public_menus(_widget), stage12_customization, pixel_art, stage14_systems, day_night, stage17_avatar_layers |
-| 온라인 | online_backend, stage9_ranking, stage16_kakao_ranking, premium_catalog, premium_flow, invite_system, invite_widget |
+| 온라인 | online_backend, online_setup(키 파일·gitignore·App Check), stage9_ranking, stage16_kakao_ranking, premium_catalog, premium_flow, invite_system, invite_widget |
 | 화면 | widget_test(공용 `mountGame`, `FixedTime`), home_golden, stage7_widget, stage8_widget |
 | Workshop 제작·홈(24번) | cooking_paint, cooking_controls, cooking_flip, flip_circle_control, workshop_two_molds, workshop_home_layout, workshop_home_golden, step02_home, workshop_full_flow(새 설치~주문 제작 통합 흐름) |
 | 규칙 | no_tracking_sdk |
@@ -1030,11 +1058,10 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 
 ## 15. 알려진 문제
 
-2026-10-08에 확인한 것입니다. 해결하면 이 목록에서 지워 주세요. (2026-11-17: "릴리스 빌드가 debug 키로 서명됨"은 23번 6단계에서 업로드 키 서명·키 없으면 빌드 중단으로 해소해 지움.)
+2026-10-08에 확인한 것입니다. 해결하면 이 목록에서 지워 주세요. (2026-11-17: "릴리스 빌드가 debug 키로 서명됨"은 23번 6단계에서 업로드 키 서명·키 없으면 빌드 중단으로 해소해 지움. "서버 App Check 꺼짐"은 23번 7단계에서 모든 callable 강제·앱 Play Integrity로 해소해 지움.)
 
 | 문제 | 내용 |
 | --- | --- |
-| 서버 App Check 꺼짐 | 모든 서버 함수가 `enforceAppCheck: false`입니다. (7단계에서 처리) |
 | 붕어빵력은 타당성 검증만 함 | 서버는 붕어빵력을 재생하지 못하고 시간·보유 스킬 기준 상한만 확인합니다. 조작된 앱은 상한 안에서 붕어빵력을 부풀릴 수 있습니다. 황금은 서버 지갑에서만 움직입니다. |
 | 노점 부품 그림 없음 | `assets/images/stall/`에 `awning`, `post`, `postlamp`, `counter`(`_snow`) 파일이 없어서 해당 층이 그려지지 않습니다. 현재 있는 것은 `postlamp_lilac/mint/rose`뿐입니다. |
 | 온라인은 Android 전용 | iOS에서는 오프라인으로만 동작합니다. |
@@ -1321,3 +1348,17 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 항목 | 결정 | DEC | 구현 단계 |
 | --- | --- | --- | --- |
 | 스킬 황금 조건 | 황금 재화·손님 희귀 황금·미션 황금·IAP 유지. 탭·자동 스킬 1~4단계는 붕어빵력만(몇 번을 사도 황금 0, 10번마다 +1 증가도 없음). 5~16단계는 지금 황금 가격 유지 | DEC-041 | 26번 3단계 |
+
+## 29. 온라인 운영 설정 — 2026-11-17
+
+[23번 가출시 작업](../23_가출시우선작업프롬프트.md) 7단계. 코드·설정·스크립트는 준비했고, 계정이 필요한 콘솔 작업(Firebase 프로젝트·Blaze·배포·카카오 앱·Play 상품·권한·테스트 구매)은 사용자가 [online_setup.md](online_setup.md)대로 한다. 상세는 9장 "App Check"·"서버 운영 설정"·"서버가 Google에 요청할 때 쓰는 계정", 13장 "온라인 빌드".
+
+| 항목 | 내용 |
+| --- | --- |
+| App Check | 서버 모든 callable 강제(`callable_options.ts`), 앱 `firebase_app_check` 0.4.9(Play Integrity / debug 토큰). 함께 `firebase_core` 4.15.0 → 4.15.2 |
+| 키 주입 | `dart_defines/online.json` + `--dart-define-from-file`. 견본 `online.example.json`(빈 값)만 커밋 |
+| 서버 설정 | `functions/.env`(커밋 금지), 견본 `.env.example`, 생성 스크립트 `firebase/make_server_env.ps1`. `WORKSHOP_ONLINE_ENABLED` 운영값 `true` |
+| 상품 ID | `gold_60/330/700/2200/3800`, 앱·서버 일치(8장, `premium_catalog_test`). Play Console 등록은 사용자 |
+| 지문 | 업로드 키 SHA-1 `17:17:AB:A9:DB:2D:31:40:06:0F:2D:4F:DE:48:89:16:3F:25:4C:42`(카카오 키 해시 `FxerqdstMUAGDy1P3kiJFj8lTEI=`), 이 PC debug 키 SHA-1 `04:1A:06:46:C2:D5:37:58:6C:A1:C5:6E:EA:97:21:33:62:08:82:DB`(`BBoGRsLVN1hsocVu6pchM2IIgts=`). Play 앱 서명 키는 첫 업로드 뒤 |
+| 도구 | `firebase/firebase_local.cmd`(로컬 Firebase CLI), `tools/kakao_key_hash.ps1`(SHA-1 → 카카오 키 해시) |
+| 미완료 | 운영 Firebase에서 테스트 구매 1건 서버 확인·지급·복구(online_setup.md 11장 표) — 사용자 콘솔 작업 뒤 확인 |

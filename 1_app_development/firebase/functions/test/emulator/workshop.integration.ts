@@ -88,15 +88,25 @@ test("Firestore rules deny direct client evidence writes and protected reads",as
   assert.equal(write.status,403);
   assert.equal((await fetch(`http://${host}/v1/projects/${project}/databases/(default)/documents/users/emu_purchase`)).status,403);
 });
-test("callable authentication and default OFF gates are preserved through HTTP",async()=>{
+test("callable authentication, App Check and default OFF gates are preserved through HTTP",async()=>{
   if(process.env.FIREBASE_AUTH_EMULATOR_HOST!=="127.0.0.1:19099") throw new Error("Require demo auth emulator");
-  const call=async(name:string,token?:string)=>fetch(`http://127.0.0.1:15004/${project}/asia-northeast3/${name}`,{method:"POST",
-    headers:{"Content-Type":"application/json",...(token ? {Authorization:`Bearer ${token}`}:{})},body:JSON.stringify({data:{progress}})});
+  // The functions emulator skips token signatures, so an unsigned App Check
+  // JWT stands in for a Play Integrity token. Production verifies it.
+  const part=(value:object)=>Buffer.from(JSON.stringify(value)).toString("base64url");
+  const appCheck=`${part({alg:"none",typ:"JWT"})}.${part({sub:"1:000000000000:android:emulator"})}.unsigned`;
+  const call=async(name:string,token?:string,withAppCheck=true)=>fetch(`http://127.0.0.1:15004/${project}/asia-northeast3/${name}`,{method:"POST",
+    headers:{"Content-Type":"application/json",...(token ? {Authorization:`Bearer ${token}`}:{}),...(withAppCheck ? {"X-Firebase-AppCheck":appCheck}:{})},
+    body:JSON.stringify({data:{progress}})});
   const anonymous=await call("workshopProgressClaim");assert.equal(anonymous.status,401);
   const token=await getAuth(app).createCustomToken("kakao:emulator",{provider:"kakao"});
   const login=await fetch("http://127.0.0.1:19099/identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key=demo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({token,returnSecureToken:true})});
   assert.equal(login.status,200);
   const data=await login.json() as {idToken:string};
+  // App Check is enforced (callable_options.ts): a signed-in call without it is refused.
+  for (const name of ["workshopProgressClaim","walletSync","authKakao"]) {
+    const missing=await call(name,data.idToken,false);assert.equal(missing.status,401,name);
+    assert.equal(((await missing.json()) as {error:{status:string}}).error.status,"UNAUTHENTICATED");
+  }
   const disabled=await call("workshopProgressClaim",data.idToken);assert.equal(disabled.status,400);
   assert.equal(((await disabled.json()) as {error:{status:string}}).error.status,"FAILED_PRECONDITION");
   assert.equal((await fetch(`http://127.0.0.1:15004/${project}/asia-northeast3/workshopAdSsv`)).status,503);
