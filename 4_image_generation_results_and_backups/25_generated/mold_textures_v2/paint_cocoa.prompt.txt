@@ -1,0 +1,10 @@
+﻿Seamless tileable square texture, 256x256 pixels, pixel art on a crisp
+8-pixel grid. Top-down close-up view of the surface of a filling spread
+flat, filling the entire square edge to edge:
+glossy dark chocolate cream with soft swirls.
+Subtle piped-cream ridges are fine. The pattern must tile seamlessly on all
+four edges (left matches right, top matches bottom), with no visible seams,
+no vignette, and no single focal point. Fully opaque.
+Do NOT draw a fish, taiyaki, bungeoppang, eye, scales, fins, outline,
+border, bowl, plate, mold, background scene, shadow edge, or text.
+Soft top-left light, small specular highlights, warm cozy game palette.

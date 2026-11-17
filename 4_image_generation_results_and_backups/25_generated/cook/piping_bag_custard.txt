@@ -1,0 +1,10 @@
+﻿Pixel art game sprite, 128x192 pixels, transparent background, crisp dot
+texture matching a cozy Korean street-food stall game (bungeoppang, fish-shaped
+pastries). A cloth piping bag seen from the side, drawn pointing straight
+DOWN: a cream-coloured canvas cone, wider at the top, gathered at the top with
+an orange cord tied in a bow, ending at the bottom centre in a small silver
+metal nozzle. The nozzle tip touches the bottom centre of the canvas (about
+x=64, y=188). Soft warm lighting from the upper left, a thin dark-brown
+outline, no background, no hand, no text, no shadow outside the object.
+custard: the bag is filled with glossy yellow custard cream; a little shows at the nozzle.
+Normal unsqueezed variant. Clean transparent cutout: absolutely no glow, no halo, no cast shadow outside the object. Preserve genuine transparent alpha around the sprite.

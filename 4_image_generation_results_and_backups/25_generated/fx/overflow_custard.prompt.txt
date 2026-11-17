@@ -1,0 +1,2 @@
+﻿Pixel art game sprite, 32x48 pixels, transparent background, crisp dot texture. One drip of yellow custard hanging down from a ledge: thin at the top centre where it attaches, swelling into a round glossy drop at the bottom, with one small highlight. Thin darker outline, no ledge drawn, no text.
+Clean transparent cutout, no glow, no exterior shadow.
