@@ -119,6 +119,12 @@ D:\DevMoved\flutter-sdk\bin\flutter.bat build appbundle --release
 
 나온 `SHA256:` 값이 1-4의 지문과 같으면 된다. `CN=Android Debug`가 보이면 잘못된 것이다(이 설정에서는 그렇게 될 수 없게 막아 두었다).
 
+**확인된 업로드 키 지문 (2026-11-17 첫 서명 빌드, AAB·APK 같음):** 서명자 `CN=Soi Lee, C=KR`. 이 값은 비밀이 아니다. 7단계에서 Firebase·카카오에 등록할 때 이 값을 쓴다.
+
+```
+SHA-256: 6A:17:CF:A1:1C:B5:EB:2E:97:C1:8F:E7:DB:3C:12:8B:24:BB:B3:91:ED:23:1D:78:8B:FB:D5:30:B6:BA:54:EA
+```
+
 **이런 오류가 나오면:** `release 빌드 중단: android/key.properties 파일이 없습니다` → 2장의 파일 위치·이름(.txt) 확인. `…가 모두 있어야 합니다` → 네 줄 중 빠진 줄 확인. `…가리키는 키 파일이 없습니다` → `storeFile` 경로와 슬래시 확인. `Keystore was tampered with, or password was incorrect` → 비밀번호 확인.
 
 **빌드 뒤 테스트 환경 되돌리기:**
