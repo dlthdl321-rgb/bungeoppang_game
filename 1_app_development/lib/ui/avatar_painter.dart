@@ -43,6 +43,7 @@ class AvatarLook {
 
   /// The item worn in [slot] (only the slots with a layer).
   String worn(CosmeticSlot slot) => switch (slot) {
+        CosmeticSlot.hair => hair,
         CosmeticSlot.top => top,
         CosmeticSlot.bottom => bottom,
         CosmeticSlot.shoes => shoes,
@@ -138,12 +139,25 @@ class AvatarRig {
         : Size(base.width.toDouble(), base.height.toDouble());
   }
 
+  /// The skin the pictures are recoloured for.
+  String get _skin => look?.skin ?? defaultCosmetics[CosmeticSlot.skin]!;
+
   /// The pictures to draw, back to front. Missing pictures are left out, so
-  /// a face frame without art shows the face as drawn.
-  List<RigSprite> get sprites {
-    final out = <RigSprite>[];
-    void add(String asset, RigLayer layer, {(double, double)? anchor}) {
-      final image = PixelSprites.byPath(asset);
+  /// a face frame without art shows the face as drawn. A picture with a
+  /// copy for the worn skin ([rigSkinPicture]) draws that copy.
+  List<RigSprite> get sprites => _sprites(cuts: false);
+
+  /// Masks of the worn items ([rigCutPicture]): drawn over the base to
+  /// erase what the items hide, before the hair, the face and the items.
+  List<RigSprite> get cuts => _sprites(cuts: true);
+
+  List<RigSprite> _sprites({required bool cuts}) {
+    final out = <RigSprite>[], masks = <RigSprite>[];
+    void add(String asset, RigLayer layer,
+        {(double, double)? anchor, List<RigSprite>? into}) {
+      final skinned = rigSkinPicture(asset, _skin);
+      final drawn = PixelSprites.byPath(skinned) != null ? skinned : asset;
+      final image = PixelSprites.byPath(drawn);
       if (image == null) return;
       final place = rigPlacements[asset] ?? const RigPlacement();
       final at = anchor ??
@@ -156,8 +170,9 @@ class AvatarRig {
           ? (0, 0)
           : avatarTrimOffsets[asset] ?? (0, 0);
       final (px, py) = avatarPartPivots[asset] ?? (0.0, 0.0);
-      out.add(RigSprite(asset, image, layer, place, Offset(at.$1, at.$2),
-          Offset(px, py), Offset(tx.toDouble(), ty.toDouble())));
+      (into ?? out).add(RigSprite(drawn, image, layer, place,
+          Offset(at.$1, at.$2), Offset(px, py),
+          Offset(tx.toDouble(), ty.toDouble())));
     }
 
     add(pose.picture(character), RigLayer.base);
@@ -177,12 +192,14 @@ class AvatarRig {
         if (blankCosmetics.contains(id)) continue;
         final main = PixelSprites.avatarPartPath(character, slot, id);
         add(main, layer);
+        add(rigCutPicture(main), RigLayer.base, into: masks);
         for (final MapEntry(key: half, value: halfLayer)
             in rigItemHalves.entries) {
           add(main.replaceFirst('.png', '_$half.png'), halfLayer);
         }
       }
     }
+    if (cuts) return masks;
     // Stable: same layer and order keep the order they were added in.
     final indexed = out.indexed.toList()
       ..sort((a, b) {
@@ -203,13 +220,13 @@ class AvatarRig {
   void paint(Canvas canvas, Paint paint,
       {Offset at = Offset.zero, double scale = 1, double toolLift = 0}) {
     final size = this.size;
-    final sprites = this.sprites;
+    final sprites = this.sprites, cuts = this.cuts;
     canvas.save();
     if (flip) {
       canvas.translate(2 * at.dx + size.width * scale, 0);
       canvas.scale(-1, 1);
     }
-    for (final s in sprites) {
+    void draw(RigSprite s, Paint paint) {
       final p = s.placement;
       final lift = s.layer == RigLayer.tool ? toolLift : 0.0;
       final origin =
@@ -220,7 +237,7 @@ class AvatarRig {
           (s.trim.dy - s.pivot.dy) * scale, w * scale, h * scale);
       if (p.rotation == 0 && p.scale == 1) {
         canvas.drawImageRect(s.image, src, box.shift(origin), paint);
-        continue;
+        return;
       }
       canvas.save();
       canvas.translate(origin.dx, origin.dy);
@@ -228,6 +245,29 @@ class AvatarRig {
       canvas.scale(p.scale);
       canvas.drawImageRect(s.image, src, box, paint);
       canvas.restore();
+    }
+
+    // The body goes into a group of its own so the items' masks erase only
+    // it; the hair style, the face and the items come after, untouched.
+    var i = 0;
+    if (cuts.isNotEmpty) {
+      canvas.saveLayer(null, Paint());
+      for (;
+          i < sprites.length &&
+              sprites[i].layer.index <= RigLayer.base.index;
+          i++) {
+        draw(sprites[i], paint);
+      }
+      final erase = Paint()
+        ..filterQuality = paint.filterQuality
+        ..blendMode = BlendMode.dstOut;
+      for (final s in cuts) {
+        draw(s, erase);
+      }
+      canvas.restore();
+    }
+    for (; i < sprites.length; i++) {
+      draw(sprites[i], paint);
     }
     if (AvatarRigDebug.show.value) {
       canvas.translate(at.dx, at.dy);

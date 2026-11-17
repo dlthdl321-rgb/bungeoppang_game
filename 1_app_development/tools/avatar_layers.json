@@ -315,6 +315,1152 @@
   "avatar/girl/top_sagesweater.png": [
    83,
    208
+  ],
+  "avatar/boy/accessory_ribbon.png": [
+   35,
+   3
+  ],
+  "avatar/boy/accessory_ribbon_cut.png": [
+   40,
+   70
+  ],
+  "avatar/boy/bottom_brownpants.png": [
+   52,
+   274
+  ],
+  "avatar/boy/bottom_brownpants_cut.png": [
+   73,
+   274
+  ],
+  "avatar/boy/bottom_skirt.png": [
+   52,
+   274
+  ],
+  "avatar/boy/bottom_skirt_cut.png": [
+   75,
+   357
+  ],
+  "avatar/boy/bottom_widepants.png": [
+   55,
+   274
+  ],
+  "avatar/boy/bottom_widepants_cut.png": [
+   83,
+   278
+  ],
+  "avatar/boy/hair_curly.png": [
+   33,
+   0
+  ],
+  "avatar/boy/hair_curly_cut.png": [
+   42,
+   85
+  ],
+  "avatar/boy/hair_ponytail.png": [
+   42,
+   0
+  ],
+  "avatar/boy/hair_ponytail_cut.png": [
+   40,
+   11
+  ],
+  "avatar/boy/hair_short.png": [
+   39,
+   10
+  ],
+  "avatar/boy/hair_short_cut.png": [
+   40,
+   9
+  ],
+  "avatar/boy/hat_blackcap.png": [
+   36,
+   2
+  ],
+  "avatar/boy/hat_blackcap_cut.png": [
+   41,
+   55
+  ],
+  "avatar/boy/hat_chefhat.png": [
+   37,
+   0
+  ],
+  "avatar/boy/hat_chefhat_cut.png": [
+   40,
+   70
+  ],
+  "avatar/boy/hat_earmuffs.png": [
+   31,
+   3
+  ],
+  "avatar/boy/hat_earmuffs_cut.png": [
+   40,
+   90
+  ],
+  "avatar/boy/hat_redbandana.png": [
+   29,
+   21
+  ],
+  "avatar/boy/hat_redbandana_cut.png": [
+   105,
+   9
+  ],
+  "avatar/boy/hat_santa.png": [
+   32,
+   25
+  ],
+  "avatar/boy/hat_santa_cut.png": [
+   52,
+   9
+  ],
+  "avatar/boy/outfit_apron.png": [
+   51,
+   193
+  ],
+  "avatar/boy/outfit_apron_cut.png": [
+   69,
+   193
+  ],
+  "avatar/boy/outfit_chefcoat.png": [
+   53,
+   193
+  ],
+  "avatar/boy/outfit_chefcoat_cut.png": [
+   69,
+   193
+  ],
+  "avatar/boy/outfit_creamapron.png": [
+   52,
+   193
+  ],
+  "avatar/boy/outfit_creamapron_cut.png": [
+   75,
+   193
+  ],
+  "avatar/boy/outfit_darkapron.png": [
+   54,
+   198
+  ],
+  "avatar/boy/outfit_darkapron_cut.png": [
+   79,
+   211
+  ],
+  "avatar/boy/outfit_stripe.png": [
+   53,
+   193
+  ],
+  "avatar/boy/outfit_stripe_cut.png": [
+   78,
+   193
+  ],
+  "avatar/boy/outfit_waistapron.png": [
+   52,
+   193
+  ],
+  "avatar/boy/outfit_waistapron_cut.png": [
+   75,
+   193
+  ],
+  "avatar/boy/tool_goldtongs.png": [
+   199,
+   321
+  ],
+  "avatar/girl/bottom_brownpants.png": [
+   67,
+   274
+  ],
+  "avatar/girl/bottom_brownpants_cut.png": [
+   104,
+   343
+  ],
+  "avatar/girl/bottom_widepants.png": [
+   67,
+   278
+  ],
+  "avatar/girl/bottom_widepants_cut.png": [
+   104,
+   332
+  ],
+  "avatar/girl/hair_curly.png": [
+   28,
+   14
+  ],
+  "avatar/girl/hair_curly_cut.png": [
+   38,
+   251
+  ],
+  "avatar/girl/hair_ponytail.png": [
+   51,
+   0
+  ],
+  "avatar/girl/hair_ponytail_cut.png": [
+   34,
+   137
+  ],
+  "avatar/girl/hair_short.png": [
+   36,
+   0
+  ],
+  "avatar/girl/hair_short_cut.png": [
+   34,
+   200
+  ],
+  "avatar/girl/hat_blackcap.png": [
+   40,
+   14
+  ],
+  "avatar/girl/hat_blackcap_cut.png": [
+   129,
+   21
+  ],
+  "avatar/girl/hat_chefhat.png": [
+   58,
+   0
+  ],
+  "avatar/girl/hat_chefhat_cut.png": [
+   53,
+   76
+  ],
+  "avatar/girl/hat_earmuffs.png": [
+   41,
+   22
+  ],
+  "avatar/girl/hat_redbandana.png": [
+   45,
+   17
+  ],
+  "avatar/girl/hat_santa.png": [
+   53,
+   0
+  ],
+  "avatar/girl/outfit_apron.png": [
+   91,
+   214
+  ],
+  "avatar/girl/outfit_apron_cut.png": [
+   148,
+   291
+  ],
+  "avatar/girl/outfit_chefcoat.png": [
+   33,
+   189
+  ],
+  "avatar/girl/outfit_chefcoat_cut.png": [
+   54,
+   283
+  ],
+  "avatar/girl/outfit_creamapron.png": [
+   67,
+   193
+  ],
+  "avatar/girl/outfit_creamapron_cut.png": [
+   66,
+   297
+  ],
+  "avatar/girl/outfit_darkapron.png": [
+   67,
+   193
+  ],
+  "avatar/girl/outfit_darkapron_cut.png": [
+   66,
+   328
+  ],
+  "avatar/girl/outfit_stripe.png": [
+   68,
+   193
+  ],
+  "avatar/girl/outfit_stripe_cut.png": [
+   66,
+   327
+  ],
+  "avatar/girl/outfit_waistapron.png": [
+   33,
+   189
+  ],
+  "avatar/girl/outfit_waistapron_cut.png": [
+   54,
+   292
+  ],
+  "avatar/girl/tool_goldtongs.png": [
+   198,
+   314
+  ],
+  "avatar/girl/accessory_mittens@skin2.png": [
+   67,
+   323
+  ],
+  "avatar/girl/accessory_scarf@skin2.png": [
+   99,
+   189
+  ],
+  "avatar/girl/base@skin2.png": [
+   36,
+   23
+  ],
+  "avatar/girl/bottom_brownpants@skin2.png": [
+   67,
+   274
+  ],
+  "avatar/girl/bottom_widepants@skin2.png": [
+   67,
+   278
+  ],
+  "avatar/girl/hair_curly@skin2.png": [
+   28,
+   14
+  ],
+  "avatar/girl/hair_ponytail@skin2.png": [
+   51,
+   0
+  ],
+  "avatar/girl/hair_short@skin2.png": [
+   36,
+   0
+  ],
+  "avatar/girl/hat_ballcap@skin2.png": [
+   84,
+   28
+  ],
+  "avatar/girl/hat_bandana@skin2.png": [
+   84,
+   14
+  ],
+  "avatar/girl/hat_beanie@skin2.png": [
+   84,
+   3
+  ],
+  "avatar/girl/hat_blackcap@skin2.png": [
+   40,
+   14
+  ],
+  "avatar/girl/hat_chefhat@skin2.png": [
+   58,
+   0
+  ],
+  "avatar/girl/hat_earmuffs@skin2.png": [
+   41,
+   22
+  ],
+  "avatar/girl/hat_newsboy@skin2.png": [
+   84,
+   23
+  ],
+  "avatar/girl/hat_redbandana@skin2.png": [
+   45,
+   17
+  ],
+  "avatar/girl/hat_santa@skin2.png": [
+   53,
+   0
+  ],
+  "avatar/girl/outfit_apron@skin2.png": [
+   91,
+   214
+  ],
+  "avatar/girl/outfit_chefcoat@skin2.png": [
+   33,
+   189
+  ],
+  "avatar/girl/outfit_creamapron@skin2.png": [
+   67,
+   193
+  ],
+  "avatar/girl/outfit_darkapron@skin2.png": [
+   67,
+   193
+  ],
+  "avatar/girl/outfit_padding@skin2.png": [
+   87,
+   208
+  ],
+  "avatar/girl/outfit_stripe@skin2.png": [
+   68,
+   193
+  ],
+  "avatar/girl/outfit_waistapron@skin2.png": [
+   33,
+   189
+  ],
+  "avatar/girl/shoes_furboots@skin2.png": [
+   107,
+   442
+  ],
+  "avatar/girl/top_cardigan@skin2.png": [
+   85,
+   208
+  ],
+  "avatar/girl/top_creamlong@skin2.png": [
+   84,
+   208
+  ],
+  "avatar/girl/top_creamsweater@skin2.png": [
+   87,
+   208
+  ],
+  "avatar/girl/top_pinksweater@skin2.png": [
+   85,
+   208
+  ],
+  "avatar/girl/accessory_mittens@skin3.png": [
+   67,
+   323
+  ],
+  "avatar/girl/accessory_scarf@skin3.png": [
+   99,
+   189
+  ],
+  "avatar/girl/base@skin3.png": [
+   36,
+   23
+  ],
+  "avatar/girl/bottom_brownpants@skin3.png": [
+   67,
+   274
+  ],
+  "avatar/girl/bottom_widepants@skin3.png": [
+   67,
+   278
+  ],
+  "avatar/girl/hair_curly@skin3.png": [
+   28,
+   14
+  ],
+  "avatar/girl/hair_ponytail@skin3.png": [
+   51,
+   0
+  ],
+  "avatar/girl/hair_short@skin3.png": [
+   36,
+   0
+  ],
+  "avatar/girl/hat_ballcap@skin3.png": [
+   84,
+   28
+  ],
+  "avatar/girl/hat_bandana@skin3.png": [
+   84,
+   14
+  ],
+  "avatar/girl/hat_beanie@skin3.png": [
+   84,
+   3
+  ],
+  "avatar/girl/hat_blackcap@skin3.png": [
+   40,
+   14
+  ],
+  "avatar/girl/hat_chefhat@skin3.png": [
+   58,
+   0
+  ],
+  "avatar/girl/hat_earmuffs@skin3.png": [
+   41,
+   22
+  ],
+  "avatar/girl/hat_newsboy@skin3.png": [
+   84,
+   23
+  ],
+  "avatar/girl/hat_redbandana@skin3.png": [
+   45,
+   17
+  ],
+  "avatar/girl/hat_santa@skin3.png": [
+   53,
+   0
+  ],
+  "avatar/girl/outfit_apron@skin3.png": [
+   91,
+   214
+  ],
+  "avatar/girl/outfit_chefcoat@skin3.png": [
+   33,
+   189
+  ],
+  "avatar/girl/outfit_creamapron@skin3.png": [
+   67,
+   193
+  ],
+  "avatar/girl/outfit_darkapron@skin3.png": [
+   67,
+   193
+  ],
+  "avatar/girl/outfit_padding@skin3.png": [
+   87,
+   208
+  ],
+  "avatar/girl/outfit_stripe@skin3.png": [
+   68,
+   193
+  ],
+  "avatar/girl/outfit_waistapron@skin3.png": [
+   33,
+   189
+  ],
+  "avatar/girl/shoes_furboots@skin3.png": [
+   107,
+   442
+  ],
+  "avatar/girl/top_cardigan@skin3.png": [
+   85,
+   208
+  ],
+  "avatar/girl/top_creamlong@skin3.png": [
+   84,
+   208
+  ],
+  "avatar/girl/top_creamsweater@skin3.png": [
+   87,
+   208
+  ],
+  "avatar/girl/top_pinksweater@skin3.png": [
+   85,
+   208
+  ],
+  "avatar/boy/accessory_mittens@skin2.png": [
+   59,
+   330
+  ],
+  "avatar/boy/accessory_ribbon@skin2.png": [
+   35,
+   3
+  ],
+  "avatar/boy/accessory_scarf@skin2.png": [
+   81,
+   199
+  ],
+  "avatar/boy/base@skin2.png": [
+   0,
+   11
+  ],
+  "avatar/boy/bottom_brownpants@skin2.png": [
+   52,
+   274
+  ],
+  "avatar/boy/bottom_skirt@skin2.png": [
+   52,
+   274
+  ],
+  "avatar/boy/bottom_widepants@skin2.png": [
+   55,
+   274
+  ],
+  "avatar/boy/hair_curly@skin2.png": [
+   33,
+   0
+  ],
+  "avatar/boy/hair_ponytail@skin2.png": [
+   42,
+   0
+  ],
+  "avatar/boy/hair_short@skin2.png": [
+   39,
+   10
+  ],
+  "avatar/boy/hat_ballcap@skin2.png": [
+   56,
+   11
+  ],
+  "avatar/boy/hat_bandana@skin2.png": [
+   56,
+   0
+  ],
+  "avatar/boy/hat_beanie@skin2.png": [
+   56,
+   0
+  ],
+  "avatar/boy/hat_blackcap@skin2.png": [
+   36,
+   2
+  ],
+  "avatar/boy/hat_chefhat@skin2.png": [
+   37,
+   0
+  ],
+  "avatar/boy/hat_earmuffs@skin2.png": [
+   31,
+   3
+  ],
+  "avatar/boy/hat_newsboy@skin2.png": [
+   56,
+   6
+  ],
+  "avatar/boy/hat_redbandana@skin2.png": [
+   29,
+   21
+  ],
+  "avatar/boy/hat_santa@skin2.png": [
+   32,
+   25
+  ],
+  "avatar/boy/outfit_apron@skin2.png": [
+   51,
+   193
+  ],
+  "avatar/boy/outfit_chefcoat@skin2.png": [
+   53,
+   193
+  ],
+  "avatar/boy/outfit_creamapron@skin2.png": [
+   52,
+   193
+  ],
+  "avatar/boy/outfit_darkapron@skin2.png": [
+   54,
+   198
+  ],
+  "avatar/boy/outfit_padding@skin2.png": [
+   61,
+   208
+  ],
+  "avatar/boy/outfit_stripe@skin2.png": [
+   53,
+   193
+  ],
+  "avatar/boy/outfit_waistapron@skin2.png": [
+   52,
+   193
+  ],
+  "avatar/boy/shoes_furboots@skin2.png": [
+   81,
+   413
+  ],
+  "avatar/boy/top_cardigan@skin2.png": [
+   63,
+   208
+  ],
+  "avatar/boy/top_creamlong@skin2.png": [
+   58,
+   208
+  ],
+  "avatar/boy/top_creamsweater@skin2.png": [
+   55,
+   208
+  ],
+  "avatar/boy/top_pinksweater@skin2.png": [
+   59,
+   208
+  ],
+  "avatar/boy/accessory_mittens@skin3.png": [
+   59,
+   330
+  ],
+  "avatar/boy/accessory_ribbon@skin3.png": [
+   35,
+   3
+  ],
+  "avatar/boy/accessory_scarf@skin3.png": [
+   81,
+   199
+  ],
+  "avatar/boy/base@skin3.png": [
+   0,
+   11
+  ],
+  "avatar/boy/bottom_brownpants@skin3.png": [
+   52,
+   274
+  ],
+  "avatar/boy/bottom_skirt@skin3.png": [
+   52,
+   274
+  ],
+  "avatar/boy/bottom_widepants@skin3.png": [
+   55,
+   274
+  ],
+  "avatar/boy/hair_curly@skin3.png": [
+   33,
+   0
+  ],
+  "avatar/boy/hair_ponytail@skin3.png": [
+   42,
+   0
+  ],
+  "avatar/boy/hair_short@skin3.png": [
+   39,
+   10
+  ],
+  "avatar/boy/hat_ballcap@skin3.png": [
+   56,
+   11
+  ],
+  "avatar/boy/hat_bandana@skin3.png": [
+   56,
+   0
+  ],
+  "avatar/boy/hat_beanie@skin3.png": [
+   56,
+   0
+  ],
+  "avatar/boy/hat_blackcap@skin3.png": [
+   36,
+   2
+  ],
+  "avatar/boy/hat_chefhat@skin3.png": [
+   37,
+   0
+  ],
+  "avatar/boy/hat_earmuffs@skin3.png": [
+   31,
+   3
+  ],
+  "avatar/boy/hat_newsboy@skin3.png": [
+   56,
+   6
+  ],
+  "avatar/boy/hat_redbandana@skin3.png": [
+   29,
+   21
+  ],
+  "avatar/boy/hat_santa@skin3.png": [
+   32,
+   25
+  ],
+  "avatar/boy/outfit_apron@skin3.png": [
+   51,
+   193
+  ],
+  "avatar/boy/outfit_chefcoat@skin3.png": [
+   53,
+   193
+  ],
+  "avatar/boy/outfit_creamapron@skin3.png": [
+   52,
+   193
+  ],
+  "avatar/boy/outfit_darkapron@skin3.png": [
+   54,
+   198
+  ],
+  "avatar/boy/outfit_padding@skin3.png": [
+   61,
+   208
+  ],
+  "avatar/boy/outfit_stripe@skin3.png": [
+   53,
+   193
+  ],
+  "avatar/boy/outfit_waistapron@skin3.png": [
+   52,
+   193
+  ],
+  "avatar/boy/shoes_furboots@skin3.png": [
+   81,
+   413
+  ],
+  "avatar/boy/top_cardigan@skin3.png": [
+   63,
+   208
+  ],
+  "avatar/boy/top_creamlong@skin3.png": [
+   58,
+   208
+  ],
+  "avatar/boy/top_creamsweater@skin3.png": [
+   55,
+   208
+  ],
+  "avatar/boy/top_pinksweater@skin3.png": [
+   59,
+   208
+  ]
+ },
+ "worn": {
+  "avatar/girl/hair_short.png": {
+   "source": "girl/hair_short.png",
+   "overlap": 0.727,
+   "scale": 0.3134,
+   "at": [
+    14,
+    -34
+   ],
+   "pixels": 34748,
+   "cut": 10056
+  },
+  "avatar/girl/hair_ponytail.png": {
+   "source": "girl/hair_ponytail.png",
+   "overlap": 0.711,
+   "scale": 0.3007,
+   "at": [
+    16,
+    -11
+   ],
+   "pixels": 22674,
+   "cut": 12042
+  },
+  "avatar/girl/hair_curly.png": {
+   "source": "girl/hair_curly.png",
+   "overlap": 0.879,
+   "scale": 0.3001,
+   "at": [
+    20,
+    -11
+   ],
+   "pixels": 21498,
+   "cut": 625
+  },
+  "avatar/girl/outfit_apron.png": {
+   "source": "girl/outfit_apron.png",
+   "overlap": 0.899,
+   "scale": 0.2984,
+   "at": [
+    21,
+    -8
+   ],
+   "pixels": 12499,
+   "cut": 292
+  },
+  "avatar/girl/hat_santa.png": {
+   "source": "girl/hat_santa.png",
+   "overlap": 0.907,
+   "scale": 0.2959,
+   "at": [
+    21,
+    -4
+   ],
+   "pixels": 14552,
+   "cut": 0
+  },
+  "avatar/girl/hat_chefhat.png": {
+   "source": "girl/hat_chefhat.png",
+   "overlap": 0.822,
+   "scale": 0.3016,
+   "at": [
+    19,
+    -12
+   ],
+   "pixels": 21321,
+   "cut": 2395
+  },
+  "avatar/girl/hat_earmuffs.png": {
+   "source": "girl/hat_earmuffs.png",
+   "overlap": 0.9,
+   "scale": 0.2958,
+   "at": [
+    22,
+    -3
+   ],
+   "pixels": 9205,
+   "cut": 0
+  },
+  "avatar/girl/hat_blackcap.png": {
+   "source": "girl/hat_blackcap.png",
+   "overlap": 0.906,
+   "scale": 0.2978,
+   "at": [
+    21,
+    -7
+   ],
+   "pixels": 10142,
+   "cut": 83
+  },
+  "avatar/girl/hat_redbandana.png": {
+   "source": "girl/hat_redbandana.png",
+   "overlap": 0.901,
+   "scale": 0.299,
+   "at": [
+    20,
+    -8
+   ],
+   "pixels": 14374,
+   "cut": 0
+  },
+  "avatar/girl/outfit_stripe.png": {
+   "source": "girl/outfit_stripe.png",
+   "overlap": 0.899,
+   "scale": 0.2911,
+   "at": [
+    24,
+    5
+   ],
+   "pixels": 15295,
+   "cut": 418
+  },
+  "avatar/girl/outfit_chefcoat.png": {
+   "source": "girl/outfit_chefcoat.png",
+   "overlap": 0.898,
+   "scale": 0.2984,
+   "at": [
+    21,
+    -8
+   ],
+   "pixels": 11244,
+   "cut": 622
+  },
+  "avatar/girl/outfit_darkapron.png": {
+   "source": "girl/outfit_darkapron.png",
+   "overlap": 0.896,
+   "scale": 0.2921,
+   "at": [
+    24,
+    3
+   ],
+   "pixels": 15578,
+   "cut": 219
+  },
+  "avatar/girl/outfit_creamapron.png": {
+   "source": "girl/outfit_creamapron.png",
+   "overlap": 0.895,
+   "scale": 0.294,
+   "at": [
+    23,
+    0
+   ],
+   "pixels": 14240,
+   "cut": 309
+  },
+  "avatar/girl/outfit_waistapron.png": {
+   "source": "girl/outfit_waistapron.png",
+   "overlap": 0.898,
+   "scale": 0.2984,
+   "at": [
+    21,
+    -8
+   ],
+   "pixels": 9317,
+   "cut": 382
+  },
+  "avatar/girl/bottom_widepants.png": {
+   "source": "girl/outfit_widepants.png",
+   "overlap": 0.826,
+   "scale": 0.2936,
+   "at": [
+    23,
+    0
+   ],
+   "pixels": 17953,
+   "cut": 495
+  },
+  "avatar/girl/bottom_brownpants.png": {
+   "source": "girl/outfit_brownpants.png",
+   "overlap": 0.888,
+   "scale": 0.2968,
+   "at": [
+    22,
+    -5
+   ],
+   "pixels": 15825,
+   "cut": 611
+  },
+  "avatar/boy/hair_short.png": {
+   "source": "boy/hair_short.png",
+   "overlap": 0.881,
+   "scale": 0.2985,
+   "at": [
+    13,
+    -7
+   ],
+   "pixels": 16948,
+   "cut": 4147
+  },
+  "avatar/boy/hair_ponytail.png": {
+   "source": "boy/hair_ponytail.png",
+   "overlap": 0.879,
+   "scale": 0.3049,
+   "at": [
+    9,
+    -18
+   ],
+   "pixels": 18482,
+   "cut": 4011
+  },
+  "avatar/boy/hair_curly.png": {
+   "source": "boy/hair_curly.png",
+   "overlap": 0.895,
+   "scale": 0.3021,
+   "at": [
+    11,
+    -13
+   ],
+   "pixels": 19816,
+   "cut": 2425
+  },
+  "avatar/boy/outfit_apron.png": {
+   "source": "boy/outfit_apron.png",
+   "overlap": 0.872,
+   "scale": 0.3046,
+   "at": [
+    8,
+    -17
+   ],
+   "pixels": 25575,
+   "cut": 2088
+  },
+  "avatar/boy/hat_santa.png": {
+   "source": "boy/hat_santa.png",
+   "overlap": 0.661,
+   "scale": 0.2814,
+   "at": [
+    8,
+    24
+   ],
+   "pixels": 16372,
+   "cut": 3924
+  },
+  "avatar/boy/hat_chefhat.png": {
+   "source": "boy/hat_chefhat.png",
+   "overlap": 0.846,
+   "scale": 0.3116,
+   "at": [
+    8,
+    -22
+   ],
+   "pixels": 23920,
+   "cut": 999
+  },
+  "avatar/boy/hat_earmuffs.png": {
+   "source": "boy/hat_earmuffs.png",
+   "overlap": 0.915,
+   "scale": 0.3014,
+   "at": [
+    12,
+    -12
+   ],
+   "pixels": 16190,
+   "cut": 220
+  },
+  "avatar/boy/hat_blackcap.png": {
+   "source": "boy/hat_blackcap.png",
+   "overlap": 0.944,
+   "scale": 0.2986,
+   "at": [
+    16,
+    -8
+   ],
+   "pixels": 12129,
+   "cut": 847
+  },
+  "avatar/boy/hat_redbandana.png": {
+   "source": "boy/hat_redbandana.png",
+   "overlap": 0.733,
+   "scale": 0.2915,
+   "at": [
+    7,
+    6
+   ],
+   "pixels": 15748,
+   "cut": 2169
+  },
+  "avatar/boy/outfit_stripe.png": {
+   "source": "boy/outfit_stripe.png",
+   "overlap": 0.886,
+   "scale": 0.3012,
+   "at": [
+    10,
+    -12
+   ],
+   "pixels": 23853,
+   "cut": 1751
+  },
+  "avatar/boy/outfit_chefcoat.png": {
+   "source": "boy/outfit_chefcoat.png",
+   "overlap": 0.868,
+   "scale": 0.3008,
+   "at": [
+    10,
+    -12
+   ],
+   "pixels": 15210,
+   "cut": 2717
+  },
+  "avatar/boy/outfit_darkapron.png": {
+   "source": "boy/outfit_darkapron.png",
+   "overlap": 0.884,
+   "scale": 0.2969,
+   "at": [
+    12,
+    -4
+   ],
+   "pixels": 23197,
+   "cut": 1622
+  },
+  "avatar/boy/outfit_creamapron.png": {
+   "source": "boy/outfit_creamapron.png",
+   "overlap": 0.876,
+   "scale": 0.3025,
+   "at": [
+    9,
+    -14
+   ],
+   "pixels": 23596,
+   "cut": 1886
+  },
+  "avatar/boy/outfit_waistapron.png": {
+   "source": "boy/outfit_waistapron.png",
+   "overlap": 0.878,
+   "scale": 0.3027,
+   "at": [
+    9,
+    -15
+   ],
+   "pixels": 18350,
+   "cut": 2078
+  },
+  "avatar/boy/bottom_widepants.png": {
+   "source": "boy/outfit_widepants.png",
+   "overlap": 0.825,
+   "scale": 0.2937,
+   "at": [
+    13,
+    1
+   ],
+   "pixels": 21075,
+   "cut": 2739
+  },
+  "avatar/boy/bottom_brownpants.png": {
+   "source": "boy/outfit_brownpants.png",
+   "overlap": 0.86,
+   "scale": 0.3025,
+   "at": [
+    9,
+    -14
+   ],
+   "pixels": 18448,
+   "cut": 2585
+  },
+  "avatar/boy/bottom_skirt.png": {
+   "source": "boy/outfit_skirt.png",
+   "overlap": 0.872,
+   "scale": 0.3023,
+   "at": [
+    9,
+    -14
+   ],
+   "pixels": 18841,
+   "cut": 2005
+  },
+  "avatar/boy/accessory_ribbon.png": {
+   "source": "boy/accessory_ribbon.png",
+   "overlap": 0.871,
+   "scale": 0.3008,
+   "at": [
+    10,
+    -11
+   ],
+   "pixels": 11239,
+   "cut": 926
+  }
+ },
+ "skin": {
+  "girl@skin2": [
+   0.9412,
+   0.7972,
+   0.6354
+  ],
+  "girl@skin3": [
+   0.6732,
+   0.4831,
+   0.3867
+  ],
+  "boy@skin2": [
+   0.9163,
+   0.6981,
+   0.5027
+  ],
+  "boy@skin3": [
+   0.7331,
+   0.4537,
+   0.3211
   ]
  }
 }

@@ -101,8 +101,12 @@ class CosmeticDefinition {
   BigInt get cost => configBigInt(price);
   BigInt get unlockProductionAmount => configBigInt(unlockProduction);
 
-  /// Counts toward the collection: not a slot default, character or skin tone.
-  bool get collectible => slot.collectible && defaultCosmetics[slot] != id;
+  /// Counts toward the collection: not a slot default, a free extra choice
+  /// ([freeChoiceCosmetics]), character or skin tone.
+  bool get collectible =>
+      slot.collectible &&
+      defaultCosmetics[slot] != id &&
+      !freeChoiceCosmetics.contains(id);
 
   /// Owned from the start without a purchase.
   bool get free => !collectible;
@@ -155,6 +159,8 @@ const cosmeticDefinitions = [
   CosmeticDefinition('ponytail', '묶은 머리', CosmeticSlot.hair, '5', 2),
   CosmeticDefinition('curly', '곱슬머리', CosmeticSlot.hair, '8', 5),
   CosmeticDefinition('apron', '기본 앞치마', CosmeticSlot.outfit, '0', 1),
+  // Stage 26 4-4: the default apron is drawn now; this takes it off.
+  CosmeticDefinition('noapron', '앞치마 없음', CosmeticSlot.outfit, '0', 1),
   CosmeticDefinition('padding', '패딩 조끼', CosmeticSlot.outfit, '6', 3),
   CosmeticDefinition('stripe', '줄무늬 앞치마', CosmeticSlot.outfit, '9', 5),
   CosmeticDefinition('chefcoat', '요리사 복', CosmeticSlot.outfit, '12', 7),
@@ -234,6 +240,10 @@ const defaultCosmetics = {
   CosmeticSlot.time: 'scenetime'
 };
 
+/// Free choices besides the slot defaults, owned from the start and not
+/// collected: taking off the default apron (stage 26 4-4).
+const freeChoiceCosmetics = {'noapron'};
+
 /// Slots added in save format v10; older saves get their defaults.
 const stage12Slots = {
   CosmeticSlot.pattern,
@@ -274,6 +284,7 @@ const blankCosmetics = {
   'plain',
   'nohat',
   'noacc',
+  'noapron',
   'amberlamp',
   'scenetime',
   'day',

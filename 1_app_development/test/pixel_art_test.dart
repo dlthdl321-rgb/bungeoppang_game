@@ -7,7 +7,7 @@ import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 
 // All art comes from the user's folders (concept art and the extra art
-// set); items still without art are listed in PixelSprites.artPending.
+// set); avatar items without art are hidden (PixelSprites.avatarArtReady).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(PixelSprites.load);
@@ -15,7 +15,7 @@ void main() {
   (double, double) sizeOf(image) =>
       (image.width.toDouble(), image.height.toDouble());
 
-  test('붕어빵·가게 꾸미기는 그림이 있거나 그림 대기 목록에 있다', () {
+  test('붕어빵·가게 꾸미기는 모두 그림이 있다', () {
     for (final d in cosmeticDefinitions) {
       if (d.slot.category == CosmeticCategory.avatar) continue; // below
       // Blank items draw nothing; patterns are baked into the fish images.
@@ -24,13 +24,6 @@ void main() {
         continue;
       }
       final image = PixelSprites.cosmetic(d.slot, d.id);
-      if (PixelSprites.artPending.contains(d.id)) {
-        // A stand-in, if any, is another item's art.
-        expect(image == null || PixelSprites.artStandIns.containsKey(d.id),
-            isTrue,
-            reason: d.id);
-        continue;
-      }
       expect(image, isNotNull, reason: d.id);
       if (d.slot.category == CosmeticCategory.bungeoppang) {
         // 96x72 sprites or the concept fish at its own resolution: 4:3.
@@ -61,7 +54,7 @@ void main() {
     }
   });
 
-  test('사장님: 캐릭터마다 기본 몸과, 대기 목록 밖의 모든 항목 그림이 같은 캔버스에 놓인다', () {
+  test('사장님: 캐릭터마다 기본 몸과, 꾸미기에 보이는 모든 항목 그림이 같은 캔버스에 놓인다', () {
     const canvas = (280.0, 520.0);
     expect(AvatarLook.size.width / AvatarLook.size.height,
         closeTo(canvas.$1 / canvas.$2, .01));
@@ -78,8 +71,6 @@ void main() {
 
     // The base figure already wears the default hair, tee, shorts and flats.
     const worn = {'long', 'tee', 'shorts', 'flats'};
-    // The sheets have no boy skirt or ribbon.
-    const missing = {('boy', 'skirt'), ('boy', 'ribbon')};
     for (final character
         in cosmeticDefinitions.where((d) => d.slot == CosmeticSlot.character)) {
       onCanvas('avatar/${character.id}/base.png',
@@ -92,8 +83,7 @@ void main() {
         final image = PixelSprites.avatarPart(character.id, d.slot, d.id);
         if (blankCosmetics.contains(d.id) ||
             worn.contains(d.id) ||
-            PixelSprites.artPending.contains(d.id) ||
-            missing.contains((character.id, d.id))) {
+            !PixelSprites.avatarArtReady(character.id, d.slot, d.id)) {
           continue;
         }
         expect(image, isNotNull, reason: '${character.id} ${d.id}');
