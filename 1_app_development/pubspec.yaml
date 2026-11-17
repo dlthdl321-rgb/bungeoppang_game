@@ -21,6 +21,9 @@ dependencies:
   in_app_purchase: ^3.3.1
   kakao_flutter_sdk_user: ^2.0.1
   firebase_app_check: ^0.4.9
+  # 26번 5-1단계: 손님 도착 기기 안 예약 알림(서버 푸시·Firebase 메시징 아님). 시각은 UTC로만 넘긴다.
+  flutter_local_notifications: 22.3.3
+  timezone: 0.11.2
 
 dev_dependencies:
   integration_test:

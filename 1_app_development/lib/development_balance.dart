@@ -153,7 +153,7 @@ class DevelopmentBalance {
         integer(relationship, 'choice_chance_basis_points') > 10000 ||
         integer(relationship, 'delay_threshold_permille') > 1000) throw const FormatException('손님 관계 수치 오류');
     for (final key in ['affinity_cap','ordinary_daily_cap','choice_daily_cap','recent_dialogue_limit',
-        'return_gap_business_days','new_npcs_daily_limit','visits_per_npc_business_day',
+        'return_gap_business_days','new_npcs_daily_limit',
         'choice_first_business_day','choice_gap_business_days','choice_skip_retry_business_days']) {
       if (integer(relationship, key) == 0) throw const FormatException('손님 관계 양수 설정 오류');
     }
@@ -165,7 +165,24 @@ class DevelopmentBalance {
         integer(choices,'wave') != 0 || !(integer(choices,'a') > integer(choices,'b') && integer(choices,'b') > integer(choices,'c')) ||
         integer(choices,'a') > integer(relationship,'choice_daily_cap')) throw const FormatException('선택 친밀도 설정 오류');
     if (integer(relationship,'new_npcs_daily_limit')!=2) throw const FormatException('확정 신규 손님 일일 소개 한도 변경');
-    if (integer(relationship,'anonymous_visit_basis_points')>10000 || integer(relationship,'holiday_visit_basis_points')>10000 || integer(relationship,'own_portion_extra_quantity')<1) throw const FormatException('손님 방문 비율/수량 오류');
+    if (integer(relationship,'holiday_visit_basis_points')>10000 || integer(relationship,'own_portion_extra_quantity')<1) throw const FormatException('손님 방문 비율/수량 오류');
+    // 5-1단계: 실제 시간 손님 간격 두 개(일반·네임드)와 자리 수. 옛 무기명 확률·하루 1회·줄 상한은 없앴다.
+    if (relationship.containsKey('anonymous_visit_basis_points') || relationship.containsKey('visits_per_npc_business_day') ||
+        levels.any((row) => row.containsKey('max_queue'))) {
+      throw const FormatException('없앤 손님 방문 설정');
+    }
+    final arrivals = result.section('customer_arrivals');
+    for (final kind in ['regular', 'named']) {
+      final low = integer(arrivals, '${kind}_min_ms'), high = integer(arrivals, '${kind}_max_ms');
+      if (low == 0 || high < low || integer(arrivals, '${kind}_slots') == 0) {
+        throw const FormatException('손님 방문 간격/자리 오류');
+      }
+    }
+    final notices = result.section('customer_notifications');
+    if (integer(notices, 'quiet_start_minute') >= 1440 || integer(notices, 'quiet_end_minute') >= 1440 ||
+        integer(notices, 'regular_max_notices') == 0 || integer(notices, 'preview_horizon_ms') == 0) {
+      throw const FormatException('손님 알림 설정 오류');
+    }
     const npcIds={'npc_yunha','npc_doyun','npc_makrye','npc_seojin','npc_taeo','npc_eunchae','npc_minjae','npc_sua'};
     for(final section in ['customer_choice_conditions','customer_story_conditions','customer_order_preferences']) {
       final rows=result.section(section);

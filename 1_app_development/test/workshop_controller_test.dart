@@ -225,8 +225,8 @@ void main() {
   test('schema1은 구매 없는 schema4로 읽되 신규 구매 누락은 초기화하지 않는다', () {
     final legacy = controller.state.toJson();
     legacy['schema'] = 1;
-    for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime','relationships','customerScene','tutorial']) { legacy.remove(key); }
-    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 6);
+    for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime','relationships','customerScene','tutorial','regularClock','namedClock','lastNamedVisitor']) { legacy.remove(key); }
+    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 7);
     final corrupted = controller.state.toJson()..remove('purchases');
     expect(() => WorkshopState.fromJson(corrupted, config), throwsFormatException);
   });
@@ -276,7 +276,7 @@ void main() {
     expect(() => WorkshopState.fromJson(saved,config),throwsFormatException);
   });
 
-  test('첫 도윤은 팥 주문이며 네임드 하루2명 뒤에는 무기명 손님이 온다', () async {
+  test('첫 도윤은 팥 주문, 소개 하루 2명 뒤에는 직전 손님을 뺀 네임드, 일반 손님은 무기명 (5-1단계)', () async {
     await controller.openBusiness();
     expect(await controller.welcomeCustomer(),isTrue);
     final first=controller.state.customers.single;
@@ -286,6 +286,10 @@ void main() {
     expect(controller.state.customers.single.customerId,'npc_yunha');
     await controller.command(()=>controller.state.customers.clear());
     await controller.welcomeCustomer();
+    expect(controller.state.customers.single.customerId,'npc_doyun',reason:'하루 1회 제한 없음, 직전 윤하는 뺌');
+    expect(controller.state.lastNamedVisitor,'npc_doyun');
+    await controller.command(()=>controller.state.customers.clear());
+    await controller.welcomeCustomer(named:false);
     final anonymous=controller.state.customers.single.customerId;
     expect(anonymous,startsWith('anonymous_'));
     expect(controller.state.tasteObservations.containsKey(anonymous),isFalse);
@@ -312,10 +316,10 @@ void main() {
     expect(restored.sales.length,1);
   });
   test('schema3 보상·구매를 유지하여 최신 schema로 읽고 관계 누락은 새 기본값으로 덮지 않는다', () {
-    final old=controller.state.toJson()..remove('relationships')..remove('customerScene')..remove('tutorial');old['schema']=3;
+    final old=controller.state.toJson()..remove('relationships')..remove('customerScene')..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor');old['schema']=3;
     final restored=WorkshopState.fromJson(old,config);
     expect(restored.purchases.toJson(),controller.state.purchases.toJson());
-    expect(restored.toJson()['schema'],6);
+    expect(restored.toJson()['schema'],7);
     final bad=controller.state.toJson()..remove('relationships');
     expect(()=>WorkshopState.fromJson(bad,config),throwsFormatException);
     old['relationships']={};expect(()=>WorkshopState.fromJson(old,config),throwsFormatException);

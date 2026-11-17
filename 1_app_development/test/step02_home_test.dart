@@ -63,9 +63,17 @@ void main() {
       expect(find.byKey(const Key('setting-music')),findsOneWidget);
       await tester.scrollUntilVisible(find.text('진동'),250,scrollable:find.byType(Scrollable).last);
       expect(find.text('진동'),findsOneWidget);
-      await tester.scrollUntilVisible(find.text('모션 줄이기'),200,scrollable:find.byType(Scrollable).last);
+      // The settings list grew (5-1단계 손님 알림 3줄): drag in small steps.
+      Future<void> reveal(Finder target) async {
+        for (var i = 0; i < 40 && target.hitTestable().evaluate().isEmpty; i++) {
+          await tester.drag(find.byType(Scrollable).last, const Offset(0, -100)); await tester.pump();
+        }
+      }
+      await reveal(find.text('모션 줄이기'));
       expect(find.text('모션 줄이기'),findsOneWidget);
-      await tester.scrollUntilVisible(find.byKey(const Key('settings-save')),200,scrollable:find.byType(Scrollable).last);
+      await reveal(find.text('밤 알림 끄기 (밤 10시~아침 8시)'));
+      expect(find.text('단골 손님 알림'),findsOneWidget);
+      await reveal(find.byKey(const Key('settings-save')));
       await tester.tap(find.byKey(const Key('settings-save')));await tester.pumpAndSettle();
       expect(find.byKey(const Key('griddle')),findsOneWidget);
       // Before opening the griddle is an empty picture with no cells (24번 3단계).

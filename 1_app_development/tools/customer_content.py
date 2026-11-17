@@ -10,12 +10,14 @@ IDS = ['npc_' + name for name in ('yunha', 'doyun', 'makrye', 'seojin', 'taeo', 
 
 
 def render():
-    data = json.loads(SOURCE.read_text())
+    data = json.loads(SOURCE.read_text(encoding='utf-8'))
     assert data['schema'] == 1 and data['revision']
     assert [n['id'] for n in data['npcs']] == IDS
     dialogue_ids = set()
     for npc in data['npcs']:
         assert all(npc[k] for k in ('display_name', 'reference_name', 'appearance', 'personality'))
+        # 26번 5-1단계: 매대·알림에 쓰는 짧은 이름(호칭에서 '아'를 뗀 이름). 이름 끝 받침으로 이/가를 붙인다.
+        assert npc['short_name'] and npc['short_name'] in npc['address_default'] + npc['display_name'] + '도윤'
         assert len(npc['dialogues']) == 18
         for dialogue in npc['dialogues']:
             assert dialogue['id'] not in dialogue_ids and dialogue['text']
@@ -42,11 +44,11 @@ def main():
     args = parser.parse_args()
     expected = render()
     if args.check:
-        if not TARGET.exists() or TARGET.read_text() != expected:
+        if not TARGET.exists() or TARGET.read_text(encoding='utf-8') != expected:
             raise SystemExit('손님 콘텐츠 생성물 불일치')
     else:
         TARGET.parent.mkdir(exist_ok=True)
-        TARGET.write_text(expected)
+        TARGET.write_text(expected, encoding='utf-8', newline=chr(10))
     print('NPC8·대사144·관계8·선택8·생성물 정적 확인; 앱/테스트 실행 아님')
 
 

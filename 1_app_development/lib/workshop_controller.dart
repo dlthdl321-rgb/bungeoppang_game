@@ -23,19 +23,24 @@ import 'workshop_customers.dart';
 import 'workshop_customer_events.dart';
 import 'workshop_customer_dialogue.dart';
 import 'workshop_customer_orders.dart';
+import 'workshop_arrivals.dart';
 
 part 'workshop_storage.dart';
 
 const workshopTutorialStates = {'cook', 'sell', 'done', 'skipped'};
 
 /// What happened while the app was away, for the welcome-back card. Sales
-/// and customer timers only run in the foreground, so only production is shown.
+/// and the customers' waits only run in the foreground; customers still come
+/// in real time (26번 5-1단계), so the card counts who arrived.
 class WorkshopAwayReport {
   final Duration away;
   final BigInt buns;
   final bool open;
   final int waiting;
-  const WorkshopAwayReport({required this.away, required this.buns, required this.open, required this.waiting});
+  /// Guests who arrived while the app was away.
+  final int arrivals;
+  const WorkshopAwayReport({required this.away, required this.buns, required this.open, required this.waiting,
+      this.arrivals = 0});
 }
 
 /// Fresh-game local production aggregate. Gold remains in the authenticated
@@ -46,6 +51,12 @@ class WorkshopState {
   String selectedFlavor = 'redbean',sceneTime='scenetime';
   /// First-run guide: `cook` → `sell` → `done`, or `skipped` (schema 6).
   String tutorial = 'cook';
+  /// Real-time customer clocks (schema 7, 26번 5-1단계): regular guests and
+  /// named neighbors. Stopped (nextAt null) while closed, during the guide,
+  /// or while their places are full.
+  ArrivalClock regularClock = const ArrivalClock(seed: 0), namedClock = const ArrivalClock(seed: 1);
+  /// The named neighbor who came last; the next named visit skips them.
+  String? lastNamedVisitor;
   final Set<String> recipes = {'redbean'};
   final Set<String> recipeMissions = {};
   final Map<String, Map<String, dynamic>> masteryAwards = {};
@@ -80,10 +91,13 @@ class WorkshopState {
   WorkshopState.initial(DateTime now, DevelopmentBalance config, String runId) {
     missions=WorkshopMissions.initial(now);
     business = BusinessProgress.initial(now); grid = GriddleProgress.empty(runId, config);
+    regularClock = ArrivalClock(seed: arrivalSeed(runId, 1));
+    namedClock = ArrivalClock(seed: arrivalSeed(runId, 2));
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
   }
-  Map<String, dynamic> toJson() => {'schema': 6, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
+  Map<String, dynamic> toJson() => {'schema': 7, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
+    'regularClock': regularClock.toJson(), 'namedClock': namedClock.toJson(), 'lastNamedVisitor': lastNamedVisitor,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
     'levelStartTaps': levelStartTaps, 'levelStartSales': levelStartSales, 'arrivalMs': arrivalMs,
     'selectedFlavor': selectedFlavor,'sceneTime':sceneTime, 'recipes': recipes.toList()..sort(),
@@ -107,7 +121,7 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6, 7].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
     if ((row['schema'] as int) < 4 && (row.containsKey('relationships') || row.containsKey('customerScene'))) throw const FormatException('구형 관계 저장 충돌');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
@@ -334,6 +348,33 @@ class WorkshopState {
         state.customerScene=jsonDecode(jsonEncode(scene)) as Map<String,dynamic>;
       } else if(active!=null) { throw const FormatException('활성 대화 화면 누락'); }
     }
+    const arrivalKeys = ['regularClock', 'namedClock', 'lastNamedVisitor'];
+    if ((row['schema'] as int) >= 7) {
+      if (!arrivalKeys.every(row.containsKey)) throw const FormatException('손님 시계 저장 누락');
+      state.regularClock = ArrivalClock.fromJson(row['regularClock']);
+      state.namedClock = ArrivalClock.fromJson(row['namedClock']);
+      final last = row['lastNamedVisitor'];
+      if (last != null && (last is! String || !state.relationships.met.contains(last))) throw const FormatException('직전 네임드 손님 오류');
+      state.lastNamedVisitor = last as String?;
+      final rules = WorkshopArrivals.of(config), settled = business.settledUtc.millisecondsSinceEpoch;
+      for (final (clock, kind) in [(state.regularClock, ArrivalKind.regular), (state.namedClock, ArrivalKind.named)]) {
+        final next = clock.nextAt;
+        if (next != null && (!business.open || state.tutorialActive || next > settled + rules.maxInterval(kind))) {
+          throw const FormatException('손님 시계 상태 오류');
+        }
+      }
+    } else {
+      // Schema 6 and older: clocks start (stopped) from the run id and begin
+      // counting on the first settlement after loading; the last named
+      // neighbor is the latest visit in the relationship journal.
+      if (arrivalKeys.any(row.containsKey)) throw const FormatException('구형 저장에 손님 시계가 있어요.');
+      String? last; var lastDay = -1;
+      for (final visit in (state.relationships.toJson()['visits'] as Map).values) {
+        final day = (visit as Map)['day'] as int;
+        if (day >= lastDay) { lastDay = day; last = visit['npc'] as String; }
+      }
+      state.lastNamedVisitor = last;
+    }
     return state;
   }
 }
@@ -375,9 +416,82 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final settlement = _settleAway();
     state.business = settlement.state;
     state.buns += settlement.buns; state.lifetime += settlement.buns;
+    // Guests kept coming while away (26번 5-1단계); their waits start now.
+    final arrivals = _syncArrivals();
     final away = state.business.settledUtc.difference(from);
     return away < welcomeBackAfter ? null
-        : WorkshopAwayReport(away: away, buns: settlement.buns, open: open, waiting: state.customers.length);
+        : WorkshopAwayReport(away: away, buns: settlement.buns, open: open, waiting: state.customers.length,
+            arrivals: arrivals);
+  }
+  WorkshopArrivals get arrivalRules => WorkshopArrivals.of(config);
+  int _waiting(ArrivalKind kind) => state.customers.where((c) =>
+      customerCatalog.contains(c.customerId) == (kind == ArrivalKind.named)).length;
+  /// The named neighbor a named-clock draw brings at [at], as the arrival
+  /// will choose: the business day turns over first after KST midnight.
+  String? _namedFor(ArrivalClock clock, int at) {
+    final business = state.business;
+    final turned = business.open && business.acceptedDay != null &&
+        businessDayKst(DateTime.fromMillisecondsSinceEpoch(at, isUtc: true)) != business.acceptedDay;
+    return state.relationships.selectNamedVisitor(business.businessIndex + (turned ? 1 : 0), clock.pick, config,
+        customerCatalog, alreadyQueued: state.customers.map((c) => c.customerId).toSet(),
+        lastVisitor: state.lastNamedVisitor);
+  }
+  /// Applies every arrival and KST midnight due by the settled business time
+  /// (26번 5-1단계). Waits are counted only in the foreground, so a guest who
+  /// came while the app was off waits the full `order_wait_ms` from now on.
+  /// Nothing happens during a story scene or an ad; due events follow after.
+  /// Returns how many guests arrived.
+  int _syncArrivals() {
+    if (_adPaused || storyPaused) return 0;
+    final business = state.business;
+    if (!business.open) {
+      state.regularClock = state.regularClock.withNext(null);
+      state.namedClock = state.namedClock.withNext(null);
+      return 0;
+    }
+    final rules = arrivalRules, until = business.settledUtc.millisecondsSinceEpoch;
+    if (!state.tutorialActive) {
+      state.regularClock = rules.resume(state.regularClock, ArrivalKind.regular, waiting: _waiting(ArrivalKind.regular), at: until);
+      state.namedClock = rules.resume(state.namedClock, ArrivalKind.named, waiting: _waiting(ArrivalKind.named), at: until);
+    }
+    var arrived = 0;
+    for (var guard = 0; guard < 100; guard++) {
+      final event = rules.next(regular: state.regularClock, named: state.namedClock,
+          open: state.business.open, acceptedDay: state.business.acceptedDay, until: until);
+      if (event == null) break;
+      switch (event.kind) {
+        case ArrivalKind.newDay:
+          _startBusinessDay(next: true);
+        case ArrivalKind.regular:
+          _spawnCustomer(null);
+          arrived++;
+          state.regularClock = rules.arrived(state.regularClock, ArrivalKind.regular,
+              waiting: _waiting(ArrivalKind.regular), at: event.at);
+        case ArrivalKind.named:
+          final npc = _namedFor(state.namedClock, event.at);
+          if (npc != null) { _spawnCustomer(npc); arrived++; }
+          state.namedClock = rules.arrived(state.namedClock, ArrivalKind.named,
+              waiting: _waiting(ArrivalKind.named), at: event.at);
+      }
+      if (storyPaused) break;
+    }
+    return arrived;
+  }
+  /// The guests the clocks would bring within [horizon] while the app is
+  /// away, for the customer notifications. None while closed, during the
+  /// guide or a story scene.
+  List<PlannedArrival> upcomingArrivals(Duration horizon) {
+    if (!state.business.open || state.tutorialActive || storyPaused) return const [];
+    return arrivalRules.preview(regular: state.regularClock, named: state.namedClock,
+        regularWaiting: _waiting(ArrivalKind.regular), namedWaiting: _waiting(ArrivalKind.named),
+        from: state.business.settledUtc.millisecondsSinceEpoch, horizonMs: horizon.inMilliseconds, nameAt: _namedFor);
+  }
+  /// What opening the business does at the start of a business day; at KST
+  /// midnight ([next]) an open business turns over by itself (DEC-TBD-5-1).
+  void _startBusinessDay({bool next = false}) {
+    state.business = next ? state.business.nextDay() : state.business.beginOrContinue(state.business.settledUtc);
+    state.inventory = state.inventory.expire(config, state.business.businessIndex).acceptPrepared(state.business.businessIndex);
+    state.missions=state.missions.observe(now(),businessStarted:true,autoPeak:autoRate);
   }
   void dismissAwayReport() { awayReport = null; if (!disposed) notifyListeners(); }
   BigInt get tapRate => state.purchases.rate(config, 'tap');
@@ -502,18 +616,34 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
       state.missions=state.missions.observe(now(),production:settlement.buns,autoPeak:autoRate);
       _advanceMemory(at - _lastMono);
+      _syncArrivalsSafely();
     }
     _lastMono = at;
+  }
+  /// Outside a command a failed arrival must not leave half a guest behind.
+  void _syncArrivalsSafely() {
+    if (!state.business.open || _adPaused || storyPaused) return;
+    final rules = arrivalRules, until = state.business.settledUtc.millisecondsSinceEpoch;
+    bool idle(ArrivalClock clock, ArrivalKind kind) => clock.nextAt == null && _waiting(kind) < rules.slots(kind);
+    final due = rules.next(regular: state.regularClock, named: state.namedClock, open: true,
+            acceptedDay: state.business.acceptedDay, until: until) != null ||
+        (!state.tutorialActive && (idle(state.regularClock, ArrivalKind.regular) || idle(state.namedClock, ArrivalKind.named)));
+    if (!due) return;
+    final before = state.toJson();
+    try { _syncArrivals(); }
+    on FormatException catch (e) { state = WorkshopState.fromJson(before, config); notice = e.message; }
   }
   void _tick() {
     if (busy) return;
     _flushActive();
     if (!foreground || error != null || disposed) return;
-    final row = config.rows('level_progression')[state.level - 1];
-    if (!_adPaused && !storyPaused && state.business.permitsProducts(now()) &&
-        state.arrivalMs >= DevelopmentBalance.integer(config.section('ordinary_sale'), 'customer_arrival_interval_ms') &&
-        state.customers.length < DevelopmentBalance.integer(row, 'max_queue')) {
-      unawaited(welcomeCustomer());
+    // During the first-run guide a guest comes when needed (the old way):
+    // 도윤 right away, then one more `customer_arrival_interval_ms` after the
+    // line empties. Afterwards the real-time clocks bring everyone.
+    if (state.tutorialActive && !_adPaused && !storyPaused && state.business.permitsProducts(now()) &&
+        state.customers.isEmpty && (state.relationships.met.isEmpty ||
+        state.arrivalMs >= DevelopmentBalance.integer(config.section('ordinary_sale'), 'customer_arrival_interval_ms'))) {
+      unawaited(welcomeCustomer(named: state.relationships.met.isEmpty));
     }
     if (_checkpoint >= DevelopmentBalance.integer(config.section('manual_cooking'), 'checkpoint_ms')) {
       _checkpoint = 0; unawaited(_saveCheckpoint());
@@ -548,15 +678,15 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     // DEC-035: a special bungeoppang in the mold must be finished first.
     if(state.session != null) throw const FormatException('스페셜 붕어빵을 다 만든 뒤 영업을 시작해요.');
     state.business = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
-    state.business = state.business.beginOrContinue(state.business.settledUtc);
-    state.inventory = state.inventory.expire(config, state.business.businessIndex).acceptPrepared(state.business.businessIndex);
-    state.missions=state.missions.observe(now(),businessStarted:true,autoPeak:autoRate);
+    _startBusinessDay();
+    _syncArrivals(); // The clocks count from opening.
   });
   Future<bool> closeBusiness() => command(() {
     if(storyPaused) throw const FormatException('대화를 먼저 마쳐 주세요.');
     final settled = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
     state.business = settled.close(settled.settledUtc);
     state.customers.clear(); state.arrivalMs = 0;
+    _syncArrivals(); // Closed: both clocks stop.
     if (state.session?.finished != true) { state.session = null; state.phaseMs = 0; }
   });
   void tap() {
@@ -674,6 +804,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   Future<bool> skipTutorial() => command(() {
     if (!state.tutorialActive) throw const FormatException('진행 중인 안내가 없어요.');
     state.tutorial = 'skipped';
+    _syncArrivals(); // Open already: the real-time clocks start now.
   });
   Future<bool> startCell(int index) => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업 중, 스페셜 붕어빵을 만들지 않을 때만 쓸 수 있어요.');
@@ -696,10 +827,24 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (saved) _pendingHarvests.remove(frozenId);
     return saved;
   }
-  Future<bool> welcomeCustomer() => command(() {
+  /// Brings a guest now: the first-run guide's guests and tests. A named
+  /// neighbor by the selection rule unless [named] is false; [visitor] names
+  /// one for tests. After the guide the real-time clocks call
+  /// [_spawnCustomer] instead and there is no button for this (S5-1-Q2).
+  Future<bool> welcomeCustomer({bool named = true, String? visitor}) => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now())) throw const FormatException('영업을 시작해 주세요.');
+    final rules = arrivalRules;
+    if (state.customers.length >= rules.regularSlots + rules.namedSlots) throw const FormatException('손님 대기열이 가득 찼어요.');
+    if (visitor != null && (!customerCatalog.contains(visitor) || state.customers.any((c) => c.customerId == visitor))) {
+      throw const FormatException('손님 지정 오류');
+    }
+    _spawnCustomer(visitor ?? (named ? state.relationships.selectNamedVisitor(state.business.businessIndex,
+        random.nextInt(1 << 30), config, customerCatalog,
+        alreadyQueued: state.customers.map((c) => c.customerId).toSet(), lastVisitor: state.lastNamedVisitor) : null));
+  });
+  /// Adds one waiting guest: the [named] neighbor, or an anonymous guest when null.
+  void _spawnCustomer(String? named) {
     final rule = config.rows('level_progression')[state.level - 1];
-    if (state.customers.length >= DevelopmentBalance.integer(rule, 'max_queue')) throw const FormatException('손님 대기열이 가득 찼어요.');
     final sale = config.section('ordinary_sale');
     final special = state.level >= DevelopmentBalance.integer(sale, 'special_order_unlock_level') &&
         random.nextInt(10000) < DevelopmentBalance.integer(sale, 'special_order_basis_points');
@@ -712,8 +857,6 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final total = kinds + random.nextInt(DevelopmentBalance.integer(rule, 'order_quantity_limit') - kinds + 1);
     final quantities = List<int>.filled(kinds, 1);
     for (var i = kinds; i < total; i++) { quantities[random.nextInt(kinds)]++; }
-    final named = state.relationships.selectNamedVisitor(state.business.businessIndex,
-      random.nextInt(10000), random.nextInt(1 << 30), config, customerCatalog,alreadyQueued:state.customers.map((c) => c.customerId).toSet());
     final customerId = named ?? 'anonymous_${_id()}';
     final pending = state.relationships.toJson()['followups'] as Map;
     final pendingChoice = named == null ? null : pending['choice_${named.substring(4)}_01'] as String?;
@@ -760,6 +903,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       remainingMs:DevelopmentBalance.integer(rule,'order_wait_ms'),lines:lines);
     state.customers.add(order);
     if (named != null) {
+      state.lastNamedVisitor = named;
       state.relationships = state.relationships.visit(order.id,named,state.business.businessIndex,customerCatalog,context:{
         'lines':lines.map((l)=>l.toJson()).toList(),'initialWaitMs':order.remainingMs,'working':named=='npc_eunchae' && (pendingChoice!=null || !state.relationships.stories.contains('story_eunchae_01') || random.nextInt(10000)>=DevelopmentBalance.integer(config.section('customer_relationships'),'holiday_visit_basis_points')),
         'cameraPresent':named=='npc_taeo' && (pendingChoice=='c' || newFlavorForTaeo || !state.relationships.stories.contains('story_taeo_01')),
@@ -776,7 +920,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final followup=_matchingFollowup(order);
       if(followup!=null) state.customerScene=followup;
     }
-  });
+  }
 
   /// How many products the sale button would hand over to [order] now.
   int saleReadyCount(CustomerOrder order) {
@@ -838,6 +982,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     // The guide's first sale stays free of story, follow-up and choice scenes.
     if (state.tutorialActive) { state.tutorial = 'done'; }
     else if(customerCatalog.contains(order.customerId)) { _afterNamedSale(order); }
+    _syncArrivals(); // A freed place (or the guide's end) starts a stopped clock.
   });
   Map<String,dynamic>? _matchingFollowup(CustomerOrder order) {
     // Existing relationship scenes precede optional choice follow-ups, even

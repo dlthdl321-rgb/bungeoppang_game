@@ -42,6 +42,7 @@
 | 원칙 | 내용 | 지키는 곳 |
 | --- | --- | --- |
 | 광고·추적 SDK 금지 | ads, admob, analytics, crashlytics, sentry 등 금지. Firebase는 core/auth/functions/app_check만 허용(app_check는 23번 7단계, Play Integrity). 카카오는 로그인용만 | `test/no_tracking_sdk_test.dart` |
+| 손님 알림은 기기 안에서만 | 26번 5-1단계: `flutter_local_notifications`(+`timezone`, UTC만)로 앱이 꺼진 동안 올 손님을 기기 안에 예약. 서버 푸시·Firebase Messaging 없음, 정보를 어디에도 보내지 않음. 권한은 `POST_NOTIFICATIONS`(Android 13+ 실행 중 요청)·`RECEIVE_BOOT_COMPLETED`(재부팅 뒤 재예약)뿐, 정확한 알람 권한(`SCHEDULE_EXACT_ALARM`·`USE_EXACT_ALARM`) 없음(몇 분 늦을 수 있음) | `test/no_tracking_sdk_test.dart`, `lib/customer_notifier.dart` |
 | 현실 보상 없음 | 현금·상품·포인트를 지급하지 않음. 공유에도 보상 없음 | README |
 | 경제는 BigInt | 가격·생산·보상은 BigInt로 계산하고, 배율은 정수 천분율(‰)로 계산(`effectScale` = 1000). double 금지. 저장할 때는 10진 문자열 | `economy.dart`, `config_values.dart` |
 | 코인은 원장으로만 | 모든 코인 변동은 `support.transact(id, …)`/`grantReward`로. id가 중복 지급을 막는 키(`daily:<day>:<id>`, `weekly:<week>:<id>`, `achievement:<id>`, `level:<n>`) | `support_rules.dart` |
@@ -130,10 +131,11 @@
 | 항목 | 값 |
 | --- | --- |
 | DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
-| JSON 저장 형식 | `schema` 6. 1~5를 읽고 6으로 저장 |
+| JSON 저장 형식 | `schema` 7. 1~6을 읽고 7로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 7만 받음) |
 | schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
 | 제작 세션 `session` (CookingSession schema 1, 24번 5단계 G1) | 짤주머니 세 단계의 칠한 양을 **추가 필드**로 저장: `firstBatterCoverage`·`firstBatterAmount`, `fillingCoverage`·`fillingAmount`, `secondBatterCoverage`·`secondBatterAmount`(permille, 단계를 마치면 둘 다 있음, 0 < 덮음 ≤ 1000, 덮음 ≤ 양 ≤ 9000). 예전 `firstBatterMs`·`secondBatterMs`·`fillingDurationMs`는 읽기만 하고 새로 쓰지 않음(같은 단계에 두 종류가 함께 있으면 거절). 단계 완료 = 둘 중 하나가 있음. 예전 저장·진행 중 세션은 그대로 이어서 하고, ms로 끝난 반죽 단계는 손기술 실패. Workshop schema 6·`user_version` 4·생산 저널 형식 변경 없음 |
 | schema 6 (2026-11-11) | 첫 실행 안내 `tutorial`: `cook` → `sell` → `done`, 또는 `skipped`. 새 설치는 `cook`. schema 5 이하는 `done`으로 올리고, 그 버전에 `tutorial`이 있으면 거절. 판매 기록이 있는데 `cook`/`sell`이면 거절 |
+| schema 7 (2026-11-18, 26번 5-1단계) | 손님 시계 `regularClock`·`namedClock`(`{nextAt: UTC ms 또는 null, seed, draws}`)과 직전 네임드 `lastNamedVisitor`. 7에 셋 중 하나라도 없거나 6 이하에 있으면 거절. 닫힌 가게·안내 중인데 `nextAt`이 있거나, `nextAt`이 정산 시각 + 최대 간격보다 멀면 거절. `lastNamedVisitor`는 만난 손님만. 6 이하 이전: 시드는 진행 ID(`grid.runId`)에서 만들고 시계는 멈춘 채(null) 두어 불러온 뒤 첫 정산 시각부터 셈, `lastNamedVisitor`는 관계 기록의 가장 늦은 방문. `arrivalMs`는 안내 중 손님 간격용으로 그대로 |
 
 **저장 손상 대처** (`lib/main.dart` `_start`, `lib/ui/save_recovery.dart`, `lib/save_quarantine.dart`)
 
@@ -174,7 +176,9 @@
 | 오프라인 최대 | 8시간 (`maxOfflineMs`) | `balance.dart` |
 | 오프라인 효율 | 접속 중 생산의 50%. 일일 생산 목표에는 안 셈(`dailyOfflineCounts = false`) | `support_rules.dart` |
 | 돌아오기 환영 창 | 24시간 이상 떠나 있었고 획득량이 있을 때(구형 홈) | `offlineWelcomeAfter` |
-| Workshop 복귀 안내 | 영업 시계로 2시간 이상 비웠다가 돌아왔을 때 한 번(앱 다시 열기·백그라운드 복귀 모두). 비운 시간, 영업 중이면 쌓인 붕어빵력(오프라인 효율·상한 함께 표시), 닫혀 있으면 쌓이지 않았다는 문구, 기다리는 손님 수. 판매·손님 시간은 앱이 앞에 있을 때만 흐르므로 판매 수는 없음 | `workshopWelcomeBackAfter`, `WorkshopController.awayReport`, `ui/workshop_guide.dart` `WorkshopWelcomeBackCard` |
+| Workshop 복귀 안내 | 영업 시계로 2시간 이상 비웠다가 돌아왔을 때 한 번(앱 다시 열기·백그라운드 복귀 모두). 비운 시간, 영업 중이면 쌓인 붕어빵력(오프라인 효율·상한 함께 표시), 닫혀 있으면 쌓이지 않았다는 문구, '자리 비운 동안 손님 N명이 왔어요.'(0명이면 없음, `welcome-back-arrivals`), 기다리는 손님 수. 판매와 손님 기다림은 앱이 앞에 있을 때만 흐르므로 판매 수는 없음 |
+| Workshop 손님 도착 (26번 5-1단계) | 실제 시간. 30장 "손님 방문 간격·알림" | `lib/workshop_arrivals.dart` |
+| Workshop 영업일 넘김 (26번 5-1단계) | 영업을 열어 두면 KST 자정 뒤 저절로 다음 영업일(재고 나이·준비품 수락·미션 '영업한 날'까지 영업 시작과 같이). 며칠을 비워도 한 번만 넘김. 닫혀 있으면 지금처럼 '영업 시작' | `BusinessProgress.nextDay`, `WorkshopController._startBusinessDay` | `workshopWelcomeBackAfter`, `WorkshopController.awayReport`, `ui/workshop_guide.dart` `WorkshopWelcomeBackCard` |
 
 ---
 
@@ -592,7 +596,7 @@
 | 요소 | 위치·크기 | 키 | 파일 |
 | --- | --- | --- | --- |
 | 스페셜 붕어빵 무대 | HUD 아래 중앙. 배경에 그려진 붕어빵 자리에 맞춤. 영업 상태별(DEC-035, 아래 "두 틀 규칙"): 영업 준비 중 빈 틀 + 맛 선택 + '스페셜 붕어빵 제작 시작'(버튼 아래끝 = 판매 카운터 윗변 − 4, 24번 4단계. 행주 값이 없는 배경이면 예전처럼 틀 아래 경계에 걸침), 영업 중 세션이 없으면 틀 없이 떠 있는 큰 붕어빵(클리커, 틀 자리에서 틀 높이×0.75 위), 제작 세션 중에는 틀과 단계 조작. 새 영업일 이어서 영업 전에는 빈 틀만 | `workshop-center-stage`, `workshop-mold-action`, `workshop-clicker` | `ui/workshop_mold_stage.dart` `WorkshopMoldStage`·`WorkshopClicker` |
-| 손님 줄 | 무대 왼쪽, 폭 64, 위 48·아래 56 여백. 맨 앞이 위. 배지 52(남은 시간 고리, 맨 앞은 노란 면) + "N번" + 맛 첫 글자·수량. 영업 중이고 줄이 차지 않았으면 아래에 '맞이' 버튼 | `customer-N`, `customer-welcome` | `ui/workshop_counter.dart` `WorkshopCustomerQueue` |
+| 손님 줄 | 무대 왼쪽, 폭 64, 위 48·아래 56 여백. 맨 앞이 위. 배지 52(남은 시간 고리, 맨 앞은 노란 면) + "N번" + 맛 첫 글자·수량. '맞이' 버튼은 **첫 실행 안내 중이고 줄이 비었을 때만**(26번 5-1단계 S5-1-Q2). 안내가 끝나면 손님은 실제 시간 시계로만 옴(30장). 줄은 일반 3 + 네임드 1까지 | `customer-N`, `customer-welcome` | `ui/workshop_counter.dart` `WorkshopCustomerQueue` |
 | 판매 카운터 | 왼쪽 8, 폭 = w − 16 − (조리 컷 폭 + 8), **위 = 배경 왼쪽 빨간 체크 행주의 윗변**(DEC-038, 아래 "행주 윗변"), 높이는 내용대로. 행주 값이 없는 배경(장면 크기 픽셀 그림·새 배경)이면 예전처럼 아래 = 굽는 판 바닥 + 굽는 판 높이×0.66. 스페셜 붕어빵 제작 중에는 숨김 | `sale-counter` | `WorkshopSaleCounter` |
 | 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 굽는 판 폭 = w − 16(왼쪽 8), 높이 = 폭 × 그림 높이/폭(941×470), 그림이 상자를 꽉 채워 칸 위치·터치 영역도 같은 비율로 커짐(DEC-038). 바탕은 **빈 굽는 판 그림**(`assets/images/stove_empty/<화로>.png`, 25번 1번 생성 그림을 `tools/apply_25_art.py`로 원래 화로 위치에 맞춤: 칸이 붕어빵 모양 홈)이고, 굽는 칸에만 원래 그림의 붕어빵만 남긴 층(`stove_fish/<화로>.png`, 없으면 `stove/<화로>.png`)을 그 칸 자리(`griddleFishClips`)에서 잘라 겹쳐 그림(`GriddlePainter(filled:)`, `workshopGriddleFilled`). 홈 중심과 `griddleCavities` 차이는 그림 px로 가로 −9~+3, 세로 −3~+1(25번 1번). 영업 준비 중(새 영업일 이어서 영업 전 포함)에는 칸을 하나도 그리지 않음: 빈 굽는 판 그림만, 글자·면·터치 없음(`griddle-idle`). 영업 중 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음·숙련한 맛 있음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면 검은 반투명 면만. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
 | 손님 창 | 손님 배지를 누르면 뜨는 작은 창: 주문 줄(드린 수/주문 수), 대사, '이웃 이야기 확인', 맛별 '주문 제작'(영업 중·세션 없을 때만. 누르면 창을 닫고 그 주문 하나를 만드는 동안만 스페셜 붕어빵 틀이 나옴. 결과를 닫으면 다시 클리커). 카운터의 '맛 제작'(`order-produce`)도 같은 주문 제작 | `customer-card`, `customer-produce-<맛>` | `WorkshopCustomerCard` |
@@ -994,6 +998,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
    - 자정·월요일 경계
    - 3개 화면 크기 × 글자 크기
 9. 이 문서와 README를 갱신합니다.
+10. Workshop 진행(`WorkshopState`)이면 `toJson`의 `schema`를 올리고 `fromJson`의 허용 목록·옛 버전 이전(새 필드가 옛 버전에 있으면 거절)을 고치며, `lib/workshop_storage.dart`의 구매 보호 schema 목록(`[2,…,N]`, 저장 검사 `!= N`)도 같이 올립니다. SQLite `user_version`은 표 구조가 바뀔 때만 올립니다(26번 5-1단계 schema 7 예).
 
 ### 스킬 단계 추가
 
@@ -1359,6 +1364,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 공유 카드 | 넣음, 보상 없음. 완벽 결과·이야기·도감 완성·가게 사진 네 곳, 1080×1350 | DEC-048 | 26번 8단계 |
 | 보상형 광고 | 출시 후 첫 업데이트. 별도 브랜치 `s26/9-ads`에만, 출시 빌드에 광고 SDK 없음(DEC-028 유지). 충전 탭 + 황금 부족 안내, 광고 ID 안 씀, 만 13세 이상 | DEC-049 | 26번 9단계 |
 | 출시 범위 | Lv.50 전체 유지(DEC-029). 26번 6단계 할 일 1 건너뜀 | DEC-050 | — |
+| 손님 방문 간격·알림 | 실제 시간: 일반 1~15분·네임드 30분~3시간, 자리 일반 3·네임드 1, 기다림은 켠 순간부터, 자정 자동 영업일 넘김, 네임드 하루 1회 제한·무기명 30% 폐지(직전 손님 제외), 튜토리얼 뒤 '맞이' 버튼 없음, 기기 안 알림(일반 끔·네임드 켬·밤 22~8시 끔 기본), 희귀 황금 3배. **구현 완료** (30장) | DEC-TBD-5-1-1~10 | 26번 5-1단계 |
 
 2026-11-18 26번 1단계 기록(문서만, 코드·설정 변경 없음). 추천안으로 확정한 세부(묻지 않은 것)와 1단계 밖 단계의 답은 00_결정취합.md 「26번 2차 구현 전 확정」 소절에 있고, 각 단계가 구현할 때 이 표에 줄을 더한다.
 
@@ -1375,3 +1381,27 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 지문 | 업로드 키 SHA-1 `17:17:AB:A9:DB:2D:31:40:06:0F:2D:4F:DE:48:89:16:3F:25:4C:42`(카카오 키 해시 `FxerqdstMUAGDy1P3kiJFj8lTEI=`), 이 PC debug 키 SHA-1 `04:1A:06:46:C2:D5:37:58:6C:A1:C5:6E:EA:97:21:33:62:08:82:DB`(`BBoGRsLVN1hsocVu6pchM2IIgts=`). Play 앱 서명 키는 첫 업로드 뒤 |
 | 도구 | `firebase/firebase_local.cmd`(로컬 Firebase CLI), `tools/kakao_key_hash.ps1`(SHA-1 → 카카오 키 해시) |
 | 미완료 | 운영 Firebase에서 테스트 구매 1건 서버 확인·지급·복구(online_setup.md 11장 표) — 사용자 콘솔 작업 뒤 확인 |
+
+## 30. 손님 방문 간격·알림 — 2026-11-18
+
+[26번 5-1단계](../26_흥행개선단계별프롬프트.md#5-1단계--손님-방문-간격과-알림). 결정은 00_결정취합.md `DEC-TBD-5-1-1`~`10`(병합 때 번호). 설정값은 `config/development_balance.json` `customer_arrivals`·`customer_notifications`(하드코딩 없음, 14번 문서에 자동 반영).
+
+| 규칙 | 내용 | 코드 |
+| --- | --- | --- |
+| 손님 시계 | 일반(무기명)·네임드 두 개가 따로 돎. 간격 = `min + hash(seed, draws) % (max − min + 1)`(고정 32비트 해시)이라 미리 정해짐 → 알림 예약 시각 = 실제 도착 시각. 일반 `regular_min_ms` 60000~`regular_max_ms` 900000, 네임드 `named_min_ms` 1800000~`named_max_ms` 10800000 | `lib/workshop_arrivals.dart` `ArrivalClock`·`WorkshopArrivals` |
+| 자리 | 일반 `regular_slots` 3, 네임드 `named_slots` 1. 켜 있을 때도 같은 자리. 자리가 차면 그 시계가 멈추고(`nextAt` null), 판매·시간 초과로 자리가 나면 그 순간부터 다음 간격. 예전 레벨별 `max_queue` 열은 없앰 | `WorkshopArrivals.resume`·`arrived` |
+| 시간 기준 | 영업 정산 시각(`business.settledUtc`, 뒤로 안 감)까지의 사건을 시각 순서로 처리. 기기 시계를 되돌려도 지난 도착이 다시 생기지 않고, 앞당겨도 자리 수에서 막힘. 앱이 꺼져 있어도 흐름(복귀·재실행 때 한꺼번에) | `WorkshopController._syncArrivals` |
+| 기다림 | 꺼진 동안 온 손님도 `order_wait_ms`를 다 가진 채 생기고, 기다림은 앱이 앞에 있을 때만 줄어듦(켠 순간부터) | `_advanceMemory` |
+| 자정 | 열린 가게는 KST 자정에 저절로 다음 영업일(`BusinessProgress.nextDay`) + 재고 나이·준비품 수락·미션 '영업한 날'. 같은 처리 순서 안에서 자정 뒤 손님은 새 영업일로 관계·소개를 셈. 여러 날 비워도 한 번만(S5-1-Q3) | `_startBusinessDay(next: true)` |
+| 멈춤 | 이야기 장면·광고 중에는 도착·자정 처리를 미루고 끝난 뒤 처리. 손님 도착으로 후일담 장면이 열리면 그 뒤 사건은 장면 뒤로 | `_syncArrivals` |
+| 네임드 고르기 | 처음은 도윤 → 못 만난 손님이 있고 그 영업일 소개 2명(`new_npcs_daily_limit`) 미만이면 목록 순서로 소개 → 아니면 만난 손님 중 직전 네임드(`lastNamedVisitor`)·줄에 선 사람을 뺀 무작위(시계 해시). 한 명뿐이면 그 사람. 하루 1회 제한(`visits_per_npc_business_day`)·무기명 30%(`anonymous_visit_basis_points`)는 설정에서 없앰. 일반 시계는 늘 무기명, 네임드 시계는 늘 네임드(못 고르면 그 회차 건너뜀). `holiday_visit_basis_points`(은채 쉬는 날)는 그대로 | `WorkshopRelationships.selectNamedVisitor` |
+| 첫 실행 안내 | 안내 중(`cook`/`sell`)엔 시계 없음. 줄이 비었으면 도윤이 바로(처음), 그 뒤엔 `customer_arrival_interval_ms`(15초) 뒤 한 명(무기명). 안내 '맞이' 버튼도 이때만. 첫 판매로 `done`이 되거나 건너뛰면 같은 명령에서 두 시계 시작. `customer_arrival_interval_ms`는 안내용 + 서버 판매 한도 계산용으로 키 유지 | `WorkshopController._tick`, `welcomeCustomer` |
+| 짧은 이름 | `customer_content.json` `short_name`: 도윤·윤하 씨·막례 할머니·오 작가님(이야기 뒤 서진 씨)·태오 씨·은채 씨·민재 씨·수아 씨. 조사 이/가는 받침으로(`withSubjectParticle`) | `WorkshopCustomerCatalog.shortName` |
+| 알림 예약 | 앱이 `paused`/`hidden`이 될 때만(inactive 아님) 저장 뒤 `upcomingArrivals(preview_horizon_ms 24시간)`으로 올 손님(일반 ≤3·네임드 ≤1)을 계산 → 끈 종류 빼기, 일반은 `regular_max_notices` 3번까지, 밤 끄기 켜면 기기 시각 `quiet_start_minute` 1320(22:00)~`quiet_end_minute` 480(08:00) 알림만 건너뜀(손님은 옴) → 모두 취소 후 예약. `resumed`에서 모두 취소. 영업 닫힘·안내 중·이야기 장면 중이면 예약 없음 | `ui/game_app.dart` `_scheduleNotices`, `planCustomerNotices` |
+| 알림 문구 | 제목 '오늘의 붕어빵'. 일반 '손님이 붕어빵을 사러 왔어요! 가게로 가 볼까요?', 네임드 '{짧은 이름}{이/가} 찾아왔어요. 따끈한 붕어빵을 기다려요.' 누르면 앱이 홈으로 열리고 손님이 기다림. 채널 '손님 알림'. 아이콘 `res/drawable/ic_stat_customer.xml`(임시 흰 붕어빵, 25번 21번) | `lib/customer_notifier.dart` |
+| 알림 드라이버 | `CustomerNotifier`(schedule·cancelAll·requestPermission). 앱은 `LocalCustomerNotifier`(Android만, `inexactAllowWhileIdle`, UTC `TZDateTime`), 테스트는 가짜. 예약 실패는 게임을 막지 않음. `build.gradle.kts` core library desugaring, 매니페스트에 예약·부팅 수신기 | `main.dart`, `android/app` |
+| 설정 화면 | 설정 창 '모션 줄이기' 아래 '일반 손님 알림'(기본 끔), '단골 손님 알림'(기본 켬), '밤 알림 끄기 (밤 10시~아침 8시)'(기본 켬). 켤 때 권한을 묻고, 거절되면 그대로 꺼진 채 '휴대폰 설정에서 이 앱의 알림을 허용해야 받을 수 있어요.' 저장은 `GameSettings` `notifyRegularGuests`·`notifyNamedGuests`·`quietNightNotices`·`notificationPromptDone`(없으면 기본값, 계정 저장 v13 그대로) | `ui/workshop_page.dart` `_audioSettings`·`_setNotice` |
+| 권한 묻기 | 안내가 끝나고(또는 건너뛰고) 첫 판매가 끝난 뒤 한 번 창 '손님 알림 — 손님이 찾아오면 알려 드릴까요? 앱을 꺼 둬도 단골손님이 오면 알림으로 알려 드려요.' [나중에][알림 받기]. 어느 쪽이든 다시 묻지 않음. '알림 받기' → Android 13+ 권한 창, 허용이면 기본값 그대로. 거절이나 '나중에'면 두 알림 끔(거절이면 위 안내 문구) | `_askNotifications` (`notice-prompt`) |
+| 희귀 황금 | 별 1~5 확률 300·600·900·1200·1500(3·6·9·12·15%), 하루 최대 10 그대로. 서버 생성본 갱신(revision 그대로) — **서버를 다시 배포하기 전까지 서버는 옛 확률(1~5%)로 추첨** | `rare_gold_sale`, `firebase/functions/src/generated/development_balance.json` |
+
+테스트: `test/workshop_arrivals_test.dart`(시계 범위·결정성, 1분·15분·3시간, 자리 상한·재시작, 시계 되돌림·1년 앞당김, 영업 닫힘, 자정 넘김·새 영업일 손님·미션, 기다림은 켠 순간부터, 미리보기 = 실제 도착, 이야기 장면 보류, 안내 → 시계 시작, schema 6→7·잘못된 7 거절, 밤 판정, 알림 계획, 설정 저장, 수명주기 예약·취소, 권한 묻기 2가지), `test/workshop_customers_test.dart`(소개 하루 2명·하루 1회 없음·직전 제외·1명뿐·짧은 이름·조사), `test/no_tracking_sdk_test.dart`(권한 3개·정확한 알람 없음·메시징 없음), `test/workshop_progression_simulation_test.dart`(8분마다 판매: Lv.5 32분·Lv.10 72분), 서버 `test/sale_rewards.test.ts`(생성본 확률 = 앱). 에뮬레이터 알림 수신 확인은 26번 5-1단계 결과 표.

@@ -46,7 +46,9 @@ class WorkshopCustomerQueue extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = controller, s = c.state;
     if (!s.business.open) return const SizedBox.shrink();
-    final full = s.customers.length >= (c.config.rows('level_progression')[s.level - 1]['max_queue'] as int);
+    // 26번 5-1단계: guests come by the real-time clocks; the '맞이' button is
+    // only for the first-run guide (S5-1-Q2) and brings one guest when the line is empty.
+    final full = !s.tutorialActive || s.customers.isNotEmpty;
     final canWelcome = !c.busy && !full && c.error == null && !c.gameplayPaused && s.business.permitsProducts(c.now());
     return SingleChildScrollView(
       key: const Key('customer-queue'),
@@ -60,7 +62,7 @@ class WorkshopCustomerQueue extends StatelessWidget {
             child: InkWell(
               key: const Key('customer-welcome'),
               customBorder: const CircleBorder(),
-              onTap: canWelcome ? c.welcomeCustomer : null,
+              onTap: canWelcome ? () => c.welcomeCustomer(named: s.relationships.met.isEmpty) : null,
               child: Opacity(
                 opacity: canWelcome ? 1 : .5,
                 child: Column(children: [

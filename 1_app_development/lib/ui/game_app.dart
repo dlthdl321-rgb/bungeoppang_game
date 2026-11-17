@@ -21,13 +21,17 @@ import 'shop_panel.dart';
 import '../workshop_controller.dart';
 import '../cooking_session.dart';
 import 'workshop_page.dart';
+import '../customer_notifier.dart';
+import '../development_balance.dart';
 
 class GameApp extends StatefulWidget {
   final GameController controller;
   final GameAudio audio;
   final WorkshopController? workshop;
+  /// Device-only customer notifications (26번 5-1단계); null in tests.
+  final CustomerNotifier? notifier;
   const GameApp(
-      {super.key, required this.controller, this.audio = const SilentAudio(), this.workshop});
+      {super.key, required this.controller, this.audio = const SilentAudio(), this.workshop, this.notifier});
   @override
   State<GameApp> createState() => _GameAppState();
 }
@@ -116,10 +120,36 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     super.dispose();
   }
 
+  /// Notifier calls run one after another so a late schedule never lands
+  /// after the cancel of a quick return.
+  Future<void> _notices = Future.value();
+  int _noticeGeneration = 0;
+  void _queueNotices(Future<void> Function() action) {
+    _notices = _notices.then((_) => action()).catchError((Object e) => debugPrint('손님 알림 오류: $e'));
+  }
+  /// Leaving the app (paused/hidden, not inactive): once the workshop is
+  /// saved, schedule one notice per guest the clocks will bring.
+  void _scheduleNotices(Future<void>? saved) {
+    final notifier = widget.notifier, workshop = widget.workshop;
+    if (notifier == null || workshop == null) return;
+    final generation = _noticeGeneration;
+    _queueNotices(() async {
+      await saved;
+      if (generation != _noticeGeneration || _foreground || workshop.disposed) return;
+      final horizon = DevelopmentBalance.integer(workshop.config.section('customer_notifications'), 'preview_horizon_ms');
+      await notifier.schedule(planCustomerNotices(workshop.upcomingArrivals(Duration(milliseconds: horizon)),
+          settings: widget.controller.state.settings, config: workshop.config, catalog: workshop.customerCatalog,
+          completedStories: workshop.state.relationships.stories));
+    });
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _foreground = true;
+      _noticeGeneration++;
+      final notifier = widget.notifier;
+      if (notifier != null) _queueNotices(notifier.cancelAll);
       widget.workshop?.setForeground(true);
       _syncAudio();
       widget.controller.resume().then(_welcomeBack);
@@ -129,7 +159,8 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
         state == AppLifecycleState.detached) {
       _foreground = false;
       _syncAudio();
-      widget.workshop?.setForeground(false);
+      final saved = widget.workshop?.setForeground(false);
+      if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) _scheduleNotices(saved);
       widget.controller.leaveActive();
     }
   }
@@ -151,7 +182,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
               child: CelebrationHost(
                   controller: widget.controller, child: child!))),
       home: widget.workshop == null ? GameHome(controller: widget.controller) :
-          WorkshopPage(controller: widget.workshop!, accountController: widget.controller));
+          WorkshopPage(controller: widget.workshop!, accountController: widget.controller, notifier: widget.notifier));
 }
 
 /// Shown when the save cannot be loaded. Switches to [GameApp] once a

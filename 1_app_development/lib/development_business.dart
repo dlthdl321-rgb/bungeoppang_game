@@ -64,6 +64,17 @@ class BusinessProgress {
     final increment = acceptedDay == day ? 0 : 1;
     return BusinessProgress._(true, businessIndex + increment, day, at, fractional);
   }
+  /// 26번 5-1단계: an open business turns over to the KST day of its settled
+  /// time by itself after midnight, without pressing '영업 시작' again.
+  /// However many midnights passed, the business day advances once
+  /// (S5-1-Q3, like [beginOrContinue]). The caller settles first.
+  BusinessProgress nextDay() {
+    final day = businessDayKst(settledUtc);
+    if (!open || acceptedDay == null || day.compareTo(acceptedDay!) <= 0) {
+      throw const FormatException('영업일 넘김 오류');
+    }
+    return BusinessProgress._(true, businessIndex + 1, day, settledUtc, fractional);
+  }
   BusinessProgress close(DateTime now) {
     if (observed(now) != settledUtc) throw const FormatException('영업 종료 전 생산 정산 필요');
     return BusinessProgress._(false, businessIndex, acceptedDay, settledUtc, fractional);

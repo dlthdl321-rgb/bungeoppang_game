@@ -582,7 +582,11 @@ class GameController extends ChangeNotifier {
       int? musicVolume,
       String? musicSelection,
       bool? cookingSound,
-      int? cookingVolume}) async {
+      int? cookingVolume,
+      bool? notifyRegularGuests,
+      bool? notifyNamedGuests,
+      bool? quietNightNotices,
+      bool? notificationPromptDone}) async {
     final previous = _settingsQueue;
     final done = Completer<void>();
     _settingsQueue = done.future;
@@ -605,6 +609,10 @@ class GameController extends ChangeNotifier {
       s.music = music ?? s.music;
       s.sfxVolume = (sfxVolume ?? s.sfxVolume).clamp(0, 100);
       s.musicVolume = (musicVolume ?? s.musicVolume).clamp(0, 100);
+      s.notifyRegularGuests = notifyRegularGuests ?? s.notifyRegularGuests;
+      s.notifyNamedGuests = notifyNamedGuests ?? s.notifyNamedGuests;
+      s.quietNightNotices = quietNightNotices ?? s.quietNightNotices;
+      s.notificationPromptDone = notificationPromptDone ?? s.notificationPromptDone;
       // Restore the previous settings if this one-shot save fails.
       await _commit(before);
     } finally {

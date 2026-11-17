@@ -9,6 +9,10 @@ import 'package:flutter_test/flutter_test.dart';
 // logs in with the Kakao SDK (kakao_flutter_sdk_user: login only).
 // Since plan 23 stage 7 the server enforces Firebase App Check, so the app
 // attests itself with firebase_app_check (Play Integrity; no ads or analytics).
+// 26번 5-1단계: device-only customer notifications with
+// flutter_local_notifications (+ timezone). They schedule on the device and
+// send nothing anywhere; no family word of _forbidden matches them, so they
+// need no allow-list entry. Exact alarms are not used.
 const _allowed = <String>{
   'firebase_core',
   'firebase_core_platform_interface',
@@ -74,6 +78,9 @@ const _forbiddenManifestEntries = <String>[
   'com.google.android.gms.measurement',
   'com.google.firebase.analytics',
   'com.google.firebase.crashlytics',
+  // 5-1단계 손님 알림은 정확한 알람 권한 없이 inexact 예약만 쓴다.
+  'android.permission.SCHEDULE_EXACT_ALARM',
+  'android.permission.USE_EXACT_ALARM',
 ];
 
 List<String> manifestViolations(String xml) =>
@@ -148,6 +155,27 @@ void main() {
     final manifest =
         File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
     expect(manifest, isNot(contains('AD_ID')));
+  });
+
+  test('5-1단계 기기 안 알림: 권한은 알림·부팅 뒤 재예약뿐, 정확한 알람 없음', () {
+    final manifest =
+        File('android/app/src/main/AndroidManifest.xml').readAsStringSync();
+    final permissions = RegExp(r'uses-permission android:name="([^"]+)"')
+        .allMatches(manifest)
+        .map((m) => m.group(1))
+        .toSet();
+    expect(permissions, {
+      'android.permission.INTERNET',
+      'android.permission.POST_NOTIFICATIONS',
+      'android.permission.RECEIVE_BOOT_COMPLETED',
+    });
+    expect(manifestViolations(manifest), isEmpty);
+    final lock = File('pubspec.lock').readAsStringSync();
+    expect(lock, contains('flutter_local_notifications:'));
+    // No server push: Firebase messaging stays out.
+    expect(lock, isNot(contains('firebase_messaging')));
+    expect(manifestViolations('<uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>'),
+        ['android.permission.SCHEDULE_EXACT_ALARM']);
   });
 
   test('pubspec.lock 허용 목록 밖의 Firebase·결제 패키지는 여전히 걸린다', () {
