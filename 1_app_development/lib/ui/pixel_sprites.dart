@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import '../avatar_atlas.dart';
 import '../avatar_rig_config.dart';
 import '../cosmetic_config.dart';
 
@@ -203,14 +204,24 @@ class PixelSprites {
       }
     }
     for (final character in _slot(CosmeticSlot.character)) {
-      yield _avatarPath(character.id, 'base');
+      // Every picture also in each skin's recoloured copy, when made.
+      Iterable<String> skinned(String path) sync* {
+        for (final skin in _slot(CosmeticSlot.skin)) {
+          yield 'assets/images/${rigSkinPicture(path, skin.id)}';
+        }
+      }
+
+      yield* skinned('avatar/${character.id}/base.png');
       for (final d in cosmeticDefinitions) {
         if (d.slot.category == CosmeticCategory.avatar &&
             !blankCosmetics.contains(d.id)) {
-          yield _avatarPath(character.id, '${d.slot.name}_${d.id}');
-          // An item's back and front halves (rigItemHalves), when drawn.
+          final main = avatarPartPath(character.id, d.slot, d.id);
+          yield* skinned(main);
+          // The worn item's mask (rigCutPicture) and its back and front
+          // halves (rigItemHalves), when drawn.
+          yield 'assets/images/${rigCutPicture(main)}';
           for (final half in rigItemHalves.keys) {
-            yield _avatarPath(character.id, '${d.slot.name}_${d.id}_$half');
+            yield* skinned(main.replaceFirst('.png', '_$half.png'));
           }
         }
       }
@@ -219,8 +230,8 @@ class PixelSprites {
       for (final view in const ['front', 'side']) {
         for (final channel in rigChannels) {
           for (final frame in channel.frames) {
-            yield 'assets/images/'
-                '${rigFeaturePicture(character.id, view, channel.id, frame)}';
+            yield* skinned(
+                rigFeaturePicture(character.id, view, channel.id, frame));
           }
         }
       }
@@ -299,19 +310,34 @@ class PixelSprites {
   // Every background has its own picture now (3.3_additional_character_and_background_images, stage 2).
   static const artStandIns = <String, String>{};
 
-  /// Stage 14 items still waiting for their art (오늘의붕어빵_이미지교체
-  /// 프롬프트 B4, B8, B9). Until then they draw a stand-in ([artStandIns])
-  /// or nothing. Remove an id when its file is added, and add the new
-  /// avatar folders (top, bottom, shoes, accessory) to pubspec.yaml.
-  static const artPending = {
-    // Vendor items the concept sheets do not have (the base figure's own
-    // hair, tee, shorts and flats are the defaults).
-    'short', 'ponytail', 'curly', 'skin2', 'skin3', 'stripe', 'chefcoat',
-    'earmuffs', 'chefhat', 'santa', 'goldtongs', 'redbandana', 'blackcap',
-    // The sheets draw these laid flat, not worn.
-    'widepants', 'brownpants', 'apron', 'darkapron', 'creamapron',
-    'waistapron',
-  };
+  /// Avatar slots whose items must be made from a picture of the vendor
+  /// wearing them ([avatarWornLayers]): flat hats sit badly on the head
+  /// (26번 녹화 피드백 F23), so they wait for their worn picture (25번 문서
+  /// 17번) and the wardrobe hides them until then.
+  static const avatarWornOnlySlots = {CosmeticSlot.hat, CosmeticSlot.hair};
+
+  /// Whether [character] can show item [id] of avatar [slot]: what the
+  /// base already wears (defaults, `blankCosmetics`), a skin tone with its
+  /// recoloured base, or an item with its own art (worn art for
+  /// [avatarWornOnlySlots]). Reads the generated [avatarArtFiles], so art
+  /// added with tools/avatar_layers.py shows up without code changes.
+  static bool avatarArtReady(String character, CosmeticSlot slot, String id) {
+    if (slot == CosmeticSlot.character) {
+      return avatarArtFiles.contains('avatar/$id/base.png');
+    }
+    if (!avatarArtFiles.contains('avatar/$character/base.png')) return false;
+    if (blankCosmetics.contains(id) || defaultCosmetics[slot] == id) {
+      return true;
+    }
+    if (slot == CosmeticSlot.skin) {
+      return avatarArtFiles
+          .contains(rigSkinPicture('avatar/$character/base.png', id));
+    }
+    final path = avatarPartPath(character, slot, id);
+    return avatarWornOnlySlots.contains(slot)
+        ? avatarWornLayers.contains(path)
+        : avatarArtFiles.contains(path);
+  }
 
   static ui.Image? cosmetic(CosmeticSlot slot, String id) {
     for (final d in cosmeticDefinitions) {

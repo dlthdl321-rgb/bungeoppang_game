@@ -105,7 +105,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
     }
     // Only the avatar catalog is for sale; other old cosmetics show once owned.
     return CosmeticMenuAccess(equipped:_equipped,owned:owned,unlocked:unlocked,canApply:canApply,price:price,
-      listed:(d)=>avatar(d) || owned(d),
+      // Avatar items show once their art is ready for the vendor worn now
+      // (PixelSprites.avatarArtReady); owners keep seeing what they bought.
+      listed:(d)=>avatar(d) && PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id) || owned(d),
       requirement:(d)=>avatar(d) ? '해금 Lv.${(catalog[d.id] as Map)['unlock_level']} · 누적 ${(catalog[d.id] as Map)['unlock_total']}' : '',
       action:(d)=>_equipped(d.slot)==d.id ? '장착 중':!unlocked(d) ? '잠김':owned(d) ? '적용':!avatar(d) ? '살 수 없음':'구매하고 적용',
       apply:(d) async {

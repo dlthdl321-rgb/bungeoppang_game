@@ -1534,6 +1534,13 @@
       "unlock_level": 1,
       "unlock_total": "0"
     },
+    "noapron": {
+      "label": "앞치마 없음",
+      "slot": "outfit",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
     "padding": {
       "label": "패딩 조끼",
       "slot": "outfit",

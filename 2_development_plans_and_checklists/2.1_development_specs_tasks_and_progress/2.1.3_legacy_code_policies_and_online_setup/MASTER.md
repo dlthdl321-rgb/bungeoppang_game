@@ -380,7 +380,7 @@
 | top | **tee 흰 티셔츠 0/1**, creamlong 크림 긴팔 3/2, pinksweater 분홍 니트 6/3, sagesweater 세이지 니트 6/4, creamsweater 꽈배기 니트 8/5, cardigan 카디건 10/6 |
 | bottom | **shorts 베이지 반바지 0/1**, skirt 주름치마 4/2, widepants 와이드 바지 6/3, brownpants 갈색 바지 7/4 |
 | shoes | **flats 갈색 단화 0/1**, sneakers 흰 운동화 4/2, boots 앵클부츠 7/4, furboots 털 부츠 10/7 |
-| outfit | **apron 기본 앞치마 0/1**, darkapron 초코 앞치마 5/2, padding 패딩 조끼 6/3, creamapron 크림 앞치마 7/4, stripe 줄무늬 앞치마 9/5, waistapron 허리 앞치마 9/5, chefcoat 요리사 복 12/7 |
+| outfit | **apron 기본 앞치마 0/1**(26번 4-4부터 그림으로 입혀짐), noapron 앞치마 없음 0/1(무료, 그림 없음), darkapron 초코 앞치마 5/2, padding 패딩 조끼 6/3, creamapron 크림 앞치마 7/4, stripe 줄무늬 앞치마 9/5, waistapron 허리 앞치마 9/5, chefcoat 요리사 복 12/7 |
 | hat | **nohat 0/1**, beanie 털 비니 3/2, bandana 크림 두건 4/2, earmuffs 귀마개 6/3, redbandana 빨간 두건 6/3, ballcap 크림 야구모자 7/4, newsboy 헌팅캡 8/4, blackcap 검정 야구모자 9/6, chefhat 요리사 모자 10/6, santa 산타 모자 14/9 |
 | accessory | **noacc 0/1**, ribbon 분홍 리본 4/2, fishpin 붕어빵 머리핀 5/3, glasses 동그란 안경 6/3, scarf 분홍 목도리 8/5, mittens 털장갑 9/6, crossbag 크로스백 11/7 |
 | tool | **tongs 붕어빵 집게 0/1**, paperbag 붕어빵 봉투 8/5, fishhold 갓 구운 붕어빵 12/8, goldtongs 황금 집게 15/9 |
@@ -396,16 +396,21 @@
 | 순서 | 레이어 | 내용 |
 | --- | --- | --- |
 | 1 | behind | 아이템 뒤 조각 `<slot>_<id>_back.png` |
-| 2 | base | 포즈 그림(몸·얼굴·기본 머리·기본 옷) |
-| 3 | eyes | 눈 프레임 |
-| 4 | mouth | 입 프레임 |
-| 5~11 | bottom, shoes, top, outfit, hat, accessory, tool | 칸별 아이템(`rigSlotLayers`). tool만 탭할 때 올라감 |
-| 12 | front | 아이템 앞 조각 `<slot>_<id>_front.png` |
+| 2 | base | 포즈 그림(몸·얼굴·기본 머리·기본 옷). 피부톤이 skin2·3이면 `base@<skin>.png` |
+| 2-1 | (_cut) | 착용 중인 아이템의 `<slot>_<id>_cut.png` 마스크로 base에서 가려질 픽셀을 지움(`BlendMode.dstOut`, base만 담은 `saveLayer` 안). 머리·얼굴·옷은 지우지 않음 |
+| 3 | hair | 머리 모양 `hair_<short·ponytail·curly>.png`(긴 생머리 `long`은 base 그대로). 긴 머리는 hair의 `_cut`이 지움 |
+| 4 | eyes | 눈 프레임 |
+| 5 | mouth | 입 프레임 |
+| 6~12 | bottom, shoes, top, outfit, hat, accessory, tool | 칸별 아이템(`rigSlotLayers`). tool만 탭할 때 올라감 |
+| 13 | front | 아이템 앞 조각 `<slot>_<id>_front.png` |
 
 - 아이템 그림의 기준점은 캔버스 원점입니다. 잘라낸 그림은 `avatarTrimOffsets`의 (left, top)에 놓입니다. 그림 크기가 280×520이면 오프셋을 무시합니다.
 - 그림별 위치 보정·크기·회전·같은 층 안의 순서는 `rigPlacements`(경로 → `RigPlacement`)에 둡니다. 지금은 비어 있습니다.
 - 앞/뒤 조각은 파일만 넣으면 됩니다. `PixelSprites.load`가 에셋 목록에 있는 것만 읽습니다.
-- character·skin·hair는 레이어가 아니라 base 그림 자체를 바꿉니다(머리 그림은 아직 base에 합쳐져 있음).
+- character는 base 그림을 고릅니다. skin은 그림마다 피부색만 바꾼 복사본 `<파일>@skin2.png`·`@skin3.png`를 고릅니다(`rigSkinPicture`, 복사본이 없는 그림은 원래 그림). 복사본은 base, 정면 얼굴 부분 그림, 피부가 보이는 hair·hat 레이어에만 있습니다. hair는 hair 레이어입니다(26번 4-4, 2026-11-18).
+- **입은 모습(worn) 레이어:** 3.3 원본 폴더의 '입은 모습' 전신 그림(`avatar/<성별>/<slot>_<id>.png`)을 base에 겹쳐(머리 아래 몸으로 맞춤) 바뀐 픽셀만 아이템 레이어로, base에서 사라진 픽셀은 `_cut` 마스크로 만듭니다(`tools/avatar_layers.py worn`, `WORN_ITEMS`). `_cut`은 base 가장자리 밖·아이템 아래로 2픽셀 넓혀서 축소해 그려도 옛 외곽선이 남지 않습니다. 모자·액세서리는 얼굴(눈·입 상자 + 12픽셀)을 바꾸지 않습니다. 어느 레이어가 worn으로 만들어졌는지는 생성 파일 `avatarWornLayers`, 에셋 목록은 `avatarArtFiles`(둘 다 `lib/avatar_atlas.dart`).
+- **꾸미기에 보이는 조건(`PixelSprites.avatarArtReady`):** 기본값·그림 없는 아이템(`blankCosmetics`)·skin1·긴 생머리는 늘 보임. skin2·3은 `base@<skin>.png`, hat·hair는 worn 레이어(`avatarWornOnlySlots`), 나머지는 그림 파일이 있어야 보입니다. 지금 캐릭터 기준이고, 이미 산 아이템은 그림이 없어도 보입니다(`workshop_page.dart` `_cosmetics` `listed`). 그림이 들어오면 `python tools/avatar_layers.py`만 다시 돌리면 코드 변경 없이 보입니다. 2026-11-18 기준 숨김: 털 비니·크림 두건·크림 야구모자·헌팅캡(남녀, 평면 그림만 있음 — 25번 17번 '쓴 모습' 원본 대기).
+- 조리 장면(cook 측면 6장)은 옷·피부가 그려진 그림이라 피부톤·머리·아이템을 반영하지 않습니다(26번 4-4 '이번엔 정면만', 후속).
 
 **포즈(`RigPose`)**
 
@@ -425,7 +430,7 @@
 
 - 쉬는 프레임은 그림 자체라서 파일이 없습니다. 프레임 그림이 없으면 쉬는 프레임으로 대체됩니다.
 - 부분 그림의 피벗(기준점에 닿는 점)은 `avatarPartPivots`에 있습니다.
-- 부분 그림은 그려진 눈·입을 주변 피부색으로 덮고 새 모양을 그립니다(`tools/avatar_layers.py face`). 피부색은 skin1 그림에서 가져옵니다. skin2·skin3 그림이 생기면 피부톤별 부분 그림도 만들어야 합니다.
+- 부분 그림은 그려진 눈·입을 주변 피부색으로 덮고 새 모양을 그립니다(`tools/avatar_layers.py face`). 피부색은 skin1 그림에서 가져오고, skin2·skin3용은 `skin` 작업이 같은 색 치환으로 `parts/<character>_front_<part>@<skin>.png`를 만듭니다.
 
 **모션(`MotionClip`)**
 
@@ -440,7 +445,7 @@
 - 모션 줄이기를 켜거나 `WeatherLayer.animate`가 false(테스트)이면 얼굴은 그려진 그대로이고 티커도 돌지 않습니다.
 - 친구·랭킹 목록의 아바타는 움직이지 않습니다.
 
-**디버그:** 개발 빌드(`developerTools`)의 설정 맨 아래 '레이어 기준점 보기'를 켭니다(`AvatarRigDebug.show`). 노란 선은 리그 영역, 하늘색 선은 레이어 경계, 분홍 표시는 기준점입니다. 확인용 이미지는 `flutter test tools/preview_avatar_layers_test.dart`로 만들고, 결과는 `build/preview/avatar_layers.png`에 저장됩니다.
+**디버그:** 개발 빌드(`developerTools`)의 설정 맨 아래 '레이어 기준점 보기'를 켭니다(`AvatarRigDebug.show`). 노란 선은 리그 영역, 하늘색 선은 레이어 경계, 분홍 표시는 기준점입니다. 확인용 이미지는 `flutter test tools/preview_avatar_layers_test.dart`로 만들고, 결과는 `build/preview/avatar_layers.png`에 저장됩니다. 골든 `test/goldens/avatar_skin_hair.png`(`test/avatar_golden_test.dart`, 2026-11-18 26번 4-4에서 새로 만듦)는 남녀 × 피부톤 3 × 머리 4와 짧은 머리+요리사 모자·앞치마 없음을 찍어 `_cut`·피부 복사본·머리 레이어가 깨지는지 봅니다. 황금 집게는 원본이 다른 팔 자세라 기존 집게를 금색으로 바꾼 그림입니다(`tools/avatar_layers.py derive`).
 
 **저장:** 바뀐 것이 없습니다. 장착 상태는 원래부터 `wardrobe.equipped`에 '칸 이름 → 아이템 id'로 저장됩니다. 그림 경로는 저장하지 않습니다. 서버 외형도 같은 id를 씁니다(`lookFromServer`).
 
@@ -870,7 +875,7 @@
 | 화로 | `stove/<id>.png`, 빈 굽는 판 `stove_empty/<id>.png`·붕어빵만 `stove_fish/<id>.png`(941×470, `tools/apply_25_art.py`) |
 | 장식 | `deco/<id>.png` (위치는 `night_stall_painter.dart` `decorationAt`) |
 | 등불 | `stall/postlamp_<색>.png` (id는 `<색>lamp`) |
-| 아바타 | `avatar/<girl·boy>/base.png`, `avatar/<character>/<slot>_<id>.png` (여백을 잘라내고 위치는 `avatarTrimOffsets`), 앞/뒤 조각 `_front`·`_back` |
+| 아바타 | `avatar/<girl·boy>/base.png`, `avatar/<character>/<slot>_<id>.png` (여백을 잘라내고 위치는 `avatarTrimOffsets`), 앞/뒤 조각 `_front`·`_back`, 지울 마스크 `_cut`, 피부톤 복사본 `@skin2`·`@skin3` |
 | 얼굴 부분 | `parts/<character>_<front·side>_<eyes·mouth>_<frame>.png` (위치는 `avatarPartPivots`, `avatarFaceAnchors`) |
 | 스킬 | `skills/tap_N.png`, `skills/auto_N.png` |
 | 아이콘 | `icons/<name>.png` (이름을 `iconNames`에 등록) |
@@ -883,8 +888,8 @@
 
 - 모든 경로는 `assets/images/` 아래이고, **새 폴더는 `pubspec.yaml`의 assets에도 등록**해야 합니다.
 - 파일이 없으면 오류 없이 그려지지 않습니다.
-- 그림이 없는 아이템은 `blankCosmetics`에, 그림을 기다리는 아이템은 `artPending`에 올립니다(`test/pixel_art_test.dart`가 확인).
-- 아바타 그림을 바꾸거나 추가했으면 `python tools/avatar_layers.py`를 실행합니다. 280×520 그림의 여백을 잘라내고, 얼굴 부분 그림과 `lib/avatar_atlas.dart`를 다시 만듭니다. 이미 잘라낸 그림은 기록된 위치를 유지합니다. 측정값은 `tools/avatar_layers.json`에 저장됩니다.
+- 그림이 없는 아이템은 `blankCosmetics`에 올립니다. 붕어빵·가게 아이템은 모두 그림이 있어야 하고(`test/pixel_art_test.dart`), 아바타 아이템은 그림이 준비될 때까지 꾸미기에서 숨깁니다(`PixelSprites.avatarArtReady`, 7장). 예전 `artPending` 목록은 26번 4-4에서 없앴습니다.
+- 아바타 그림을 바꾸거나 추가했으면 `python tools/avatar_layers.py`를 실행합니다(fringe → face → worn → derive → skin → trim, 2026-11-18 기준 약 20분). 머리 사이 흰 배경 잔여를 메우고, 얼굴 부분 그림·입은 모습 레이어와 `_cut`·피부톤 복사본을 만들고, 280×520 그림의 여백을 잘라낸 뒤 `lib/avatar_atlas.dart`를 다시 만듭니다. 전수 확인은 `python tools/avatar_audit.py`(`build/avatar_audit/audit.md`)와 `flutter test tools/preview_avatar_audit_test.dart`(`build/avatar_audit/<girl·boy>.png`, 모든 아이템·피부톤×머리 비교 이미지). 이미 잘라낸 그림은 기록된 위치를 유지합니다. 측정값은 `tools/avatar_layers.json`에 저장됩니다.
 
 ### 소리 (`lib/game_audio.dart`, `lib/music_config.dart`, `lib/feedback_config.dart`)
 
@@ -1029,7 +1034,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 ### 꾸미기 아이템 추가
 
 1. `cosmetic_config.dart`에 `CosmeticDefinition`을 추가합니다. id는 `^[a-z0-9_]{1,32}$` 형식이어야 합니다(서버 검사).
-2. [12장](#12-이미지소리) 경로에 그림을 넣습니다. 아바타는 girl과 boy 둘 다 필요합니다. 그림이 없으면 `blankCosmetics`/`artPending`에 올립니다.
+2. [12장](#12-이미지소리) 경로에 그림을 넣습니다. 아바타는 girl과 boy 둘 다 필요하고, 가능하면 '입은 모습' 원본을 3.3 폴더에 넣고 `WORN_ITEMS`에 한 줄 더한 뒤 `python tools/avatar_layers.py`를 돌립니다. 그림이 아예 없는 기본·빈 아이템은 `blankCosmetics`에 올리고, 그림이 아직 없는 유료 아바타 아이템은 꾸미기에서 자동으로 숨겨집니다.
 3. 종류별 추가 작업
    - 장식: `decorationAt` 위치
    - 배경: `musicMoodFor`, 밤 이미지
@@ -1096,7 +1101,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 | 레벨 | Lv.1~50 전체(11~50은 임시 곡선). 2026-11-18 유지 재확인 | DEC-029, DEC-050 |
 | 맛 | 팥 기본, 슈크림·초코 획득 경로 유지 | DEC-029 |
 | 손님 | 네임드 8명 전체 + 무기명 | DEC-029 |
-| 유료·온라인 노출 | 황금 상점(IAP)·유료 아바타 노출. 랭킹·친구·초대 숨김 | DEC-029 |
+| 유료·온라인 노출 | 황금 상점(IAP)·유료 아바타 노출. 랭킹·친구·초대 숨김. 2026-11-18: 그림이 준비 안 된 유료 아바타(지금은 모자 4종)는 숨김 | DEC-029, DEC-TBD-4-4-1 |
 | 테스트 | Play 비공개 테스트로 바로 배포, 12~20명·14일 이상 | DEC-030 |
 | 부분 판매 집계 | 판매 횟수 = 주문 완료 1회. 별점 = 판매 당시 품질·신선도 고정, 개수 가중 | DEC-017/023/007, DEC-018/022 |
 
@@ -1359,6 +1364,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 공유 카드 | 넣음, 보상 없음. 완벽 결과·이야기·도감 완성·가게 사진 네 곳, 1080×1350 | DEC-048 | 26번 8단계 |
 | 보상형 광고 | 출시 후 첫 업데이트. 별도 브랜치 `s26/9-ads`에만, 출시 빌드에 광고 SDK 없음(DEC-028 유지). 충전 탭 + 황금 부족 안내, 광고 ID 안 씀, 만 13세 이상 | DEC-049 | 26번 9단계 |
 | 출시 범위 | Lv.50 전체 유지(DEC-029). 26번 6단계 할 일 1 건너뜀 | DEC-050 | — |
+| 아바타 그림 매칭 | 머리 = 입은 모습 레이어 + `_cut`, 피부톤 = 도구 색 치환 복사본(`@skin2·3`), 정면만. 기본 앞치마를 그림으로 입히고 무료 '앞치마 없음'(`noapron`) 추가. 그림이 준비 안 된 유료 아바타는 꾸미기·상점에서 숨김(보유자에겐 보임). **구현함**(7장, 2026-11-18) | DEC-TBD-4-4-1~3 | 26번 4-4단계 |
 
 2026-11-18 26번 1단계 기록(문서만, 코드·설정 변경 없음). 추천안으로 확정한 세부(묻지 않은 것)와 1단계 밖 단계의 답은 00_결정취합.md 「26번 2차 구현 전 확정」 소절에 있고, 각 단계가 구현할 때 이 표에 줄을 더한다.
 

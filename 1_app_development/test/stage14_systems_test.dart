@@ -36,18 +36,17 @@ void main() {
     }
   });
 
-  test('그림 대기 목록과 대체 그림은 실제 꾸미기 ID만 가리킨다', () {
+  test('대체 그림은 실제 꾸미기 ID만 가리키고, 기본 차림은 언제나 그릴 수 있다', () {
     final ids = cosmeticDefinitions.map((d) => d.id).toSet();
-    expect(ids.containsAll(PixelSprites.artPending), isTrue);
     expect(ids.containsAll(PixelSprites.artStandIns.keys), isTrue);
     expect(ids.containsAll(PixelSprites.artStandIns.values), isTrue);
-    // Every new default is either drawn or borrows art.
-    for (final id in defaultCosmetics.values) {
-      if (PixelSprites.artPending.contains(id) &&
-          !blankCosmetics.contains(id) &&
-          !PixelSprites.artStandIns.containsKey(id)) {
-        // Clothes layers may stay empty until drawn; the body still shows.
-        expect(['tee', 'shorts', 'flats', 'apron'], contains(id));
+    // Every default avatar item is drawn by the base or its own layer, so
+    // the wardrobe never hides what a new vendor wears.
+    for (final character in ['girl', 'boy']) {
+      for (final e in defaultCosmetics.entries) {
+        if (e.key.category != CosmeticCategory.avatar) continue;
+        expect(PixelSprites.avatarArtReady(character, e.key, e.value), isTrue,
+            reason: '$character ${e.value}');
       }
     }
   });
