@@ -149,8 +149,12 @@ abstract class SoundPolicy implements GameAudio {
   }
 }
 
+/// Seamless 20 s griddle loop (tools/generate_cooking_sound.py).
+const cookingLoopAsset = 'audio/sizzle_loop.wav';
+
 class AudioplayersAudio extends SoundPolicy {
-  static const _files = {
+  /// Effect files (under assets/), made by tools/generate_sounds.py.
+  static const sfxFiles = {
     Sfx.tap: 'audio/tap.wav',
     Sfx.purchase: 'audio/purchase.wav',
     Sfx.reward: 'audio/reward.wav',
@@ -170,7 +174,9 @@ class AudioplayersAudio extends SoundPolicy {
   int _cookingRevision = 0;
   Future<void> _cookingWork = Future<void>.value();
   bool _ready = false, _disposed = false;
-  String? _loadedMood;
+  /// Loaded song. Every mood shares one song now, so a mood change must not
+  /// reload (and restart) it.
+  String? _loadedAsset;
   int _musicRevision = 0;
   Future<void> _musicWork = Future<void>.value();
   Future<void>? _initializing;
@@ -185,14 +191,14 @@ class AudioplayersAudio extends SoundPolicy {
       await AudioPlayer.global.setAudioContext(
           AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers)
               .build());
-      for (final e in _files.entries) {
+      for (final e in sfxFiles.entries) {
         _pools[e.key] = await AudioPool.createFromAsset(
             path: e.value, maxPlayers: e.key == Sfx.tap ? 4 : 2);
       }
       await _music.setReleaseMode(ReleaseMode.loop);
-      final initialMood = mood;
-      await _music.setSource(AssetSource(musicAsset(initialMood)));
-      _loadedMood = initialMood;
+      final initialAsset = musicAsset(mood);
+      await _music.setSource(AssetSource(initialAsset));
+      _loadedAsset = initialAsset;
       if (_disposed) return;
       _ready = true;
       _syncMusic();
@@ -244,10 +250,10 @@ class AudioplayersAudio extends SoundPolicy {
     final revision = ++_musicRevision;
     _musicWork = _musicWork.catchError((_) {}).then((_) async {
       if (_disposed || revision != _musicRevision) return;
-      if (_loadedMood != mood) {
-        final requested = mood;
-        await _music.setSource(AssetSource(musicAsset(requested)));
-        _loadedMood = requested;
+      final requested = musicAsset(mood);
+      if (_loadedAsset != requested) {
+        await _music.setSource(AssetSource(requested));
+        _loadedAsset = requested;
       }
       if (_disposed || revision != _musicRevision) return;
       await _music.setVolume(musicVolume / 100);
@@ -269,7 +275,7 @@ class AudioplayersAudio extends SoundPolicy {
       if (!playing && !_cookingLoaded) return;
       if (!_cookingLoaded) {
         await _cooking.setReleaseMode(ReleaseMode.loop);
-        await _cooking.setSource(AssetSource('audio/sizzle_loop.wav'));
+        await _cooking.setSource(AssetSource(cookingLoopAsset));
         _cookingLoaded = true;
       }
       if (_disposed || revision != _cookingRevision) return;
