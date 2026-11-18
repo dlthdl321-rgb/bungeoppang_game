@@ -144,7 +144,6 @@ void main() {
     }
 
     Finder key(String name) => find.byKey(Key(name));
-    InkWell cell(WidgetTester tester, int i) => tester.widget<InkWell>(key('workshop-cell-$i'));
 
     testWidgets('영업 준비 중: 스페셜 붕어빵 틀과 제작 시작만, 숙련된 붕어빵 틀은 빈 틀', (tester) async {
       final c = await mount(tester);
@@ -178,8 +177,10 @@ void main() {
       expect(key('workshop-mold-action'), findsNothing);
       expect(find.text('스페셜 붕어빵 제작 시작'), findsNothing);
       expect(find.byType(DropdownButton<String>), findsNothing);
-      // The griddle works as before: cells are there.
-      expect(key('workshop-cell-0'), findsOneWidget);
+      // The griddle is out (not idle); before a flavor is mastered it shows
+      // the common lock instead of cells (26번 2단계).
+      expect(key('griddle-locked'), findsOneWidget);
+      expect(key('workshop-cell-0'), findsNothing);
       expect(key('griddle-idle'), findsNothing);
 
       final buns = c.state.buns, taps = c.state.taps;
@@ -214,9 +215,9 @@ void main() {
       expect(key('workshop-clicker'), findsNothing);
       expect(key('floating-fish'), findsNothing);
       expect(c.clickerTap(), isNull);
-      // The griddle stays paused while the mold is busy.
-      expect(key('workshop-cell-0'), findsOneWidget);
-      expect(cell(tester, 0).onTap, isNull);
+      // The griddle stays locked (nothing mastered yet) while the mold is busy.
+      expect(key('griddle-locked'), findsOneWidget);
+      expect(key('workshop-cell-0'), findsNothing);
 
       await bake(c);
       await tester.pump();

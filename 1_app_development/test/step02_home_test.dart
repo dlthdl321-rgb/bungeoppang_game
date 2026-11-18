@@ -57,8 +57,9 @@ void main() {
       expect(find.byType(NightHome),findsOneWidget);
       expect(find.byType(BakeTarget),findsNothing);
       expect(find.byKey(const Key('menu-menu')),findsOneWidget);
-      expect(find.byKey(const Key('auto-rate')),findsOneWidget);
-      expect(find.byKey(const Key('tap-rate')),findsOneWidget);
+      // 26번 2단계: the per-second and per-tap numbers open with the skills at Lv.2.
+      expect(find.byKey(const Key('auto-rate')),findsNothing);
+      expect(find.byKey(const Key('tap-rate')),findsNothing);
       await tester.tap(find.byTooltip('설정'));await tester.pumpAndSettle();
       expect(find.byKey(const Key('setting-music')),findsOneWidget);
       await tester.scrollUntilVisible(find.text('진동'),250,scrollable:find.byType(Scrollable).last);

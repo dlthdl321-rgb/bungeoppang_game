@@ -184,6 +184,8 @@ def validate(data, catalog):
     require(all(1 <= level <= 50 for level in data['feature_unlock_levels'].values()), '기능 레벨 범위')
     for key in ('manual_practice', 'core_business', 'core_sales', 'mastery_progress', 'six_slot_access'):
         require(data['feature_unlock_levels'][key] == 1, '핵심 진행의 추가 성장 잠금 금지')
+    # 26번 2단계(DEC-043): 스킬 창은 처음 5분 안(Lv.2~5)에 연다.
+    require(2 <= data['feature_unlock_levels']['skill_shop'] <= 5, '스킬 창 해금 레벨(처음 5분)')
     check = data['server_validation']
     require(check['max_taps_per_second'] > 0 and check['mission_claim_grace_days'] >= 1 and
             all(re.fullmatch(r'0|[1-9][0-9]*', check[k]) for k in ('slack_buns', 'first_checkpoint_max_lifetime')),

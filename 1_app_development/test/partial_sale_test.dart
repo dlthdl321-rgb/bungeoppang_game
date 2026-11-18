@@ -160,10 +160,10 @@ void main() {
     test('schema4 저장은 최신 schema로 읽고, schema4에 납품 기록이 있으면 거절한다', () async {
       await controller.command(() => controller.state.customers.add(order()));
       await stock('first');
-      final schema4 = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor');
-      expect(WorkshopState.fromJson(schema4, config).toJson()['schema'], 7);
+      final schema4 = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros');
+      expect(WorkshopState.fromJson(schema4, config).toJson()['schema'], 8);
       expect(await controller.sellToCustomer('order'), isTrue);
-      final forged = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor');
+      final forged = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros');
       expect(() => WorkshopState.fromJson(forged, config), throwsFormatException);
     });
 

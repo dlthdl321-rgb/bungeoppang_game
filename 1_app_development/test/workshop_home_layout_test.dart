@@ -48,6 +48,8 @@ void main() {
           'practiceRequired': DevelopmentBalance.integer(rule, 'practice_required'),
           'techniqueRequired': DevelopmentBalance.integer(rule, 'technique_passes_required'),
         };
+        // Its introduction card is not what these layouts check.
+        c.state.featureIntros.add('griddle');
       });
 
   for (final size in const [Size(360, 640), Size(360, 800), Size(390, 844), Size(412, 915)]) {
@@ -71,7 +73,9 @@ void main() {
           .ancestor(of: find.text('스페셜 붕어빵 제작 시작'), matching: find.byType(Container))
           .first);
       expect(pill.bottom, closeTo(counter.top - 4, .5));
-      // The counter stays above the griddle's cells, the cells above the menu.
+      // The counter stays above the griddle's cells, the cells above the menu
+      // (cells show once a flavor is mastered, 26번 2단계).
+      await master(c);
       await c.openBusiness();
       await tester.pump();
       final nav = tester.getRect(find.byKey(const Key('home-nav')));

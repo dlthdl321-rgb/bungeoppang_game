@@ -22,6 +22,13 @@ void main(){
       await tester.tap(finder);await tester.pumpAndSettle();
     }
     Future<void> close()async{await tester.tap(find.byTooltip('닫기').last);await tester.pumpAndSettle();}
+    // 26번 2단계: during the first-run guide 상점·꾸미기·스킬 are locked.
+    for(final id in ['shop','skins','skills']){expect(find.byKey(Key('menu-$id-locked')),findsOneWidget);}
+    expect(await c.skipTutorial(),isTrue);
+    // Lv.8 opens every menu row; the cards were seen (they have their own test).
+    expect(await c.command((){c.state.level=8;c.state.claimedLevels.addAll([for(var n=2;n<=8;n++)n]);
+      c.state.featureIntros.addAll(['skills','collection','recipes','specialOrders','fishCosmetics','stallCosmetics']);}),isTrue);
+    await tester.pump();
     await tapKey('menu-shop');
     expect(tester.getBottomRight(find.byType(CozyBackButton)).dy,lessThanOrEqualTo(776));
     expect(tester.widget<Text>(find.byKey(const Key('workshop-window-title'))).data,'상점');
@@ -57,7 +64,7 @@ void main(){
       await tapKey('menu-menu');expect(c.gridVisible,isFalse);
       await tapKey(route.$1);
       expect(tester.widget<Text>(find.byKey(const Key('workshop-window-title'))).data,route.$2);
-      if(route.$1=='menu-collection')expect(find.textContaining('맛 도감은 Lv.'),findsOneWidget);
+      if(route.$1=='menu-collection')expect(find.textContaining('맛 도감은 Lv.'),findsNothing);
       expect(c.gridVisible,isFalse,reason:'switching windows must keep the grid paused');
       if(route.$1=='menu-theme')expect(find.textContaining('준비 중'),findsNothing);
       expect(tester.takeException(),isNull);await close();expect(c.gridVisible,isTrue);

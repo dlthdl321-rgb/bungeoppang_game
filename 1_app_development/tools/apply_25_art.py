@@ -11,6 +11,7 @@ snaps the alpha so there is no halo:
     python tools/apply_25_art.py <25_generated folder> --preview  # + sheet
     python tools/apply_25_art.py <25_generated folder> --measure  # re-fit stoves
     python tools/apply_25_art.py <25_generated folder> --only textures --preview
+    python tools/apply_25_art.py <26_feedback_generated folder> --only locks --preview
 
 Run it in 1_app_development. Outputs:
 
@@ -40,6 +41,12 @@ Run it in 1_app_development. Outputs:
   feather), first left/right then top/bottom. Last, a few flat colors per
   flavor (no dither) so the dots stay crisp. paintMoldLayer tiles it at
   fillingTextureScale mold pixels per texture pixel.
+* assets/images/ui/lock_badge.png (128x128): the big padlock of 26번
+  13_locks/lock_badge.png (1254x1254), cut to its drawn part, centred on a
+  square with a 4px margin and scaled down. The stripes are drawn in code
+  (LockHatchPainter: 6px lines, 10px gaps, 35%), not from the generated
+  tile (its alpha tops at 71 and it does not repeat). Source: the
+  26_feedback_generated folder.
 """
 import argparse
 import sys
@@ -405,13 +412,37 @@ def preview(made, path):
     sheet.save(path)
 
 
+# ---------------------------------------------------------------- locks
+
+LOCK_SIZE = 128
+
+
+def locks(src):
+    img = load(src / "13_locks" / "lock_badge.png")
+    a = np.asarray(img)[..., 3]
+    ys, xs = np.nonzero(a > 128)
+    box = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
+    part = img.crop(box)
+    side = max(part.size)
+    square = Image.new("RGBA", (side, side))
+    square.paste(part, ((side - part.width) // 2, (side - part.height) // 2))
+    inner = LOCK_SIZE - 8
+    small = premultiplied_resize(square, (inner, inner))
+    out = Image.new("RGBA", (LOCK_SIZE, LOCK_SIZE))
+    out.alpha_composite(small, (4, 4))
+    out = snap_alpha(out, 40, 215)
+    (IMAGES / "ui").mkdir(exist_ok=True)
+    out.save(IMAGES / "ui" / "lock_badge.png")
+    return {"ui/lock_badge": out}
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("source", type=Path, help="the 25_generated folder")
     p.add_argument("--preview", action="store_true")
     p.add_argument("--measure", action="store_true",
                    help="re-measure STOVE_FIT (slow, a few minutes)")
-    steps = ["stoves", "bags", "drips", "rings", "textures"]
+    steps = ["stoves", "bags", "drips", "rings", "textures", "locks"]
     p.add_argument("--only", choices=steps, action="append",
                    help="run only these steps (repeatable)")
     args = p.parse_args()
@@ -433,6 +464,9 @@ def main():
     if "textures" in run:
         print("filling textures")
         made.update(textures(src))
+    if "locks" in run and args.only:
+        print("lock badge")
+        made.update(locks(src))
     for key, img in made.items():
         print(f"  {key}.png {img.size}")
     if args.preview:

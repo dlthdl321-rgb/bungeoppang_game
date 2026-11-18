@@ -131,11 +131,12 @@
 | 항목 | 값 |
 | --- | --- |
 | DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
-| JSON 저장 형식 | `schema` 7. 1~6을 읽고 7로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 7만 받음) |
+| JSON 저장 형식 | `schema` 8. 1~7을 읽고 8로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 8만 받음) |
 | schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
 | 제작 세션 `session` (CookingSession schema 1, 24번 5단계 G1) | 짤주머니 세 단계의 칠한 양을 **추가 필드**로 저장: `firstBatterCoverage`·`firstBatterAmount`, `fillingCoverage`·`fillingAmount`, `secondBatterCoverage`·`secondBatterAmount`(permille, 단계를 마치면 둘 다 있음, 0 < 덮음 ≤ 1000, 덮음 ≤ 양 ≤ 9000). 예전 `firstBatterMs`·`secondBatterMs`·`fillingDurationMs`는 읽기만 하고 새로 쓰지 않음(같은 단계에 두 종류가 함께 있으면 거절). 단계 완료 = 둘 중 하나가 있음. 예전 저장·진행 중 세션은 그대로 이어서 하고, ms로 끝난 반죽 단계는 손기술 실패. Workshop schema 6·`user_version` 4·생산 저널 형식 변경 없음 |
 | schema 6 (2026-11-11) | 첫 실행 안내 `tutorial`: `cook` → `sell` → `done`, 또는 `skipped`. 새 설치는 `cook`. schema 5 이하는 `done`으로 올리고, 그 버전에 `tutorial`이 있으면 거절. 판매 기록이 있는데 `cook`/`sell`이면 거절 |
 | schema 7 (2026-11-18, 26번 5-1단계) | 손님 시계 `regularClock`·`namedClock`(`{nextAt: UTC ms 또는 null, seed, draws}`)과 직전 네임드 `lastNamedVisitor`. 7에 셋 중 하나라도 없거나 6 이하에 있으면 거절. 닫힌 가게·안내 중인데 `nextAt`이 있거나, `nextAt`이 정산 시각 + 최대 간격보다 멀면 거절. `lastNamedVisitor`는 만난 손님만. 6 이하 이전: 시드는 진행 ID(`grid.runId`)에서 만들고 시계는 멈춘 채(null) 두어 불러온 뒤 첫 정산 시각부터 셈, `lastNamedVisitor`는 관계 기록의 가장 늦은 방문. `arrivalMs`는 안내 중 손님 간격용으로 그대로 |
+| schema 8 (2026-11-18, 26번 2단계) | 이미 본 기능 소개 카드 `featureIntros`(`WorkshopFeature` 이름 목록, 정렬해 저장: `skills`·`griddle`·`collection`·`recipes`·`specialOrders`·`fishCosmetics`·`freshness`·`stallCosmetics`). 8에 없거나, 모르는 이름·중복이 있거나, 7 이하에 있으면 거절. 7 이하 이전: 불러온 상태에서 **이미 열린 기능은 본 것으로 채움**(고레벨 기존 저장은 카드 0장, 낮은 레벨은 앞으로 열릴 카드만). 첫 판매 칭찬(`salePraise`)은 저장하지 않음 |
 
 **저장 손상 대처** (`lib/main.dart` `_start`, `lib/ui/save_recovery.dart`, `lib/save_quarantine.dart`)
 
@@ -608,7 +609,7 @@
 | 스페셜 붕어빵 무대 | HUD 아래 중앙. 배경에 그려진 붕어빵 자리에 맞춤. 영업 상태별(DEC-035, 아래 "두 틀 규칙"): 영업 준비 중 빈 틀 + 맛 선택 + '스페셜 붕어빵 제작 시작'(버튼 아래끝 = 판매 카운터 윗변 − 4, 24번 4단계. 행주 값이 없는 배경이면 예전처럼 틀 아래 경계에 걸침), 영업 중 세션이 없으면 틀 없이 떠 있는 큰 붕어빵(클리커, 틀 자리에서 틀 높이×0.75 위), 제작 세션 중에는 틀과 단계 조작. 새 영업일 이어서 영업 전에는 빈 틀만 | `workshop-center-stage`, `workshop-mold-action`, `workshop-clicker` | `ui/workshop_mold_stage.dart` `WorkshopMoldStage`·`WorkshopClicker` |
 | 손님 줄 | 무대 왼쪽, 폭 64, 위 48·아래 56 여백. 맨 앞이 위. 배지 52(남은 시간 고리, 맨 앞은 노란 면) + "N번" + 맛 첫 글자·수량. '맞이' 버튼은 **첫 실행 안내 중이고 줄이 비었을 때만**(26번 5-1단계 S5-1-Q2). 안내가 끝나면 손님은 실제 시간 시계로만 옴(30장). 줄은 일반 3 + 네임드 1까지 | `customer-N`, `customer-welcome` | `ui/workshop_counter.dart` `WorkshopCustomerQueue` |
 | 판매 카운터 | 왼쪽 8, 폭 = w − 16 − (조리 컷 폭 + 8), **위 = 배경 왼쪽 빨간 체크 행주의 윗변**(DEC-038, 아래 "행주 윗변"), 높이는 내용대로. 행주 값이 없는 배경(장면 크기 픽셀 그림·새 배경)이면 예전처럼 아래 = 굽는 판 바닥 + 굽는 판 높이×0.66. 스페셜 붕어빵 제작 중에는 숨김 | `sale-counter` | `WorkshopSaleCounter` |
-| 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 굽는 판 폭 = w − 16(왼쪽 8), 높이 = 폭 × 그림 높이/폭(941×470), 그림이 상자를 꽉 채워 칸 위치·터치 영역도 같은 비율로 커짐(DEC-038). 바탕은 **빈 굽는 판 그림**(`assets/images/stove_empty/<화로>.png`, 25번 1번 생성 그림을 `tools/apply_25_art.py`로 원래 화로 위치에 맞춤: 칸이 붕어빵 모양 홈)이고, 굽는 칸에만 원래 그림의 붕어빵만 남긴 층(`stove_fish/<화로>.png`, 없으면 `stove/<화로>.png`)을 그 칸 자리(`griddleFishClips`)에서 잘라 겹쳐 그림(`GriddlePainter(filled:)`, `workshopGriddleFilled`). 홈 중심과 `griddleCavities` 차이는 그림 px로 가로 −9~+3, 세로 −3~+1(25번 1번). 영업 준비 중(새 영업일 이어서 영업 전 포함)에는 칸을 하나도 그리지 않음: 빈 굽는 판 그림만, 글자·면·터치 없음(`griddle-idle`). 영업 중 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음·숙련한 맛 있음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면 검은 반투명 면만. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
+| 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 굽는 판 폭 = w − 16(왼쪽 8), 높이 = 폭 × 그림 높이/폭(941×470), 그림이 상자를 꽉 채워 칸 위치·터치 영역도 같은 비율로 커짐(DEC-038). 바탕은 **빈 굽는 판 그림**(`assets/images/stove_empty/<화로>.png`, 25번 1번 생성 그림을 `tools/apply_25_art.py`로 원래 화로 위치에 맞춤: 칸이 붕어빵 모양 홈)이고, 굽는 칸에만 원래 그림의 붕어빵만 남긴 층(`stove_fish/<화로>.png`, 없으면 `stove/<화로>.png`)을 그 칸 자리(`griddleFishClips`)에서 잘라 겹쳐 그림(`GriddlePainter(filled:)`, `workshopGriddleFilled`). 홈 중심과 `griddleCavities` 차이는 그림 px로 가로 −9~+3, 세로 −3~+1(25번 1번). 영업 준비 중(새 영업일 이어서 영업 전 포함)에는 칸을 하나도 그리지 않음: 빈 굽는 판 그림만, 글자·면·터치 없음(`griddle-idle`). 영업 중 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면(제작 중 등) 검은 반투명 면만. **숙련한 맛이 하나도 없으면**(26번 2단계, S2-Q2) 빈 칸 대신 굽는 판 그림 전체에 공통 잠금(`griddle-locked`, 빗금 + 큰 자물쇠 + '팥을 숙련하면 열려요 (연습 n/m · 손기술 n/m)')을 덮고, 누르면 같은 글을 짧은 알림으로. 굽는 중인 칸(옛 저장)은 잠금 위에 그대로 그려 꺼내기·폐기 가능. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
 | 손님 창 | 손님 배지를 누르면 뜨는 작은 창: 주문 줄(드린 수/주문 수), 대사, '이웃 이야기 확인', 맛별 '주문 제작'(영업 중·세션 없을 때만. 누르면 창을 닫고 그 주문 하나를 만드는 동안만 스페셜 붕어빵 틀이 나옴. 결과를 닫으면 다시 클리커). 카운터의 '맛 제작'(`order-produce`)도 같은 주문 제작 | `customer-card`, `customer-produce-<맛>` | `WorkshopCustomerCard` |
 | 재고 창 | 카운터 글자를 누르면 뜨는 작은 창: 오래된 순 묶음(맛·익힘·개수·경과 영업일), 준비품 | `stock-card` | `WorkshopStockList` |
 
@@ -702,13 +703,13 @@
 
 **메뉴 창 아래:** 황금붕어빵력 심사 대기 건수(`menu-pending-gold`), '로그인·보상 확인'(`menu-sync`), 영업 중이면 '영업 종료'(`menu-close-business`). 예전 "가게 관리" 시트는 없앴습니다. 레시피(슈크림·초코) 미션 받기는 레벨 미션 창, 맛별 연습·손기술 진행과 손님 취향 기록·이야기 다시 보기는 도감 창으로 옮겼습니다.
 
-**메뉴 창 목록(Workshop):** 도감 · 업적 · 통계 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션. 온라인 랭킹·친구·공유는 가출시 범위 밖이라 `MenuPanel(hidden:)`으로 뺌(DEC-029, 2026-11-16 5단계).
+**메뉴 창 목록(Workshop):** 도감 · 업적 · 통계 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션. 온라인 랭킹·친구·공유는 가출시 범위 밖이라 `MenuPanel(hidden:)`으로 뺌(DEC-029, 2026-11-16 5단계). 도감은 Lv.3 전, 배경 테마(가게 꾸미기)는 Lv.8 전까지 같은 방법으로 숨김(26번 2단계, 아래 "처음 5분 해금").
 
 **Workshop 창**(`showWorkshopWindow`, `lib/ui/workshop_windows.dart`, 키 `workshop-window`): 위 안전 영역 아래 화면 전체 높이. 위에서부터 잔액 알약, 제목 프레임(닫기 버튼), 내용. 맨 아래 짙은 나무색 받침(`workshop-window-base`, 화면 폭 전체, 위 테두리 wood 2, 최소 높이 = `NightHome.navHeight` 66, 아래 여백 10 + 안전 영역) 가운데에 '돌아가기'. 받침이 홈 하단 메뉴를 완전히 덮어 버튼 옆으로 메뉴가 비치지 않음.
 
 **상점·꾸미기(Workshop):** 파는 것은 아바타 카탈로그(`avatar_catalog`)뿐. 그 밖의 구형 꾸미기(화로·배경·장식·등불·무늬·토핑)는 가지고 있을 때만 보임(`CosmeticMenuAccess.listed`). 품목이 하나도 없는 상점 탭(지금은 테마)은 숨기고 충전 탭은 항상 둠. 충전 탭에는 구형 클리커 부스트 줄을 두지 않음(`GoldChargeTab(legacyBoost: false)`). 로그인 전에는 '로그인하면 충전할 수 있어요', 상품을 불러오는 동안 가격 자리에 '불러오는 중'.
 
-골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%), 그리고 25번 그림 적용 때 더한 `workshop_home_filling_390x844`(속을 짜는 도중, 넘침·짜는 중 짤주머니)와 `workshop_home_griddle_390x844`(영업 중 1·4번 칸만 굽는 중). 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄이 카운터 위, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
+골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%), 그리고 25번 그림 적용 때 더한 `workshop_home_filling_390x844`(속을 짜는 도중, 넘침·짜는 중 짤주머니)와 `workshop_home_griddle_390x844`(영업 중 1·4번 칸만 굽는 중). 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄이 카운터 위, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 26번 2단계에서 `workshop_counter_*` 3장과 `workshop_home_*` 13장을 모두 다시 만듦(이유: Lv.1 새 상태라 초당·클릭당 숫자가 숨고 하단 메뉴 '스킬'에 빗금 자물쇠, 숙련 전 굽는 판에 공통 잠금과 남은 숙련 글이 덮임. `griddle` 골든은 숙련 상태라 칸 그대로, 소개 카드는 본 것으로 둠). 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
 
 **첫 실행 안내** (`lib/workshop_tutorial.dart` 단계 계산, `lib/ui/workshop_guide.dart` `WorkshopTutorialOverlay`): 홈 위에 겹친 층. 대상 위젯을 꿀색 고리로 두르고 작은 카드(“첫 영업 안내 N/7”, 한 줄 설명, '건너뛰기')를 띄움. 카드만 터치를 받고 게임은 그대로 조작됨. 저장하는 것은 `tutorial` 값뿐이고 단계는 매 프레임 상태에서 계산.
 
@@ -720,6 +721,26 @@
 | 7 | `sell`: 영업 시작 → 첫 손님 기다리기('첫 손님을 기다려요. 손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요.') → 판매(재고 없으면 주문 제작) | `business-open`, `workshop-clicker`, `sale-button`, `order-produce` |
 
 카드 위치: 스페셜 붕어빵 제작 단계는 무대(`workshop-center-stage`) 바로 아래, 그 밖에는 대상의 넓은 쪽. 왼쪽 72(손님 줄 피함)·오른쪽 12. 어떤 글자 크기에서도 하단 메뉴(`home-nav`) 위 6에서 멈추도록 위로 밀어 올림. 이야기 장면 중에는 숨김. 연습 결과를 보관하거나 주문 제작 결과를 닫으면 `sell`, 첫 판매 완료(주문을 다 채운 판매)면 `done`. 안내 중 첫 판매는 네임드 손님이어도 이야기·후일담·선택 장면을 붙이지 않고, 손님 맞이에서도 선택 장면을 굴리지 않음.
+
+**처음 5분 해금** (26번 2단계, DEC-043 A. 하나씩 열기, `lib/workshop_feature_unlocks.dart`): 화면·창·컨트롤러가 모두 `featureOpen`/`featureLockReason`(`WorkshopController.featureIsOpen`·`featureLock`) 하나로 판단. 핵심 진행(굽기·판매·영업·연습)은 레벨로 잠그지 않음(`tools/development_balance.py`가 `manual_practice`·`core_*`·`mastery_progress`·`six_slot_access` = 1을 검사, `skill_shop`은 2~5만 허용).
+
+| 기능 (`WorkshopFeature`) | 열리는 조건 | 잠겨 있을 때 화면 |
+| --- | --- | --- |
+| 굽기·영업·손님·판매·큰 붕어빵 | 처음부터 | — |
+| 꾸미기·상점 (`wardrobe`) | 첫 실행 안내가 끝나면(`done`/`skipped`) | 하단 메뉴 '꾸미기'·'상점'에 빗금 자물쇠, 누르면 '꾸미기: 첫 영업 안내가 끝나면 열려요' |
+| 스킬 창·초당/클릭당 숫자 (`skills`) | `feature_unlock_levels.skill_shop`(Lv.2), 또는 스킬을 이미 샀거나 정산 중인 거래가 있을 때 | 하단 메뉴 '스킬'에 빗금 자물쇠('스킬: Lv.2에 열려요'), HUD 초당·클릭당 칸 숨김(잔액 칸이 넓어짐) |
+| 숙련된 붕어빵 틀 6구 (`griddle`) | 맛 하나 숙련(`masteryAwards`, S2-Q2) + `six_slot_access`(Lv.1) | 위 '숙련된 붕어빵 틀 칸' 줄의 `griddle-locked` |
+| 도감 (`collection`) | `full_recipe_collection_ui`(Lv.3) | 메뉴 창에서 숨김 |
+| 새 맛 레시피 (`recipes`) | `additional_recipe_acquisition_tiers` 가장 낮은 `unlock_level`(Lv.4), 또는 이미 받은 레시피 | 소개 카드만(레벨 미션 창의 레시피 미션 줄은 원래 조건 그대로) |
+| 특별 주문 (`specialOrders`) | `ordinary_sale.special_order_unlock_level`(Lv.5) | 소개 카드만(주문 규칙은 원래대로) |
+| 붕어빵 꾸미기 (`fishCosmetics`) | `fish_cosmetics`(Lv.5) | 소개 카드만(꾸미기 칸 정리는 4-5단계) |
+| 신선도 (`freshness`) | 재고 묶음이 영업일을 하나 이상 넘김 | 아무것도 잠그지 않음, 소개 카드만 |
+| 가게 꾸미기 (`stallCosmetics`) | `stall_cosmetics`(Lv.8) | 메뉴 창 '배경 테마' 숨김(꾸미기 창 가게 칸은 4-5단계) |
+
+- **공통 잠금 표시** (`lib/ui/lock_overlay.dart` `LockedOverlay`, 4-3단계가 함께 씀): 원래 모습을 투명도 0.5로 흐리게 + 짙은 나무색 0.18 면 + 45° 사선 빗금(`LockHatchPainter`, 굵기 6·간격 10, `0xff5b3a24` 35%, 25번 13번 덮개 값을 코드로) + 큰 자물쇠(`ui/lock_badge.png` 128×128, 25번 13번 생성 그림을 `tools/apply_25_art.py --only locks`로 줄임, 없으면 Material 자물쇠) + 높이 64 이상이면 아래에 잠금 글 상자. 하단 메뉴는 자물쇠 최대 34를 아이콘 자리(`Alignment(-.55, 0)`)에 두어 글자를 가리지 않고 잠금 글은 숨김(화면 읽기 '잠김, 스킬: Lv.2에 열려요'). 키 `menu-<id>-locked`, `griddle-locked`, `lock-hatch`, `lock-badge`, `lock-caption`. 모양은 `LockStyle.hatch` 하나(4-3이 실루엣을 더함).
+- **기능 소개 카드** (`ui/workshop_guide.dart` `WorkshopFeatureIntroCard`, 키 `feature-intro-<id>`): 그림 200×150 틀 + 제목 + 두 문장 + '알겠어요'(`feature-intro-ok`). 그림은 `ui/intro_<id>.png`(25번 22번, 아직 없음) — 없으면 기존 아이콘(`skill`·`bun`·`achievements`·`mission`·`daily`·`tab_fish`·`records`·`tab_stall`)을 88로 그린 임시 그림(`feature-intro-standin`). 안내가 끝난 뒤, 다른 창·복귀 카드·알림 질문·이야기 장면·스페셜 붕어빵 제작·첫 판매 칭찬이 없을 때 한 장씩(여러 개면 표 순서), 바깥을 눌러도 닫히지 않음. 닫으면 `markIntroSeen`으로 저장(schema 8 `featureIntros`). 손님 알림 질문은 소개 카드가 떠 있으면 기다림. 스킬 카드 문구에 '카카오 로그인 후 레벨업'(S3-Q3).
+- **첫 판매 칭찬** (S2-Q4, `WorkshopSalePraiseBanner`, 키 `sale-praise`): 안내를 끝내는 첫 판매에만. 화면 가운데에 손님 이름·성공 대사 말풍선(`sale-praise-speech`) + 큰 별(`icons/star`, 64) + '별 N개!' + 둘레 반짝이(`SparklePainter`, `fx/sparkle`) 2초, 커졌다 돌아오는 연출. 모션 줄이기(설정 또는 기기)면 반짝이·연출 없이 정지 표시. 터치는 막지 않음. 저장하지 않음(`WorkshopController.salePraise`, 다시 켜면 없음). 그 뒤 판매는 예전처럼 카운터 한 줄(`lastSaleFeedback`).
+- 새 설치 첫 화면 비교(26번 2단계 결과 표): HUD·하단 메뉴에서 바로 쓸 수 있는 버튼 8 → 5(화면 전체 12 → 9: 맛 선택·제작 시작·영업 시작·건너뛰기 포함), HUD 숫자 6 → 4(초당·클릭당 숨김).
 
 **복귀 카드:** 3장 "Workshop 복귀 안내". 화면이 그려진 뒤 대화상자로 띄우고, 떠 있는 동안 숙련된 붕어빵 제작을 멈춤(다른 창과 같음). 닫으면 보고를 지움.
 
@@ -891,7 +912,7 @@
 | 효과 | `fx/minifish, sparkle, fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
 | 짤주머니 | `cook/piping_bag_<batter·redbean·custard·cocoa>[_squeeze].png`(128×192, 손가락 점 (64, 188), `pipingPastes`) |
 | 속 칠 질감 | `mold/paint_<redbean·custard·cocoa>.png`(256×256 불투명 심리스, `tools/apply_25_art.py --only textures`로 v2 생성본을 줄이고 이음매 보정) |
-| 화면 장식 | `ui/wardrobe_bg, offline, title_fish` |
+| 화면 장식 | `ui/wardrobe_bg, offline, title_fish`, 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120 예정, 25번 22번, 없으면 아이콘) |
 | 이벤트 배너 | `event/spring·summer·autumn·winter` |
 | 조리 장면 | `cook/girl_1~6.png` (700ms 간격 반복) |
 
@@ -1367,7 +1388,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | --- | --- | --- | --- |
 | 스킬 황금 조건 | 황금 재화·손님 희귀 황금·미션 황금·IAP 유지. 탭·자동 스킬 1~4단계는 붕어빵력만(몇 번을 사도 황금 0, 10번마다 +1 증가도 없음). 5~16단계는 지금 황금 가격 유지 | DEC-041 | 26번 3단계 **구현 완료**(2026-11-18). 5단계 개방은 시뮬레이션상 Lv.15~21(처음 적은 'Lv.23~25' 정정) |
 | 출시 목표일 | 날짜 없음, 완성도 우선. 26번 단계를 순서대로 끝내고 6단계(비공개 테스트 업로드)를 맨 끝에. 4-1~4-6·7·8도 업로드 전 | DEC-042 | 진행 순서(코드 없음) |
-| 처음 5분 기능 해금 | 하나씩 열기: 안내 중 굽기·영업·손님·판매·큰 붕어빵 / 안내 끝 꾸미기·상점 / Lv.2 스킬 창·초당 숫자 / 첫 숙련 6구 / Lv.3 도감 / Lv.4 레시피 / Lv.5 특별 주문·붕어빵 꾸미기 / 재고 하루 경과 시 신선도 안내 / Lv.8 가게 꾸미기. 핵심 진행은 레벨로 잠그지 않음. 새 설정 키 `feature_unlock_levels.skill_shop`(2), 공통 잠금 표시·소개 카드 | DEC-043 | 26번 2단계 |
+| 처음 5분 기능 해금 | 하나씩 열기: 안내 중 굽기·영업·손님·판매·큰 붕어빵 / 안내 끝 꾸미기·상점 / Lv.2 스킬 창·초당 숫자 / 첫 숙련 6구 / Lv.3 도감 / Lv.4 레시피 / Lv.5 특별 주문·붕어빵 꾸미기 / 재고 하루 경과 시 신선도 안내 / Lv.8 가게 꾸미기. 핵심 진행은 레벨로 잠그지 않음. 새 설정 키 `feature_unlock_levels.skill_shop`(2), 공통 잠금 표시·소개 카드 | DEC-043 | 26번 2단계 **구현 완료**(2026-11-18, 10장 "처음 5분 해금", 3장 schema 8) |
 | 초반 손님 간격 | 예외 없음. 튜토리얼 뒤 레벨과 관계없이 일반 1~15분·네임드 30분~3시간 | DEC-044 | 26번 5-1단계 |
 | 측정 방식 | `firebase_analytics` 도입(1장 원칙·`no_tracking_sdk_test`를 이 패키지만 허용으로), 광고 ID·SSAID·개인화 광고 신호 끔. 이벤트 10개 이하. 자체 서버 집계·`metrics_report.py`는 만들지 않음 | DEC-045 | 26번 5단계 |
 | 측정 대상·기본값·보관 | 로그인과 상관없이 모두, 기본 켬, 첫 실행 안내 없음, 설정 '사용 통계 보내기'로 끔(`setAnalyticsCollectionEnabled(false)`). 보관 14개월(Analytics 무료판 최대) | DEC-046 | 26번 5단계 |
