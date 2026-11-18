@@ -1,7 +1,9 @@
 // Kakao login. The app logs in with the Kakao SDK and sends its access token
 // here; the server asks Kakao whose token it is and which app issued it, then
 // hands back a Firebase custom token for the uid "kakao:<회원번호>". Only the
-// member number and the nickname (if the player agreed to share it) are used.
+// member number, the nickname and the email (each only if the player agreed to
+// share it; 26번 2-1단계 account_email) are used. The email is kept in the
+// server-only account profile (account.ts) and never shown or sent elsewhere.
 
 export class KakaoError extends Error {
   constructor(
@@ -16,8 +18,8 @@ export class KakaoError extends Error {
 export interface KakaoApi {
   /** GET /v1/user/access_token_info: the member and the app the token belongs to. */
   tokenInfo(accessToken: string): Promise<{ id: string; appId: string }>;
-  /** GET /v2/user/me: the member number and the nickname if agreed to. */
-  me(accessToken: string): Promise<{ id: string; nickname?: string }>;
+  /** GET /v2/user/me: the member number, the nickname and a verified email if agreed to. */
+  me(accessToken: string): Promise<{ id: string; nickname?: string; email?: string }>;
 }
 
 /** Firebase Auth operations, injected so tests need no Admin SDK. */
@@ -25,6 +27,8 @@ export interface KakaoAccounts {
   createCustomToken(uid: string, claims: Record<string, unknown>): Promise<string>;
   /** Creates the Auth user if needed; null removes the display name. */
   setDisplayName(uid: string, name: string | null): Promise<void>;
+  /** Keeps the shared email in the account profile; null forgets it. */
+  saveEmail(uid: string, email: string | null): Promise<void>;
 }
 
 const idPattern = /^[0-9]{1,20}$/;
@@ -52,12 +56,19 @@ export const kakaoRestApi: KakaoApi = {
   },
   async me(accessToken) {
     const user = await kakaoGet("/v2/user/me", accessToken);
-    const account = user.kakao_account as { profile?: { nickname?: unknown } } | undefined;
+    const account = user.kakao_account as {
+      profile?: { nickname?: unknown };
+      email?: unknown; is_email_valid?: unknown; is_email_verified?: unknown;
+    } | undefined;
     const properties = user.properties as { nickname?: unknown } | undefined;
     const nickname = account?.profile?.nickname ?? properties?.nickname;
+    // Only a valid, verified address (Kakao sends these flags with the email).
+    const email = account?.is_email_valid === true && account?.is_email_verified === true &&
+      typeof account.email === "string" ? account.email : undefined;
     return {
       id: String(user.id ?? ""),
       nickname: typeof nickname === "string" ? nickname : undefined,
+      ...(email ? { email } : {}),
     };
   },
 };
@@ -66,6 +77,13 @@ export const kakaoRestApi: KakaoApi = {
 export function kakaoDisplayName(nickname: string | undefined): string | null {
   const name = nickname?.trim().slice(0, 16) ?? "";
   return name.length > 0 ? name : null;
+}
+
+/** A plausible email address, or null (nothing shared or something odd). */
+export function cleanEmail(raw: unknown): string | null {
+  if (typeof raw !== "string") return null;
+  const email = raw.trim();
+  return email.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null;
 }
 
 /**
@@ -91,6 +109,7 @@ export async function authKakao(
   const uid = `kakao:${user.id}`;
   const displayName = kakaoDisplayName(user.nickname);
   await accounts.setDisplayName(uid, displayName);
+  await accounts.saveEmail(uid, cleanEmail(user.email));
   const token = await accounts.createCustomToken(uid, { provider: "kakao" });
   return { token, displayName };
 }

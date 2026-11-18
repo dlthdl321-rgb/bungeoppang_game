@@ -27,6 +27,8 @@ dependencies:
   # 26번 5-1단계: 손님 도착 기기 안 예약 알림(서버 푸시·Firebase 메시징 아님). 시각은 UTC로만 넘긴다.
   flutter_local_notifications: 22.3.3
   timezone: 0.11.2
+  # 26번 2-1단계: Google 로그인(계정 선택 → Firebase Auth Google 공급자). 로그인만, 광고·분석 없음.
+  google_sign_in: 7.2.0
 
 dev_dependencies:
   integration_test:
@@ -51,6 +53,9 @@ flutter:
   # Synthesized by tools/generate_sounds.py (CC0 1.0); see README.
   assets:
     - config/development_balance.json
+    # 26번 2-1단계: 사장님 이름 글자 수·비속어 목록, 앱 안에서 보는 약관·개인정보처리방침.
+    - config/owner_name_rules.json
+    - assets/legal/
     - assets/audio/
     # Pixel art from tools/draw_pixel_assets.py (see docs/pixel_art_prompts.md).
     - assets/images/fish/

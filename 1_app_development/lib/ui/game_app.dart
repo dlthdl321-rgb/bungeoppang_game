@@ -23,6 +23,8 @@ import '../cooking_session.dart';
 import 'workshop_page.dart';
 import '../customer_notifier.dart';
 import '../development_balance.dart';
+import '../owner_account.dart';
+import 'first_run.dart';
 
 class GameApp extends StatefulWidget {
   final GameController controller;
@@ -30,8 +32,11 @@ class GameApp extends StatefulWidget {
   final WorkshopController? workshop;
   /// Device-only customer notifications (26번 5-1단계); null in tests.
   final CustomerNotifier? notifier;
+  /// The first-run login, owner name and character (26번 2-1단계). Null
+  /// (tests of the game screens) goes straight to the game.
+  final OwnerAccount? owner;
   const GameApp(
-      {super.key, required this.controller, this.audio = const SilentAudio(), this.workshop, this.notifier});
+      {super.key, required this.controller, this.audio = const SilentAudio(), this.workshop, this.notifier, this.owner});
   @override
   State<GameApp> createState() => _GameAppState();
 }
@@ -115,6 +120,7 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     widget.controller.removeListener(_syncAudio);
     widget.workshop?.removeListener(_syncAudio);
     widget.workshop?.dispose();
+    widget.owner?.dispose();
     widget.audio.dispose();
     widget.controller.dispose();
     super.dispose();
@@ -181,8 +187,14 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
                   child: child!),
               child: CelebrationHost(
                   controller: widget.controller, child: child!))),
-      home: widget.workshop == null ? GameHome(controller: widget.controller) :
-          WorkshopPage(controller: widget.workshop!, accountController: widget.controller, notifier: widget.notifier));
+      home: widget.workshop == null ? GameHome(controller: widget.controller) : _workshopHome());
+
+  Widget _workshopHome() {
+    Widget page() => WorkshopPage(controller: widget.workshop!, accountController: widget.controller,
+        notifier: widget.notifier, owner: widget.owner);
+    final owner = widget.owner;
+    return owner == null ? page() : OwnerGate(owner: owner, game: page);
+  }
 }
 
 /// Shown when the save cannot be loaded. Switches to [GameApp] once a
