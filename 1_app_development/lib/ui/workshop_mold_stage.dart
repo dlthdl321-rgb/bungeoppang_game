@@ -722,7 +722,7 @@ Set<int> workshopGriddleFilled(WorkshopController c) {
 }
 
 /// Whether the griddle shows open with its flames on (26번 4-2단계 F8,
-/// S4-2-Q1 '닫힌 판·불 꺼짐', DEC-TBD-4-2-1): only while the stall is open
+/// S4-2-Q1 '닫힌 판·불 꺼짐', DEC-099): only while the stall is open
 /// and the griddle can be used (a flavor mastered, S2-Q2's one rule in
 /// [WorkshopController.featureIsOpen]), or a cell is still cooking (old
 /// saves may take it out). Before opening, and while it is locked, it is

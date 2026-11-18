@@ -108,7 +108,10 @@ void main() {
     for (final name in PixelSprites.iconNames) {
       // The bottom menu's own icons are 96x96 (26번 4-2단계 F10, below).
       if (name.startsWith('nav_')) continue;
-      expect(sizeOf(PixelSprites.icon(name)), (72.0, 72.0), reason: name);
+      // The stall wardrobe's day/night tiles are 64x64 (26번 4-5단계,
+      // 25번 16번 그림).
+      final size = name.startsWith('time_') ? 64.0 : 72.0;
+      expect(sizeOf(PixelSprites.icon(name)), (size, size), reason: name);
     }
   });
 

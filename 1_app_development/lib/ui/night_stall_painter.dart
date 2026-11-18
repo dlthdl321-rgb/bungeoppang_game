@@ -302,7 +302,7 @@ class GriddlePainter extends CustomPainter {
   /// the full art when that layer is missing.
   final Set<int>? filled;
 
-  /// The griddle closed and cold (26번 4-2단계 F8, DEC-TBD-4-2-1): the
+  /// The griddle closed and cold (26번 4-2단계 F8, DEC-099): the
   /// closed art ([PixelSprites.closedStove]) instead of the plate, no
   /// bungeoppang. Without that art: the empty plate under a dark veil.
   final bool closed;

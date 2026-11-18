@@ -113,7 +113,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
           actions:[TextButton(key:const Key('notice-later'),onPressed:()=>Navigator.pop(ctx,false),child:const Text('나중에')),
             FilledButton(key:const Key('notice-accept'),onPressed:()=>Navigator.pop(ctx,true),child:const Text('알림 받기'))]));
         final granted=accept==true && await notifier.requestPermission();
-        // DEC-TBD-fb1-1: 'later' and a refused permission leave both switches
+        // DEC-105: 'later' and a refused permission leave both switches
         // as they are (named on, regular off by default). Settings show that
         // the permission is missing (NoticePermissionHint); the app never
         // asks again on its own.

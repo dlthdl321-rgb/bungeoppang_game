@@ -15,7 +15,7 @@ import 'package:todays_bungeoppang/workshop_customers.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'widget_test.dart' show mountGame;
 
-/// 26번 5-1단계: 실제 시간 손님(일반 30초~5분 DEC-TBD-fb1-2·네임드 30분~3시간), 자리 상한,
+/// 26번 5-1단계: 실제 시간 손님(일반 30초~5분 DEC-106·네임드 30분~3시간), 자리 상한,
 /// 자정 영업일 넘김, 기다림은 켠 순간부터, 저장 schema 7, 기기 안 알림.
 class FakeNotifier implements CustomerNotifier {
   final scheduled = <List<PlannedNotice>>[];
@@ -207,7 +207,7 @@ void main() {
         final planned = c.upcomingArrivals(const Duration(hours: 24));
         expect(planned.where((a) => a.kind == ArrivalKind.regular).length, 3);
         expect(planned.where((a) => a.kind == ArrivalKind.named).length, 1);
-        // DEC-TBD-fb1-2: 30초~5분이어도 자리(3)에서 멈춰, 앱을 내린 뒤 일반 손님은
+        // DEC-106: 30초~5분이어도 자리(3)에서 멈춰, 앱을 내린 뒤 일반 손님은
         // 15분 안에 최대 3명 = 일반 알림(켰을 때)도 최대 3번이고 그 뒤로는 오지 않는다.
         final regulars = planned.where((a) => a.kind == ArrivalKind.regular).map((a) => a.at.difference(seedStart));
         expect(regulars.every((d) => d <= Duration(milliseconds: rules.regularMax * rules.regularSlots)), isTrue);
@@ -393,7 +393,7 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink()); // GameApp disposes the workshop.
     });
 
-    // 'accept' + allowed / 'accept' + refused / '나중에' (DEC-TBD-fb1-1).
+    // 'accept' + allowed / 'accept' + refused / '나중에' (DEC-105).
     Future<(GameController, FakeNotifier)> promptAfterFirstSale(WidgetTester tester, {required bool grant}) async {
       // GameApp disposes both controllers when it goes away: a fresh pair each round.
       final account = await mountGame(tester, const Size(390, 844), reduced: true);

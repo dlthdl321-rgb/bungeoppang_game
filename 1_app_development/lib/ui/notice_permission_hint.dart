@@ -4,7 +4,7 @@ import 'cozy_style.dart';
 
 /// Shown under the guest-notice switches in the settings while a switch is
 /// on but the phone does not allow the app's notices (the first-run prompt
-/// was answered '나중에' or the permission was refused, DEC-TBD-fb1-1). The
+/// was answered '나중에' or the permission was refused, DEC-105). The
 /// switch stays on; this row says why nothing comes and asks again only when
 /// the player taps it. Looks again when the app comes back to the front (the
 /// player may have allowed it in the phone settings) and when [revision]
