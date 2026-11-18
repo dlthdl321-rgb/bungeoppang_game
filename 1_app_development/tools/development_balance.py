@@ -200,6 +200,29 @@ def validate(data, catalog):
             all(re.fullmatch(r'0|[1-9][0-9]*', check[k]) for k in ('slack_buns', 'first_checkpoint_max_lifetime')),
             '서버 타당성 검증 한도')
     require(0 <= data['welcome_reward']['gold'] <= 1000, '환영 황금 범위')
+    # 26번 7단계: 매일 돌아올 이유. 행사 날짜는 이 설정에만 둔다(코드에 날짜 없음).
+    daily = data['daily_return']
+    order = daily['special_order']
+    require(order['reward_seconds'] > 0 and re.fullmatch(r'[1-9][0-9]*', order['min_buns']) and
+            1 <= order['quantity_max'] <= 5 and 0 < order['affinity'] <= relationship['special_daily_cap'],
+            '오늘의 주문서 보상/수량')
+    require(daily['story_daily_limit'] >= 1, '이야기 하루 공개 수')
+    attendance = daily['attendance']
+    require(attendance['cycle_days'] == 7 and attendance['gold'] > 0 and attendance['buns_seconds'] > 0 and
+            attendance['substitute_seconds'] > 0 and
+            all(re.fullmatch(r'[1-9][0-9]*', attendance[k]) for k in ('min_buns', 'substitute_min_buns')),
+            '출석 보상(7일 주기, 7일째 황금)')
+    seen = set()
+    decorations = {'none', 'lantern', 'bunting', 'starlights', 'windchime', 'snowman', 'paperlanterns'}
+    for event in daily['seasonal_events']:
+        require(re.fullmatch(r'[a-z0-9_]+', event['id']) and event['id'] not in seen, '행사 ID')
+        seen.add(event['id'])
+        require(event['kind'] in ('first_snow', 'christmas', 'seollal') and event['decoration'] in decorations,
+                '행사 종류/장식')
+        for key in ('start', 'end'):
+            require(re.fullmatch(r'\d{4}-\d{2}-\d{2}', event[key]), '행사 날짜 형식(yyyy-mm-dd)')
+        require(event['start'] <= event['end'], '행사 기간 순서')
+        require(all(isinstance(event[k], str) for k in ('label', 'greeting', 'order_note')), '행사 문구')
     return data
 
 

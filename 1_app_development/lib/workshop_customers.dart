@@ -214,6 +214,20 @@ class WorkshopRelationships {
     }
     return next;
   }
+  /// 26번 7단계: the day's order (오늘의 주문서) handed over for [npc].
+  /// Its own `special` bucket and daily cap, apart from sales and talks.
+  /// [orderDay] is the KST day of the order; one award per order.
+  WorkshopRelationships specialOrder(String npc, String orderDay, int businessDay, int amount,
+      DevelopmentBalance config, WorkshopCustomerCatalog catalog) {
+    _npc(npc, catalog);
+    if (!met.contains(npc) || amount <= 0) throw const FormatException('주문서 손님 근거 오류');
+    final next = _copy(), key = 'special:$orderDay';
+    if ((next._data['actions'] as Map).containsKey(key)) throw const FormatException('주문서 보상 중복');
+    next._atDay(businessDay);
+    next._award(key, npc, amount, 'special', config);
+    (next._data['actions'] as Map<String, dynamic>)[key] = {'npc': npc, 'day': businessDay};
+    return next;
+  }
   /// Caller validates the authored per-NPC prerequisites before completing.
   WorkshopRelationships completeStory(String npc, String storyId,
       WorkshopCustomerCatalog catalog, {required bool eligible}) {
@@ -353,6 +367,12 @@ class WorkshopRelationships {
         final npc = action['npc'], dialogue = action['dialogue'];
         if (npc is! String || dialogue is! String || !state.met.contains(npc) ||
             entry.key != 'dialogue:$npc:$actionDay' || !(copy['seenDialogue'] as List).contains('$npc:$dialogue')) throw const FormatException('자동 대화 근거 오류');
+      } else if (entry.key.startsWith('special:')) {
+        final npc = action['npc'], day = entry.key.substring(8);
+        if (npc is! String || !state.met.contains(npc) || DateTime.tryParse('${day}T00:00:00Z') == null ||
+            !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(day)) {
+          throw const FormatException('주문서 관계 근거 오류');
+        }
       } else { throw const FormatException('알 수 없는 관계 처리 기록'); }
     }
     for (final entry in (copy['affinity'] as Map<String, dynamic>).entries) {
@@ -360,19 +380,19 @@ class WorkshopRelationships {
     }
     for (final entry in (copy['earned'] as Map<String, dynamic>).entries) {
       final split = entry.key.split(':');
-      if (split.length != 2 || !state.met.contains(split.first) || !['ordinary','choice'].contains(split.last) || entry.value is! int || (entry.value as int) < 0 || (entry.value as int) > _historicalDailyCap(copy, entry.key, DevelopmentBalance.integer(rules,'${split.last}_daily_cap'))) throw const FormatException('관계 일일 상한 오류');
+      if (split.length != 2 || !state.met.contains(split.first) || !['ordinary','choice','special'].contains(split.last) || entry.value is! int || (entry.value as int) < 0 || (entry.value as int) > _historicalDailyCap(copy, entry.key, DevelopmentBalance.integer(rules,'${split.last}_daily_cap'))) throw const FormatException('관계 일일 상한 오류');
     }
     final totals = <String,int>{}, daily = <String,int>{};
     for (final entry in (copy['awards'] as Map<String,dynamic>).entries) {
       final award = entry.value;
       if (award is! Map<String,dynamic> || award['npc'] is! String || !state.met.contains(award['npc']) ||
-          !['ordinary','choice'].contains(award['bucket']) || award['revision'] is! String || (award['revision'] as String).isEmpty) throw const FormatException('관계 보상 원장 오류');
+          !['ordinary','choice','special'].contains(award['bucket']) || award['revision'] is! String || (award['revision'] as String).isEmpty) throw const FormatException('관계 보상 원장 오류');
       final npc = award['npc'] as String, bucket = award['bucket'] as String;
       final at = DevelopmentBalance.integer(award,'day'), earned = DevelopmentBalance.integer(award,'earned');
       final applied = DevelopmentBalance.integer(award,'applied'), cap = DevelopmentBalance.integer(award,'dailyCap');
       if (at < 1 || at > state.day || applied > earned || earned > cap || cap == 0 ||
           applied > DevelopmentBalance.integer(award,'totalCap')) throw const FormatException('관계 보상 수치 오류');
-      if (bucket == 'ordinary') {
+      if (bucket == 'ordinary' || bucket == 'special') {
         final action = (copy['actions'] as Map)[entry.key];
         final visit = action is Map ? (copy['visits'] as Map)[action['visit']] : null;
         if (action is! Map || action['day'] != at ||

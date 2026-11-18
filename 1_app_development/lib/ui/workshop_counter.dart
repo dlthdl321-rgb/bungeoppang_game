@@ -272,6 +272,8 @@ class WorkshopCustomerCard extends StatelessWidget {
         final order = s.customers[index], named = c.customerCatalog.contains(order.customerId);
         final idle = !c.inputBusy && c.error == null && !c.gameplayPaused && s.session == null;
         final words = [
+          // 26번 7단계(S7-Q3): the seasonal greeting comes first.
+          c.seasonalEvent?.greeting,
           c.customerOrderSpeech(order),
           c.customerWaitingAction(order),
           c.waitingLine(order),

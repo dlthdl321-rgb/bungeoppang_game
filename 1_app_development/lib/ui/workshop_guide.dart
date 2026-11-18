@@ -193,6 +193,11 @@ class WorkshopWelcomeBackCard extends StatelessWidget {
               if (report.arrivals > 0)
                 Text('자리 비운 동안 손님 ${report.arrivals}명이 왔어요.',
                     key: const Key('welcome-back-arrivals'), textAlign: TextAlign.center),
+              // 26번 7단계: the '오늘' slip at the counter has something new.
+              if (report.newOrder)
+                const Text('오늘의 주문서가 도착했어요.', key: Key('welcome-back-order'), textAlign: TextAlign.center),
+              if (report.stampReady)
+                const Text('오늘 출석 도장을 찍을 수 있어요.', key: Key('welcome-back-stamp'), textAlign: TextAlign.center),
               Text(report.waiting > 0
                   ? '판매는 가게에 계실 때만 해요. 기다리던 손님 ${report.waiting}명은 그대로 있어요.'
                   : '판매는 가게에 계실 때만 해요.',

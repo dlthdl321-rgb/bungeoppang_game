@@ -116,3 +116,48 @@ test("스냅샷 없는 보상 제출은 기존처럼 대기로 남는다",async(
   const data={...context,claim:`${progress}:mission:daily:2026-10-16:taps`,kind:"mission",payload:daily("taps","50")};
   assert.equal((await service.reward("a",data,true)).outcome,"pending");
 });
+// 26번 7단계: 출석 7일째 황금과 오늘의 주문서·출석 붕어빵력 한도.
+const stamp=(period:string,extra:Record<string,unknown>={})=>({scope:"attendance",period,goal:"day7",
+  gold:config.daily_return.attendance.gold,revision:config.metadata.revision,...extra});
+test("출석 7일째 황금은 서버 검증 후 한 번만, 다음 황금은 7일 뒤에만 지급한다",async()=>{
+  const {store,service,clock}=setup();await service.claim("a",{progress});
+  const data={...context,claim:`${progress}:attendance:2026-10-16`,kind:"mission",payload:stamp("2026-10-16"),snapshot:snapshot("50","50",50)};
+  const first=await service.reward("a",data,true);
+  assert.equal(first.outcome,"eligible");assert.equal(first.gold,config.daily_return.attendance.gold);
+  assert.deepEqual(await service.reward("a",data,true),first);
+  assert.equal(gold(store),config.welcome_reward.gold+1);
+  // A second card three days later (impossible with seven boxes) pays nothing.
+  clock.now+=3*86400000;
+  const early=await service.reward("a",{...context,claim:`${progress}:attendance:2026-10-19`,kind:"mission",payload:stamp("2026-10-19"),snapshot:snapshot("50","50",50)},true);
+  assert.equal(early.outcome,"unverifiable");
+  clock.now+=4*86400000;
+  const next=await service.reward("a",{...context,claim:`${progress}:attendance:2026-10-23`,kind:"mission",payload:stamp("2026-10-23"),snapshot:snapshot("50","50",50)},true);
+  assert.equal(next.outcome,"eligible");
+  assert.equal(gold(store),config.welcome_reward.gold+2);
+});
+test("출석 황금은 보상량·형식·기간이 틀리면 지급하지 않는다",async()=>{
+  const {store,service}=setup();await service.claim("a",{progress});
+  const ask=(claim:string,payload:Record<string,unknown>)=>service.reward("a",{...context,claim:`${progress}:${claim}`,kind:"mission",payload,snapshot:snapshot("50","50",50)},true);
+  assert.equal((await ask("attendance:w1",stamp("2026-10-16",{gold:5}))).outcome,"unverifiable");
+  assert.equal((await ask("attendance:w2",stamp("2026-10-16",{goal:"day6"}))).outcome,"unverifiable");
+  assert.equal((await ask("attendance:w3",stamp("2026-10-16",{extra:true}))).outcome,"unverifiable");
+  assert.equal((await ask("attendance:w4",stamp("2026-10-01"))).outcome,"unverifiable");
+  assert.equal((await ask("attendance:w5",stamp("2026-10-20"))).outcome,"unverifiable");
+  assert.equal(gold(store),config.welcome_reward.gold);
+});
+test("오늘의 주문서·출석 붕어빵력은 하루치만 서버 한도에 더한다",async()=>{
+  const {service,clock}=setup();await service.claim("a",{progress});
+  await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  const second={...context,intent:intent("transaction_0002",1)};
+  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns);
+  // Without auto skills: two touched days of order + stamp minimums fit on top of the slack.
+  const fits=(40n+BigInt(config.server_validation.slack_buns)+2n*minimum).toString();
+  clock.now+=1000;
+  assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot(fits,fits,40)})).status,"reserved");
+  const {service:other}=setup();await other.claim("a",{progress});
+  await other.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await other.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  const tooMuch=(40n+BigInt(config.server_validation.slack_buns)+2n*minimum+1000n).toString();
+  await assert.rejects(other.purchase("a","reserve",{...second,snapshot:snapshot(tooMuch,tooMuch,40)}));
+});

@@ -62,6 +62,10 @@ class NightHome extends StatelessWidget {
   /// on the screen just above the counter (26번 4-1단계 F6, S4-1-Q6).
   final Widget? counterAction;
 
+  /// A small slip at the right edge just above the cooking cut, beside the
+  /// counter (26번 7단계: the '오늘' slip for 오늘의 주문서·출석).
+  final Widget? counterSlip;
+
   /// The stall lowered to the towel with guests behind it (26번 4-1단계,
   /// [WorkshopHomeLayout.active]): the lowered background, and [guests]
   /// laid out over the street down to the counter's top.
@@ -98,6 +102,7 @@ class NightHome extends StatelessWidget {
       this.centerBuilder,
       this.counter,
       this.counterAction,
+      this.counterSlip,
       this.lowStall = false,
       this.guests,
       this.griddleFilled,
@@ -293,6 +298,13 @@ class NightHome extends StatelessWidget {
                 width: w,
                 bottom: actionBottom,
                 child: Center(child: counterAction!)),
+            // Above the cooking cut, and above the floating action where
+            // the screen is narrow enough for the two to meet.
+            if (counterSlip != null && vendor != null) Positioned(
+                right: side + 8,
+                bottom: math.max(cookBottom + cookH + 2,
+                    actionBottom + WorkshopHomeLayout.actionHeight + 4),
+                child: counterSlip!),
             if (vendor == null) Positioned(
                 right: side + 8,
                 width: cookW,

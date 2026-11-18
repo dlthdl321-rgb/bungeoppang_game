@@ -192,7 +192,7 @@ void main() {
       final seed = WorkshopController(_config(), MemoryRepository(), now: () => now);
       await seed.initialize();
       final old = seed.state.toJson()..['schema'] = 5..remove('tutorial')..remove('regularClock')
-        ..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros');
+        ..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily');
       seed.dispose();
       final sink = RecordingSink(), repository = MemoryRepository()..saved = old;
       final c = WorkshopController(_config(), repository, now: () => now, usage: UsageStats(sink));

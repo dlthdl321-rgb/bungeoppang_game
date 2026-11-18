@@ -19,6 +19,7 @@ import 'public_menus.dart';
 import 'shop_panel.dart';
 import 'workshop_windows.dart';
 import 'workshop_counter.dart';
+import 'workshop_daily_card.dart';
 import 'workshop_guests.dart';
 import 'workshop_home_layout.dart';
 import 'workshop_guide.dart';
@@ -315,6 +316,10 @@ class _WorkshopPageState extends State<WorkshopPage> {
   }
   String _equipped(CosmeticSlot slot) => slot == CosmeticSlot.time ? c.state.sceneTime :
     c.state.avatarEquipment[slot.name] ?? widget.accountController.state.equippedCosmetic(slot);
+  /// What the home draws: during a seasonal event its decoration hangs on
+  /// the stall (26번 7단계, S7-Q3) without changing what is equipped.
+  String _homeEquipped(CosmeticSlot slot) =>
+    slot == CosmeticSlot.decoration && c.seasonalEvent != null ? c.seasonalEvent!.decoration : _equipped(slot);
   /// A small window over the stall; it closes itself when a story scene starts.
   Future<void> _popup(Key key,Widget child) async {
     _enterWindow();
@@ -337,6 +342,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
   }
   Future<void> _customerCard(String orderId)=>_popup(const Key('customer-card'),WorkshopCustomerCard(controller:c,orderId:orderId));
   Future<void> _stock()=>_popup(const Key('stock-card'),WorkshopStockList(controller:c));
+  /// 26번 7단계: the '오늘' slip's card. The seventh stamp's gold goes to
+  /// the server right away when signed in, like mission gold.
+  Future<void> _daily()=>_popup(const Key('daily-card'),WorkshopDailyCard(controller:c,onGoldClaim:() async {
+    if(widget.accountController.online.signedIn && await c.syncRewards()) await widget.accountController.refreshWorkshopWallet();
+  }));
   Map<String,int> _rewardCounts(){
     final m=c.state.missions;
     int ready(String scope)=>[...m.goals(c.config,scope).keys,if(scope=='daily')'all'].where((id)=>
@@ -504,7 +514,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     // (26번 4-1단계, S4-1-Q4); the old left line until then.
     final low=WorkshopHomeLayout.active;
     final home=NightHome(key:_homeKey,controller:widget.accountController,onOpen:_open,
-      equipped:_equipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
+      equipped:_homeEquipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
         buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts().values.fold<int>(0,(a,b)=>a+b),
         // The guests show themselves now: no '· 주문 N' (F7).
         status:c.error!=null ? '저장 확인 필요' : s.business.open ? '영업 중' : '영업 준비',
@@ -522,6 +532,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
         if(!low)Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
       ]),
       counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock,onCloseBusiness:_closeBusiness),
+      // The '오늘' slip (오늘의 주문서·출석, 26번 7단계) beside the counter,
+      // over the cooking cut's top right.
+      counterSlip:WorkshopDailyTicket(controller:c,onOpen:_daily),
       counterAction:WorkshopCounterAction(controller:c,onCloseBusiness:_closeBusiness),
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
       // The griddle art is empty; only cooking cells show a bungeoppang, and

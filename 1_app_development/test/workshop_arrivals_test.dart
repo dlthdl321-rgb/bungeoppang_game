@@ -278,15 +278,15 @@ void main() {
             .visit('v2', 'npc_yunha', 1, c.customerCatalog);
       }), isTrue);
       final saved = c.state.toJson();
-      expect(saved['schema'], 9);
+      expect(saved['schema'], 10);
       final old = Map<String, dynamic>.from(saved)
         ..['schema'] = 6
-        ..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros');
+        ..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily');
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.regularClock.nextAt, isNull);
       expect(migrated.namedClock.nextAt, isNull);
       expect(migrated.lastNamedVisitor, 'npc_yunha');
-      expect(migrated.toJson()['schema'], 9);
+      expect(migrated.toJson()['schema'], 10);
       expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..remove('namedClock'), config), throwsFormatException);
       expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(old)..['regularClock'] = saved['regularClock'], config),
           throwsFormatException, reason: '6에 새 필드');
