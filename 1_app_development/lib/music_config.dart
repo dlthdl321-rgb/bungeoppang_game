@@ -1,6 +1,11 @@
-/// Background music by the mood of the stall background. Each mood is a 24 s
-/// loop made by tools/generate_sounds.py (assets/audio/bgm_<mood>.wav).
+/// Background music. 26번 4-6단계 (S46-Q1): every mood plays the same song,
+/// 'Warm Bungeoppang Stall' (Suno, paid plan, 2026-10-17), made into a 171 s
+/// seamless OGG loop by tools/prepare_bgm.py. The mood structure stays so a
+/// later update can give moods their own songs again without a save change.
 const musicMoods = ['day', 'spring', 'dusk', 'rain', 'snow', 'night'];
+
+/// The one background song (under assets/).
+const warmStallMusicAsset = 'audio/bgm_warm_stall.ogg';
 
 /// The mood that plays over [background] (a CosmeticSlot.background id).
 String musicMoodFor(String background) => switch (background) {
@@ -12,20 +17,13 @@ String musicMoodFor(String background) => switch (background) {
       _ => 'day', // clear and anything new
     };
 
-/// Asset path (under assets/) of [mood]'s loop.
-String musicAsset(String mood) => 'audio/bgm_$mood.wav';
+/// Asset path (under assets/) of [mood]'s loop. All moods share one song.
+String musicAsset(String mood) => warmStallMusicAsset;
 
-/// Existing saves follow the background until the player explicitly selects a loop.
+/// Existing saves follow the background until the player explicitly selected
+/// a loop. The settings screen no longer offers a choice (one song), but saved
+/// mood ids stay valid so old saves load unchanged.
 const defaultMusicSelection = 'auto';
-const musicSelectionLabels = {
-  'auto': '배경에 맞춤',
-  'day': '포근한 낮',
-  'spring': '봄바람',
-  'dusk': '해질녘',
-  'rain': '비 오는 날',
-  'snow': '눈 오는 날',
-  'night': '조용한 밤',
-};
 
 bool validMusicSelection(String value) =>
     value == defaultMusicSelection || musicMoods.contains(value);

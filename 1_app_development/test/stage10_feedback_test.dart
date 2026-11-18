@@ -8,7 +8,6 @@ import 'package:todays_bungeoppang/game_audio.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/game_events.dart';
 import 'package:todays_bungeoppang/models.dart';
-import 'package:todays_bungeoppang/music_config.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/tap_effects.dart';
@@ -438,14 +437,14 @@ void main() {
     });
   }
 
-  test('합성 효과음 자산: WAV 22.05kHz 모노 16비트, 길이 범위', () {
+  test('합성 효과음 자산: WAV 44.1kHz 모노 16비트, 길이 범위', () {
+    // 26번 4-6단계: one 44.1 kHz family; the music is the OGG song.
     final limits = {
       'tap': (0.05, 0.2),
-      'purchase': (0.2, 0.6),
-      'reward': (0.3, 0.8),
-      'levelup': (1.0, 2.0),
-      for (final mood in musicMoods) 'bgm_$mood': (23.9, 24.1),
-      'sizzle_loop': (3.99, 4.01),
+      'purchase': (0.3, 1.0),
+      'reward': (0.5, 1.2),
+      'levelup': (1.0, 1.5),
+      'sizzle_loop': (19.99, 20.01),
     };
     for (final e in limits.entries) {
       final bytes = File('assets/audio/${e.key}.wav').readAsBytesSync();
@@ -453,9 +452,9 @@ void main() {
       expect(String.fromCharCodes(bytes.sublist(0, 4)), 'RIFF');
       expect(String.fromCharCodes(bytes.sublist(8, 12)), 'WAVE');
       expect(data.getUint16(22, Endian.little), 1, reason: 'mono');
-      expect(data.getUint32(24, Endian.little), 22050);
+      expect(data.getUint32(24, Endian.little), 44100);
       expect(data.getUint16(34, Endian.little), 16);
-      final seconds = data.getUint32(40, Endian.little) / 2 / 22050;
+      final seconds = data.getUint32(40, Endian.little) / 2 / 44100;
       expect(seconds, inInclusiveRange(e.value.$1, e.value.$2), reason: e.key);
     }
   });

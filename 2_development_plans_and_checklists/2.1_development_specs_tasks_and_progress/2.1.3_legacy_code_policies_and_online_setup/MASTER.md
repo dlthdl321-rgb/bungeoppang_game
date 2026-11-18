@@ -348,6 +348,7 @@
 파일: `lib/cosmetic_config.dart`, 해금 규칙은 `lib/menu_rules.dart`
 
 > 18단계 기획: 꾸미기를 붕어빵력으로 사도록 바꾸고, 배경과 음악 선택을 분리합니다([16장](#16-기획-중인-변경)).
+> 26번 4-6단계: 배경음악은 모든 배경·시간에 같은 곡 'Warm Bungeoppang Stall' 하나입니다(`audio/bgm_warm_stall.ogg`). 아래 표의 '음악' 열(분위기)은 코드 구조로만 남아 있고 지금은 모두 같은 곡을 틉니다. 설정의 '배경음 선택' 드롭다운은 없앴습니다(저장값은 그대로 읽음, [12장 소리](#12-이미지소리)).
 
 - 해금 조건: 레벨 ≥ `unlockLevel` 그리고 누적 생산 ≥ `unlockProduction`.
 - 코인으로 삽니다. 황금 붕어빵으로 사면 가격은 코인 × 5이고 해금 조건을 건너뜁니다.
@@ -473,7 +474,7 @@
 | cherry | 꽃잎 | spring | `cherry_night` |
 | snow / snowday | 눈 | snow | snow ↔ snowday 짝 |
 
-- 시간 설정이 밤이면 배경과 상관없이 night 음악이 나옵니다.
+- 시간 설정이 밤이면 배경과 상관없이 night 분위기가 됩니다. 26번 4-6단계부터 모든 분위기가 같은 곡이라 소리는 바뀌지 않고, 분위기가 바뀌어도 곡을 처음부터 다시 틀지 않습니다(`AudioplayersAudio`가 불러 둔 파일 경로를 비교).
 - 계절은 주간 도전 문구에만 영향을 주고, 홈 배경을 바꾸지 않습니다.
 
 ---
@@ -956,17 +957,21 @@
 
 | 소리 | 파일 | 언제 |
 | --- | --- | --- |
-| tap | `audio/tap.wav` | 굽기. 최소 간격 60ms |
-| purchase | `audio/purchase.wav` | 구매 |
-| levelUp | `audio/levelup.wav` | 레벨업·환생 |
-| reward | `audio/reward.wav` | 그 밖의 보상, 미션 달성, 돌아오기 환영 |
-| resultPerfect·resultGood·resultNear·resultFail | `audio/result_<perfect·good·near·fail>.wav` (44.1kHz 모노, 0.6~1.3초, 최고 −3dBFS 이하, 서로 크기 차 2dB 안) | 스페셜 붕어빵 결과 등급(26번 4단계). '진짜 물건 소리 + 살짝 귀엽게'(바삭·작은 가게 종·퐁·툭+치익), `tools/generate_sounds.py` `result_sounds()` 합성(CC0). 녹음 소리 후보는 25번 '필요한 소리' |
-| 배경 음악 | `audio/bgm_<mood>.wav` (24초 반복) | day, spring, dusk, rain, snow, night |
+| 소리 | 파일 | 언제 | 만든 방법·출처·라이선스 |
+| --- | --- | --- | --- |
+| tap | `audio/tap.wav` (0.12초) | 굽기. 최소 간격 60ms | 따뜻한 빵 손끝 '톡' + 작은 바삭. `tools/generate_sounds.py` 합성, CC0 |
+| purchase | `audio/purchase.wav` (0.62초) | 구매 | 동전 세 개가 나무 계산대에 짤랑 + 종이봉투 바스락. 같은 도구, CC0 |
+| reward | `audio/reward.wav` (0.90초) | 그 밖의 보상, 미션 달성, 돌아오기 환영 | 작은 가게 종 '딸랑'. 같은 도구, CC0 |
+| levelUp | `audio/levelup.wav` (1.45초) | 레벨업·환생 | 가게 문 종 '딸랑딸랑' + 동전 쏟아짐. 같은 도구, CC0 |
+| resultPerfect·resultGood·resultNear·resultFail | `audio/result_<perfect·good·near·fail>.wav` (0.6~1.3초) | 스페셜 붕어빵 결과 등급(26번 4단계) | 바삭+종 두 번·바삭+종·'퐁'·'툭'+'치익'. 같은 도구, CC0 |
+| 굽는 소리 | `audio/sizzle_loop.wav` (20초 반복, 44.1kHz 모노 16bit, 약 1.76MB) | 실제 굽기 활동이 있을 때(설정 '굽는 소리', 기본 꺼짐·50%) | 20초 원형 합성(지글 바탕·기름 튀는 '탁탁'·기포 터짐·낮은 웅웅), 끝과 처음이 그대로 이어져 이음매에 틈이 없음. `tools/generate_cooking_sound.py`, CC0. 녹음으로 바꿀 때는 `tools/make_seamless_loop.py`(25번 소리1) |
+| 배경 음악 | `audio/bgm_warm_stall.ogg` (171.04초 반복, OGG Vorbis q4 스테레오 48kHz, 약 2.3MB) | 모든 배경·시간(분위기 6종이 모두 이 곡) | 'Warm Bungeoppang Stall' — 사용자가 Suno **유료 요금제**로 2026-10-17에 만든 곡(태그 'created=2026-10-17T16:16:48Z', Suno 곡 id `29f264fe-0757-41e8-827f-c31b6b6bab3c`, 원본 `7_music/Warm Bungeoppang Stall.mp3`, SHA-256 `83fadd55…f7fbead3`). 유료 요금제 생성곡이라 상업 앱에 넣을 수 있음(사용자 확인 2026-11-18, S46-Q2). 크레딧 표기 의무 없음. `tools/prepare_bgm.py`가 끝 3초를 처음 3초에 같은 힘으로 겹쳐 이음매를 없애고 −6dB, 태그·표지 제거 |
 
+- 효과음 8개는 한 계열('진짜 물건 소리 + 살짝 귀엽게', S46-Q4·Q5)입니다: 모두 44.1kHz 모노 16bit, 1.5초 이하, 앞 무음 10ms 이하, 최고 −3dBFS 이하, 소리 부분 평균 크기 차 2dB 안(`test/audio_assets_test.dart`). 녹음 소리 후보는 25번 '필요한 소리'.
 - 기본 볼륨은 효과음 70, 음악 40입니다.
 - 앱이 백그라운드로 가면 음악을 멈춥니다.
-- 미사용 파일 `audio/bgm.wav`는 중복·불필요 파일 정리에서 삭제했습니다.
-- 18단계 기획: 배경 음악을 설정에서 따로 고르고, 붕어빵 익는 소리(`audio/sizzle_loop.wav`)를 겹쳐 트는 옵션을 더합니다([16장](#16-기획-중인-변경)).
+- 26번 4-6단계에서 합성 배경음 `audio/bgm_<day·spring·dusk·rain·snow·night>.wav`(24초) 6개를 지웠습니다. 저장된 '배경음 선택' 값('auto'·분위기 id)은 계속 유효하고 저장 형식은 바뀌지 않았습니다(`validMusicSelection`). 설정 화면에서는 선택 드롭다운을 없앴습니다.
+- MP3는 반복할 때 인코더 여백으로 틈이 생겨 쓰지 않습니다. iOS는 OGG를 못 틀므로 iOS 빌드 때 `prepare_bgm.py --m4a`로 만든 `.m4a`를 쓰도록 바꿔야 합니다(지금은 Android만).
 
 ### 연출 값 (`lib/feedback_config.dart`)
 
@@ -1006,6 +1011,9 @@
 | 실기기 확인용 release APK | `flutter build apk --release` → `adb install build\app\outputs\flutter-apk\app-release.apk` |
 | 골든 다시 만들기(의도한 홈 화면 변경 후에만) | `flutter test --update-goldens test/workshop_home_golden_test.dart`(실제 홈), 구형은 `test/home_golden_test.dart` |
 | 서버 가격표 다시 만들기 | `UPDATE_PREMIUM_CATALOG=1 flutter test test/premium_catalog_test.dart` |
+| 효과음 다시 만들기 | `python tools/generate_sounds.py` (효과음 8개, 크기 맞춤까지) |
+| 굽는 소리 다시 만들기 | `python tools/generate_cooking_sound.py` / 녹음 파일로: `python tools/make_seamless_loop.py <파일> --seconds 20` (`--check`로 이음매 검사) |
+| 배경음악 다시 만들기 | `python tools/prepare_bgm.py` (원본 `../7_music/Warm Bungeoppang Stall.mp3`를 읽기만), 이음매 검사 `python tools/prepare_bgm.py --check`. 필요: `pip install --user numpy imageio-ffmpeg` |
 | 서버 배포 | `firebase_local.cmd deploy --only "functions,firestore"` (`firebase/` 폴더, [online_setup.md](online_setup.md) 4장) |
 | 에뮬레이터 | `tools/run_android_emulator.ps1` |
 
@@ -1036,6 +1044,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 | 미션·보조 | level_missions(_widget), mission_alerts, support_system, support_widget |
 | 진행·환생 | stage8_progress, stage11_endgame |
 | 꾸미기·그림 | public_menus(_widget), stage12_customization, pixel_art, stage14_systems, day_night, stage17_avatar_layers |
+| 소리 | audio_assets(파일·효과음 한 계열·굽는 소리 이음매), independent_music(배경음 선택 저장값·드롭다운 없음), step05_audio, stage10_feedback(길이·형식) |
 | 온라인 | online_backend, online_setup(키 파일·gitignore·App Check), stage9_ranking, stage16_kakao_ranking, premium_catalog, premium_flow, invite_system, invite_widget |
 | 화면 | widget_test(공용 `mountGame`, `FixedTime`), home_golden, stage7_widget, stage8_widget |
 | Workshop 제작·홈(24번) | cooking_paint, cooking_controls, cooking_flip, flip_circle_control, workshop_two_molds, workshop_home_layout, workshop_home_golden, step02_home, workshop_full_flow(새 설치~주문 제작 통합 흐름) |
@@ -1175,7 +1184,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 
 v13은 오디오 설정 musicSelection/cookingSound/cookingVolume만 추가한다. v1~12 자산 파싱은 유지하고 구형 자동 배경 모드를 보존한다. 사업 운영·숙련·재고/복합 거래의 실제 저장 이전은 포함하지 않는다. 변경·다운그레이드/실제 SQLite 검수는 미실행이다.
 
-설정 화면의 배경음 선택은 배경/시간대와 독립이며 ‘배경에 맞춤’으로 기존 모드로 돌아간다. 굽기 루프는 실제 활동 소스가 있을 때만 별도 player로 출력하고 설정/음량·전경에 따라 정지한다. 실제 신규 스페셜 붕어빵/숙련된 붕어빵 제작 활동 전달은 미연결이다. 오디오 기본값은 development_balance.json에서 development_audio_defaults.dart로 생성한다. sizzle_loop.wav는 generate_cooking_sound.py로 직접 합성(CC0)했다.
+설정 화면의 배경음 선택은 배경/시간대와 독립이며 ‘배경에 맞춤’으로 기존 모드로 돌아간다. 굽기 루프는 실제 활동 소스가 있을 때만 별도 player로 출력하고 설정/음량·전경에 따라 정지한다. 실제 신규 스페셜 붕어빵/숙련된 붕어빵 제작 활동 전달은 미연결이다. 오디오 기본값은 development_balance.json에서 development_audio_defaults.dart로 생성한다. sizzle_loop.wav는 generate_cooking_sound.py로 직접 합성(CC0)했다. 26번 4-6단계에서 4초·양 끝 25ms를 0으로 줄이던 방식(4초마다 소리가 잠깐 꺼짐)을 20초 44.1kHz 원형 합성(이음매 없음)으로 바꿨고, 배경음 선택 드롭다운을 없애 새 곡 하나로 통일했다([12장 소리](#12-이미지소리)).
 
 development_balance.dart/asset 로더와 development_rules.dart는 새 복합 견적·익힘·숙련·신선도·KST 날짜·복구 라우팅 계산의 소스를 제공한다. 실제 서버 지갑/광고/신규 게임 흐름 연결은 하지 않았다. [15번 소스 구현·검수 대기](../15_현재환경소스구현과검수대기.md)를 따른다. 테스트 코드는 작성했으나 앱 실행·컴파일/Flutter/서버 테스트·빌드·실기기는 미실행이다.
 
@@ -1435,6 +1444,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 스킬 레벨업 로그인 | 지금처럼 로그인 필요(DEC-021). 스킬 창에 '카카오 로그인 후 레벨업할 수 있어요' + 로그인 버튼, 로그인 전 구매는 거래를 만들지 않음 | DEC-064 | 26번 3단계 (4장) |
 | 성장 속도 | 그대로. 황금 0 서버로 Lv.10 9분, 5단계 개방 Lv.15~21. 5-1(손님 간격) 뒤 다시 확인 | DEC-065 | 26번 3단계·5-1 |
 | 아바타 그림 매칭 | 머리 = 입은 모습 레이어 + `_cut`, 피부톤 = 도구 색 치환 복사본(`@skin2·3`), 정면만. 기본 앞치마를 그림으로 입히고 무료 '앞치마 없음'(`noapron`) 추가. 그림이 준비 안 된 유료 아바타는 꾸미기·상점에서 숨김(보유자에겐 보임). **구현함**(7장, 2026-11-18) | DEC-066~068 | 26번 4-4단계 |
+| 배경음악·굽는 소리·효과음 | 새 곡 'Warm Bungeoppang Stall' 하나로 모든 분위기 통일(Suno 유료 요금제, 출시 빌드에 넣음, 출처 12장), 설정 '배경음 선택' 없앰(저장값 유지), 굽는 소리 20초 이음매 없는 합성, 효과음 4종을 결과음과 같은 '진짜 물건 소리 + 살짝 귀엽게' 계열·크기로. **구현함**(12장, 2026-11-18) | DEC-TBD-4-6-1~3 | 26번 4-6단계 |
 
 2026-11-18 26번 1단계 기록(문서만, 코드·설정 변경 없음). 추천안으로 확정한 세부(묻지 않은 것)와 1단계 밖 단계의 답은 00_결정취합.md 「26번 2차 구현 전 확정」 소절에 있고, 각 단계가 구현할 때 이 표에 줄을 더한다.
 

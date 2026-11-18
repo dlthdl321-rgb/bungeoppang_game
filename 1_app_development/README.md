@@ -124,10 +124,12 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 | 에셋 | 출처 | 라이선스 |
 | --- | --- | --- |
 | `assets/images/` | 이 프로젝트에서 제작한 도트 그림. 원본과 시안은 `이미지/`, 변환 스크립트는 `tools/` | 프로젝트 소유 |
-| `assets/audio/` 효과음 4종, `bgm_*.wav` 6종 | `tools/generate_sounds.py`로 직접 합성(외부 샘플 없음, 고정 시드로 재현 가능) | CC0 1.0 |
+| `assets/audio/` 효과음 8종(`tap`·`purchase`·`reward`·`levelup`·`result_*`) | `tools/generate_sounds.py`로 직접 합성(외부 샘플 없음, 고정 시드로 재현 가능) | CC0 1.0 |
+| `assets/audio/sizzle_loop.wav` | `tools/generate_cooking_sound.py`로 직접 합성(20초 이음매 없는 반복) | CC0 1.0 |
+| `assets/audio/bgm_warm_stall.ogg` | 'Warm Bungeoppang Stall' — 사용자가 Suno 유료 요금제로 2026-10-17 생성(원본 `../7_music/`), `tools/prepare_bgm.py`로 반복용 변환 | 유료 요금제 생성곡, 상업 이용 가능(표기 의무 없음) |
 | `assets/fonts/Jua-Regular.ttf` | Jua 글꼴 | SIL OFL 1.1 (`assets/fonts/Jua-OFL.txt`) |
 
-소리를 다시 만들려면 `python tools/generate_sounds.py`(numpy 필요)를 실행합니다.
+소리를 다시 만들려면 `python tools/generate_sounds.py`(효과음), `python tools/generate_cooking_sound.py`(굽는 소리), `python tools/prepare_bgm.py`(배경음악)를 실행합니다(numpy, 배경음악은 imageio-ffmpeg도 필요).
 
 패키지 라이선스는 각 배포물의 라이선스를 따릅니다.
 
