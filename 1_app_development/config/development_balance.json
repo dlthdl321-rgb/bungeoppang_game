@@ -456,6 +456,30 @@
       "buns": "1000",
       "gold": 2
     },
+    "jeans": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "denimshorts": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "joggers": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "checkskirt": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "cargopants": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "longskirt": {
+      "buns": "1000",
+      "gold": 2
+    },
     "sneakers": {
       "buns": "1000",
       "gold": 2
@@ -1649,6 +1673,48 @@
       "slot": "bottom",
       "free": false,
       "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "jeans": {
+      "label": "연청 청바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "denimshorts": {
+      "label": "데님 반바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "joggers": {
+      "label": "회색 조거 바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "checkskirt": {
+      "label": "빨강 체크 치마",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "cargopants": {
+      "label": "카키 카고 바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 5,
+      "unlock_total": "0"
+    },
+    "longskirt": {
+      "label": "크림 롱스커트",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 6,
       "unlock_total": "0"
     },
     "flats": {

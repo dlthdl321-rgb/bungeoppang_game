@@ -21,6 +21,12 @@ again.
 
     python tools/make_cosmetic_icons.py            # writes the icons
     python tools/make_cosmetic_icons.py --preview  # + build/cosmetic_icons_preview.png
+    python tools/make_cosmetic_icons.py --only skin2 --only skin3
+                                                   # just these icons (4-7단계
+                                                   # G4: new skin tone colours)
+
+Items without any art yet (4-7단계 new bottoms, drawn only for the v2
+vendor) are skipped; tools/avatar_v2.py icons brings their real icons.
 
 Run in 1_app_development.
 """
@@ -231,16 +237,22 @@ def icon(item, slot):
     path = AVATAR / "girl" / f"{slot}_{item}.png"
     if not path.exists():
         path = AVATAR / "boy" / f"{slot}_{item}.png"
+    if not path.exists():
+        return None  # no art yet (4-7단계 new items)
     return fit(solid(Image.open(path).convert("RGBA")))
 
 
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--preview", action="store_true")
+    p.add_argument("--only", action="append", default=[],
+                   help="write only this icon id (repeatable)")
     args = p.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
-    made = {"none": hanger()}
+    made = {} if args.only else {"none": hanger()}
     for item, slot in definitions():
+        if args.only and item not in args.only:
+            continue
         img = icon(item, slot)
         if img is not None:
             made[item] = img

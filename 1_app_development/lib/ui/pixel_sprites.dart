@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import '../avatar_atlas.dart';
 import '../avatar_rig_config.dart';
+import '../avatar_v2.dart';
 import '../cosmetic_config.dart';
 
 /// Pixel-art images in assets/images, drawn by tools/draw_pixel_assets.py
@@ -265,6 +266,10 @@ class PixelSprites {
         }
       }
     }
+    // 26번 4-7단계: the v2 vendor's pictures (tools/avatar_v2.py).
+    for (final f in avatarV2Shipped) {
+      yield 'assets/images/$f';
+    }
     yield* skillIds.map(_skillPath);
     yield 'assets/images/stall/counter.png';
     yield 'assets/images/stall/counter_snow.png';
@@ -368,6 +373,19 @@ class PixelSprites {
   /// [avatarWornOnlySlots]). Reads the generated [avatarArtFiles], so art
   /// added with tools/avatar_layers.py shows up without code changes.
   static bool avatarArtReady(String character, CosmeticSlot slot, String id) {
+    // 26번 4-7단계: with the v2 vendor on, what v2 drew (the new bottoms
+    // too); while it is off, items only v2 draws stay hidden.
+    if (avatarV2On) {
+      final files = avatarV2Shipped;
+      if (slot == CosmeticSlot.character) {
+        return files.contains(avatarV2Base(id, defaultCosmetics[CosmeticSlot.skin]!));
+      }
+      if (blankCosmetics.contains(id)) return true;
+      if (slot == CosmeticSlot.skin) {
+        return files.contains(avatarV2Base(character, id));
+      }
+      return files.contains(avatarV2Item(character, slot, id));
+    }
     if (slot == CosmeticSlot.character) {
       return avatarArtFiles.contains('avatar/$id/base.png');
     }
@@ -414,6 +432,17 @@ class PixelSprites {
   /// Any loaded picture by its path under assets/images (one decoded copy
   /// per file, shared by every painter), or null when it is not shipped.
   static ui.Image? byPath(String path) => _images['assets/images/$path'];
+
+  /// Tests only: puts [image] at [path] (under assets/images), or removes
+  /// it when null, e.g. to draw made-up v2 vendor art.
+  @visibleForTesting
+  static void debugPut(String path, ui.Image? image) {
+    if (image == null) {
+      _images.remove('assets/images/$path');
+    } else {
+      _images['assets/images/$path'] = image;
+    }
+  }
 
   /// Icon of an upgrade skill (`tap_1`..`auto_16`).
   static ui.Image? skill(String id) => _images[_skillPath(id)];
