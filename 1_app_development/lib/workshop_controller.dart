@@ -1424,7 +1424,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       if (!await _purchaseResponse(gateway, account, intent.transactionId, response)) return false;
       return await _finishPurchase(gateway, account, intent.transactionId);
     } catch (e) {
-      notice = '구매 확인이 남아 있어요. 새 거래 대신 같은 기록을 복구해 주세요: $e';
+      notice = '${skill.startsWith('cosmetic:') ? '구매' : '레벨업'} 확인이 남아 있어요. 새 거래 대신 같은 기록을 복구해 주세요: $e';
       return false;
     } finally { _purchaseBusy = false; if (!disposed) notifyListeners(); }
   }
@@ -1446,7 +1446,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         if (state.purchases.journal(transaction).serverStatus == 'reserved') return false;
       }
       return await _finishPurchase(gateway, account, transaction);
-    } catch (e) { notice = '구매 복구 확인이 필요해요: $e'; return false;
+    } catch (e) {
+      final cosmetic = state.purchases.journals[transaction]?.quote.skillId.startsWith('cosmetic:') ?? false;
+      notice = '${cosmetic ? '구매' : '레벨업'} 복구 확인이 필요해요: $e'; return false;
     } finally { _purchaseBusy = false; if (!disposed) notifyListeners(); }
   }
   Future<bool> _purchaseResponse(WorkshopPurchaseGateway gateway, String account, String transaction,

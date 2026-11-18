@@ -1814,7 +1814,7 @@
         "reward_key": "daily_production"
       },
       "purchases": {
-        "label": "스킬 구매 수량",
+        "label": "스킬 레벨업 횟수",
         "metric": "purchases",
         "target": "3",
         "reward_key": "daily_purchases"
@@ -1840,7 +1840,7 @@
         "reward_key": "weekly_days"
       },
       "purchases": {
-        "label": "주간 스킬 구매 수량",
+        "label": "주간 스킬 레벨업 횟수",
         "metric": "purchases",
         "target": "20",
         "reward_key": "weekly_purchases"

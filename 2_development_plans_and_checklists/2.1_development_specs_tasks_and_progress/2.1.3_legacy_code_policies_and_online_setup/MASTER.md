@@ -246,7 +246,7 @@
 - 목표 밸런스는 Lv.10까지 약 21~22일입니다(`test/economy_simulation_test.dart`).
 - 신규 Workshop 경로: 스킬은 붕어빵력+황금붕어빵력 두 재화 가격(`skill_purchase`). **1~4단계(`tap_1`~`tap_4`, `auto_1`~`auto_4`)는 황금 0**이라 붕어빵력만으로 사고 몇 번째든 황금 0, **5~16단계는 황금 2·3·4개(4단계씩) + 10번마다 1개 증가**(DEC-041, 26번 3단계). 황금 공식은 `기본 황금 > 0`일 때만 `기본 황금 + ⌊n / gold_step_purchase_count⌋ × gold_step_amount`, 기본 황금이 0이면 0(앱 `lib/development_rules.dart` `quoteCompositeSkill`, 서버 `development_contracts.ts` `validateDevelopmentCompositeQuote` 같은 식). 황금 0은 스킬에만 허용하고 꾸미기·부스트는 계속 황금 1 이상이어야 한다(설정 검사 `lib/development_balance.dart`·`tools/development_balance.py`, 저널 `PurchaseJournal.start`, 영수증 `compositeReceiptMatches`, 서버 `parseCompositeIntent`).
 - 성장 확인(`test/workshop_progression_simulation_test.dart`, 탭 2회/초·1분 1판매·가장 싼 스킬부터 분당 3개까지 구매): 황금 0인 서버로 Lv.5 4분·Lv.10 9분, 스킬 황금 소비 0. 첫 황금 스킬인 5단계는 탭 Lv.15·자동 Lv.19에서 열림(탭 1회/초면 Lv.17·21). 환영 황금(`welcome_reward.gold` = 10)은 스킬에 쓰이지 않고 꾸미기(가장 싼 유료 아바타 황금 2)에 쓴다. Lv.1~5 승급은 스킬 없이 30분 안에 가능([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)). 손님 간격이 바뀌면(5-1단계) 다시 확인한다.
-- 스킬 창(`lib/ui/workshop_windows.dart` `WorkshopSkillShop`): 황금 0이면 버튼·자세히 보기에 황금 줄을 숨기고 '붕어빵력만 있으면 돼요.', 맨 위에 '1~N단계 스킬은 붕어빵력만으로 레벨업해요…'(N은 설정에서 계산). 온라인 빌드에서 로그인 전이면 '카카오 로그인 후 레벨업할 수 있어요.' + '카카오 로그인' 버튼(`GameController.signInOnline`). 로그인 전 `purchaseSkill`은 거래를 만들지 않고 같은 안내만 남긴다. 모양 개편('+' 레벨업 등)은 26번 4-3단계.
+- 스킬 창(`lib/ui/workshop_skill_shop.dart` `WorkshopSkillShop`, `workshop_windows.dart`가 다시 내보냄; 26번 4-3단계 F12~F19): '사는 목록'이 아니라 **레벨을 올리는 목록**. 위 줄 = 탭 버튼 '클릭 생산'·'자동 생산'(키 `kind-tap/kind-auto`, 체크 표시 없는 직접 만든 탭, 아이콘 28px, 고른 탭은 꿀색) + 오른쪽 작은 세로 돌림판 `SkillStepWheel`(키 `skill-step`, 값 `step-1/10/100`, 위아래로 밀거나 이웃 값을 눌러 한 칸씩; 두 탭 공통). 단위 `skillLevelUpSteps = [1, 10, 100]`은 Dart 상수(`lib/development_rules.dart`, 설정 파일 아님). 한 번에 올리는 양 `skillLevelUpQuantity` = min(단위, 1000 − 레벨) — 995에서 ×10은 5. 서버(`development_contracts.ts`)가 `cap − owned` 이하면 받으므로 서버 변경 없음. '최대(살 수 있는 만큼)'·1개/10개/최대 칩·'자세히 보기'·'스킬 구매는 온라인 연결…' 문장은 없앰. 칸(키 `skill-$id`, 높이 약 60px): 왼쪽 그림 40px, 가운데 이름 + 'Lv.12/1000 · +60/클릭'(키 `level-$id`, 이 스킬 한 레벨 효과, 자동은 '/초'), 오른쪽 비용(`CurrencyAmount`: 붕어빵력·황금 아이콘 + 줄인 숫자, 모자라면 빨강 `0xffc0392b`, 줄였으면 길게 눌러 정확한 숫자, 황금 0이면 황금 줄 없음, 키 `cost-$id`) + 둥근 '+'(`LevelUpButton`, 키 `buy-$id`, `ui/levelup_plus.png`·`levelup_plus_off.png` 64×64, ×10·×100이면 오른쪽 아래 '×10' 꼬리표). '+'는 해금·온라인 구매 연결·로그인·오류 없음·바쁘지 않음·두 재화 충분일 때만 켜짐. 꺼진 '+'를 누르면 스낵바로 이유: '누적 N개 만들면 열려요.' / '인터넷에 연결하면 레벨업할 수 있어요.' / '카카오 로그인 후 레벨업할 수 있어요.' / '붕어빵력이 3.2만 모자라요.'(황금도 같은 식) / '잠시 뒤에 다시 눌러 주세요.'. 1000이면 '+' 대신 'MAX' 배지(키 `max-$id`). 잠긴 스킬은 **바로 다음 하나만** 보이고(S43-Q3) 그 뒤는 숨김: 그림 대신 공통 잠금 `LockedOverlay(style: LockStyle.hidden)`(키 `skill-lock-$id`, 실루엣 + 큰 자물쇠) + '누적 100만 개 만들면 해금'(키 `unlock-$id`, `compactNumber`라 '누적 2000조 개'). 조기 해금 없음(S43-Q5). 위쪽 안내: 황금 0 단계가 있으면 '1~N단계 스킬은 붕어빵력만으로 레벨업해요. 황금붕어빵력은 N+1단계부터 필요해요.'(키 `skill-gold-note`, N은 설정에서 계산), 온라인 빌드에서 로그인 전이면 '카카오 로그인 후 레벨업할 수 있어요.' + '카카오 로그인' 버튼(키 `skill-sign-in`, `GameController.signInOnline`), 정산 안 된 거래는 '레벨업 확인 대기: 스킬 이름'(꾸미기는 '구매 확인 대기') + 복구·취소 확인. 로그인 전 `purchaseSkill`은 거래를 만들지 않고 같은 안내만 남긴다. 확인 실패·복구 문구는 스킬이면 '레벨업 확인이 남아 있어요…'·'레벨업 복구 확인이 필요해요', 꾸미기(`cosmetic:`)는 '구매'. 저장(`purchases.owned` = 레벨)·서버 함수 이름은 그대로. 한 화면에 보이는 칸: 390×844 7칸, 360×640 4칸(전에는 390×844에서 약 2칸, `test/workshop_skill_window_test.dart`가 확인). 구형 `lib/ui/skill_shop.dart` `SkillShop`(구형 `GameHome`)은 고치지 않음.
 
 ---
 
@@ -275,11 +275,13 @@
 
 ### 일일 미션 (`lib/support_config.dart` `dailyDefinitions`)
 
+신규 Workshop 미션 창은 `config/development_balance.json` `mission_targets`의 label을 보여 줍니다. 26번 4-3단계에서 일일 `purchases` '스킬 구매 수량' → '스킬 레벨업 횟수', 주간 '주간 스킬 구매 수량' → '주간 스킬 레벨업 횟수'로 바꿈(id·집계 그대로, 레벨 수를 셈: ×10 한 번 = 10).
+
 | id | 내용 | 목표 | 보상 |
 | --- | --- | --- | --- |
 | taps | 붕어빵 탭 | 50 | 2코인 |
 | production | 오늘 붕어빵 생산 | 1000 | 3코인 |
-| purchases | 스킬 구매 수량 | 3 | 2코인 |
+| purchases | 스킬 레벨업 횟수 | 3 | 2코인 |
 | auto | 기본 초당 생산 | 10 | 3코인 |
 | (전체 완료) | | | 10코인 (`dailyAllReward`) |
 
@@ -814,7 +816,9 @@
 | 신선도 (`freshness`) | 재고 묶음이 영업일을 하나 이상 넘김 | 아무것도 잠그지 않음, 소개 카드만 |
 | 가게 꾸미기 (`stallCosmetics`) | `stall_cosmetics`(Lv.8) | 메뉴 창 '배경 테마' 숨김(꾸미기 창 가게 칸은 4-5단계) |
 
-- **공통 잠금 표시** (`lib/ui/lock_overlay.dart` `LockedOverlay`, 4-3단계가 함께 씀): 원래 모습을 투명도 0.5로 흐리게 + 짙은 나무색 0.18 면 + 45° 사선 빗금(`LockHatchPainter`, 굵기 6·간격 10, `0xff5b3a24` 35%, 25번 13번 덮개 값을 코드로) + 큰 자물쇠(`ui/lock_badge.png` 128×128, 25번 13번 생성 그림을 `tools/apply_25_art.py --only locks`로 줄임, 없으면 Material 자물쇠) + 높이 64 이상이면 아래에 잠금 글 상자. 하단 메뉴는 자물쇠 최대 34를 아이콘 자리(`Alignment(-.55, 0)`)에 두어 글자를 가리지 않고 잠금 글은 숨김(화면 읽기 '잠김, 스킬: Lv.2에 열려요'). 키 `menu-<id>-locked`, `griddle-locked`, `lock-hatch`, `lock-badge`, `lock-caption`. 모양은 `LockStyle.hatch` 하나(4-3이 실루엣을 더함).
+- **공통 잠금 표시** (`lib/ui/lock_overlay.dart` `LockedOverlay`, 4-3단계가 함께 씀): 원래 모습을 투명도 0.5로 흐리게 + 짙은 나무색 0.18 면 + 45° 사선 빗금(`LockHatchPainter`, 굵기 6·간격 10, `0xff5b3a24` 35%, 25번 13번 덮개 값을 코드로) + 큰 자물쇠(`ui/lock_badge.png` 128×128, 25번 13번 생성 그림을 `tools/apply_25_art.py --only locks`로 줄임, 없으면 Material 자물쇠) + 높이 64 이상이면 아래에 잠금 글 상자. 하단 메뉴는 자물쇠 최대 34를 아이콘 자리(`Alignment(-.55, 0)`)에 두어 글자를 가리지 않고 잠금 글은 숨김(화면 읽기 '잠김, 스킬: Lv.2에 열려요'). 키 `menu-<id>-locked`, `griddle-locked`, `lock-hatch`, `lock-badge`, `lock-caption`. 모양은 두 가지(26번 4-3단계, S43-Q4 '빗금+큰 자물쇠'): `LockStyle.hatch`(기능·꾸미기, 위 설명) / `LockStyle.hidden`(다음 스킬: 그림을 `ColorFiltered`로 `0xff3e2a1d` 실루엣 0.55 + 큰 자물쇠, 빗금 없음, 키 `lock-silhouette`). `maxLock`·`showCaption`·`lockAlignment`·`onTap`을 받고, 잠긴 칸의 손가락은 아래 그림에 닿지 않음(`test/lock_overlay_test.dart`). 4-5단계 꾸미기 잠금도 이 위젯을 쓴다.
+- **재화 표시** (`lib/ui/currency_amount.dart` `CurrencyAmount(Currency.buns|gold, amount, short, missing)`, 26번 4-3단계): 아이콘(`icons/bun.png` / 황금 `icons/gold_bun.png` 72×72, 25번 18번) + 숫자(기본 `compactNumber`, 줄였으면 길게 눌러 정확한 숫자 Tooltip, 모자라면 빨강, 화면 읽기 '붕어빵력 12345, 모자라요'). 스킬 창 비용이 쓰고 4-5단계 잔액 줄·꾸미기 타일이 쓴다.
+- **스킬 창 골든** `test/goldens/skill_shop_{tap,auto}_390x844.png`·`skill_shop_states_360x800.png`(`test/workshop_skill_window_test.dart`, 실제 글꼴; 26번 4-3단계에서 새로 만듦): tap = MAX·올릴 수 있음·돈 부족·해금됨 Lv.0·잠김(실루엣), auto = ×10 + 황금이 필요한 5단계를 못 사는 상태, states = 360 폭·×100·두 재화. 시안 비교 `flutter test tools/preview_skill_shop_test.dart` → `build/preview/skill_shop_options.png`(칸 2안·단위 고르기 2안·잠금 3안).
 - **기능 소개 카드** (`ui/workshop_guide.dart` `WorkshopFeatureIntroCard`, 키 `feature-intro-<id>`): 그림 200×150 틀 + 제목 + 두 문장 + '알겠어요'(`feature-intro-ok`). 그림은 `ui/intro_<id>.png`(25번 22번, 아직 없음) — 없으면 기존 아이콘(`skill`·`bun`·`achievements`·`mission`·`daily`·`tab_fish`·`records`·`tab_stall`)을 88로 그린 임시 그림(`feature-intro-standin`). 안내가 끝난 뒤, 다른 창·복귀 카드·알림 질문·이야기 장면·스페셜 붕어빵 제작·첫 판매 칭찬이 없을 때 한 장씩(여러 개면 표 순서), 바깥을 눌러도 닫히지 않음. 닫으면 `markIntroSeen`으로 저장(schema 8 `featureIntros`). 손님 알림 질문은 소개 카드가 떠 있으면 기다림. 스킬 카드 문구에 '카카오 로그인 후 레벨업'(S3-Q3).
 - **첫 판매 칭찬** (S2-Q4, `WorkshopSalePraiseBanner`, 키 `sale-praise`): 안내를 끝내는 첫 판매에만. 화면 가운데에 손님 이름·성공 대사 말풍선(`sale-praise-speech`) + 큰 별(`icons/star`, 64) + '별 N개!' + 둘레 반짝이(`SparklePainter`, `fx/sparkle`) 2초, 커졌다 돌아오는 연출. 모션 줄이기(설정 또는 기기)면 반짝이·연출 없이 정지 표시. 터치는 막지 않음. 저장하지 않음(`WorkshopController.salePraise`, 다시 켜면 없음). 그 뒤 판매는 예전처럼 카운터 한 줄(`lastSaleFeedback`).
 - 새 설치 첫 화면 비교(26번 2단계 결과 표): HUD·하단 메뉴에서 바로 쓸 수 있는 버튼 8 → 5(화면 전체 12 → 9: 맛 선택·제작 시작·영업 시작·건너뛰기 포함), HUD 숫자 6 → 4(초당·클릭당 숨김).
@@ -989,7 +993,7 @@
 | 효과 | `fx/minifish`, 반짝임 3프레임 `fx/sparkle_1~3`(32×32, 25번 12번, `tools/apply_25_art.py --only sparkles`, 26번 4단계), `fx/fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
 | 짤주머니 | `cook/piping_bag_<batter·redbean·custard·cocoa>[_squeeze].png`(128×192, 손가락 점 (64, 188), `pipingPastes`) |
 | 속 칠 질감 | `mold/paint_<redbean·custard·cocoa>.png`(256×256 불투명 심리스, `tools/apply_25_art.py --only textures`로 v2 생성본을 줄이고 이음매 보정) |
-| 화면 장식 | `ui/wardrobe_bg, offline, title_fish`, 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120 예정, 25번 22번, 없으면 아이콘) |
+| 화면 장식 | `ui/wardrobe_bg, offline, title_fish`, 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 스킬 창 '+' `ui/levelup_plus`·`levelup_plus_off`(64×64, 25번 19번, 26번 4-3단계), 황금붕어빵력 아이콘 `icons/gold_bun`(72×72, 25번 18번, 26번 4-3단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120 예정, 25번 22번, 없으면 아이콘) |
 | 이벤트 배너 | `event/spring·summer·autumn·winter` |
 | 조리 장면 | `cook/girl_1~6.png` (700ms 간격 반복) |
 
@@ -1490,6 +1494,8 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 성장 속도 | 그대로. 황금 0 서버로 Lv.10 9분, 5단계 개방 Lv.15~21. 5-1(손님 간격) 뒤 다시 확인 | DEC-065 | 26번 3단계·5-1 |
 | 아바타 그림 매칭 | 머리 = 입은 모습 레이어 + `_cut`, 피부톤 = 도구 색 치환 복사본(`@skin2·3`), 정면만. 기본 앞치마를 그림으로 입히고 무료 '앞치마 없음'(`noapron`) 추가. 그림이 준비 안 된 유료 아바타는 꾸미기·상점에서 숨김(보유자에겐 보임). **구현함**(7장, 2026-11-18) | DEC-066~068 | 26번 4-4단계 |
 | 배경음악·굽는 소리·효과음 | 새 곡 'Warm Bungeoppang Stall' 하나로 모든 분위기 통일(Suno 유료 요금제, 출시 빌드에 넣음, 출처 12장), 설정 '배경음 선택' 없앰(저장값 유지), 굽는 소리 20초 이음매 없는 합성, 효과음 4종을 결과음과 같은 '진짜 물건 소리 + 살짝 귀엽게' 계열·크기로. **구현함**(12장, 2026-11-18) | DEC-TBD-4-6-1~3 | 26번 4-6단계 |
+
+| 스킬 창 레벨업 방식 | 스킬 창은 레벨업 목록: 칸 = 그림·이름·'Lv.12/1000 · +60/클릭'·비용·둥근 '+'. 단위 ×1·×10·×100 작은 돌림판(창 위 하나), 실제 양 = min(단위, 1000 − 레벨), '최대' 없음. 모자라면 '+' 끔·모자란 비용 빨강·꺼진 '+'는 이유 안내. 'Lv.' 통일, 미션 '스킬 레벨업 횟수'. 잠긴 스킬은 다음 하나만 실루엣+자물쇠, 조기 해금 없음. 공통 잠금 `LockedOverlay`(hatch·hidden)·재화 `CurrencyAmount`. **구현함**(4장, 10장, 2026-11-18) | DEC-TBD-4-3-1~3 | 26번 4-3단계 |
 
 2026-11-18 26번 1단계 기록(문서만, 코드·설정 변경 없음). 추천안으로 확정한 세부(묻지 않은 것)와 1단계 밖 단계의 답은 00_결정취합.md 「26번 2차 구현 전 확정」 소절에 있고, 각 단계가 구현할 때 이 표에 줄을 더한다.
 

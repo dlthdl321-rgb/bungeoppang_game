@@ -5,8 +5,10 @@ import 'pixel_sprites.dart';
 
 /// How a locked thing looks (S43-Q4). [hatch]: the thing itself, faded,
 /// under diagonal stripes and a big padlock (26번 2단계, home buttons and
-/// the six-cell griddle). 4-3단계 adds a silhouette style for skill cells.
-enum LockStyle { hatch }
+/// the six-cell griddle). [hidden]: only the thing's outline as a dark
+/// silhouette (its colours and details stay secret) under the big padlock
+/// (26번 4-3단계, the next skill to unlock).
+enum LockStyle { hatch, hidden }
 
 /// The common lock (26번 2단계 → 4-3단계 공통): [child] faded under warm
 /// diagonal stripes (6px lines, 10px gaps, 35%, the 25번 13번 tile values)
@@ -30,6 +32,8 @@ class LockedOverlay extends StatelessWidget {
       this.onTap, this.maxLock = 56, this.showCaption = true, this.lockAlignment = Alignment.center});
 
   static const stripe = Color(0xff5b3a24);
+  /// The [LockStyle.hidden] silhouette colour (the stripe's warm brown).
+  static const silhouette = Color(0xff3e2a1d);
 
   @override
   Widget build(BuildContext context) => Semantics(
@@ -46,9 +50,14 @@ class LockedOverlay extends StatelessWidget {
             final roomForCaption = showCaption && h >= 64;
             final lock = math.min(maxLock, math.min(w * .6, (roomForCaption ? h - 22 : h) * .8)).clamp(12.0, maxLock);
             return Stack(fit: StackFit.passthrough, children: [
-              IgnorePointer(child: Opacity(opacity: .5, child: child)),
-              Positioned.fill(child: IgnorePointer(child: ClipRRect(borderRadius: BorderRadius.circular(10),
-                  child: CustomPaint(key: const Key('lock-hatch'), painter: const LockHatchPainter())))),
+              if (style == LockStyle.hidden)
+                IgnorePointer(child: Opacity(opacity: .55, child: ColorFiltered(key: const Key('lock-silhouette'),
+                    colorFilter: const ColorFilter.mode(silhouette, BlendMode.srcIn), child: child)))
+              else ...[
+                IgnorePointer(child: Opacity(opacity: .5, child: child)),
+                Positioned.fill(child: IgnorePointer(child: ClipRRect(borderRadius: BorderRadius.circular(10),
+                    child: CustomPaint(key: const Key('lock-hatch'), painter: const LockHatchPainter())))),
+              ],
               Positioned.fill(child: IgnorePointer(child: Align(alignment: lockAlignment, child: Column(mainAxisSize: MainAxisSize.min, children: [
                 SizedBox.square(dimension: lock, child: const _LockBadge()),
                 if (roomForCaption)
