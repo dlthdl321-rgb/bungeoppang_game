@@ -13,7 +13,7 @@ import 'package:flutter_test/flutter_test.dart';
 // flutter_local_notifications (+ timezone). They schedule on the device and
 // send nothing anywhere; no family word of _forbidden matches them, so they
 // need no allow-list entry. Exact alarms are not used.
-// 26번 5단계(DEC-045·046, DEC-TBD-5-1): Firebase Analytics is the one
+// 26번 5단계(DEC-045·046, DEC-084): Firebase Analytics is the one
 // analytics SDK allowed (firebase_analytics and its platform interface/web
 // parts only). The ad ID, SSAID and ad personalization signals are off in the
 // main manifest, and the ad ID / ad services permissions the library merges in
