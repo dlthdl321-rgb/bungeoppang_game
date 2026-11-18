@@ -25,6 +25,7 @@ import 'workshop_customer_dialogue.dart';
 import 'workshop_customer_orders.dart';
 import 'workshop_arrivals.dart';
 import 'workshop_feature_unlocks.dart';
+import 'usage_stats.dart';
 
 part 'workshop_storage.dart';
 
@@ -533,9 +534,16 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   int _lastMono = 0, _checkpoint = 0;
   /// Monotonic times of clicker taps counted in the last second (DEC-036).
   final List<int> _clickerTaps = [];
+  /// 사용 통계(26번 5단계): saved commands report first bake/sale, the end
+  /// of the guide and Lv.3·5·10 after the save, never inside it.
+  final UsageStats usage;
+  UsageProgress get _usageProgress => UsageProgress(
+      bakes: state.flavorMasteries.values.fold(0, (n, m) => n + m.results.length),
+      sales: state.completedSales, level: state.level, tutorial: state.tutorial);
   WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway,
-      int Function()? monotonicMs})
-      : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure(), _monotonicMs = monotonicMs {
+      int Function()? monotonicMs, UsageStats? usage})
+      : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure(), _monotonicMs = monotonicMs,
+        usage = usage ?? UsageStats.none {
     onlineGateway?.source = this;
   }
   @override
@@ -574,6 +582,8 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     _flushActive();
     busy = true; _commandIdle = Completer<void>();
     final before = state.toJson();
+    final progressBefore = _usageProgress;
+    var saved = false;
     try {
       try { mutate(); } on FormatException catch (e) {
         state = WorkshopState.fromJson(before, config); notice = e.message; return false;
@@ -586,12 +596,16 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         await (repository as WorkshopProductionJournal).stageProduction(next, before['sequence'] as int);
       }
       await repository.save(next, before['sequence'] as int);
-      return true;
+      return saved = true;
     } catch (e) {
       state = WorkshopState.fromJson(before, config);
       error = '저장 또는 명령 확인이 필요해요: $e';
       return false;
-    } finally { busy = false; _commandIdle?.complete(); _commandIdle = null; if (!disposed) notifyListeners(); }
+    } finally {
+      busy = false; _commandIdle?.complete(); _commandIdle = null; if (!disposed) notifyListeners();
+      // Only after the save: never part of the command or its transaction.
+      if (saved) usage.observeProgress(progressBefore, _usageProgress);
+    }
   }
   Future<void> reloadAfterError() async {
     if (busy || disposed) return;

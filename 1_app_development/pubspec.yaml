@@ -21,6 +21,9 @@ dependencies:
   in_app_purchase: ^3.3.1
   kakao_flutter_sdk_user: ^2.0.1
   firebase_app_check: ^0.4.9
+  # 26번 5단계(DEC-045·046): 사용 통계는 Firebase Analytics만. 광고 ID·SSAID·개인화 광고 신호는
+  # AndroidManifest에서 끈다. firebase_core 4.15.x와 맞는 12.x 마지막 안정판으로 고정.
+  firebase_analytics: 12.6.1
   # 26번 5-1단계: 손님 도착 기기 안 예약 알림(서버 푸시·Firebase 메시징 아님). 시각은 UTC로만 넘긴다.
   flutter_local_notifications: 22.3.3
   timezone: 0.11.2

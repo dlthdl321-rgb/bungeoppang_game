@@ -66,6 +66,8 @@ extension PremiumCommands on GameController {
       final gold = await online.redeemPurchase(p.productId, p.purchaseToken);
       await billing.complete(p);
       await _setGold(gold);
+      // 사용 통계: the product only, never the price (26번 5단계).
+      usage.record(UsageEvent.payDone, {'product_id': p.productId});
       _setPremiumNotice('$goldName 충전 완료');
     } on OnlineException catch (e) {
       if (e.failure == OnlineFailure.rejected) {

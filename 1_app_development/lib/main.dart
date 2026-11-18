@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'billing_service.dart';
 import 'firebase_online_backend.dart';
+import 'firebase_usage_stats.dart';
 import 'game_audio.dart';
 import 'game_controller.dart';
 import 'online_backend.dart';
@@ -13,6 +14,7 @@ import 'repository.dart';
 import 'save_quarantine.dart';
 import 'server_invite_repository.dart';
 import 'time_service.dart';
+import 'usage_stats.dart';
 import 'development_balance_asset.dart';
 import 'workshop_controller.dart';
 import 'workshop_online.dart';
@@ -33,12 +35,17 @@ Future<void> main() async {
   final online = withOnline
       ? await FirebaseOnlineBackend.create()
       : const NoOnlineBackend();
-  await _start(online);
+  // 사용 통계(26번 5단계): Firebase Analytics only where Firebase started,
+  // for every player (signed in or not); the setting can turn it off.
+  final usage = online.configured
+      ? UsageStats(FirebaseUsageStatsSink())
+      : UsageStats.none;
+  await _start(online, usage);
 }
 
 /// Reads the saves and runs the game, or the recovery screen when a read
 /// fails. Retrying and starting over both come back here.
-Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
+Future<void> _start(OnlineBackend online, UsageStats usage, {int attempts = 0}) async {
   final accounts = SqliteGameRepository(), workshops = SqliteWorkshopRepository();
   final controller = GameController(accounts, SystemTimeService(),
       ranking: online.configured
@@ -48,7 +55,8 @@ Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
       billing:
           online.configured ? PlayBillingService() : const NoBillingService(),
       invitationRepository:
-          online.configured ? ServerInvitationRepository(online) : null);
+          online.configured ? ServerInvitationRepository(online) : null,
+      usage: usage);
   final audio = AudioplayersAudio();
   await PixelSprites.load();
   WorkshopController? workshop;
@@ -59,7 +67,8 @@ Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
     final config = await loadDevelopmentBalance();
     stage = SaveStage.workshop;
     workshop = WorkshopController(config, workshops,
-      purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online as WorkshopTransport) : null);
+      purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online as WorkshopTransport) : null,
+      usage: usage);
     await workshop.initialize();
     runApp(GameApp(controller: controller, audio: audio, workshop: workshop,
         notifier: defaultTargetPlatform == TargetPlatform.android
@@ -82,7 +91,7 @@ Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
             try { await accounts.restoreBackup(); } catch (_) {}
             await accounts.close();
           }
-          await _start(online, attempts: attempts + 1);
+          await _start(online, usage, attempts: attempts + 1);
         },
         onStartFresh: failed == SaveStage.config ? null : () async {
           await setAsideDatabaseFile(
@@ -90,7 +99,7 @@ Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
                   ? await SqliteGameRepository.defaultPath()
                   : await SqliteWorkshopRepository.defaultPath(),
               DateTime.now());
-          await _start(online);
+          await _start(online, usage);
         }));
   }
 }
