@@ -60,6 +60,17 @@ export class PlausibilityValidator {
       firstSales: natural(v.first_checkpoint_max_sales), graceDays: natural(v.mission_claim_grace_days),
       arrivalMs: natural(sale.customer_arrival_interval_ms), saleBuns: base * BigInt(Math.max(quantity, preferred)),
       levels, revision: String(object(root.metadata).revision),
+      daily: PlausibilityValidator.dailyLimits(object(root.daily_return)),
+    };
+  }
+  /** 26번 7단계: per KST day at most one 오늘의 주문서 and one attendance
+   * stamp pay buns, each `seconds` of auto production or at least `min`. */
+  private static dailyLimits(daily: Row) {
+    const order = object(daily.special_order), stamp = object(daily.attendance);
+    return {
+      seconds: BigInt(natural(order.reward_seconds) + Math.max(natural(stamp.buns_seconds), natural(stamp.substitute_seconds))),
+      minimum: decimal(order.min_buns) + (decimal(stamp.min_buns) > decimal(stamp.substitute_min_buns) ? decimal(stamp.min_buns) : decimal(stamp.substitute_min_buns)),
+      attendanceGold: natural(stamp.gold),
     };
   }
   private skill(id: string): Row { return object(object(object(this.config).skill_purchase).entries)[id] as Row; }
@@ -99,7 +110,10 @@ export class PlausibilityValidator {
     if (sales > Math.floor(elapsedMs / l.arrivalMs) + l.slackSales) fail("판매 증가가 서버 시간 한도를 넘었습니다.");
     let rewards = 0n;
     for (let level = prev.level + 1; level <= next.level; level++) rewards += decimal(l.levels[level - 1].buns_reward);
-    const bound = prev.lifetime + BigInt(taps) * rates.tap + seconds * rates.auto + BigInt(sales) * l.saleBuns + rewards + l.slackBuns;
+    // The KST days the interval touches, each with one order and one stamp.
+    const days = BigInt(Math.floor(elapsedMs / 86400000) + 2);
+    const daily = days * (l.daily.seconds * rates.auto + l.daily.minimum);
+    const bound = prev.lifetime + BigInt(taps) * rates.tap + seconds * rates.auto + BigInt(sales) * l.saleBuns + rewards + daily + l.slackBuns;
     if (next.lifetime > bound) fail("붕어빵력 증가가 서버 시간 한도를 넘었습니다.");
     return { ...next, atMs: Math.max(now, prev.atMs), saleEvidence: prev.saleEvidence + saleEvidence };
   }
@@ -208,6 +222,11 @@ export class PlausibilityValidator {
       if (!row || level > snapshot.level || natural(row.gold_reward) <= 0 || payload.gold !== row.gold_reward) fail("승급 보상 근거 오류", true);
       return natural(row.gold_reward);
     }
+    if (payload.scope === "attendance") {
+      // 26번 7단계: the seventh attendance stamp, one gold.
+      if (payload.goal !== "day7" || payload.gold !== this.limits.daily.attendanceGold || Object.keys(payload).length !== 5) fail("출석 보상 근거 오류", true);
+      return this.limits.daily.attendanceGold;
+    }
     const scope = payload.scope, goal = payload.goal, targets = object(object(root.mission_targets)[String(scope)] ?? null);
     const all = scope === "daily" && goal === "all";
     if (typeof goal !== "string" || (!all && !targets[goal])) fail("미션 목표 오류", true);
@@ -228,8 +247,9 @@ export class PlausibilityValidator {
     if (payload.level !== undefined) return;
     const period = payload.period, grace = this.limits.graceDays * 86400000;
     if (typeof period !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(period)) fail("미션 기간 형식 오류", true);
-    const [latest, earliest] = payload.scope === "daily" ? [kstDay(now), kstDay(now - grace)] : [kstWeek(now), kstWeek(now - grace)];
+    const [latest, earliest] = payload.scope === "weekly" ? [kstWeek(now), kstWeek(now - grace)] : [kstDay(now), kstDay(now - grace)];
     if (period > latest || period < earliest) fail("미션 신청 기간이 지났습니다.", true);
+    if (payload.scope === "attendance") return;
     const progress = object(payload.progress), value = (key: string) => decimal(progress[key] ?? "0");
     if (value("taps") > BigInt(snapshot.taps) || value("production") > snapshot.lifetime || value("purchases") > BigInt(rates.skills) ||
         value("auto") > rates.auto || value("days") > 7n || value("dailyAll") > 7n) fail("미션 진행량이 서버 확인 진행과 맞지 않습니다.", true);

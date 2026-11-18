@@ -191,7 +191,9 @@ export class WorkshopService {
     if (!attestation) return { ...resultBase,outcome:"pending",gold:0,receiptId:"" };
     if (attestation.progress !== progress || attestation.fingerprint !== fingerprint) throw new WorkshopServiceError("미션 검증 대상 불일치");
     const verified = await this.evidence.mission.verify(account,claim);
-    const credited=await creditWorkshopMission(this.store,verified,payload,this.clock());
+    const daily=(this.config as Row|undefined)?.daily_return as Row|undefined;
+    const cycle=(daily?.attendance as Row|undefined)?.cycle_days;
+    const credited=await creditWorkshopMission(this.store,verified,payload,this.clock(),typeof cycle==="number" ? cycle : 7);
     return finish({ ...resultBase,...credited,receiptId:`mission_${digest}` });
   }
   async adStart(account: string,input: unknown) {

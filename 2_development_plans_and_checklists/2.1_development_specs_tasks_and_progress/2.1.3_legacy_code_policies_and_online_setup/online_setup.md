@@ -463,7 +463,7 @@ Firestore 보는 법: Firebase 콘솔 → `Firestore Database` → `데이터` �
 
 26번 5단계부터 앱이 Firebase Analytics로 **이름 없는 사용 통계**를 보낸다(로그인과 상관없이 기본 켬, 설정 > '사용 통계 보내기'로 끔). 앱 쪽 준비는 끝났고, 콘솔에서 아래만 하면 된다. **서버 배포나 새 키는 필요 없다**(3장 `online.json`의 Firebase 값 4개를 그대로 쓴다).
 
-보내는 이벤트: `first_bake`(첫 굽기), `first_sale`(첫 판매), `tutorial_done`(안내 끝, `result`=done/skipped), `level_reached`(`level`=3·5·10), `shop_open`(상점, 하루 1번), `pay_view`(황금 충전 화면, 하루 1번), `pay_done`(결제 완료, `product_id`만). 첫 실행 `first_open`과 재방문 `session_start`는 Analytics가 스스로 모은다.
+보내는 이벤트: `first_bake`(첫 굽기), `first_sale`(첫 판매), `tutorial_done`(안내 끝, `result`=done/skipped), `level_reached`(`level`=3·5·10), `shop_open`(상점, 하루 1번), `pay_view`(황금 충전 화면, 하루 1번), `pay_done`(결제 완료, `product_id`만), `special_order_done`(오늘의 주문서 납품, `event`=행사 ID 또는 none, 26번 7단계), `event_join`(겨울 행사 기간 첫 접속, `event`=행사 ID). 첫 실행 `first_open`과 재방문 `session_start`는 Analytics가 스스로 모은다.
 
 **17-1. Google Analytics 켜기(계정 연결)**
 1. <https://console.firebase.google.com> → 프로젝트 → 왼쪽 위 톱니바퀴 → `프로젝트 설정` → 위쪽 `통합` 탭.

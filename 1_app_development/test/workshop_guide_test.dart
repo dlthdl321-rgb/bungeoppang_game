@@ -184,10 +184,10 @@ void main() {
     test('schema 5 이하 저장은 안내를 끝낸 것으로 올리고, 판매 뒤 진행 중 안내는 거절한다', () async {
       final c = WorkshopController(load(), MemoryRepository(), now: () => DateTime.utc(2026, 10, 18));
       await c.initialize();
-      final old = c.state.toJson()..['schema'] = 5..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros');
+      final old = c.state.toJson()..['schema'] = 5..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily');
       final migrated = WorkshopState.fromJson(old, c.config);
       expect(migrated.tutorial, 'done');
-      expect(migrated.toJson()['schema'], 9);
+      expect(migrated.toJson()['schema'], 10);
       expect(() => WorkshopState.fromJson(c.state.toJson()..['tutorial'] = 'later', c.config), throwsFormatException);
       expect(() => WorkshopState.fromJson(c.state.toJson()..['completedSales'] = 1, c.config), throwsFormatException);
       c.dispose();

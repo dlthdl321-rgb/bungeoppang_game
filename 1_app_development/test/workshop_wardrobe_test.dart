@@ -75,14 +75,15 @@ void main() {
         ..lifetime = BigInt.from(5000));
       expect(await c.purchaseSkill(c.purchaseGateway!, 'cosmetic:padding'), isTrue, reason: c.notice);
       final saved = c.state.toJson();
-      expect(saved['schema'], 9);
+      expect(saved['schema'], 10);
       final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>
         ..['schema'] = 8
-        ..['avatarEquipment'] = {'outfit': 'padding', 'top': 'tee'};
+        ..['avatarEquipment'] = {'outfit': 'padding', 'top': 'tee'}
+        ..remove('daily');
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.avatarEquipment['top'], 'padding');
       expect(migrated.avatarEquipment['outfit'], 'noapron');
-      expect(migrated.toJson()['schema'], 9);
+      expect(migrated.toJson()['schema'], 10);
       final strict = jsonDecode(jsonEncode(old)) as Map<String, dynamic>..['schema'] = 9;
       expect(() => WorkshopState.fromJson(strict, config), throwsFormatException);
     });

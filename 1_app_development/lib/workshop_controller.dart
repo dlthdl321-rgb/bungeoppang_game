@@ -25,6 +25,7 @@ import 'workshop_customer_dialogue.dart';
 import 'workshop_customer_orders.dart';
 import 'workshop_arrivals.dart';
 import 'workshop_feature_unlocks.dart';
+import 'workshop_daily.dart';
 import 'usage_stats.dart';
 import 'cosmetic_config.dart' show CosmeticSlot, movedToTop;
 
@@ -42,8 +43,10 @@ class WorkshopAwayReport {
   final int waiting;
   /// Guests who arrived while the app was away.
   final int arrivals;
+  /// 26번 7단계: a new 오늘의 주문서 came, today's stamp is still to take.
+  final bool newOrder, stampReady;
   const WorkshopAwayReport({required this.away, required this.buns, required this.open, required this.waiting,
-      this.arrivals = 0});
+      this.arrivals = 0, this.newOrder = false, this.stampReady = false});
 }
 
 /// One finished sale as the guest saw it: who, how many stars, what they said.
@@ -70,6 +73,8 @@ class WorkshopState {
   /// Feature introduction cards already shown (schema 8, 26번 2단계):
   /// [WorkshopFeature] names from [workshopIntroIds].
   final Set<String> featureIntros = {};
+  /// 오늘의 주문서·출석·행사 (schema 10, 26번 7단계).
+  WorkshopDaily daily = WorkshopDaily.empty;
   final Set<String> recipes = {'redbean'};
   final Set<String> recipeMissions = {};
   final Map<String, Map<String, dynamic>> masteryAwards = {};
@@ -109,8 +114,8 @@ class WorkshopState {
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
   }
-  Map<String, dynamic> toJson() => {'schema': 9, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
-    'featureIntros': featureIntros.toList()..sort(),
+  Map<String, dynamic> toJson() => {'schema': 10, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
+    'featureIntros': featureIntros.toList()..sort(), 'daily': daily.toJson(),
     'regularClock': regularClock.toJson(), 'namedClock': namedClock.toJson(), 'lastNamedVisitor': lastNamedVisitor,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
     'levelStartTaps': levelStartTaps, 'levelStartSales': levelStartSales, 'arrivalMs': arrivalMs,
@@ -135,7 +140,7 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6, 7, 8, 9].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
     if ((row['schema'] as int) < 4 && (row.containsKey('relationships') || row.containsKey('customerScene'))) throw const FormatException('구형 관계 저장 충돌');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
@@ -283,6 +288,25 @@ class WorkshopState {
       }
     }
     if (salesBuns > state.lifetime) throw const FormatException('판매 대금 누적 근거 불일치');
+    // Schema 10 (26번 7단계): today's order, the attendance card and the
+    // seasonal events seen. Older saves start empty.
+    if ((row['schema'] as int) >= 10) {
+      state.daily = WorkshopDaily.fromJson(row['daily'], config, today: businessDayKst(business.settledUtc));
+      final order = state.daily.order;
+      if (order != null) {
+        final action = (state.relationships.toJson()['actions'] as Map)['special:${order.day}'];
+        if (!state.recipes.contains(order.flavor) ||
+            (order.npc != null && !state.relationships.met.contains(order.npc)) ||
+            (order.businessIndex ?? 0) > business.businessIndex ||
+            (order.done && order.npc != null
+                ? action is! Map || action['npc'] != order.npc || action['day'] != order.businessIndex
+                : action != null)) {
+          throw const FormatException('오늘의 주문서 근거 오류');
+        }
+      }
+    } else if (row.containsKey('daily')) {
+      throw const FormatException('구형 저장에 매일 기록이 있어요.');
+    }
     for (final e in object('pendingGold').entries) {
       if (e.value is! String) throw const FormatException('황금 심사 형식 오류');
       final payload = jsonDecode(e.value as String);
@@ -296,6 +320,15 @@ class WorkshopState {
             (payload['revision'] as String).isEmpty) throw const FormatException('승급 황금 심사 근거 오류');
       } else if(e.key.startsWith('mission:')) {
         if(state.missions.claims[e.key.substring(8)]!=e.value) throw const FormatException('미션 황금 신청 원본 불일치');
+      } else if (e.key.startsWith('attendance:')) {
+        // 26번 7단계: the seventh stamp's gold, verified like a mission claim.
+        final day = e.key.substring(11), stamped = state.daily.stampDay;
+        if (payload.length != 5 || payload['scope'] != 'attendance' || payload['period'] != day ||
+            payload['goal'] != 'day7' || DevelopmentBalance.integer(payload, 'gold') == 0 ||
+            payload['revision'] is! String || (payload['revision'] as String).isEmpty ||
+            stamped == null || day.compareTo(stamped) > 0) {
+          throw const FormatException('출석 황금 신청 근거 오류');
+        }
       } else { throw const FormatException('알 수 없는 황금 심사 종류'); }
       state.pendingGold[e.key] = e.value as String;
     }
@@ -472,10 +505,11 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     state.buns += settlement.buns; state.lifetime += settlement.buns;
     // Guests kept coming while away (26번 5-1단계); their waits start now.
     final arrivals = _syncArrivals();
+    final newOrder = _observeDaily();
     final away = state.business.settledUtc.difference(from);
     return away < welcomeBackAfter ? null
         : WorkshopAwayReport(away: away, buns: settlement.buns, open: open, waiting: state.customers.length,
-            arrivals: arrivals);
+            arrivals: arrivals, newOrder: newOrder, stampReady: attendanceReady);
   }
   WorkshopArrivals get arrivalRules => WorkshopArrivals.of(config);
   int _waiting(ArrivalKind kind) => state.customers.where((c) =>
@@ -566,7 +600,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   final UsageStats usage;
   UsageProgress get _usageProgress => UsageProgress(
       bakes: state.flavorMasteries.values.fold(0, (n, m) => n + m.results.length),
-      sales: state.completedSales, level: state.level, tutorial: state.tutorial);
+      sales: state.completedSales, level: state.level, tutorial: state.tutorial,
+      orderDone: state.daily.order?.done == true ? state.daily.order!.day : null,
+      orderEvent: state.daily.order?.event, events: state.daily.events);
   WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway,
       int Function()? monotonicMs, UsageStats? usage})
       : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure(), _monotonicMs = monotonicMs,
@@ -624,7 +660,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final progressBefore = _usageProgress;
     var saved = false;
     try {
-      try { mutate(); } on FormatException catch (e) {
+      try { mutate(); _observeDaily(); } on FormatException catch (e) {
         state = WorkshopState.fromJson(before, config); notice = e.message; return false;
       }
       state.sequence++;
@@ -1037,7 +1073,8 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         if (line.variant != null) variants.add(line.variant!);
       }
       final followup=_matchingFollowup(order);
-      if(followup!=null) state.customerScene=followup;
+      // 이야기 하루 한 조각: a follow-up waits for a day with room.
+      if(followup!=null && _storyRoomToday) state.customerScene=followup;
     }
   }
 
@@ -1273,22 +1310,42 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     return !state.relationships.stories.contains(story) && eligibleCustomerStory(npc,storyFacts,config)
         ? story : null;
   }
+  /// 이야기 하루 한 조각 (26번 7단계): story scenes, follow-ups and choice
+  /// events opened on this business day, together.
+  int get storiesOpenedToday {
+    final journal = state.relationships.toJson(), day = state.business.businessIndex;
+    final scene = state.customerScene;
+    return (journal['storyDays'] as Map).values.where((d) => d == day).length +
+        (journal['followupDays'] as Map).values.where((d) => d == day).length +
+        (journal['lastChoiceDay'] == day ? 1 : 0) +
+        // A story or follow-up on screen counts once it shows.
+        (scene != null && (scene['kind'] == 'story' || scene['kind'] == 'followup') ? 1 : 0);
+  }
+  bool get _storyRoomToday =>
+      storiesOpenedToday < DevelopmentBalance.integer(config.section('daily_return'), 'story_daily_limit');
+  /// A story ready for [npc] waits for tomorrow: say so, gently.
+  void _storyTomorrow(String npc) {
+    final name = customerShortName(npc);
+    notice = '내일 $name${_subjectParticle(name)} 이야기를 이어 갈 것 같아요.';
+  }
   void _afterNamedSale(CustomerOrder order) {
-    final npc=order.customerId, facts=_choiceFacts(npc,order),journal=state.relationships.toJson();
+    final npc=order.customerId, facts=_choiceFacts(npc,order);
     final story = _readyCustomerStory(npc);
     if (story != null) {
+      if (!_storyRoomToday) { _storyTomorrow(npc); return; }
       state.customerScene={'kind':'story','id':story,'npc':npc};return;
     }
     final followup = _matchingFollowup(order);
     if (followup != null) {
+      if (!_storyRoomToday) { _storyTomorrow(npc); return; }
       state.customerScene = followup; return;
     }
     final event='choice_${npc.substring(4)}_01';
     final candidateMatches=npc!='npc_yunha' || (order.lines.length==1 && order.lines.single.flavor=='redbean' &&
       order.lines.single.quantity==DevelopmentBalance.integer(config.section('customer_choice_conditions')[npc] as Map<String,dynamic>,'candidate_redbean_quantity'));
     if(!eligibleCustomerChoice(facts,config,candidateOrderMatches:candidateMatches)) return;
-    state.relationships=state.relationships.rollChoice(state.business.businessIndex,[event],random.nextInt(10000),config,customerCatalog,tutorial:state.tutorialActive,anotherStoryToday:
-      (journal['storyDays'] as Map).values.contains(state.business.businessIndex) || (journal['followupDays'] as Map).values.contains(state.business.businessIndex));
+    state.relationships=state.relationships.rollChoice(state.business.businessIndex,[event],random.nextInt(10000),config,customerCatalog,tutorial:state.tutorialActive,
+      anotherStoryToday:!_storyRoomToday);
     if(state.relationships.active!=null) {
       final orderIds=['a','b','c']..shuffle(random);
       state.customerScene={'kind':'choice','id':event,'npc':npc,'order':orderIds};
@@ -1521,6 +1578,136 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       }
     });
   }
+  // ---- 26번 7단계: 매일 돌아올 이유 (lib/workshop_daily.dart) ----
+  Map<String, dynamic> get _dailyRules => config.section('daily_return');
+  Map<String, dynamic> get _orderRules => _dailyRules['special_order'] as Map<String, dynamic>;
+  Map<String, dynamic> get _stampRules => _dailyRules['attendance'] as Map<String, dynamic>;
+  /// The KST day of the settled business time. It only moves forward, so a
+  /// clock turned back never reopens a day.
+  String get today => businessDayKst(state.business.settledUtc);
+  /// The seasonal event today (config dates only), after the first-run guide.
+  SeasonalEvent? get seasonalEvent => state.tutorialActive ? null : activeSeasonalEvent(config, today);
+  /// Today's 오늘의 주문서 once special orders are open (Lv.5), or null.
+  DailyOrder? get dailyOrder {
+    final order = state.daily.order;
+    return order != null && order.day == today && !state.tutorialActive ? order : null;
+  }
+  /// The buns the order pays now: `reward_seconds` of auto production, at least `min_buns`.
+  BigInt get dailyOrderReward => dailyBuns(autoRate, DevelopmentBalance.integer(_orderRules, 'reward_seconds'),
+      DevelopmentBalance.decimal(_orderRules, 'min_buns'));
+  int get dailyOrderAffinity => DevelopmentBalance.integer(_orderRules, 'affinity');
+  bool _fitsDailyOrder(DailyOrder order, ProductBatch b) {
+    final age = state.business.businessIndex - b.madeOnBusinessIndex;
+    return b.flavor == order.flavor && b.variant == order.variant && age >= 0 && age < 5;
+  }
+  /// Stock that fits the order (flavor and doneness, still sellable), oldest
+  /// first, or null when there is not enough.
+  Map<String, int>? _dailyOrderStock(DailyOrder order) {
+    final fits = state.inventory.batches.values.where((b) => _fitsDailyOrder(order, b)).toList()
+      ..sort((a, b) => a.madeOnBusinessIndex != b.madeOnBusinessIndex
+          ? a.madeOnBusinessIndex.compareTo(b.madeOnBusinessIndex) : a.id.compareTo(b.id));
+    var needed = order.quantity;
+    final pick = <String, int>{};
+    for (final batch in fits) {
+      if (needed == 0) break;
+      final amount = min(needed, batch.quantity);
+      pick[batch.id] = amount; needed -= amount;
+    }
+    return needed == 0 ? pick : null;
+  }
+  /// How many fitting products are in stock (for the card).
+  int get dailyOrderStock {
+    final order = dailyOrder;
+    if (order == null) return 0;
+    return state.inventory.batches.values.where((b) => _fitsDailyOrder(order, b)).fold(0, (n, b) => n + b.quantity);
+  }
+  /// Whether today's stamp is still to take.
+  bool get attendanceReady => !state.tutorialActive && state.daily.stampDay != today;
+  int get attendanceCycle => DevelopmentBalance.integer(_stampRules, 'cycle_days');
+  /// The box the next stamp takes (1~7); after the seventh it starts again.
+  int get nextStamp => state.daily.stamps >= attendanceCycle ? 1 : state.daily.stamps + 1;
+  /// Day 7 gives gold through the server wallet; without a server (builds
+  /// with no online keys) it gives more buns instead.
+  bool stampGivesGold(int box) => box == attendanceCycle && onlineGateway != null;
+  int get attendanceGold => DevelopmentBalance.integer(_stampRules, 'gold');
+  BigInt stampBuns(int box) => box == attendanceCycle
+      ? dailyBuns(autoRate, DevelopmentBalance.integer(_stampRules, 'substitute_seconds'),
+          DevelopmentBalance.decimal(_stampRules, 'substitute_min_buns'))
+      : dailyBuns(autoRate, DevelopmentBalance.integer(_stampRules, 'buns_seconds'),
+          DevelopmentBalance.decimal(_stampRules, 'min_buns'));
+  /// Something on the '오늘' slip still waits for the player.
+  bool get dailyWaiting => attendanceReady || (dailyOrder != null && !dailyOrder!.done);
+
+  /// Records the KST day after the guide: the day's order (once special
+  /// orders are open) and the seasonal event the player is in. Runs after
+  /// every command and on coming back; pays nothing. Returns whether a new
+  /// order came. However many days passed, one order for today.
+  bool _observeDaily() {
+    if (state.tutorialActive) return false;
+    final day = today;
+    var daily = state.daily, fresh = false;
+    if (daily.day != day) daily = daily.copyWith(day: day);
+    final event = activeSeasonalEvent(config, day);
+    if (event != null && !daily.events.contains(event.id)) daily = daily.copyWith(events: {...daily.events, event.id});
+    if (daily.order?.day != day && featureOpen(state, config, WorkshopFeature.specialOrders)) {
+      final met = state.relationships.met;
+      daily = daily.copyWith(order: makeDailyOrder(config, day: day, runId: state.grid.runId,
+          flavors: state.recipes.toList()..sort(), neighbors: customerCatalog.ids.where(met.contains).toList(),
+          event: event));
+      fresh = true;
+    }
+    state.daily = daily;
+    return fresh;
+  }
+
+  /// '도장 찍기': the first stamp of the KST day takes the next box. Boxes
+  /// 1~6 pay buns; the seventh asks the server for gold (pending until
+  /// verified, like mission gold).
+  Future<bool> stampAttendance() => command(() {
+    if (!attendanceReady) throw const FormatException('오늘 출석 도장은 이미 찍었어요.');
+    final box = nextStamp, day = today;
+    if (stampGivesGold(box)) {
+      state.pendingGold['attendance:$day'] = attendanceClaim(config, day);
+    } else {
+      final buns = stampBuns(box);
+      state.buns += buns; state.lifetime += buns;
+    }
+    state.daily = state.daily.copyWith(stamps: box, stampDay: day);
+  });
+
+  /// Bakes for the order in the big mold while open (no customer needed).
+  Future<bool> startDailyOrderProduction() => command(() {
+    final order = dailyOrder;
+    if (order == null || order.done) throw const FormatException('오늘의 주문서를 확인해 주세요.');
+    if (!state.business.permitsProducts(now())) throw const FormatException('영업 중에 주문서 붕어빵을 구울 수 있어요.');
+    _startCooking(order.flavor, practice: false);
+  });
+
+  /// '납품하기': hands the order over from stock while open. Pays buns and
+  /// the requester's affinity (its own daily cap), never gold.
+  Future<bool> deliverDailyOrder() => command(() {
+    final order = dailyOrder;
+    if (order == null || order.done) throw const FormatException('오늘의 주문서를 확인해 주세요.');
+    if (gameplayPaused || !state.business.permitsProducts(now())) throw const FormatException('영업 중에 납품할 수 있어요.');
+    final pick = _dailyOrderStock(order);
+    if (pick == null) throw const FormatException('주문서에 맞는 붕어빵이 모자라요.');
+    state.inventory = state.inventory.consume(pick);
+    final buns = dailyOrderReward;
+    state.buns += buns; state.lifetime += buns;
+    if (order.npc != null) {
+      state.relationships = state.relationships.specialOrder(order.npc!, order.day, state.business.businessIndex,
+          dailyOrderAffinity, config, customerCatalog);
+    }
+    state.daily = state.daily.copyWith(order: order.delivered(buns, state.business.businessIndex));
+  });
   @override
   void dispose() { disposed = true; _timer?.cancel(); _clock.stop(); super.dispose(); }
+}
+
+/// 이/가 after [word]: by whether its last syllable has a final consonant.
+String _subjectParticle(String word) {
+  if (word.isEmpty) return '이';
+  final code = word.codeUnitAt(word.length - 1);
+  if (code < 0xAC00 || code > 0xD7A3) return '이';
+  return (code - 0xAC00) % 28 == 0 ? '가' : '이';
 }

@@ -18,7 +18,11 @@ enum UsageEvent {
   /// 황금 충전 화면을 열었을 때(하루 1번).
   payView('pay_view'),
   /// 황금 결제가 서버에서 확인됐을 때(결제마다, product_id만, 금액 없음).
-  payDone('pay_done');
+  payDone('pay_done'),
+  /// 오늘의 주문서를 납품했을 때(하루 1번, event: 행사 ID 또는 none, 26번 7단계).
+  specialOrderDone('special_order_done'),
+  /// 겨울 행사 기간에 처음 들어왔을 때(행사마다 1번, event: 행사 ID, 26번 7단계).
+  eventJoin('event_join');
 
   final String wireName;
   const UsageEvent(this.wireName);
@@ -107,6 +111,12 @@ class UsageStats {
         record(UsageEvent.levelReached, {'level': level});
       }
     }
+    if (after.orderDone != null && after.orderDone != before.orderDone) {
+      record(UsageEvent.specialOrderDone, {'event': after.orderEvent ?? 'none'});
+    }
+    for (final event in after.events.difference(before.events).toList()..sort()) {
+      record(UsageEvent.eventJoin, {'event': event});
+    }
   }
 
   static String _kstDay(DateTime utc) {
@@ -126,10 +136,17 @@ class UsageStats {
 class UsageProgress {
   final int bakes, sales, level;
   final String tutorial;
+  /// 26번 7단계: the KST day of the order handed over today (null: not yet),
+  /// its seasonal event, and the events the player has been in.
+  final String? orderDone, orderEvent;
+  final Set<String> events;
   const UsageProgress(
       {required this.bakes,
       required this.sales,
       required this.level,
-      required this.tutorial});
+      required this.tutorial,
+      this.orderDone,
+      this.orderEvent,
+      this.events = const {}});
   bool get tutorialActive => tutorial == 'cook' || tutorial == 'sell';
 }
