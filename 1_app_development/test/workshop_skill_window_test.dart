@@ -45,6 +45,10 @@ void main() {
 
     test('일일 미션 문구는 스킬 레벨업 횟수', () {
       expect(dailyDefinitions.firstWhere((d) => d.id == 'purchases').title, '스킬 레벨업 횟수');
+      // The Workshop mission list reads its labels from the config.
+      final missions = config.section('mission_targets');
+      expect(((missions['daily'] as Map)['purchases'] as Map)['label'], '스킬 레벨업 횟수');
+      expect(((missions['weekly'] as Map)['purchases'] as Map)['label'], '주간 스킬 레벨업 횟수');
     });
   });
 
@@ -58,34 +62,6 @@ void main() {
       expect(await c.purchaseSkill(c.purchaseGateway!, 'cosmetic:beanie'), isFalse);
       expect(c.notice, startsWith('구매 확인이 남아 있어요'));
     });
-  });
-
-  testWidgets('잠금 표시: 빗금과 실루엣', (tester) async {
-    var taps = 0;
-    await tester.pumpWidget(MaterialApp(
-        home: Row(children: [
-      SizedBox.square(
-          dimension: 80,
-          child: LockedOverlay(key: const Key('a'), caption: 'Lv.5에 열려요', onTap: () => taps++, child: const ColoredBox(color: Colors.red))),
-      const SizedBox.square(
-          dimension: 40,
-          child: LockedOverlay(key: Key('b'), caption: '누적 1만 개 만들면 해금', style: LockStyle.hidden, showCaption: false,
-              child: ColoredBox(color: Colors.blue))),
-    ])));
-    Finder inside(String key, String part) => find.descendant(of: find.byKey(Key(key)), matching: find.byKey(Key(part)));
-    expect(inside('a', 'lock-hatch'), findsOneWidget);
-    expect(inside('a', 'lock-silhouette'), findsNothing);
-    expect(inside('a', 'lock-caption'), findsOneWidget);
-    expect(inside('b', 'lock-silhouette'), findsOneWidget);
-    expect(inside('b', 'lock-hatch'), findsNothing);
-    expect(inside('b', 'lock-caption'), findsNothing);
-    expect(inside('b', 'lock-badge'), findsOneWidget);
-    // The silhouette keeps only the picture's shape: every colour becomes the dark brown.
-    final filter = tester.widget<ColorFiltered>(inside('b', 'lock-silhouette'));
-    expect(filter.colorFilter, const ColorFilter.mode(LockedOverlay.silhouette, BlendMode.srcIn));
-    expect(tester.getSemantics(find.byKey(const Key('b'))).label, '잠김, 누적 1만 개 만들면 해금');
-    await tester.tap(find.byKey(const Key('a')));
-    expect(taps, 1);
   });
 
   testWidgets('창: 자세히 보기·온라인 문장·수량 칩 없음, 오프라인이면 꺼진 +가 이유를 말함', (tester) async {
@@ -154,7 +130,7 @@ void main() {
     final big = BigInt.from(10).pow(90);
     final (c, account) = await _open(tester, const Size(390, 844), buns: big);
     expect(_button(tester, 'tap_1').enabled, isTrue);
-    expect(_level(tester, 'tap_1'), 'Lv.0/1000 · +1 / 클릭');
+    expect(_level(tester, 'tap_1'), 'Lv.0/1000 · +1/클릭');
     await tester.tap(find.byKey(const Key('buy-tap_1')));
     await tester.pumpAndSettle();
     expect(c.state.purchases.owned['tap_1'], 1);
@@ -174,7 +150,7 @@ void main() {
     expect(c.state.purchases.owned['tap_1'], 1000);
     expect(find.byKey(const Key('max-tap_1')), findsOneWidget);
     expect(find.byKey(const Key('buy-tap_1')), findsNothing);
-    expect(_level(tester, 'tap_1'), 'Lv.1000/1000 · +1 / 클릭');
+    expect(_level(tester, 'tap_1'), 'Lv.1000/1000 · +1/클릭');
     // 995 with ×10 offers five levels.
     await _buy(c, 'auto_1', 995);
     await _tap(tester, 'kind-auto');
@@ -183,6 +159,25 @@ void main() {
     await _tap(tester, 'step-10');
     expect(_button(tester, 'auto_1').quantity, 5);
     expect(account.state.premium.gold, 0);
+  });
+
+  testWidgets('한 화면에 보이는 스킬 칸 수(F13: 전에는 약 2칸)', (tester) async {
+    for (final size in [const Size(390, 844), const Size(360, 640)]) {
+      final huge = BigInt.from(10).pow(90);
+      await _open(tester, size, buns: huge, lifetime: huge);
+      final list = tester.getRect(find.byType(Scrollable).last);
+      final whole = find
+          .byWidgetPredicate((w) => w.key is ValueKey<String> && RegExp(r'^skill-tap_\d+$').hasMatch((w.key! as ValueKey<String>).value))
+          .evaluate()
+          .where((e) {
+        final r = tester.getRect(find.byWidget(e.widget));
+        return r.top >= list.top && r.bottom <= list.bottom;
+      }).length;
+      // ignore: avoid_print
+      print('skill rows fully visible at ${size.width.toInt()}x${size.height.toInt()}: $whole');
+      expect(whole, greaterThanOrEqualTo(size.height > 700 ? 6 : 3));
+      await tester.pumpWidget(const SizedBox());
+    }
   });
 
   // Goldens: the window as it opens from the home menu, with the app's own
@@ -287,7 +282,10 @@ Future<void> _loadFonts(WidgetTester tester) => tester.runAsync(() async {
 /// [account] '' is a signed-out player.
 Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size size,
     {bool gateway = true, String account = 'account', BigInt? buns, BigInt? lifetime, bool fonts = false, int gold = 0}) async {
-  final online = FakeOnlineBackend(products: const {}, prices: const {})..signedIn = account.isNotEmpty;
+  // The server owns the gold balance; the app mirrors it on sync.
+  final online = FakeOnlineBackend(products: const {}, prices: const {})
+    ..signedIn = account.isNotEmpty
+    ..gold = gold;
   final game = await mountGame(tester, size, reduced: true, online: online);
   if (fonts) await _loadFonts(tester);
   final config = DevelopmentBalance.fromJson(

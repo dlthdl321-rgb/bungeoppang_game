@@ -1,0 +1,7 @@
+Pixel art game currency icon, 72x72, transparent background, the object
+filling about 80% of the canvas. A shiny GOLDEN bungeoppang (Korean fish-shaped
+pastry) seen from the side, bright gold body with honey-yellow highlights and
+deep amber shading, simple scale pattern, two tiny white sparkles. Same
+silhouette and size as the supplied plain bungeoppang icon (bun.png) so the two
+read as a pair. Thin dark-brown outline. No text.
+Targeted correction to supplied generated image: remove ALL grey, coloured and translucent glow, cloud, halo and scattered pixels outside the fish and its two star sparkles. Exterior must be clean fully transparent right up to the dark-brown outline. Preserve the fish design and sparkles. No drop shadow, no aura.

@@ -15,7 +15,7 @@ import 'pixel_sprites.dart';
 /// level up, not things to buy. Two tabs (클릭 생산·자동 생산) share one
 /// layout; a small wheel beside them picks how many levels one '+' adds
 /// (×1·×10·×100, [skillLevelUpSteps]). Each row: picture, name,
-/// 'Lv.12/1000 · +60 / 클릭' (one level's effect), the price of the chosen
+/// 'Lv.12/1000 · +60/클릭' (one level's effect), the price of the chosen
 /// step and a round '+' that is lit only when the level-up can go through.
 /// A dark '+' still answers with the reason. Of the locked skills only the
 /// next one shows, as a silhouette under the padlock with its condition.
@@ -195,11 +195,11 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Cozy.ink)),
             if (unlocked)
-              Text('Lv.$owned/$cap · +${compactNumber(DevelopmentBalance.decimal(rule, 'effect'))} / $unit',
+              Text('Lv.$owned/$cap · +${compactNumber(DevelopmentBalance.decimal(rule, 'effect'))}/$unit',
                   key: Key('level-$id'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12.5, color: Cozy.inkSoft, fontWeight: FontWeight.w700))
+                  style: const TextStyle(fontSize: 12, color: Cozy.inkSoft, fontWeight: FontWeight.w700))
             else
               Text('${unlockGoalText(c.config, id)} 만들면 해금',
                   key: Key('unlock-$id'),
