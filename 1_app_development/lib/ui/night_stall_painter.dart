@@ -33,13 +33,18 @@ class NightStallPainter extends CustomPainter {
   /// Prefer the copy of [background] without the baked mold (the home
   /// stage then draws its own; see PixelSprites.hasCleanBackground).
   final bool cleanCounter;
+
+  /// The picture with the stall lowered to the towel (assets/images/bg_low,
+  /// 26번 4-1단계); it has no baked mold either.
+  final bool lowStall;
   const NightStallPainter(
       {this.background = 'clear',
       this.night,
       this.stove = 'iron',
       this.decoration = 'none',
       this.avatar,
-      this.cleanCounter = false});
+      this.cleanCounter = false,
+      this.lowStall = false});
 
   static const sceneSize = Size(180, 400);
 
@@ -99,7 +104,7 @@ class NightStallPainter extends CustomPainter {
   /// (335x762 pixels), measured by tools/towel_top.py: the first row where
   /// the cloth covers 60% of columns 28..40. The Workshop sale counter's top
   /// sits on it (DEC-038).
-  static const towelTops = {
+  static final towelTops = <String, int>{
     'bg/autumn': 520,
     'bg/autumn_night': 518,
     'bg/cherry': 523,
@@ -115,15 +120,19 @@ class NightStallPainter extends CustomPainter {
     'bg/snow': 530,
     'bg/snowday': 530,
     'bg_clean/clear': 524,
+    // tools/apply_26_home_art.py moves each lowered picture so the towel's
+    // top is at 524 (its TOWEL_AT_335 table, checked on its preview sheet).
+    for (final id in PixelSprites.lowStallBackgrounds) 'bg_low/$id': 524,
   };
 
   /// Where the towel's top edge shows on a [size] screen for the picture
   /// [sceneBackground] picks, or null when that picture has no measured
   /// towel (scene-sized pixel art or a new background).
   static double? towelTopOnScreen(Size size, String background, bool? night,
-      {bool clean = false}) {
-    final (image, _) =
-        PixelSprites.sceneBackground(background, night, clean: clean);
+      {bool clean = false, bool low = false}) {
+    final (image, _) = low
+        ? PixelSprites.lowStallBackground(background, night)
+        : PixelSprites.sceneBackground(background, night, clean: clean);
     final path = PixelSprites.pathOf(image);
     if (image == null || path == null) return null;
     final key = path
@@ -176,8 +185,9 @@ class NightStallPainter extends CustomPainter {
     canvas.save();
     canvas.translate(origin.dx, origin.dy);
     canvas.scale(scale);
-    final (image, darken) =
-        PixelSprites.sceneBackground(background, night, clean: cleanCounter);
+    final (image, darken) = lowStall
+        ? PixelSprites.lowStallBackground(background, night)
+        : PixelSprites.sceneBackground(background, night, clean: cleanCounter);
     _drawBackground(canvas, image);
     if (darken) {
       // No night picture yet: the day one under a deep blue night wash.
@@ -224,7 +234,8 @@ class NightStallPainter extends CustomPainter {
       stove != oldDelegate.stove ||
       decoration != oldDelegate.decoration ||
       avatar != oldDelegate.avatar ||
-      cleanCounter != oldDelegate.cleanCounter;
+      cleanCounter != oldDelegate.cleanCounter ||
+      lowStall != oldDelegate.lowStall;
 }
 
 /// The stall's frame from the concept art: a striped awning across the top

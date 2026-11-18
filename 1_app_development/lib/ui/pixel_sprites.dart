@@ -263,6 +263,12 @@ class PixelSprites {
       yield _cleanPath(bg.id);
       yield _cleanPath('${bg.id}_night');
     }
+    yield* lowStallBackgrounds.map(_lowPath);
+    for (final id in guestArt) {
+      for (final mood in guestMoods) {
+        yield 'assets/images/customer/${id}_$mood.png';
+      }
+    }
     yield* moldNames.map((n) => 'assets/images/mold/$n.png');
     for (final stove in _slot(CosmeticSlot.stove)) {
       yield _emptyStovePath(stove.id);
@@ -424,6 +430,44 @@ class PixelSprites {
   }
 
   static String _cleanPath(String id) => 'assets/images/bg_clean/$id.png';
+
+  /// The backgrounds with the stall lowered to the towel and no baked mold
+  /// (assets/images/bg_low, 25번 20번, tools/apply_26_home_art.py): every
+  /// day and night picture of [sceneBackground].
+  static const lowStallBackgrounds = ['autumn', 'autumn_night', 'cherry',
+    'cherry_night', 'clear', 'clear_night', 'dusk', 'forest', 'night', 'rain',
+    'rain_night', 'seaside', 'snow', 'snowday'];
+
+  static String _lowPath(String id) => 'assets/images/bg_low/$id.png';
+
+  /// Whether every lowered background loaded: the new home layout waits for
+  /// all of them (26번 4-1단계, S4-1-Q4).
+  static bool get lowStallReady =>
+      lowStallBackgrounds.every((id) => _images.containsKey(_lowPath(id)));
+
+  /// The lowered picture for [background] by day or at [night], like
+  /// [sceneBackground]: a missing night picture is the day one darkened.
+  static (ui.Image?, bool) lowStallBackground(String background, bool? night) {
+    ui.Image? low(String id) => _images[_lowPath(id)];
+    if (night == null) return (low(background), false);
+    final dayId = dayBackground(background);
+    if (!night) return (low(dayId), false);
+    final own = low(nightBackground(background));
+    return own != null ? (own, false) : (low(dayId), true);
+  }
+
+  /// Guest art ids (assets/images/customer, 25번 6번): the eight named
+  /// guests and four walk-in looks.
+  static const guestArt = ['npc_yunha', 'npc_doyun', 'npc_makrye',
+    'npc_seojin', 'npc_taeo', 'npc_eunchae', 'npc_minjae', 'npc_sua',
+    'walkin_1', 'walkin_2', 'walkin_3', 'walkin_4'];
+  static const guestMoods = ['normal', 'happy', 'sad'];
+
+  /// A standing guest (256x320, body cut at the bottom): [mood] is one of
+  /// [guestMoods]; falls back to the normal face, null when not drawn.
+  static ui.Image? guest(String id, String mood) =>
+      _images['assets/images/customer/${id}_$mood.png'] ??
+      _images['assets/images/customer/${id}_normal.png'];
 
   /// Whether the picture [sceneBackground] shows has a copy without the
   /// baked mold and bungeoppang, so the stage can draw its own.

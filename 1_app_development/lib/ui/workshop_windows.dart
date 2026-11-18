@@ -94,8 +94,8 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop>{
         if(c.notice!=null)Text(c.notice!),if(c.error!=null)Text(c.error!),
         for(final journal in c.state.purchases.journals.values.where((j)=>!j.settled)) CozyPanel(child:Column(children:[
           Text('구매 확인 대기: ${journal.quote.skillId}'),Wrap(children:[
-            TextButton(onPressed:c.purchaseGateway==null || c.purchaseBusy || c.busy ? null : ()=>c.recoverPurchase(c.purchaseGateway!,journal.transactionId),child:const Text('복구')),
-            TextButton(onPressed:c.purchaseGateway==null || c.purchaseBusy || c.busy ? null : ()=>c.recoverPurchase(c.purchaseGateway!,journal.transactionId,cancel:true),child:const Text('취소 확인')),
+            TextButton(onPressed:c.purchaseGateway==null || c.purchaseBusy || c.inputBusy ? null : ()=>c.recoverPurchase(c.purchaseGateway!,journal.transactionId),child:const Text('복구')),
+            TextButton(onPressed:c.purchaseGateway==null || c.purchaseBusy || c.inputBusy ? null : ()=>c.recoverPurchase(c.purchaseGateway!,journal.transactionId,cancel:true),child:const Text('취소 확인')),
           ])])),
         for(final skill in upgrades.where((u)=>u.kind==_kind)) Builder(builder:(context){
           final id=skill.id,owned=c.state.purchases.owned[id] ?? 0;
@@ -106,7 +106,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop>{
             : quoteCompositeSkill(c.config,id,owned:owned,quantity:quantity);
           final rule=c.config.skill(id);
           final unlocked=c.state.lifetime>=DevelopmentBalance.decimal(rule,'unlock_total');
-          final enabled=unlocked && q.quantity>0 && c.purchaseGateway!=null && !c.busy && !c.purchaseBusy && c.error==null &&
+          final enabled=unlocked && q.quantity>0 && c.purchaseGateway!=null && !c.inputBusy && !c.purchaseBusy && c.error==null &&
             q.affordable(c.state.purchases.available(c.state.buns),BigInt.from(account.state.premium.gold));
           return Card(key:Key('skill-$id'),child:Padding(padding:const EdgeInsets.all(14),child:Column(
             crossAxisAlignment:CrossAxisAlignment.stretch,children:[

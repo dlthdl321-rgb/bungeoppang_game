@@ -1,0 +1,16 @@
+﻿Pixel art game character sprite, 256x320 pixels, transparent background,
+crisp dot texture, cozy Korean street-food stall game (bungeoppang, fish-shaped
+pastries). Cute chibi proportions with a large head, matching a warm hand-made
+pixel style with a thin dark-brown outline and soft top-left light.
+Upper body only, from the waist up, facing the viewer in a slight 3/4 view,
+standing at a street stall counter as a customer waiting to buy bungeoppang.
+The body is cut off cleanly at the bottom edge of the canvas (the stall counter
+will cover it). Top of the head about 16 px below the top edge, body centred
+horizontally. No counter, no background, no text, no shadow outside the figure.
+Expression: normal: calm friendly smile.
+Keep the body, clothes, pose and position identical across the three
+expressions; only the face changes.
+
+npc_doyun: curious elementary-school boy, round glasses, one missing front tooth, bright YELLOW school backpack straps visible, standing on tiptoe.
+Match the drawing style, proportions, outline and palette of the attached customer sprite. Reference image1 is STYLE ONLY: copy only the drawing style of the customer, not her identity, not her clothes and not any food stall objects. Exclude the stall, counter, awning, lanterns, food, and white background. Output ONLY the single named customer sprite on a truly transparent canvas, body cropped at bottom.
+

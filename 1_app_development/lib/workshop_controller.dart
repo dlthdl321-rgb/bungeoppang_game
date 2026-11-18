@@ -413,7 +413,25 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   final WorkshopPurchaseGateway? purchaseGateway;
   late WorkshopState state;
   final customerCatalog = WorkshopCustomerCatalog.bundled();
-  String customerName(String id) => id.startsWith('anonymous_') ? '지나가는 손님' : customerCatalog.displayName(id,state.relationships.stories);
+  /// A guest's full name: the nickname for named guests (the customer
+  /// window's title), '일반 손님' for walk-ins (26번 4-1단계 F3).
+  String customerName(String id) => id.startsWith('anonymous_') ? '일반 손님' : customerCatalog.displayName(id,state.relationships.stories);
+  /// The short name the stall and the counter show ('도윤', '막례 할머니';
+  /// S4-1-Q2), '일반 손님' for walk-ins.
+  String customerShortName(String id) => customerCatalog.contains(id)
+      ? customerCatalog.shortName(id,state.relationships.stories) : customerName(id);
+  /// Which guest picture stands at the stall (assets/images/customer): the
+  /// named guest's own, or one of four walk-in looks picked from the id.
+  String guestArtId(String id) {
+    if (customerCatalog.contains(id)) return id;
+    final sum = id.codeUnits.fold<int>(0, (a, b) => (a * 31 + b) & 0x3fffffff);
+    return 'walkin_${sum % 4 + 1}';
+  }
+  /// The guest who just left the stall (memory only): happy after a sale,
+  /// sad after running out of time. The guest layer shows them for a
+  /// moment ([departureAgeMs]).
+  ({String customerId, bool happy, int atMs})? guestDeparture;
+  int get departureAgeMs => guestDeparture == null ? 1 << 30 : _mono - guestDeparture!.atMs;
   bool busy = false, foreground = true, disposed = false;
   bool _gridVisible = true;
   bool get gridVisible => _gridVisible;
@@ -546,7 +564,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   // Retained through reloadAfterError; storage integration can persist these
   // frozen attempts alongside its command journal for process-death recovery.
   bool _savingCheckpoint = false;
-  bool get cookingInputBlocked => gameplayPaused || error != null || (busy && !_savingCheckpoint);
+  bool get cookingInputBlocked => gameplayPaused || error != null || inputBusy;
+  /// Busy with a command the player started, not the periodic checkpoint
+  /// save: buttons and the clicker stay usable while it runs (26번 4-1 F1).
+  bool get inputBusy => busy && !_savingCheckpoint;
   int get activePhaseElapsedMs => state.phaseMs +
       (gameplayPaused || state.session == null || state.session!.finished ? 0 : _mono - _lastMono);
   CookingSession? _pendingCookingResult;
@@ -565,12 +586,21 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     // ledger can produce skill effects; legacy local purchases are not used.
     final report = saved == null ? null : _settleAwayInto();
     error = null;
-    if (!await command(() {})) throw StateError('신규 진행 저장 실패');
+    if (!await command(() {}, keepNotice: true)) throw StateError('신규 진행 저장 실패');
     awayReport = report;
     _clock.start(); _timer = Timer.periodic(const Duration(milliseconds: 100), (_) => _tick());
   }
-  Future<bool> command(void Function() mutate, {bool production = false}) async {
+  /// Runs [mutate] and saves. A command that comes in while the periodic
+  /// checkpoint save runs waits for it instead of being dropped (26번 4-1 F1).
+  /// The notice is cleared before the active time is settled, so a guest's
+  /// timeout line set by that settlement survives; [keepNotice] (checkpoint,
+  /// lifecycle and recovery saves) leaves it alone.
+  Future<bool> command(void Function() mutate, {bool production = false, bool keepNotice = false}) async {
+    while (busy && _savingCheckpoint && !disposed && _commandIdle != null) {
+      await _commandIdle!.future;
+    }
     if (busy || disposed || error != null) return false;
+    if (!keepNotice) notice = null;
     _flushActive();
     busy = true; _commandIdle = Completer<void>();
     final before = state.toJson();
@@ -578,7 +608,6 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       try { mutate(); } on FormatException catch (e) {
         state = WorkshopState.fromJson(before, config); notice = e.message; return false;
       }
-      notice = null;
       state.sequence++;
       final next = state.toJson();
       WorkshopState.fromJson(next, config); // Never persist an inconsistent aggregate.
@@ -617,7 +646,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     } finally {
       busy = false; _commandIdle?.complete(); _commandIdle = null;
     }
-    await command(() {});
+    await command(() {}, keepNotice: true);
   }
   void _advanceMemory(int ms) {
     if (ms <= 0) return;
@@ -627,7 +656,8 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final advanced=state.customers.map((c)=>c.advanceActive(ms)).toList();
       for(final order in advanced.where((c)=>c.remainingMs==0)) {
         final speech=selectCustomerSpeech(customerCatalog,'timeout',_dialogueFacts(order));
-        if(speech!=null) notice='${customerName(order.customerId)}: ${speech['text']}';
+        if(speech!=null) notice='${customerShortName(order.customerId)}: ${speech['text']}';
+        guestDeparture=(customerId:order.customerId,happy:false,atMs:_mono);
       }
       state.customers=advanced.where((c)=>c.remainingMs>0).toList();
       if (state.session == null && gridVisible) state.grid = state.grid.advanceActive(ms);
@@ -679,7 +709,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   Future<void> _saveCheckpoint() async {
     if (busy || disposed || error != null) return;
     _savingCheckpoint = true;
-    try { await command(() {}); }
+    try { await command(() {}, keepNotice: true); }
     finally { _savingCheckpoint = false; if (!disposed) notifyListeners(); }
   }
   Future<void> setForeground(bool value) async {
@@ -697,7 +727,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       if (disposed || generation != _lifecycleGeneration) return;
       foreground = true; _lastMono = _mono;
       notifyListeners();
-    } else { await command(() {}); }
+    } else { await command(() {}, keepNotice: true); }
   }
   Future<bool> openBusiness() => command(() {
     if(storyPaused) throw const FormatException('대화를 먼저 마쳐 주세요.');
@@ -716,7 +746,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (state.session?.finished != true) { state.session = null; state.phaseMs = 0; }
   });
   void tap() {
-    if (busy || !foreground || disposed || error != null || state.session != null) return;
+    if (inputBusy || !foreground || disposed || error != null || state.session != null) return;
     _flushActive();
     if (gameplayPaused) return;
     state.buns += tapRate; state.lifetime += tapRate; state.taps++;
@@ -728,7 +758,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// `server_validation.max_taps_per_second` counted taps in any second.
   /// Returns the buns earned, or null when the tap only shows its effect.
   BigInt? clickerTap() {
-    if (busy || !foreground || disposed || error != null || gameplayPaused) return null;
+    if (inputBusy || !foreground || disposed || error != null || gameplayPaused) return null;
     if (state.session != null || !state.business.permitsProducts(now())) return null;
     final at = _mono;
     _clickerTaps.removeWhere((t) => at - t >= 1000);
@@ -780,6 +810,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// only: not saved, so after a restart the result has no reaction.
   (String, String)? _orderProductionFor;
 
+  /// The order whose customer gives [resultReaction] (the guest layer puts
+  /// the words in a bubble over them), or null.
+  String? get resultReactionOrderId => _orderProductionFor?.$2;
+
   /// The order customer's words about the finished bake's [grade] while the
   /// result shows: '도윤: 와, 이건 …'. Null for practice, after a restart,
   /// or when the customer has already left.
@@ -793,9 +827,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (found.isEmpty) return null;
     final order = found.single;
     final speech = selectCustomerSpeech(customerCatalog, cookingGradeEvent(grade), _dialogueFacts(order));
-    final name = customerCatalog.contains(order.customerId)
-        ? customerCatalog.shortName(order.customerId, state.relationships.stories)
-        : customerName(order.customerId);
+    final name = customerShortName(order.customerId);
     return speech == null ? null : '$name: ${speech['text']}';
   }
   void _recordCookingProduct(CookingSession session, {required bool keep}) {
@@ -1043,6 +1075,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       state.relationships = state.relationships.successfulSale(order.id,order.id,state.business.businessIndex,config);
     }
     state.completedSales++; state.customers.removeAt(index);
+    guestDeparture = (customerId: order.customerId, happy: true, atMs: _mono);
     // The guide's first sale stays free of story, follow-up and choice scenes.
     // It gets the big praise (26번 2단계, S2-Q4): the guest's words, the
     // stars and a short sparkle, not saved.
@@ -1111,7 +1144,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final sale=state.sales.entries.last,evidence=validateStoredCustomerSale(sale.key,sale.value);
     final order=CustomerOrder.fromJson(evidence['order'] as Map<String,dynamic>);
     final speech=selectCustomerSpeech(customerCatalog,'success',_dialogueFacts(order));
-    return WorkshopSalePraise(customerName(order.customerId),DevelopmentBalance.integer(evidence,'stars'),
+    return WorkshopSalePraise(customerShortName(order.customerId),DevelopmentBalance.integer(evidence,'stars'),
       speech?['text'] ?? '감사합니다. 잘 먹을게요.');
   }
   String? get lastSaleFeedback {

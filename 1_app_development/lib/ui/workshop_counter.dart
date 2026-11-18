@@ -4,10 +4,13 @@ import '../cooking_result_rules.dart';
 import '../development_orders.dart';
 import '../workshop_controller.dart';
 import 'cozy_style.dart';
+import 'workshop_home_layout.dart';
 
-/// The sale loop on the home screen (MASTER 10장, 3단계 B안): the waiting
-/// line down the left, and the counter strip above the griddle for the
-/// first customer. Presentation only; commands go through the controller.
+/// The sale loop on the home screen (MASTER 10장, 26번 4-1단계): the guests
+/// at the stall (workshop_guests.dart; the old left line until the new
+/// backgrounds are in), and the counter strip on the towel with its button
+/// floating centred above it. Presentation only; commands go through the
+/// controller.
 
 /// "팥 바삭함 1/2": what one order line asks for and how much was handed over.
 String orderLineLabel(WorkshopController c, CustomerOrder order, int i) {
@@ -35,8 +38,10 @@ const _captionStyle = TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.font
   Shadow(color: Cozy.woodDark, offset: Offset(1, 1)),
 ]);
 
-/// The waiting customers, first at the top. Each badge shows the queue
-/// number, the name's first letter and a ring for the time left.
+/// The old layout's waiting line down the left (until the lowered
+/// backgrounds are in, WorkshopHomeLayout.active), first at the top. Each
+/// badge shows the name's first letter, a ring for the time left and the
+/// order in short; no queue numbers (26번 4-1단계 F2).
 class WorkshopCustomerQueue extends StatelessWidget {
   final WorkshopController controller;
   final ValueChanged<String> onOpenCustomer;
@@ -49,7 +54,7 @@ class WorkshopCustomerQueue extends StatelessWidget {
     // 26번 5-1단계: guests come by the real-time clocks; the '맞이' button is
     // only for the first-run guide (S5-1-Q2) and brings one guest when the line is empty.
     final full = !s.tutorialActive || s.customers.isNotEmpty;
-    final canWelcome = !c.busy && !full && c.error == null && !c.gameplayPaused && s.business.permitsProducts(c.now());
+    final canWelcome = !c.inputBusy && !full && c.error == null && !c.gameplayPaused && s.business.permitsProducts(c.now());
     return SingleChildScrollView(
       key: const Key('customer-queue'),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
@@ -82,12 +87,12 @@ class WorkshopCustomerQueue extends StatelessWidget {
   }
 
   Widget _badge(WorkshopController c, int i) {
-    final order = c.state.customers[i], name = c.customerName(order.customerId);
+    final order = c.state.customers[i], name = c.customerShortName(order.customerId);
     final left = order.remainingMs / math.max(1, c.initialWaitMs(order));
     final short = order.lines.map((l) => '${c.flavorLabel(l.flavor).characters.first}${l.quantity}').join(' ');
     return Semantics(
       button: true,
-      label: '${i + 1}번 손님 $name · ${orderSummary(c, order)} · 남은 ${(order.remainingMs / 1000).ceil()}초',
+      label: '$name · ${orderSummary(c, order)} · 남은 ${(order.remainingMs / 1000).ceil()}초',
       excludeSemantics: true,
       child: InkWell(
         key: Key('customer-$i'),
@@ -112,7 +117,6 @@ class WorkshopCustomerQueue extends StatelessWidget {
                 ),
               ),
             ),
-            Text('${i + 1}번', maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: _captionStyle),
             Text(short, maxLines: 1, softWrap: false, overflow: TextOverflow.fade, style: _captionStyle),
           ]),
         ),
@@ -138,9 +142,61 @@ class _WaitRing extends CustomPainter {
   bool shouldRepaint(_WaitRing old) => old.left != left || old.front != front;
 }
 
-/// The counter strip: business state, then the first customer's order and
-/// the next action (sell, or bake what is missing). Tapping the text opens
-/// the stock. Hidden while the big mold is in use.
+/// What the sale counter says and its one next action (sell, or bake what
+/// is missing, open, close…), for [WorkshopSaleCounter] and the floating
+/// [WorkshopCounterAction]. Null while the big mold is in use.
+class _CounterContent {
+  final String title, detail;
+  final Widget action;
+  const _CounterContent(this.title, this.detail, this.action);
+
+  static _CounterContent? of(WorkshopController c, VoidCallback onCloseBusiness) {
+    final s = c.state;
+    if (s.session != null) return null;
+    final now = c.now(), idle = !c.inputBusy && c.error == null && !c.gameplayPaused;
+    final stock = s.inventory.batches.values.fold<int>(0, (n, b) => n + b.quantity);
+    Widget primary(Key key, String label, VoidCallback? onPressed) => CozyPrimaryButton(key: key,
+        onPressed: onPressed, label: label, minHeight: WorkshopHomeLayout.actionHeight, fontSize: 17,
+        padding: const EdgeInsets.symmetric(horizontal: 18));
+    Widget secondary(Key key, String label, VoidCallback? onPressed) => CozyButton(key: key,
+        onPressed: onPressed, label: label, minHeight: WorkshopHomeLayout.actionHeight, fontSize: 17,
+        padding: const EdgeInsets.symmetric(horizontal: 18));
+    if (c.error != null) {
+      return _CounterContent('저장 확인이 필요해요', '진행은 그대로 있어요',
+          primary(const Key('counter-reload'), '다시 확인', c.busy ? null : c.reloadAfterError));
+    }
+    if (!s.business.open || s.business.needsContinuation(now)) {
+      final continuing = s.business.open;
+      return _CounterContent(continuing ? '새 영업일이 밝았어요' : '오늘 영업 준비',
+          '재고 $stock개 · 준비품 ${s.inventory.prepared.length}묶음',
+          primary(const Key('business-open'), continuing ? '이어서 영업' : '영업 시작', idle ? c.openBusiness : null));
+    }
+    if (c.photoReactionSale case final sale?) {
+      return _CounterContent('태오: 와, 냄새 좋다.', '……아! 또 사진 전에 먹었네.',
+          secondary(const Key('photo-reaction'), '반응 확인', idle ? () => c.acknowledgePhotoReaction(sale) : null));
+    }
+    if (s.customers.isEmpty) {
+      return _CounterContent(c.lastSaleFeedback ?? '손님을 기다리는 중이에요', '재고 $stock개',
+          secondary(const Key('business-close'), '영업 종료', idle ? onCloseBusiness : null));
+    }
+    final order = s.customers.first, ready = c.saleReadyCount(order), missing = missingFlavor(c, order);
+    // The name and what they want; the time left is the bar over the guest
+    // (S4-1-Q3), not seconds in the text.
+    return _CounterContent('${c.customerShortName(order.customerId)} · ${orderSummary(c, order)}', '재고 $stock개',
+        // Short stock with nothing to hand over: bake the missing flavor first.
+        ready == 0 && missing != null
+            ? secondary(const Key('order-produce'), '${c.flavorLabel(missing)} 제작',
+                idle ? () => c.startOrderProduction(order.id, missing) : null)
+            : primary(const Key('sale-button'), ready >= order.remainingQuantity ? '판매 완료' : '$ready개 먼저 판매',
+                idle && ready > 0 ? () => c.sellToCustomer(order.id) : null));
+  }
+}
+
+/// The counter strip on the towel (DEC-038): one line of who and what
+/// (26번 4-1단계 F6: the short name and the order, no seconds) and a small
+/// line under it for the stock or a notice. Text wraps rather than being
+/// cut (no fade). Tapping it opens the stock. Hidden while the big
+/// mold is in use. Its button floats apart ([WorkshopCounterAction]).
 class WorkshopSaleCounter extends StatelessWidget {
   final WorkshopController controller;
   final VoidCallback onOpenStock, onCloseBusiness;
@@ -149,70 +205,52 @@ class WorkshopSaleCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = controller, s = c.state;
-    if (s.session != null) return const SizedBox.shrink();
-    final now = c.now(), idle = !c.busy && c.error == null && !c.gameplayPaused;
-    final stock = s.inventory.batches.values.fold<int>(0, (n, b) => n + b.quantity);
-    // One line of who/what, one of detail, and the single next action.
-    final String title, detail;
-    final Widget action;
-    Widget primary(Key key, String label, VoidCallback? onPressed) => CozyPrimaryButton(key: key,
-        onPressed: onPressed, label: label, minHeight: 44, fontSize: 16, padding: const EdgeInsets.symmetric(horizontal: 10));
-    Widget secondary(Key key, String label, VoidCallback? onPressed) => CozyButton(key: key,
-        onPressed: onPressed, label: label, minHeight: 44, fontSize: 16, padding: const EdgeInsets.symmetric(horizontal: 10));
-    if (c.error != null) {
-      title = '저장 확인이 필요해요';
-      detail = '진행은 그대로 있어요';
-      action = primary(const Key('counter-reload'), '다시 확인', c.busy ? null : c.reloadAfterError);
-    } else if (!s.business.open || s.business.needsContinuation(now)) {
-      final continuing = s.business.open;
-      title = continuing ? '새 영업일이 밝았어요' : '오늘 영업 준비';
-      detail = '재고 $stock개, 준비품 ${s.inventory.prepared.length}묶음';
-      action = primary(const Key('business-open'), continuing ? '이어서 영업' : '영업 시작', idle ? c.openBusiness : null);
-    } else if (c.photoReactionSale case final sale?) {
-      title = '태오: 와, 냄새 좋다.';
-      detail = '……아! 또 사진 전에 먹었네.';
-      action = secondary(const Key('photo-reaction'), '반응 확인', idle ? () => c.acknowledgePhotoReaction(sale) : null);
-    } else if (s.customers.isEmpty) {
-      title = c.lastSaleFeedback ?? '손님을 기다리는 중이에요';
-      detail = '재고 $stock개';
-      action = secondary(const Key('business-close'), '영업 종료', idle ? onCloseBusiness : null);
-    } else {
-      final order = s.customers.first, ready = c.saleReadyCount(order), missing = missingFlavor(c, order);
-      title = '${c.customerName(order.customerId)} (${(order.remainingMs / 1000).ceil()}초)';
-      detail = '${orderSummary(c, order)}, 재고 $stock';
-      // Short stock with nothing to hand over: bake the missing flavor first.
-      action = ready == 0 && missing != null
-          ? secondary(const Key('order-produce'), '${c.flavorLabel(missing)} 제작',
-              idle ? () => c.startOrderProduction(order.id, missing) : null)
-          : primary(const Key('sale-button'), ready >= order.remainingQuantity ? '판매 완료' : '$ready개 먼저 판매',
-              idle && ready > 0 ? () => c.sellToCustomer(order.id) : null);
-    }
+    final c = controller, content = _CounterContent.of(c, onCloseBusiness);
+    if (content == null) return const SizedBox.shrink();
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.3,
       child: CozyPanel(
         key: const Key('sale-counter'),
-        padding: const EdgeInsets.fromLTRB(8, 4, 4, 4),
-        child: Row(children: [
-          Expanded(
-            child: Semantics(
-              button: true,
-              label: '재고 보기',
-              child: InkWell(
-                key: const Key('stock-open'),
-                onTap: onOpenStock,
-                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(title, key: const Key('counter-title'), maxLines: 1, softWrap: false, overflow: TextOverflow.fade,
-                      style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 15, color: Cozy.ink)),
-                  Text(c.notice ?? detail, key: const Key('counter-order'), maxLines: 1, softWrap: false, overflow: TextOverflow.fade,
-                      style: TextStyle(fontSize: 12, color: c.notice == null ? Cozy.inkSoft : Cozy.brick)),
-                ]),
-              ),
-            ),
+        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
+        child: Semantics(
+          button: true,
+          label: '재고 보기',
+          child: InkWell(
+            key: const Key('stock-open'),
+            onTap: onOpenStock,
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Text(content.title, key: const Key('counter-title'), maxLines: 2,
+                  style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 16, color: Cozy.ink)),
+              // A notice (a guest's parting words, a refused command) takes
+              // the small line's place.
+              Text(c.notice ?? content.detail, key: Key(c.notice == null ? 'counter-order' : 'counter-notice'), maxLines: 2,
+                  style: TextStyle(fontSize: 12, color: c.notice == null ? Cozy.inkSoft : Cozy.brick)),
+            ]),
           ),
-          const SizedBox(width: 4),
-          ConstrainedBox(constraints: const BoxConstraints(maxWidth: 104), child: action),
-        ]),
+        ),
+      ),
+    );
+  }
+}
+
+/// The counter's one action, floating centred on the screen above the
+/// counter (S4-1-Q6): at least 160 wide and 44 tall. Hidden with the
+/// counter while the big mold is in use.
+class WorkshopCounterAction extends StatelessWidget {
+  final WorkshopController controller;
+  final VoidCallback onCloseBusiness;
+  const WorkshopCounterAction({super.key, required this.controller, required this.onCloseBusiness});
+
+  @override
+  Widget build(BuildContext context) {
+    final content = _CounterContent.of(controller, onCloseBusiness);
+    if (content == null) return const SizedBox.shrink();
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.3,
+      child: ConstrainedBox(
+        key: const Key('counter-action'),
+        constraints: const BoxConstraints(minWidth: WorkshopHomeLayout.actionMinWidth, maxWidth: 260),
+        child: content.action,
       ),
     );
   }
@@ -232,7 +270,7 @@ class WorkshopCustomerCard extends StatelessWidget {
           return const Text('주문이 끝났어요.', key: Key('customer-card-gone'));
         }
         final order = s.customers[index], named = c.customerCatalog.contains(order.customerId);
-        final idle = !c.busy && c.error == null && !c.gameplayPaused && s.session == null;
+        final idle = !c.inputBusy && c.error == null && !c.gameplayPaused && s.session == null;
         final words = [
           c.customerOrderSpeech(order),
           c.customerWaitingAction(order),
@@ -241,7 +279,7 @@ class WorkshopCustomerCard extends StatelessWidget {
           if (named && c.customerConversation(order) != c.waitingLine(order)) c.customerConversation(order),
         ].whereType<String>().toList();
         return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text('${index + 1}번 ${c.customerName(order.customerId)}',
+          Text(c.customerName(order.customerId), key: const Key('customer-card-title'),
               style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 22, color: Cozy.ink)),
           Text('남은 ${(order.remainingMs / 1000).ceil()}초', style: const TextStyle(fontSize: 12, color: Cozy.inkSoft)),
           const SizedBox(height: 8),
