@@ -159,8 +159,9 @@ void main() {
       final stage12Coins = cosmeticDefinitions
           .where((d) => stage12Slots.contains(d.slot))
           .fold(BigInt.zero, (a, d) => a + d.cost);
-      // 145 at stage 12, plus stage 14's items in those slots and short.
-      expect(stage12Coins, BigInt.from(223));
+      // 145 at stage 12, plus stage 14's items in those slots and short,
+      // less the chef coat and padded vest (18), tops since 26번 4-5단계.
+      expect(stage12Coins, BigInt.from(205));
     });
   });
 

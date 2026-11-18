@@ -235,7 +235,7 @@ void main() {
     final legacy = controller.state.toJson();
     legacy['schema'] = 1;
     for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime','relationships','customerScene','tutorial','regularClock','namedClock','lastNamedVisitor','featureIntros']) { legacy.remove(key); }
-    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 8);
+    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 9);
     final corrupted = controller.state.toJson()..remove('purchases');
     expect(() => WorkshopState.fromJson(corrupted, config), throwsFormatException);
   });
@@ -328,7 +328,7 @@ void main() {
     final old=controller.state.toJson()..remove('relationships')..remove('customerScene')..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros');old['schema']=3;
     final restored=WorkshopState.fromJson(old,config);
     expect(restored.purchases.toJson(),controller.state.purchases.toJson());
-    expect(restored.toJson()['schema'],8);
+    expect(restored.toJson()['schema'],9);
     final bad=controller.state.toJson()..remove('relationships');
     expect(()=>WorkshopState.fromJson(bad,config),throwsFormatException);
     old['relationships']={};expect(()=>WorkshopState.fromJson(old,config),throwsFormatException);

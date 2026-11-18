@@ -135,7 +135,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
   void _leaveWindow(){_windowCount--;c.gridVisible=_windowCount==0;}
   Future<void> _window(String title,Widget Function(BuildContext) content) async {
     _enterWindow();
-    try {await showWorkshopWindow(context,controller:c,account:widget.accountController,title:title,content:content);}
+    try {await showWorkshopWindow(context,controller:c,account:widget.accountController,title:title,content:content,
+      onGold:()=>unawaited(_goldPacks()));}
     finally {_leaveWindow();}
   }
   Future<void> _closeBusiness() async {
@@ -181,6 +182,13 @@ class _WorkshopPageState extends State<WorkshopPage> {
       final quote=quoteWorkshopProduct(c.config,'cosmetic:${d.id}',owned:0,quantity:1);
       return '붕어빵력 ${compactNumber(quote.buns)} + 황금붕어빵력 ${compactNumber(quote.gold)}';
     }
+    // The price as icons, the currency the player lacks in red (F28).
+    WardrobePrice? cost(CosmeticDefinition d){
+      if(!avatar(d) || owned(d))return null;
+      final q=quoteWorkshopProduct(c.config,'cosmetic:${d.id}',owned:0,quantity:1);
+      return WardrobePrice(q.buns,q.gold,missingBuns:c.state.purchases.available(c.state.buns)<q.buns,
+        missingGold:BigInt.from(account.state.premium.gold)<q.gold);
+    }
     bool canApply(CosmeticDefinition d){
       if(c.inputBusy || c.purchaseBusy || c.error!=null || account.busy || _equipped(d.slot)==d.id || !unlocked(d))return false;
       if(owned(d))return true;
@@ -193,7 +201,15 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // Avatar items show once their art is ready for the vendor worn now
       // (PixelSprites.avatarArtReady); owners keep seeing what they bought.
       listed:(d)=>avatar(d) && PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id) || owned(d),
-      requirement:(d)=>avatar(d) ? '해금 Lv.${(catalog[d.id] as Map)['unlock_level']} · 누적 ${(catalog[d.id] as Map)['unlock_total']}' : '',
+      forSale:avatar,cost:cost,
+      // 26번 4-5단계(S45-Q2): only the level; the production total ('누적',
+      // 0 for every item) is not shown.
+      requirement:(d)=>avatar(d) ? 'Lv.${(catalog[d.id] as Map)['unlock_level']} 해금' : '',
+      // 붕어빵 꾸미기 from Lv.5, 가게 꾸미기 from Lv.8 (S45-Q6): hidden before.
+      tabOpen:(t)=>switch(t){
+        WardrobeTab.bungeoppang=>c.featureIsOpen(WorkshopFeature.fishCosmetics),
+        WardrobeTab.stall=>c.featureIsOpen(WorkshopFeature.stallCosmetics),
+        _=>true},
       action:(d)=>_equipped(d.slot)==d.id ? '장착 중':!unlocked(d) ? '잠김':owned(d) ? '적용':!avatar(d) ? '살 수 없음':'구매하고 적용',
       apply:(d) async {
         if(!canApply(d))return false;
@@ -208,11 +224,14 @@ class _WorkshopPageState extends State<WorkshopPage> {
         return account.buyOrEquipCosmetic(d.id);
       });
   }
-  Future<void> _wardrobe({WardrobeTab tab=WardrobeTab.hair})=>_window('꾸미기',(_)=>WardrobePanel(
-    controller:widget.accountController,access:_cosmetics,initialTab:tab));
-  Future<void> _store(){
+  /// 꾸미기 wears what is owned; '상점에서 더 보기' opens the shop at that
+  /// slot (26번 4-5단계, S45-Q1 B).
+  Future<void> _wardrobe({WardrobeTab tab=WardrobeTab.hair})=>_window('꾸미기',(ctx)=>WardrobePanel(
+    controller:widget.accountController,access:_cosmetics,initialTab:tab,
+    onMore:(slot){Navigator.pop(ctx);unawaited(_store(slot:slot));}));
+  Future<void> _store({CosmeticSlot? slot}){
     c.usage.record(UsageEvent.shopOpen); // 사용 통계(26번 5단계), 하루 1번
-    return _window('상점',(_)=>ShopPanel(controller:widget.accountController,access:_cosmetics,onOpen:_open));
+    return _window('상점',(_)=>ShopPanel(controller:widget.accountController,access:_cosmetics,onOpen:_open,initialSlot:slot));
   }
   Future<void> _goldPacks() async {
     _enterWindow();

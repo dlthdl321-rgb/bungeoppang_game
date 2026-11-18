@@ -92,3 +92,6 @@ flutter:
     # at it (tools/apply_26_home_art.py, 25번 필요한 그림 20번·6번).
     - assets/images/bg_low/
     - assets/images/customer/
+    # 26번 4-5단계: wardrobe item icons (tools/make_cosmetic_icons.py
+    # temporary ones until 25번 필요한 그림 31번).
+    - assets/images/cosmetic_icons/
