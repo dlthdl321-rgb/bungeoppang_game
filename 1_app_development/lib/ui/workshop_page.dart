@@ -31,6 +31,8 @@ import '../owner_account.dart';
 import '../owner_texts.dart';
 import 'owner_settings.dart';
 import 'notice_permission_hint.dart';
+import '../share_card.dart';
+import 'share_card_view.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -347,6 +349,47 @@ class _WorkshopPageState extends State<WorkshopPage> {
   Future<void> _daily()=>_popup(const Key('daily-card'),WorkshopDailyCard(controller:c,onGoldClaim:() async {
     if(widget.accountController.online.signedIn && await c.syncRewards()) await widget.accountController.refreshWorkshopWallet();
   }));
+  /// 공유 카드(26번 8단계, DEC-048): the card, '공유하기' and nothing else
+  /// (no reward, no state change).
+  Future<void> _shareCard(ShareCardData data) async {
+    _enterWindow();
+    try {await showShareCardDialog(context,data:data,texts:ShareCardTexts.of(c.config),usage:c.usage);}
+    finally {_leaveWindow();}
+  }
+  /// What the stall and the vendor wear in a share card: the home's look.
+  Map<String,String> get _shareLook => {for(final slot in CosmeticSlot.values)slot.name:_homeEquipped(slot)};
+  void _sharePerfect(ResultLook look) {
+    final session=c.state.session;
+    if(session==null) return;
+    final reaction=c.resultReaction(look.grade);
+    final orderId=c.resultReactionOrderId;
+    final order=orderId==null ? null : c.state.customers.where((o)=>o.id==orderId).firstOrNull;
+    final split=reaction?.indexOf(': ') ?? -1;
+    unawaited(_shareCard(ShareCardData(moment:ShareMoment.perfect,title:'${c.flavorLabel(session.flavor)} 붕어빵',
+      speaker:split>0 ? reaction!.substring(0,split) : null,
+      line:split>0 ? reaction!.substring(split+2) : cookingGradeLine(c.config,session,look.grade,variant:look.variant),
+      guestArt:order==null ? null : c.guestArtId(order.customerId),variant:look.variant,shine:true,equipped:_shareLook)));
+  }
+  void _shareStory(String npc,String title,String? scene) {
+    // One spoken line of the scene ('수아: 저 이제 …'), not the owner's
+    // and not the '완료 처리' note; the guest's own name when there is none.
+    final spoken=[for(final row in (scene ?? '').split('\n'))
+      if(RegExp(r'^([^:#\s][^:]{0,15}): (.+)$').firstMatch(row.trim()) case final m?
+          when m.group(1)!='사장님' && m.group(1)!='완료 처리') (m.group(1)!,m.group(2)!)];
+    final name=c.customerShortName(npc);
+    unawaited(_shareCard(ShareCardData(moment:ShareMoment.story,title:title,
+      speaker:spoken.isEmpty ? null : spoken.first.$1,
+      line:spoken.isEmpty ? '$name의 이야기를 들었어요.' : spoken.first.$2,
+      guestArt:c.guestArtId(npc),equipped:_shareLook)));
+  }
+  /// 도감 완성: every doneness of [flavor] found (팥 미디엄 is known from the start).
+  bool _collectionDone(String flavor)=>[for(var i=0;i<provisionalDonenessLabels.length;i++)i].every((i)=>
+    c.state.flavorMasteries[flavor]?.discovered.contains(i)==true || (flavor=='redbean' && i==2));
+  void _shareCollection(String flavor)=>unawaited(_shareCard(ShareCardData(moment:ShareMoment.collection,
+    title:'${c.flavorLabel(flavor)} 붕어빵 도감',line:'다섯 가지 익힘을 모두 찾았어요.',
+    variant:3,equipped:_shareLook)));
+  void _sharePhoto()=>unawaited(_shareCard(ShareCardData(moment:ShareMoment.shop,title:'우리 가게',
+    line:c.seasonalEvent?.greeting ?? '따끈한 붕어빵 구워 놓고 기다릴게요!',equipped:_shareLook)));
   Map<String,int> _rewardCounts(){
     final m=c.state.missions;
     int ready(String scope)=>[...m.goals(c.config,scope).keys,if(scope=='daily')'all'].where((id)=>
@@ -399,6 +442,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
       case 'event': unawaited(_window('주간 도전',(_)=>_missions('weekly')));
       case 'missions': unawaited(_window('레벨 미션',(_)=>_levelMissions()));
       case 'gold': unawaited(_goldPacks());
+      case 'photo': _sharePhoto();
     }
   }
   Widget _records()=>ListView(key:const Key('records-scroll'),padding:const EdgeInsets.all(16),children:[
@@ -415,6 +459,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
       Text(c.flavorLabel(flavor),style:Theme.of(context).textTheme.titleLarge),
       Wrap(spacing:6,children:[for(var i=0;i<5;i++)Chip(label:Text('${c.state.flavorMasteries[flavor]?.discovered.contains(i)==true || (flavor=='redbean' && i==2) ? '●':'○'} ${provisionalDonenessLabels[i]}'))]),
       Text(c.state.masteryAwards.containsKey(flavor) ? '숙련 완료 · 숙련된 붕어빵 제작 가능':'연습 중'),
+      if(_collectionDone(flavor))Align(alignment:Alignment.centerLeft,child:CozyButton(key:Key('collection-share-$flavor'),
+        minHeight:36,fontSize:14,label:'도감 완성 자랑하기',onPressed:()=>_shareCollection(flavor))),
     ],
     for(final flavor in c.state.recipes)Builder(builder:(context){
       final m=c.state.flavorMasteries[flavor]!,rule=c.config.mastery(c.difficulty(flavor));
@@ -503,6 +549,10 @@ class _WorkshopPageState extends State<WorkshopPage> {
           if(['story','replay'].contains(scene['kind']) && definition['scene'] is String) Text(definition['scene'] as String),
           if(c.notice!=null) Text(c.notice!),if(c.error!=null) Text(c.error!),
           FilledButton(onPressed:c.inputBusy || c.error!=null ? null : c.finishCustomerScene,child:const Text('대화 마치기')),
+          // 26번 8단계: a story's end can be shown off (no reward).
+          if(['story','replay'].contains(scene['kind']))TextButton.icon(key:const Key('story-share'),
+            onPressed:()=>_shareStory(npc,definition['event'] as String,definition['scene'] as String?),
+            icon:const Icon(Icons.ios_share),label:const Text('자랑하기')),
         ]);
       }
       return Scaffold(appBar:AppBar(title:const Text('이웃 이야기')),
@@ -526,7 +576,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
         reduceMotion:reduceMotion || MediaQuery.disableAnimationsOf(context)),
       centerBuilder:(fish,clean,counterTop)=>Stack(children:[
         Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,
-          lowStall:low,reduceMotion:reduceMotion,
+          lowStall:low,reduceMotion:reduceMotion,onSharePerfect:_sharePerfect,
           vibration:widget.accountController.state.settings.vibration)),
         // The old layout: below the flavor row, clear of the counter strip.
         if(!low)Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),

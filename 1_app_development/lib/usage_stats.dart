@@ -3,7 +3,7 @@ import 'dart:async';
 /// 사용 통계(26번 5단계, DEC-045·046): Firebase Analytics로 "어디까지 와서
 /// 그만두는지"만 본다. 이름·계정·광고 ID는 보내지 않고 setUserId도 쓰지 않는다.
 /// 첫 실행·재방문은 Analytics가 스스로 모으는 first_open·session_start로 보고,
-/// 아래 이벤트만 직접 남긴다(10개 이하, 영문 소문자·밑줄).
+/// 아래 이벤트만 직접 남긴다(10개 이하, 영문 소문자·밑줄. 26번 8단계 share로 10개).
 enum UsageEvent {
   /// 처음으로 굽기 결과가 나왔을 때(평생 1번).
   firstBake('first_bake'),
@@ -22,7 +22,10 @@ enum UsageEvent {
   /// 오늘의 주문서를 납품했을 때(하루 1번, event: 행사 ID 또는 none, 26번 7단계).
   specialOrderDone('special_order_done'),
   /// 겨울 행사 기간에 처음 들어왔을 때(행사마다 1번, event: 행사 ID, 26번 7단계).
-  eventJoin('event_join');
+  eventJoin('event_join'),
+  /// 공유 카드를 공유 창으로 보냈을 때(하루 1번, moment: perfect/story/
+  /// collection/shop, 26번 8단계). 보상 없음.
+  share('share');
 
   final String wireName;
   const UsageEvent(this.wireName);
@@ -32,7 +35,7 @@ enum UsageEvent {
 const usageLevelMarks = [3, 5, 10];
 
 /// 하루 1번만 남기는 이벤트.
-const _dailyOnce = {UsageEvent.shopOpen, UsageEvent.payView};
+const _dailyOnce = {UsageEvent.shopOpen, UsageEvent.payView, UsageEvent.share};
 
 /// Where the events go: Firebase Analytics in builds with Firebase keys,
 /// nowhere otherwise.

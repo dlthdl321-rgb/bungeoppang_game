@@ -223,6 +223,12 @@ def validate(data, catalog):
             require(re.fullmatch(r'\d{4}-\d{2}-\d{2}', event[key]), '행사 날짜 형식(yyyy-mm-dd)')
         require(event['start'] <= event['end'], '행사 기간 순서')
         require(all(isinstance(event[k], str) for k in ('label', 'greeting', 'order_note')), '행사 문구')
+    # 26번 8단계: 공유 카드(보상 없음). 정식 출시 뒤 store_line_mode만 live로 바꾼다.
+    share = data['share']
+    require(share['card_width'] == 1080 and share['card_height'] == 1350, '공유 카드 크기(1080×1350, 4:5)')
+    require(share['store_line_mode'] in ('soon', 'live'), '공유 카드 스토어 문구 방식(soon/live)')
+    require(share['store_url'] == 'https://play.google.com/store/apps/details?id=com.todaybungeoppang.app',
+            '공유 카드 스토어 주소(앱 ID)')
     return data
 
 

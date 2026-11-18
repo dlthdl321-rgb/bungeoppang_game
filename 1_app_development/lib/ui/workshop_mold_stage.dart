@@ -48,6 +48,9 @@ class WorkshopMoldStage extends StatefulWidget {
   /// counter at 0.8 (S4-1-Q5) and the order customer's words go in a
   /// bubble over the guest (WorkshopGuestLayer) instead of under the result.
   final bool lowStall;
+
+  /// '자랑하기' on a perfect result (26번 8단계 공유 카드); null hides it.
+  final void Function(ResultLook look)? onSharePerfect;
   const WorkshopMoldStage(
       {super.key,
       required this.controller,
@@ -55,6 +58,7 @@ class WorkshopMoldStage extends StatefulWidget {
       this.counterTop,
       this.cleanCounter = false,
       this.lowStall = false,
+      this.onSharePerfect,
       this.reduceMotion = false,
       this.vibration = false});
 
@@ -300,6 +304,11 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                     TextButton(
                         onPressed: blocked ? null : () => c.storeResult(false),
                         child: _caption('버리기')),
+                  if (look!.grade == CookingGrade.perfect && widget.onSharePerfect != null)
+                    TextButton(
+                        key: const Key('mold-share'),
+                        onPressed: () => widget.onSharePerfect!(look),
+                        child: _caption('자랑하기')),
                 ] else
                   TextButton(
                       onPressed: blocked

@@ -12,3 +12,29 @@ class InviteSharingService {
         ShareParams(text: text, subject: subject, sharePositionOrigin: origin));
   }
 }
+
+/// Hands a share card picture to the phone's share window (26번 8단계).
+/// Only the share window: no photo-library save, so no storage permission.
+/// Opening it gives nothing in the game (MASTER 1장 '공유에도 보상 없음').
+abstract class CardSharer {
+  /// Throws when the share window could not open.
+  Future<void> sharePng(Uint8List png,
+      {required String text, required String fileName, Rect? origin});
+}
+
+class SharePlusCardSharer implements CardSharer {
+  const SharePlusCardSharer();
+  @override
+  Future<void> sharePng(Uint8List png,
+      {required String text, required String fileName, Rect? origin}) async {
+    final result = await SharePlus.instance.share(ShareParams(
+        files: [XFile.fromData(png, mimeType: 'image/png', name: fileName)],
+        fileNameOverrides: [fileName],
+        text: text,
+        subject: '오늘의 붕어빵',
+        sharePositionOrigin: origin));
+    if (result.status == ShareResultStatus.unavailable) {
+      throw StateError('share unavailable');
+    }
+  }
+}
