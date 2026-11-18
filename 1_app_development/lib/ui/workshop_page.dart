@@ -500,6 +500,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // The griddle art is empty; only cooking cells show a bungeoppang, and
       // none before opening (24번 4단계).
       griddleFilled:workshopGriddleFilled(c),
+      // Closed and cold before opening and while locked; open with the
+      // flames on once it can be used (26번 4-2단계 F8).
+      griddleOpen:workshopGriddleOpen(c),
       vendor:CookCut(equipped:_equipped,taps:BigInt.from(s.taps),
         reduceMotion:reduceMotion,greeting:s.customers.isNotEmpty));
     final praise=c.salePraise;

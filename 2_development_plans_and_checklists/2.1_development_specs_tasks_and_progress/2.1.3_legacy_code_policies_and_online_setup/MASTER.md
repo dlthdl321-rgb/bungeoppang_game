@@ -444,7 +444,7 @@
 | front | `avatar/<character>/base.png` | front | 그림 |
 | cook1~6 | `cook/<character>_1~6.png` | side | 안 그림(프레임에 옷이 그려져 있음) |
 
-얼굴 기준점은 `avatarFaceAnchors[포즈 그림]['eyes'·'mouth']`입니다. 없으면 얼굴 프레임을 그리지 않고 그림 속 얼굴을 그대로 둡니다.
+얼굴 기준점은 `avatarFaceAnchors[포즈 그림]['eyes'·'mouth']`입니다. 없으면 얼굴 프레임을 그리지 않고 그림 속 얼굴을 그대로 둡니다. cook1~6 기준점은 26번 4-2단계에서 조리 컷을 옮긴 만큼 같이 옮김(`tools/align_cook_cuts.py`가 `tools/avatar_layers.json` anchors를 고치고 `avatar_layers.py write`로 생성 파일 갱신, 얼굴 측정 상자 `FACES['girl_side']`도 2번 컷 이동 (+5, −2)만큼 옮김). 남자 사장님 조리 컷(3.3 `cook/boy_1~6.png`)은 아직 앱에 없고(`cookCharacters = ['girl']`) 옮길 값만 json `boy`에 저장.
 
 **얼굴 채널(`rigChannels`)**
 
@@ -655,7 +655,7 @@
 | 판매 카운터 | 왼쪽 8, 폭 = w − 16 − (조리 컷 폭 + 8), **위 = 배경 왼쪽 빨간 체크 행주의 윗변**(DEC-038, 아래 "행주 윗변"), 높이는 내용대로. 행주 값이 없는 배경(장면 크기 픽셀 그림·새 배경)이면 예전처럼 아래 = 굽는 판 바닥 + 굽는 판 높이×0.66. 스페셜 붕어빵 제작 중에는 숨김. 버튼은 카운터 밖(아래 줄) | `sale-counter` | `WorkshopSaleCounter` |
 | 카운터 버튼 | **26번 4-1단계 F6(S4-1-Q6 '버튼만 화면 가운데')**: 카운터의 다음 행동 버튼 하나를 화면 가로 가운데에 띄움. 아래끝 = 판매 카운터 윗변 − 6(`actionGap`), 폭 160~260, 높이 44, 글자 17. 두 구도 모두 같음 | `counter-action`(안의 버튼 키는 아래 '판매 카운터' 표) | `WorkshopCounterAction` |
 | 가게 상태 간판 | **26번 4-1단계 F7**: HUD 아래 줄 가운데 나무 간판(짙은 나무색, 주황 테두리 2, 둥근 12, 그림자), 앞에 점(영업 중 초록·영업 준비 회색), 글 Jua 16 크림색 '영업 중'/'영업 준비'('· 주문 N'은 없앰). 저장 오류면 벽돌색 간판 '저장 확인 필요'. 구형 홈의 `_note`(`home-prestige` 등)는 그대로 | `workshop-status`(글), `workshop-status-badge` | `night_home.dart` `WorkshopStatusBadge` |
-| 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 굽는 판 폭 = w − 16(왼쪽 8), 높이 = 폭 × 그림 높이/폭(941×470), 그림이 상자를 꽉 채워 칸 위치·터치 영역도 같은 비율로 커짐(DEC-038). 바탕은 **빈 굽는 판 그림**(`assets/images/stove_empty/<화로>.png`, 25번 1번 생성 그림을 `tools/apply_25_art.py`로 원래 화로 위치에 맞춤: 칸이 붕어빵 모양 홈)이고, 굽는 칸에만 원래 그림의 붕어빵만 남긴 층(`stove_fish/<화로>.png`, 없으면 `stove/<화로>.png`)을 그 칸 자리(`griddleFishClips`)에서 잘라 겹쳐 그림(`GriddlePainter(filled:)`, `workshopGriddleFilled`). 홈 중심과 `griddleCavities` 차이는 그림 px로 가로 −9~+3, 세로 −3~+1(25번 1번). 영업 준비 중(새 영업일 이어서 영업 전 포함)에는 칸을 하나도 그리지 않음: 빈 굽는 판 그림만, 글자·면·터치 없음(`griddle-idle`). 영업 중 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면(제작 중 등) 검은 반투명 면만. **숙련한 맛이 하나도 없으면**(26번 2단계, S2-Q2) 빈 칸 대신 굽는 판 그림 전체에 공통 잠금(`griddle-locked`, 빗금 + 큰 자물쇠 + '팥을 숙련하면 열려요 (연습 n/m · 손기술 n/m)')을 덮고, 누르면 같은 글을 짧은 알림으로. 굽는 중인 칸(옛 저장)은 잠금 위에 그대로 그려 꺼내기·폐기 가능. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
+| 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 굽는 판 폭 = w − 16(왼쪽 8), 높이 = 폭 × 그림 높이/폭(941×470), 그림이 상자를 꽉 채워 칸 위치·터치 영역도 같은 비율로 커짐(DEC-038). 바탕은 **빈 굽는 판 그림**(`assets/images/stove_empty/<화로>.png`, 25번 1번 생성 그림을 `tools/apply_25_art.py`로 원래 화로 위치에 맞춤: 칸이 붕어빵 모양 홈)이고, 굽는 칸에만 원래 그림의 붕어빵만 남긴 층(`stove_fish/<화로>.png`, 없으면 `stove/<화로>.png`)을 그 칸 자리(`griddleFishClips`)에서 잘라 겹쳐 그림(`GriddlePainter(filled:)`, `workshopGriddleFilled`). 홈 중심과 `griddleCavities` 차이는 그림 px로 가로 −9~+3, 세로 −3~+1(25번 1번). **판 그림 상태(26번 4-2단계 F8, DEC-TBD-4-2-1, `workshopGriddleOpen`)**: 영업 준비 중(새 영업일 이어서 영업 전 포함)과 숙련 전(잠김)에는 **닫히고 불 꺼진 판**(`stove_closed/<화로>.png` 941×470, `GriddlePainter(closed: true)`, 그림이 없으면 빈 굽는 판 위 검은 반투명 0.45), 영업 중 + 쓸 수 있음(숙련한 맛 있음, 또는 굽는 칸이 남은 옛 저장)이면 **열리고 불 켜진 판**: 바탕은 위의 빈 굽는 판 그대로(칸·붕어빵 층 그대로)이고 뚜껑은 굽는 판 상자 **위로** 따로 그림(`GriddleLidPainter`, 키 `griddle-lid`, `stove_open/<화로>.png` 941×700의 위 230px, 높이 = 굽는 판 폭 × 230/941, 390 폭에서 약 91). 층 순서: 손님 그림 → 뚜껑 → 굽는 판 → HUD·무대 → 카운터·카운터 버튼·조리 컷이라 뚜껑은 대부분 판매 카운터·조리 컷 뒤에 가려짐(S4-2-Q2 '가려지는 대로', 결과 표 참고). 굽는 판 상자·칸 위치는 상태와 상관없이 그대로. 영업 준비 중에는 칸을 하나도 그리지 않음: 닫힌 판 그림만, 글자·면·터치 없음(`griddle-idle`). 영업 중 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면(제작 중 등) 검은 반투명 면만. **숙련한 맛이 하나도 없으면**(26번 2단계, S2-Q2) 빈 칸 대신 (닫힌) 굽는 판 그림 전체에 공통 잠금(`griddle-locked`, 빗금 + 큰 자물쇠 + '팥을 숙련하면 열려요 (연습 n/m · 손기술 n/m)')을 덮고, 누르면 같은 글을 짧은 알림으로. 굽는 중인 칸(옛 저장)은 잠금 위에 그대로 그려 꺼내기·폐기 가능. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
 | 손님 창 | 손님(그림 머리 쪽 또는 예전 배지)을 누르면 뜨는 작은 창. 제목은 별명 전체(`customerName`, 'N번' 없음, 키 `customer-card-title`): 주문 줄(드린 수/주문 수), 대사, '이웃 이야기 확인', 맛별 '주문 제작'(영업 중·세션 없을 때만. 누르면 창을 닫고 그 주문 하나를 만드는 동안만 스페셜 붕어빵 틀이 나옴. 결과를 닫으면 다시 클리커). 카운터의 '맛 제작'(`order-produce`)도 같은 주문 제작 | `customer-card`, `customer-produce-<맛>` | `WorkshopCustomerCard` |
 | 재고 창 | 카운터 글자를 누르면 뜨는 작은 창: 오래된 순 묶음(맛·익힘·개수·경과 영업일), 준비품 | `stock-card` | `WorkshopStockList` |
 
@@ -793,7 +793,7 @@
 
 **상점·꾸미기(Workshop):** 파는 것은 아바타 카탈로그(`avatar_catalog`)뿐. 그 밖의 구형 꾸미기(화로·배경·장식·등불·무늬·토핑)는 가지고 있을 때만 보임(`CosmeticMenuAccess.listed`). 품목이 하나도 없는 상점 탭(지금은 테마)은 숨기고 충전 탭은 항상 둠. 충전 탭에는 구형 클리커 부스트 줄을 두지 않음(`GoldChargeTab(legacyBoost: false)`). 로그인 전에는 '로그인하면 충전할 수 있어요', 상품을 불러오는 동안 가격 자리에 '불러오는 중'.
 
-골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%), 그리고 25번 그림 적용 때 더한 `workshop_home_filling_390x844`(속을 짜는 도중, 넘침·짜는 중 짤주머니)와 `workshop_home_griddle_390x844`(영업 중 1·4번 칸만 굽는 중), 26번 4단계에서 더한 `workshop_home_result_<perfect·good·near·fail>_390x844`(결과 등급별, 모션 줄이기라 효과 없이 글·익힘 색·넘침 방울·윤기)와 반짝이 시안 `sparkle_options.png`(`test/sparkle_options_golden_test.dart`). 26번 4단계 반짝이 교체로 `workshop_home_open_*`·`workshop_home_griddle_390x844`·`workshop_counter_*`·`home_*`(맑은 하늘 날씨·`BakeTarget`)을 다시 만듦. 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄(예전 구도)·손님 그림 아래끝(새 구도, ±1)이 카운터 윗변, 맨 앞 손님 가로 가운데, 손님 머리가 HUD 아래, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 26번 2단계에서 `workshop_counter_*` 3장과 `workshop_home_*` 13장을 모두 다시 만듦(이유: Lv.1 새 상태라 초당·클릭당 숫자가 숨고 하단 메뉴 '스킬'에 빗금 자물쇠, 숙련 전 굽는 판에 공통 잠금과 남은 숙련 글이 덮임. `griddle` 골든은 숙련 상태라 칸 그대로, 소개 카드는 본 것으로 둠). 웨이브 4 병합(2·4단계)에서 두 변경이 함께 보이도록 `workshop_counter_*`·`workshop_home_open_*`·`workshop_home_griddle_390x844`·`workshop_home_result_*` 12장을 다시 만듦. **26번 4-1단계**에서 `workshop_counter_*` 3장과 `workshop_home_*` 17장을 모두 다시 만듦(이유: 낮춘 배경·매대 앞 손님·클리커 0.8배 내림, 카운터 버튼 가운데·카운터 2줄 글, 상태 간판, 무기명 '일반 손님', 결과 손님 반응을 손님 머리 위 말풍선으로). 새 골든 6장: `workshop_home_empty_{360x640,412x915}`(손님 0명 빈 매대), `workshop_home_guests_max_390x844`(손님 4명), `workshop_home_sold_390x844`(판매 직후 기쁜 손님이 떠나는 중), `workshop_home_reaction_390x844`(주문 제작 결과 손님 말풍선), `workshop_home_old_layout_390x844`(낮춘 배경이 다 없을 때 예전 구도). 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
+골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%), 그리고 25번 그림 적용 때 더한 `workshop_home_filling_390x844`(속을 짜는 도중, 넘침·짜는 중 짤주머니)와 `workshop_home_griddle_390x844`(영업 중 1·4번 칸만 굽는 중), 26번 4단계에서 더한 `workshop_home_result_<perfect·good·near·fail>_390x844`(결과 등급별, 모션 줄이기라 효과 없이 글·익힘 색·넘침 방울·윤기)와 반짝이 시안 `sparkle_options.png`(`test/sparkle_options_golden_test.dart`). 26번 4단계 반짝이 교체로 `workshop_home_open_*`·`workshop_home_griddle_390x844`·`workshop_counter_*`·`home_*`(맑은 하늘 날씨·`BakeTarget`)을 다시 만듦. 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄(예전 구도)·손님 그림 아래끝(새 구도, ±1)이 카운터 윗변, 맨 앞 손님 가로 가운데, 손님 머리가 HUD 아래, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 26번 2단계에서 `workshop_counter_*` 3장과 `workshop_home_*` 13장을 모두 다시 만듦(이유: Lv.1 새 상태라 초당·클릭당 숫자가 숨고 하단 메뉴 '스킬'에 빗금 자물쇠, 숙련 전 굽는 판에 공통 잠금과 남은 숙련 글이 덮임. `griddle` 골든은 숙련 상태라 칸 그대로, 소개 카드는 본 것으로 둠). 웨이브 4 병합(2·4단계)에서 두 변경이 함께 보이도록 `workshop_counter_*`·`workshop_home_open_*`·`workshop_home_griddle_390x844`·`workshop_home_result_*` 12장을 다시 만듦. **26번 4-1단계**에서 `workshop_counter_*` 3장과 `workshop_home_*` 17장을 모두 다시 만듦(이유: 낮춘 배경·매대 앞 손님·클리커 0.8배 내림, 카운터 버튼 가운데·카운터 2줄 글, 상태 간판, 무기명 '일반 손님', 결과 손님 반응을 손님 머리 위 말풍선으로). 새 골든 6장: `workshop_home_empty_{360x640,412x915}`(손님 0명 빈 매대), `workshop_home_guests_max_390x844`(손님 4명), `workshop_home_sold_390x844`(판매 직후 기쁜 손님이 떠나는 중), `workshop_home_reaction_390x844`(주문 제작 결과 손님 말풍선), `workshop_home_old_layout_390x844`(낮춘 배경이 다 없을 때 예전 구도). **26번 4-2단계**에서 `workshop_home_*` 23장 모두·`workshop_counter_*` 3장·`home_{360x800,390x844,412x915}`·`skill_shop_{tap,auto}_390x844`·`skill_shop_states_360x800`을 다시 만듦(이유: 하단 메뉴 아이콘 위·이름 아래와 nav_* 아이콘, 영업 준비·숙련 전 닫힌 판, `griddle` 골든의 열린 판·뚜껑, 위치를 맞춘 조리 컷). 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
 
 **첫 실행 안내** (`lib/workshop_tutorial.dart` 단계 계산, `lib/ui/workshop_guide.dart` `WorkshopTutorialOverlay`): 홈 위에 겹친 층. 대상 위젯을 꿀색 고리로 두르고 작은 카드(“첫 영업 안내 N/7”, 한 줄 설명, '건너뛰기')를 띄움. 카드만 터치를 받고 게임은 그대로 조작됨. 저장하는 것은 `tutorial` 값뿐이고 단계는 매 프레임 상태에서 계산.
 
@@ -867,7 +867,7 @@
 - 누르고 있으면 250ms마다 굽습니다. Space/Enter 키로도 구울 수 있습니다.
 - 콤보 표시는 위 8px에 나옵니다. 콤보 20 이상, 50 이상에서 글자 크기와 색이 바뀝니다.
 
-**하단 내비게이션**: 버튼 4개가 같은 폭으로 놓입니다.
+**하단 내비게이션**: 버튼 4개가 같은 폭으로 놓입니다. 버튼 안은 **아이콘 위, 이름 아래**(26번 4-2단계 F10): 아이콘은 여백을 잘라 96×96을 채운 `icons/nav_menu·nav_skill·nav_skins·nav_shop.png`(`tools/fit_nav_icons.py`, 그림 긴 변 87~88px. 원본 `menu`·`skill`·`tab_outfit`·`shop`은 다른 화면용으로 그대로) 32, 이름 Jua 15(줄 높이 1.15). 가장 긴 이름('꾸미기')이 버튼 폭에, 아이콘 + 가장 높은 이름이 버튼 높이(60 − 7)에 들어가도록 **넷이 같은 비율**로 줄임(`NightHome.navScale`, 글자 크기 설정 반영) → 네 아이콘이 늘 같은 크기(예전: 버튼마다 따로 줄어 번개·앞치마가 훨씬 작게 보임). 잠긴 버튼은 자물쇠(최대 34)가 아이콘 자리를 덮음.
 
 | id | 표시 | 키 |
 | --- | --- | --- |
@@ -966,7 +966,7 @@
 | --- | --- |
 | 시트 제목 | Jua 28 |
 | 메뉴 줄 제목(CozyMenuRow) | Jua 22 |
-| 하단 내비 글자 | Jua 21 |
+| 하단 내비 글자 | Jua 15, 아이콘 32 위·이름 아래(넷이 같은 비율로 줄어듦, 26번 4-2단계) |
 | 잔액 표시 | Jua 20 |
 | 주 버튼·탭 | Jua 18 |
 | 메뉴 줄 제목(현재 MenuPanel) | 18 굵게 |
@@ -989,7 +989,7 @@
 | 토핑 | `topping/<id>.png` |
 | 배경 | `bg/<id>.png`, 밤 `bg/<id>_night.png`. 매대를 행주 높이로 내린 새 구도 배경 `bg_low/<id>.png` 14장(335×762, `tools/apply_26_home_art.py --only backgrounds`, 25번 20번, 26번 4-1단계) |
 | 손님 | `customer/<npc_* 8명·walkin_1~4>_<normal·happy·sad>.png`(256×320 RGBA, 몸 아래끝이 그림 아래끝, 세 표정 같은 자리. `tools/apply_26_home_art.py --only customers`, 25번 6번. walkin_1은 3.3 원본 `customer/order·receive`를 잘라 씀) — 무기명 손님 그림은 주문 id로 4종 중 하나(`guestArtId`) |
-| 화로 | `stove/<id>.png`, 빈 굽는 판 `stove_empty/<id>.png`·붕어빵만 `stove_fish/<id>.png`(941×470, `tools/apply_25_art.py`) |
+| 화로 | `stove/<id>.png`, 빈 굽는 판 `stove_empty/<id>.png`·붕어빵만 `stove_fish/<id>.png`(941×470, `tools/apply_25_art.py`), 닫히고 불 꺼진 판 `stove_closed/<id>.png`(941×470)·열린 판 `stove_open/<id>.png`(941×700, 아래 941×470 = `stove_empty`와 같은 픽셀, 위 230px 뚜껑)(25번 7번, `tools/apply_26_stoves.py`, 26번 4-2단계) |
 | 장식 | `deco/<id>.png` (위치는 `night_stall_painter.dart` `decorationAt`) |
 | 등불 | `stall/postlamp_<색>.png` (id는 `<색>lamp`) |
 | 아바타 | `avatar/<girl·boy>/base.png`, `avatar/<character>/<slot>_<id>.png` (여백을 잘라내고 위치는 `avatarTrimOffsets`), 앞/뒤 조각 `_front`·`_back`, 지울 마스크 `_cut`, 피부톤 복사본 `@skin2`·`@skin3` |
@@ -1001,7 +1001,8 @@
 | 속 칠 질감 | `mold/paint_<redbean·custard·cocoa>.png`(256×256 불투명 심리스, `tools/apply_25_art.py --only textures`로 v2 생성본을 줄이고 이음매 보정) |
 | 화면 장식 | `ui/wardrobe_bg, offline, title_fish`, 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 스킬 창 '+' `ui/levelup_plus`·`levelup_plus_off`(64×64, 25번 19번, 26번 4-3단계), 황금붕어빵력 아이콘 `icons/gold_bun`(72×72, 25번 18번, 26번 4-3단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120 예정, 25번 22번, 없으면 아이콘) |
 | 이벤트 배너 | `event/spring·summer·autumn·winter` |
-| 조리 장면 | `cook/girl_1~6.png` (700ms 간격 반복) |
+| 조리 장면 | `cook/girl_1~6.png` (700ms 간격 반복). 26번 4-2단계 F9: 작업대(나무 상자)의 가운데·아래끝이 6장 모두 같은 자리가 되도록 장마다 정수 픽셀로 옮김(`tools/align_cook_cuts.py`, 값 `tools/cook_cut_alignment.json`, 공통 이동 (−24, −2)). 남은 머리 흔들림: 2·3번 ≤3px, 4번 세로 9, 5번 7·7, 6번 12·4(그림 자체의 자세 차이 → 25번 10번 재생성 요청) |
+| 하단 메뉴 아이콘 | `icons/nav_menu·nav_skill·nav_skins·nav_shop.png`(96×96, 그림 긴 변 87~88, `tools/fit_nav_icons.py`: 2배 이상이면 정수배 최근접(`skill` ×3 = 57×87), 아니면 Lanczos. 26번 4-2단계 F10) |
 
 - 모든 경로는 `assets/images/` 아래이고, **새 폴더는 `pubspec.yaml`의 assets에도 등록**해야 합니다.
 - 파일이 없으면 오류 없이 그려지지 않습니다.
@@ -1444,7 +1445,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 항목 | 결정 | 구현 단계 |
 | --- | --- | --- |
 | 용어 | 큰 틀 제작 → 스페셜 붕어빵 제작, 6구 제작 → 숙련된 붕어빵 제작. 코드 이름·Key는 그대로 (DEC-039). **2단계 구현 완료**: 화면·안내·튜토리얼·오류 글 적용, 숙련된 붕어빵 틀 빈 칸 글자 제거(강조 면·테두리만) | 2 |
-| 영업 준비 중 | 스페셜 붕어빵 틀로 연습 제작만. '+붕어빵력' 버튼 없음. 숙련된 붕어빵 틀은 빈 틀(칸 글자·터치 없음) (DEC-035·036). **3단계 구현 완료**(10장 "두 틀 규칙") | 3 |
+| 영업 준비 중 | 스페셜 붕어빵 틀로 연습 제작만. '+붕어빵력' 버튼 없음. 숙련된 붕어빵 틀은 빈 틀(칸 글자·터치 없음) (DEC-035·036). **3단계 구현 완료**(10장 "두 틀 규칙"). 26번 4-2단계(DEC-TBD-4-2-1)부터 이 빈 틀 그림은 **닫히고 불 꺼진 판** | 3 |
 | 영업 중 | 틀 없이 큰 붕어빵 = 클리커(`c.tap`·탭 효과, 1초 15번 초과분은 효과만, `server_validation.max_taps_per_second`). 손님 창 '주문 제작' 동안만 틀이 나오고 클리커 탭은 막힘. 연습 제작은 명령에서도 거부. `orderFlash` 없앰 (DEC-035·036). **3단계 구현 완료**: `WorkshopController.clickerTap`, `WorkshopClicker` | 3 |
 | 제작 중 영업 시작 | 거부. `openBusiness`에서도 막고 '스페셜 붕어빵을 다 만든 뒤 영업을 시작해요' (DEC-035). **3단계 구현 완료** | 3 |
 | 튜토리얼 | 흐름 유지. 7단계 손님 기다리기에 '손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요'. `cook` 단계에서 이미 영업 중이면 주문 제작 안내. schema 6 유지 (DEC-037). **3단계 구현 완료** | 3 |

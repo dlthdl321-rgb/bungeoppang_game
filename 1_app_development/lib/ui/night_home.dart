@@ -76,6 +76,12 @@ class NightHome extends StatelessWidget {
   /// bungeoppang only in these cavities (Workshop: the cooking cells; empty
   /// before opening). See GriddlePainter.filled.
   final Set<int>? griddleFilled;
+
+  /// Null draws the griddle as before. False: closed and cold (the lid
+  /// over the plate, no flames); true: open with the flames on and the lid
+  /// standing above the griddle box, behind the counter (26번 4-2단계 F8,
+  /// [workshopGriddleOpen]). The griddle box and its cells do not move.
+  final bool? griddleOpen;
   final String Function(CosmeticSlot)? equipped;
   /// Bottom-menu buttons still locked, by destination id, with the reason
   /// ('Lv.2에 열려요'). They show the common hatched lock (26번 2단계) and
@@ -95,6 +101,7 @@ class NightHome extends StatelessWidget {
       this.lowStall = false,
       this.guests,
       this.griddleFilled,
+      this.griddleOpen,
       this.equipped,
       this.navLocks = const {}});
 
@@ -210,6 +217,18 @@ class NightHome extends StatelessWidget {
                   top: padding.top,
                   height: math.max(0.0, towelTop - padding.top),
                   child: guests!(clicker, false)),
+            // The open lid stands above the griddle box: over the guests,
+            // under the stage and the counter (26번 4-2단계 F8).
+            if (griddleOpen == true && stove != null)
+              Positioned(
+                  left: side + (w - griddleW) / 2,
+                  width: griddleW,
+                  bottom: griddleBottom + griddleH,
+                  height: GriddleLidPainter.heightFor(griddleW, stove.width.toDouble()),
+                  child: IgnorePointer(
+                      child: CustomPaint(
+                          key: const Key('griddle-lid'),
+                          painter: GriddleLidPainter(e(CosmeticSlot.stove))))),
             Positioned(
                 left: side + (w - griddleW) / 2,
                 width: griddleW,
@@ -219,7 +238,8 @@ class NightHome extends StatelessWidget {
                     child: CustomPaint(
                         key: const Key('griddle'),
                         painter: GriddlePainter(e(CosmeticSlot.stove),
-                            filled: griddleFilled)))),
+                            filled: griddleFilled,
+                            closed: griddleOpen == false)))),
             Positioned(
                 left: side + (w - griddleW) / 2,
                 width: griddleW,
@@ -512,6 +532,44 @@ class NightHome extends StatelessWidget {
         ])),
       ]);
 
+  /// The bottom menu's icon size and label size before any shrinking
+  /// (26번 4-2단계 F10): the icon above its label. Every button uses the
+  /// same pair, shrunk by the one factor the longest (or, with large text,
+  /// tallest) label needs, so the four icons look the same size.
+  static const navIconSize = 32.0, navLabelSize = 15.0;
+  static const _navItems = <(String, String, String)>[
+    ('menu', '메뉴', 'nav_menu'),
+    ('skills', '스킬', 'nav_skill'),
+    ('skins', '꾸미기', 'nav_skins'),
+    ('shop', '상점', 'nav_shop'),
+  ];
+
+  /// The shrink factor (at most 1) that fits the longest label in a button
+  /// [inner] wide and the icon over the tallest label in [innerHeight].
+  static double navScale(BuildContext context, double inner, double innerHeight) {
+    final scaler = MediaQuery.textScalerOf(context);
+    var widest = 0.0, tallest = 0.0;
+    for (final (_, label, _) in _navItems) {
+      final painter = TextPainter(
+          text: TextSpan(text: label, style: _navLabelStyle(navLabelSize)),
+          textDirection: TextDirection.ltr,
+          textScaler: scaler)
+        ..layout();
+      widest = math.max(widest, painter.width);
+      tallest = math.max(tallest, painter.height);
+      painter.dispose();
+    }
+    return math.min(1.0,
+        math.min(inner / widest, innerHeight / (navIconSize + tallest)));
+  }
+
+  static TextStyle _navLabelStyle(double size) => TextStyle(
+      color: Cozy.ink,
+      fontFamily: 'Jua',
+      fontFamilyFallback: Cozy.fontFallback,
+      fontSize: size,
+      height: 1.15);
+
   Widget _nav(double bottomInset) {
     final claimable =
         centerBuilder == null ? claimableCount(controller.state) : 0;
@@ -520,15 +578,18 @@ class NightHome extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(8, 0, 8, 6 + bottomInset),
       child: SizedBox(
         height: navHeight - 6,
-        child: Row(children: [
-          for (final (id, label, icon) in const <(String, String, Widget)>[
-            ('menu', '메뉴', PixelIcon('menu', size: 28)),
-            ('skills', '스킬', PixelIcon('skill', size: 34)),
-            ('skins', '꾸미기', PixelIcon('tab_outfit', size: 34)),
-            ('shop', '상점', PixelIcon('shop', size: 28)),
-          ]) ...[
+        child: LayoutBuilder(builder: (context, box) {
+          // Button width less its 2 margin, 1.5 border and 4 breathing room
+          // at each side.
+          final inner = (box.maxWidth - 6 * (_navItems.length - 1)) / _navItems.length - 15;
+          // Height less the 2 margin and 1.5 border at top and bottom.
+          final k = navScale(context, inner, box.maxHeight - 7);
+          return Row(children: [
+          for (final (id, label, iconName) in _navItems) ...[
             if (id != 'menu') const SizedBox(width: 6),
-            Expanded(
+            Builder(builder: (context) {
+              final icon = PixelIcon(iconName, size: navIconSize * k);
+              return Expanded(
                 child: CountBadge(
                     count: id == 'menu' ? claimable : 0,
                     badgeKey: const Key('menubar-badge'),
@@ -549,15 +610,19 @@ class NightHome extends StatelessWidget {
                                     id: id,
                                     label: label,
                                     icon: icon,
+                                    labelSize: navLabelSize * k,
                                     onPressed: () {})))
                         : _NavButton(
                             // The HUD's round menu button already uses menu-menu.
                             id: id == 'menu' ? 'menubar' : id,
                             label: label,
                             icon: icon,
-                            onPressed: () => onOpen(id)))),
+                            labelSize: navLabelSize * k,
+                            onPressed: () => onOpen(id))));
+            }),
           ],
-        ]),
+        ]);
+        }),
       ),
     );
   }
@@ -566,11 +631,13 @@ class NightHome extends StatelessWidget {
 class _NavButton extends StatelessWidget {
   final String id, label;
   final Widget icon;
+  final double labelSize;
   final VoidCallback onPressed;
   const _NavButton(
       {required this.id,
       required this.label,
       required this.icon,
+      required this.labelSize,
       required this.onPressed});
   @override
   Widget build(BuildContext context) => Semantics(
@@ -594,12 +661,9 @@ class _NavButton extends StatelessWidget {
               child: Center(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
                     icon,
-                    const SizedBox(width: 4),
-                    Text(label,
-                        style: const TextStyle(
-                            color: Cozy.ink, fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 21)),
+                    Text(label, style: NightHome._navLabelStyle(labelSize)),
                   ]),
                 ),
               ),

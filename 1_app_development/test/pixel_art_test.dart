@@ -106,6 +106,8 @@ void main() {
 
   test('모든 아이콘에 72×72 그림이 있다 (논리 24×24의 3배)', () {
     for (final name in PixelSprites.iconNames) {
+      // The bottom menu's own icons are 96x96 (26번 4-2단계 F10, below).
+      if (name.startsWith('nav_')) continue;
       expect(sizeOf(PixelSprites.icon(name)), (72.0, 72.0), reason: name);
     }
   });
@@ -116,5 +118,61 @@ void main() {
     expect(at.dx + AvatarLook.size.width,
         lessThanOrEqualTo(NightStallPainter.sceneSize.width + 1));
     expect(at.dy, lessThan(NightStallPainter.counterTop));
+  });
+
+  // 26번 4-2단계 F8: 닫힌 판은 굽는 판과 같은 캔버스, 열린 판은 위 230px에 뚜껑을
+  // 세우고 아래 941x470은 빈 굽는 판 그대로(칸 위치가 같다).
+  test('닫힌 판·열린 판 그림 4종: 크기, 열린 판 아래는 빈 굽는 판과 같은 픽셀', () async {
+    for (final id in ['iron', 'copper', 'castiron', 'golden']) {
+      final stove = PixelSprites.cosmetic(CosmeticSlot.stove, id)!;
+      final closed = PixelSprites.closedStove(id);
+      final open = PixelSprites.openStove(id);
+      final empty = PixelSprites.emptyStove(id)!;
+      expect(sizeOf(closed), sizeOf(stove), reason: id);
+      expect(sizeOf(open), (stove.width.toDouble(),
+          stove.height.toDouble() + PixelSprites.openStoveLidRoom), reason: id);
+      final o = (await open!.toByteData())!, e = (await empty.toByteData())!;
+      final skip = PixelSprites.openStoveLidRoom * open.width * 4;
+      var differ = 0;
+      for (var i = 0; i < e.lengthInBytes; i += 4) {
+        // Only where the empty griddle is drawn (the lid may stand behind
+        // its transparent top).
+        if (e.getUint8(i + 3) < 255) continue;
+        for (var k = 0; k < 4; k++) {
+          if (o.getUint8(skip + i + k) != e.getUint8(i + k)) {
+            differ++;
+            break;
+          }
+        }
+      }
+      expect(differ, 0, reason: id);
+      // The lid stands above the plate: something is drawn up there.
+      var lid = 0;
+      for (var i = 3; i < skip; i += 4) {
+        if (o.getUint8(i) > 128) lid++;
+      }
+      expect(lid, greaterThan(open.width * 60), reason: id);
+    }
+  });
+
+  // 26번 4-2단계 F10: 하단 메뉴 아이콘은 여백을 잘라 96x96을 거의 채운다.
+  test('하단 메뉴 아이콘 nav_* 4종은 96x96의 그림이 86~90px', () async {
+    for (final name in ['nav_menu', 'nav_skill', 'nav_skins', 'nav_shop']) {
+      final img = PixelSprites.icon(name)!;
+      expect((img.width, img.height), (96, 96), reason: name);
+      final px = (await img.toByteData())!;
+      var top = 96, bottom = 0, left = 96, right = 0;
+      for (var y = 0; y < 96; y++) {
+        for (var x = 0; x < 96; x++) {
+          if (px.getUint8((y * 96 + x) * 4 + 3) == 0) continue;
+          if (y < top) top = y;
+          if (y >= bottom) bottom = y + 1;
+          if (x < left) left = x;
+          if (x >= right) right = x + 1;
+        }
+      }
+      final longer = bottom - top > right - left ? bottom - top : right - left;
+      expect(longer, inInclusiveRange(86, 90), reason: name);
+    }
   });
 }

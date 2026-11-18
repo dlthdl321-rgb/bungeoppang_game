@@ -130,9 +130,11 @@ void main() {
         }
         mouths.add(sprites.last.anchor);
       }
-      // One shared mouth picture, placed per frame (frame 1's head is 30
-      // pixels right of frame 2's, measured by tools/avatar_layers.py).
-      expect(mouths[0] - mouths[1], const Offset(30, -1));
+      // One shared mouth picture, placed per frame (measured by
+      // tools/avatar_layers.py, then moved with the frames by
+      // tools/align_cook_cuts.py: frame 1's head is now 1 pixel right of
+      // frame 2's instead of 30, 26번 4-2단계 F9).
+      expect(mouths[0] - mouths[1], const Offset(1, -1));
     });
 
     test('서버 외형(아이템 id)과 저장된 차림은 같은 레이어가 된다', () {
