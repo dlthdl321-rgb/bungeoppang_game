@@ -64,10 +64,18 @@ void main() {
       expect(find.byKey(const Key('setting-music')),findsOneWidget);
       await tester.scrollUntilVisible(find.text('진동'),250,scrollable:find.byType(Scrollable).last);
       expect(find.text('진동'),findsOneWidget);
-      // The settings list grew (5-1단계 손님 알림 3줄): drag in small steps.
+      // The settings list grew (5-1단계 손님 알림 3줄, 5단계 사용 통계): move
+      // it 100px at a time (no fling) until the target lies inside the list.
+      bool inView(Finder target) {
+        if (target.evaluate().isEmpty) return false;
+        final r = tester.getRect(target.first), view = tester.getRect(find.byType(Scrollable).last);
+        return r.top >= view.top && r.bottom <= view.bottom;
+      }
       Future<void> reveal(Finder target) async {
-        for (var i = 0; i < 40 && target.hitTestable().evaluate().isEmpty; i++) {
-          await tester.drag(find.byType(Scrollable).last, const Offset(0, -100)); await tester.pump();
+        await tester.pumpAndSettle(); // let scrollUntilVisible's animation end first
+        final position = tester.state<ScrollableState>(find.byType(Scrollable).last).position;
+        for (var i = 0; i < 40 && !inView(target); i++) {
+          position.jumpTo((position.pixels + 100).clamp(0.0, position.maxScrollExtent)); await tester.pump();
         }
       }
       await reveal(find.text('모션 줄이기'));

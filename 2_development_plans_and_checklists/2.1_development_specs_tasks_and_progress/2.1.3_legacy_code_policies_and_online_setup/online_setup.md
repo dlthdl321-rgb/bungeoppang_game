@@ -21,6 +21,7 @@
 | 9 | 인앱 상품 5개 만들기, 구매 확인 권한 주기 | Play Console | 30분 + 권한 반영 대기(최대 하루) |
 | 10 | 라이선스 테스터로 테스트 구매·복구 확인 | 휴대폰 | 30분 |
 | 16 | (26번 2-1단계) 구글 로그인 켜기, SHA-1 등록, 웹 클라이언트 ID 넣기, 카카오 이메일 동의 항목, 서버 다시 배포 | Firebase·Google Cloud·카카오 콘솔 + 내 PC | 40분 |
+| 17 | (26번 5단계) Google Analytics 켜기, 데이터 보존 14개월, DebugView로 이벤트 확인, 리텐션·이탈 보는 법, (선택) BigQuery 내보내기 | Firebase 콘솔·Google Analytics | 30분 |
 
 **26번 2-1단계부터는 앱을 처음 켤 때 로그인이 꼭 필요하다.** 1~6장을 이미 끝냈다면 16장만 하면 된다. 아직이면 1~6장을 하면서 16장을 함께 한다(16장 순서대로).
 
@@ -68,7 +69,7 @@ subst B: "D:\Users\이소이\Desktop\Git\붕어빵 게임"
 1. 브라우저에서 <https://console.firebase.google.com> 을 열고 Google 계정으로 로그인한다(Play Console과 같은 계정 권장).
 2. `프로젝트 만들기`(또는 `Firebase 프로젝트 시작하기`) 클릭.
 3. 이름: `todaybungeoppang` 처럼 영문으로 입력. 아래에 회색으로 **프로젝트 ID**(예: `todaybungeoppang-1a2b3`)가 보인다. 적어 둔다.
-4. **Google 애널리틱스는 끈다**(사용 안 함). 이 게임은 분석 도구를 쓰지 않는다고 개인정보 문서에 약속했다.
+4. Google 애널리틱스는 이 화면에서 켜도 되고 꺼도 된다. **26번 5단계부터 사용 통계(Google Analytics)를 쓰므로**, 여기서 껐다면 나중에 17장에서 켠다. 켠다면 '애널리틱스 위치'는 `대한민국`, 데이터 공유 체크는 모두 해제한다.
 5. `프로젝트 만들기` → 잠시 뒤 `계속`.
 
 **1-2. Blaze 요금제로 바꾸기**
@@ -84,7 +85,7 @@ subst B: "D:\Users\이소이\Desktop\Git\붕어빵 게임"
 1. Firebase 콘솔 프로젝트 첫 화면에서 Android 아이콘(`앱 추가` → Android) 클릭.
 2. **Android 패키지 이름**: `com.todaybungeoppang.app` (정확히).
 3. 앱 닉네임: `오늘의 붕어빵`. 디버그 서명 인증서 SHA-1: 비워도 된다(8장에서 넣는다).
-4. `앱 등록` → **`google-services.json 다운로드`** 를 눌러 `다운로드` 폴더에 받는다. 이 파일은 **프로젝트 폴더에 넣지 않는다**(이 게임은 이 파일 대신 6번 키 파일을 쓴다. 넣으면 분석 SDK가 끼어들 수 있다).
+4. `앱 등록` → **`google-services.json 다운로드`** 를 눌러 `다운로드` 폴더에 받는다. 이 파일은 **프로젝트 폴더에 넣지 않는다**(이 게임은 이 파일 대신 3장 키 파일을 쓴다. Analytics가 필요한 앱 ID는 빌드 때 키 파일 값으로 자동으로 들어간다, 26번 5단계).
 5. 나머지 단계(SDK 추가 등)는 `다음` → `콘솔로 이동`으로 넘긴다.
 6. 탐색기에서 `다운로드\google-services.json`을 오른쪽 클릭 → `연결 프로그램` → `메모장`. 아래 4개 값을 찾아 메모해 둔다(3장에서 씀).
 
@@ -457,3 +458,63 @@ Firestore 보는 법: Firebase 콘솔 → `Firestore Database` → `데이터` �
 
 **16-7. 확인**
 11장 표 0~0-4·9·9-1번을 해 보고 결과를 13장처럼 알려 준다. 구글 로그인이 `로그인하지 못했어요`로 끝나면 대부분 16-1의 SHA-1(특히 Play 앱 서명 키) 누락이다.
+
+## 17. 사용 통계 (Google Analytics, 26번 5단계)
+
+26번 5단계부터 앱이 Firebase Analytics로 **이름 없는 사용 통계**를 보낸다(로그인과 상관없이 기본 켬, 설정 > '사용 통계 보내기'로 끔). 앱 쪽 준비는 끝났고, 콘솔에서 아래만 하면 된다. **서버 배포나 새 키는 필요 없다**(3장 `online.json`의 Firebase 값 4개를 그대로 쓴다).
+
+보내는 이벤트: `first_bake`(첫 굽기), `first_sale`(첫 판매), `tutorial_done`(안내 끝, `result`=done/skipped), `level_reached`(`level`=3·5·10), `shop_open`(상점, 하루 1번), `pay_view`(황금 충전 화면, 하루 1번), `pay_done`(결제 완료, `product_id`만). 첫 실행 `first_open`과 재방문 `session_start`는 Analytics가 스스로 모은다.
+
+**17-1. Google Analytics 켜기(계정 연결)**
+1. <https://console.firebase.google.com> → 프로젝트 → 왼쪽 위 톱니바퀴 → `프로젝트 설정` → 위쪽 `통합` 탭.
+2. `Google Analytics` 카드의 `사용 설정`(이미 켜져 있으면 `관리`라고 보인다 → 17-2로).
+3. `Google 애널리틱스 계정`: 처음이면 `새 계정 만들기` → 이름 `오늘의 붕어빵` → 저장. 있으면 그 계정을 고른다.
+4. `애널리틱스 위치`: **대한민국**. 아래 데이터 공유 체크(Google 제품·서비스, 벤치마킹, 기술 지원 등)는 **모두 해제**한다(Google에 넘기는 범위를 줄임).
+5. `Google 애널리틱스 사용 설정` → 끝나면 `완료`. 이제 Firebase 앱(`com.todaybungeoppang.app`)과 연결된 Analytics '속성'이 생긴다.
+
+**17-2. 데이터 보존 14개월 + 광고 신호 끄기**
+1. <https://analytics.google.com> 을 열고 왼쪽 아래 톱니바퀴 `관리`.
+2. 가운데 `속성` 열(속성 이름이 `오늘의 붕어빵`인지 확인) → `데이터 수집 및 수정` → `데이터 보존`.
+3. `이벤트 데이터 보존`을 **14개월**로 바꾸고 `저장`. (무료판에서 고를 수 있는 가장 긴 값이다. 원래 원하신 10년은 무료판으로는 안 되고, 17-5의 BigQuery 내보내기로만 오래 남길 수 있다.)
+4. 같은 `데이터 수집 및 수정` → `데이터 수집` → `Google 신호 데이터 수집`이 **꺼져 있는지** 확인한다(켜져 있으면 끈다). 광고·맞춤 광고 연결은 하지 않는다.
+5. `관리` → `제품 링크`에서 Google Ads·AdSense 같은 광고 연결이 **없는지** 확인한다.
+
+**17-3. 맞춤 측정기준 등록(레벨·결과별로 나눠 보기)**
+1. `관리` → `속성` 열 → `데이터 표시` → `맞춤 정의` → `맞춤 측정기준 만들기`.
+2. 아래 5개를 하나씩 만든다(이름 = 이벤트 매개변수 이름 그대로 써도 된다).
+
+| 측정기준 이름 | 범위 | 이벤트 매개변수 / 사용자 속성 |
+| --- | --- | --- |
+| level | 이벤트 | `level` |
+| tutorial_result | 이벤트 | `result` |
+| product_id | 이벤트 | `product_id` |
+| gender | 사용자 | `gender` |
+| age_band | 사용자 | `age_band` |
+
+3. 등록 전 데이터에는 적용되지 않으니 앱을 올리기 전에 해 두면 좋다.
+
+**17-4. DebugView로 이벤트가 오는지 확인 (휴대폰 1대, 10분)**
+1. 6장처럼 휴대폰을 USB로 연결하고 PowerShell에서:
+   ```powershell
+   C:\Android\sdk\platform-tools\adb.exe shell setprop debug.firebase.analytics.app com.todaybungeoppang.app
+   ```
+2. 6장 3번 명령(`flutter run --dart-define-from-file=dart_defines/online.json`)으로 앱을 켠다. **앱 데이터를 지운 새 설치**면 `first_open`도 보인다.
+3. Firebase 콘솔 → 왼쪽 `Analytics`(또는 `분석`) → `DebugView`. 1분쯤 안에 휴대폰 이름이 보이고 이벤트가 시간순으로 올라온다.
+4. 게임에서 첫 굽기 → 보관 → 영업 → 첫 판매까지 해 보면 `first_bake` → `first_sale` → `tutorial_done`이 차례로 와야 한다. 상점을 열면 `shop_open`.
+5. 설정 > '사용 통계 보내기'를 끄고 상점을 다시 열면(다음 날이 아니어도) 아무 이벤트도 오지 않아야 한다. 확인 뒤 다시 켠다.
+6. 끝나면 디버그 모드를 끈다:
+   ```powershell
+   C:\Android\sdk\platform-tools\adb.exe shell setprop debug.firebase.analytics.app .none.
+   ```
+7. 이벤트가 하나도 안 오면 14장처럼 알려 준다(로그에 `Missing google_app_id`가 보이면 `online.json`의 `FIREBASE_APP_ID`가 빠진 것).
+
+**17-5. 1일·7일 재방문과 어디서 그만두는지 보기**
+- **재방문(리텐션):** <https://analytics.google.com> → 왼쪽 `탐색` → `동질 집단 탐색 분석`(Cohort) 템플릿 → `동질 집단 포함 조건` = `first_open`, `재방문 기준` = `session_start`(모든 이벤트도 됨), `동질 집단 세부사항` = `일별`. 표의 `1일`·`7일` 열이 1일·7일 뒤 다시 온 비율이다. 간단히 보려면 `보고서` → `참여도`/`유지`(Retention) 화면도 있다.
+- **단계별 이탈(유입경로):** `탐색` → `유입경로 탐색 분석` → `단계` 연필 → 아래 순서로 단계를 만든다: ① `first_open` ② `first_bake` ③ `first_sale` ④ `tutorial_done` ⑤ `level_reached`(매개변수 조건 `level` = 3) ⑥ `level_reached`(`level` = 5) ⑦ `level_reached`(`level` = 10). `개방형 유입경로`는 끈다. 막대 사이 `이탈` 숫자가 그 단계에서 그만둔 사람 수다. 결제 쪽은 `shop_open` → `pay_view` → `pay_done` 3단계로 따로 만든다.
+- 데이터는 보통 하루 안에 보고서에 나타난다(DebugView는 바로).
+
+**17-6. (선택) BigQuery 내보내기 — 10년 보관하고 싶을 때**
+- Analytics 무료판은 이벤트 원본을 **최대 14개월**만 둔다. 더 오래 남기려면 매일 원본을 BigQuery로 복사해 두면 된다(복사한 표는 지우기 전까지 남는다).
+- 켜는 법: Firebase 콘솔 → 톱니바퀴 `프로젝트 설정` → `통합` → `BigQuery` → `연결` → `Google Analytics` 켜기, 내보내기 방식은 **일일**(스트리밍은 따로 돈이 듦) → 데이터 위치 `asia-northeast3 (서울)` → `BigQuery에 연결`. 프로젝트는 이미 Blaze 요금제라 따로 할 일은 없다.
+- 비용(2026-11 기준 Google 공개 가격, 바뀔 수 있음): 일일 내보내기 자체는 무료. 저장은 매달 처음 10GB 무료, 그 뒤 GB당 월 약 0.02달러(90일 넘게 안 바뀐 표는 약 0.01달러). 조회는 매달 1TB 무료. 이벤트 1개를 약 1KB로 잡으면 하루 1,000명 × 30개 = 하루 약 30MB, 1년 약 11GB, 10년 약 110GB → 10년째에도 **한 달 1~2달러 안팎**. 1-3의 예산 알림이 그대로 지켜 준다.
+- 개인정보처리방침은 지금 '14개월 보관'으로 적혀 있다. BigQuery로 더 오래 남기기로 하면 **방침의 보관 기간도 함께 고쳐야 한다**(고칠 때 알려 주면 문서를 바꿔 준다).

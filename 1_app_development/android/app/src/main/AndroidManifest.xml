@@ -53,8 +53,13 @@
         </receiver>
         <!-- 26번 5단계: Analytics는 광고 ID·SSAID를 모으지 않고 개인화 광고 신호도 보내지 않는다.
              사용 통계 끄기는 설정 창 스위치(setAnalyticsCollectionEnabled)로 한다. -->
+        <!-- Off until the game reads the '사용 통계 보내기' setting and calls
+             setAnalyticsCollectionEnabled (that value is then kept by Firebase). -->
+        <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
         <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
         <meta-data android:name="google_analytics_ssaid_collection_enabled" android:value="false" />
+        <!-- The Privacy Sandbox ad services library Analytics may use is left out too. -->
+        <uses-library android:name="android.ext.adservices" android:required="false" tools:node="remove" />
         <meta-data android:name="google_analytics_default_allow_ad_personalization_signals" android:value="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

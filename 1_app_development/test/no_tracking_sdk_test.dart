@@ -71,6 +71,10 @@ final _packageLine = RegExp(r'^  ([a-z0-9_]+):\s*$', multiLine: true);
 const _releaseManifestPaths = [
   'build/app/intermediates/merged_manifests/release/processReleaseManifest/AndroidManifest.xml',
   'build/app/intermediates/merged_manifest/release/processReleaseMainManifest/AndroidManifest.xml',
+  // 26번 5단계: a profile build merges the same libraries without the upload
+  // key (`flutter build apk --profile`), so agents without key.properties
+  // can check the permissions too. The newest of these files is read.
+  'build/app/intermediates/merged_manifests/profile/processProfileManifest/AndroidManifest.xml',
 ];
 const _manifestSources = [
   'android/app/src/main/AndroidManifest.xml',
@@ -85,6 +89,7 @@ const _manifestSources = [
 const _forbiddenManifestEntries = <String>[
   'com.google.android.gms.permission.AD_ID',
   'android.permission.ACCESS_ADSERVICES',
+  'android.ext.adservices',
   'com.google.android.gms.ads',
   'com.google.firebase.crashlytics',
   // 5-1단계 손님 알림은 정확한 알람 권한 없이 inexact 예약만 쓴다.
@@ -92,10 +97,10 @@ const _forbiddenManifestEntries = <String>[
   'android.permission.USE_EXACT_ALARM',
 ];
 
-/// `<uses-permission ... tools:node="remove"/>` lines take a permission
-/// out of the merged manifest; they are not requests.
+/// `<uses-permission|uses-library ... tools:node="remove"/>` lines take a
+/// permission or library out of the merged manifest; they are not requests.
 final _removedPermission =
-    RegExp(r'<uses-permission[^>]*tools:node="remove"[^>]*/>');
+    RegExp(r'<uses-(?:permission|library)[^>]*tools:node="remove"[^>]*/>');
 
 List<String> manifestViolations(String xml) {
   final kept = xml.replaceAll(_removedPermission, '');
@@ -105,6 +110,8 @@ List<String> manifestViolations(String xml) {
 /// 26번 5단계: Analytics must not collect the ad ID or SSAID nor allow ad
 /// personalization signals. Returns the switches that are missing or on.
 const _analyticsOffSwitches = [
+  // Collection starts only after the game reads the '사용 통계 보내기' setting.
+  'firebase_analytics_collection_enabled',
   'google_analytics_adid_collection_enabled',
   'google_analytics_ssaid_collection_enabled',
   'google_analytics_default_allow_ad_personalization_signals',
@@ -189,6 +196,7 @@ void main() {
     expect(manifest, contains('com.google.android.gms.permission.AD_ID" tools:node="remove"'));
     expect(manifest, contains('android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove"'));
     expect(manifest, contains('android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove"'));
+    expect(manifest, contains('android:name="android.ext.adservices" android:required="false" tools:node="remove"'));
     expect(analyticsSwitchesNotOff(manifest), isEmpty);
   });
 

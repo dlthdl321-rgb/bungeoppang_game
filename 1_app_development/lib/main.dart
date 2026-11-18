@@ -85,8 +85,9 @@ Future<void> _start(OnlineBackend online, UsageStats usage, {int attempts = 0}) 
         online: online,
         rules: nameRules,
         game: controller,
-        workshop: workshop);
-    owner.onDeleted = () => _wipeAndRestart(online, accounts, workshops, owners);
+        workshop: workshop,
+        analytics: UsageOwnerAnalytics(usage));
+    owner.onDeleted = () => _wipeAndRestart(online, usage, accounts, workshops, owners);
     await owner.load();
     runApp(GameApp(controller: controller, audio: audio, workshop: workshop, owner: owner,
         notifier: defaultTargetPlatform == TargetPlatform.android
@@ -126,7 +127,7 @@ Future<void> _start(OnlineBackend online, UsageStats usage, {int attempts = 0}) 
 /// After an account deletion (26번 2-1단계): close the game, delete this
 /// device's saves (account, workshop, owner profile) and start like a new
 /// install.
-Future<void> _wipeAndRestart(OnlineBackend online, SqliteGameRepository accounts,
+Future<void> _wipeAndRestart(OnlineBackend online, UsageStats usage, SqliteGameRepository accounts,
     SqliteWorkshopRepository workshops, SqliteOwnerProfileRepository owners) async {
   // Unmounting GameApp disposes the controllers and stops their timers.
   runApp(const SizedBox.shrink());
@@ -141,7 +142,7 @@ Future<void> _wipeAndRestart(OnlineBackend online, SqliteGameRepository accounts
   ]) {
     await deleteDatabase(path);
   }
-  await _start(online);
+  await _start(online, usage);
 }
 
 /// Debug builds made with `--dart-define=CUSTOMER_NOTICE_SELFTEST=true` add

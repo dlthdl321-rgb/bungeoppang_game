@@ -35,6 +35,8 @@ const _dailyOnce = {UsageEvent.shopOpen, UsageEvent.payView};
 abstract class UsageStatsSink {
   Future<void> setEnabled(bool enabled);
   Future<void> log(String name, Map<String, Object> parameters);
+  /// An Analytics user property; null clears it.
+  Future<void> setUserProperty(String name, String? value);
 }
 
 /// Builds without Firebase keys and tests: sends nothing.
@@ -44,6 +46,8 @@ class NoUsageStatsSink implements UsageStatsSink {
   Future<void> setEnabled(bool enabled) async {}
   @override
   Future<void> log(String name, Map<String, Object> parameters) async {}
+  @override
+  Future<void> setUserProperty(String name, String? value) async {}
 }
 
 /// The recorder the game calls. Every call is fire-and-forget: it never
@@ -79,6 +83,14 @@ class UsageStats {
       _dailySent[event] = day;
     }
     _quietly(() => sink.log(event.wireName, parameters));
+  }
+
+  /// 선택 정보(26번 2-1단계)를 Analytics 사용자 속성 gender·age_band로.
+  /// [OwnerAccount] passes only values the player agreed to give, never the
+  /// name or email; null (skipped, '선택 안 함', under 14) clears it.
+  void setUserProperties({String? gender, String? ageBand}) {
+    _quietly(() => sink.setUserProperty('gender', gender));
+    _quietly(() => sink.setUserProperty('age_band', ageBand));
   }
 
   /// Compares the Workshop progress before and after a saved command and

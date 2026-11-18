@@ -11,6 +11,7 @@ import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
+import 'package:todays_bungeoppang/owner_account.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/gold_widgets.dart';
 import 'package:todays_bungeoppang/usage_stats.dart';
@@ -22,6 +23,7 @@ import 'step02_controller_test.dart' show MemoryRepository;
 class RecordingSink implements UsageStatsSink {
   final events = <(String, Map<String, Object>)>[];
   final switches = <bool>[];
+  final properties = <String>[];
   bool throwNow = false, failLater = false;
   List<String> get names => [for (final e in events) e.$1];
   /// 'name {param: value}' lines (maps compare by identity inside records).
@@ -34,6 +36,9 @@ class RecordingSink implements UsageStatsSink {
     events.add((name, parameters));
     return failLater ? Future.error(StateError('offline')) : Future.value();
   }
+  @override
+  Future<void> setUserProperty(String name, String? value) async =>
+      properties.add('$name=$value');
 }
 
 DevelopmentBalance _config() => DevelopmentBalance.fromJson(
@@ -107,6 +112,21 @@ void main() {
         'level_reached {level: 5}',
         'level_reached {level: 10}',
       ]);
+    });
+  });
+
+  group('선택 정보 사용자 속성(2-1단계 연결)', () {
+    test('성별·연령대만 gender·age_band로, 선택 안 함·없음은 지운다', () {
+      final sink = RecordingSink(), owner = UsageOwnerAnalytics(UsageStats(sink));
+      owner.setUserProperties(gender: 'female', ageBand: '20s');
+      owner.setUserProperties(gender: 'none', ageBand: 'none');
+      owner.setUserProperties();
+      expect(sink.properties, [
+        'gender=female', 'age_band=20s',
+        'gender=null', 'age_band=null',
+        'gender=null', 'age_band=null',
+      ]);
+      expect(sink.events, isEmpty, reason: '사용자 속성은 이벤트가 아님');
     });
   });
 
