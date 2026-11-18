@@ -6,12 +6,13 @@ import { acceptWorkshopSsv } from "./workshop_ads";
 import { workshopFailure } from "./workshop_errors";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
-import { getFirestore } from "firebase-admin/firestore";
+import { FieldPath, getFirestore } from "firebase-admin/firestore";
 import { HttpsError, onCall, onRequest } from "firebase-functions/v2/https";
 import developmentBalance from "./generated/development_balance.json";
 import { WorkshopService } from "./workshop_service";
 import { PlausibilityValidator } from "./plausibility_validator";
-import { signedIn } from "./auth";
+import { signedIn, signedInAccount } from "./auth";
+import { AccountError, deleteAccount, rememberEmail, setAccountProfile } from "./account";
 import { callableOptions, functionsRegion } from "./callable_options";
 import { catalog } from "./catalog";
 import * as friends from "./friends";
@@ -22,8 +23,9 @@ import { AlreadyExists } from "./store";
 import { WalletError, redeemPurchase, spendGold, syncWallet } from "./wallet";
 
 // Callable endpoints for the app. authKakao turns a Kakao login into a
-// Firebase account; every other call needs that account (auth.ts). The app
-// never reads or writes Firestore itself.
+// Firebase account; Google logins go straight to Firebase Auth (26번 2-1단계).
+// Every other call needs one of the two accounts (auth.ts). The app never
+// reads or writes Firestore itself.
 
 initializeApp();
 const db = () => getFirestore();
@@ -45,6 +47,7 @@ const kakaoAccounts: KakaoAccounts = {
       await auth.createUser({ uid, ...(name ? { displayName: name } : {}) });
     }
   },
+  saveEmail: (uid, email) => rememberEmail(store, uid, email),
 };
 
 const rankingQueries: ranking.RankingQueries = {
@@ -94,6 +97,10 @@ async function handle<T>(work: () => Promise<T>): Promise<T> {
               : "invalid-argument";
       throw new HttpsError(code, e.message, { reason: e.code });
     }
+    if (e instanceof AccountError) {
+      const code = e.code === "invalid-argument" ? "invalid-argument" : "failed-precondition";
+      throw new HttpsError(code, e.message, { reason: e.code });
+    }
     if (e instanceof AlreadyExists) throw new HttpsError("aborted", "please retry");
     throw e;
   }
@@ -105,6 +112,28 @@ const options = callableOptions();
 // Set in functions/.env (not committed): KAKAO_APP_ID=<카카오 앱 ID>.
 export const authKakao = onCall(options, (req) =>
   handle(() => checkKakao(kakaoRestApi, kakaoAccounts, process.env.KAKAO_APP_ID, req.data ?? {})));
+
+// 26번 2-1단계: owner name, consents and optional gender/age band (account.ts).
+export const accountProfileSet = onCall(options, (req) =>
+  handle(() => setAccountProfile(store, signedInAccount(req), req.data ?? {}, Date.now())));
+
+// Deletes everything keyed by the caller's uid, then the Auth user.
+export const accountDelete = onCall(options, (req) =>
+  handle(() => deleteAccount(store, {
+    deleteTree: (path) => db().recursiveDelete(db().doc(path)),
+    async deletePrefixed(collection, prefix) {
+      const snap = await db().collection(collection).where(FieldPath.documentId(), ">=", prefix)
+        .where(FieldPath.documentId(), "<", `${prefix}\uf8ff`).get();
+      await Promise.all(snap.docs.map((d) => d.ref.delete()));
+    },
+    async deleteAuthUser(uid) {
+      try {
+        await auth.deleteUser(uid);
+      } catch (e) {
+        if ((e as { code?: string }).code !== "auth/user-not-found") throw e;
+      }
+    },
+  }, signedIn(req))));
 
 export const walletSync = onCall(options, (req) =>
   handle(() => syncWallet(store, signedIn(req))));

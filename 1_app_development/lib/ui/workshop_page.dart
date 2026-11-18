@@ -23,6 +23,9 @@ import 'workshop_guide.dart';
 import '../workshop_tutorial.dart';
 import '../customer_notifier.dart';
 import '../workshop_feature_unlocks.dart';
+import '../owner_account.dart';
+import '../owner_texts.dart';
+import 'owner_settings.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -30,7 +33,10 @@ class WorkshopPage extends StatefulWidget {
   /// Customer notifications (26번 5-1단계); null keeps the question card
   /// and permission requests away (tests, platforms without notifications).
   final CustomerNotifier? notifier;
-  const WorkshopPage({super.key, required this.controller, required this.accountController, this.notifier});
+  /// The owner name and account settings (26번 2-1단계); null in tests of
+  /// the game screens.
+  final OwnerAccount? owner;
+  const WorkshopPage({super.key, required this.controller, required this.accountController, this.notifier, this.owner});
   @override
   State<WorkshopPage> createState() => _WorkshopPageState();
 }
@@ -229,7 +235,10 @@ class _WorkshopPageState extends State<WorkshopPage> {
   }
   Future<void> _audioSettings()=>_window('설정',(ctx){
     final account=widget.accountController,settings=account.state.settings;
+    final owner=widget.owner;
     return ListView(padding:const EdgeInsets.all(12),children:[
+      if(owner!=null)OwnerSettingsSection(owner:owner,closeWindow:()=>Navigator.pop(ctx),
+        notify:(m){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(m)));}),
       SoundSettings(controller:account),
       CozySettingRow(icon:const PixelIcon('vibration',size:28),label:'진동',value:settings.vibration,
         onChanged:(v)=>account.updateSettings(vibration:v)),
@@ -297,6 +306,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
     return {'daily':ready('daily'),'event':ready('weekly'),'missions':c.canLevelUp ? 1:0};
   }
   Future<void> _menu()=>_window('메뉴',(ctx)=>Column(children:[
+    // 26번 2-1단계: where the owner name shows.
+    if(widget.owner?.profile.name case final name?)Padding(padding:const EdgeInsets.only(top:6),
+      child:Text(OwnerTexts.shopOf(name),key:const Key('menu-owner-name'),style:const TextStyle(fontSize:18,color:Cozy.wood))),
     Expanded(child:MenuPanel(controller:widget.accountController,legacyDescriptions:false,rewardCounts:_rewardCounts(),
       hidden:{'ranking','friends','share',
         for(final d in ['achievements:collection','skins:stall']) if(_lockFor(d)!=null) d},
