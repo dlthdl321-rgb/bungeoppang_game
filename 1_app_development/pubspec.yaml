@@ -66,6 +66,10 @@ flutter:
     # (tools/apply_25_art.py, 25번 필요한 그림 1번).
     - assets/images/stove_empty/
     - assets/images/stove_fish/
+    # Closed (cold) and open (lid up) griddles, 26번 4-2단계 F8
+    # (tools/apply_26_stoves.py, 25번 필요한 그림 7번).
+    - assets/images/stove_closed/
+    - assets/images/stove_open/
     - assets/images/icons/
     - assets/images/topping/
     - assets/images/skills/

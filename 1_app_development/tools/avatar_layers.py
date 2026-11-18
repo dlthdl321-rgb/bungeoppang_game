@@ -89,14 +89,16 @@ FACES = {
         mouth=((135, 177, 166, 191), (150, 184)),
         skin=(138, 150, 165, 172)),
     # The side (cooking) frames: measured on frame 2, found in the others.
+    # 26번 4-2단계 F9 moved frame 2 by (+5, -2) (tools/align_cook_cuts.py,
+    # cook_cut_alignment.json); these boxes moved with it.
     'girl_side': dict(
         image='cook/girl_2.png',
         frames=[f'cook/girl_{i}.png' for i in range(1, 7)],
-        match=(245, 135, 345, 200),
-        eyes=[((246, 137, 279, 178), (263, 158)),
-              ((303, 135, 345, 177), (324, 156))],
-        mouth=((286, 184, 300, 193), (293, 188)),
-        skin=(282, 160, 302, 182)),
+        match=(250, 133, 350, 198),
+        eyes=[((251, 135, 284, 176), (268, 156)),
+              ((308, 133, 350, 175), (329, 154))],
+        mouth=((291, 182, 305, 191), (298, 186)),
+        skin=(287, 158, 307, 180)),
 }
 
 

@@ -6,6 +6,7 @@ import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
+import 'package:todays_bungeoppang/ui/night_home.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
@@ -216,4 +217,73 @@ void main() {
     expect(painter(tester).filled, {1, 4});
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  // 26번 4-2단계 F8 (S4-2-Q1 '닫힌 판·불 꺼짐'): 영업 준비 중·숙련 전에는 닫히고
+  // 불이 꺼진 판, 영업 중 + 쓸 수 있으면 열린 판(불 켜짐)과 판 위로 선 뚜껑.
+  // 뚜껑은 굽는 판 상자 위에 따로 그려 칸 위치는 그대로다.
+  testWidgets('6구 그림: 영업 준비·숙련 전 닫힘, 숙련 뒤 열림과 뚜껑, 칸 위치 그대로', (tester) async {
+    final c = await mount(tester, const Size(390, 844));
+    final griddle = tester.getRect(find.byKey(const Key('griddle')));
+    expect(painter(tester).closed, isTrue, reason: '영업 준비 중');
+    expect(find.byKey(const Key('griddle-lid')), findsNothing);
+    await c.openBusiness();
+    await tester.pump();
+    expect(painter(tester).closed, isTrue, reason: '숙련 전');
+    expect(find.byKey(const Key('griddle-locked')), findsOneWidget);
+    expect(find.byKey(const Key('griddle-lid')), findsNothing);
+    await master(c);
+    await tester.pump();
+    expect(painter(tester).closed, isFalse);
+    expect(tester.getRect(find.byKey(const Key('griddle'))), griddle, reason: '판 상자는 그대로');
+    final lid = tester.getRect(find.byKey(const Key('griddle-lid')));
+    expect(lid.bottom, closeTo(griddle.top, .01));
+    expect((lid.left, lid.width), (griddle.left, griddle.width));
+    final stove = PixelSprites.cosmetic(CosmeticSlot.stove, 'iron')!;
+    expect(lid.height, closeTo(griddle.width * PixelSprites.openStoveLidRoom / stove.width, .01));
+    // The cells stay on the plate's cavities (griddleCavities on the 941x470 art).
+    for (var i = 0; i < 6; i++) {
+      final cell = tester.getRect(find.byKey(Key('workshop-cell-$i')));
+      expect(cell.top, greaterThan(griddle.top), reason: 'cell $i');
+      expect(cell.bottom, lessThanOrEqualTo(griddle.bottom), reason: 'cell $i');
+    }
+    // Closing the stall closes the griddle again.
+    expect(await c.closeBusiness(), isTrue);
+    await tester.pump();
+    expect(painter(tester).closed, isTrue);
+    expect(find.byKey(const Key('griddle-lid')), findsNothing);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  // 26번 4-2단계 F10: 하단 메뉴 아이콘은 여백을 자른 nav_* 그림을 이름 위에 모두
+  // 같은 크기로 그린다(가장 긴 이름이 들어가도록 넷이 같은 비율로 줄어듦).
+  for (final size in const [Size(360, 640), Size(390, 844), Size(412, 915)]) {
+    final tag = '${size.width.toInt()}x${size.height.toInt()}';
+    testWidgets('하단 메뉴 아이콘 넷이 같은 크기 $tag', (tester) async {
+      await mount(tester, size);
+      final icons = tester
+          .widgetList<PixelIcon>(find.descendant(
+              of: find.byKey(const Key('home-nav')), matching: find.byType(PixelIcon)))
+          .toList();
+      expect(icons.map((i) => i.name), ['nav_menu', 'nav_skill', 'nav_skins', 'nav_shop']);
+      final shown = [
+        for (final i in find
+            .descendant(of: find.byKey(const Key('home-nav')), matching: find.byType(PixelIcon))
+            .evaluate())
+          tester.getSize(find.byWidget(i.widget)).width
+      ];
+      // The drawn part is 87-88 of 96 in every icon, so the same box shows
+      // them within 1 px of each other.
+      for (final s in shown) {
+        expect((s - shown.first).abs() * 88 / 96, lessThanOrEqualTo(2));
+        expect(s * 87 / 96, greaterThanOrEqualTo(26), reason: '보이는 그림이 충분히 크다');
+      }
+      for (final id in ['menubar', 'skills', 'skins', 'shop']) {
+        final key = find.byKey(Key('menu-$id'));
+        if (key.evaluate().isEmpty) continue; // locked: the lock overlay's own key
+        final button = tester.getRect(key);
+        expect(button.height, lessThanOrEqualTo(NightHome.navHeight - 6));
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
 }

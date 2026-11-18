@@ -270,12 +270,12 @@ const avatarPartPivots = <String, (double, double)>{
 const avatarFaceAnchors = <String, Map<String, (double, double)>>{
   'avatar/boy/base.png': {'eyes': (151.5, 156), 'mouth': (150, 184)},
   'avatar/girl/base.png': {'eyes': (153.5, 155), 'mouth': (152, 184)},
-  'cook/girl_1.png': {'eyes': (323.5, 156), 'mouth': (323, 187)},
-  'cook/girl_2.png': {'eyes': (293.5, 157), 'mouth': (293, 188)},
-  'cook/girl_3.png': {'eyes': (285.5, 155), 'mouth': (285, 186)},
-  'cook/girl_4.png': {'eyes': (323.5, 137), 'mouth': (323, 168)},
-  'cook/girl_5.png': {'eyes': (304.5, 135), 'mouth': (304, 166)},
-  'cook/girl_6.png': {'eyes': (305.5, 134), 'mouth': (305, 165)},
+  'cook/girl_1.png': {'eyes': (299.5, 154), 'mouth': (299, 185)},
+  'cook/girl_2.png': {'eyes': (298.5, 155), 'mouth': (298, 186)},
+  'cook/girl_3.png': {'eyes': (302.5, 153), 'mouth': (302, 184)},
+  'cook/girl_4.png': {'eyes': (299.5, 163), 'mouth': (299, 194)},
+  'cook/girl_5.png': {'eyes': (306.5, 161), 'mouth': (306, 192)},
+  'cook/girl_6.png': {'eyes': (311.5, 158), 'mouth': (311, 189)},
 };
 
 /// Every picture in assets/images/avatar/, so the wardrobe knows

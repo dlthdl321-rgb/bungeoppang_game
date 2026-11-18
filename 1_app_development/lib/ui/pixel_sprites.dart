@@ -15,6 +15,12 @@ class PixelSprites {
   PixelSprites._();
 
   static const iconNames = [
+    // The bottom menu's icons cut to fill 96x96 (26번 4-2단계 F10,
+    // tools/fit_nav_icons.py).
+    'nav_menu',
+    'nav_skill',
+    'nav_skins',
+    'nav_shop',
     'shop',
     'skins',
     'records',
@@ -277,6 +283,8 @@ class PixelSprites {
     for (final stove in _slot(CosmeticSlot.stove)) {
       yield _emptyStovePath(stove.id);
       yield _stoveFishPath(stove.id);
+      yield _closedStovePath(stove.id);
+      yield _openStovePath(stove.id);
     }
     for (final flavor in fillingTextureFlavors) {
       yield _fillingTexturePath(flavor);
@@ -501,6 +509,24 @@ class PixelSprites {
   static ui.Image? stoveFish(String stove) => _images[_stoveFishPath(stove)];
 
   static String _stoveFishPath(String id) => 'assets/images/stove_fish/$id.png';
+
+  /// [stove] closed and cold: the lid over the plate, no flames (26번
+  /// 4-2단계 F8, assets/images/stove_closed, 941x470 like the stove,
+  /// tools/apply_26_stoves.py). Null when that stove has none.
+  static ui.Image? closedStove(String stove) => _images[_closedStovePath(stove)];
+
+  static String _closedStovePath(String id) =>
+      'assets/images/stove_closed/$id.png';
+
+  /// [stove] open with the flames on (assets/images/stove_open, 941x700):
+  /// the bottom 941x470 is [emptyStove] itself and the lid stands in the
+  /// [openStoveLidRoom] rows above it. Null when that stove has none.
+  static ui.Image? openStove(String stove) => _images[_openStovePath(stove)];
+
+  static String _openStovePath(String id) => 'assets/images/stove_open/$id.png';
+
+  /// Rows of [openStove] above the plate (the open lid), in picture pixels.
+  static const openStoveLidRoom = 230;
 
   /// Filling textures (`assets/images/mold/paint_<flavor>.png`, 256x256
   /// seamless tiles, 25번 필요한 그림 3번, tools/apply_25_art.py). The

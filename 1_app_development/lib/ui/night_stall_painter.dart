@@ -301,17 +301,33 @@ class GriddlePainter extends CustomPainter {
   /// ([PixelSprites.stoveFish]), so the drawn hollow stays around it; from
   /// the full art when that layer is missing.
   final Set<int>? filled;
-  const GriddlePainter(this.stove, {this.filled});
+
+  /// The griddle closed and cold (26번 4-2단계 F8, DEC-TBD-4-2-1): the
+  /// closed art ([PixelSprites.closedStove]) instead of the plate, no
+  /// bungeoppang. Without that art: the empty plate under a dark veil.
+  final bool closed;
+  const GriddlePainter(this.stove, {this.filled, this.closed = false});
 
   @override
   void paint(Canvas canvas, Size size) {
     final image = PixelSprites.cosmetic(CosmeticSlot.stove, stove);
     if (image == null) return;
-    final empty = filled == null ? null : PixelSprites.emptyStove(stove);
+    final empty = filled == null && !closed ? null : PixelSprites.emptyStove(stove);
     final scale =
         math.min(size.width / image.width, size.height / image.height);
     final w = image.width * scale, h = image.height * scale;
     final dst = Rect.fromLTWH((size.width - w) / 2, size.height - h, w, h);
+    if (closed) {
+      final art = PixelSprites.closedStove(stove);
+      if (art != null) {
+        _draw(canvas, art, dst, scale);
+        return;
+      }
+      _draw(canvas, empty ?? image, dst, scale);
+      canvas.drawRect(dst, Paint()..color = Colors.black.withValues(alpha: .45)
+        ..blendMode = BlendMode.srcATop);
+      return;
+    }
     if (empty == null) {
       _draw(canvas, image, dst, scale);
       return;
@@ -347,5 +363,38 @@ class GriddlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant GriddlePainter oldDelegate) =>
-      stove != oldDelegate.stove || !setEquals(filled, oldDelegate.filled);
+      stove != oldDelegate.stove ||
+      closed != oldDelegate.closed ||
+      !setEquals(filled, oldDelegate.filled);
+}
+
+/// The open griddle's lid (26번 4-2단계 F8): the rows of
+/// [PixelSprites.openStove] above the plate, drawn so they stand on the
+/// plate that [GriddlePainter] draws in [plateBox]'s bottom part. The
+/// canvas is the area above the griddle box (its width, the lid's height),
+/// so the griddle box and its cells stay where they were.
+class GriddleLidPainter extends CustomPainter {
+  final String stove;
+  const GriddleLidPainter(this.stove);
+
+  /// Height of the lid area over a griddle box [griddleW] wide whose stove
+  /// art is [stoveW] pixels wide (the box keeps the art's shape).
+  static double heightFor(double griddleW, double stoveW) =>
+      griddleW * PixelSprites.openStoveLidRoom / stoveW;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final art = PixelSprites.openStove(stove);
+    if (art == null) return;
+    final room = PixelSprites.openStoveLidRoom.toDouble();
+    final scale = size.width / art.width;
+    final src = Rect.fromLTWH(0, 0, art.width.toDouble(), room);
+    final dst = Rect.fromLTWH(0, size.height - room * scale, size.width, room * scale);
+    canvas.drawImageRect(art, src, dst,
+        scale < 1 ? GriddlePainter._rawPaint : (Paint()..filterQuality = FilterQuality.none));
+  }
+
+  @override
+  bool shouldRepaint(covariant GriddleLidPainter oldDelegate) =>
+      stove != oldDelegate.stove;
 }
