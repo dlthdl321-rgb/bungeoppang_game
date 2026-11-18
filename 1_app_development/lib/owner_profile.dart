@@ -62,8 +62,10 @@ class OwnerNameRules {
         bannedWords: [for (final w in words) (w as String).toLowerCase()]);
   }
 
-  static final _allowed = RegExp(r'^[가-힣A-Za-z0-9]+$');
-  static final _notAllowed = RegExp(r'[^가-힣A-Za-z0-9]');
+  // 완성형 한글(U+AC00~U+D7A3)·영문·숫자. 글자를 escape로 적어 font_coverage_test가
+  // 범위 끝 글자를 화면 문구로 세지 않게 한다.
+  static final _allowed = RegExp(r'^[\uAC00-\uD7A3A-Za-z0-9]+$');
+  static final _notAllowed = RegExp(r'[^\uAC00-\uD7A3A-Za-z0-9]');
 
   /// Why [raw] cannot be the owner name, or null when it can.
   String? problem(String raw) {
