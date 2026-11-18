@@ -415,7 +415,7 @@
 - 앞/뒤 조각은 파일만 넣으면 됩니다. `PixelSprites.load`가 에셋 목록에 있는 것만 읽습니다.
 - character는 base 그림을 고릅니다. skin은 그림마다 피부색만 바꾼 복사본 `<파일>@skin2.png`·`@skin3.png`를 고릅니다(`rigSkinPicture`, 복사본이 없는 그림은 원래 그림). 복사본은 base, 정면 얼굴 부분 그림, 피부가 보이는 hair·hat 레이어에만 있습니다. hair는 hair 레이어입니다(26번 4-4, 2026-11-18).
 - **입은 모습(worn) 레이어:** 3.3 원본 폴더의 '입은 모습' 전신 그림(`avatar/<성별>/<slot>_<id>.png`)을 base에 겹쳐(머리 아래 몸으로 맞춤) 바뀐 픽셀만 아이템 레이어로, base에서 사라진 픽셀은 `_cut` 마스크로 만듭니다(`tools/avatar_layers.py worn`, `WORN_ITEMS`). `_cut`은 base 가장자리 밖·아이템 아래로 2픽셀 넓혀서 축소해 그려도 옛 외곽선이 남지 않습니다. 모자·액세서리는 얼굴(눈·입 상자 + 12픽셀)을 바꾸지 않습니다. 어느 레이어가 worn으로 만들어졌는지는 생성 파일 `avatarWornLayers`, 에셋 목록은 `avatarArtFiles`(둘 다 `lib/avatar_atlas.dart`).
-- **꾸미기에 보이는 조건(`PixelSprites.avatarArtReady`):** 기본값·그림 없는 아이템(`blankCosmetics`)·skin1·긴 생머리는 늘 보임. skin2·3은 `base@<skin>.png`, hat·hair는 worn 레이어(`avatarWornOnlySlots`), 나머지는 그림 파일이 있어야 보입니다. 지금 캐릭터 기준이고, 이미 산 아이템은 그림이 없어도 보입니다(`workshop_page.dart` `_cosmetics` `listed`). 그림이 들어오면 `python tools/avatar_layers.py`만 다시 돌리면 코드 변경 없이 보입니다. 2026-11-18 기준 숨김: 털 비니·크림 두건·크림 야구모자·헌팅캡(남녀, 평면 그림만 있음 — 25번 17번 '쓴 모습' 원본 대기).
+- **꾸미기에 보이는 조건(`PixelSprites.avatarArtReady`):** 기본값·그림 없는 아이템(`blankCosmetics`)·skin1·긴 생머리는 늘 보임. skin2·3은 `base@<skin>.png`, hat·hair는 worn 레이어(`avatarWornOnlySlots`), 나머지는 그림 파일이 있어야 보입니다. 지금 캐릭터 기준이고, 이미 산 아이템은 그림이 없어도 보입니다(`workshop_page.dart` `_cosmetics` `listed`). 그림이 들어오면 `python tools/avatar_layers.py`만 다시 돌리면 코드 변경 없이 보입니다. 2026-11-18: 털 비니·크림 두건·크림 야구모자·헌팅캡도 '쓴 모습' 레이어가 생겨(25번 17번) 지금 숨기는 아바타 아이템은 없음.
 - 조리 장면(cook 측면 6장)은 옷·피부가 그려진 그림이라 피부톤·머리·아이템을 반영하지 않습니다(26번 4-4 '이번엔 정면만', 후속).
 
 **포즈(`RigPose`)**
@@ -1112,7 +1112,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 | 레벨 | Lv.1~50 전체(11~50은 임시 곡선). 2026-11-18 유지 재확인 | DEC-029, DEC-050 |
 | 맛 | 팥 기본, 슈크림·초코 획득 경로 유지 | DEC-029 |
 | 손님 | 네임드 8명 전체 + 무기명 | DEC-029 |
-| 유료·온라인 노출 | 황금 상점(IAP)·유료 아바타 노출. 랭킹·친구·초대 숨김. 2026-11-18: 그림이 준비 안 된 유료 아바타(지금은 모자 4종)는 숨김 | DEC-029, DEC-066 |
+| 유료·온라인 노출 | 황금 상점(IAP)·유료 아바타 노출. 랭킹·친구·초대 숨김. 2026-11-18: 그림이 준비 안 된 유료 아바타는 숨김(모자 4종은 그림 적용으로 풀림, 지금 숨김 없음) | DEC-029, DEC-066 |
 | 테스트 | Play 비공개 테스트로 바로 배포, 12~20명·14일 이상 | DEC-030 |
 | 부분 판매 집계 | 판매 횟수 = 주문 완료 1회. 별점 = 판매 당시 품질·신선도 고정, 개수 가중 | DEC-017/023/007, DEC-018/022 |
 

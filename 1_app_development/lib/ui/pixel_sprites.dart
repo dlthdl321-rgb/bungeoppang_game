@@ -312,8 +312,8 @@ class PixelSprites {
 
   /// Avatar slots whose items must be made from a picture of the vendor
   /// wearing them ([avatarWornLayers]): flat hats sit badly on the head
-  /// (26번 녹화 피드백 F23), so they wait for their worn picture (25번 문서
-  /// 17번) and the wardrobe hides them until then.
+  /// (26번 녹화 피드백 F23), so an item without its worn picture (25번 문서
+  /// 17번) is hidden in the wardrobe until it has one.
   static const avatarWornOnlySlots = {CosmeticSlot.hat, CosmeticSlot.hair};
 
   /// Whether [character] can show item [id] of avatar [slot]: what the
