@@ -15,6 +15,12 @@ class PixelSprites {
   PixelSprites._();
 
   static const iconNames = [
+    // The bottom menu's icons cut to fill 96x96 (26번 4-2단계 F10,
+    // tools/fit_nav_icons.py).
+    'nav_menu',
+    'nav_skill',
+    'nav_skins',
+    'nav_shop',
     'shop',
     'skins',
     'records',
@@ -59,6 +65,11 @@ class PixelSprites {
     'volume',
     'save',
     'menu',
+    // The wardrobe's day/night tiles (25번 16번, 26번 4-5단계).
+    'time_scenetime',
+    'time_day',
+    'time_night',
+    'time_clock',
   ];
 
   /// Effects in assets/images/fx: a tiny bungeoppang for tap particles
@@ -97,6 +108,9 @@ class PixelSprites {
   /// 13번, lib/ui/lock_overlay.dart), the skill window's '+' button, and the feature introduction cards'
   /// pictures (160x120, 25번 22번; until drawn the card shows an icon).
   static const uiNames = ['wardrobe_bg', 'offline', 'title_fish', 'lock_badge',
+    // The wardrobe preview's room without the counter (1440x864, 25번 11번,
+    // 26번 4-5단계); wardrobe_bg stays for the cooking scene.
+    'wardrobe_room',
     // The skill window's round '+' level-up button, on and off (64x64, 25번 19번).
     'levelup_plus', 'levelup_plus_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
@@ -105,6 +119,10 @@ class PixelSprites {
   /// Weekly challenge banners in assets/images/event (160x48), one per
   /// season of weekly_config.dart.
   static const seasonBanners = ['spring', 'summer', 'autumn', 'winter'];
+
+  /// The wardrobe's lamp tiles: the whole post lamp (64x96,
+  /// `stall/lamp_<colour>.png`, 25번 16번).
+  static const lampTileColours = ['amber', 'rose', 'mint', 'lilac'];
 
   /// Coloured glass for the stall post lamps (`stall/postlamp_<colour>.png`,
   /// the same 9x14 as stall/postlamp.png).
@@ -259,6 +277,15 @@ class PixelSprites {
     for (final colour in postlampColors) {
       yield _stallPartPath('postlamp_$colour');
     }
+    for (final colour in lampTileColours) {
+      yield _stallPartPath('lamp_$colour');
+    }
+    yield _cosmeticIconPath('none');
+    for (final d in cosmeticDefinitions) {
+      if (d.slot.category == CosmeticCategory.avatar) {
+        yield _cosmeticIconPath(d.id);
+      }
+    }
     yield* fxNames.map((n) => 'assets/images/fx/$n.png');
     yield* uiNames.map((n) => 'assets/images/ui/$n.png');
     yield* seasonBanners.map((n) => 'assets/images/event/$n.png');
@@ -277,6 +304,8 @@ class PixelSprites {
     for (final stove in _slot(CosmeticSlot.stove)) {
       yield _emptyStovePath(stove.id);
       yield _stoveFishPath(stove.id);
+      yield _closedStovePath(stove.id);
+      yield _openStovePath(stove.id);
     }
     for (final flavor in fillingTextureFlavors) {
       yield _fillingTexturePath(flavor);
@@ -502,6 +531,24 @@ class PixelSprites {
 
   static String _stoveFishPath(String id) => 'assets/images/stove_fish/$id.png';
 
+  /// [stove] closed and cold: the lid over the plate, no flames (26번
+  /// 4-2단계 F8, assets/images/stove_closed, 941x470 like the stove,
+  /// tools/apply_26_stoves.py). Null when that stove has none.
+  static ui.Image? closedStove(String stove) => _images[_closedStovePath(stove)];
+
+  static String _closedStovePath(String id) =>
+      'assets/images/stove_closed/$id.png';
+
+  /// [stove] open with the flames on (assets/images/stove_open, 941x700):
+  /// the bottom 941x470 is [emptyStove] itself and the lid stands in the
+  /// [openStoveLidRoom] rows above it. Null when that stove has none.
+  static ui.Image? openStove(String stove) => _images[_openStovePath(stove)];
+
+  static String _openStovePath(String id) => 'assets/images/stove_open/$id.png';
+
+  /// Rows of [openStove] above the plate (the open lid), in picture pixels.
+  static const openStoveLidRoom = 230;
+
   /// Filling textures (`assets/images/mold/paint_<flavor>.png`, 256x256
   /// seamless tiles, 25번 필요한 그림 3번, tools/apply_25_art.py). The
   /// painted filling falls back to a flat color (fillingPasteColors) when
@@ -533,6 +580,24 @@ class PixelSprites {
 
   /// One of [fxNames].
   static ui.Image? fx(String name) => _images['assets/images/fx/$name.png'];
+
+  static String _cosmeticIconPath(String id) =>
+      'assets/images/cosmetic_icons/$id.png';
+
+  /// The wardrobe tile icon of avatar item [id] (64x64, both characters;
+  /// 26번 4-5단계, G5): the 'none' hanger for the take-off items, null
+  /// when not drawn.
+  static ui.Image? cosmeticIcon(String id) => _images[_cosmeticIconPath(
+      const {'nohat', 'noapron', 'noacc'}.contains(id) ? 'none' : id)];
+
+  /// The wardrobe tile picture of a stall item when it has its own (lamps:
+  /// the whole post lamp; day/night: an icon), else null.
+  static ui.Image? stallTile(CosmeticDefinition d) => switch (d.slot) {
+        CosmeticSlot.lamp => _images[_stallPartPath(
+            'lamp_${d.id == defaultCosmetics[CosmeticSlot.lamp] ? 'amber' : d.id.substring(0, d.id.length - 'lamp'.length)}')],
+        CosmeticSlot.time => icon('time_${d.id == 'night_time' ? 'night' : d.id}'),
+        _ => null,
+      };
 
   /// One of [uiNames].
   static ui.Image? screenArt(String name) =>

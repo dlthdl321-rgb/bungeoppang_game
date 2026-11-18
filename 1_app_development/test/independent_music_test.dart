@@ -45,7 +45,7 @@ void main() {
     expect(restored.buns, state.buns);
     expect(restored.lifetime, state.lifetime);
     expect(restored.settings.musicSelection, 'auto');
-    expect(restored.toJson()['formatVersion'], 13);
+    expect(restored.toJson()['formatVersion'], GameState.formatVersion);
   });
 
   test('v13 명시 선택은 왕복 보존하고 누락/잘못된 값은 거부한다', () {

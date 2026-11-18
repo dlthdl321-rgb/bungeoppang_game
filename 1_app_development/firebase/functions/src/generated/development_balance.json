@@ -1513,7 +1513,7 @@
     },
     "padding": {
       "label": "패딩 조끼",
-      "slot": "outfit",
+      "slot": "top",
       "free": false,
       "unlock_level": 3,
       "unlock_total": "0"
@@ -1527,7 +1527,7 @@
     },
     "chefcoat": {
       "label": "요리사 복",
-      "slot": "outfit",
+      "slot": "top",
       "free": false,
       "unlock_level": 7,
       "unlock_total": "0"

@@ -138,7 +138,7 @@ const cosmeticDefinitions = [
   CosmeticDefinition('windchime', '풍경', CosmeticSlot.decoration, '9', 5),
   CosmeticDefinition('snowman', '눈사람', CosmeticSlot.decoration, '12', 7),
   // Stage 12: pastry pattern and topping.
-  CosmeticDefinition('scales', '기본 비늘', CosmeticSlot.pattern, '0', 1),
+  CosmeticDefinition('scales', '기본 모양', CosmeticSlot.pattern, '0', 1),
   CosmeticDefinition('heartscale', '하트 비늘', CosmeticSlot.pattern, '5', 2),
   CosmeticDefinition('starmark', '별 도장', CosmeticSlot.pattern, '8', 4),
   CosmeticDefinition('crispgrid', '바삭 격자', CosmeticSlot.pattern, '11', 6),
@@ -161,9 +161,7 @@ const cosmeticDefinitions = [
   CosmeticDefinition('apron', '기본 앞치마', CosmeticSlot.outfit, '0', 1),
   // Stage 26 4-4: the default apron is drawn now; this takes it off.
   CosmeticDefinition('noapron', '앞치마 없음', CosmeticSlot.outfit, '0', 1),
-  CosmeticDefinition('padding', '패딩 조끼', CosmeticSlot.outfit, '6', 3),
   CosmeticDefinition('stripe', '줄무늬 앞치마', CosmeticSlot.outfit, '9', 5),
-  CosmeticDefinition('chefcoat', '요리사 복', CosmeticSlot.outfit, '12', 7),
   CosmeticDefinition('nohat', '모자 없음', CosmeticSlot.hat, '0', 1),
   CosmeticDefinition('beanie', '털 비니', CosmeticSlot.hat, '3', 2),
   CosmeticDefinition('earmuffs', '귀마개', CosmeticSlot.hat, '6', 3),
@@ -178,6 +176,10 @@ const cosmeticDefinitions = [
   CosmeticDefinition('sagesweater', '세이지 니트', CosmeticSlot.top, '6', 4),
   CosmeticDefinition('creamsweater', '꽈배기 니트', CosmeticSlot.top, '8', 5),
   CosmeticDefinition('cardigan', '카디건', CosmeticSlot.top, '10', 6),
+  // 26번 4-5단계(G12): tops now, not aprons (saves move them, see
+  // [movedToTop]); the apron can go over them.
+  CosmeticDefinition('padding', '패딩 조끼', CosmeticSlot.top, '6', 3),
+  CosmeticDefinition('chefcoat', '요리사 복', CosmeticSlot.top, '12', 7),
   CosmeticDefinition('shorts', '베이지 반바지', CosmeticSlot.bottom, '0', 1),
   CosmeticDefinition('skirt', '주름치마', CosmeticSlot.bottom, '4', 2),
   CosmeticDefinition('widepants', '와이드 바지', CosmeticSlot.bottom, '6', 3),
@@ -243,6 +245,12 @@ const defaultCosmetics = {
 /// Free choices besides the slot defaults, owned from the start and not
 /// collected: taking off the default apron (stage 26 4-4).
 const freeChoiceCosmetics = {'noapron'};
+
+/// Items that were aprons ([CosmeticSlot.outfit]) before 26번 4-5단계 and
+/// are tops now. An older save wearing one wears it as the top and takes
+/// the apron off ('noapron'), so the vendor looks the same (account save
+/// v14, Workshop schema 9).
+const movedToTop = {'chefcoat', 'padding'};
 
 /// Slots added in save format v10; older saves get their defaults.
 const stage12Slots = {
@@ -317,7 +325,7 @@ String dayBackground(String background) =>
 
 String cosmeticSlotLabel(CosmeticSlot slot) => switch (slot) {
       CosmeticSlot.fish => '맛',
-      CosmeticSlot.pattern => '무늬',
+      CosmeticSlot.pattern => '틀',
       CosmeticSlot.topping => '토핑',
       CosmeticSlot.character => '캐릭터',
       CosmeticSlot.skin => '피부톤',
