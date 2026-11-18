@@ -91,6 +91,10 @@ class GameController extends ChangeNotifier {
   /// Firebase backend (online_controller.dart): friends, visits, invites.
   final OnlineBackend online;
   bool _onlineSyncing = false, _levelOneReported = false, _signingIn = false;
+  /// The owner name (사장님 이름) friends and rankings show, and how the
+  /// player logs in; both set by OwnerAccount (26번 2-1단계).
+  String? ownerName;
+  LoginProvider? preferredLogin;
   int? _lastOnlineSyncMs;
 
   /// Google Play Billing for 황금 붕어빵 packs (premium_controller.dart).

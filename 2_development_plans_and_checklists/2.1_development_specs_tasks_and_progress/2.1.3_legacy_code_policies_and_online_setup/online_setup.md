@@ -20,6 +20,9 @@
 | 8 | 앱 서명 키 지문을 Firebase·카카오에 등록, Play Integrity 연결 | 세 콘솔 | 20분 |
 | 9 | 인앱 상품 5개 만들기, 구매 확인 권한 주기 | Play Console | 30분 + 권한 반영 대기(최대 하루) |
 | 10 | 라이선스 테스터로 테스트 구매·복구 확인 | 휴대폰 | 30분 |
+| 16 | (26번 2-1단계) 구글 로그인 켜기, SHA-1 등록, 웹 클라이언트 ID 넣기, 카카오 이메일 동의 항목, 서버 다시 배포 | Firebase·Google Cloud·카카오 콘솔 + 내 PC | 40분 |
+
+**26번 2-1단계부터는 앱을 처음 켤 때 로그인이 꼭 필요하다.** 1~6장을 이미 끝냈다면 16장만 하면 된다. 아직이면 1~6장을 하면서 16장을 함께 한다(16장 순서대로).
 
 **완료 기준(23번 7단계):** 10번에서 운영 Firebase로 테스트 구매 1건이 서버 확인·지급·복구까지 통과하면 끝이다. 결과는 13장 표에 적어서 알려 준다.
 
@@ -96,7 +99,7 @@ subst B: "D:\Users\이소이\Desktop\Git\붕어빵 게임"
 
 **1-5. Authentication 켜기**
 1. 왼쪽 메뉴 `빌드`(또는 `제품 카테고리`) → `Authentication` → `시작하기`.
-2. 로그인 제공업체는 **아무것도 켜지 않아도 된다**(카카오 로그인은 서버가 만든 토큰으로 들어간다).
+2. 카카오 로그인만 쓸 때는 로그인 제공업체를 켜지 않아도 된다(카카오 로그인은 서버가 만든 토큰으로 들어간다). **구글 로그인(26번 2-1단계)은 16-1에서 `Google`을 켠다.**
 
 **1-6. Firestore 데이터베이스 만들기**
 1. 왼쪽 메뉴 `Firestore Database` → `데이터베이스 만들기`.
@@ -131,7 +134,7 @@ subst B: "D:\Users\이소이\Desktop\Git\붕어빵 게임"
 
 **2-4. 카카오 로그인 켜기**
 1. `제품 설정` → `카카오 로그인` → `활성화 설정`을 `ON`.
-2. `동의항목` → `닉네임` → `설정` → **선택 동의**, 동의 목적 `게임 안에서 이름으로 표시` → 저장. (닉네임 말고 다른 항목은 켜지 않는다.)
+2. `동의항목` → `닉네임` → `설정` → **선택 동의**, 동의 목적 `게임 안에서 이름으로 표시` → 저장. 이메일(`카카오계정(이메일)`, `account_email`)은 16-4에서 켠다. 이 둘 말고 다른 항목은 켜지 않는다.
 3. Redirect URI는 Android 앱에서는 넣지 않아도 된다.
 
 ## 3. 키 파일 두 개 만들기
@@ -148,7 +151,8 @@ subst B: "D:\Users\이소이\Desktop\Git\붕어빵 게임"
   "FIREBASE_SENDER_ID": "숫자",
   "FIREBASE_PROJECT_ID": "프로젝트 ID",
   "KAKAO_NATIVE_APP_KEY": "32글자 네이티브 앱 키",
-  "APP_CHECK_DEBUG_TOKEN": ""
+  "APP_CHECK_DEBUG_TOKEN": "",
+  "GOOGLE_SERVER_CLIENT_ID": "16-2에서 넣음(…apps.googleusercontent.com)"
 }
 ```
 
@@ -320,7 +324,12 @@ powershell -ExecutionPolicy Bypass -File .\kakao_key_hash.ps1 -Sha1 "여기에 �
 
 | # | 할 일 | 기대 결과 | 확인 방법 | 결과 |
 | --- | --- | --- | --- | --- |
-| 1 | Play에서 받은 앱 실행 → 메뉴에서 카카오 로그인 | 로그인 성공, 이름 표시 | 화면 | |
+| 0 | (26번 2-1단계) 앱 데이터를 지우거나 새로 설치 → 실행 | 게임 대신 '따끈한 붕어빵 가게를 열어 볼까요?' 화면. 필수 동의 두 개를 체크해야 로그인 버튼이 켜짐 | 화면 | |
+| 0-1 | 카카오로 시작하기 → 이름 → 여자/남자 사장님 → 선택 정보 '건너뛰기' | 첫 영업 안내(1/7)가 나옴. 메뉴 창 위에 '○○ 사장님의 가게' | 화면 + Firestore `accountProfiles/kakao:…`에 `name`·`email`(이메일 동의 시)·`requiredConsent` | |
+| 0-2 | 다른 휴대폰(또는 앱 데이터 지운 뒤)에서 Google로 시작하기 → 이름 → 캐릭터 → 성별·연령대 입력, 선택 동의 체크 → 저장 | 첫 영업 안내가 나옴 | Firestore `accountProfiles/<영숫자 uid>`에 `email`·`gender`·`ageBand` | |
+| 0-3 | 비행기 모드로 새 설치 첫 실행 → 로그인 버튼 | '인터넷 연결이 필요해요' 화면. 비행기 모드 끄고 '다시 시도' → 로그인 화면 | 화면 | |
+| 0-4 | 로그인한 뒤 비행기 모드로 앱 다시 실행 | 로그인 화면 없이 바로 게임 | 화면 | |
+| 1 | Play에서 받은 앱 실행 → (0-1에서 로그인함) 메뉴 '로그인·보상 확인' | 로그인 상태 유지, 이름 표시 | 화면 | |
 | 2 | 상점 열기 | 황금붕어빵력 10(환영 황금, 계정당 1번) | 화면 + Firestore `users/kakao:…`의 `gold` | |
 | 3 | 상점 충전 탭 | 상품 5개에 원화 가격이 보임('불러오는 중'/'구매할 수 없음'이 아님) | 화면 | |
 | 4 | `gold_60` 테스트 구매(테스트 카드) | 결제 완료 뒤 황금 10 → 70 | 화면 + Firestore `gold: 70`, `purchases` 컬렉션에 1건 | |
@@ -328,7 +337,8 @@ powershell -ExecutionPolicy Bypass -File .\kakao_key_hash.ps1 -Sha1 "여기에 �
 | 6 | 스킬 상점에서 황금이 드는 스킬 구매 | 황금이 가격만큼 줄고 스킬 보유 | 화면 + Firestore `users/kakao:…/compositeSkills` | |
 | 7 | **복구 ①**: 구매 버튼 → 결제 완료 직후 홈 버튼 → 최근 앱에서 게임을 위로 밀어 강제 종료 → 다시 실행 | 다시 켠 뒤 1분 안에 황금이 늘어 있음(중복 지급 없음) | 화면 + Firestore `gold` | |
 | 8 | **복구 ②**: 앱 삭제 → Play에서 다시 설치 → 같은 카카오 계정 로그인 | 황금 잔액이 서버 값 그대로(구워 둔 붕어빵 등 로컬 진행은 처음부터 — 정상) | 화면 | |
-| 9 | 로그아웃 → 다른 카카오 계정 로그인 | 그 계정의 잔액(새 계정이면 환영 황금 10) | 화면 | |
+| 9 | 설정 → 계정 → 로그아웃 → **다른** 카카오 계정 로그인 | (26번 2-1단계) '이 기기의 가게는 다른 카카오 계정에 연결돼 있어요…'가 나오고 로그인되지 않음. 처음 계정으로 다시 로그인하면 바로 게임 | 화면 | |
+| 9-1 | 설정 → 계정 → 계정 삭제 → '위 내용을 확인했어요' 체크 → 삭제하기 | 앱이 처음 화면(로그인)으로 돌아감 | 화면 + Firestore에서 그 uid의 `users`·`accountProfiles`·`inviteProfiles`가 사라짐(`purchases`만 남음), Authentication `사용자` 목록에서도 사라짐 | |
 | 10 | Play Console → `주문 관리` | 테스트 주문이 보이고 환불·청구 없음 | Play Console | |
 
 Firestore 보는 법: Firebase 콘솔 → `Firestore Database` → `데이터` 탭 → `users` → `kakao:숫자`.
@@ -346,6 +356,8 @@ Firestore 보는 법: Firebase 콘솔 → `Firestore Database` → `데이터` �
 | 앱 서명 키·업로드 키 SHA-256 | 8-1, 업로드 키는 release_signing.md 3장 | Firebase 프로젝트 설정, App Check Play Integrity |
 | 서버 계정 이메일 | 5-1 | IAM(토큰 생성자), Play Console 사용자(재무·주문 권한) |
 | 상품 ID 5개 | 9-1 표 | Play Console 인앱 상품 |
+| debug·업로드·앱 서명 키 **SHA-1** | 16-1 표 | Firebase 프로젝트 설정 → 내 앱(구글 로그인용) |
+| 구글 웹 클라이언트 ID | 16-2 | `dart_defines/online.json` `GOOGLE_SERVER_CLIENT_ID` |
 
 ## 13. 결과 알려 주기
 
@@ -385,3 +397,63 @@ Firestore 보는 법: Firebase 콘솔 → `Firestore Database` → `데이터` �
 | 앱 App Check: debug 빌드는 디버그 토큰, 그 외 Play Integrity | `lib/firebase_online_backend.dart` (`_activateAppCheck`), `pubspec.yaml` `firebase_app_check` |
 | 서버 App Check 강제(모든 callable, `APP_CHECK_ENFORCED=false`일 때만 끔) | `firebase/functions/src/callable_options.ts`, `index.ts` |
 | 검사 | `test/online_setup_test.dart`, `test/no_tracking_sdk_test.dart`(허용 목록에 App Check 추가), `functions/test/callable_options.test.ts`, 에뮬레이터 `functions/test/emulator/workshop.integration.ts`(App Check 없는 호출 401) |
+
+## 16. 구글 로그인·이메일 동의·계정 삭제 (26번 2-1단계)
+
+2-1단계부터 앱을 처음 켜면 **약관 동의 + 카카오 또는 구글 로그인**을 마쳐야 게임이 시작된다. 아래를 하지 않으면 구글 버튼이 보이지 않거나(16-2), 눌러도 실패한다(16-1). 카카오 로그인은 1~6장 설정 그대로 된다.
+
+> 참고: 이 앱은 `google-services.json` 파일을 쓰지 않는다(1-4). 그래서 "google-services.json 갱신"은 할 일이 아니고, 대신 16-2의 **웹 클라이언트 ID**를 `online.json`에 넣는다.
+
+**16-1. Firebase에서 구글 로그인 켜기 + SHA-1 등록**
+1. <https://console.firebase.google.com> → 프로젝트 → 왼쪽 `빌드` → `Authentication` → 위쪽 `로그인 방법`(Sign-in method) 탭.
+2. `새 제공업체 추가` → `Google` 클릭 → 오른쪽 위 `사용 설정` 스위치를 켠다.
+3. `프로젝트의 공개용 이름`: `오늘의 붕어빵`, `프로젝트 지원 이메일`: 내 Gmail 선택 → `저장`.
+4. 왼쪽 위 톱니바퀴 → `프로젝트 설정` → `일반` 탭 → 아래 `내 앱`의 Android 앱(`com.todaybungeoppang.app`) → `디지털 지문 추가`.
+5. 아래 **SHA-1** 세 개를 하나씩 넣고 `저장`한다(8-3에서 넣은 SHA-256과 별개로 SHA-1이 꼭 있어야 구글 로그인이 된다).
+
+| 키 | SHA-1 | 어디서 |
+| --- | --- | --- |
+| 이 PC의 debug 키(`flutter run`) | `04:1A:06:46:C2:D5:37:58:6C:A1:C5:6E:EA:97:21:33:62:08:82:DB` | 2-3 표와 같음 |
+| 업로드 키 | `17:17:AB:A9:DB:2D:31:40:06:0F:2D:4F:DE:48:89:16:3F:25:4C:42` | 2-3 표와 같음 |
+| Play 앱 서명 키(Play에서 받은 앱) | 8-1에서 복사한 SHA-1 | Play Console → 앱 무결성 → 앱 서명 |
+
+   SHA-1을 넣으면 Firebase가 Google Cloud에 'Android 클라이언트'를 자동으로 만든다. Play 앱 서명 키 SHA-1을 빼먹으면 **Play에서 받은 앱만** 구글 로그인이 실패한다.
+
+**16-2. 웹 클라이언트 ID를 `online.json`에 넣기**
+1. 16-1의 `Authentication` → `로그인 방법` → `Google` 줄을 다시 클릭 → `웹 SDK 구성`을 펼친다.
+2. `웹 클라이언트 ID`(`숫자-영문.apps.googleusercontent.com` 모양)를 복사한다. (보이지 않으면 <https://console.cloud.google.com/apis/credentials> → 같은 프로젝트 → `OAuth 2.0 클라이언트 ID` 목록의 `Web client (auto created by Google Service)` → `클라이언트 ID` 복사.)
+3. 탐색기에서 `1_app_development\dart_defines\online.json`을 메모장으로 열고, 마지막 줄 위에 아래처럼 한 줄을 넣는다(위 줄 끝에 쉼표를 붙이는 것 잊지 말기).
+   ```json
+     "APP_CHECK_DEBUG_TOKEN": "…원래 값…",
+     "GOOGLE_SERVER_CLIENT_ID": "복사한 웹 클라이언트 ID"
+   }
+   ```
+4. 저장한 뒤 3-1의 5번 확인 명령으로 `True`가 나오는지 본다. 이 값은 비밀은 아니지만 다른 키와 같이 `online.json`에만 둔다(커밋되지 않음).
+5. 앱을 다시 빌드해야 반영된다(`flutter run --dart-define-from-file=dart_defines/online.json`, 출시용은 `flutter build appbundle …`).
+
+**16-3. Google 동의 화면(OAuth) 확인**
+1. <https://console.cloud.google.com/apis/credentials/consent> → 같은 프로젝트.
+2. `앱 이름` `오늘의 붕어빵`, `사용자 지원 이메일`이 들어 있는지 본다(16-1의 3번에서 자동으로 채워짐). 비어 있으면 채우고 저장.
+3. `게시 상태`가 `테스트`면 `앱 게시`를 눌러 `프로덕션`으로 바꾼다(이 앱이 받는 범위는 이메일·프로필뿐이라 Google 심사가 필요 없다). `테스트`로 두면 `테스트 사용자`에 넣은 계정만 로그인된다.
+
+**16-4. 카카오 이메일 동의 항목 (`account_email`)**
+1. <https://developers.kakao.com> → 내 애플리케이션 → `오늘의 붕어빵` → `제품 설정` → `카카오 로그인` → `동의항목`.
+2. `카카오계정(이메일)` 줄의 `설정` → **선택 동의**, 동의 목적 `공지·계정 안내` → 저장.
+3. `설정` 버튼이 회색이라 누를 수 없으면 이메일은 '비즈 앱'만 받을 수 있는 경우다: `앱 설정` → `비즈니스`(또는 `앱 권한 신청`) → `개인 개발자 비즈 앱 전환` → 안내대로 본인 확인 → 다시 1~2.
+4. 이메일 동의를 켜지 않아도 로그인은 된다(서버가 이메일을 비워 둔다).
+
+**16-5. 서버 다시 배포 (꼭)**
+
+구글 계정을 받는 검사, `accountProfileSet`(이름·동의·선택 정보 저장), `accountDelete`(계정 삭제) 함수가 새로 생겼다. 배포 전에는 구글 로그인한 사람이 서버를 부르면 거절되고, 계정 삭제도 실패한다.
+1. PowerShell을 열고 0-3의 `subst B: …` 한 줄을 먼저 실행한 뒤 `cd B:\1_app_development\firebase`.
+2. `.\firebase_local.cmd deploy --only "functions,firestore"` (4장 3번과 같음). `✔ Deploy complete!`가 나오면 성공.
+3. 확인: Firebase 콘솔 → `Functions` 목록에 `accountProfileSet`·`accountDelete`가 `asia-northeast3`로 보이면 된다.
+4. **서버를 먼저 배포하고 앱을 올린다.** (새 앱이 옛 서버를 부르면 구글 로그인 사용자가 막힌다.)
+
+**16-6. Play Console 데이터 보안·계정 삭제 항목**
+1. Play Console → `앱 콘텐츠` → `데이터 보안` → [play_data_safety.md](play_data_safety.md)의 '양식 답변' 표대로 고친다(이메일 주소·성별·연령대가 새로 들어감).
+2. 같은 화면의 `데이터 삭제` 질문: '사용자가 앱 안에서 계정 삭제를 요청할 수 있음' 예, 웹 링크 칸에는 공개한 개인정보처리방침 주소(6절 '계정 삭제')를 넣는다.
+3. 개인정보처리방침·이용약관(`privacy_policy.md`, `terms_of_service.md`)을 공개 웹 주소에 올리고 스토어 등록정보의 `개인정보처리방침` 칸에 넣는다.
+
+**16-7. 확인**
+11장 표 0~0-4·9·9-1번을 해 보고 결과를 13장처럼 알려 준다. 구글 로그인이 `로그인하지 못했어요`로 끝나면 대부분 16-1의 SHA-1(특히 Play 앱 서명 키) 누락이다.

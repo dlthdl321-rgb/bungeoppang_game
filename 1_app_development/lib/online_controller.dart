@@ -20,10 +20,12 @@ extension OnlineCommands on GameController {
     _signingIn = true;
     _notifyChanged();
     try {
-      final result = await online.signIn();
+      // The way this player first logged in (26번 2-1단계: Kakao or Google).
+      final result = await online.signIn(preferredLogin ?? LoginProvider.kakao);
       if (result == SignInResult.failed) {
         return '로그인하지 못했어요. 잠시 후 다시 해 주세요';
       }
+      if (result == SignInResult.offline) return '인터넷에 연결한 뒤 다시 해 주세요';
       if (result == SignInResult.success && !_disposed) {
         await syncOnline();
         await refreshRanking();
@@ -69,7 +71,9 @@ extension OnlineCommands on GameController {
     if (!online.signedIn) return;
     _onlineSyncing = true;
     try {
-      await online.setProfile(onlineLook, online.displayName ?? '친구');
+      // The owner name from the first-run screen (26번 2-1단계), else the
+      // login nickname.
+      await online.setProfile(onlineLook, ownerName ?? online.displayName ?? '친구');
       // The server ignores this unless I accepted an invitation and have
       // not reported yet, so one call per session is enough.
       if (state.level >= 2 && !_levelOneReported) {

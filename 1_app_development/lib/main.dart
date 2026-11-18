@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:sqflite/sqflite.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'billing_service.dart';
@@ -8,6 +10,9 @@ import 'game_audio.dart';
 import 'game_controller.dart';
 import 'online_backend.dart';
 import 'online_ranking.dart';
+import 'owner_account.dart';
+import 'owner_profile.dart';
+import 'owner_repository.dart';
 import 'play_billing_service.dart';
 import 'repository.dart';
 import 'save_quarantine.dart';
@@ -25,9 +30,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   final android = defaultTargetPlatform == TargetPlatform.android;
-  // Online features (Kakao login, ranking, friends, visits, invitations,
-  // 황금 붕어빵) only in an Android build made with the Firebase settings
-  // and the Kakao native app key (firebase_online_backend.dart).
+  // Online features (Kakao or Google login, ranking, friends, visits,
+  // invitations, 황금 붕어빵) only in an Android build made with the Firebase
+  // settings and the Kakao native app key (firebase_online_backend.dart).
+  // Such a build asks every new player to log in first (26번 2-1단계).
   final withOnline = android && firebaseConfigured;
   if (withOnline) await KakaoSdk.init(nativeAppKey: kakaoNativeAppKey);
   final online = withOnline
@@ -40,6 +46,7 @@ Future<void> main() async {
 /// fails. Retrying and starting over both come back here.
 Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
   final accounts = SqliteGameRepository(), workshops = SqliteWorkshopRepository();
+  final owners = SqliteOwnerProfileRepository();
   final controller = GameController(accounts, SystemTimeService(),
       ranking: online.configured
           ? ServerRankingService(online)
@@ -57,11 +64,22 @@ Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
     await controller.initialize();
     stage = SaveStage.config;
     final config = await loadDevelopmentBalance();
+    final nameRules = OwnerNameRules.fromJson(
+        jsonDecode(await rootBundle.loadString('config/owner_name_rules.json')) as Map<String, dynamic>);
     stage = SaveStage.workshop;
     workshop = WorkshopController(config, workshops,
       purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online as WorkshopTransport) : null);
     await workshop.initialize();
-    runApp(GameApp(controller: controller, audio: audio, workshop: workshop,
+    // 26번 2-1단계: login, owner name and character before the game.
+    final owner = OwnerAccount(
+        repository: owners,
+        online: online,
+        rules: nameRules,
+        game: controller,
+        workshop: workshop);
+    owner.onDeleted = () => _wipeAndRestart(online, accounts, workshops, owners);
+    await owner.load();
+    runApp(GameApp(controller: controller, audio: audio, workshop: workshop, owner: owner,
         notifier: defaultTargetPlatform == TargetPlatform.android
             ? (!kReleaseMode && _noticeSelfTest ? _SelfTestNotifier(LocalCustomerNotifier()) : LocalCustomerNotifier())
             : null));
@@ -71,6 +89,7 @@ Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
     await audio.dispose();
     await accounts.close();
     await workshops.close();
+    await owners.close();
     final failed = stage;
     runApp(SaveRecoveryApp(
         failure: SaveFailure(failed, '$e', DateTime.now()),
@@ -93,6 +112,27 @@ Future<void> _start(OnlineBackend online, {int attempts = 0}) async {
           await _start(online);
         }));
   }
+}
+
+/// After an account deletion (26번 2-1단계): close the game, delete this
+/// device's saves (account, workshop, owner profile) and start like a new
+/// install.
+Future<void> _wipeAndRestart(OnlineBackend online, SqliteGameRepository accounts,
+    SqliteWorkshopRepository workshops, SqliteOwnerProfileRepository owners) async {
+  // Unmounting GameApp disposes the controllers and stops their timers.
+  runApp(const SizedBox.shrink());
+  await WidgetsBinding.instance.endOfFrame;
+  await accounts.close();
+  await workshops.close();
+  await owners.close();
+  for (final path in [
+    await SqliteGameRepository.defaultPath(),
+    await SqliteWorkshopRepository.defaultPath(),
+    await SqliteOwnerProfileRepository.defaultPath(),
+  ]) {
+    await deleteDatabase(path);
+  }
+  await _start(online);
 }
 
 /// Debug builds made with `--dart-define=CUSTOMER_NOTICE_SELFTEST=true` add
