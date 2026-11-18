@@ -40,6 +40,12 @@ Six jobs, all safe to run again (run in this order):
          base's long hair). The game erases every worn item's _cut from the
          base and hair before drawing the face and clothes.
 
+  chin   26번 4-7단계 (G3): the boy's worn aprons and chef coat were cut
+         from pictures whose chin and neck differ from the base; their
+         layers (and _cut masks) began at row 194 and redrew the jaw
+         flat ("얼굴이 찌그러져"). Clears every such layer above the neck
+         line (CHIN), so the base's own face shows. Run after worn.
+
   derive Makes items by recolouring another item's layer (DERIVED: the
          golden tongs are the tongs, gilded).
 
@@ -47,13 +53,14 @@ Six jobs, all safe to run again (run in this order):
          pictures are laid over the base to find the skin pixels and a
          per-channel colour ratio; the base, the front face parts and every
          layer showing skin get a <name>@<skin>.png copy with that skin
-         recoloured (the game falls back to the plain file).
+         recoloured (the game falls back to the plain file). skin3 takes
+         the skin2 picture's colour and skin2 half of it (SKIN_TONES).
 
 All write tools/avatar_layers.json (every number below) and the
 generated lib/avatar_atlas.dart that the game reads.
 
 Run from the project root:   python tools/avatar_layers.py [fringe] [face] [worn] [derive] [skin] [trim]
-(no argument runs all six in that order). Add --preview to save checking sheets to
+(no argument runs all seven in that order: fringe face worn chin derive skin trim). Add --preview to save checking sheets to
 build/avatar_layers/.
 """
 import json
@@ -704,9 +711,39 @@ def derive(data):
             print(f'derive {key}: {how} from {src_key}')
 
 
+# ---------------------------------------------------------------- chin
+
+# Neck line per character (canvas row): worn body layers keep nothing above
+# it. Only the boy's apron-like pictures reach the chin (girl's start at 215).
+CHIN = {'boy': 208}
+CHIN_SLOTS = ('outfit_', 'top_chefcoat')
+
+
+def chin(data):
+    trimmed = data.get('trim', {})
+    for character, row in CHIN.items():
+        for path in sorted((IMAGES / 'avatar' / character).glob('*.png')):
+            if not path.name.startswith(CHIN_SLOTS):
+                continue
+            key = path.relative_to(IMAGES).as_posix()
+            a = rgba(key, trimmed)
+            above = int((a[:row, :, 3] > 0).sum())
+            if not above:
+                continue
+            a[:row, :, 3] = 0
+            save(a, path)  # full canvas again; trim cuts it back
+            print(f'chin {key}: {above} px above row {row} cleared')
+
+
 # ---------------------------------------------------------------- skin
 
 SKINS = ('skin2', 'skin3')  # skin1 is the art itself
+# 26번 4-7단계 (G4, 2026-11-18 사용자 결정): the game's skin3 is the colour
+# the skin2 picture shows (the old skin2), and the game's skin2 is a new,
+# lighter tone half way between skin1 and that colour. The skin3 picture's
+# darker colour is no longer used (it still finds the skin pixels, being
+# the darkest). Each tone: (source picture, share of its colour change).
+SKIN_TONES = {'skin2': ('skin2', .5), 'skin3': ('skin2', 1.0)}
 SKIN_MIN = 20  # a layer needs this many skin pixels for its own copy
 # Hair styles bare forehead, ears and neck the long hair covered, so their
 # skin is found by colour; every other layer only keeps (by misalignment)
@@ -823,10 +860,14 @@ def skin(data, preview):
         targets += sorted(p.relative_to(IMAGES).as_posix()
                           for p in (IMAGES / 'parts').glob(
                               f'{character}_front_*.png') if '@' not in p.stem)
-        for s in SKINS:
-            sel = core & (on[s][..., 3] > 0)
-            ratio = np.median(on[s][sel][:, :3].astype(np.float64) /
-                              np.maximum(base[sel][:, :3], 1), axis=0)
+        measured = {}
+        for src in SKINS:
+            sel = core & (on[src][..., 3] > 0)
+            measured[src] = np.median(
+                on[src][sel][:, :3].astype(np.float64) /
+                np.maximum(base[sel][:, :3], 1), axis=0)
+        for s, (src, share) in SKIN_TONES.items():
+            ratio = 1 + (measured[src] - 1) * share
             ratios[f'{character}@{s}'] = [round(float(v), 4) for v in ratio]
             for key in targets:
                 arr = np.array(Image.open(IMAGES / key).convert('RGBA')
@@ -878,7 +919,7 @@ def skin(data, preview):
             if preview:
                 img = Image.fromarray(recolour(
                     base.astype(np.int32), mask, ratio).astype(np.uint8))
-                sheets.append((Image.fromarray(on[s]), img))
+                sheets.append((Image.fromarray(on[src]), img))
     if preview and sheets:
         PREVIEW.mkdir(parents=True, exist_ok=True)
         out = Image.new('RGBA', (560 * len(sheets), 520), (110, 170, 110, 255))
@@ -951,7 +992,8 @@ def write_dart(data):
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    jobs = args or ['fringe', 'face', 'worn', 'derive', 'skin', 'trim']
+    jobs = args or ['fringe', 'face', 'worn', 'chin', 'derive', 'skin',
+                    'trim']
     data = load_data()
     if 'fringe' in jobs:
         fringe(data)
@@ -960,6 +1002,8 @@ def main():
     # Worn items are made on the full canvas, then trimmed below.
     if 'worn' in jobs:
         worn(data, '--preview' in sys.argv)
+    if 'chin' in jobs:
+        chin(data)
     if 'derive' in jobs:
         derive(data)
     # Skin copies are made from the finished layers, then trimmed below.

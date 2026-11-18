@@ -410,10 +410,10 @@
 | pattern | **scales 기본 모양 0/1**(26번 4-5단계, 전 '기본 비늘'), heartscale 하트 비늘 5/2, starmark 별 도장 8/4, crispgrid 바삭 격자 11/6 |
 | topping | **plain 0/1**, sugar 슈가파우더 4/2, choco 초코 드리즐 7/3, almond 아몬드 슬라이스 9/5, sprinkle 무지개 스프링클 13/8 |
 | character | **girl 여자 사장님**, boy 남자 사장님 |
-| skin | **skin1**, skin2, skin3 |
+| skin | **skin1**, skin2, skin3 (26번 4-7단계 G4: skin3 = 2026-11-18까지의 skin2 색, skin2 = skin1과 그 사이의 연한 새 색, id 그대로) |
 | hair | **long 긴 생머리 0/1**, short 짧은 머리 3/1, ponytail 묶은 머리 5/2, curly 곱슬머리 8/5 |
 | top | **tee 흰 티셔츠 0/1**, creamlong 크림 긴팔 3/2, pinksweater 분홍 니트 6/3, sagesweater 세이지 니트 6/4, creamsweater 꽈배기 니트 8/5, cardigan 카디건 10/6, padding 패딩 조끼 6/3, chefcoat 요리사 복 12/7 (padding·chefcoat는 26번 4-5단계 G12에서 outfit → top, 그림 `avatar/<성별>/top_<id>.png`, 앞치마를 위에 겹쳐 입을 수 있음) |
-| bottom | **shorts 베이지 반바지 0/1**, skirt 주름치마 4/2, widepants 와이드 바지 6/3, brownpants 갈색 바지 7/4 |
+| bottom | **shorts 베이지 반바지 0/1**, skirt 주름치마 4/2, widepants 와이드 바지 6/3, brownpants 갈색 바지 7/4, jeans 연청 청바지 5/2, denimshorts 데님 반바지 5/3, joggers 회색 조거 바지 6/3, checkskirt 빨강 체크 치마 7/4, cargopants 카키 카고 바지 8/5, longskirt 크림 롱스커트 9/6 (새 6종은 26번 4-7단계 G11, 가격·레벨 임시값, 서버 `avatar_catalog`·`cosmetic_purchase`에도 있음. **v2 아바타 그림에만 있어 v2가 켜지기 전에는 꾸미기·상점에서 숨김**. brownpants는 v2에서 '갈색 골덴 일자 바지'로 다시 그림, 이름은 그림이 들어올 때 바꿈) |
 | shoes | **flats 갈색 단화 0/1**, sneakers 흰 운동화 4/2, boots 앵클부츠 7/4, furboots 털 부츠 10/7 |
 | outfit | **apron 기본 앞치마 0/1**(26번 4-4부터 그림으로 입혀짐), noapron 앞치마 없음 0/1(무료, 그림 없음), darkapron 초코 앞치마 5/2, creamapron 크림 앞치마 7/4, stripe 줄무늬 앞치마 9/5, waistapron 허리 앞치마 9/5 (앞치마만) |
 | hat | **nohat 0/1**, beanie 털 비니 3/2, bandana 크림 두건 4/2, earmuffs 귀마개 6/3, redbandana 빨간 두건 6/3, ballcap 크림 야구모자 7/4, newsboy 헌팅캡 8/4, blackcap 검정 야구모자 9/6, chefhat 요리사 모자 10/6, santa 산타 모자 14/9 |
@@ -433,7 +433,7 @@
 | 1 | behind | 아이템 뒤 조각 `<slot>_<id>_back.png` |
 | 2 | base | 포즈 그림(몸·얼굴·기본 머리·기본 옷). 피부톤이 skin2·3이면 `base@<skin>.png` |
 | 2-1 | (_cut) | 착용 중인 아이템의 `<slot>_<id>_cut.png` 마스크로 base에서 가려질 픽셀을 지움(`BlendMode.dstOut`, base만 담은 `saveLayer` 안). 머리·얼굴·옷은 지우지 않음 |
-| 3 | hair | 머리 모양 `hair_<short·ponytail·curly>.png`(긴 생머리 `long`은 base 그대로). 긴 머리는 hair의 `_cut`이 지움 |
+| 3 | hair | 머리 모양 `hair_<short·ponytail·curly>.png`(긴 생머리 `long`은 base 그대로). 긴 머리는 hair의 `_cut`이 지움. (v2 순서는 아래 '맨 바탕 아바타 v2') |
 | 4 | eyes | 눈 프레임 |
 | 5 | mouth | 입 프레임 |
 | 6~12 | bottom, shoes, top, outfit, hat, accessory, tool | 칸별 아이템(`rigSlotLayers`). tool만 탭할 때 올라감 |
@@ -445,7 +445,21 @@
 - character는 base 그림을 고릅니다. skin은 그림마다 피부색만 바꾼 복사본 `<파일>@skin2.png`·`@skin3.png`를 고릅니다(`rigSkinPicture`, 복사본이 없는 그림은 원래 그림). 복사본은 base, 정면 얼굴 부분 그림, 피부가 보이는 hair·hat 레이어에만 있습니다. hair는 hair 레이어입니다(26번 4-4, 2026-11-18).
 - **입은 모습(worn) 레이어:** 3.3 원본 폴더의 '입은 모습' 전신 그림(`avatar/<성별>/<slot>_<id>.png`)을 base에 겹쳐(머리 아래 몸으로 맞춤) 바뀐 픽셀만 아이템 레이어로, base에서 사라진 픽셀은 `_cut` 마스크로 만듭니다(`tools/avatar_layers.py worn`, `WORN_ITEMS`). `_cut`은 base 가장자리 밖·아이템 아래로 2픽셀 넓혀서 축소해 그려도 옛 외곽선이 남지 않습니다. 모자·액세서리는 얼굴(눈·입 상자 + 12픽셀)을 바꾸지 않습니다. 어느 레이어가 worn으로 만들어졌는지는 생성 파일 `avatarWornLayers`, 에셋 목록은 `avatarArtFiles`(둘 다 `lib/avatar_atlas.dart`).
 - **꾸미기에 보이는 조건(`PixelSprites.avatarArtReady`):** 기본값·그림 없는 아이템(`blankCosmetics`)·skin1·긴 생머리는 늘 보임. skin2·3은 `base@<skin>.png`, hat·hair는 worn 레이어(`avatarWornOnlySlots`), 나머지는 그림 파일이 있어야 보입니다. 지금 캐릭터 기준이고, 이미 산 아이템은 그림이 없어도 보입니다(`workshop_page.dart` `_cosmetics` `listed`). 그림이 들어오면 `python tools/avatar_layers.py`만 다시 돌리면 코드 변경 없이 보입니다. 2026-11-18: 털 비니·크림 두건·크림 야구모자·헌팅캡도 '쓴 모습' 레이어가 생겨(25번 17번) 지금 숨기는 아바타 아이템은 없음.
-- 조리 장면(cook 측면 6장)은 옷·피부가 그려진 그림이라 피부톤·머리·아이템을 반영하지 않습니다(26번 4-4 '이번엔 정면만', 후속).
+- 조리 장면(cook 측면 6장)은 옷·피부가 그려진 그림이라 피부톤·머리·아이템을 반영하지 않습니다(26번 4-4 '이번엔 정면만', 4-7에서도 범위 밖 — 후속 단계).
+- **남자 턱(26번 4-7단계 G3):** 남자 사장님의 앞치마 5종·요리사 복 worn 레이어(와 `_cut`)가 194행부터 시작해 원본 그림의 다른 턱·목을 덮어 그려 얼굴 아래가 납작하게 잘려 보였습니다. `tools/avatar_layers.py chin`이 `CHIN = {'boy': 208}`(목선) 위를 지웁니다(worn 다음, derive·skin 전에 돌림). 화면 배율 문제는 아님(게임 그리기 = 에셋 픽셀, `tools/avatar_v2.py faceaudit`).
+
+### 맨 바탕 아바타 v2 (26번 4-7단계)
+
+파일: 규칙 `lib/avatar_v2.dart`, 생성 `lib/avatar_v2_atlas.dart`(직접 고치지 않음), 도구 `tools/avatar_v2.py`·`tools/avatar_v2.json`, 그림 `assets/images/avatar_v2/<girl·boy>/`(25번 문서 23~31번)
+
+- **방식:** 머리·옷 없는 맨 바탕(민소매 이너·속바지·맨발, 피부톤마다 `base@skin1~3.png` 한 장씩) 위에 모든 아이템(기본 흰 티·반바지·단화·긴 생머리·기본 앞치마 포함)을 '입은 모습' 레이어로 얹습니다. `_cut`·`@skin` 복사본을 쓰지 않습니다.
+- **켜는 스위치:** 필수 그림 112장(바탕 6 + 노출 아바타 아이템 전부 × 남녀 + 긴·묶은·곱슬 머리 뒤 조각 `hair_<id>_back.png`, `avatarV2Required`)이 **모두** 있을 때만 생성 상수 `avatarV2Ready = true`. 하나라도 없으면 정면 아바타 전체가 v1(위 표)로 그려지고 섞이지 않습니다. 조리 장면은 v2와 무관(늘 v1). 2026-11-19 현재 0/112 → 꺼짐.
+- **v2 그리기 순서(`rigV2Order`):** behind(머리 뒤 조각) → base → eyes → mouth → bottom → shoes → top → outfit(앞치마) → **hair** → hat → accessory → tool → front. 표정 파츠는 바탕 바로 위(앞머리가 눈 위를 덮음), 앞치마는 상의 위(요리사 복 위 앞치마 가능).
+- **모자와 머리:** 모자마다 `hat_<id>_hairmask.png`(도구가 모자 실루엣으로 만듦). 그리기 때 **머리 레이어에서만** 그 영역을 지움(`RigSprite.erase`, saveLayer 안 dstOut). 바탕·뒤 조각은 안 지움(묶은 머리 꽁지는 모자 뒤로 남음). 규칙 `avatar_v2.json` `hat_hair`: 기본 `cover`(모자 열에서 모자 아랫선 위의 머리 지움), `earmuffs`는 `band`(귀마개 자리만), `keep` 상자로 예외.
+- **표정 파츠:** skin1 바탕에서 v1과 같은 상자로 만들고 skin2·3은 바탕끼리의 색 비율로 피부만 바꿈: `avatar_v2/<성별>/face_<eyes_half·eyes_closed·mouth_small·mouth_wide>@<skin>.png`. 앵커는 v1과 같음(`avatarV2FaceAnchors`: 여자 눈 153.5,155·입 152,184 / 남자 눈 151.5,156·입 150,184).
+- **보이는 조건:** v2가 켜지면 `avatarArtReady`가 v2 파일 기준(새 하의 6종 포함). 꺼져 있으면 v1 규칙(새 하의는 그림이 없어 숨김).
+- **아이콘(25번 31번):** `tools/avatar_v2.py icons`가 칸 단위로 그 칸 아이콘이 모두 있을 때만 `cosmetic_icons/<id>.png`를 덮어씀(지금은 4-5 임시 아이콘, 피부톤 2·3 아이콘만 새 색으로 다시 만듦).
+- **도구 순서:** `python tools/avatar_v2.py --src <26_feedback_generated>` = align(4배 원본 1120×2080 → 280×520, 크기 변경 없이 발바닥 y=519·얼굴을 v1 얼굴 위치에 평행 이동, skin2·3은 skin1과 같은 이동) → items(바탕과 다른 픽셀만, 바탕 피부 위 피부색은 경고) → hairmask → face → icons → trim → atlas(파일 목록·`avatarV2Ready`, 그림이 있으면 pubspec에 `avatar_v2/` 추가). 규격이 다른 원본은 '규격 미달'로 건너뜀. `--demo`는 v1 그림으로 만든 대역으로 도구만 점검(build/에만 씀). `faceaudit`은 얼굴 좌우 폭(G3) 검사.
 
 **포즈(`RigPose`)**
 
@@ -1014,6 +1028,7 @@
 | 등불 | `stall/postlamp_<색>.png` (id는 `<색>lamp`) |
 | 아바타 | `avatar/<girl·boy>/base.png`, `avatar/<character>/<slot>_<id>.png` (여백을 잘라내고 위치는 `avatarTrimOffsets`), 앞/뒤 조각 `_front`·`_back`, 지울 마스크 `_cut`, 피부톤 복사본 `@skin2`·`@skin3` |
 | 얼굴 부분 | `parts/<character>_<front·side>_<eyes·mouth>_<frame>.png` (위치는 `avatarPartPivots`, `avatarFaceAnchors`) |
+| 아바타 v2 (26번 4-7단계) | `avatar_v2/<girl·boy>/base@<skin1·2·3>.png`, `<slot>_<id>.png`(기본 아이템 포함), 머리 뒤 조각 `hair_<long·ponytail·curly>_back.png`, 모자별 `hat_<id>_hairmask.png`, 표정 `face_<eyes·mouth>_<frame>@<skin>.png`. 위치 `avatarV2TrimOffsets`·`avatarV2PartPivots`(`lib/avatar_v2_atlas.dart`). 필수 112장이 다 있어야 쓰임(`avatarV2Ready`), 그림이 생기면 도구가 pubspec에 폴더를 더함 |
 | 스킬 | `skills/tap_N.png`, `skills/auto_N.png` |
 | 아이콘 | `icons/<name>.png` (이름을 `iconNames`에 등록) |
 | 효과 | `fx/minifish`, 반짝임 3프레임 `fx/sparkle_1~3`(32×32, 25번 12번, `tools/apply_25_art.py --only sparkles`, 26번 4단계), `fx/fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
@@ -1191,6 +1206,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
    - 배경: `musicMoodFor`, 밤 이미지
    - 등불: `postlampColors`
 4. 코인 가격이 있으면 서버 가격표를 다시 만들고 서버를 배포합니다.
+   - **아바타 v2(26번 4-7단계 이후):** 25번 문서 23~30번 형식(확정 바탕을 첨부해 같은 1120×2080 캔버스에 **그 아이템만**, 남녀 각 1장, 몸 뒤로 가는 머리는 `_back` 따로)으로 그림을 주문 → `4_image_generation_results_and_backups/26_feedback_generated/<번호>_<이름>/<성별>/<slot>_<id>.png`에 넣고 `python tools/avatar_v2.py --src <그 폴더>` → 칸 아이콘(31번 형식 512×512)도 같은 칸 전부 → `test/avatar_v2_test.dart`·`avatar_golden_test.dart` v2 골든(`--update-goldens`) 확인. 새 아이템은 `avatarV2Required`에 자동으로 들어가므로 그림이 없으면 v2 전체가 꺼집니다(섞이지 않게). 모자는 `avatar_v2.json` `hat_hair` 규칙을 확인합니다.
 5. 아바타 아이템이 몸을 감싸면(목도리 뒤쪽, 후드 위로 내려오는 머리) `<slot>_<id>_back.png`/`_front.png`를 같은 캔버스에 추가합니다. 위치·크기·회전·순서를 따로 맞춰야 하면 `rigPlacements`에 적습니다. 그다음 `tools/avatar_layers.py trim`을 실행합니다.
 6. 새 얼굴 프레임(예: 눈 `wink`)은 `RigChannel.frames`에 이름을 넣고 `parts/<character>_<view>_<channel>_<frame>.png`와 피벗을 추가합니다(`tools/avatar_layers.py`의 `FACES`에서 만들거나, 직접 그린 그림의 피벗을 `avatar_layers.json`에 적고 다시 실행). 새 모션은 `MotionClip`을 정의하고 `AvatarFace`(`talking`, `onTap`)나 `AvatarMotion.play`로 재생합니다.
 7. **새 칸(slot)을 만드는 것은 큰 작업입니다.**

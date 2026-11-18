@@ -92,6 +92,9 @@ void main() {
       expect(File('assets/images/cosmetic_icons/none.png').existsSync(), isTrue);
       for (final d in cosmeticDefinitions.where((d) => d.slot.category == CosmeticCategory.avatar)) {
         if (const {'nohat', 'noapron', 'noacc'}.contains(d.id)) continue;
+        // 4-7단계 new bottoms are drawn only for the v2 vendor: hidden (and
+        // without an icon) until it is on.
+        if (!['girl', 'boy'].any((c) => PixelSprites.avatarArtReady(c, d.slot, d.id))) continue;
         expect(File('assets/images/cosmetic_icons/${d.id}.png').existsSync(), isTrue, reason: d.id);
       }
     });

@@ -184,6 +184,14 @@ const cosmeticDefinitions = [
   CosmeticDefinition('skirt', '주름치마', CosmeticSlot.bottom, '4', 2),
   CosmeticDefinition('widepants', '와이드 바지', CosmeticSlot.bottom, '6', 3),
   CosmeticDefinition('brownpants', '갈색 바지', CosmeticSlot.bottom, '7', 4),
+  // 26번 4-7단계 (G11): bottoms 4 -> 10. Drawn only for the v2 vendor
+  // (avatar_v2/), so the wardrobe hides them until avatarV2Ready.
+  CosmeticDefinition('jeans', '연청 청바지', CosmeticSlot.bottom, '5', 2),
+  CosmeticDefinition('denimshorts', '데님 반바지', CosmeticSlot.bottom, '5', 3),
+  CosmeticDefinition('joggers', '회색 조거 바지', CosmeticSlot.bottom, '6', 3),
+  CosmeticDefinition('checkskirt', '빨강 체크 치마', CosmeticSlot.bottom, '7', 4),
+  CosmeticDefinition('cargopants', '카키 카고 바지', CosmeticSlot.bottom, '8', 5),
+  CosmeticDefinition('longskirt', '크림 롱스커트', CosmeticSlot.bottom, '9', 6),
   CosmeticDefinition('flats', '갈색 단화', CosmeticSlot.shoes, '0', 1),
   CosmeticDefinition('sneakers', '흰 운동화', CosmeticSlot.shoes, '4', 2),
   CosmeticDefinition('boots', '앵클부츠', CosmeticSlot.shoes, '7', 4),
