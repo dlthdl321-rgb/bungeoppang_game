@@ -23,6 +23,7 @@ import 'workshop_guide.dart';
 import '../workshop_tutorial.dart';
 import '../customer_notifier.dart';
 import '../workshop_feature_unlocks.dart';
+import '../usage_stats.dart';
 import '../owner_account.dart';
 import '../owner_texts.dart';
 import 'owner_settings.dart';
@@ -207,8 +208,10 @@ class _WorkshopPageState extends State<WorkshopPage> {
   }
   Future<void> _wardrobe({WardrobeTab tab=WardrobeTab.hair})=>_window('꾸미기',(_)=>WardrobePanel(
     controller:widget.accountController,access:_cosmetics,initialTab:tab));
-  Future<void> _store()=>_window('상점',(_)=>ShopPanel(controller:widget.accountController,
-    access:_cosmetics,onOpen:_open));
+  Future<void> _store(){
+    c.usage.record(UsageEvent.shopOpen); // 사용 통계(26번 5단계), 하루 1번
+    return _window('상점',(_)=>ShopPanel(controller:widget.accountController,access:_cosmetics,onOpen:_open));
+  }
   Future<void> _goldPacks() async {
     _enterWindow();
     try {
@@ -219,6 +222,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message ?? '로그인 후 이용할 수 있어요.')));
         return;
       }
+      account.usage.record(UsageEvent.payView); // 사용 통계(26번 5단계), 하루 1번
       final packs = await account.goldPacks();
       if (!mounted) return;
       await showModalBottomSheet<void>(context: context, builder: (context) => SafeArea(child: ListView(
@@ -251,6 +255,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
         subtitle:'이름 있는 손님이 오면 알려요',value:settings.notifyNamedGuests,onChanged:(v)=>_setNotice(named:v)),
       CozySettingRow(key:const Key('settings-quiet-night'),icon:const Icon(Icons.bedtime_outlined),label:'밤 알림 끄기 (밤 10시~아침 8시)',
         value:settings.quietNightNotices,onChanged:(v)=>_setNotice(quiet:v)),
+      // 26번 5단계(DEC-046): on by default, no first-run notice; off stops
+      // Firebase Analytics collection (privacy_policy.md '사용 통계').
+      CozySettingRow(key:const Key('settings-usage-stats'),icon:const Icon(Icons.insights_outlined),label:'사용 통계 보내기',
+        subtitle:'게임을 고치는 데 쓰는 이름 없는 사용 기록이에요',value:settings.sendUsageStats,
+        onChanged:(v)=>account.updateSettings(sendUsageStats:v)),
       const Text('배경 시간'),
       DropdownButton<String>(value:c.state.sceneTime,isExpanded:true,
         items:[for(final item in cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.time))

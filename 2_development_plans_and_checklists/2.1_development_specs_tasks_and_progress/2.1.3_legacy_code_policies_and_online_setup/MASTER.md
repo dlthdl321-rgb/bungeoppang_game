@@ -35,13 +35,15 @@
 15. [알려진 문제](#15-알려진-문제)
 16. [기획 중인 변경](#16-기획-중인-변경)
 
+흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19).
+
 ---
 
 ## 1. 개발 원칙
 
 | 원칙 | 내용 | 지키는 곳 |
 | --- | --- | --- |
-| 광고·추적 SDK 금지 | ads, admob, analytics, crashlytics, sentry 등 금지. Firebase는 core/auth/functions/app_check만 허용(app_check는 23번 7단계, Play Integrity). 카카오는 로그인용만. 구글은 `google_sign_in`(로그인만, 26번 2-1단계. 금지 단어에 걸리지 않아 허용 목록 추가 없음) | `test/no_tracking_sdk_test.dart` |
+| 광고·오류 수집 SDK 금지, 분석은 Firebase Analytics만 | ads, admob, crashlytics, sentry, 그 밖의 analytics 계열 금지. Firebase는 core/auth/functions/app_check와 **analytics**(26번 5단계, DEC-045·046)만 허용(app_check는 23번 7단계, Play Integrity). Analytics는 광고 ID·SSAID 수집과 개인화 광고 신호를 매니페스트 meta-data로 끄고, 라이브러리가 넣는 `AD_ID`·`ACCESS_ADSERVICES_*` 권한은 `tools:node="remove"`로 뺌. `setUserId`는 쓰지 않음. 카카오는 로그인용만. 구글은 `google_sign_in`(로그인만, 26번 2-1단계. 금지 단어에 걸리지 않아 허용 목록 추가 없음) | `test/no_tracking_sdk_test.dart` |
 | 첫 실행 로그인 필수 (26번 2-1단계) | 온라인 빌드는 새 설치·업데이트 뒤 첫 실행에 필수 동의 + 카카오 또는 구글 로그인을 마쳐야 게임에 들어감. 한 번 로그인하면 저장된 로그인으로 오프라인 플레이. 필수 동의(이용약관·개인정보 수집·이용)와 선택 동의(성별·연령대)는 따로 받음. 앱 안에서 계정 삭제 가능(Play 정책). 이메일은 서버 프로필에만, 화면·분석에 쓰지 않음 | `lib/owner_account.dart`, `test/owner_first_run_test.dart` |
 | 손님 알림은 기기 안에서만 | 26번 5-1단계: `flutter_local_notifications`(+`timezone`, UTC만)로 앱이 꺼진 동안 올 손님을 기기 안에 예약. 서버 푸시·Firebase Messaging 없음, 정보를 어디에도 보내지 않음. 권한은 `POST_NOTIFICATIONS`(Android 13+ 실행 중 요청)·`RECEIVE_BOOT_COMPLETED`(재부팅 뒤 재예약)뿐, 정확한 알람 권한(`SCHEDULE_EXACT_ALARM`·`USE_EXACT_ALARM`) 없음(몇 분 늦을 수 있음) | `test/no_tracking_sdk_test.dart`, `lib/customer_notifier.dart` |
 | 현실 보상 없음 | 현금·상품·포인트를 지급하지 않음. 공유에도 보상 없음 | README |
@@ -53,7 +55,7 @@
 | 테스트 기준 유지 | 테스트 목표나 골든 허용치를 낮추지 않음 | README |
 | 개발자 전용 기능 | 초대 시뮬레이터 등은 `developerTools`(= `!kReleaseMode`)일 때만 | `game_controller.dart` |
 
-**바뀔 예정(2026-11-18 결정, 아직 구현 전):** 첫 줄 '광고·추적 SDK 금지'는 26번 5단계에서 **`firebase_analytics`만 허용**(광고 ID·SSAID 수집 끔, 설정에서 끌 수 있음, 그 밖의 분석·광고·오류 수집 SDK는 계속 금지)으로 바뀐다(DEC-045·046). 광고 SDK는 출시 빌드에 넣지 않는다(DEC-028 유지, 출시 후 별도 브랜치 DEC-049). 지금 코드와 `no_tracking_sdk_test`는 위 표 그대로다.
+**2026-11-19 26번 5단계로 바뀜:** 첫 줄은 원래 '광고·추적 SDK 금지'였고, DEC-045·046에 따라 `firebase_analytics`만 허용으로 바꿨다(32장). 광고 SDK는 출시 빌드에 넣지 않는다(DEC-028 유지, 출시 후 별도 브랜치 DEC-049).
 
 ---
 
@@ -75,7 +77,7 @@
 ### 시작 순서 (`lib/main.dart`)
 
 1. 세로 고정.
-2. `withOnline = Android && firebaseConfigured`. 온라인이면 `KakaoSdk.init` 후 `FirebaseOnlineBackend.create()`. 아니면 `NoOnlineBackend`·`NoRankingService`·`NoBillingService`.
+2. `withOnline = Android && firebaseConfigured`. 온라인이면 `KakaoSdk.init` 후 `FirebaseOnlineBackend.create()`. 아니면 `NoOnlineBackend`·`NoRankingService`·`NoBillingService`. 사용 통계는 Firebase가 켜진 빌드만 `UsageStats(FirebaseUsageStatsSink())`, 아니면 `UsageStats.none`(32장). 같은 기록기를 `GameController(usage:)`·`WorkshopController(usage:)`·`OwnerAccount(analytics: UsageOwnerAnalytics(usage))`에 넘김.
 3. `GameController(SqliteGameRepository(), SystemTimeService(), …)` 생성.
 4. `PixelSprites.load()`로 이미지를 미리 읽음.
 5. `controller.initialize()` → 설정 파일(+ `config/owner_name_rules.json`) → `WorkshopController.initialize()` → `OwnerAccount.load()`(첫 실행 기록, 26번 2-1단계) → `runApp(GameApp)`. `GameApp`은 `OwnerGate`로 첫 실행 화면(로그인·이름·캐릭터·선택 정보)을 마칠 때까지 게임 대신 보여 줌. 셋 중 하나라도 읽지 못하면 두 DB를 닫고 `SaveRecoveryApp`(`ui/save_recovery.dart`, 3장 "저장 손상 대처").
@@ -526,6 +528,7 @@
 - 온라인 기능은 **Android 빌드에 키 5개가 모두 들어 있을 때만** 켜집니다. 이런 빌드는 첫 실행에 로그인을 반드시 거칩니다(아래 "첫 실행 로그인"). 구글 로그인은 선택 키 `GOOGLE_SERVER_CLIENT_ID`가 있을 때만 버튼이 보입니다. 아니면 오프라인 게임으로 동작합니다. 키는 `--dart-define-from-file=dart_defines/online.json`으로 넣습니다(13장 "온라인 빌드").
 - 서버 지역은 `asia-northeast3`(서울), 런타임은 Node 22입니다.
 - 운영 설정(Firebase·카카오·Play 결제·App Check)을 처음부터 하는 순서는 [online_setup.md](online_setup.md)(23번 7단계, 초보자용)입니다.
+- **사용 통계(26번 5단계):** Firebase가 켜진 빌드는 로그인 여부와 상관없이 Firebase Analytics로 이벤트 7종을 보냅니다(기본 켬, 설정에서 끔). 서버 함수·Firestore는 쓰지 않고 Google Analytics 콘솔에서 봅니다. 자세한 내용은 32장, 콘솔 설정은 [online_setup.md](online_setup.md) '사용 통계'.
 
 ### App Check (23번 7단계)
 
@@ -772,6 +775,8 @@
 **메뉴 창 위 (26번 2-1단계):** 사장님 이름이 있으면 '○○ 사장님의 가게'(`menu-owner-name`). 이름이 보이는 곳은 이 한 곳.
 
 **설정 창 맨 위 '계정' (26번 2-1단계, `lib/ui/owner_settings.dart` `OwnerSettingsSection`, `WorkshopPage(owner:)`가 있을 때만):** '사장님 이름: ○○' + '이름 바꾸기'(같은 규칙, 틀리면 창 안에 이유), '카카오/구글 계정으로 로그인 중', '성별·연령대 (선택): …' + '바꾸기'(첫 실행 ④와 같은 양식)·'지우기'(서버에서도 지움), 이용약관·개인정보처리방침(앱 안 `assets/legal/` 사본을 제목·목록·표 줄로 보여 줌, `test/owner_first_run_test.dart`가 문서 폴더 원본과 같은지 확인), '로그아웃'(확인 뒤 설정 창을 닫고 로그인 화면, 진행은 기기에 남음), '계정 삭제'(지워지는 것·되돌릴 수 없음 안내 + '위 내용을 확인했어요' 체크 뒤 '삭제하기', 인터넷 없으면 '계정 삭제는 인터넷에 연결된 상태에서만…'). 첫 실행 골든 `test/goldens/first_run_{login,name,character,optional}_390x844.png`·`first_run_login_360x640.png`(`test/first_run_golden_test.dart`, 실제 글꼴).
+
+**설정 창 '사용 통계 보내기' (26번 5단계, DEC-046, 키 `settings-usage-stats`):** 손님 알림 세 줄('밤 알림 끄기') 바로 아래, '배경 시간' 위. 아이콘 `Icons.insights_outlined`, 설명 '게임을 고치는 데 쓰는 이름 없는 사용 기록이에요', 기본 켬, 첫 실행 안내 없음. 끄면 `GameSettings.sendUsageStats=false` 저장 뒤 `setAnalyticsCollectionEnabled(false)`(저장에 실패하면 원래 값으로 되돌린 값을 Analytics에 알림). 계정 저장 v13 그대로(없으면 켬).
 
 **메뉴 창 아래:** 황금붕어빵력 심사 대기 건수(`menu-pending-gold`), '로그인·보상 확인'(`menu-sync`), 영업 중이면 '영업 종료'(`menu-close-business`). 예전 "가게 관리" 시트는 없앴습니다. 레시피(슈크림·초코) 미션 받기는 레벨 미션 창, 맛별 연습·손기술 진행과 손님 취향 기록·이야기 다시 보기는 도감 창으로 옮겼습니다.
 
@@ -1063,7 +1068,7 @@
    `C:\GradleCache`는 `D:\DevMoved\GradleCache`로 가는 정션이다. 정션 경로를 Gradle 홈으로 쓰면 `*.gradle.kts`를 고친 뒤 다시 컴파일할 때 `Unresolved reference 'println'`·`'orEmpty'`처럼 Kotlin 표준 함수를 전부 못 찾고 실패한다(스크립트를 안 고치면 예전 컴파일 결과를 재사용해서 성공하므로 늦게 드러남). 2026-11-17 23번 6단계에서 확인, 실제 경로로 바꾸면 통과.
 3. `processDebugResources`가 `Unable to delete directory … .ap_`(다른 프로세스가 사용 중)로 실패하면 방금 만든 파일의 일시적 잠금입니다. 코드를 고치지 말고 같은 명령을 다시 실행합니다(2026-11-03 재실행으로 통과).
 
-**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 7단계, App Check·키 파일 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 698개 통과·건너뜀 0(약 7~12분). `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 86개 통과, 에뮬레이터 통합 8개 통과입니다.
+**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 7단계, App Check·키 파일 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 698개 통과·건너뜀 0(약 7~12분). `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물(26번 5단계부터는 업로드 키 없이 만들 수 있는 `flutter build apk --profile`의 `…/profile/processProfileManifest/` 산출물도, 둘 중 새것)이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 86개 통과, 에뮬레이터 통합 8개 통과입니다.
 
 **온라인 빌드:** 키는 `1_app_development/dart_defines/online.json`(gitignore. `online.example.json`을 복사해 채움. 키 7개: `FIREBASE_API_KEY`·`FIREBASE_APP_ID`·`FIREBASE_SENDER_ID`·`FIREBASE_PROJECT_ID`·`KAKAO_NATIVE_APP_KEY`·선택 `APP_CHECK_DEBUG_TOKEN`·선택 `GOOGLE_SERVER_CLIENT_ID`(26번 2-1단계, Firebase 구글 로그인의 웹 클라이언트 ID. 없으면 구글 버튼이 숨음))에 두고 파일째 넘깁니다. 이 앱은 `google-services.json`을 쓰지 않고 Firebase 설정을 이 키들로 넣습니다.
 ```
@@ -1210,7 +1215,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 | 항목 | 결정 | DEC |
 | --- | --- | --- |
 | 온라인 | Firebase·카카오 로그인·Play 결제 켬. 황금은 서버 검증 후 지급 유지, 로컬 황금 생성 없음 | DEC-027 |
-| 광고 | 제외. SDK 미도입·광고 버튼 숨김. 1장 '광고·추적 SDK 금지'와 `no_tracking_sdk_test` 유지. 2026-11-18: 광고는 출시 후 첫 업데이트(별도 브랜치, DEC-049), 분석은 `firebase_analytics`만 허용으로 바뀔 예정(DEC-045) | DEC-028 |
+| 광고 | 제외. SDK 미도입·광고 버튼 숨김. 1장 '광고·추적 SDK 금지'와 `no_tracking_sdk_test` 유지. 2026-11-18: 광고는 출시 후 첫 업데이트(별도 브랜치, DEC-049), 분석은 `firebase_analytics`만 허용(DEC-045, 2026-11-19 26번 5단계 구현, 32장) | DEC-028 |
 | 레벨 | Lv.1~50 전체(11~50은 임시 곡선). 2026-11-18 유지 재확인 | DEC-029, DEC-050 |
 | 맛 | 팥 기본, 슈크림·초코 획득 경로 유지 | DEC-029 |
 | 손님 | 네임드 8명 전체 + 무기명 | DEC-029 |
@@ -1471,8 +1476,8 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 출시 목표일 | 날짜 없음, 완성도 우선. 26번 단계를 순서대로 끝내고 6단계(비공개 테스트 업로드)를 맨 끝에. 4-1~4-6·7·8도 업로드 전 | DEC-042 | 진행 순서(코드 없음) |
 | 처음 5분 기능 해금 | 하나씩 열기: 안내 중 굽기·영업·손님·판매·큰 붕어빵 / 안내 끝 꾸미기·상점 / Lv.2 스킬 창·초당 숫자 / 첫 숙련 6구 / Lv.3 도감 / Lv.4 레시피 / Lv.5 특별 주문·붕어빵 꾸미기 / 재고 하루 경과 시 신선도 안내 / Lv.8 가게 꾸미기. 핵심 진행은 레벨로 잠그지 않음. 새 설정 키 `feature_unlock_levels.skill_shop`(2), 공통 잠금 표시·소개 카드 | DEC-043 | 26번 2단계 **구현 완료**(2026-11-18, 10장 "처음 5분 해금", 3장 schema 8) |
 | 초반 손님 간격 | 예외 없음. 튜토리얼 뒤 레벨과 관계없이 일반 1~15분·네임드 30분~3시간 | DEC-044 | 26번 5-1단계 |
-| 측정 방식 | `firebase_analytics` 도입(1장 원칙·`no_tracking_sdk_test`를 이 패키지만 허용으로), 광고 ID·SSAID·개인화 광고 신호 끔. 이벤트 10개 이하. 자체 서버 집계·`metrics_report.py`는 만들지 않음 | DEC-045 | 26번 5단계 |
-| 측정 대상·기본값·보관 | 로그인과 상관없이 모두, 기본 켬, 첫 실행 안내 없음, 설정 '사용 통계 보내기'로 끔(`setAnalyticsCollectionEnabled(false)`). 보관 14개월(Analytics 무료판 최대) | DEC-046 | 26번 5단계 |
+| 측정 방식 | `firebase_analytics` 도입(1장 원칙·`no_tracking_sdk_test`를 이 패키지만 허용으로), 광고 ID·SSAID·개인화 광고 신호 끔. 이벤트 10개 이하. 자체 서버 집계·`metrics_report.py`는 만들지 않음 | DEC-045 | 26번 5단계 **구현 완료**(2026-11-19, 32장) |
+| 측정 대상·기본값·보관 | 로그인과 상관없이 모두, 기본 켬, 첫 실행 안내 없음, 설정 '사용 통계 보내기'로 끔(`setAnalyticsCollectionEnabled(false)`). 보관 14개월(Analytics 무료판 최대) | DEC-046 | 26번 5단계 **구현 완료**(2026-11-19, 32장) |
 | 매일 돌아올 이유 | 오늘의 특별 주문(주문서 카드) + 손님 이야기 하루 한 조각 + 겨울 계절 행사(장식·인사·주문 문구) + 출석 보상(7일째 황금 1, 서버 검증) | DEC-047 | 26번 7단계 |
 | 공유 카드 | 넣음, 보상 없음. 완벽 결과·이야기·도감 완성·가게 사진 네 곳, 1080×1350 | DEC-048 | 26번 8단계 |
 | 보상형 광고 | 출시 후 첫 업데이트. 별도 브랜치 `s26/9-ads`에만, 출시 빌드에 광고 SDK 없음(DEC-028 유지). 충전 탭 + 황금 부족 안내, 광고 ID 안 씀, 만 13세 이상 | DEC-049 | 26번 9단계 |
@@ -1535,6 +1540,23 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 화면 | ① 필수 동의 + 카카오/구글 ② 사장님 이름 ③ 여자/남자 사장님 ④ 선택 성별·연령대 → 2단계 첫 실행 안내 | `lib/ui/first_run.dart` |
 | 상태 | `OwnerAccount`(`step`, `signIn`·`acceptConsent`·`setName`·`chooseCharacter`·`saveOptional`·`skipOptional`·`clearOptional`·`signOut`·`deleteAccount`·`pushProfile`) | `lib/owner_account.dart` |
 | 문구 | 첫 실행·계정 설정 문구 한 곳 | `lib/owner_texts.dart` |
-| 분석 연결 지점 | `OwnerAnalytics.setUserProperties(gender, ageBand)` — 선택 동의한 값만, 만 14세 미만 연령대는 보내지 않음, 이메일·이름은 절대 안 보냄. 26번 5단계에서 Firebase Analytics에 연결(지금은 아무것도 보내지 않음) | `lib/owner_account.dart` |
+| 분석 연결 지점 | `OwnerAnalytics.setUserProperties(gender, ageBand)` — 선택 동의한 값만, 만 14세 미만 연령대는 보내지 않음, 이메일·이름은 절대 안 보냄. 26번 5단계에서 `UsageOwnerAnalytics`로 Firebase Analytics 사용자 속성 `gender`·`age_band`에 연결('선택 안 함'은 지움, 32장) | `lib/owner_account.dart` |
 | 서버 | `auth.ts`(구글 허용), `account.ts`(`setAccountProfile`·`rememberEmail`·`deleteAccount`), `kakao.ts`(이메일), `index.ts`(`accountProfileSet`·`accountDelete`). **배포 필요** | `firebase/functions/src` |
 | 테스트 | 앱 `test/owner_first_run_test.dart` 25개·`test/first_run_golden_test.dart` 2개(골든 5장), 서버 `test/account.test.ts` 8개 + `kakao.test.ts` 3개 추가·수정 | |
+
+## 32. 사용 통계(Firebase Analytics) — 2026-11-19
+
+26번 5단계(DEC-045·046, DEC-TBD-5-1~5). 목적은 "어디까지 와서 그만두는지". 원칙은 1장 첫 줄, 설정은 10장 '사용 통계 보내기', 개인정보는 [privacy_policy.md](privacy_policy.md) 1-3절·[play_data_safety.md](play_data_safety.md).
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 패키지 | `firebase_analytics` 12.6.1(firebase_core 4.15.x와 맞는 12.x 마지막 안정판, 고정). 하위 `firebase_analytics_platform_interface` 6.0.7·`firebase_analytics_web` 0.6.1+13. Android 쪽은 `play-services-measurement` 23.2.0 계열 | `pubspec.yaml` |
+| 매니페스트 | meta-data `firebase_analytics_collection_enabled` false(게임이 설정을 읽고 `setAnalyticsCollectionEnabled`를 부르기 전엔 수집 안 함, 그 뒤엔 Firebase가 마지막 값을 기억), `google_analytics_adid_collection_enabled`·`google_analytics_ssaid_collection_enabled`·`google_analytics_default_allow_ad_personalization_signals` 모두 false. `AD_ID`·`ACCESS_ADSERVICES_AD_ID`·`_ATTRIBUTION`·`_TOPICS` 권한 `tools:node="remove"`. 선택 라이브러리 `android.ext.adservices`(Privacy Sandbox)도 `tools:node="remove"`. 병합 뒤 새로 생기는 것: 권한 `com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE`(설치 경로), `AppMeasurementReceiver`·`AppMeasurementService`·`AppMeasurementJobService`, 구성 요소 `AnalyticsConnectorRegistrar`·`FlutterFirebaseAppRegistrar`(analytics). `ACCESS_NETWORK_STATE`·`WAKE_LOCK`은 원래 있음 | `android/app/src/main/AndroidManifest.xml` |
+| Firebase 앱 ID 리소스 | 이 앱은 `google-services.json`을 쓰지 않으므로 `android/app/build.gradle.kts`가 `--dart-define`의 Firebase 키 4개를 문자열 리소스 `google_app_id`·`google_api_key`·`gcm_defaultSenderId`·`project_id`로 넣음(`buildFeatures.resValues`, 네 값이 모두 있을 때만). Analytics가 앱 ID를 이 리소스에서 읽음. Firebase가 같은 값으로 기본 앱을 먼저 만들고 Dart `Firebase.initializeApp(options:)`은 apiKey가 같아 그 앱을 그대로 씀 | `android/app/build.gradle.kts` |
+| 기록기 | `UsageStats`(이벤트·하루 1번·평생 1번 판정, 끄기) + `UsageStatsSink`(`FirebaseUsageStatsSink` / 아무것도 안 보내는 `NoUsageStatsSink`: 키 없는 빌드·테스트). 모든 호출은 기다리지 않고 오류를 삼킴 | `lib/usage_stats.dart`, `lib/firebase_usage_stats.dart` |
+| 이벤트 7종 | `first_bake`(첫 굽기 결과), `first_sale`(첫 판매), `tutorial_done`(`result`: done/skipped), `level_reached`(`level`: 3·5·10), `shop_open`(상점 창, 한국 날짜로 하루 1번), `pay_view`(황금 충전 탭·충전 목록, 하루 1번), `pay_done`(`product_id`만, 금액 없음, 서버 확인 뒤 결제마다). 첫 실행·재방문은 Analytics 자동 `first_open`·`session_start`. 7단계 `special_order_done`·`event_join`, 8단계 `share`, 9단계 `ad_reward`를 더해도 10개 이하 | `UsageEvent` |
+| 보내는 때 | Workshop 진행 4종은 `WorkshopController.command`가 **저장에 성공한 뒤** `finally`에서 명령 전후 `UsageProgress`(굽기 수·판매 수·레벨·안내 상태)를 비교해 보냄(명령·저장 트랜잭션 안에서 보내지 않음, 실패한 명령은 안 보냄). 구형 저장(schema 5 이하)을 안내 끝으로 읽는 경로·다시 열기는 명령이 아니라 아무것도 안 보냄. `shop_open`은 `WorkshopPage._store`, `pay_view`는 `GoldChargeTab.initState`·`_goldPacks`, `pay_done`은 `PremiumCommands`의 서버 지급 성공 뒤 | `workshop_controller.dart`, `ui/workshop_page.dart`, `ui/gold_widgets.dart`, `premium_controller.dart` |
+| 사용자 속성 | 선택 정보 동의 시 `gender`·`age_band`('선택 안 함'·만 14세 미만 연령대는 null로 지움). `setUserId`는 쓰지 않음 | `UsageOwnerAnalytics` |
+| 끄기 | `GameSettings.sendUsageStats`(기본 true). 시작 때와 바꿀 때 `setAnalyticsCollectionEnabled`. 끈 동안은 기록기가 이벤트를 넘기지 않음(사용자 속성은 넘기지만 Analytics 수집이 꺼져 있어 보내지 않음) | `game_controller.dart` |
+| 보관·보기 | Analytics 이벤트 데이터 보존 14개월(무료판 최대, 콘솔에서 설정). 10년 보관은 BigQuery 내보내기로만 가능(online_setup.md '사용 통계') | — |
+| 테스트 | `test/usage_stats_test.dart`(이름 규칙·하루 1번·끄기·오류 격리·진행 비교·사용자 속성·Workshop 한 바퀴·저장 실패·skip·구형 저장·설정 호환·충전 탭), `test/no_tracking_sdk_test.dart`(허용 목록 3개 추가, 매니페스트 끄기 스위치·광고 권한 제거, release/profile 병합 매니페스트) | |
