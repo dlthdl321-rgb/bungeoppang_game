@@ -3,7 +3,6 @@ import '../cosmetic_config.dart';
 import '../economy.dart';
 import '../game_audio.dart';
 import '../game_controller.dart';
-import '../music_config.dart';
 import 'celebration.dart';
 import 'friends_panel.dart';
 import 'avatar_painter.dart';
@@ -708,24 +707,7 @@ class _SoundSettingsState extends State<SoundSettings> {
           label: '배경음',
           value: s.music,
           onChanged: (v) => c.updateSettings(music: v)),
-      Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: InputDecorator(
-          decoration: const InputDecoration(labelText: '배경음 선택'),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              key: const Key('setting-music-selection'),
-              isExpanded: true,
-              value: s.musicSelection,
-              items: [for (final entry in musicSelectionLabels.entries)
-                DropdownMenuItem(value: entry.key, child: Text(entry.value))],
-              onChanged: (value) {
-                if (value != null) c.updateSettings(musicSelection: value);
-              },
-            ),
-          ),
-        ),
-      ),
+      // 26번 4-6단계: one song for every mood, so no '배경음 선택' dropdown.
       CozySettingRow(
           key: const Key('setting-cooking-sound'),
           icon: const PixelIcon('sfx', size: 28),

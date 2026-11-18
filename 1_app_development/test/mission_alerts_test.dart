@@ -23,8 +23,9 @@ void main() {
     expect(musicMoodFor('snowday'), musicMoodFor('snow'));
     expect(musicMoodFor('seaside'), 'night');
     expect(musicMoodFor('unknown'), 'day');
+    // 26번 4-6단계: every mood plays the one song.
     for (final mood in musicMoods) {
-      expect(musicAsset(mood), 'audio/bgm_$mood.wav');
+      expect(musicAsset(mood), 'audio/bgm_warm_stall.ogg');
     }
   });
 
