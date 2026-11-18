@@ -11,6 +11,7 @@ snaps the alpha so there is no halo:
     python tools/apply_25_art.py <25_generated folder> --preview  # + sheet
     python tools/apply_25_art.py <25_generated folder> --measure  # re-fit stoves
     python tools/apply_25_art.py <25_generated folder> --only textures --preview
+    python tools/apply_25_art.py <26_feedback_generated> --only sparkles --preview
 
 Run it in 1_app_development. Outputs:
 
@@ -40,6 +41,8 @@ Run it in 1_app_development. Outputs:
   feather), first left/right then top/bottom. Last, a few flat colors per
   flavor (no dither) so the dots stay crisp. paintMoldLayer tiles it at
   fillingTextureScale mold pixels per texture pixel.
+* assets/images/fx/sparkle_1..3.png (32x32): 25번 12번 twinkle frames
+  (26번 4단계), from 26_feedback_generated/12_sparkle/ (see sparkles()).
 """
 import argparse
 import sys
@@ -381,6 +384,37 @@ def texture_preview(made, path):
         sheet.paste(t.resize((4 * n, 4 * n), Image.NEAREST), (i * (4 * n + 8), 0))
     sheet.save(path)
 
+# -------------------------------------------------------------- sparkles
+
+SPARKLE_SIZE = 32
+
+
+def sparkles(src):
+    """25번 12번 (26번 4단계 F11): three twinkle frames, no outline.
+
+    The sources are 1254x1254 with the glint centred and frame 2 the
+    largest, so the whole canvas is shrunk (keeping the frames' relative
+    size and centre). The generated glow has scattered faint alpha specks:
+    alpha under 20 goes, and so does any lit pixel not touching the main
+    blob (one 8-connected piece per frame).
+    """
+    folder = src / "12_sparkle" if (src / "12_sparkle").is_dir() else src
+    made = {}
+    for i in (1, 2, 3):
+        img = premultiplied_resize(load(folder / f"sparkle_{i}.png"),
+                                   (SPARKLE_SIZE, SPARKLE_SIZE))
+        a = np.asarray(snap_alpha(img, 20, 250)).copy()
+        lit = a[..., 3] > 0
+        labels, count = nd.label(lit, structure=np.ones((3, 3)))
+        if count > 1:
+            sizes = nd.sum(lit, labels, range(1, count + 1))
+            keep = 1 + int(np.argmax(sizes))
+            a[labels != keep] = 0
+        out = Image.fromarray(a, "RGBA")
+        out.save(IMAGES / f"fx/sparkle_{i}.png")
+        made[f"fx/sparkle_{i}"] = out
+    return made
+
 
 def preview(made, path):
     """Every output at 2x (nearest) on dark and light backing."""
@@ -411,7 +445,7 @@ def main():
     p.add_argument("--preview", action="store_true")
     p.add_argument("--measure", action="store_true",
                    help="re-measure STOVE_FIT (slow, a few minutes)")
-    steps = ["stoves", "bags", "drips", "rings", "textures"]
+    steps = ["stoves", "bags", "drips", "rings", "textures", "sparkles"]
     p.add_argument("--only", choices=steps, action="append",
                    help="run only these steps (repeatable)")
     args = p.parse_args()
@@ -433,6 +467,9 @@ def main():
     if "textures" in run:
         print("filling textures")
         made.update(textures(src))
+    if "sparkles" in run:
+        print("sparkles")
+        made.update(sparkles(src))
     for key, img in made.items():
         print(f"  {key}.png {img.size}")
     if args.preview:

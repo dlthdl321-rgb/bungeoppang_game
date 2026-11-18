@@ -747,7 +747,31 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (!state.business.permitsProducts(now()) || !state.customers.any((c) => c.id == orderId &&
         c.remainingMs > 0 && c.lines.any((l) => l.flavor == flavor))) throw const FormatException('진행 중인 손님 주문을 확인해 주세요.');
     _startCooking(flavor, practice: false);
+    _orderProductionFor = (state.session!.id, orderId);
   });
+
+  /// The order an order production was started for (26번 4단계), memory
+  /// only: not saved, so after a restart the result has no reaction.
+  (String, String)? _orderProductionFor;
+
+  /// The order customer's words about the finished bake's [grade] while the
+  /// result shows: '도윤: 와, 이건 …'. Null for practice, after a restart,
+  /// or when the customer has already left.
+  String? resultReaction(CookingGrade grade) {
+    final session = state.session, link = _orderProductionFor;
+    if (session == null || session.practice || session.phase != CookingPhase.result ||
+        link == null || link.$1 != session.id) {
+      return null;
+    }
+    final found = state.customers.where((o) => o.id == link.$2);
+    if (found.isEmpty) return null;
+    final order = found.single;
+    final speech = selectCustomerSpeech(customerCatalog, cookingGradeEvent(grade), _dialogueFacts(order));
+    final name = customerCatalog.contains(order.customerId)
+        ? customerCatalog.shortName(order.customerId, state.relationships.stories)
+        : customerName(order.customerId);
+    return speech == null ? null : '$name: ${speech['text']}';
+  }
   void _recordCookingProduct(CookingSession session, {required bool keep}) {
     final result = evaluateCookingResult(config, session, difficulty: difficulty(session.flavor));
     final active = state.business.permitsProducts(now());

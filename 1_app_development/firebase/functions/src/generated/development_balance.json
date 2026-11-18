@@ -702,6 +702,11 @@
     "flip_turn_degrees": 320,
     "flip_dead_zone_permille": 150
   },
+  "cooking_grade": {
+    "perfect_min_coverage_permille": 950,
+    "perfect_max_amount_permille": 1150,
+    "perfect_doneness_index": 2
+  },
   "griddle": {
     "slot_speed_permille": [
       850,

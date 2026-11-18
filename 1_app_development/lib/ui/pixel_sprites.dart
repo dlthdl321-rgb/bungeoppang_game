@@ -60,11 +60,14 @@ class PixelSprites {
   ];
 
   /// Effects in assets/images/fx: a tiny bungeoppang for tap particles
-  /// (12x9), a 4-point sparkle (7x7), two fairy frames (24x24, 160 ms each)
-  /// and a golden butter shine over the 96x72 centre bungeoppang.
+  /// (12x9), three twinkle frames with no outline (32x32, 25번 12번 →
+  /// 26번 4단계 F11, ui/sparkle_art.dart), two fairy frames (24x24, 160 ms
+  /// each) and a golden butter shine over the 96x72 centre bungeoppang.
   static const fxNames = [
     'minifish',
-    'sparkle',
+    'sparkle_1',
+    'sparkle_2',
+    'sparkle_3',
     'fairy_up',
     'fairy_down',
     'butter_glow',

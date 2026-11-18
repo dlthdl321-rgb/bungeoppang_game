@@ -126,6 +126,18 @@ class DevelopmentBalance {
         integer(result.section('doneness'), 'reference_medium_stage_index') != 2) {
       throw const FormatException('제작 입력/저장 수치 오류');
     }
+    // 26번 4단계: '완벽' 등급은 성공 기준 안쪽(보여 주기 전용).
+    final grade = result.section('cooking_grade');
+    final perfectCoverage = integer(grade, 'perfect_min_coverage_permille');
+    final perfectAmount = integer(grade, 'perfect_max_amount_permille');
+    final perfectDoneness = integer(grade, 'perfect_doneness_index');
+    if (perfectCoverage < coverage || perfectCoverage > 1000 || perfectAmount < 1000 ||
+        perfectAmount > integer(manual, 'paint_overflow_amount_permille') ||
+        result.rows('mastery_difficulties').any((row) =>
+            perfectDoneness < integer(row, 'success_doneness_min_index') ||
+            perfectDoneness > integer(row, 'success_doneness_max_index'))) {
+      throw const FormatException('결과 등급 수치 오류');
+    }
     final sale = result.section('ordinary_sale');
     if (integer(sale, 'quality_weight_permille') + integer(sale, 'freshness_weight_permille') != 1000) {
       throw const FormatException('만족도 가중치 오류');

@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cooking_paint.dart';
+import 'package:todays_bungeoppang/cooking_result_rules.dart';
+import 'package:todays_bungeoppang/ui/cooking_result_effects.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
@@ -147,6 +149,33 @@ void main() {
     await gesture.up();
     await tester.pumpWidget(const SizedBox.shrink());
   });
+
+  // 26번 4단계: 결과 등급별 화면(큰 글씨·칭찬/이유·익힘 색·넘침 방울·윤기).
+  // Reduced motion (mountGame): the still picture, no effect particles.
+  for (final (name, first, second, bakeMs) in const [
+    ('perfect', PaintAmount(980, 1100), PaintAmount(970, 1120), 15000),
+    ('good', PaintAmount(920, 1250), PaintAmount(940, 1200), 18000),
+    ('near', PaintAmount(1000, 1400), PaintAmount(960, 1100), 15000),
+    ('fail', PaintAmount.even, PaintAmount.even, 26000),
+  ]) {
+    testWidgets('결과 등급 $name 골든 390x844', (tester) async {
+      CookingResultView.celebrated = null;
+      final c = await mount(tester, const Size(390, 844));
+      expect(await c.startPractice(), isTrue);
+      var s = c.state.session!;
+      s = s.pour(s.token, first);
+      s = s.squeezeFilling(s.token, PaintAmount.even);
+      s = s.pour(s.token, second);
+      s = s.close(s.token);
+      s = s.flip(s.token);
+      final done = s.takeOut(s.token, bakeMs);
+      await c.command(() => c.state.session = done);
+      await tester.pump();
+      expect(cookingGrade(c.config, done, difficulty: c.difficulty(done.flavor)).name, name);
+      await shoot(tester, 'result_${name}_390x844');
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
 
   // 25번 그림 적용: 영업 중 숙련된 붕어빵 틀 1·4번 칸만 굽는 중(빈 판 위 붕어빵).
   testWidgets('영업 중 굽는 칸 골든 390x844', (tester) async {
