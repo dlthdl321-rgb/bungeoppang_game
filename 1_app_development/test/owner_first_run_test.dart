@@ -489,6 +489,19 @@ void main() {
       expect(gameShown(), isTrue);
       await tester.pumpWidget(const SizedBox.shrink());
     });
+
+    testWidgets('다른 작업 중이면 계정도 기기 저장도 지우지 않는다', (tester) async {
+      final r = await started(tester);
+      var wiped = 0;
+      r.owner.onDeleted = () async => wiped++;
+      r.owner.busy = true;
+      expect(await r.owner.deleteAccount(), OwnerTexts.deleteFailed);
+      expect(r.fake.deletedAccounts, isEmpty);
+      expect(wiped, 0);
+      expect(r.profiles.stored, isNotNull);
+      r.owner.busy = false;
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
   });
 
   test('앱 안 약관·개인정보처리방침은 문서 폴더 원본과 같다', () {

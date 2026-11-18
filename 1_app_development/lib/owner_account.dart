@@ -306,6 +306,7 @@ class OwnerAccount extends ChangeNotifier {
   /// null once deleted.
   Future<String?> deleteAccount() async {
     String? problem;
+    var deleted = false;
     await _run(() async {
       if (!await hasInternet()) {
         problem = OwnerTexts.deleteOffline;
@@ -321,8 +322,12 @@ class OwnerAccount extends ChangeNotifier {
       profile = OwnerProfile();
       nameDraft = '';
       _apply();
+      deleted = true;
     });
-    if (problem == null) await onDeleted?.call();
-    return problem;
+    // Busy with something else (_run skipped the work): nothing was deleted,
+    // so the device saves must stay.
+    if (!deleted) return problem ?? OwnerTexts.deleteFailed;
+    await onDeleted?.call();
+    return null;
   }
 }
