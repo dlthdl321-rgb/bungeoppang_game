@@ -474,7 +474,8 @@ WORN_ITEMS = {
     'hat_blackcap': ('hat', 'blackcap'),
     'hat_redbandana': ('hat', 'redbandana'),
     'outfit_stripe': ('outfit', 'stripe'),
-    'outfit_chefcoat': ('outfit', 'chefcoat'),
+    # 26번 4-5단계(G12): the chef coat is a top now (the apron goes over it).
+    'outfit_chefcoat': ('top', 'chefcoat'),
     'outfit_darkapron': ('outfit', 'darkapron'),
     'outfit_creamapron': ('outfit', 'creamapron'),
     'outfit_waistapron': ('outfit', 'waistapron'),
@@ -491,6 +492,7 @@ WORN_ROWS = {
     'hat': (0, 215),
     'accessory': (0, 215),
     'outfit': (190, 470),
+    'top': (190, 470),
     'bottom': (275, 520),
     'tool': (290, 440),
 }

@@ -14,6 +14,7 @@ snaps the alpha so there is no halo:
     python tools/apply_25_art.py <26_feedback_generated folder> --only locks --preview
     python tools/apply_25_art.py <26_feedback_generated> --only sparkles --preview
     python tools/apply_25_art.py <26_feedback_generated> --only gold --only levelup --only tabs --preview
+    python tools/apply_25_art.py <26_feedback_generated> --only room --only title --only stall16 --preview
 
 Run it in 1_app_development. Outputs:
 
@@ -57,6 +58,12 @@ Run it in 1_app_development. Outputs:
   19번 '+' level-up button, on and off, from 19_levelup/ (see levelup()).
 * assets/images/icons/tab_tap.png (72x72): the existing tab icon's drawn
   part (29x36) doubled with nearest sampling (25번 19번: no new art).
+* assets/images/ui/wardrobe_room.png (1440x864, 128 colours): 25번 11번,
+  the wardrobe preview's shop interior without the counter (26번 4-5단계).
+* assets/images/ui/title_fish.png (96x72): 25번 15번 title fish.
+* assets/images/stall/lamp_<amber|rose|mint|lilac>.png (64x96) and
+  assets/images/icons/time_<scenetime|day|night|clock>.png (64x64):
+  25번 16번 wardrobe tiles of the stall tab.
 """
 import argparse
 import sys
@@ -539,6 +546,69 @@ def tabs(_src):
     return {"icons/tab_tap": out}
 
 
+# ---------------------------------------------------------------- 26번 4-5단계
+
+ROOM_SIZE = (1440, 864)
+TITLE_SIZE = (96, 72)
+LAMP_SIZE = (64, 96)
+TIME_SIZE = 64
+LAMPS = ["amber", "rose", "mint", "lilac"]
+TIMES = ["scenetime", "day", "night", "clock"]
+
+
+def fit_box(img, low, size, margin=2):
+    """The part of [img] with alpha over [low], scaled to fit inside [size]
+    less [margin] on each side (aspect kept) and centred."""
+    a = np.asarray(img)[..., 3]
+    ys, xs = np.nonzero(a > low)
+    part = img.crop((xs.min(), ys.min(), xs.max() + 1, ys.max() + 1))
+    w, h = size
+    k = min((w - 2 * margin) / part.width, (h - 2 * margin) / part.height)
+    small_size = (max(1, round(part.width * k)), max(1, round(part.height * k)))
+    small = premultiplied_resize(part, small_size)
+    out = Image.new("RGBA", size)
+    out.alpha_composite(small, ((w - small_size[0]) // 2, (h - small_size[1]) // 2))
+    return out
+
+
+def room(src):
+    """25번 11번: the wardrobe preview's shop interior without the counter
+    (1619x971 → 1440x864, opaque). Its own file, ui/wardrobe_room.png:
+    ui/wardrobe_bg stays for the cooking scene (lib/ui/cook_cut.dart).
+    128 colours keep the file small; the floor starts near y 630."""
+    folder = src / "11_wardrobe" if (src / "11_wardrobe").is_dir() else src
+    img = Image.open(folder / "wardrobe_bg.png").convert("RGB")
+    out = img.resize(ROOM_SIZE, Image.LANCZOS).quantize(128, dither=Image.Dither.NONE)
+    out.save(IMAGES / "ui" / "wardrobe_room.png", optimize=True)
+    return {"ui/wardrobe_room": out.convert("RGBA")}
+
+
+def title(src):
+    """25번 15번: the cute fish beside window titles, facing right (the left
+    one is flipped in code), 96x72."""
+    folder = src / "15_title" if (src / "15_title").is_dir() else src
+    out = snap_alpha(fit_box(load(folder / "title_fish.png"), 40, TITLE_SIZE), 40, 215)
+    out.save(IMAGES / "ui" / "title_fish.png")
+    return {"ui/title_fish": out}
+
+
+def stall16(src):
+    """25번 16번: the stall tab's lamp tiles (whole post lamp, 64x96,
+    stall/lamp_<colour>.png) and the day/night tiles (64x64,
+    icons/time_<id>.png). Only the wardrobe tiles use them."""
+    folder = src / "16_stall" if (src / "16_stall").is_dir() else src
+    made = {}
+    for colour in LAMPS:
+        out = snap_alpha(fit_box(load(folder / f"lamp_{colour}.png"), 40, LAMP_SIZE), 40, 215)
+        out.save(IMAGES / "stall" / f"lamp_{colour}.png")
+        made[f"stall/lamp_{colour}"] = out
+    for time in TIMES:
+        out = snap_alpha(fit_box(load(folder / f"time_{time}.png"), 40, (TIME_SIZE, TIME_SIZE)), 40, 215)
+        out.save(IMAGES / "icons" / f"time_{time}.png")
+        made[f"icons/time_{time}"] = out
+    return made
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("source", type=Path, help="the 25_generated folder")
@@ -546,7 +616,7 @@ def main():
     p.add_argument("--measure", action="store_true",
                    help="re-measure STOVE_FIT (slow, a few minutes)")
     steps = ["stoves", "bags", "drips", "rings", "textures", "locks", "sparkles",
-             "gold", "levelup", "tabs"]
+             "gold", "levelup", "tabs", "room", "title", "stall16"]
     p.add_argument("--only", choices=steps, action="append",
                    help="run only these steps (repeatable)")
     args = p.parse_args()
@@ -574,7 +644,8 @@ def main():
     if "sparkles" in run and args.only:
         print("sparkles")
         made.update(sparkles(src))
-    for step, run_step in (("gold", gold), ("levelup", levelup), ("tabs", tabs)):
+    for step, run_step in (("gold", gold), ("levelup", levelup), ("tabs", tabs),
+                           ("room", room), ("title", title), ("stall16", stall16)):
         if step in run and args.only:
             print(step)
             made.update(run_step(src))

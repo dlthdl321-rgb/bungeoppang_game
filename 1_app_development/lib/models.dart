@@ -144,7 +144,7 @@ class GameSettings {
 }
 
 class GameState {
-  static const formatVersion = 13;
+  static const formatVersion = 14;
   BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
   int level, snapshotSequence;
   Map<String, int> upgradeCounts;

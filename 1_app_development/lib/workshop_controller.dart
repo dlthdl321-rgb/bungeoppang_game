@@ -26,6 +26,7 @@ import 'workshop_customer_orders.dart';
 import 'workshop_arrivals.dart';
 import 'workshop_feature_unlocks.dart';
 import 'usage_stats.dart';
+import 'cosmetic_config.dart' show CosmeticSlot, movedToTop;
 
 part 'workshop_storage.dart';
 
@@ -108,7 +109,7 @@ class WorkshopState {
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
   }
-  Map<String, dynamic> toJson() => {'schema': 8, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
+  Map<String, dynamic> toJson() => {'schema': 9, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
     'featureIntros': featureIntros.toList()..sort(),
     'regularClock': regularClock.toJson(), 'namedClock': namedClock.toJson(), 'lastNamedVisitor': lastNamedVisitor,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
@@ -134,7 +135,7 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6, 7, 8].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6, 7, 8, 9].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
     if ((row['schema'] as int) < 4 && (row.containsKey('relationships') || row.containsKey('customerScene'))) throw const FormatException('구형 관계 저장 충돌');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
@@ -331,7 +332,15 @@ class WorkshopState {
         if (e.value is! Map<String,dynamic> || state.rewardAccount==null) throw const FormatException('광고 기록 형식 오류');
         state.adAttempts[e.key]=validateWorkshopAd(e.value as Map<String,dynamic>,state.rewardAccount!,e.key);
       }
-      for (final e in object('avatarEquipment').entries) {
+      final worn=Map<String,dynamic>.of(object('avatarEquipment'));
+      // Schema 9 (26번 4-5단계, G12): the chef coat and padded vest are
+      // tops now. An older save wearing one as its apron wears it as the
+      // top with no apron, so the vendor looks the same.
+      if ((row['schema'] as int)<9 && movedToTop.contains(worn[CosmeticSlot.outfit.name])) {
+        worn[CosmeticSlot.top.name]=worn[CosmeticSlot.outfit.name];
+        worn[CosmeticSlot.outfit.name]='noapron';
+      }
+      for (final e in worn.entries) {
         if (e.value is! String) throw const FormatException('아바타 착용 형식 오류');
         final item=config.section('avatar_catalog')[e.value];
         if (item is! Map<String,dynamic> || item['slot']!=e.key ||

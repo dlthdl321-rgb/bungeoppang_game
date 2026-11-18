@@ -35,7 +35,7 @@
 15. [알려진 문제](#15-알려진-문제)
 16. [기획 중인 변경](#16-기획-중인-변경)
 
-흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19).
+흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19), [33 꾸미기·상점 화면 정리](#33-꾸미기상점-화면-정리--2026-11-19).
 
 ---
 
@@ -115,7 +115,7 @@
 | --- | --- |
 | DB | sqflite `todays_bungeoppang.db` |
 | 테이블 | `snapshots(slot, sequence, body)`. 슬롯 `current`, `backup` |
-| 저장 형식 버전 | `GameState.formatVersion = 13` (`models.dart`) |
+| 저장 형식 버전 | `GameState.formatVersion = 14` (`models.dart`) |
 | 밸런스 버전 | `economyBalanceVersion = 3` |
 | 보조 시스템 버전 | `supportConfigVersion = 'support-v2'` (v1도 읽음) |
 | 주간 버전 | `weeklyConfigVersion = 'weekly-v1'` (다르면 읽기 실패) |
@@ -134,12 +134,13 @@
 | 항목 | 값 |
 | --- | --- |
 | DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
-| JSON 저장 형식 | `schema` 8. 1~7을 읽고 8로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 8만 받음) |
+| JSON 저장 형식 | `schema` 9. 1~8을 읽고 9로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 9만 받음, 보호 목록 `[2,…,9]`) |
 | schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
 | 결과 등급 (26번 4단계) | 저장 변경 없음: 등급은 화면에서 계산하고, 주문 손님 반응 연결은 메모리에만 둠 |
 | 제작 세션 `session` (CookingSession schema 1, 24번 5단계 G1) | 짤주머니 세 단계의 칠한 양을 **추가 필드**로 저장: `firstBatterCoverage`·`firstBatterAmount`, `fillingCoverage`·`fillingAmount`, `secondBatterCoverage`·`secondBatterAmount`(permille, 단계를 마치면 둘 다 있음, 0 < 덮음 ≤ 1000, 덮음 ≤ 양 ≤ 9000). 예전 `firstBatterMs`·`secondBatterMs`·`fillingDurationMs`는 읽기만 하고 새로 쓰지 않음(같은 단계에 두 종류가 함께 있으면 거절). 단계 완료 = 둘 중 하나가 있음. 예전 저장·진행 중 세션은 그대로 이어서 하고, ms로 끝난 반죽 단계는 손기술 실패. Workshop schema 6·`user_version` 4·생산 저널 형식 변경 없음 |
 | schema 6 (2026-11-11) | 첫 실행 안내 `tutorial`: `cook` → `sell` → `done`, 또는 `skipped`. 새 설치는 `cook`. schema 5 이하는 `done`으로 올리고, 그 버전에 `tutorial`이 있으면 거절. 판매 기록이 있는데 `cook`/`sell`이면 거절 |
 | schema 7 (2026-11-18, 26번 5-1단계) | 손님 시계 `regularClock`·`namedClock`(`{nextAt: UTC ms 또는 null, seed, draws}`)과 직전 네임드 `lastNamedVisitor`. 7에 셋 중 하나라도 없거나 6 이하에 있으면 거절. 닫힌 가게·안내 중인데 `nextAt`이 있거나, `nextAt`이 정산 시각 + 최대 간격보다 멀면 거절. `lastNamedVisitor`는 만난 손님만. 6 이하 이전: 시드는 진행 ID(`grid.runId`)에서 만들고 시계는 멈춘 채(null) 두어 불러온 뒤 첫 정산 시각부터 셈, `lastNamedVisitor`는 관계 기록의 가장 늦은 방문. `arrivalMs`는 안내 중 손님 간격용으로 그대로 |
+| schema 9 (2026-11-19, 26번 4-5단계, G12) | 필드 추가 없음. 요리사 복(`chefcoat`)·패딩 조끼(`padding`)가 앞치마(`outfit`) 칸에서 상의(`top`) 칸으로 옮겨 감(`movedToTop`). 8 이하에서 `avatarEquipment.outfit`이 둘 중 하나면 `top`=그 id, `outfit`=`noapron`으로 읽음(보이는 모습 유지, 보유 `purchases.owned['cosmetic:<id>']`는 id 그대로라 변화 없음). 9에서 `outfit`이 둘 중 하나면 칸 불일치로 거절 |
 | schema 8 (2026-11-18, 26번 2단계) | 이미 본 기능 소개 카드 `featureIntros`(`WorkshopFeature` 이름 목록, 정렬해 저장: `skills`·`griddle`·`collection`·`recipes`·`specialOrders`·`fishCosmetics`·`freshness`·`stallCosmetics`). 8에 없거나, 모르는 이름·중복이 있거나, 7 이하에 있으면 거절. 7 이하 이전: 불러온 상태에서 **이미 열린 기능은 본 것으로 채움**(고레벨 기존 저장은 카드 0장, 낮은 레벨은 앞으로 열릴 카드만). 첫 판매 칭찬(`salePraise`)은 저장하지 않음 |
 
 **첫 실행 기록 저장** (26번 2-1단계, `lib/owner_profile.dart` `OwnerProfile`, `lib/owner_repository.dart`)
@@ -179,6 +180,7 @@
 | v11 | 꾸미기 칸: character |
 | v12 | 꾸미기 칸: lamp, time, top, bottom, shoes, accessory |
 | v13 | 독립 음악 선택·굽기 채널 설정만 추가. 구형 v1~12 파싱/자산 유지, 실제 이전·실행 검수 미실행 |
+| v14 | 26번 4-5단계(G12): 필드 추가 없음. 13 이하에서 `wardrobe.equipped.outfit`이 `chefcoat`·`padding`이면 `top`=그 id, `outfit`=`noapron`(`menu_state.dart`). 14에서 앞치마 칸에 두 아이템이 있으면 거절 |
 | (버전 없음) | premium: 키가 없으면 기본값, 잘못된 값이면 오류 |
 
 ### 시간 규칙
@@ -366,7 +368,7 @@
 > 18단계 기획: 꾸미기를 붕어빵력으로 사도록 바꾸고, 배경과 음악 선택을 분리합니다([16장](#16-기획-중인-변경)).
 > 26번 4-6단계: 배경음악은 모든 배경·시간에 같은 곡 'Warm Bungeoppang Stall' 하나입니다(`audio/bgm_warm_stall.ogg`). 아래 표의 '음악' 열(분위기)은 코드 구조로만 남아 있고 지금은 모두 같은 곡을 틉니다. 설정의 '배경음 선택' 드롭다운은 없앴습니다(저장값은 그대로 읽음, [12장 소리](#12-이미지소리)).
 
-- 해금 조건: 레벨 ≥ `unlockLevel` 그리고 누적 생산 ≥ `unlockProduction`.
+- 해금 조건: 레벨 ≥ `unlockLevel` 그리고 누적 생산 ≥ `unlockProduction`. 신규 Workshop의 아바타는 `avatar_catalog`의 `unlock_level`·`unlock_total`(누적 생산, 지금 모두 "0")이고, 화면에는 **'Lv.N 해금'만** 보임(26번 4-5단계 S45-Q2: '누적' 표시는 지움, 값 0과 서버 검사는 그대로).
 - 코인으로 삽니다. 황금 붕어빵으로 사면 가격은 코인 × 5이고 해금 조건을 건너뜁니다.
 - 기본 아이템과 character, skin, time 칸의 아이템은 무료이고 수집 개수에서 빠집니다.
 
@@ -382,6 +384,8 @@
 | --- | --- |
 | hair | character, skin, hair, hat |
 | outfit | top, bottom, shoes, outfit |
+
+칸 이름(화면): pattern은 **'틀'**(26번 4-5단계 S45-Q5, 전에는 '무늬'), outfit은 '앞치마'. id·enum은 저장값이라 그대로.
 | props | accessory, tool |
 | bungeoppang | pattern, topping |
 | stall | 노점 칸 전부 |
@@ -397,15 +401,15 @@
 | decoration | **none 0/1**, lantern 종이 등불 4/2, starlights 별 전구 5/3, bunting 작은 축제 깃발 8/4/5000, windchime 풍경 9/5, paperlanterns 종이 초롱 줄 10/6, snowman 눈사람 12/7 |
 | lamp | **amberlamp 기본 등불 0/1**, roselamp 분홍 4/2, mintlamp 민트 6/3, lilaclamp 라일락 8/4 |
 | time | **scenetime 배경 그대로**, day 낮, night_time 밤, clock 기기 시간(19~06시 밤) |
-| pattern | **scales 기본 비늘 0/1**, heartscale 하트 비늘 5/2, starmark 별 도장 8/4, crispgrid 바삭 격자 11/6 |
+| pattern | **scales 기본 모양 0/1**(26번 4-5단계, 전 '기본 비늘'), heartscale 하트 비늘 5/2, starmark 별 도장 8/4, crispgrid 바삭 격자 11/6 |
 | topping | **plain 0/1**, sugar 슈가파우더 4/2, choco 초코 드리즐 7/3, almond 아몬드 슬라이스 9/5, sprinkle 무지개 스프링클 13/8 |
 | character | **girl 여자 사장님**, boy 남자 사장님 |
 | skin | **skin1**, skin2, skin3 |
 | hair | **long 긴 생머리 0/1**, short 짧은 머리 3/1, ponytail 묶은 머리 5/2, curly 곱슬머리 8/5 |
-| top | **tee 흰 티셔츠 0/1**, creamlong 크림 긴팔 3/2, pinksweater 분홍 니트 6/3, sagesweater 세이지 니트 6/4, creamsweater 꽈배기 니트 8/5, cardigan 카디건 10/6 |
+| top | **tee 흰 티셔츠 0/1**, creamlong 크림 긴팔 3/2, pinksweater 분홍 니트 6/3, sagesweater 세이지 니트 6/4, creamsweater 꽈배기 니트 8/5, cardigan 카디건 10/6, padding 패딩 조끼 6/3, chefcoat 요리사 복 12/7 (padding·chefcoat는 26번 4-5단계 G12에서 outfit → top, 그림 `avatar/<성별>/top_<id>.png`, 앞치마를 위에 겹쳐 입을 수 있음) |
 | bottom | **shorts 베이지 반바지 0/1**, skirt 주름치마 4/2, widepants 와이드 바지 6/3, brownpants 갈색 바지 7/4 |
 | shoes | **flats 갈색 단화 0/1**, sneakers 흰 운동화 4/2, boots 앵클부츠 7/4, furboots 털 부츠 10/7 |
-| outfit | **apron 기본 앞치마 0/1**(26번 4-4부터 그림으로 입혀짐), noapron 앞치마 없음 0/1(무료, 그림 없음), darkapron 초코 앞치마 5/2, padding 패딩 조끼 6/3, creamapron 크림 앞치마 7/4, stripe 줄무늬 앞치마 9/5, waistapron 허리 앞치마 9/5, chefcoat 요리사 복 12/7 |
+| outfit | **apron 기본 앞치마 0/1**(26번 4-4부터 그림으로 입혀짐), noapron 앞치마 없음 0/1(무료, 그림 없음), darkapron 초코 앞치마 5/2, creamapron 크림 앞치마 7/4, stripe 줄무늬 앞치마 9/5, waistapron 허리 앞치마 9/5 (앞치마만) |
 | hat | **nohat 0/1**, beanie 털 비니 3/2, bandana 크림 두건 4/2, earmuffs 귀마개 6/3, redbandana 빨간 두건 6/3, ballcap 크림 야구모자 7/4, newsboy 헌팅캡 8/4, blackcap 검정 야구모자 9/6, chefhat 요리사 모자 10/6, santa 산타 모자 14/9 |
 | accessory | **noacc 0/1**, ribbon 분홍 리본 4/2, fishpin 붕어빵 머리핀 5/3, glasses 동그란 안경 6/3, scarf 분홍 목도리 8/5, mittens 털장갑 9/6, crossbag 크로스백 11/7 |
 | tool | **tongs 붕어빵 집게 0/1**, paperbag 붕어빵 봉투 8/5, fishhold 갓 구운 붕어빵 12/8, goldtongs 황금 집게 15/9 |
@@ -461,7 +465,7 @@
 
 | 클립 | 트랙 | 쓰는 곳 |
 | --- | --- | --- |
-| talk | mouth: small 90 → wide 110 → small 80 → closed 70 → wide 100 → small 90 → closed 120 (ms, 반복) | 손님이 와 있는 동안 조리 장면 사장님(`CookCut.greeting`), 인사하는 손님, 꾸미기 미리보기를 누를 때 |
+| talk | mouth: small 90 → wide 110 → small 80 → closed 70 → wide 100 → small 90 → closed 120 (ms, 반복) | 손님이 와 있는 동안 조리 장면 사장님(`CookCut.greeting`), 인사하는 손님 (꾸미기 미리보기는 26번 4-5단계 G2부터 눌러도 말하지 않음, 눈 깜빡임만) |
 | blink | eyes: half 40 → closed 70 → half 40 | 자동. 간격 `blinkGapMs` 2400~5200ms 무작위 |
 | cheer | eyes closed + mouth wide 520ms(같은 시계) | 정의만 있음 |
 
@@ -521,7 +525,7 @@
 - 결제 흐름: `buyGoldPack`(로그인 필요) → Play 결제 → 서버 `walletRedeem`이 Play API로 확인하고 소모 처리 → 지급. 앱에서는 자동 소모하지 않습니다(`autoConsume: false`).
 - 사용할 때는 요청마다 20자 무작위 id를 붙여 `walletSpend`를 부릅니다. 같은 id는 한 번만 처리됩니다.
 - 신규 Workshop의 황금 획득: 환영 황금(계정당 1회, `ledger/welcome_v1`), 일일·주간 미션, 희귀 판매 추첨. 모두 서버 지갑에서만 늘어나고 앱은 로컬 황금을 만들지 않습니다([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)).
-- 신규 Workshop의 황금 쓰는 곳(26번 3단계): 꾸미기(유료 아바타)와 5단계 이상 스킬. 상점(`ShopPanel`, Workshop 경로)은 **꾸미기 탭으로 열리고**(구형 경로는 장비 탭), 충전 탭에 '황금붕어빵력 쓰는 곳: 꾸미기(옷·모자·머리·도구)와 높은 단계 스킬…' 한 줄(`gold-uses`), 약관 줄은 '황금붕어빵력 잔액은 로그인한 카카오 계정에 보관돼요.'(구형 경로의 '꾸미기와 스킬 해금은 돌아와요'는 Workshop에서 쓰지 않음). 메뉴 '로그인·보상 확인' 뒤 잔액이 늘면 '황금붕어빵력 N개를 받았어요. 꾸미기에서 써 보세요.' 알림(환영 황금 안내). 이미 황금으로 1~4단계를 산 사용자는 환불 없이 그대로(DEC-062).
+- 신규 Workshop의 황금 쓰는 곳(26번 3단계): 꾸미기(유료 아바타)와 5단계 이상 스킬. 상점(`ShopPanel`, Workshop 경로)은 **꾸미기 탭으로 열리고**(구형 경로는 장비 탭; 26번 4-5단계부터 Workshop 상점은 꾸미기·충전 두 탭, 꾸미기 탭은 사고 바로 입는 곳, 모든 Workshop 창 위 잔액 줄 황금 옆 '+'가 충전 목록), 충전 탭에 '황금붕어빵력 쓰는 곳: 꾸미기(옷·모자·머리·도구)와 높은 단계 스킬…' 한 줄(`gold-uses`), 약관 줄은 '황금붕어빵력 잔액은 로그인한 카카오 계정에 보관돼요.'(구형 경로의 '꾸미기와 스킬 해금은 돌아와요'는 Workshop에서 쓰지 않음). 메뉴 '로그인·보상 확인' 뒤 잔액이 늘면 '황금붕어빵력 N개를 받았어요. 꾸미기에서 써 보세요.' 알림(환영 황금 안내). 이미 황금으로 1~4단계를 산 사용자는 환불 없이 그대로(DEC-062).
 
 ---
 
@@ -789,7 +793,16 @@
 
 **메뉴 창 목록(Workshop):** 도감 · 업적 · 통계 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션. 온라인 랭킹·친구·공유는 가출시 범위 밖이라 `MenuPanel(hidden:)`으로 뺌(DEC-029, 2026-11-16 5단계). 도감은 Lv.3 전, 배경 테마(가게 꾸미기)는 Lv.8 전까지 같은 방법으로 숨김(26번 2단계, 아래 "처음 5분 해금").
 
-**Workshop 창**(`showWorkshopWindow`, `lib/ui/workshop_windows.dart`, 키 `workshop-window`): 위 안전 영역 아래 화면 전체 높이. 위에서부터 잔액 알약, 제목 프레임(닫기 버튼), 내용. 맨 아래 짙은 나무색 받침(`workshop-window-base`, 화면 폭 전체, 위 테두리 wood 2, 최소 높이 = `NightHome.navHeight` 66, 아래 여백 10 + 안전 영역) 가운데에 '돌아가기'. 받침이 홈 하단 메뉴를 완전히 덮어 버튼 옆으로 메뉴가 비치지 않음.
+**Workshop 창**(`showWorkshopWindow`, `lib/ui/workshop_windows.dart`, 키 `workshop-window`): 위 안전 영역 아래 화면 전체 높이. 위에서부터 잔액 알약, 제목 프레임(닫기 버튼), 내용. 잔액 알약(`workshop-balance`, 26번 4-5단계 F31·S45-Q4)은 `CurrencyAmount` 두 개(아이콘 24, 굵은 숫자 19: `balance-buns`·`balance-gold`)와 황금 옆 꿀색 '+'(`balance-gold-plus`, `onGold` → `WorkshopPage._goldPacks` 충전 목록). 제목 양옆은 25번 15번 붕어빵 `ui/title_fish` 48×36(왼쪽은 좌우 뒤집음, `title-fish-left`), 설정 창은 톱니 아이콘. 맨 아래 짙은 나무색 받침(`workshop-window-base`, 화면 폭 전체, 위 테두리 wood 2, 최소 높이 = `NightHome.navHeight` 66, 아래 여백 10 + 안전 영역) 가운데에 '돌아가기'. 받침이 홈 하단 메뉴를 완전히 덮어 버튼 옆으로 메뉴가 비치지 않음.
+
+**꾸미기·상점 역할 (26번 4-5단계, S45-Q1 B, `lib/ui/workshop_wardrobe.dart` `WorkshopWardrobe`):** 꾸미기 창(하단 '꾸미기', `WardrobeMode.wear`)은 **가진 것(무료 포함)만** 입어 보고 입는 곳, 상점의 꾸미기 탭(`WardrobeMode.shop`, 키 `shop-wardrobe`)은 **아직 없는 아바타 아이템을 사는 곳**(잠긴 것도 눌러 입어 봄). 꾸미기 창 칸의 마지막 타일 '상점에서 더 보기'(`wardrobe-more-<slot>`)는 꾸미기 창을 닫고 상점을 그 칸으로 엶. 상점은 꾸미기·충전 두 탭(Workshop에서 장비 탭 없음, 도구는 꾸미기의 소품 탭).
+- 배치(위만 고정, 격자만 스크롤): 알약 탭 줄(`cosmetic-category-<tab>`, 가로 스크롤) → 미리보기(창 높이의 36%, 150~220) → 알약 칸 줄(`cosmetic-slot-<slot>`, 입어 보는 칸에 꿀색 점) → 3열 타일 격자(`wardrobe-grid`). '모습만 바뀌어요' 글은 없음(G14).
+- 미리보기: 사장님 탭은 매대 없는 방 `ui/wardrobe_room`(25번 11번) 위 전신(G1), 누르면 말하지 않음(G2). 붕어빵 탭은 붕어빵 크게. 가게 탭은 세로 홈 장면(180×400)을 **통째로** 상자 높이에 맞춤(`preview-stall-scene`, F33). 고른 것은 칸마다 기억(`picks`)해 탭·칸을 바꿔도 함께 그림.
+- 미리보기 왼쪽 위: 입은 것과 다를 때만 리본 '입어 보는 중'(`cosmetic-preview-status`)과 되돌리기(`wardrobe-revert`). 입은 그대로면 아무것도 없음(G15).
+- 미리보기 오른쪽 아래(S45-Q3): 꾸미기는 '모두 적용(N)'(`wardrobe-apply-all`, N = 바뀐 칸 수, 0이면 꺼짐) — 칸마다 차례로 입히고 못 입힌 것은 이름을 미리보기 아래에 말하고(`wardrobe-message`) 입어 보는 중으로 남김. 사는 일 없음(서버 변경 없음). 상점은 마지막으로 누른 아이템의 '사고 바로 입기'(`buy-cosmetic-<id>`, 잠겼으면 'Lv.N 해금', 못 사면 꺼짐) → 확인 창(가격 아이콘·'사면 계속 갖고, 바로 입어요', `wardrobe-buy-confirm`) → 1건 구매 뒤 바로 입힘.
+- 타일(`WardrobeTile`, 키 `preview-<id>`): 둥근 카드에 아이템 아이콘(폭 68% 동그란 받침, G5 `CosmeticThumb`), 이름 한 줄, 상태 한 줄. 입는 중 = 진한 테두리 + 오른쪽 위 체크 + '입는 중', 보유 = '보유' 배지, 살 수 있음 = 가격표 한 줄(`CurrencyAmount` 붕어빵력·황금, `FittedBox`로 줄바꿈 없음), 모자람 = 같은 가격표에 모자란 재화 빨강(화면 읽기 '붕어빵력 모자람'), 레벨 잠김 = 아이콘에만 공통 잠금 `LockedOverlay`(빗금+자물쇠) + 빨간 'Lv.N 해금', 눌러서 입어 보기 가능. 고른 타일은 꿀색 테두리.
+- 탭 공개: 붕어빵 탭은 `fish_cosmetics`(Lv.5), 가게 탭은 `stall_cosmetics`(Lv.8)부터 보임(`CosmeticMenuAccess.tabOpen`, S45-Q6). 칩은 체크 표시 없는 크림 알약, 고르면 꿀색(G8).
+- 구형 클리커 경로(`game_app.dart`, access 없음)의 `WardrobePanel`·`ShopPanel`은 예전 모양 그대로.
 
 **상점·꾸미기(Workshop):** 파는 것은 아바타 카탈로그(`avatar_catalog`)뿐. 그 밖의 구형 꾸미기(화로·배경·장식·등불·무늬·토핑)는 가지고 있을 때만 보임(`CosmeticMenuAccess.listed`). 품목이 하나도 없는 상점 탭(지금은 테마)은 숨기고 충전 탭은 항상 둠. 충전 탭에는 구형 클리커 부스트 줄을 두지 않음(`GoldChargeTab(legacyBoost: false)`). 로그인 전에는 '로그인하면 충전할 수 있어요', 상품을 불러오는 동안 가격 자리에 '불러오는 중'.
 
@@ -999,7 +1012,9 @@
 | 효과 | `fx/minifish`, 반짝임 3프레임 `fx/sparkle_1~3`(32×32, 25번 12번, `tools/apply_25_art.py --only sparkles`, 26번 4단계), `fx/fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
 | 짤주머니 | `cook/piping_bag_<batter·redbean·custard·cocoa>[_squeeze].png`(128×192, 손가락 점 (64, 188), `pipingPastes`) |
 | 속 칠 질감 | `mold/paint_<redbean·custard·cocoa>.png`(256×256 불투명 심리스, `tools/apply_25_art.py --only textures`로 v2 생성본을 줄이고 이음매 보정) |
-| 화면 장식 | `ui/wardrobe_bg, offline, title_fish`, 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 스킬 창 '+' `ui/levelup_plus`·`levelup_plus_off`(64×64, 25번 19번, 26번 4-3단계), 황금붕어빵력 아이콘 `icons/gold_bun`(72×72, 25번 18번, 26번 4-3단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120 예정, 25번 22번, 없으면 아이콘) |
+| 화면 장식 | `ui/wardrobe_bg`(조리 장면 `cook_cut.dart`), 꾸미기 미리보기 방 `ui/wardrobe_room`(1440×864, 128색, 25번 11번, 26번 4-5단계), `ui/offline`, 창 제목 붕어빵 `ui/title_fish`(96×72, 25번 15번, 화면 48×36), 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 스킬 창 '+' `ui/levelup_plus`·`levelup_plus_off`(64×64, 25번 19번, 26번 4-3단계), 황금붕어빵력 아이콘 `icons/gold_bun`(72×72, 25번 18번, 26번 4-3단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120 예정, 25번 22번, 없으면 아이콘) |
+| 꾸미기 칸 아이콘 (26번 4-5단계, G5) | `cosmetic_icons/<id>.png` 64×64, 남녀 공통, 아바타 아이템마다 한 장 + 빼기 아이템(모자 없음·앞치마 없음·소품 없음)이 같이 쓰는 `none.png`(빈 옷걸이+사선). 지금은 `tools/make_cosmetic_icons.py`가 지금 아바타 레이어에서 자른 **임시** 아이콘(피부톤은 얼굴 없는 마네킹, 캐릭터는 머리 초상). 25번 31번 그림이 오면 같은 경로에 파일만 바꿈(4-7단계 뒤에는 이 도구를 다시 돌리지 않음). `PixelSprites.cosmeticIcon(id)`, 없으면 예전처럼 작은 전신 |
+| 가게 칸 그림 (25번 16번, 26번 4-5단계) | 등불 칸 `stall/lamp_<amber·rose·mint·lilac>.png` 64×96(기둥째 등불), 밤낮 칸 `icons/time_<scenetime·day·night·clock>.png` 64×64. 꾸미기 타일에만 씀(`PixelSprites.stallTile`). 배경 칸은 배경 그림 가운데 정사각형 |
 | 이벤트 배너 | `event/spring·summer·autumn·winter` |
 | 조리 장면 | `cook/girl_1~6.png` (700ms 간격 반복) |
 
@@ -1573,3 +1588,17 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 끄기 | `GameSettings.sendUsageStats`(기본 true). 시작 때와 바꿀 때 `setAnalyticsCollectionEnabled`. 끈 동안은 기록기가 이벤트를 넘기지 않음(사용자 속성은 넘기지만 Analytics 수집이 꺼져 있어 보내지 않음) | `game_controller.dart` |
 | 보관·보기 | Analytics 이벤트 데이터 보존 14개월(무료판 최대, 콘솔에서 설정). 10년 보관은 BigQuery 내보내기로만 가능(online_setup.md '사용 통계') | — |
 | 테스트 | `test/usage_stats_test.dart`(이름 규칙·하루 1번·끄기·오류 격리·진행 비교·사용자 속성·Workshop 한 바퀴·저장 실패·skip·구형 저장·설정 호환·충전 탭), `test/no_tracking_sdk_test.dart`(허용 목록 3개 추가, 매니페스트 끄기 스위치·광고 권한 제거, release/profile 병합 매니페스트) | |
+
+## 33. 꾸미기·상점 화면 정리 — 2026-11-19
+
+26번 4-5단계(F25~F36, 2차 녹화 G1·G2·G5·G8·G12~G15, DEC-TBD-4-5-1~5). 배치는 10장 '꾸미기·상점 역할', 칸·이름은 7장, 저장은 3장(계정 v14·가게 schema 9), 그림은 12장.
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 역할 | 꾸미기 = 가진 것 입기(여러 칸 '모두 적용'), 상점 꾸미기 탭 = 사고 바로 입기. 구매는 지금처럼 1건씩(서버 변경 없음) | `lib/ui/workshop_wardrobe.dart`, `public_menus.dart`(`CosmeticMenuAccess.forSale·cost·tabOpen`), `shop_panel.dart`, `workshop_page.dart` |
+| 누적 조건 | 화면에서만 뺌('Lv.N 해금'). `unlock_total` 값 0과 서버 검사는 그대로 | `workshop_page.dart` `_cosmetics.requirement` |
+| 칸 이동 | 요리사 복·패딩 조끼 outfit → top(`movedToTop`), 설정 `avatar_catalog` slot, 서버 생성 JSON, 그림 파일 이름 `top_*`, `tools/avatar_layers.py` `WORN_ITEMS`·`WORN_ROWS['top']`, `concept_avatar.py`. **서버 생성 설정이 바뀌어 배포 묶음에 포함** | `cosmetic_config.dart`, `config/development_balance.json`, `firebase/functions/src/generated/development_balance.json` |
+| 잔액 줄·제목 | 모든 Workshop 창 공통(10장) | `workshop_windows.dart` |
+| 그림 적용 | `python tools/apply_25_art.py ../4_image_generation_results_and_backups/26_feedback_generated --only room --only title --only stall16 --preview` | `tools/apply_25_art.py` |
+| 테스트 | `test/workshop_wardrobe_test.dart`(17개, 골든 `wardrobe_hair_390x844`·`wardrobe_stall_390x844`·`shop_avatar_390x844`), 창 골든 다시 만듦(`skill_shop_*` 3장·`workshop_home_menu_*` 4장: 잔액 줄·제목 붕어빵) | |
+| 시안 | `tools/preview_wardrobe_options_test.dart` → `build/preview/wardrobe_options.png` | |

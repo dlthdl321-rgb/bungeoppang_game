@@ -22,7 +22,10 @@ class ShopPanel extends StatefulWidget {
 
   /// Opens another sheet (the item and coin details).
   final void Function(String destination) onOpen;
-  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access});
+  /// The Workshop shop opens its 꾸미기 tab at this slot (from the
+  /// wardrobe's '상점에서 더 보기').
+  final CosmeticSlot? initialSlot;
+  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access,this.initialSlot});
   @override
   State<ShopPanel> createState() => _ShopPanelState();
 }
@@ -57,13 +60,59 @@ class _ShopPanelState extends State<ShopPanel> {
               (widget.access?.listed(d) ?? true));
 
   /// Tabs with something in them; a tab with nothing for sale is left out.
-  List<ShopTab> get _tabs => [
+  /// The Workshop sells avatar items only, all in 꾸미기 (26번 4-5단계).
+  List<ShopTab> get _tabs => widget.access != null ? const [ShopTab.cosmetics, ShopTab.gold] : [
         for (final t in ShopTab.values)
           if (t == ShopTab.gold || _catalog(t).isNotEmpty) t
       ];
 
+  Widget _tabChips(List<ShopTab> tabs, ShopTab tab) => Wrap(spacing: 6, runSpacing: 4, children: [
+        for (final t in tabs)
+          ChoiceChip(
+              key: Key('shop-tab-${t.name}'),
+              avatar: PixelIcon(switch (t) {
+                ShopTab.gear => 'tab_gear',
+                ShopTab.cosmetics => 'tab_outfit',
+                ShopTab.theme => 'theme',
+                ShopTab.gold => 'gold_bun',
+              }, size: 20),
+              label: Text(_label(t), style: const TextStyle(fontWeight: FontWeight.w900)),
+              showCheckmark: false,
+              shape: StadiumBorder(side: BorderSide(color: t == tab ? Cozy.wood : Cozy.tan, width: t == tab ? 2 : 1.5)),
+              backgroundColor: Cozy.cream,
+              selected: t == tab,
+              selectedColor: Cozy.honey,
+              onSelected: (_) => setState(() => this.tab = t)),
+      ]);
+
+  /// The Workshop shop (26번 4-5단계, S45-Q1 B): 꾸미기 is the wardrobe's
+  /// look with the avatar items for sale (locked ones to try on), bought
+  /// and worn at once; 충전 is the gold tab.
+  Widget _workshop(BuildContext context, CosmeticMenuAccess access) {
+    final tabs = _tabs;
+    final tab = tabs.contains(this.tab) ? this.tab : tabs.first;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: _tabChips(tabs, tab)),
+      saveError(c),
+      Expanded(
+          child: tab == ShopTab.gold
+              ? SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: GoldChargeTab(controller: c, legacyBoost: false))
+              : WardrobePanel(
+                  key: const Key('shop-wardrobe'),
+                  controller: c,
+                  access: access,
+                  mode: WardrobeMode.shop,
+                  initialSlot: widget.initialSlot)),
+    ]);
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (widget.access case final access?) {
+      return _workshop(context, access);
+    }
     final tabs = _tabs;
     final tab = tabs.contains(this.tab) ? this.tab : tabs.first;
     return SingleChildScrollView(

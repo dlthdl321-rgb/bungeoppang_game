@@ -35,8 +35,9 @@ void main() {
   const winter = {
     CosmeticSlot.hat: 'beanie',
     CosmeticSlot.accessory: 'scarf',
-    CosmeticSlot.top: 'cardigan',
-    CosmeticSlot.outfit: 'padding',
+    // 26번 4-5단계(G12): the padded vest is a top; an apron goes over it.
+    CosmeticSlot.top: 'padding',
+    CosmeticSlot.outfit: 'darkapron',
     CosmeticSlot.shoes: 'sneakers',
     CosmeticSlot.bottom: 'skirt',
   };
@@ -306,15 +307,18 @@ void main() {
               d.id != 'ballcap' &&
               (d.slot.category != CosmeticCategory.avatar ||
                   PixelSprites.avatarArtReady('girl', d.slot, d.id)));
+      // 26번 4-5단계: locked items are tried on in the shop's 꾸미기 tab.
       await tester.pumpWidget(MaterialApp(
-          home: Scaffold(body: WardrobePanel(controller: c, access: access))));
+          home: Scaffold(
+              body: WardrobePanel(
+                  controller: c, access: access, mode: WardrobeMode.shop))));
       await tester.tap(find.byKey(const Key('cosmetic-slot-hat')));
       await tester.pump();
       expect(find.byKey(const Key('preview-ballcap')), findsNothing);
       await tester.ensureVisible(find.byKey(const Key('preview-chefhat')));
       await tester.tap(find.byKey(const Key('preview-chefhat')));
       await tester.pump();
-      expect(find.text('미리보기 · 미장착'), findsOneWidget);
+      expect(find.text('입어 보는 중'), findsOneWidget);
       final painter = tester
           .widget<CustomPaint>(find.byKey(const Key('preview-avatar-face')))
           .painter! as AvatarPainter;

@@ -59,6 +59,11 @@ class PixelSprites {
     'volume',
     'save',
     'menu',
+    // The wardrobe's day/night tiles (25번 16번, 26번 4-5단계).
+    'time_scenetime',
+    'time_day',
+    'time_night',
+    'time_clock',
   ];
 
   /// Effects in assets/images/fx: a tiny bungeoppang for tap particles
@@ -97,6 +102,9 @@ class PixelSprites {
   /// 13번, lib/ui/lock_overlay.dart), the skill window's '+' button, and the feature introduction cards'
   /// pictures (160x120, 25번 22번; until drawn the card shows an icon).
   static const uiNames = ['wardrobe_bg', 'offline', 'title_fish', 'lock_badge',
+    // The wardrobe preview's room without the counter (1440x864, 25번 11번,
+    // 26번 4-5단계); wardrobe_bg stays for the cooking scene.
+    'wardrobe_room',
     // The skill window's round '+' level-up button, on and off (64x64, 25번 19번).
     'levelup_plus', 'levelup_plus_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
@@ -105,6 +113,10 @@ class PixelSprites {
   /// Weekly challenge banners in assets/images/event (160x48), one per
   /// season of weekly_config.dart.
   static const seasonBanners = ['spring', 'summer', 'autumn', 'winter'];
+
+  /// The wardrobe's lamp tiles: the whole post lamp (64x96,
+  /// `stall/lamp_<colour>.png`, 25번 16번).
+  static const lampTileColours = ['amber', 'rose', 'mint', 'lilac'];
 
   /// Coloured glass for the stall post lamps (`stall/postlamp_<colour>.png`,
   /// the same 9x14 as stall/postlamp.png).
@@ -258,6 +270,15 @@ class PixelSprites {
     }
     for (final colour in postlampColors) {
       yield _stallPartPath('postlamp_$colour');
+    }
+    for (final colour in lampTileColours) {
+      yield _stallPartPath('lamp_$colour');
+    }
+    yield _cosmeticIconPath('none');
+    for (final d in cosmeticDefinitions) {
+      if (d.slot.category == CosmeticCategory.avatar) {
+        yield _cosmeticIconPath(d.id);
+      }
     }
     yield* fxNames.map((n) => 'assets/images/fx/$n.png');
     yield* uiNames.map((n) => 'assets/images/ui/$n.png');
@@ -533,6 +554,24 @@ class PixelSprites {
 
   /// One of [fxNames].
   static ui.Image? fx(String name) => _images['assets/images/fx/$name.png'];
+
+  static String _cosmeticIconPath(String id) =>
+      'assets/images/cosmetic_icons/$id.png';
+
+  /// The wardrobe tile icon of avatar item [id] (64x64, both characters;
+  /// 26번 4-5단계, G5): the 'none' hanger for the take-off items, null
+  /// when not drawn.
+  static ui.Image? cosmeticIcon(String id) => _images[_cosmeticIconPath(
+      const {'nohat', 'noapron', 'noacc'}.contains(id) ? 'none' : id)];
+
+  /// The wardrobe tile picture of a stall item when it has its own (lamps:
+  /// the whole post lamp; day/night: an icon), else null.
+  static ui.Image? stallTile(CosmeticDefinition d) => switch (d.slot) {
+        CosmeticSlot.lamp => _images[_stallPartPath(
+            'lamp_${d.id == defaultCosmetics[CosmeticSlot.lamp] ? 'amber' : d.id.substring(0, d.id.length - 'lamp'.length)}')],
+        CosmeticSlot.time => icon('time_${d.id == 'night_time' ? 'night' : d.id}'),
+        _ => null,
+      };
 
   /// One of [uiNames].
   static ui.Image? screenArt(String name) =>
