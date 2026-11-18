@@ -169,6 +169,15 @@ def validate(data, catalog):
             not any(k in row for row in data['mastery_difficulties']
                     for k in ('batter_target_ms', 'batter_tolerance_permille')), '삭제한 시간·센서 설정(24번 5단계)')
     require(manual['checkpoint_ms'] > 0 and manual['filling_inputs'] > 0, '제작 입력/저장 간격')
+    # 26번 4단계: 결과 등급 '완벽'(보여 주기 전용, 판정·판매는 그대로). 성공 기준 안쪽이어야 한다.
+    grade = data['cooking_grade']
+    require(set(grade) == {'perfect_min_coverage_permille', 'perfect_max_amount_permille', 'perfect_doneness_index'},
+            '결과 등급 설정 키')
+    require(manual['batter_min_coverage_permille'] <= grade['perfect_min_coverage_permille'] <= 1000 <=
+            grade['perfect_max_amount_permille'] <= manual['paint_overflow_amount_permille'],
+            '완벽 기준(덮은 면적·양)은 성공 기준 안쪽')
+    require(all(row['success_doneness_min_index'] <= grade['perfect_doneness_index'] <= row['success_doneness_max_index']
+                for row in data['mastery_difficulties']), '완벽 익힘은 성공 익힘 범위 안')
     sale = data['ordinary_sale']
     require(sale['customer_arrival_interval_ms'] > 0 and
             0 <= sale['special_order_basis_points'] <= 10000 and

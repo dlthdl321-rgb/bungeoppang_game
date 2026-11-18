@@ -133,6 +133,7 @@
 | DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
 | JSON 저장 형식 | `schema` 8. 1~7을 읽고 8로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 8만 받음) |
 | schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
+| 결과 등급 (26번 4단계) | 저장 변경 없음: 등급은 화면에서 계산하고, 주문 손님 반응 연결은 메모리에만 둠 |
 | 제작 세션 `session` (CookingSession schema 1, 24번 5단계 G1) | 짤주머니 세 단계의 칠한 양을 **추가 필드**로 저장: `firstBatterCoverage`·`firstBatterAmount`, `fillingCoverage`·`fillingAmount`, `secondBatterCoverage`·`secondBatterAmount`(permille, 단계를 마치면 둘 다 있음, 0 < 덮음 ≤ 1000, 덮음 ≤ 양 ≤ 9000). 예전 `firstBatterMs`·`secondBatterMs`·`fillingDurationMs`는 읽기만 하고 새로 쓰지 않음(같은 단계에 두 종류가 함께 있으면 거절). 단계 완료 = 둘 중 하나가 있음. 예전 저장·진행 중 세션은 그대로 이어서 하고, ms로 끝난 반죽 단계는 손기술 실패. Workshop schema 6·`user_version` 4·생산 저널 형식 변경 없음 |
 | schema 6 (2026-11-11) | 첫 실행 안내 `tutorial`: `cook` → `sell` → `done`, 또는 `skipped`. 새 설치는 `cook`. schema 5 이하는 `done`으로 올리고, 그 버전에 `tutorial`이 있으면 거절. 판매 기록이 있는데 `cook`/`sell`이면 거절 |
 | schema 7 (2026-11-18, 26번 5-1단계) | 손님 시계 `regularClock`·`namedClock`(`{nextAt: UTC ms 또는 null, seed, draws}`)과 직전 네임드 `lastNamedVisitor`. 7에 셋 중 하나라도 없거나 6 이하에 있으면 거절. 닫힌 가게·안내 중인데 `nextAt`이 있거나, `nextAt`이 정산 시각 + 최대 간격보다 멀면 거절. `lastNamedVisitor`는 만난 손님만. 6 이하 이전: 시드는 진행 ID(`grid.runId`)에서 만들고 시계는 멈춘 채(null) 두어 불러온 뒤 첫 정산 시각부터 셈, `lastNamedVisitor`는 관계 기록의 가장 늦은 방문. `arrivalMs`는 안내 중 손님 간격용으로 그대로 |
@@ -618,7 +619,7 @@
 | 상태 | 스페셜 붕어빵(큰 틀) | 숙련된 붕어빵(6구) |
 | --- | --- | --- |
 | 영업 준비 중 | 빈 틀, 맛 선택, '스페셜 붕어빵 제작 시작'(연습만). '+붕어빵력' 버튼 없음 | 빈 굽는 판 그림만(붕어빵·칸 글자·면·터치 없음) |
-| 영업 중, 평소 | 틀 없이 떠 있는 큰 붕어빵(`FloatingFishPainter`). 탭하면 `clickerTap` → `tap`(붕어빵력 +`tapRate`)과 탭 효과(눌림·작은 붕어빵 부스러기·'+N', 모션 줄이기면 멈춘 '+N'만, 진동 설정 시 80ms 간격 진동). 1초에 `server_validation.max_taps_per_second`(15)번을 넘는 탭은 효과만 보이고 '+N'·붕어빵력·탭 수 없음. 새 주문이 와도 틀을 다시 보이지 않음(예전 `orderFlash` 2.5초 삭제) | 지금처럼 동작 |
+| 영업 중, 평소 | 틀 없이 떠 있는 큰 붕어빵(`FloatingFishPainter`). 둘레 반짝이 6곳은 따로 그리는 층(`TwinklingSparkles`, `FloatingFishPainter.sparkles`)이 1.2초 주기로 서로 다른 박자에 나타났다 사라짐(26번 4단계 F11, 아래 '반짝이'), 모션 줄이기면 멈춘 한 장면. 탭하면 `clickerTap` → `tap`(붕어빵력 +`tapRate`)과 탭 효과(눌림·작은 붕어빵 부스러기·'+N', 모션 줄이기면 멈춘 '+N'만, 진동 설정 시 80ms 간격 진동). 1초에 `server_validation.max_taps_per_second`(15)번을 넘는 탭은 효과만 보이고 '+N'·붕어빵력·탭 수 없음. 새 주문이 와도 틀을 다시 보이지 않음(예전 `orderFlash` 2.5초 삭제) | 지금처럼 동작 |
 | 영업 중, 주문 제작 중 | 손님 창·카운터의 주문 제작 동안만 틀과 단계 조작. 클리커 탭 거부(`tap`도 세션 중 무시). 결과를 닫으면 클리커로 | 멈춤(칸 터치 없음) |
 
 명령에서도 막음: `startPractice`는 영업 중(새 영업일 이어서 영업 전 포함) '연습 제작은 영업 준비 중에만 할 수 있어요.', `openBusiness`는 스페셜 붕어빵 세션(결과 대기 포함)이 있으면 '스페셜 붕어빵을 다 만든 뒤 영업을 시작해요.'(이어서 영업도 같음). `startOrderProduction`은 영업 중 그대로 허용. 클리커 탭 상한은 컨트롤러의 단조 시계로 센 최근 1초 기록(저장하지 않음)이며, 구형 `tap()` 경로 자체에는 상한이 없음. 저장 형식(schema 6) 변경 없음.
@@ -637,7 +638,7 @@
 | 확정 뒤 (G2) | 이번 세션의 칠한 칸 모양을 메모리에 남겨 뚜껑을 닫을 때까지 보임(`paintedMoldFor`). 저장하지 않으므로 앱을 다시 켜면 단계 그림(`moldFor`) 전체로 보임 |
 | 짤주머니 | 세 단계 모두 손가락을 따라감. `cook/piping_bag_<반죽·맛>[_squeeze].png`(128×192, 25번 2번)의 꼭지 끝 내용물 점 (64, 188)이 손가락, 화면 폭 = min(조작 상자 폭×0.3, 64)(보통 화면은 64, 주머니 자체 약 43×92), 오른쪽 위로 0.45rad 기울임(+움직임 기울기). 손가락이 붕어빵 마스크 칸 위면 짜는 중 그림, 밖이면 빈 그림 |
 | 안내 글(`piping-amount`) | 틀 아래쪽 가운데. 아래끝 = 무대 아래 '제작 취소' 버튼(누르는 영역 48) 윗변 − 4(필요할 때만 올림, `captionLift`, 24번 6단계에서 버튼과 겹치던 것을 고침). 대기 '틀 위를 문질러 반죽을 부어 주세요' / '틀 위를 문질러 속을 짜 주세요'. 반죽 칠하는 중 '반죽 덮음 85% · 양 112% · 손을 떼면 마무리'(G5), 속 '속 양 72% · 손을 떼면 마무리'. 130% 초과면 끝에 ' · 넘쳤어요'. 위 캡션 '팥 연습 · 반죽 목표 90% 이상 덮기 · 130% 넘으면 넘침' |
-| 결과 글 (G6) | '완성 · 미디엄 · 반죽 넘침' / '… · 반죽 부족'(`batterFailureLabel`, 넘침이 우선, `mold-result-caption`) |
+| 결과 글 (G6 → 26번 4단계) | 등급 큰 글씨(`mold-result-grade`)와 칭찬·이유 한 줄(`mold-result-caption`). 이유는 `batterFailureLabel`(넘침이 우선)에서 '반죽이 넘쳤어요'·'반죽이 조금 모자랐어요'. 아래 '결과 등급·연출' |
 | 모션 줄이기 | 짤주머니가 손가락을 따라가는 것은 직접 조작이라 그대로. 움직임에 따라 짤주머니가 기우는 연출만 끔. 판정 같음 |
 | 진동(설정 켜짐) | 단계 확정 때 `selectionClick` 1회, 한 붓질에서 130%를 처음 넘는 순간 `mediumImpact` 1회 |
 | 판정 (DEC-031) | 반죽 두 번 각각 덮은 면적 ≥ `batter_min_coverage_permille`(900) 그리고 양 ≤ `paint_overflow_amount_permille`(1300) + 익힘 `success_doneness_min_index`~`max_index`. 속은 판정 안 함(양·넘침만 표시). 예전 길게 누르기로 끝난 반죽 단계(저장의 `firstBatterMs`·`secondBatterMs`)는 손기술 실패(G1) |
@@ -658,6 +659,36 @@
 | 모션 줄이기 | 틀이 따라 돌지 않고 뒤집힘 연출(회전·들림)도 없음. 고리 진행·안내 글·`flip_ms` 기다림·판정은 같음 |
 | 진동(설정 켜짐) | 다 그린 순간 `selectionClick` 1회 |
 | 저장 | 변경 없음. 각도는 저장하지 않으며 `CookingSession`(schema 1)·Workshop schema 6 그대로 |
+
+**결과 등급·연출 (26번 4단계, 판정 DEC-031~034·040은 그대로):** 결과 화면(`CookingPhase.result`)은 등급을 보여 주기만 합니다. 손기술 판정(`evaluateCookingResult`)·숙련·재고·판매값은 바뀌지 않습니다. 계산은 `lib/cooking_result_rules.dart` `cookingGrade`, 화면은 `lib/ui/cooking_result_effects.dart` `CookingResultView`, 결과 그림은 `lib/ui/workshop_mold_stage.dart` `ResultLook`·`WorkshopMoldArt`.
+
+| 등급 | 조건(위에서부터) | 큰 글씨 | 칭찬·이유 | 소리 | 화면 효과 | 진동 | 주문 손님 반응 | 결과 그림 |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| 완벽 | 손기술 성공 + 반죽 두 번 모두 덮음 ≥ `perfect_min_coverage_permille`(950)·양 ≤ `perfect_max_amount_permille`(1150) + 익힘 = `perfect_doneness_index`(2, 미디엄) | 완벽해요! | 겉은 바삭, 속은 촉촉! | `result_perfect`(바삭 + 작은 종 두 번) | 큰 글씨 300ms 튀어 오름 + 반짝 8 + 김 3줄 + 윤기 한 번 지나감 | `heavyImpact` | 와, 이건 사진 찍고 싶을 만큼 예뻐요! | 미디엄 색 + 윗면 윤기 |
+| 성공 | 손기술 성공 | 잘 구웠어요! | 익힘별 '부드럽게/알맞게/바삭하게 잘 익었어요' | `result_good`(작은 바삭 + 종 한 번) | 작게 튀어 오름 + 반짝 4 + 김 2줄 | `mediumImpact` | 맛있어 보여요. 잘 먹을게요! | 익힘별 색 |
+| 아쉬움 | 손기술 실패, 익힘은 성공 범위(1~3) — 반죽 부족·넘침, 예전 길게 누르기 저장 | 아깝다! | 반죽이 조금 모자랐어요 / 반죽이 넘쳤어요 / 조금만 더 하면 돼요 | `result_near`(부드러운 '퐁') | 김 1줄 | `lightImpact` | 그래도 맛있을 것 같아요. | 익힘별 색 + 넘침이면 반죽 방울 3개(`fx/overflow_batter`) |
+| 실패 | 익힘 0(덜 익음) 또는 4(타버림) | 다음엔 더 잘할 수 있어요 | 덜 익었어요 / 타버렸어요 | `result_fail`('툭' + 짧은 치익) | 타버림만 회색 연기 2 | 없음 | 괜찮아요, 천천히 해 주세요. | 덜 익음 창백 / 타버림 진한 갈색 |
+
+| 항목 | 규칙 |
+| --- | --- |
+| 익힘 색 (`ResultLook.filter`) | 덜 익음 채도 60%·밝기 +15%(+38), 부드러움 +6%(+15), 미디엄 그대로, 바삭함 R×1.02·G×0.88·B×0.66, 타버림 R×0.55·G×0.45·B×0.38. 큰 틀 결과 그림만(6구·재고 아이콘은 그대로) |
+| 한 번만 | 소리·진동·효과는 결과마다 한 번(`CookingResultView.celebrated`에 세션 id, 메모리). 다시 그리거나 돌아와도 다시 울리지 않음 |
+| 효과 | `AnimationController` 1개 1400ms, 입자 상한 12(`maxParticles`). 반짝이는 아래 '반짝이'와 같은 그림 |
+| 모션 줄이기 | 설정 `reduceMotion` 또는 시스템 '애니메이션 제거'(`MediaQuery.disableAnimations`)면 효과·튀어 오름 없이 글·소리·진동만 |
+| 소리·진동 설정 | 효과음 끔·음량 0이면 소리 없음(`SoundPolicy.play`), 진동 끔이면 진동 없음 |
+| 주문 손님 반응 | `startOrderProduction`이 (세션 id, 주문 id)를 메모리에 기억(`_orderProductionFor`, 저장 안 함). 결과 때 그 손님이 줄에 있으면 결과 아래 말풍선 '이름: 대사'(`mold-result-reaction`, `WorkshopController.resultReaction`). 대사는 `config/customer_content.json` `common_dialogues`의 `result_perfect·result_good·result_near·result_fail`. 연습·앱 재시작 뒤·손님이 떠난 뒤엔 없음. 4-1단계가 손님 그림 위 말풍선으로 옮길 예정 |
+| 저장 | 변경 없음. Workshop schema·`CookingSession` schema 1 그대로 |
+
+**결과 등급 설정값(`config/development_balance.json` `cooking_grade`, 개발용 임시값):** `perfect_min_coverage_permille` 950, `perfect_max_amount_permille` 1150, `perfect_doneness_index` 2. 검사(`tools/development_balance.py`, `DevelopmentBalance.fromJson`): `batter_min_coverage_permille` ≤ 완벽 덮음 ≤ 1000 ≤ 완벽 양 ≤ `paint_overflow_amount_permille`, 모든 난이도의 `success_doneness_min_index` ≤ 완벽 익힘 ≤ `max_index`. 서버는 읽지 않음(`metadata.revision` 그대로).
+
+**반짝이 (26번 4단계 F11):** 옛 `fx/sparkle.png`(21×21, 진한 외곽선 'UFO 같음')를 지우고 `lib/ui/sparkle_art.dart`로 바꿈. 떠 있는 큰 붕어빵·결과 효과·맑은 하늘 날씨(`Weather.sparkle`)·`BakeTarget`의 `fish-sparkles`가 모두 같은 반짝이를 씀.
+
+| 항목 | 값 |
+| --- | --- |
+| 안 (`SparkleArt.style`) | A `star`(기본): 25번 12번 생성본 3프레임 `fx/sparkle_1~3.png`(32×32, 외곽선 없음, 흰 가운데 → 꿀색 #FDBE38) / B `glow`: 코드로 그린 꿀색 광채 / C `steam`: 김 한 줄 + 빛 알갱이. 비교 그림 `1_app_development/build/f11_sparkle_options.png`(골든 `test/goldens/sparkle_options.png` 복사본). 사용자 선택 전까지 A |
+| 한 번 반짝임 | `SparkleArt.cycleMs` 1200ms: 0~20% 프레임1(처음 8% 서서히 나타남) → 20~45% 프레임2 → 45~70% 프레임3(끝 10% 사라짐) → 70~100% 쉼. 큰 붕어빵 6곳은 0.37주기씩 어긋난 박자 |
+| 멈춤 | 모션 줄이기·테스트(`TwinklingSparkles.animate = false`, `test/flutter_test_config.dart`)면 `stillPhase` .32(가장 큰 프레임2)로 멈춤 |
+| 그리기 | 초당 20번만 다시 그림. 큰 붕어빵 크기: 화면 짧은 변의 24%/16%(번갈아). 날씨는 장면 9px |
 
 **제작 설정값(`config/development_balance.json` `manual_cooking`, 개발용 임시값, 24번 6단계 기준):**
 
@@ -709,7 +740,7 @@
 
 **상점·꾸미기(Workshop):** 파는 것은 아바타 카탈로그(`avatar_catalog`)뿐. 그 밖의 구형 꾸미기(화로·배경·장식·등불·무늬·토핑)는 가지고 있을 때만 보임(`CosmeticMenuAccess.listed`). 품목이 하나도 없는 상점 탭(지금은 테마)은 숨기고 충전 탭은 항상 둠. 충전 탭에는 구형 클리커 부스트 줄을 두지 않음(`GoldChargeTab(legacyBoost: false)`). 로그인 전에는 '로그인하면 충전할 수 있어요', 상품을 불러오는 동안 가격 자리에 '불러오는 중'.
 
-골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%), 그리고 25번 그림 적용 때 더한 `workshop_home_filling_390x844`(속을 짜는 도중, 넘침·짜는 중 짤주머니)와 `workshop_home_griddle_390x844`(영업 중 1·4번 칸만 굽는 중). 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄이 카운터 위, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 26번 2단계에서 `workshop_counter_*` 3장과 `workshop_home_*` 13장을 모두 다시 만듦(이유: Lv.1 새 상태라 초당·클릭당 숫자가 숨고 하단 메뉴 '스킬'에 빗금 자물쇠, 숙련 전 굽는 판에 공통 잠금과 남은 숙련 글이 덮임. `griddle` 골든은 숙련 상태라 칸 그대로, 소개 카드는 본 것으로 둠). 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
+골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%), 그리고 25번 그림 적용 때 더한 `workshop_home_filling_390x844`(속을 짜는 도중, 넘침·짜는 중 짤주머니)와 `workshop_home_griddle_390x844`(영업 중 1·4번 칸만 굽는 중), 26번 4단계에서 더한 `workshop_home_result_<perfect·good·near·fail>_390x844`(결과 등급별, 모션 줄이기라 효과 없이 글·익힘 색·넘침 방울·윤기)와 반짝이 시안 `sparkle_options.png`(`test/sparkle_options_golden_test.dart`). 26번 4단계 반짝이 교체로 `workshop_home_open_*`·`workshop_home_griddle_390x844`·`workshop_counter_*`·`home_*`(맑은 하늘 날씨·`BakeTarget`)을 다시 만듦. 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄이 카운터 위, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 26번 2단계에서 `workshop_counter_*` 3장과 `workshop_home_*` 13장을 모두 다시 만듦(이유: Lv.1 새 상태라 초당·클릭당 숫자가 숨고 하단 메뉴 '스킬'에 빗금 자물쇠, 숙련 전 굽는 판에 공통 잠금과 남은 숙련 글이 덮임. `griddle` 골든은 숙련 상태라 칸 그대로, 소개 카드는 본 것으로 둠). 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
 
 **첫 실행 안내** (`lib/workshop_tutorial.dart` 단계 계산, `lib/ui/workshop_guide.dart` `WorkshopTutorialOverlay`): 홈 위에 겹친 층. 대상 위젯을 꿀색 고리로 두르고 작은 카드(“첫 영업 안내 N/7”, 한 줄 설명, '건너뛰기')를 띄움. 카드만 터치를 받고 게임은 그대로 조작됨. 저장하는 것은 `tutorial` 값뿐이고 단계는 매 프레임 상태에서 계산.
 
@@ -909,7 +940,7 @@
 | 얼굴 부분 | `parts/<character>_<front·side>_<eyes·mouth>_<frame>.png` (위치는 `avatarPartPivots`, `avatarFaceAnchors`) |
 | 스킬 | `skills/tap_N.png`, `skills/auto_N.png` |
 | 아이콘 | `icons/<name>.png` (이름을 `iconNames`에 등록) |
-| 효과 | `fx/minifish, sparkle, fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
+| 효과 | `fx/minifish`, 반짝임 3프레임 `fx/sparkle_1~3`(32×32, 25번 12번, `tools/apply_25_art.py --only sparkles`, 26번 4단계), `fx/fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
 | 짤주머니 | `cook/piping_bag_<batter·redbean·custard·cocoa>[_squeeze].png`(128×192, 손가락 점 (64, 188), `pipingPastes`) |
 | 속 칠 질감 | `mold/paint_<redbean·custard·cocoa>.png`(256×256 불투명 심리스, `tools/apply_25_art.py --only textures`로 v2 생성본을 줄이고 이음매 보정) |
 | 화면 장식 | `ui/wardrobe_bg, offline, title_fish`, 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120 예정, 25번 22번, 없으면 아이콘) |
@@ -929,6 +960,7 @@
 | purchase | `audio/purchase.wav` | 구매 |
 | levelUp | `audio/levelup.wav` | 레벨업·환생 |
 | reward | `audio/reward.wav` | 그 밖의 보상, 미션 달성, 돌아오기 환영 |
+| resultPerfect·resultGood·resultNear·resultFail | `audio/result_<perfect·good·near·fail>.wav` (44.1kHz 모노, 0.6~1.3초, 최고 −3dBFS 이하, 서로 크기 차 2dB 안) | 스페셜 붕어빵 결과 등급(26번 4단계). '진짜 물건 소리 + 살짝 귀엽게'(바삭·작은 가게 종·퐁·툭+치익), `tools/generate_sounds.py` `result_sounds()` 합성(CC0). 녹음 소리 후보는 25번 '필요한 소리' |
 | 배경 음악 | `audio/bgm_<mood>.wav` (24초 반복) | day, spring, dusk, rain, snow, night |
 
 - 기본 볼륨은 효과음 70, 음악 40입니다.

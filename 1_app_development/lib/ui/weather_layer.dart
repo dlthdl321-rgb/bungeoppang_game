@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
+import 'sparkle_art.dart';
 
 /// What falls or twinkles over each background (stage 14, B5). Drawn in
 /// code over the fixed background: swapping background frames would make
@@ -163,27 +164,20 @@ class WeatherPainter extends CustomPainter {
           if (on) dot(x, y, 1, 1, const Color(0xffe8f27a));
         }
       case Weather.sparkle:
-        final sprite = PixelSprites.fx('sparkle');
+        final art = PixelSprites.fx(SparkleArt.frames[1]) != null ||
+            SparkleArt.style != SparkleStyle.star;
         for (var i = 0; i < 6; i++) {
           final x = 8 + next() * 164, y = 10 + next() * 140;
           final phase = next() * 6.3;
           final glow = math.sin(t * .9 + phase);
-          if (glow < .3) continue;
-          if (sprite != null) {
-            // Small at half glow, the full 7x7 sparkle at its peak.
-            final d = glow > .7 ? 7.0 : 3.0;
-            canvas.saveLayer(
-                null, Paint()..color = Color.fromRGBO(0, 0, 0, glow));
-            PixelSprites.draw(
-                canvas,
-                sprite,
-                Rect.fromCenter(
-                    center: Offset(x.floorToDouble(), y.floorToDouble()),
-                    width: d,
-                    height: d));
-            canvas.restore();
+          if (art) {
+            // The no-outline twinkle (26번 4단계 F11): one twinkle per
+            // turn of the old glow wave, 9 scene pixels at its largest.
+            SparkleArt.paint(canvas, Offset(x.floorToDouble(), y.floorToDouble()), 9,
+                (t * .9 + phase) / (2 * math.pi));
             continue;
           }
+          if (glow < .3) continue;
           final color = Color.fromRGBO(254, 241, 214, glow);
           dot(x, y, 1, 1, color);
           if (glow > .7) {

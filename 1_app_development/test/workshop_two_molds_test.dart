@@ -173,6 +173,8 @@ void main() {
       await tester.pump();
       expect(key('workshop-clicker'), findsOneWidget);
       expect(key('floating-fish'), findsOneWidget);
+      // 26번 4단계 F11: its sparkles are a separate twinkling layer.
+      expect(key('twinkling-sparkles'), findsOneWidget);
       expect(key('idle-mold'), findsNothing);
       expect(key('workshop-mold-action'), findsNothing);
       expect(find.text('스페셜 붕어빵 제작 시작'), findsNothing);

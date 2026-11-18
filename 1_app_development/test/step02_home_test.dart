@@ -149,11 +149,16 @@ void main() {
       await tester.pump(const Duration(milliseconds:1100));await tester.pump();
       expect(c.state.session!.phase,CookingPhase.cooking);
       await step(CookingPhase.result);
-      // The result names why the batter failed (G6), e.g. '반죽 부족'.
+      // The result shows its grade and names why the batter failed (G6,
+      // 26번 4단계: '반죽이 조금 모자랐어요').
+      final session=c.state.session!;
+      final grade=cookingGrade(c.config,session,difficulty:c.difficulty(session.flavor));
+      final variant=evaluateCookingResult(c.config,session,difficulty:c.difficulty(session.flavor)).variant;
+      expect(find.text(cookingGradeTitle(grade)),findsOneWidget);
       final caption=tester.widget<Text>(find.byKey(const Key('mold-result-caption'))).data!;
-      expect(caption,startsWith('완성 · '));
-      final why=batterFailureLabel(c.config,c.state.session!);
-      expect(caption,why==null ? isNot(contains('반죽')) : endsWith(' · $why'));
+      expect(caption,cookingGradeLine(c.config,session,grade,variant:variant));
+      final why=batterFailureLabel(c.config,session);
+      if(why!=null&&grade==CookingGrade.near) expect(caption,contains('반죽'));
       await tester.tap(find.text('보관'));await tester.pump();
       expect(c.state.session,isNull);
       expect(account.state.buns,oldBuns);

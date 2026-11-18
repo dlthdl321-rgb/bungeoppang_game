@@ -1,7 +1,8 @@
 """Synthesizes every sound in assets/audio/ from code (no samples, no downloads).
 
 Run from the project root:  python tools/generate_sounds.py
-Output is deterministic (fixed random seed), 22.05 kHz mono 16-bit WAV.
+Output is deterministic (fixed random seed), 22.05 kHz mono 16-bit WAV
+(the four bake-result sounds, result_*.wav, are 44.1 kHz).
 The generated audio is dedicated to the public domain (CC0 1.0) by the project.
 """
 import math
@@ -89,6 +90,9 @@ def main():
     # each stall background to one). The day loop is the original BGM.
     for mood in MOODS:
         write(f'bgm_{mood.name}.wav', bgm_loop(mood), .5)
+
+    # Bake results (26번 4단계): 44.1 kHz, see result_sounds().
+    result_sounds()
 
 
 class Mood:
@@ -191,6 +195,110 @@ def bgm_loop(mood, seconds=24):
     loop[:fade] *= np.linspace(0, 1, fade)
     loop[-fade:] *= np.linspace(1, 0, fade)
     return loop
+
+# ------------------------------------------------ bake results (26번 4단계)
+# Real-object sounds with a little cuteness (S46-Q4): crust crackle, a
+# small shop bell, a soft 'pop', a dull 'thud' with a short hiss. Mono
+# 44.1 kHz, at most 1.5 s, sound from the first sample, peak -3 dBFS, and
+# the four within 2 dB of each other (RMS over the part above -40 dB).
+RESULT_RATE = 44100
+PEAK = 10 ** (-3 / 20)
+
+
+def result_sounds():
+    r = np.random.default_rng(20261118)
+    rate = RESULT_RATE
+
+    def ts(seconds):
+        return np.arange(int(rate * seconds)) / rate
+
+    def decay(n, seconds, attack=.002):
+        e = np.exp(-np.arange(n) / (rate * seconds))
+        a = max(1, int(rate * attack))
+        e[:a] *= np.linspace(0, 1, a)
+        return e
+
+    def place(total, *parts):
+        out = np.zeros(int(rate * total))
+        for at, p in parts:
+            s = int(rate * at)
+            e = min(len(out), s + len(p))
+            out[s:e] += p[:e - s]
+        return out
+
+    def bell(freq, seconds, level=1.0):
+        # Small shop bell: inharmonic partials, the high ones die first.
+        x = ts(seconds)
+        partials = [(1, 1, 1), (2.76, .5, .45), (5.40, .25, .25), (8.93, .12, .12)]
+        y = sum(a * np.sin(2 * math.pi * freq * k * x) * decay(len(x), seconds * d * .5)
+                for k, a, d in partials)
+        return level * y
+
+    def crackle(seconds, count, level=1.0):
+        # Crisp crust: many tiny high clicks, thinning out.
+        n = int(rate * seconds)
+        out = np.zeros(n)
+        for _ in range(count):
+            at = int(abs(r.normal(0, n / 3.2))) % n
+            m = int(rate * r.uniform(.002, .006))
+            click = r.normal(0, 1, m) * decay(m, .0012, attack=.0003)
+            click = np.diff(click, prepend=0)  # high-passed
+            e = min(n, at + m)
+            out[at:e] += r.uniform(.3, 1) * click[:e - at]
+        return level * out
+
+    def pop(start, end, seconds, level=1.0):
+        x = ts(seconds)
+        f = end + (start - end) * np.exp(-x * 30)
+        y = np.sin(2 * math.pi * np.cumsum(f) / rate)
+        return level * y * decay(len(x), seconds / 4, attack=.003)
+
+    def hiss(seconds, level=1.0):
+        n = int(rate * seconds)
+        noise = r.normal(0, 1, n)
+        noise = np.diff(noise, prepend=0) * .6 + noise * .4
+        sw = (1 - np.exp(-np.arange(n) / (rate * .02))) * np.exp(-np.arange(n) / (rate * seconds / 3))
+        return level * noise * sw * (1 + .4 * r.normal(0, 1, n).clip(-1, 1))
+
+    def thud(seconds, level=1.0):
+        x = ts(seconds)
+        f = 70 + 90 * np.exp(-x * 40)
+        body = np.sin(2 * math.pi * np.cumsum(f) / rate) * decay(len(x), .05, attack=.001)
+        knock = np.convolve(r.normal(0, 1, len(x)), np.ones(30) / 30, 'same') * decay(len(x), .015, attack=.0005)
+        return level * (body + 1.5 * knock)
+
+    sounds = {
+        'result_perfect': place(1.3, (0, crackle(.32, 70, .9)), (.06, bell(1568, 1.1, .8)),
+                                (.24, bell(2093, 1.05, .7))),
+        'result_good': place(1.0, (0, crackle(.18, 30, .6)), (.03, bell(1760, .95, .9))),
+        'result_near': place(.6, (0, pop(720, 330, .55, 1.0)), (.05, bell(1175, .5, .25))),
+        'result_fail': place(.8, (0, thud(.35, 1.0)), (.08, hiss(.7, .35))),
+    }
+
+    def loud(y):
+        part = y[np.abs(y) > PEAK * 10 ** (-40 / 20)]
+        return 20 * math.log10(math.sqrt(np.mean(part ** 2)) or 1e-9)
+
+    for name in sounds:
+        y = sounds[name]
+        fade = int(rate * .03)
+        y[-fade:] *= np.linspace(1, 0, fade)
+        sounds[name] = y / (np.max(np.abs(y)) or 1) * PEAK
+    quietest = min(loud(y) for y in sounds.values())
+    for name, y in sounds.items():
+        over = loud(y) - quietest - 1.5
+        if over > 0:
+            y = y * 10 ** (-over / 20)
+        lead = int(np.argmax(np.abs(y) > 1e-3))
+        data = (np.clip(y, -1, 1) * 32767).astype('<i2').tobytes()
+        with wave.open(os.path.join(OUT, f'{name}.wav'), 'wb') as f:
+            f.setnchannels(1)
+            f.setsampwidth(2)
+            f.setframerate(rate)
+            f.writeframes(data)
+        print(f'{name}.wav {len(y) / rate:.2f}s peak {20 * math.log10(np.max(np.abs(y))):.1f} dBFS '
+              f'loudness {loud(y):.1f} dB lead {lead / rate * 1000:.1f} ms')
+
 
 if __name__ == '__main__':
     main()
