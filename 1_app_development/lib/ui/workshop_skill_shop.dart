@@ -113,12 +113,12 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
               Text(_pendingLabel(journal.quote.skillId)),
               Wrap(children: [
                 TextButton(
-                    onPressed: c.purchaseGateway == null || c.purchaseBusy || c.busy
+                    onPressed: c.purchaseGateway == null || c.purchaseBusy || c.inputBusy
                         ? null
                         : () => c.recoverPurchase(c.purchaseGateway!, journal.transactionId),
                     child: const Text('복구')),
                 TextButton(
-                    onPressed: c.purchaseGateway == null || c.purchaseBusy || c.busy
+                    onPressed: c.purchaseGateway == null || c.purchaseBusy || c.inputBusy
                         ? null
                         : () => c.recoverPurchase(c.purchaseGateway!, journal.transactionId, cancel: true),
                     child: const Text('취소 확인')),
@@ -144,7 +144,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
     if (c.purchaseGateway == null) return '인터넷에 연결하면 레벨업할 수 있어요.';
     if (c.purchaseGateway!.authenticatedAccount.isEmpty) return '카카오 로그인 후 레벨업할 수 있어요.';
     if (c.error != null) return c.error;
-    if (c.busy || c.purchaseBusy) return '잠시 뒤에 다시 눌러 주세요.';
+    if (c.inputBusy || c.purchaseBusy) return '잠시 뒤에 다시 눌러 주세요.';
     if (quote == null) return null;
     final lackBuns = quote.buns - buns, lackGold = quote.gold - gold;
     if (lackBuns > BigInt.zero && lackGold > BigInt.zero) {

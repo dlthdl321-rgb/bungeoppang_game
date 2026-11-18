@@ -14,6 +14,7 @@ import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/ui/flip_circle_control.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
+import 'package:todays_bungeoppang/ui/workshop_home_layout.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'widget_test.dart' show mountGame;
@@ -203,6 +204,91 @@ void main() {
     expect(await c.startCell(4), isTrue);
     await tester.pump();
     await shoot(tester, 'griddle_390x844');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  // 26번 4-1단계: 손님이 매대 앞에 서는 새 구도. 빈 매대(배경 + 큰 붕어빵),
+  // 최대 손님 4명(맨 앞 크게 + 뒤 0.8배), 주문 손님 말풍선,
+  // 판매 직후 기쁜 얼굴, 그리고 그림이 덜 들어왔을 때의 예전 구도.
+  Future<void> openWithStock(WorkshopController c, {int stock = 1}) async {
+    await c.openBusiness();
+    await c.command(() => c.state.inventory = c.state.inventory.recordResult(ProductBatch(id: 'one',
+        flavor: 'redbean', variant: 2, quantity: stock, madeOnBusinessIndex: c.state.business.businessIndex), keep: true));
+  }
+
+  for (final size in [const Size(360, 640), const Size(412, 915)]) {
+    testWidgets('빈 매대 골든 ${tag(size)}', (tester) async {
+      final c = await mount(tester, size);
+      await openWithStock(c);
+      await tester.pump();
+      expect(find.byKey(const Key('customer-0')), findsNothing);
+      await shoot(tester, 'empty_${tag(size)}');
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+  }
+
+  testWidgets('최대 손님 골든 390x844', (tester) async {
+    final c = await mount(tester, const Size(390, 844));
+    await openWithStock(c, stock: 0);
+    await c.command(() => c.state.customers
+      ..add(CustomerOrder(id: 'first', customerId: 'anonymous_a', remainingMs: 100000,
+          lines: [CustomerOrderLine(flavor: 'redbean', quantity: 2)]))
+      ..add(CustomerOrder(id: 'second', customerId: 'anonymous_second', remainingMs: 20000,
+          lines: [CustomerOrderLine(flavor: 'redbean', quantity: 1)]))
+      ..add(CustomerOrder(id: 'third', customerId: 'anonymous_third', remainingMs: 100000,
+          lines: [CustomerOrderLine(flavor: 'redbean', quantity: 1)]))
+      ..add(CustomerOrder(id: 'fourth', customerId: 'anonymous_d', remainingMs: 100000,
+          lines: [CustomerOrderLine(flavor: 'redbean', quantity: 3)])));
+    await tester.pump();
+    await shoot(tester, 'guests_max_390x844');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('판매 직후 기쁜 손님 골든 390x844', (tester) async {
+    final c = await mount(tester, const Size(390, 844));
+    await openWithStock(c, stock: 2);
+    await c.command(() => c.state.customers
+      ..add(CustomerOrder(id: 'first', customerId: 'anonymous_first', remainingMs: 100000,
+          lines: [CustomerOrderLine(flavor: 'redbean', quantity: 2)]))
+      ..add(CustomerOrder(id: 'second', customerId: 'anonymous_second', remainingMs: 100000,
+          lines: [CustomerOrderLine(flavor: 'redbean', quantity: 1)])));
+    expect(await c.sellToCustomer('first'), isTrue, reason: '${c.notice} ${c.error}');
+    await tester.pump();
+    expect(find.byKey(const Key('customer-leaving')), findsOneWidget);
+    await shoot(tester, 'sold_390x844');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('주문 제작 결과 손님 말풍선 골든 390x844', (tester) async {
+    CookingResultView.celebrated = null;
+    final c = await mount(tester, const Size(390, 844));
+    await openWithStock(c, stock: 0);
+    await c.command(() => c.state.customers.add(CustomerOrder(id: 'first', customerId: 'anonymous_first',
+        remainingMs: 100000, lines: [CustomerOrderLine(flavor: 'redbean', quantity: 1)])));
+    expect(await c.startOrderProduction('first', 'redbean'), isTrue, reason: '${c.notice} ${c.error}');
+    var s = c.state.session!;
+    s = s.pour(s.token, const PaintAmount(980, 1100));
+    s = s.squeezeFilling(s.token, PaintAmount.even);
+    s = s.pour(s.token, const PaintAmount(970, 1120));
+    s = s.close(s.token);
+    s = s.flip(s.token);
+    final done = s.takeOut(s.token, 15000);
+    await c.command(() => c.state.session = done);
+    await tester.pump();
+    expect(find.byKey(const Key('guest-reaction')), findsOneWidget);
+    expect(find.byKey(const Key('mold-result-reaction')), findsNothing);
+    await shoot(tester, 'reaction_390x844');
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  testWidgets('예전 구도(배경 14장이 다 없을 때) 골든 390x844', (tester) async {
+    WorkshopHomeLayout.enabled = false;
+    addTearDown(() => WorkshopHomeLayout.enabled = true);
+    final c = await mount(tester, const Size(390, 844));
+    await serve(c);
+    await tester.pump();
+    expect(find.byKey(const Key('customer-queue')), findsOneWidget);
+    await shoot(tester, 'old_layout_390x844');
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

@@ -15,7 +15,8 @@ Flutter 앱과 관련된 도구입니다. 원칙적으로 `1_app_development/`�
 | 25번 그림 적용 | `apply_25_art.py` | `1_app_development`에서 `python tools/apply_25_art.py <25_generated 폴더> --preview`. 생성 원본(읽기만)을 줄여 `assets/images/stove_empty`(빈 굽는 판 4종, 원래 화로에 맞춘 배율·위치 `STOVE_FIT`, `--measure`로 다시 잼)·`stove_fish`(원래 화로의 붕어빵만)·`cook/piping_bag_*`·`fx/overflow_*`·`fx/flip_ring*`을 만듦. 미리보기 `build/apply_25_art_preview.png` |
 | 알림 아이콘 적용 | `notification_icon.py` | `1_app_development`에서 `python tools/notification_icon.py <원본 ic_stat_customer.png> --preview`. 25번 21번 생성 원본(읽기만)을 흰색·알파 0/255로 정리해 `android/app/src/main/res/drawable-<dpi>/ic_stat_customer.png`(24~96px)를 만듦. 미리보기 `build/notification_icon_check.png` |
 | 임시 빈 굽는 판(예전) | `empty_griddle.py` | 그린 그림으로 대체됨. 실행하면 `build/stove_empty_temp`에만 씀(에셋을 덮어쓰지 않음). 붕어빵 마스크 함수는 `apply_25_art.py`가 씀 |
-| 행주 윗변 측정 | `towel_top.py` | `1_app_development`에서 `python tools/towel_top.py`. 배경별 빨간 체크 행주 윗변 행을 출력, `NightStallPainter.towelTops`에 옮김 |
+| 행주 윗변 측정 | `towel_top.py` | `1_app_development`에서 `python tools/towel_top.py`. 배경별 빨간 체크 행주 윗변 행을 출력, `NightStallPainter.towelTops`에 옮김. 새 생성 배경(빛·색이 그림마다 다름)은 자동 측정이 맞지 않아 `apply_26_home_art.py`의 `TOWEL_AT_335` 표(손으로 잰 값)를 씀 |
+| 26번 홈 손님·낮춘 배경 적용 | `apply_26_home_art.py` | `1_app_development`에서 `python tools/apply_26_home_art.py ../4_image_generation_results_and_backups/26_feedback_generated --preview`(`--only customers`·`--only backgrounds`, `--measure`). 손님 36장 → `assets/images/customer/<id>_<normal·happy·sad>.png`(256×320, 세 표정 같은 자리), 배경 14장 → `assets/images/bg_low/<id>.png`(335×762, 행주 윗변 y524로 옮김). 미리보기 `build/apply_26_home_art_preview.png`. 25번 6번·20번, 26번 4-1단계 |
 | 화면 캡처 검증 | `preview_*_test.dart` | `1_app_development`에서 `flutter test tools/해당파일.dart` |
 | Android 에뮬레이터 실행 | `run_android_emulator.ps1` | Windows 전용. `1_app_development` 기준 APK 경로 사용 |
 | 카카오 키 해시 계산 | `kakao_key_hash.ps1 -Sha1 "AA:BB:…"` | SHA-1 지문을 카카오 콘솔용 키 해시로 바꿈(23번 7단계, `online_setup.md` 8-2) |

@@ -84,3 +84,7 @@ flutter:
     # Home stage: mold-free backgrounds and the big mold (tools/make_home_stage_art.py).
     - assets/images/bg_clean/
     - assets/images/mold/
+    # 26번 4-1단계: the stall lowered to the towel and the guests standing
+    # at it (tools/apply_26_home_art.py, 25번 필요한 그림 20번·6번).
+    - assets/images/bg_low/
+    - assets/images/customer/
