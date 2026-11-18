@@ -8,7 +8,7 @@ Flutter 앱과 관련된 도구입니다. 원칙적으로 `1_app_development/`�
 | 기획 상태 문서 생성 | `planning_tasks.py` | 저장소 루트에서 `python 1_app_development/tools/planning_tasks.py render` |
 | 효과음 생성 | `generate_sounds.py` | `1_app_development`에서 `python tools/generate_sounds.py`. 효과음 8개(tap·purchase·reward·levelup·result_*)를 44.1kHz 한 계열로 합성하고 크기 차를 2dB 안으로 맞춤 |
 | 배경음악 반복본 만들기 | `prepare_bgm.py` | `1_app_development`에서 `python tools/prepare_bgm.py`. `../7_music/Warm Bungeoppang Stall.mp3`(읽기만)를 끝 3초 교차 페이드·−6dB·OGG로 바꿔 `assets/audio/bgm_warm_stall.ogg`를 씀. `--check`는 이음매 측정(앞뒤 크기 차 ≤3dB, 샘플 차 ≤0.02, 이음매 근처 큰 틈 0). 필요: `pip install --user numpy imageio-ffmpeg` |
-| 녹음 소리를 이음매 없는 반복으로 | `make_seamless_loop.py` | `1_app_development`에서 `python tools/make_seamless_loop.py <받은 파일> --seconds 20`(기본 출력 `assets/audio/sizzle_loop.wav`). 앞뒤 무음 자르기·끝 2초 교차 페이드·크기 −25dB 맞춤·태그 없는 WAV. `--check`로 이음매 검사 |
+| 녹음 소리를 이음매 없는 반복으로 | `make_seamless_loop.py` | `1_app_development`에서 `python tools/make_seamless_loop.py <받은 파일> --seconds 20`(기본 출력 `assets/audio/sizzle_loop.wav`). 구간 고르기(`--start`·`--end`초)·앞뒤 무음 자르기·느린 크기 변화 고르기(`--flatten`초)·끝 2초 교차 페이드(이웃 샘플 차가 가장 작은 곳에서 이음)·크기 −25dB 맞춤·튀는 소리만 −3dBFS로 누름·태그 없는 WAV. `--check`로 이음매 검사. **지금 굽는 소리**는 `python tools/make_seamless_loop.py ../4_image_generation_results_and_backups/26_feedback_generated/sounds/crepe_making_117602_preview.mp3 --start 22.8 --end 41.3 --seconds 16.4 --flatten 2`로 만든 녹음본 |
 | 픽셀 그림 생성 | `draw_pixel_assets.py` | `1_app_development`에서 실행. 기존 에셋을 갱신하므로 변경 내용을 확인 |
 | 아바타 조각·좌표 관리 | `avatar_layers.py` | `1_app_development`에서 `python tools/avatar_layers.py --help` |
 | 원본 이미지 적용 | `apply_extra_art.py`, `concept_*.py` | `3_original_images_and_visual_references`의 원본을 읽고 앱 에셋을 갱신 |
@@ -29,6 +29,6 @@ Flutter 앱과 관련된 도구입니다. 원칙적으로 `1_app_development/`�
 
 저장소 루트에서 `python 1_app_development/tools/development_balance.py`로 단일 JSON 설정을 검증하고14번 문서를 생성합니다. `--check`는 문서 일치만 확인합니다. 게임 실행·밸런스 검수·실제 서버 상품 변경은 하지 않습니다.
 
-굽기 루프 원본은 `python 1_app_development/tools/generate_cooking_sound.py`로 재생성합니다(저장소 루트 기준). 외부 샘플 없는 고정 seed 합성(20초 44.1kHz 원형 합성이라 반복 이음매에 틈이 없음, 26번 4-6단계), CC0이며 실행하면 해당 WAV만 갱신합니다. 오디오 기본값 Dart도 development_balance.py의 생성물입니다.
+지금 굽기 루프(`assets/audio/sizzle_loop.wav`)는 **녹음본**입니다(Freesound 117602 'Crepe Making', CC0, 2026-11-18 적용, 위 `make_seamless_loop.py` 줄의 명령). `python 1_app_development/tools/generate_cooking_sound.py`는 예비용 합성(외부 샘플 없는 고정 seed, 20초 44.1kHz 원형 합성, 26번 4-6단계)으로 남겨 두었으며, 기본 출력으로 실행하면 녹음본을 덮어쓰므로 비교할 때는 `--output`을 다른 곳으로 줍니다. 오디오 기본값 Dart도 development_balance.py의 생성물입니다.
 
 손님 글/인물 원본은 config/customer_content.json, 숫자는 config/development_balance.json입니다. 저장소 루트에서 `python 1_app_development/tools/customer_content.py`로 Dart를 생성하고 `--check`로 일치를 검사합니다. 생성물은 직접 수정하지 않습니다. 앱/테스트 실행 도구가 아닙니다.

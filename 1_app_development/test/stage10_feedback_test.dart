@@ -444,7 +444,7 @@ void main() {
       'purchase': (0.3, 1.0),
       'reward': (0.5, 1.2),
       'levelup': (1.0, 1.5),
-      'sizzle_loop': (19.99, 20.01),
+      'sizzle_loop': (15.0, 25.0),
     };
     for (final e in limits.entries) {
       final bytes = File('assets/audio/${e.key}.wav').readAsBytesSync();

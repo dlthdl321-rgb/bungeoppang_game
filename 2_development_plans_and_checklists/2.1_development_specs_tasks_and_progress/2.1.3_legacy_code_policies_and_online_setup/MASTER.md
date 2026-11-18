@@ -995,8 +995,6 @@
 
 ### 소리 (`lib/game_audio.dart`, `lib/music_config.dart`, `lib/feedback_config.dart`)
 
-| 소리 | 파일 | 언제 |
-| --- | --- | --- |
 | 소리 | 파일 | 언제 | 만든 방법·출처·라이선스 |
 | --- | --- | --- | --- |
 | tap | `audio/tap.wav` (0.12초) | 굽기. 최소 간격 60ms | 따뜻한 빵 손끝 '톡' + 작은 바삭. `tools/generate_sounds.py` 합성, CC0 |
@@ -1004,7 +1002,7 @@
 | reward | `audio/reward.wav` (0.90초) | 그 밖의 보상, 미션 달성, 돌아오기 환영 | 작은 가게 종 '딸랑'. 같은 도구, CC0 |
 | levelUp | `audio/levelup.wav` (1.45초) | 레벨업·환생 | 가게 문 종 '딸랑딸랑' + 동전 쏟아짐. 같은 도구, CC0 |
 | resultPerfect·resultGood·resultNear·resultFail | `audio/result_<perfect·good·near·fail>.wav` (0.6~1.3초) | 스페셜 붕어빵 결과 등급(26번 4단계) | 바삭+종 두 번·바삭+종·'퐁'·'툭'+'치익'. 같은 도구, CC0 |
-| 굽는 소리 | `audio/sizzle_loop.wav` (20초 반복, 44.1kHz 모노 16bit, 약 1.76MB) | 실제 굽기 활동이 있을 때(설정 '굽는 소리', 기본 꺼짐·50%) | 20초 원형 합성(지글 바탕·기름 튀는 '탁탁'·기포 터짐·낮은 웅웅), 끝과 처음이 그대로 이어져 이음매에 틈이 없음. `tools/generate_cooking_sound.py`, CC0. 녹음으로 바꿀 때는 `tools/make_seamless_loop.py`(25번 소리1) |
+| 굽는 소리 | `audio/sizzle_loop.wav` (16.40초 반복, 44.1kHz 모노 16bit, 약 1.45MB, 평균 −25.1dB·최고 −3.0dBFS) | 실제 굽기 활동이 있을 때(설정 '굽는 소리', 기본 꺼짐·50%) | **녹음** 'Crepe Making' — mefrancis13, Freesound 117602 (https://freesound.org/people/mefrancis13/sounds/117602/), **CC0**(표기 의무 없음, 기록용, 라이선스는 소리 페이지에서 확인 2026-11-18). 로그인 없이 받는 공개 고음질 미리듣기 MP3(60초 48kHz 모노, 원본 `4_image_generation_results_and_backups/26_feedback_generated/sounds/`)의 22.8~41.3초를 `tools/make_seamless_loop.py`로 크기 고르기(2초 이동 평균)·끝 2초 교차 페이드·튀는 소리만 −3dBFS로 눌러 이음매 없게 함(25번 소리1). 예비 합성본은 `tools/generate_cooking_sound.py`(CC0, 실행하면 녹음본을 덮어씀) |
 | 배경 음악 | `audio/bgm_warm_stall.ogg` (171.04초 반복, OGG Vorbis q4 스테레오 48kHz, 약 2.3MB) | 모든 배경·시간(분위기 6종이 모두 이 곡) | 'Warm Bungeoppang Stall' — 사용자가 Suno **유료 요금제**로 2026-10-17에 만든 곡(태그 'created=2026-10-17T16:16:48Z', Suno 곡 id `29f264fe-0757-41e8-827f-c31b6b6bab3c`, 원본 `7_music/Warm Bungeoppang Stall.mp3`, SHA-256 `83fadd55…f7fbead3`). 유료 요금제 생성곡이라 상업 앱에 넣을 수 있음(사용자 확인 2026-11-18, S46-Q2). 크레딧 표기 의무 없음. `tools/prepare_bgm.py`가 끝 3초를 처음 3초에 같은 힘으로 겹쳐 이음매를 없애고 −6dB, 태그·표지 제거 |
 
 - 효과음 8개는 한 계열('진짜 물건 소리 + 살짝 귀엽게', S46-Q4·Q5)입니다: 모두 44.1kHz 모노 16bit, 1.5초 이하, 앞 무음 10ms 이하, 최고 −3dBFS 이하, 소리 부분 평균 크기 차 2dB 안(`test/audio_assets_test.dart`). 녹음 소리 후보는 25번 '필요한 소리'.
@@ -1052,7 +1050,7 @@
 | 골든 다시 만들기(의도한 홈 화면 변경 후에만) | `flutter test --update-goldens test/workshop_home_golden_test.dart`(실제 홈), 구형은 `test/home_golden_test.dart` |
 | 서버 가격표 다시 만들기 | `UPDATE_PREMIUM_CATALOG=1 flutter test test/premium_catalog_test.dart` |
 | 효과음 다시 만들기 | `python tools/generate_sounds.py` (효과음 8개, 크기 맞춤까지) |
-| 굽는 소리 다시 만들기 | `python tools/generate_cooking_sound.py` / 녹음 파일로: `python tools/make_seamless_loop.py <파일> --seconds 20` (`--check`로 이음매 검사) |
+| 굽는 소리 다시 만들기 | 지금 녹음본: `python tools/make_seamless_loop.py ../4_image_generation_results_and_backups/26_feedback_generated/sounds/crepe_making_117602_preview.mp3 --start 22.8 --end 41.3 --seconds 16.4 --flatten 2` (`python tools/make_seamless_loop.py assets/audio/sizzle_loop.wav --check`로 이음매 검사). 예비 합성본: `python tools/generate_cooking_sound.py` |
 | 배경음악 다시 만들기 | `python tools/prepare_bgm.py` (원본 `../7_music/Warm Bungeoppang Stall.mp3`를 읽기만), 이음매 검사 `python tools/prepare_bgm.py --check`. 필요: `pip install --user numpy imageio-ffmpeg` |
 | 서버 배포 | `firebase_local.cmd deploy --only "functions,firestore"` (`firebase/` 폴더, [online_setup.md](online_setup.md) 4장) |
 | 에뮬레이터 | `tools/run_android_emulator.ps1` |

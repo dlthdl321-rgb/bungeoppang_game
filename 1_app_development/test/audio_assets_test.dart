@@ -97,11 +97,15 @@ void main() {
     expect(tapSoundMinIntervalMs, 60);
   });
 
-  test('굽는 소리: 20초 44.1kHz, 반복 이음매에 틈·뚝 끊김이 없다', () {
+  test('굽는 소리: 녹음 반복본 15~25초 44.1kHz, 크기 −25dB 안팎·최고 −3dBFS, 이음매에 틈·뚝 끊김이 없다', () {
+    // Recorded crepe sizzle (Freesound 117602, CC0), 2026-11-18.
     expect(cookingLoopAsset, 'audio/sizzle_loop.wav');
     final wav = _Wav.read('assets/$cookingLoopAsset');
     expect(wav.rate, 44100);
-    expect(wav.seconds, closeTo(20, .01));
+    expect(wav.seconds, inInclusiveRange(15, 25));
+    expect(_db(wav.samples), closeTo(-25, 1.5));
+    final peak = wav.samples.map((v) => v.abs()).reduce(math.max);
+    expect(20 * math.log(peak) / math.ln10, lessThanOrEqualTo(-2.9));
     expect(_seamProblems(wav), isEmpty);
   });
 
