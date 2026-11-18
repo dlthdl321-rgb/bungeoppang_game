@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/customer_notifier.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
+import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_arrivals.dart';
@@ -14,19 +15,23 @@ import 'package:todays_bungeoppang/workshop_customers.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'widget_test.dart' show mountGame;
 
-/// 26번 5-1단계: 실제 시간 손님(일반 1~15분·네임드 30분~3시간), 자리 상한,
+/// 26번 5-1단계: 실제 시간 손님(일반 30초~5분 DEC-TBD-fb1-2·네임드 30분~3시간), 자리 상한,
 /// 자정 영업일 넘김, 기다림은 켠 순간부터, 저장 schema 7, 기기 안 알림.
 class FakeNotifier implements CustomerNotifier {
   final scheduled = <List<PlannedNotice>>[];
   var cancels = 0, permissionAsks = 0;
-  bool grant;
-  FakeNotifier({this.grant = true});
+  /// What the next permission request answers, and whether the phone
+  /// allows notices now (starts refused, like a fresh Android 13 install).
+  bool grant, allowed;
+  FakeNotifier({this.grant = true, this.allowed = false});
   @override
   Future<void> schedule(List<PlannedNotice> notices) async => scheduled.add(notices);
   @override
   Future<void> cancelAll() async => cancels++;
   @override
-  Future<bool> requestPermission() async { permissionAsks++; return grant; }
+  Future<bool> requestPermission() async { permissionAsks++; return allowed = grant; }
+  @override
+  Future<bool> hasPermission() async => allowed;
 }
 
 void main() {
@@ -66,11 +71,11 @@ void main() {
         expect(regular, inInclusiveRange(rules.regularMin, rules.regularMax));
         expect(named, inInclusiveRange(rules.namedMin, rules.namedMax));
         expect(rules.intervalOf(ArrivalClock(seed: 77, draws: draw), ArrivalKind.regular), regular);
-        seen.add(regular ~/ 60000);
+        seen.add(regular ~/ 30000);
       }
-      expect(seen.length, greaterThan(10), reason: '1~15분에 고루 퍼짐');
-      expect(rules.regularMin, 60000);
-      expect(rules.regularMax, 900000);
+      expect(seen.length, greaterThan(7), reason: '30초~5분에 고루 퍼짐');
+      expect(rules.regularMin, 30000);
+      expect(rules.regularMax, 300000);
       expect(rules.namedMin, 1800000);
       expect(rules.namedMax, 10800000);
       expect((rules.regularSlots, rules.namedSlots), (3, 1), reason: 'S5-1-Q1 일반 3+단골 1');
@@ -80,20 +85,20 @@ void main() {
       expect(() => ArrivalClock.fromJson({'seed': -1, 'draws': 0, 'nextAt': null}), throwsFormatException);
     });
 
-    test('1분·15분·3시간: 실제 시간으로 오고 일반 3·네임드 1에서 시계가 멈춘다', () async {
+    test('30초·5분·3시간: 실제 시간으로 오고 일반 3·네임드 1에서 시계가 멈춘다', () async {
       final (c, setNow) = await open();
       addTearDown(c.dispose);
       final regularAt = c.state.regularClock.nextAt!, namedAt = c.state.namedClock.nextAt!;
-      expect(regularAt - ms(start), inInclusiveRange(60000, 900000));
+      expect(regularAt - ms(start), inInclusiveRange(rules.regularMin, rules.regularMax));
       expect(namedAt - ms(start), inInclusiveRange(1800000, 10800000));
-      setNow(start.add(const Duration(seconds: 59)));
+      setNow(start.add(const Duration(seconds: 29)));
       await flush(c);
-      expect(c.state.customers, isEmpty, reason: '1분 전에는 아무도 안 옴');
+      expect(c.state.customers, isEmpty, reason: '30초 전에는 아무도 안 옴');
       setNow(at(regularAt));
       await flush(c);
       expect(anonymous(c), 1);
-      expect(c.state.regularClock.nextAt! - regularAt, inInclusiveRange(60000, 900000));
-      setNow(start.add(const Duration(minutes: 15)));
+      expect(c.state.regularClock.nextAt! - regularAt, inInclusiveRange(rules.regularMin, rules.regularMax));
+      setNow(start.add(const Duration(minutes: 5)));
       await flush(c);
       expect(anonymous(c), greaterThanOrEqualTo(1));
       setNow(start.add(const Duration(hours: 3)));
@@ -110,7 +115,7 @@ void main() {
       setNow(freedAt);
       expect(await c.command(() => c.state.customers.removeWhere((o) => o.customerId.startsWith('anonymous_'))), isTrue);
       await flush(c);
-      expect(c.state.regularClock.nextAt! - ms(freedAt), inInclusiveRange(60000, 900000));
+      expect(c.state.regularClock.nextAt! - ms(freedAt), inInclusiveRange(rules.regularMin, rules.regularMax));
       expect(c.state.namedClock.nextAt, isNull, reason: '네임드 자리는 그대로 참');
     });
 
@@ -146,7 +151,7 @@ void main() {
       expect(c.state.customers, isEmpty);
       expect(c.upcomingArrivals(const Duration(days: 1)), isEmpty);
       expect(await c.openBusiness(), isTrue);
-      expect(c.state.regularClock.nextAt! - ms(start.add(const Duration(hours: 5))), inInclusiveRange(60000, 900000),
+      expect(c.state.regularClock.nextAt! - ms(start.add(const Duration(hours: 5))), inInclusiveRange(rules.regularMin, rules.regularMax),
           reason: '다시 열면 연 시각부터 셈');
     });
 
@@ -161,7 +166,7 @@ void main() {
             quantity: 1, madeOnBusinessIndex: 1), keep: true);
         // The named neighbor is due one minute after midnight.
         c.state.namedClock = c.state.namedClock.withNext(ms(DateTime.utc(2026, 11, 18, 15, 1)));
-        c.state.regularClock = c.state.regularClock.withNext(ms(DateTime.utc(2026, 11, 18, 14, 10)));
+        c.state.regularClock = c.state.regularClock.withNext(ms(DateTime.utc(2026, 11, 18, 14, 3)));
       }), isTrue, reason: '${c.notice} ${c.error}');
       setNow(DateTime.utc(2026, 11, 18, 15, 2));
       await flush(c);
@@ -202,6 +207,10 @@ void main() {
         final planned = c.upcomingArrivals(const Duration(hours: 24));
         expect(planned.where((a) => a.kind == ArrivalKind.regular).length, 3);
         expect(planned.where((a) => a.kind == ArrivalKind.named).length, 1);
+        // DEC-TBD-fb1-2: 30초~5분이어도 자리(3)에서 멈춰, 앱을 내린 뒤 일반 손님은
+        // 15분 안에 최대 3명 = 일반 알림(켰을 때)도 최대 3번이고 그 뒤로는 오지 않는다.
+        final regulars = planned.where((a) => a.kind == ArrivalKind.regular).map((a) => a.at.difference(seedStart));
+        expect(regulars.every((d) => d <= Duration(milliseconds: rules.regularMax * rules.regularSlots)), isTrue);
         await c.setForeground(false);
         setNow(seedStart.add(const Duration(hours: 24)));
         await c.setForeground(true);
@@ -294,7 +303,7 @@ void main() {
       final again = WorkshopController(config, repository, now: () => start.add(const Duration(minutes: 1)), monotonicMs: () => 0);
       addTearDown(again.dispose);
       await again.initialize();
-      expect(again.state.regularClock.nextAt! - ms(start.add(const Duration(minutes: 1))), inInclusiveRange(60000, 900000));
+      expect(again.state.regularClock.nextAt! - ms(start.add(const Duration(minutes: 1))), inInclusiveRange(rules.regularMin, rules.regularMax));
     });
   });
 
@@ -384,43 +393,90 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink()); // GameApp disposes the workshop.
     });
 
-    testWidgets('첫 판매 뒤 한 번 알림을 묻고, 거절하면 두 알림이 꺼진 채 안내 문구를 보인다', (tester) async {
-      for (final grant in [true, false]) {
-        // GameApp disposes both controllers when it goes away: a fresh pair each round.
-        final account = await mountGame(tester, const Size(390, 844), reduced: true);
-        expect(account.state.settings.notificationPromptDone, isFalse);
-        final notifier = FakeNotifier(grant: grant);
-        final c = WorkshopController(config, MemoryRepository(), now: () => start, random: Random(5), monotonicMs: () => 0);
-        await c.initialize();
-        await tester.pumpWidget(GameApp(controller: account, workshop: c, notifier: notifier));
-        await tester.pump();
-        expect(find.byKey(const Key('notice-prompt')), findsNothing, reason: '판매 전에는 묻지 않음');
-        expect(await c.command(() => c.state.tutorial = 'skipped'), isTrue);
-        expect(await c.openBusiness(), isTrue);
-        expect(await c.welcomeCustomer(), isTrue);
-        final order = c.state.customers.single;
-        expect(await c.command(() {
-          for (final line in order.lines) {
-            c.state.inventory = c.state.inventory.recordResult(ProductBatch(id: 'p-${line.flavor}', flavor: line.flavor,
-                variant: line.variant ?? 2, quantity: line.quantity, madeOnBusinessIndex: c.state.business.businessIndex), keep: true);
-          }
-        }), isTrue);
-        expect(await c.sellToCustomer(order.id), isTrue);
-        await tester.pump();
-        await tester.pump();
-        expect(find.byKey(const Key('notice-prompt')), findsOneWidget);
-        expect(find.textContaining('앱을 꺼 둬도 단골손님이 오면'), findsOneWidget);
-        await tester.tap(find.byKey(const Key('notice-accept')));
+    // 'accept' + allowed / 'accept' + refused / '나중에' (DEC-TBD-fb1-1).
+    Future<(GameController, FakeNotifier)> promptAfterFirstSale(WidgetTester tester, {required bool grant}) async {
+      // GameApp disposes both controllers when it goes away: a fresh pair each round.
+      final account = await mountGame(tester, const Size(390, 844), reduced: true);
+      expect(account.state.settings.notificationPromptDone, isFalse);
+      final notifier = FakeNotifier(grant: grant);
+      final c = WorkshopController(config, MemoryRepository(), now: () => start, random: Random(5), monotonicMs: () => 0);
+      await c.initialize();
+      await tester.pumpWidget(GameApp(controller: account, workshop: c, notifier: notifier));
+      await tester.pump();
+      expect(find.byKey(const Key('notice-prompt')), findsNothing, reason: '판매 전에는 묻지 않음');
+      expect(await c.command(() => c.state.tutorial = 'skipped'), isTrue);
+      expect(await c.openBusiness(), isTrue);
+      expect(await c.welcomeCustomer(), isTrue);
+      final order = c.state.customers.single;
+      expect(await c.command(() {
+        for (final line in order.lines) {
+          c.state.inventory = c.state.inventory.recordResult(ProductBatch(id: 'p-${line.flavor}', flavor: line.flavor,
+              variant: line.variant ?? 2, quantity: line.quantity, madeOnBusinessIndex: c.state.business.businessIndex), keep: true);
+        }
+      }), isTrue);
+      expect(await c.sellToCustomer(order.id), isTrue);
+      await tester.pump();
+      await tester.pump();
+      expect(find.byKey(const Key('notice-prompt')), findsOneWidget);
+      expect(find.textContaining('앱을 꺼 둬도 단골손님이 오면'), findsOneWidget);
+      return (account, notifier);
+    }
+
+    testWidgets('첫 판매 뒤 한 번 알림을 묻고, 거절·나중에여도 단골 알림은 켬으로 남는다', (tester) async {
+      for (final answer in ['allow', 'refuse', 'later']) {
+        final (account, notifier) = await promptAfterFirstSale(tester, grant: answer == 'allow');
+        await tester.tap(find.byKey(Key(answer == 'later' ? 'notice-later' : 'notice-accept')));
         for (var i = 0; i < 5; i++) { await tester.pump(); }
-        expect(notifier.permissionAsks, 1);
+        expect(notifier.permissionAsks, answer == 'later' ? 0 : 1, reason: '나중에는 권한 창을 띄우지 않음');
         expect(account.state.settings.notificationPromptDone, isTrue);
-        expect(account.state.settings.notifyNamedGuests, grant);
+        expect(account.state.settings.notifyNamedGuests, isTrue, reason: '$answer: 단골 알림 설정은 그대로 켬');
         expect(account.state.settings.notifyRegularGuests, isFalse);
-        expect(find.text('휴대폰 설정에서 이 앱의 알림을 허용해야 받을 수 있어요.'), grant ? findsNothing : findsOneWidget);
+        expect(find.text('휴대폰 설정에서 이 앱의 알림을 허용해야 받을 수 있어요.'),
+            answer == 'refuse' ? findsOneWidget : findsNothing);
         await tester.pump(const Duration(seconds: 5));
         expect(find.byKey(const Key('notice-prompt')), findsNothing, reason: '한 번만 물음');
         await tester.pumpWidget(const SizedBox.shrink()); // GameApp disposes the workshop.
       }
+    });
+
+    testWidgets('권한 없이 켜 둔 단골 알림은 설정에서 "알림 권한이 필요해요"와 허용 버튼으로 보인다', (tester) async {
+      final (account, notifier) = await promptAfterFirstSale(tester, grant: false);
+      await tester.tap(find.byKey(const Key('notice-later')));
+      for (var i = 0; i < 5; i++) { await tester.pump(); }
+      await tester.pump(const Duration(seconds: 5));
+      await tester.tap(find.byTooltip('설정'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      final hint = find.byKey(const Key('settings-notice-permission'));
+      // The settings list builds lazily: scroll down to the notice switches.
+      await tester.scrollUntilVisible(find.byKey(const Key('settings-notify-named')), 120,
+          scrollable: find.descendant(of: find.byType(ListView).last, matching: find.byType(Scrollable)).first);
+      await tester.pump();
+      expect(hint, findsOneWidget);
+      expect(find.text('알림 권한이 필요해요'), findsOneWidget);
+      expect(notifier.permissionAsks, 0, reason: '설정을 열기만 해서는 묻지 않음');
+      // Refused again: the hint stays and says where to allow it.
+      await tester.ensureVisible(find.byKey(const Key('settings-notice-permission-ask')));
+      await tester.tap(find.byKey(const Key('settings-notice-permission-ask')));
+      for (var i = 0; i < 3; i++) { await tester.pump(); }
+      expect(notifier.permissionAsks, 1);
+      expect(hint, findsOneWidget);
+      expect(find.text('휴대폰 설정에서 이 앱의 알림을 허용해야 받을 수 있어요.'), findsOneWidget);
+      // Allowed in the phone settings, then back to the app: the hint goes.
+      notifier.allowed = true;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      for (var i = 0; i < 3; i++) { await tester.pump(); }
+      expect(hint, findsNothing);
+      expect(account.state.settings.notifyNamedGuests, isTrue);
+      // Both switches off: nothing to warn about even without the permission.
+      notifier.allowed = false;
+      await tester.ensureVisible(find.byKey(const Key('settings-notify-named')));
+      await tester.tap(find.byKey(const Key('settings-notify-named')));
+      for (var i = 0; i < 3; i++) { await tester.pump(); }
+      expect(account.state.settings.notifyNamedGuests, isFalse);
+      expect(hint, findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
     });
   });
 }

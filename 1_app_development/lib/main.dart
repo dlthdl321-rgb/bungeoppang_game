@@ -162,4 +162,6 @@ class _SelfTestNotifier implements CustomerNotifier {
   Future<void> cancelAll() => inner.cancelAll();
   @override
   Future<bool> requestPermission() => inner.requestPermission();
+  @override
+  Future<bool> hasPermission() => inner.hasPermission();
 }
