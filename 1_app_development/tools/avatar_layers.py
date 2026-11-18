@@ -455,10 +455,10 @@ WORN_SRC = ROOT.parent / '3_original_images_and_visual_references' / '3.3_additi
 # the trousers and the boy's skirt 'outfit_*', but they are bottoms.
 # outfit_apron is the default 'apron' (stage 26 4-4): every default vendor
 # wears it; 'noapron' (blank) takes it off. Hair styles replace the base's
-# long hair. Pictures still to come (25번 문서 17번: beanie, bandana,
-# ballcap, newsboy) are listed so dropping the file in and running the tool
-# is all it takes; until then those hats keep their flat art and the
-# wardrobe hides them (PixelSprites.avatarArtReady).
+# long hair. A hat or hair style without its worn picture keeps its flat
+# art and the wardrobe hides it (PixelSprites.avatarArtReady); dropping the
+# file in and running the tool is all it takes (the beanie, bandana, ballcap
+# and newsboy pictures came this way, 25번 문서 17번).
 WORN_ITEMS = {
     'hair_short': ('hair', 'short'),
     'hair_ponytail': ('hair', 'ponytail'),

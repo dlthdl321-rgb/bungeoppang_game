@@ -300,9 +300,12 @@ void main() {
           price: (_) => '',
           action: (_) => '잠김',
           apply: (_) async => false,
+          // Every hat has its worn art now (25번 문서 17번), so the test
+          // hides one itself to check the panel leaves hidden items out.
           listed: (d) =>
-              d.slot.category != CosmeticCategory.avatar ||
-              PixelSprites.avatarArtReady('girl', d.slot, d.id));
+              d.id != 'ballcap' &&
+              (d.slot.category != CosmeticCategory.avatar ||
+                  PixelSprites.avatarArtReady('girl', d.slot, d.id)));
       await tester.pumpWidget(MaterialApp(
           home: Scaffold(body: WardrobePanel(controller: c, access: access))));
       await tester.tap(find.byKey(const Key('cosmetic-slot-hat')));
