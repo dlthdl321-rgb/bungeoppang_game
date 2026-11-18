@@ -42,6 +42,16 @@ CompositeQuote quoteCompositeSkill(DevelopmentBalance config, String id,
   return CompositeQuote(config.revision, id, owned, quantity, buns, gold);
 }
 
+/// Level-up steps of the Workshop skill window (26번 4-3단계, S43-Q8).
+/// A Dart constant, not a config value: the server accepts any quantity up
+/// to `max_owned_per_skill − owned`, so no deploy is needed.
+const skillLevelUpSteps = [1, 10, 100];
+
+/// How many levels one press of the '+' adds: [step], or fewer near the
+/// cap (995 with ×10 → 5), never negative (S43-Q2: no '최대' button).
+int skillLevelUpQuantity(int step, {required int owned, required int cap}) =>
+    (cap - owned).clamp(0, step);
+
 CompositeQuote maximumCompositeSkill(DevelopmentBalance config, String id,
     {required int owned, required BigInt availableBuns,
     required BigInt availableGold}) {

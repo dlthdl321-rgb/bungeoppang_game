@@ -27,6 +27,8 @@ class PixelSprites {
     'butter',
     // Extra art (이미지/이미지 raw, 이미지생성프롬프트_통합 부록 S3, E1, E2).
     'bun',
+    // 황금붕어빵력 (25번 18번, 26번 4-3단계; lib/ui/currency_amount.dart).
+    'gold_bun',
     'coin',
     'title',
     'prestige',
@@ -92,9 +94,11 @@ class PixelSprites {
   /// Screen art in assets/images/ui: the wardrobe preview's stall interior
   /// (120x72), the offline reward bag (64x48) and the small fish beside
   /// panel titles (16x12), the big padlock of locked things (128x128, 25번
-  /// 13번, lib/ui/lock_overlay.dart), and the feature introduction cards'
+  /// 13번, lib/ui/lock_overlay.dart), the skill window's '+' button, and the feature introduction cards'
   /// pictures (160x120, 25번 22번; until drawn the card shows an icon).
   static const uiNames = ['wardrobe_bg', 'offline', 'title_fish', 'lock_badge',
+    // The skill window's round '+' level-up button, on and off (64x64, 25번 19번).
+    'levelup_plus', 'levelup_plus_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
     'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics'];
 
