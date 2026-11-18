@@ -41,7 +41,8 @@
 
 | 원칙 | 내용 | 지키는 곳 |
 | --- | --- | --- |
-| 광고·추적 SDK 금지 | ads, admob, analytics, crashlytics, sentry 등 금지. Firebase는 core/auth/functions/app_check만 허용(app_check는 23번 7단계, Play Integrity). 카카오는 로그인용만 | `test/no_tracking_sdk_test.dart` |
+| 광고·추적 SDK 금지 | ads, admob, analytics, crashlytics, sentry 등 금지. Firebase는 core/auth/functions/app_check만 허용(app_check는 23번 7단계, Play Integrity). 카카오는 로그인용만. 구글은 `google_sign_in`(로그인만, 26번 2-1단계. 금지 단어에 걸리지 않아 허용 목록 추가 없음) | `test/no_tracking_sdk_test.dart` |
+| 첫 실행 로그인 필수 (26번 2-1단계) | 온라인 빌드는 새 설치·업데이트 뒤 첫 실행에 필수 동의 + 카카오 또는 구글 로그인을 마쳐야 게임에 들어감. 한 번 로그인하면 저장된 로그인으로 오프라인 플레이. 필수 동의(이용약관·개인정보 수집·이용)와 선택 동의(성별·연령대)는 따로 받음. 앱 안에서 계정 삭제 가능(Play 정책). 이메일은 서버 프로필에만, 화면·분석에 쓰지 않음 | `lib/owner_account.dart`, `test/owner_first_run_test.dart` |
 | 손님 알림은 기기 안에서만 | 26번 5-1단계: `flutter_local_notifications`(+`timezone`, UTC만)로 앱이 꺼진 동안 올 손님을 기기 안에 예약. 서버 푸시·Firebase Messaging 없음, 정보를 어디에도 보내지 않음. 권한은 `POST_NOTIFICATIONS`(Android 13+ 실행 중 요청)·`RECEIVE_BOOT_COMPLETED`(재부팅 뒤 재예약)뿐, 정확한 알람 권한(`SCHEDULE_EXACT_ALARM`·`USE_EXACT_ALARM`) 없음(몇 분 늦을 수 있음) | `test/no_tracking_sdk_test.dart`, `lib/customer_notifier.dart` |
 | 현실 보상 없음 | 현금·상품·포인트를 지급하지 않음. 공유에도 보상 없음 | README |
 | 경제는 BigInt | 가격·생산·보상은 BigInt로 계산하고, 배율은 정수 천분율(‰)로 계산(`effectScale` = 1000). double 금지. 저장할 때는 10진 문자열 | `economy.dart`, `config_values.dart` |
@@ -77,7 +78,7 @@
 2. `withOnline = Android && firebaseConfigured`. 온라인이면 `KakaoSdk.init` 후 `FirebaseOnlineBackend.create()`. 아니면 `NoOnlineBackend`·`NoRankingService`·`NoBillingService`.
 3. `GameController(SqliteGameRepository(), SystemTimeService(), …)` 생성.
 4. `PixelSprites.load()`로 이미지를 미리 읽음.
-5. `controller.initialize()` → 설정 파일 → `WorkshopController.initialize()` → `runApp(GameApp)`. 셋 중 하나라도 읽지 못하면 두 DB를 닫고 `SaveRecoveryApp`(`ui/save_recovery.dart`, 3장 "저장 손상 대처").
+5. `controller.initialize()` → 설정 파일(+ `config/owner_name_rules.json`) → `WorkshopController.initialize()` → `OwnerAccount.load()`(첫 실행 기록, 26번 2-1단계) → `runApp(GameApp)`. `GameApp`은 `OwnerGate`로 첫 실행 화면(로그인·이름·캐릭터·선택 정보)을 마칠 때까지 게임 대신 보여 줌. 셋 중 하나라도 읽지 못하면 두 DB를 닫고 `SaveRecoveryApp`(`ui/save_recovery.dart`, 3장 "저장 손상 대처").
 
 `initialize()`는 저장을 읽고, `resume()`으로 오프라인 생산을 정산하고, 100ms 틱 타이머와 10초 자동 저장 타이머를 시작합니다.
 
@@ -138,6 +139,17 @@
 | schema 6 (2026-11-11) | 첫 실행 안내 `tutorial`: `cook` → `sell` → `done`, 또는 `skipped`. 새 설치는 `cook`. schema 5 이하는 `done`으로 올리고, 그 버전에 `tutorial`이 있으면 거절. 판매 기록이 있는데 `cook`/`sell`이면 거절 |
 | schema 7 (2026-11-18, 26번 5-1단계) | 손님 시계 `regularClock`·`namedClock`(`{nextAt: UTC ms 또는 null, seed, draws}`)과 직전 네임드 `lastNamedVisitor`. 7에 셋 중 하나라도 없거나 6 이하에 있으면 거절. 닫힌 가게·안내 중인데 `nextAt`이 있거나, `nextAt`이 정산 시각 + 최대 간격보다 멀면 거절. `lastNamedVisitor`는 만난 손님만. 6 이하 이전: 시드는 진행 ID(`grid.runId`)에서 만들고 시계는 멈춘 채(null) 두어 불러온 뒤 첫 정산 시각부터 셈, `lastNamedVisitor`는 관계 기록의 가장 늦은 방문. `arrivalMs`는 안내 중 손님 간격용으로 그대로 |
 | schema 8 (2026-11-18, 26번 2단계) | 이미 본 기능 소개 카드 `featureIntros`(`WorkshopFeature` 이름 목록, 정렬해 저장: `skills`·`griddle`·`collection`·`recipes`·`specialOrders`·`fishCosmetics`·`freshness`·`stallCosmetics`). 8에 없거나, 모르는 이름·중복이 있거나, 7 이하에 있으면 거절. 7 이하 이전: 불러온 상태에서 **이미 열린 기능은 본 것으로 채움**(고레벨 기존 저장은 카드 0장, 낮은 레벨은 앞으로 열릴 카드만). 첫 판매 칭찬(`salePraise`)은 저장하지 않음 |
+
+**첫 실행 기록 저장** (26번 2-1단계, `lib/owner_profile.dart` `OwnerProfile`, `lib/owner_repository.dart`)
+
+| 항목 | 값 |
+| --- | --- |
+| DB | sqflite `todays_bungeoppang_owner.db`, 테이블 `owner(id, body)` 한 줄(JSON). 계정·가게 저장과 따로라 **계정 저장 v13·가게 schema 8은 그대로** |
+| JSON | `schema` 1. `account`(`kakao:<번호>` 또는 구글 uid)·`provider`(`kakao`/`google`, 둘은 함께 있거나 함께 없음), `consentVersion`(필수 동의 판, 지금 `2026-11-18` = `requiredConsentVersion`)·`consentAtMs`, `name`(사장님 이름), `characterChosen`, `optionalAsked`, `optional`(`gender`·`ageBand`·`guardianConsent`·`agreedAtMs`, 만 14세 미만이면 보호자 동의 필수), `serverSynced`(서버 프로필에 보냈는지) |
+| 읽기 실패 | 모양이 틀리거나 DB를 못 읽으면 빈 기록으로 보고 첫 실행 질문을 다시 함(게임 진행은 다른 저장이라 영향 없음, 복구 화면으로 가지 않음) |
+| 캐릭터 | 고른 값은 가게 저장 `avatarEquipment.character`(`WorkshopController.equipAvatar`)에 들어가 꾸미기와 같음. 이 기록은 물었는지만 |
+| 기존 저장 | 로그인 없이 하던 저장은 그대로 두고, 로그인한 계정이 이 기기 가게의 주인이 됨. 가게 저장에 이미 `rewardAccount`·`purchases.account`가 있으면 그 계정만 받음(다른 계정이면 로그아웃시키고 안내) |
+| 계정 삭제 뒤 | 서버 삭제가 끝나면 세 DB(`todays_bungeoppang.db`·`_workshop.db`·`_owner.db`)를 지우고 새 설치처럼 다시 시작(`main.dart` `_wipeAndRestart`) |
 
 **저장 손상 대처** (`lib/main.dart` `_start`, `lib/ui/save_recovery.dart`, `lib/save_quarantine.dart`)
 
@@ -510,7 +522,7 @@
 
 ## 9. 온라인: 로그인·랭킹·친구·초대
 
-- 온라인 기능은 **Android 빌드에 키 5개가 모두 들어 있을 때만** 켜집니다. 아니면 오프라인 게임으로 동작합니다. 키는 `--dart-define-from-file=dart_defines/online.json`으로 넣습니다(13장 "온라인 빌드").
+- 온라인 기능은 **Android 빌드에 키 5개가 모두 들어 있을 때만** 켜집니다. 이런 빌드는 첫 실행에 로그인을 반드시 거칩니다(아래 "첫 실행 로그인"). 구글 로그인은 선택 키 `GOOGLE_SERVER_CLIENT_ID`가 있을 때만 버튼이 보입니다. 아니면 오프라인 게임으로 동작합니다. 키는 `--dart-define-from-file=dart_defines/online.json`으로 넣습니다(13장 "온라인 빌드").
 - 서버 지역은 `asia-northeast3`(서울), 런타임은 Node 22입니다.
 - 운영 설정(Firebase·카카오·Play 결제·App Check)을 처음부터 하는 순서는 [online_setup.md](online_setup.md)(23번 7단계, 초보자용)입니다.
 
@@ -541,12 +553,33 @@
 
 ### 로그인
 
+**카카오** (`FirebaseOnlineBackend.signIn(LoginProvider.kakao)`)
 1. 카카오톡 로그인을 시도하고, 안 되면 카카오 계정 페이지로 로그인합니다.
-2. 서버 `authKakao`가 카카오 토큰과 app_id를 확인합니다.
-3. uid를 `kakao:<회원번호>`로 정한 커스텀 토큰을 돌려줍니다.
+2. 서버 `authKakao`가 카카오 토큰과 app_id를 확인합니다. 닉네임과(동의 항목 `account_email`에 동의했고 카카오가 확인한) 이메일을 받아 이메일은 `accountProfiles/{uid}.email`에 둡니다(`rememberEmail`).
+3. uid를 `kakao:<회원번호>`로 정한 커스텀 토큰(`provider: kakao`)을 돌려줍니다.
 4. Firebase에 로그인합니다.
 
-나머지 서버 함수는 모두 카카오 커스텀 로그인만 받습니다. 서버 `.env`에는 `KAKAO_APP_ID`가 필요합니다.
+**구글** (26번 2-1단계, `google_sign_in` 7.2.0)
+1. `GoogleSignIn.instance.initialize(serverClientId: GOOGLE_SERVER_CLIENT_ID)` 후 `authenticate()`(Credential Manager 계정 선택).
+2. 받은 ID 토큰으로 `FirebaseAuth.signInWithCredential(GoogleAuthProvider.credential(idToken))`. uid는 Firebase가 만든 값(28자 영숫자).
+3. 서버는 토큰의 `email`(확인된 것만)을 `accountProfileSet` 때 저장합니다.
+
+**서버 검사** (`functions/src/auth.ts` `signedIn`·`signedInAccount`): `sign_in_provider`가 `custom`이고 `provider: kakao`이거나, `google.com`이면 통과. 익명·이메일·애플 등은 거절. 지갑·구매·랭킹·친구 문서 키가 모두 uid 그대로라(`development_contracts`는 `encodeURIComponent(uid)`) 구글 uid도 바뀌는 것 없음. 같은 사람이 두 방법을 쓰면 **계정이 둘**(연결은 후속 과제). 서버 `.env`에는 `KAKAO_APP_ID`가 필요합니다(구글은 서버 설정 없음).
+
+**첫 실행 로그인** (26번 2-1단계, `lib/owner_account.dart` `OwnerAccount.step`)
+
+| 순서 | 화면 | 조건·저장 |
+| --- | --- | --- |
+| ① 동의 + 로그인 | 전체 동의 / (필수) 이용약관 [보기] / (필수) 개인정보 수집·이용 [보기] → '카카오로 시작하기'·'Google로 시작하기'(필수 둘 다 체크해야 켜짐). '처음 고른 방법으로 계속 로그인해 주세요…', '만 14세 미만이라면 보호자와 함께…', 약관·방침 전문 링크 | 누르면 먼저 인터넷 확인(`lookupInternet`, DNS 4초). 없으면 ② 대신 오프라인 화면. 이미 로그인한 사용자(업데이트 전 카카오 로그인)는 로그인 버튼 대신 '동의하고 계속하기'. 다른 계정이 이 기기 가게의 주인이면 로그아웃시키고 '이 기기의 가게는 다른 ○○ 계정에…' |
+| 오프라인 | '인터넷 연결이 필요해요' + '다시 시도' | 로그인 전에만. 로그인 뒤에는 Firebase 세션이 기기에 남아 오프라인 플레이 |
+| ② 사장님 이름 | 입력칸(로그인 닉네임에서 허용 글자만 남긴 값이 기본값, '사장님' 꼬리말), 2~8자 안내 | `OwnerNameRules`(아래) |
+| ③ 사장님 고르기 | 여자/남자 사장님 그림 두 장(`AvatarPainter`), 지금 입은 캐릭터가 기본 선택 | `equipAvatar('girl'/'boy')` |
+| ④ 선택 정보 | 성별(여성·남성·선택 안 함)·연령대(만 14세 미만~50대 이상·선택 안 함), 수집 항목·목적·보관 기간 상자, (선택) 동의 체크, 만 14세 미만이면 보호자 동의 체크. '건너뛰기'와 '저장하고 시작'이 같은 크기 | 동의 체크·두 값을 골라야 저장 켜짐. 만 14세 미만 + 보호자 동의 없음 → 저장하지 않고 '보호자 동의가 없어 선택 정보는 저장하지 않았어요.' |
+| 끝 | 게임 + 2단계 첫 실행 안내 | 알림 권한 질문(5-1)은 안내가 끝난 뒤 그대로 |
+
+온라인 설정이 없는 빌드(개발용)는 ①·④ 없이 ②·③만. 테스트용 `GameApp`에 `owner`를 넘기지 않으면 바로 게임.
+
+**사장님 이름 규칙** (`config/owner_name_rules.json`, 앱 `OwnerNameRules`, 서버 `account.ts` `cleanOwnerName`): 한 글자씩 세어 2~8자, 완성형 한글·영문·숫자만(빈칸·기호·자음만 불가), 다른 사람과 겹쳐도 됨, `banned_words`(욕설·운영자 사칭 등 간단한 목록, 대소문자 무시 포함 검사)는 앱만 검사. 이름은 기기 기록 + 서버 `accountProfiles`, 친구·랭킹에는 `profileSet`으로 `GameController.ownerName`이 감(없으면 예전처럼 로그인 닉네임).
 
 ### Firestore
 
@@ -558,12 +591,15 @@
 - `inviteProfiles`, `inviteCodes`, `players`, `inviteTickets`, `inviteAccepts`, `inviteEvents`
 - `friends/{uid}/list`, `visitsSent`, `visits/{uid}/inbox`
 - `rankings/{board}/entries`, `rankingSubmits`
+- `accountProfiles/{uid}` (26번 2-1단계): `provider`, `name`, `email`(있을 때), `requiredConsent{version, atMs}`, 선택 동의 시 `optionalConsent{atMs}`·`gender`·`ageBand`(만 14세 미만이면 `guardianConsentAtMs`), `updatedAtMs`
 
 ### 서버 함수 (`firebase/functions/src/index.ts`)
 
 | 함수 | 역할 |
 | --- | --- |
-| authKakao | 카카오 토큰 → Firebase 토큰 |
+| authKakao | 카카오 토큰 → Firebase 토큰(+ 동의한 이메일 기억) |
+| accountProfileSet | (26번 2-1단계) 사장님 이름·필수 동의 판·선택 정보 저장. 선택 정보를 안 보내면 지움. 동의 판이 다르면 `consent-required`, 만 14세 미만에 보호자 동의 없으면 `guardian-required` |
+| accountDelete | (26번 2-1단계) uid로 된 문서 전부(`users/{uid}`·인코딩한 `users/{…}` 하위 전부, 친구 양쪽·하루 방문 표시, 내 아이디 코드·최근 초대 링크, 방문함, 초대 기록, 프로필, 랭킹 3개, `accountProfiles`)와 Firebase 인증 사용자 삭제. 결제 기록 `purchases/*`만 법정 보관. 다시 불러도 안전 |
 | walletSync / walletRedeem / walletSpend | 황금 붕어빵 잔액·결제 확인·사용 |
 | inviteRegister / inviteCreateTicket / inviteAccept / inviteLevelOne / inviteFetchEvents | 초대 |
 | profileSet | 이름과 외형 등록 |
@@ -731,6 +767,10 @@
 | 태오 사진 반응 | 태오 대사 | 반응 확인 (`photo-reaction`) |
 | 손님 없음 | 마지막 판매 한마디 또는 '손님을 기다리는 중이에요', 재고 | 영업 종료 (`business-close`) |
 | 맨 앞 손님 | 이름 (남은 초) / "팥 1/2, 재고 3" | 드릴 재고가 있으면 'N개 먼저 판매' 또는 '판매 완료'(`sale-button`), 없으면 '맛 제작'(`order-produce`) |
+
+**메뉴 창 위 (26번 2-1단계):** 사장님 이름이 있으면 '○○ 사장님의 가게'(`menu-owner-name`). 이름이 보이는 곳은 이 한 곳.
+
+**설정 창 맨 위 '계정' (26번 2-1단계, `lib/ui/owner_settings.dart` `OwnerSettingsSection`, `WorkshopPage(owner:)`가 있을 때만):** '사장님 이름: ○○' + '이름 바꾸기'(같은 규칙, 틀리면 창 안에 이유), '카카오/구글 계정으로 로그인 중', '성별·연령대 (선택): …' + '바꾸기'(첫 실행 ④와 같은 양식)·'지우기'(서버에서도 지움), 이용약관·개인정보처리방침(앱 안 `assets/legal/` 사본을 제목·목록·표 줄로 보여 줌, `test/owner_first_run_test.dart`가 문서 폴더 원본과 같은지 확인), '로그아웃'(확인 뒤 설정 창을 닫고 로그인 화면, 진행은 기기에 남음), '계정 삭제'(지워지는 것·되돌릴 수 없음 안내 + '위 내용을 확인했어요' 체크 뒤 '삭제하기', 인터넷 없으면 '계정 삭제는 인터넷에 연결된 상태에서만…'). 첫 실행 골든 `test/goldens/first_run_{login,name,character,optional}_390x844.png`·`first_run_login_360x640.png`(`test/first_run_golden_test.dart`, 실제 글꼴).
 
 **메뉴 창 아래:** 황금붕어빵력 심사 대기 건수(`menu-pending-gold`), '로그인·보상 확인'(`menu-sync`), 영업 중이면 '영업 종료'(`menu-close-business`). 예전 "가게 관리" 시트는 없앴습니다. 레시피(슈크림·초코) 미션 받기는 레벨 미션 창, 맛별 연습·손기술 진행과 손님 취향 기록·이야기 다시 보기는 도감 창으로 옮겼습니다.
 
@@ -1017,7 +1057,7 @@
 
 **분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 7단계, App Check·키 파일 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 698개 통과·건너뜀 0(약 7~12분). `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 86개 통과, 에뮬레이터 통합 8개 통과입니다.
 
-**온라인 빌드:** 키는 `1_app_development/dart_defines/online.json`(gitignore. `online.example.json`을 복사해 채움. 키 6개: `FIREBASE_API_KEY`·`FIREBASE_APP_ID`·`FIREBASE_SENDER_ID`·`FIREBASE_PROJECT_ID`·`KAKAO_NATIVE_APP_KEY`·선택 `APP_CHECK_DEBUG_TOKEN`)에 두고 파일째 넘깁니다.
+**온라인 빌드:** 키는 `1_app_development/dart_defines/online.json`(gitignore. `online.example.json`을 복사해 채움. 키 7개: `FIREBASE_API_KEY`·`FIREBASE_APP_ID`·`FIREBASE_SENDER_ID`·`FIREBASE_PROJECT_ID`·`KAKAO_NATIVE_APP_KEY`·선택 `APP_CHECK_DEBUG_TOKEN`·선택 `GOOGLE_SERVER_CLIENT_ID`(26번 2-1단계, Firebase 구글 로그인의 웹 클라이언트 ID. 없으면 구글 버튼이 숨음))에 두고 파일째 넘깁니다. 이 앱은 `google-services.json`을 쓰지 않고 Firebase 설정을 이 키들로 넣습니다.
 ```
 flutter run --dart-define-from-file=dart_defines/online.json
 flutter build appbundle --release --dart-define-from-file=dart_defines/online.json
@@ -1475,3 +1515,16 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 희귀 황금 | 별 1~5 확률 300·600·900·1200·1500(3·6·9·12·15%), 하루 최대 10 그대로. 서버 생성본 갱신(revision 그대로) — **서버를 다시 배포하기 전까지 서버는 옛 확률(1~5%)로 추첨** | `rare_gold_sale`, `firebase/functions/src/generated/development_balance.json` |
 
 테스트: `test/workshop_arrivals_test.dart`(시계 범위·결정성, 1분·15분·3시간, 자리 상한·재시작, 시계 되돌림·1년 앞당김, 영업 닫힘, 자정 넘김·새 영업일 손님·미션, 기다림은 켠 순간부터, 미리보기 = 실제 도착, 이야기 장면 보류, 안내 → 시계 시작, schema 6→7·잘못된 7 거절, 밤 판정, 알림 계획, 설정 저장, 수명주기 예약·취소, 권한 묻기 2가지), `test/workshop_customers_test.dart`(소개 하루 2명·하루 1회 없음·직전 제외·1명뿐·짧은 이름·조사), `test/no_tracking_sdk_test.dart`(권한 3개·정확한 알람 없음·메시징 없음), `test/workshop_progression_simulation_test.dart`(8분마다 판매: Lv.5 32분·Lv.10 72분), 서버 `test/sale_rewards.test.ts`(생성본 확률 = 앱). 에뮬레이터 알림 수신 확인은 26번 5-1단계 결과 표. 확인용 debug 빌드: `flutter build apk --debug --dart-define=CUSTOMER_NOTICE_SELFTEST=true`(13장대로 `GRADLE_USER_HOME`·`PUB_CACHE` 영문 경로) — 앱을 내리면 진짜 예약에 더해 1분 뒤 '[시험] …' 알림 하나를 예약(`main.dart` `_SelfTestNotifier`, release에서는 꺼짐). AVD `TodayBungeoppang_API35`가 없으면 `avdmanager create avd -n TodayBungeoppang_API35 -k "system-images;android-35;default;x86_64"`로 만든다.
+
+## 31. 첫 실행 로그인·사장님 이름·캐릭터 — 2026-11-18
+
+26번 2-1단계(DEC-TBD-2-1-1~8). 원칙은 1장 '첫 실행 로그인 필수', 시작 순서는 2장, 저장은 3장 "첫 실행 기록 저장", 로그인·서버 함수·Firestore는 9장, 설정·메뉴 화면은 10장, 빌드 키는 13장 "온라인 빌드". 개인정보처리방침·이용약관(`terms_of_service.md`, 새 문서)·Play 데이터 보안 문서·online_setup.md 16장(콘솔 작업)을 같은 작업에서 고쳤다.
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 화면 | ① 필수 동의 + 카카오/구글 ② 사장님 이름 ③ 여자/남자 사장님 ④ 선택 성별·연령대 → 2단계 첫 실행 안내 | `lib/ui/first_run.dart` |
+| 상태 | `OwnerAccount`(`step`, `signIn`·`acceptConsent`·`setName`·`chooseCharacter`·`saveOptional`·`skipOptional`·`clearOptional`·`signOut`·`deleteAccount`·`pushProfile`) | `lib/owner_account.dart` |
+| 문구 | 첫 실행·계정 설정 문구 한 곳 | `lib/owner_texts.dart` |
+| 분석 연결 지점 | `OwnerAnalytics.setUserProperties(gender, ageBand)` — 선택 동의한 값만, 만 14세 미만 연령대는 보내지 않음, 이메일·이름은 절대 안 보냄. 26번 5단계에서 Firebase Analytics에 연결(지금은 아무것도 보내지 않음) | `lib/owner_account.dart` |
+| 서버 | `auth.ts`(구글 허용), `account.ts`(`setAccountProfile`·`rememberEmail`·`deleteAccount`), `kakao.ts`(이메일), `index.ts`(`accountProfileSet`·`accountDelete`). **배포 필요** | `firebase/functions/src` |
+| 테스트 | 앱 `test/owner_first_run_test.dart` 25개·`test/first_run_golden_test.dart` 2개(골든 5장), 서버 `test/account.test.ts` 8개 + `kakao.test.ts` 3개 추가·수정 | |
