@@ -767,8 +767,8 @@
     "customer_archetype_count": 8
   },
   "customer_arrivals": {
-    "regular_min_ms": 60000,
-    "regular_max_ms": 900000,
+    "regular_min_ms": 30000,
+    "regular_max_ms": 300000,
     "named_min_ms": 1800000,
     "named_max_ms": 10800000,
     "regular_slots": 3,

@@ -50,7 +50,7 @@ void main() {
       await tester.pump();
     }
     /// 26번 5-1단계: after the guide the next regular guest comes in real
-    /// time, 1~15 minutes later. Move the wall clock to that arrival.
+    /// time, 30 s~5 min later. Move the wall clock to that arrival.
     Future<void> nextGuest() async {
       clock = DateTime.fromMillisecondsSinceEpoch(c.state.regularClock.nextAt!, isUtc: true);
       await elapse(100);

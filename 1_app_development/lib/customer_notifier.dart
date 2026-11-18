@@ -68,6 +68,9 @@ abstract class CustomerNotifier {
   /// Asks for the notification permission (Android 13+ at run time).
   /// False when the player refused it.
   Future<bool> requestPermission();
+  /// Whether notices can be shown now, without asking (the settings show
+  /// '알림 권한이 필요해요' when a switch is on but this is false).
+  Future<bool> hasPermission();
 }
 
 /// flutter_local_notifications with inexact alarms: no exact-alarm
@@ -109,6 +112,26 @@ class LocalCustomerNotifier implements CustomerNotifier {
     try {
       if (await _init()) await _plugin.cancelAll();
     } catch (e) { debugPrint('손님 알림 취소 실패: $e'); }
+  }
+
+  @override
+  Future<bool> hasPermission() async {
+    try {
+      if (!await _init()) return false;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        return await _plugin.resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+            ?.areNotificationsEnabled() ?? false;
+      }
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final options = await _plugin.resolvePlatformSpecificImplementation<IOSFlutterLocalNotificationsPlugin>()
+            ?.checkPermissions();
+        return options?.isEnabled ?? false;
+      }
+      return false;
+    } catch (e) {
+      debugPrint('손님 알림 권한 확인 실패: $e');
+      return false;
+    }
   }
 
   @override

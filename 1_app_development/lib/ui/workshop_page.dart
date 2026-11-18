@@ -29,6 +29,7 @@ import '../usage_stats.dart';
 import '../owner_account.dart';
 import '../owner_texts.dart';
 import 'owner_settings.dart';
+import 'notice_permission_hint.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -112,10 +113,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
           actions:[TextButton(key:const Key('notice-later'),onPressed:()=>Navigator.pop(ctx,false),child:const Text('나중에')),
             FilledButton(key:const Key('notice-accept'),onPressed:()=>Navigator.pop(ctx,true),child:const Text('알림 받기'))]));
         final granted=accept==true && await notifier.requestPermission();
-        // Without permission (or 'later') both kinds stay off; turning one
-        // on in the settings asks again.
-        await account.updateSettings(notificationPromptDone:true,
-          notifyNamedGuests:granted ? null : false,notifyRegularGuests:granted ? null : false);
+        // DEC-TBD-fb1-1: 'later' and a refused permission leave both switches
+        // as they are (named on, regular off by default). Settings show that
+        // the permission is missing (NoticePermissionHint); the app never
+        // asks again on its own.
+        await account.updateSettings(notificationPromptDone:true);
         if(accept==true && !granted && mounted) {
           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text(noticeDeniedText)));
         }
@@ -129,8 +131,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
       if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text(noticeDeniedText)));
       return;
     }
+    if(regular==true || named==true) _permissionChecks++;
     await account.updateSettings(notifyRegularGuests:regular,notifyNamedGuests:named,quietNightNotices:quiet);
   }
+  /// Bumped after a switch got the permission: the settings hint looks again.
+  int _permissionChecks=0;
   void _enterWindow(){_windowCount++;c.gridVisible=false;}
   void _leaveWindow(){_windowCount--;c.gridVisible=_windowCount==0;}
   Future<void> _window(String title,Widget Function(BuildContext) content) async {
@@ -274,6 +279,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
         subtitle:'앱을 꺼 둔 동안 손님이 오면 알려요',value:settings.notifyRegularGuests,onChanged:(v)=>_setNotice(regular:v)),
       CozySettingRow(key:const Key('settings-notify-named'),icon:const Icon(Icons.notifications_active_outlined),label:'단골 손님 알림',
         subtitle:'이름 있는 손님이 오면 알려요',value:settings.notifyNamedGuests,onChanged:(v)=>_setNotice(named:v)),
+      if(widget.notifier case final notifier? when settings.notifyNamedGuests || settings.notifyRegularGuests)
+        NoticePermissionHint(notifier:notifier,revision:_permissionChecks,
+          denied:(){if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text(noticeDeniedText)));}),
       CozySettingRow(key:const Key('settings-quiet-night'),icon:const Icon(Icons.bedtime_outlined),label:'밤 알림 끄기 (밤 10시~아침 8시)',
         value:settings.quietNightNotices,onChanged:(v)=>_setNotice(quiet:v)),
       // 26번 5단계(DEC-046): on by default, no first-run notice; off stops

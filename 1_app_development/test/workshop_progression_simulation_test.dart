@@ -55,8 +55,9 @@ class _Result {
 /// daily missions (server pays the configured gold) and buying the cheapest
 /// affordable unlocked skill (up to 3 a minute) whenever both currencies allow.
 ///
-/// 26번 5-1단계: guests now come 1~15 minutes apart in real time (8 minutes
-/// on average), so [saleEvery] sells only every that many minutes and
+/// 26번 5-1단계: guests come in real time (regular 30 s~5 min since
+/// DEC-TBD-fb1-2, about 3 minutes on average), so [saleEvery] sells only
+/// every that many minutes and
 /// [target] is the level to reach.
 Future<_Result> _play(DevelopmentBalance config, {required int welcome, int target = 5, int minutes = 60,
     int saleEvery = 1, int tapsPerMinute = 120}) async {
@@ -126,15 +127,20 @@ void main() {
     expect(result.level, 5);
     expect(result.minutes, lessThanOrEqualTo(30));
   });
-  test('5-1단계 실제 시간 손님(평균 8분에 한 명)에서도 Lv.5·Lv.10까지 막히지 않는다', () async {
+  test('실제 시간 일반 손님(30초~5분, 평균 간격마다 한 명)에서도 Lv.5·Lv.10까지 막히지 않는다', () async {
     final welcome = DevelopmentBalance.integer(config.section('welcome_reward'), 'gold');
-    final lv5 = await _play(config, welcome: welcome, minutes: 600, saleEvery: 8);
-    final lv10 = await _play(config, welcome: welcome, minutes: 1200, saleEvery: 8, target: 10);
-    debugPrint('5-1 시뮬레이션: Lv.5 ${lv5.minutes}분, Lv.10 ${lv10.minutes}분 (탭 2/초, 8분마다 판매)');
+    final arrivals = config.section('customer_arrivals');
+    // The average regular interval, rounded up to whole minutes (DEC-TBD-fb1-2: 30초~5분 → 3분).
+    final every = ((DevelopmentBalance.integer(arrivals, 'regular_min_ms') +
+            DevelopmentBalance.integer(arrivals, 'regular_max_ms')) / 2 / 60000).ceil();
+    final lv5 = await _play(config, welcome: welcome, minutes: 600, saleEvery: every);
+    final lv10 = await _play(config, welcome: welcome, minutes: 1200, saleEvery: every, target: 10);
+    debugPrint('일반 손님 시뮬레이션: Lv.5 ${lv5.minutes}분, Lv.10 ${lv10.minutes}분 (탭 2/초, $every분마다 판매)');
+    expect(every, 3);
     expect(lv5.level, 5);
-    expect(lv5.minutes, lessThanOrEqualTo(40));
+    expect(lv5.minutes, lessThanOrEqualTo(15));
     expect(lv10.level, 10);
-    expect(lv10.minutes, lessThanOrEqualTo(90));
+    expect(lv10.minutes, lessThanOrEqualTo(35));
     expect(lv10.goldSpentOnSkills, 0);
   });
   test('환영 황금은 초반 스킬에 쓰이지 않고 꾸미기에 쓸 만큼 남는다', () async {
