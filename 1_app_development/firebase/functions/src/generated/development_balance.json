@@ -2065,5 +2065,13 @@
         "order_note": "설날 손님맞이 주문이에요."
       }
     ]
+  },
+  "share": {
+    "card_width": 1080,
+    "card_height": 1350,
+    "store_line_mode": "soon",
+    "store_line_soon": "오늘의 붕어빵 · 곧 Google Play에서",
+    "store_line_live": "오늘의 붕어빵 · Google Play에서 만나요",
+    "store_url": "https://play.google.com/store/apps/details?id=com.todaybungeoppang.app"
   }
 }

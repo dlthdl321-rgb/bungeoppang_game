@@ -518,6 +518,14 @@ class MenuPanel extends StatelessWidget {
         const PixelIcon('share', size: 32),
         const Key('menu-share')
       ),
+      // 26번 8단계 공유 카드(보상 없음): the stall as a picture to share.
+      (
+        'photo',
+        '가게 사진 찍기',
+        null,
+        const Icon(Icons.photo_camera_outlined, color: Cozy.orangeDeep, size: 32),
+        const Key('menu-photo')
+      ),
     ];
     // A short list: built eagerly (not lazily) so every entry exists even
     // when large text pushes it below the fold.
