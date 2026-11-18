@@ -22,6 +22,7 @@
 | 10 | 라이선스 테스터로 테스트 구매·복구 확인 | 휴대폰 | 30분 |
 | 16 | (26번 2-1단계) 구글 로그인 켜기, SHA-1 등록, 웹 클라이언트 ID 넣기, 카카오 이메일 동의 항목, 서버 다시 배포 | Firebase·Google Cloud·카카오 콘솔 + 내 PC | 40분 |
 | 17 | (26번 5단계) Google Analytics 켜기, 데이터 보존 14개월, DebugView로 이벤트 확인, 리텐션·이탈 보는 법, (선택) BigQuery 내보내기 | Firebase 콘솔·Google Analytics | 30분 |
+| 18 | (26번 6단계) 26번 서버 변경을 **한 번에** 배포하고, 그 뒤에 앱(AAB)을 만들어 올리기. 4장 배포는 이 순서로 한다(서버 먼저, 앱 나중) | 내 PC(PowerShell) + Play Console | 40분 |
 
 **26번 2-1단계부터는 앱을 처음 켤 때 로그인이 꼭 필요하다.** 1~6장을 이미 끝냈다면 16장만 하면 된다. 아직이면 1~6장을 하면서 16장을 함께 한다(16장 순서대로).
 
@@ -518,3 +519,37 @@ Firestore 보는 법: Firebase 콘솔 → `Firestore Database` → `데이터` �
 - 켜는 법: Firebase 콘솔 → 톱니바퀴 `프로젝트 설정` → `통합` → `BigQuery` → `연결` → `Google Analytics` 켜기, 내보내기 방식은 **일일**(스트리밍은 따로 돈이 듦) → 데이터 위치 `asia-northeast3 (서울)` → `BigQuery에 연결`. 프로젝트는 이미 Blaze 요금제라 따로 할 일은 없다.
 - 비용(2026-11 기준 Google 공개 가격, 바뀔 수 있음): 일일 내보내기 자체는 무료. 저장은 매달 처음 10GB 무료, 그 뒤 GB당 월 약 0.02달러(90일 넘게 안 바뀐 표는 약 0.01달러). 조회는 매달 1TB 무료. 이벤트 1개를 약 1KB로 잡으면 하루 1,000명 × 30개 = 하루 약 30MB, 1년 약 11GB, 10년 약 110GB → 10년째에도 **한 달 1~2달러 안팎**. 1-3의 예산 알림이 그대로 지켜 준다.
 - 개인정보처리방침은 지금 '14개월 보관'으로 적혀 있다. BigQuery로 더 오래 남기기로 하면 **방침의 보관 기간도 함께 고쳐야 한다**(고칠 때 알려 주면 문서를 바꿔 준다).
+
+## 18. 26번 변경을 한 번에 배포하고 앱 올리기 (26번 6단계)
+
+26번 흥행 개선의 여러 단계(2-1 첫 실행 로그인, 3 스킬 1~4단계 황금 0, 4-4·4-5·4-7 꾸미기 목록, 5-1 희귀 황금 3배, 7 출석 7칸째 황금)에서 서버가 바뀌었는데 **아직 한 번도 배포하지 않았다**. 단계마다 따로 배포하지 말고 아래 순서로 한 번에 한다. **서버 먼저, 앱 나중** — 앱을 먼저 올리면 18-4 표의 문제가 생긴다.
+
+**18-1. 시작 전에 확인할 것**
+1. 1~3장(Firebase 프로젝트·카카오 앱·키 파일 두 개)과 16-1~16-4(구글 로그인·웹 클라이언트 ID·OAuth 동의 화면·카카오 이메일 동의)를 끝냈다. `1_app_development\firebase\functions\.env` 파일이 있다(3-2).
+2. 저장소 폴더가 26번이 모두 합쳐진 코드다. PowerShell에서 `git -C "D:\Users\이소이\Desktop\Git\붕어빵 게임" branch --show-current`를 실행해 `s26/integration`(또는 이를 합친 뒤라면 `main`)이 나오면 된다. 다른 이름이 나오면 멈추고 알려 준다.
+
+**18-2. 서버 검사와 배포**
+1. PowerShell을 열고 `subst B: "D:\Users\이소이\Desktop\Git\붕어빵 게임"`을 실행한다(이미 B:가 있다는 오류가 나오면 그냥 넘어간다).
+2. `cd B:\1_app_development\firebase\functions` → `npm ci` → 끝날 때까지 기다린다(몇 분).
+3. `npm test` → 끝 부분에 `ℹ fail 0`이 보여야 한다. `fail`이 0이 아니면 **배포하지 말고** 그 화면을 찍어 알려 준다.
+4. `cd ..`로 `firebase` 폴더로 올라간다. 4장 1·2번(로그인·프로젝트 고르기)을 아직 안 했으면 먼저 한다.
+5. `.\firebase_local.cmd deploy --only "functions,firestore"` → 마지막에 `✔ Deploy complete!`가 나오면 성공(처음이면 10~20분).
+6. 확인: Firebase 콘솔 → `Functions` 목록에 `accountProfileSet`·`accountDelete`·`workshopPurchaseReserve`·`workshopRewardSubmit`이 지역 `asia-northeast3`로 보이고, 함수를 눌렀을 때 마지막 배포 시각이 방금이면 된다.
+
+**18-3. 앱 만들기와 올리기 (18-2가 끝난 뒤에만)**
+1. [release_signing.md](release_signing.md) 3장대로 업로드용 AAB를 만든다. 온라인 키를 넣어야 하므로 빌드 명령은 `flutter.bat build appbundle --release --dart-define-from-file=dart_defines/online.json`.
+2. 같은 방법으로 release APK도 만들어(release_signing.md 4장, 명령 끝에 같은 `--dart-define-from-file=dart_defines/online.json`) 권한 목록을 확인한다: `& "C:\Android\sdk\build-tools\36.0.0\aapt.exe" dump badging build\app\outputs\flutter-apk\app-release.apk | Select-String permission`. [23번 문서](../23_가출시우선작업프롬프트.md) 6단계 '26번 반영 뒤 권한 다시 확인' 표와 같으면 된다(다르면 목록을 그대로 알려 준다).
+3. 7장대로 Play Console 내부 테스트(또는 비공개 테스트)에 올린다. 아직 한 번도 올리지 않았으므로 `0.1.0+1`(versionCode 1) 그대로. 그 뒤 다시 올릴 때마다 `pubspec.yaml`의 `+` 뒤 숫자를 1씩 올린다.
+4. 17장(Google Analytics)을 하고, 23번 9단계 검수표를 위에서부터 채운다.
+
+**18-4. 순서를 바꾸면 생기는 일 (서버보다 앱이 먼저일 때)**
+
+| 바뀐 것 (26번 단계) | 옛 서버 + 새 앱이면 |
+| --- | --- |
+| 스킬 1~4단계 황금 0 (3단계) | 1~4단계 스킬 레벨업이 '견적 불일치'로 거절된다(황금은 빠지지 않음) |
+| 구글 로그인·이름·계정 삭제 (2-1단계) | 구글로 로그인한 사람의 서버 호출이 거절되고, 앱 안 계정 삭제가 실패한다 |
+| 출석 7칸째 황금 (7단계) | 7칸째 도장의 황금이 '확인 대기'로 남는다(서버를 배포하면 다음 확인 때 들어옴) |
+| 꾸미기 목록 (4-4·4-5·4-7단계) | '앞치마 없음'·상의로 옮긴 옷·새 하의의 구매가 거절될 수 있다 |
+| 희귀 황금 3배 (5-1단계) | 서버 추첨이 옛 확률(지금의 1/3)로 돈다 |
+
+나중에 서버만 바뀌는 업데이트가 또 생기면 18-2만 다시 하고, 앱도 바뀌면 18-2 → 18-3 순서를 지킨다.
