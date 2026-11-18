@@ -1090,7 +1090,7 @@
 | SDK | minSdk 24 · targetSdk 36 · compileSdk 36 (Flutter 3.47.5 기본값, `build.gradle.kts`가 `flutter.*`를 따름) |
 | 앱 버전 | `pubspec.yaml` `version: 0.1.0+1`. `+` 뒤 versionCode는 Play 업로드마다 +1(재사용 불가), versionName은 가출시 동안 `0.1.x`, 정식 출시 `1.0.0` |
 | release 서명 | `android/key.properties`(커밋 금지)의 업로드 키로만 서명. 파일이 없거나 항목·키 파일이 없으면 release 작업(`flutter build appbundle/apk --release`, `flutter run --release`)이 "Release build stopped (release 빌드 중단)" 오류로 멈춤. debug 키로 대체하지 않음. debug·profile은 키 없이 빌드됨. 키 만들기·빌드·설치: [release_signing.md](release_signing.md) |
-| 권한(메인 매니페스트) | `INTERNET`(온라인 가출시, DEC-027). 병합 결과는 23번 6단계 결과 표 |
+| 권한(메인 매니페스트) | `INTERNET`(온라인 가출시, DEC-027), `POST_NOTIFICATIONS`·`RECEIVE_BOOT_COMPLETED`(26번 5-1 손님 알림), 광고 ID·광고 서비스 권한 4개는 `tools:node="remove"`로 제거(26번 5단계). 병합 결과(라이브러리가 넣는 `VIBRATE`·`USE_BIOMETRIC`·`USE_FINGERPRINT`·`BIND_GET_INSTALL_REFERRER_SERVICE` 포함)는 23번 6단계 '26번 반영 뒤 권한 다시 확인' 표(2026-11-19) |
 
 **자주 쓰는 명령**
 
@@ -1115,8 +1115,9 @@
 2. 릴리스·debug APK 빌드는 추가로 `GRADLE_USER_HOME=D:\DevMoved\GradleCache`, `PUB_CACHE=C:\PubCacheBungeoppang`을 지정합니다(2026-11-17 debug APK도 이것 없이는 Gradle 데몬·`jni` CMake가 한글 사용자 폴더에서 실패). 빌드 뒤 기본 캐시로 `flutter pub get`을 다시 실행해 테스트 환경을 되돌립니다.
    `C:\GradleCache`는 `D:\DevMoved\GradleCache`로 가는 정션이다. 정션 경로를 Gradle 홈으로 쓰면 `*.gradle.kts`를 고친 뒤 다시 컴파일할 때 `Unresolved reference 'println'`·`'orEmpty'`처럼 Kotlin 표준 함수를 전부 못 찾고 실패한다(스크립트를 안 고치면 예전 컴파일 결과를 재사용해서 성공하므로 늦게 드러남). 2026-11-17 23번 6단계에서 확인, 실제 경로로 바꾸면 통과.
 3. `processDebugResources`가 `Unable to delete directory … .ap_`(다른 프로세스가 사용 중)로 실패하면 방금 만든 파일의 일시적 잠금입니다. 코드를 고치지 말고 같은 명령을 다시 실행합니다(2026-11-03 재실행으로 통과).
+4. 영문 경로의 작업 폴더(worktree, 예: `D:\s26wt\s6`)에서는 `subst`가 필요 없고 2번의 두 환경 변수만 지정하면 됩니다(2026-11-19 26번 6단계: debug APK 6분 22초·약 211MB, profile APK 3분 21초·128.9MB). 업로드 키 없이 release와 같은 라이브러리 병합 결과를 보려면 `flutter build apk --profile` 뒤 `C:\Android\sdk\build-tools\36.0.0\aapt.exe dump badging build\app\outputs\flutter-apk\app-profile.apk`와 `build\app\outputs\logs\manifest-merger-profile-report.txt`(권한마다 넣은 라이브러리)를 봅니다.
 
-**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 7단계, App Check·키 파일 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 698개 통과·건너뜀 0(약 7~12분). `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물(26번 5단계부터는 업로드 키 없이 만들 수 있는 `flutter build apk --profile`의 `…/profile/processProfileManifest/` 산출물도, 둘 중 새것)이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 86개 통과, 에뮬레이터 통합 8개 통과입니다.
+**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 7단계, App Check·키 파일 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 698개 통과·건너뜀 0(약 7~12분). 2026-11-19(26번 웨이브 9 병합 `862908e` 뒤, 26번 6단계) 기준 `flutter analyze` error·warning 0(info 71), 마지막 전체 `flutter test`는 웨이브 9 병합 때 904개 통과·5개 건너뜀(v2 골든 4개 포함), 서버 `npm test` 103개 통과. `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물(26번 5단계부터는 업로드 키 없이 만들 수 있는 `flutter build apk --profile`의 `…/profile/processProfileManifest/` 산출물도, 둘 중 새것)이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 86개 통과, 에뮬레이터 통합 8개 통과입니다.
 
 **온라인 빌드:** 키는 `1_app_development/dart_defines/online.json`(gitignore. `online.example.json`을 복사해 채움. 키 7개: `FIREBASE_API_KEY`·`FIREBASE_APP_ID`·`FIREBASE_SENDER_ID`·`FIREBASE_PROJECT_ID`·`KAKAO_NATIVE_APP_KEY`·선택 `APP_CHECK_DEBUG_TOKEN`·선택 `GOOGLE_SERVER_CLIENT_ID`(26번 2-1단계, Firebase 구글 로그인의 웹 클라이언트 ID. 없으면 구글 버튼이 숨음))에 두고 파일째 넘깁니다. 이 앱은 `google-services.json`을 쓰지 않고 Firebase 설정을 이 키들로 넣습니다.
 ```
@@ -1265,7 +1266,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 | --- | --- | --- |
 | 온라인 | Firebase·카카오 로그인·Play 결제 켬. 황금은 서버 검증 후 지급 유지, 로컬 황금 생성 없음 | DEC-027 |
 | 광고 | 제외. SDK 미도입·광고 버튼 숨김. 1장 '광고·추적 SDK 금지'와 `no_tracking_sdk_test` 유지. 2026-11-18: 광고는 출시 후 첫 업데이트(별도 브랜치, DEC-049), 분석은 `firebase_analytics`만 허용(DEC-045, 2026-11-19 26번 5단계 구현, 32장) | DEC-028 |
-| 레벨 | Lv.1~50 전체(11~50은 임시 곡선). 2026-11-18 유지 재확인 | DEC-029, DEC-050 |
+| 레벨 | Lv.1~50 전체(11~50은 임시 곡선). 2026-11-18 유지 재확인. 2026-11-19 26번 6단계 확인: Lv.50이면 레벨 창에 '최고 레벨에 도달했어요.'만 보이고 분점 '준비 중' 문구는 없음(할 일 1 건너뜀) | DEC-029, DEC-050 |
 | 맛 | 팥 기본, 슈크림·초코 획득 경로 유지 | DEC-029 |
 | 손님 | 네임드 8명 전체 + 무기명 | DEC-029 |
 | 유료·온라인 노출 | 황금 상점(IAP)·유료 아바타 노출. 랭킹·친구·초대 숨김. 2026-11-18: 그림이 준비 안 된 유료 아바타는 숨김(모자 4종은 그림 적용으로 풀림, 지금 숨김 없음) | DEC-029, DEC-066 |
@@ -1532,7 +1533,8 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 공유 카드 | 넣음, 보상 없음. 완벽 결과·이야기·도감 완성·가게 사진 네 곳, 1080×1350 | DEC-048 | 26번 8단계 **구현함**(2026-11-19, 35장) |
 | 공유 카드 구현 세부 | 카드 미리보기 창 → '공유하기' = 휴대폰 공유 창(사진첩 저장·권한 없음). 위 70% 가게 거리·사장님·붕어빵·손님, 아래 30% 배지·제목·대사 한 줄·'오늘의 붕어빵 · 곧 Google Play에서'(설정 `share.store_line_mode`). 개인 정보 없음, 상태 변화 없음, 사용 통계 `share` 하루 1번 | DEC-111~113 | 26번 8단계 (35장) |
 | 보상형 광고 | 출시 후 첫 업데이트. 별도 브랜치 `s26/9-ads`에만, 출시 빌드에 광고 SDK 없음(DEC-028 유지). 충전 탭 + 황금 부족 안내, 광고 ID 안 씀, 만 13세 이상 | DEC-049 | 26번 9단계 |
-| 출시 범위 | Lv.50 전체 유지(DEC-029). 26번 6단계 할 일 1 건너뜀 | DEC-050 | — |
+| 출시 범위 | Lv.50 전체 유지(DEC-029). 26번 6단계 할 일 1 건너뜀 | DEC-050 | 26번 6단계 확인(2026-11-19, 코드 변경 없음) |
+| 출시 범위 정리·23번 복귀 | 26번 서버 변경(2-1·3·4-4·4-5·4-7·5-1·7)은 단계마다 따로 배포하지 않고 한 번에, **서버 먼저·앱 나중**([online_setup.md](online_setup.md) 18장). 첫 업로드는 `0.1.0+1` 그대로. 23번 문서에 '26번 흥행 개선 반영' 표·6단계 '26번 반영 뒤 권한' 표·8단계 '가져갈 것' 표·9단계 검수표(처음5분·결제·통계·홈·스킬·꾸미기·매일·공유) 추가. 구글 로그인 라이브러리(androidx.credentials)가 가져오는 `USE_BIOMETRIC`·`USE_FINGERPRINT`(일반 권한)는 그대로 둠 | DEC-TBD-6-1~2 | 26번 6단계 **완료**(2026-11-19, 문서·빌드 확인만, 코드 변경 없음). 다음은 23번 7단계 콘솔 → 8 → 9 |
 | 손님 방문 간격·알림 | 실제 시간: 일반 30초~5분(DEC-106)·네임드 30분~3시간, 자리 일반 3·네임드 1, 기다림은 켠 순간부터, 자정 자동 영업일 넘김, 네임드 하루 1회 제한·무기명 30% 폐지(직전 손님 제외), 튜토리얼 뒤 '맞이' 버튼 없음, 기기 안 알림(일반 끔·네임드 켬·밤 22~8시 끔 기본), 희귀 황금 3배. **구현 완료** (30장) | DEC-051~060 | 26번 5-1단계 |
 | 스킬 황금 0 산식·검증 | 기본 황금 0이면 몇 번째든 0(10번마다 증가 없음). 황금 0은 스킬만 허용, 꾸미기·부스트는 1 이상. 앱·서버 같은 식, **서버 먼저 배포 후 앱** | DEC-061 | 26번 3단계 (4장) |
 | 기존 구매자 | 황금으로 1~4단계를 산 사용자는 환불 없이 그대로 | DEC-062 | 26번 3단계 |
@@ -1560,6 +1562,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 지문 | 업로드 키 SHA-1 `17:17:AB:A9:DB:2D:31:40:06:0F:2D:4F:DE:48:89:16:3F:25:4C:42`(카카오 키 해시 `FxerqdstMUAGDy1P3kiJFj8lTEI=`), 이 PC debug 키 SHA-1 `04:1A:06:46:C2:D5:37:58:6C:A1:C5:6E:EA:97:21:33:62:08:82:DB`(`BBoGRsLVN1hsocVu6pchM2IIgts=`). Play 앱 서명 키는 첫 업로드 뒤 |
 | 도구 | `firebase/firebase_local.cmd`(로컬 Firebase CLI), `tools/kakao_key_hash.ps1`(SHA-1 → 카카오 키 해시) |
 | 미완료 | 운영 Firebase에서 테스트 구매 1건 서버 확인·지급·복구(online_setup.md 11장 표) — 사용자 콘솔 작업 뒤 확인 |
+| 26번 배포 묶음 (2026-11-19) | 26번 서버 변경은 아직 배포 전. 4장 배포는 online_setup.md 18장(검사 `npm test` → `firebase_local.cmd deploy --only "functions,firestore"` → 그 뒤에만 AAB)으로 한 번에. 16장(구글 로그인)·17장(Analytics)도 이 묶음 전에 |
 
 ## 30. 손님 방문 간격·알림 — 2026-11-18
 
