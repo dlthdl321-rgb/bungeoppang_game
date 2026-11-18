@@ -88,8 +88,12 @@ class PixelSprites {
 
   /// Screen art in assets/images/ui: the wardrobe preview's stall interior
   /// (120x72), the offline reward bag (64x48) and the small fish beside
-  /// panel titles (16x12).
-  static const uiNames = ['wardrobe_bg', 'offline', 'title_fish'];
+  /// panel titles (16x12), the big padlock of locked things (128x128, 25번
+  /// 13번, lib/ui/lock_overlay.dart), and the feature introduction cards'
+  /// pictures (160x120, 25번 22번; until drawn the card shows an icon).
+  static const uiNames = ['wardrobe_bg', 'offline', 'title_fish', 'lock_badge',
+    'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
+    'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics'];
 
   /// Weekly challenge banners in assets/images/event (160x48), one per
   /// season of weekly_config.dart.

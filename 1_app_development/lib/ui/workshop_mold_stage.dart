@@ -12,7 +12,9 @@ import '../economy.dart' show compactNumber;
 import '../feedback_config.dart';
 import '../game_audio.dart';
 import '../workshop_controller.dart';
+import '../workshop_feature_unlocks.dart';
 import 'boost_effects.dart';
+import 'lock_overlay.dart';
 import 'flip_circle_control.dart';
 import 'piping_bag_control.dart';
 import 'cozy_style.dart';
@@ -618,15 +620,34 @@ class WorkshopGriddleLayer extends StatelessWidget {
         if (!s.business.permitsProducts(c.now())) {
           return const SizedBox.shrink(key: Key('griddle-idle'));
         }
-        final enabled = !c.busy &&
+        // 26번 2단계 (S2-Q2): the griddle opens once a flavor is mastered;
+        // until then it is hatched with the common lock and the mastery
+        // still to go. A cell already cooking (old saves) can still be
+        // taken out.
+        final lock = c.featureLock(WorkshopFeature.griddle);
+        final idle = !c.busy &&
             c.error == null &&
             !c.gameplayPaused &&
-            s.session == null &&
-            s.masteryAwards.isNotEmpty;
+            s.session == null;
         return Stack(children: [
+          if (lock != null)
+            Positioned.fromRect(
+                rect: sprite,
+                child: LockedOverlay(
+                    key: const Key('griddle-locked'),
+                    caption: lock,
+                    maxLock: 48,
+                    onTap: () => ScaffoldMessenger.maybeOf(context)
+                      ?..hideCurrentSnackBar()
+                      ..showSnackBar(SnackBar(
+                          content: Text('숙련된 붕어빵 틀: $lock'),
+                          duration: const Duration(seconds: 2))),
+                    child: const SizedBox.expand())),
           for (var i = 0; i < s.grid.cells.length; i++)
+            if (lock == null || s.grid.cells[i].cooking)
             Builder(builder: (context) {
               final cell = s.grid.cells[i], cycle = cell.cycle;
+              final enabled = idle && (lock == null || cell.cooking);
               final center = sprite.topLeft +
                   Offset(griddleCavities[i].dx * sprite.width,
                       griddleCavities[i].dy * sprite.height);

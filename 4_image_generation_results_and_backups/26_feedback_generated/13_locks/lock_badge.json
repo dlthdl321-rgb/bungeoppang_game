@@ -1,0 +1,21 @@
+{
+  "section": 13,
+  "section_hash": "a527e465da6ef431a4fdb81fbf43c4b195f1555598f15eb0fee6c1336290aeac",
+  "required": [
+    128,
+    128
+  ],
+  "actual": [
+    1254,
+    1254
+  ],
+  "method": "built-in imagegen",
+  "references": [],
+  "limitations": "Generated candidate; requested dimensions, alignment, exact tile seams/opacity require verification before game integration",
+  "mode": "RGBA",
+  "alpha_extrema": [
+    0,
+    255
+  ],
+  "visual_review": "Chunky brown/gold padlock fills most canvas, visually correct. Resize remains."
+}

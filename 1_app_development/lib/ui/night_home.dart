@@ -13,6 +13,7 @@ import 'boost_effects.dart';
 import 'cook_cut.dart';
 import 'count_badge.dart';
 import 'cozy_style.dart';
+import 'lock_overlay.dart';
 import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'weather_layer.dart';
@@ -24,9 +25,12 @@ class NightHomeHeaderData {
   final int level, progressPermille, claimable;
   final BigInt buns, lifetime, autoRate, tapRate;
   final String status;
+  /// Whether the per-second and per-tap numbers show (26번 2단계: they open
+  /// with the skill window at Lv.2).
+  final bool showRates;
   const NightHomeHeaderData({required this.level, required this.progressPermille,
     required this.buns, required this.lifetime, required this.autoRate,
-    required this.tapRate, required this.status, this.claimable = 0});
+    required this.tapRate, required this.status, this.claimable = 0, this.showRates = true});
 }
 
 class NightHome extends StatelessWidget {
@@ -51,6 +55,10 @@ class NightHome extends StatelessWidget {
   /// before opening). See GriddlePainter.filled.
   final Set<int>? griddleFilled;
   final String Function(CosmeticSlot)? equipped;
+  /// Bottom-menu buttons still locked, by destination id, with the reason
+  /// ('Lv.2에 열려요'). They show the common hatched lock (26번 2단계) and
+  /// a tap tells the reason instead of opening.
+  final Map<String, String> navLocks;
   const NightHome(
       {super.key,
       required this.controller,
@@ -62,7 +70,8 @@ class NightHome extends StatelessWidget {
       this.centerBuilder,
       this.counter,
       this.griddleFilled,
-      this.equipped});
+      this.equipped,
+      this.navLocks = const {}});
 
   static const cream = Cozy.cream;
 
@@ -231,6 +240,7 @@ class NightHome extends StatelessWidget {
             Expanded(flex: 26, child: _levelBadge()),
             const SizedBox(width: 6),
             Expanded(flex: 44, child: _balance()),
+            if (headerData?.showRates ?? true) ...[
             const SizedBox(width: 6),
             Expanded(
                 flex: 30,
@@ -243,6 +253,7 @@ class NightHome extends StatelessWidget {
                       _rate(const Key('tap-rate'), Icons.touch_app_outlined,
                           '클릭당', headerData?.tapRate ?? controller.currentTapRate),
                     ])),
+            ],
           ]),
         ),
         const SizedBox(height: 6),
@@ -459,12 +470,30 @@ class NightHome extends StatelessWidget {
                 child: CountBadge(
                     count: id == 'menu' ? claimable : 0,
                     badgeKey: const Key('menubar-badge'),
-                    child: _NavButton(
-                        // The HUD's round menu button already uses menu-menu.
-                        id: id == 'menu' ? 'menubar' : id,
-                        label: label,
-                        icon: icon,
-                        onPressed: () => onOpen(id)))),
+                    child: navLocks[id] != null
+                        ? Builder(
+                            builder: (context) => LockedOverlay(
+                                key: Key('menu-$id-locked'),
+                                caption: '$label: ${navLocks[id]}',
+                                showCaption: false,
+                                maxLock: 34,
+                                lockAlignment: const Alignment(-.55, 0),
+                                onTap: () => ScaffoldMessenger.maybeOf(context)
+                                  ?..hideCurrentSnackBar()
+                                  ..showSnackBar(SnackBar(
+                                      content: Text('$label: ${navLocks[id]}'),
+                                      duration: const Duration(seconds: 2))),
+                                child: _NavButton(
+                                    id: id,
+                                    label: label,
+                                    icon: icon,
+                                    onPressed: () {})))
+                        : _NavButton(
+                            // The HUD's round menu button already uses menu-menu.
+                            id: id == 'menu' ? 'menubar' : id,
+                            label: label,
+                            icon: icon,
+                            onPressed: () => onOpen(id)))),
           ],
         ]),
       ),

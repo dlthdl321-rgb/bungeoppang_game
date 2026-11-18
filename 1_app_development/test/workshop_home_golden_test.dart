@@ -167,6 +167,8 @@ void main() {
         'practiceRequired': DevelopmentBalance.integer(rule, 'practice_required'),
         'techniqueRequired': DevelopmentBalance.integer(rule, 'technique_passes_required'),
       };
+      // 26번 2단계: the griddle's introduction card was seen (its own test).
+      c.state.featureIntros.add('griddle');
     });
     expect(await c.startCell(1), isTrue);
     expect(await c.startCell(4), isTrue);

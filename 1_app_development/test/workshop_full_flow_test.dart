@@ -152,6 +152,19 @@ void main() {
     expect(c.state.completedSales, 1);
     expect(c.state.tutorial, 'done');
     expect(key('tutorial-card'), findsNothing);
+    // 26번 2단계: the first sale's praise (words, big star) for two seconds,
+    // then the six-cell griddle's card once (팥 was mastered in the guide).
+    expect(key('sale-praise'), findsOneWidget);
+    expect(key('sale-praise-star'), findsOneWidget);
+    expect(key('feature-intro-griddle'), findsNothing, reason: '칭찬이 먼저');
+    await tester.pump(const Duration(seconds: 2));
+    await tester.pump();
+    await tester.pump();
+    expect(key('sale-praise'), findsNothing);
+    expect(key('feature-intro-griddle'), findsOneWidget);
+    await tester.tap(key('feature-intro-ok'));
+    await tester.pumpAndSettle();
+    expect(c.state.featureIntros, contains('griddle'));
 
     // 둘째 손님에게는 남은 재고(보관한 연습 붕어빵과 수확분 중 남은 1개)를 판다.
     await nextGuest();

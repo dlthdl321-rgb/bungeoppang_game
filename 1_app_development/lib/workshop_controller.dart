@@ -24,6 +24,7 @@ import 'workshop_customer_events.dart';
 import 'workshop_customer_dialogue.dart';
 import 'workshop_customer_orders.dart';
 import 'workshop_arrivals.dart';
+import 'workshop_feature_unlocks.dart';
 
 part 'workshop_storage.dart';
 
@@ -43,6 +44,13 @@ class WorkshopAwayReport {
       this.arrivals = 0});
 }
 
+/// One finished sale as the guest saw it: who, how many stars, what they said.
+class WorkshopSalePraise {
+  final String name, speech;
+  final int stars;
+  const WorkshopSalePraise(this.name, this.stars, this.speech);
+}
+
 /// Fresh-game local production aggregate. Gold remains in the authenticated
 /// server wallet; pending claims here are never spendable gold.
 class WorkshopState {
@@ -57,6 +65,9 @@ class WorkshopState {
   ArrivalClock regularClock = const ArrivalClock(seed: 0), namedClock = const ArrivalClock(seed: 1);
   /// The named neighbor who came last; the next named visit skips them.
   String? lastNamedVisitor;
+  /// Feature introduction cards already shown (schema 8, 26번 2단계):
+  /// [WorkshopFeature] names from [workshopIntroIds].
+  final Set<String> featureIntros = {};
   final Set<String> recipes = {'redbean'};
   final Set<String> recipeMissions = {};
   final Map<String, Map<String, dynamic>> masteryAwards = {};
@@ -96,7 +107,8 @@ class WorkshopState {
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
   }
-  Map<String, dynamic> toJson() => {'schema': 7, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
+  Map<String, dynamic> toJson() => {'schema': 8, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
+    'featureIntros': featureIntros.toList()..sort(),
     'regularClock': regularClock.toJson(), 'namedClock': namedClock.toJson(), 'lastNamedVisitor': lastNamedVisitor,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
     'levelStartTaps': levelStartTaps, 'levelStartSales': levelStartSales, 'arrivalMs': arrivalMs,
@@ -121,7 +133,7 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6, 7].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6, 7, 8].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
     if ((row['schema'] as int) < 4 && (row.containsKey('relationships') || row.containsKey('customerScene'))) throw const FormatException('구형 관계 저장 충돌');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
@@ -374,6 +386,20 @@ class WorkshopState {
         if (day >= lastDay) { lastDay = day; last = visit['npc'] as String; }
       }
       state.lastNamedVisitor = last;
+    }
+    // Schema 8 (26번 2단계): introduction cards already shown. Older saves
+    // count every feature already open as introduced, so a player past
+    // those levels sees no cards.
+    if ((row['schema'] as int) >= 8) {
+      final seen = row['featureIntros'];
+      if (seen is! List || seen.any((id) => id is! String || !workshopIntroIds.contains(id)) ||
+          seen.toSet().length != seen.length) {
+        throw const FormatException('기능 소개 저장 오류');
+      }
+      state.featureIntros.addAll(seen.cast<String>());
+    } else {
+      if (row.containsKey('featureIntros')) throw const FormatException('구형 저장에 기능 소개 기록이 있어요.');
+      state.featureIntros.addAll(openedIntroIds(state, config));
     }
     return state;
   }
@@ -801,6 +827,20 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     state.session = null;
     if (state.tutorial == 'cook' && (keep || !session.practice)) state.tutorial = 'sell';
   }, production: true);
+  /// The first feature introduction card still to show (26번 2단계).
+  WorkshopFeature? get pendingIntro => pendingFeatureIntro(state, config);
+  bool featureIsOpen(WorkshopFeature feature) => featureOpen(state, config, feature);
+  String? featureLock(WorkshopFeature feature) => featureLockReason(state, config, feature);
+  /// '알겠어요' on an introduction card: never shown again.
+  /// Waits for a command in flight, so the card is not shown again.
+  Future<bool> markIntroSeen(WorkshopFeature feature) async {
+    if (!workshopIntroIds.contains(feature.name)) return false;
+    while (busy && !disposed) {
+      await (_commandIdle?.future ?? Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    if (state.featureIntros.contains(feature.name)) return true;
+    return command(() => state.featureIntros.add(feature.name));
+  }
   Future<bool> skipTutorial() => command(() {
     if (!state.tutorialActive) throw const FormatException('진행 중인 안내가 없어요.');
     state.tutorial = 'skipped';
@@ -980,7 +1020,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     }
     state.completedSales++; state.customers.removeAt(index);
     // The guide's first sale stays free of story, follow-up and choice scenes.
-    if (state.tutorialActive) { state.tutorial = 'done'; }
+    // It gets the big praise (26번 2단계, S2-Q4): the guest's words, the
+    // stars and a short sparkle, not saved.
+    if (state.tutorialActive) { state.tutorial = 'done'; salePraise = _lastSale(); }
     else if(customerCatalog.contains(order.customerId)) { _afterNamedSale(order); }
     _syncArrivals(); // A freed place (or the guide's end) starts a stopped clock.
   });
@@ -1040,12 +1082,25 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if(initial is! int || initial<=0 || (initial-order.remainingMs)*1000<initial*DevelopmentBalance.integer(config.section('customer_relationships'),'delay_threshold_permille')) return null;
     return selectCustomerSpeech(customerCatalog,'delayed',_dialogueFacts(order))?['text'];
   }
-  String? get lastSaleFeedback {
+  WorkshopSalePraise? _lastSale() {
     if(state.sales.isEmpty) return null;
     final sale=state.sales.entries.last,evidence=validateStoredCustomerSale(sale.key,sale.value);
     final order=CustomerOrder.fromJson(evidence['order'] as Map<String,dynamic>);
     final speech=selectCustomerSpeech(customerCatalog,'success',_dialogueFacts(order));
-    return '${customerName(order.customerId)} · 별 ${evidence['stars']} · ${speech?['text'] ?? '감사합니다. 잘 먹을게요.'}';
+    return WorkshopSalePraise(customerName(order.customerId),DevelopmentBalance.integer(evidence,'stars'),
+      speech?['text'] ?? '감사합니다. 잘 먹을게요.');
+  }
+  String? get lastSaleFeedback {
+    final sale=_lastSale();
+    return sale==null ? null : '${sale.name} · 별 ${sale.stars} · ${sale.speech}';
+  }
+  /// The first-run guide's first sale, shown big for a moment over the
+  /// stall (26번 2단계). Never saved: a restart simply skips it.
+  WorkshopSalePraise? salePraise;
+  void dismissSalePraise() {
+    if (salePraise == null) return;
+    salePraise = null;
+    if (!disposed) notifyListeners();
   }
   String customerConversation(CustomerOrder order)=>_neighborSpeech(order)['text']!;
   String? customerWaitingAction(CustomerOrder order) {

@@ -22,6 +22,7 @@ import 'workshop_counter.dart';
 import 'workshop_guide.dart';
 import '../workshop_tutorial.dart';
 import '../customer_notifier.dart';
+import '../workshop_feature_unlocks.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -55,13 +56,38 @@ class _WorkshopPageState extends State<WorkshopPage> {
       }
     });
   }
+  bool _introShowing=false;
+  /// A feature that just opened gets its one-screen card once (26번 2단계),
+  /// after the guide and never over another window, card, scene or a bake
+  /// in the big mold.
+  void _showFeatureIntro() {
+    final feature=c.pendingIntro;
+    if(feature==null || _introShowing || _noticeAsking || _windowCount>0 || _awayShowing ||
+        c.state.customerScene!=null || c.state.session!=null || c.salePraise!=null || c.busy || c.error!=null) {
+      return;
+    }
+    _introShowing=true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if(!mounted || c.pendingIntro!=feature){_introShowing=false;return;}
+      _enterWindow();
+      try {
+        await showDialog<void>(context:context,barrierDismissible:false,builder:(ctx)=>WorkshopFeatureIntroCard(
+          feature:feature,onDone:()=>Navigator.pop(ctx)));
+      } finally {
+        _leaveWindow();
+        await c.markIntroSeen(feature);
+        _introShowing=false;
+      }
+    });
+  }
   bool _noticeAsking=false;
   static const noticeDeniedText='휴대폰 설정에서 이 앱의 알림을 허용해야 받을 수 있어요.';
   /// After the first-run guide, once: may we tell the player when guests
   /// come while the app is off? Either answer is remembered (5-1단계).
   void _askNotifications() {
     final account=widget.accountController,s=c.state,notifier=widget.notifier;
-    if(notifier==null || _noticeAsking || _windowCount>0 || _awayShowing || s.tutorialActive || s.completedSales==0 ||
+    if(notifier==null || _noticeAsking || _introShowing || _windowCount>0 || _awayShowing || s.tutorialActive || s.completedSales==0 ||
+        c.salePraise!=null ||
         s.customerScene!=null || account.state.settings.notificationPromptDone) {
       return;
     }
@@ -272,7 +298,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
   }
   Future<void> _menu()=>_window('메뉴',(ctx)=>Column(children:[
     Expanded(child:MenuPanel(controller:widget.accountController,legacyDescriptions:false,rewardCounts:_rewardCounts(),
-      hidden:const {'ranking','friends','share'},
+      hidden:{'ranking','friends','share',
+        for(final d in ['achievements:collection','skins:stall']) if(_lockFor(d)!=null) d},
       onOpen:(destination){Navigator.pop(ctx);_open(destination);})),
     Padding(padding:const EdgeInsets.all(8),child:Column(children:[
       Text('황금붕어빵력 심사 대기 ${c.pendingRewardCount}건. 확정 잔액에는 아직 포함되지 않아요.',
@@ -285,7 +312,19 @@ class _WorkshopPageState extends State<WorkshopPage> {
       ]),
     ])),
   ]));
+  /// Why [destination] is still closed (26번 2단계), or null.
+  String? _lockFor(String destination) => switch(destination) {
+    'skills' => c.featureLock(WorkshopFeature.skills),
+    'shop' || 'skins' || 'skins:avatar' => c.featureLock(WorkshopFeature.wardrobe),
+    'skins:stall' => c.featureLock(WorkshopFeature.wardrobe) ?? c.featureLock(WorkshopFeature.stallCosmetics),
+    'achievements:collection' => c.featureLock(WorkshopFeature.collection),
+    _ => null,
+  };
   void _open(String destination) {
+    if(_lockFor(destination) case final reason?) {
+      ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(SnackBar(content:Text(reason),duration:const Duration(seconds:2)));
+      return;
+    }
     switch(destination) {
       case 'menu': unawaited(_menu());
       case 'skills': unawaited(_shop());
@@ -383,6 +422,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     builder:(context,_)=>_content(context));
   Widget _content(BuildContext context) {
     _showAwayReport();
+    _showFeatureIntro();
     _askNotifications();
     final s = c.state;
     final scene=s.customerScene;
@@ -412,7 +452,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
     final home=NightHome(key:_homeKey,controller:widget.accountController,onOpen:_open,
       equipped:_equipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
         buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts().values.fold<int>(0,(a,b)=>a+b),
-        status:c.error!=null ? '저장 확인 필요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}'),
+        status:c.error!=null ? '저장 확인 필요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}',
+        showRates:c.featureIsOpen(WorkshopFeature.skills)),
+      navLocks:{for(final id in const ['skills','skins','shop']) if(_lockFor(id) case final reason?) id:reason},
       centerBuilder:(fish,clean,counterTop)=>Stack(children:[
         Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,
           reduceMotion:widget.accountController.state.settings.reduceMotion,
@@ -427,7 +469,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
       griddleFilled:workshopGriddleFilled(c),
       vendor:CookCut(equipped:_equipped,taps:BigInt.from(s.taps),
         reduceMotion:widget.accountController.state.settings.reduceMotion,greeting:s.customers.isNotEmpty));
+    final praise=c.salePraise;
     return Stack(children:[home,if(step!=null)Positioned.fill(child:WorkshopTutorialOverlay(step:step,home:_homeKey,
-      onSkip:c.busy || c.error!=null ? null : c.skipTutorial))]);
+      onSkip:c.busy || c.error!=null ? null : c.skipTutorial)),
+      if(praise!=null)Positioned.fill(child:WorkshopSalePraiseBanner(key:ObjectKey(praise),praise:praise,
+        reduceMotion:widget.accountController.state.settings.reduceMotion || MediaQuery.disableAnimationsOf(context),
+        onDone:c.dismissSalePraise))]);
   }
 }

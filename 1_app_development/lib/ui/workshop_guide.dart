@@ -1,9 +1,13 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../development_balance.dart';
 import '../workshop_controller.dart';
+import '../workshop_feature_unlocks.dart';
 import '../workshop_tutorial.dart';
+import 'bake_target.dart' show SparklePainter;
 import 'celebration.dart' show CountUpText;
 import 'cozy_style.dart';
+import 'pixel_sprites.dart';
 
 /// First-run guide over the real home: a ring around the widget keyed
 /// [WorkshopTutorialStep.target] inside [home], and a small card beside it.
@@ -192,5 +196,134 @@ class WorkshopWelcomeBackCard extends StatelessWidget {
               CozyPrimaryButton(key: const Key('welcome-back-close'), minHeight: 44,
                   onPressed: () => Navigator.pop(context), label: '확인'),
             ]))));
+  }
+}
+
+/// A feature's one-screen introduction (26번 2단계): a picture, two
+/// sentences and '알겠어요'. The picture is `ui/<art>.png` (25번 22번); until
+/// it is drawn an existing icon on a cream frame stands in.
+class WorkshopFeatureIntroCard extends StatelessWidget {
+  final WorkshopFeature feature;
+  final VoidCallback onDone;
+  const WorkshopFeatureIntroCard({super.key, required this.feature, required this.onDone});
+
+  @override
+  Widget build(BuildContext context) {
+    final intro = featureIntro(feature);
+    final art = PixelSprites.screenArt(intro.art);
+    return Dialog(
+        key: Key('feature-intro-${feature.name}'),
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: CozyPanel(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+            radius: 16,
+            child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                width: 200,
+                height: 150,
+                decoration: BoxDecoration(color: Cozy.honeyLight.withValues(alpha: .5),
+                    borderRadius: BorderRadius.circular(12), border: Border.all(color: Cozy.woodLight, width: 2)),
+                padding: const EdgeInsets.all(8),
+                alignment: Alignment.center,
+                child: art != null
+                    ? PixelArt(art, key: const Key('feature-intro-art'))
+                    : PixelIcon(intro.fallbackIcon, key: const Key('feature-intro-standin'), size: 88),
+              ),
+              const SizedBox(height: 10),
+              Text(intro.title, key: const Key('feature-intro-title'), textAlign: TextAlign.center,
+                  style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 22, color: Cozy.wood)),
+              const SizedBox(height: 6),
+              Text(intro.body, key: const Key('feature-intro-body'), textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, color: Cozy.ink)),
+              const SizedBox(height: 12),
+              CozyPrimaryButton(key: const Key('feature-intro-ok'), minHeight: 44, onPressed: onDone, label: '알겠어요'),
+            ]))));
+  }
+}
+
+/// The first sale's praise (26번 2단계, S2-Q4): the guest's words in a
+/// speech bubble, a big star with the star count and a short sparkle. It
+/// shows for two seconds, then [onDone]; with reduced motion it stands still.
+class WorkshopSalePraiseBanner extends StatefulWidget {
+  final WorkshopSalePraise praise;
+  final bool reduceMotion;
+  final VoidCallback onDone;
+  const WorkshopSalePraiseBanner({super.key, required this.praise, required this.onDone, this.reduceMotion = false});
+  static const duration = Duration(seconds: 2);
+  @override
+  State<WorkshopSalePraiseBanner> createState() => _WorkshopSalePraiseBannerState();
+}
+
+class _WorkshopSalePraiseBannerState extends State<WorkshopSalePraiseBanner> with SingleTickerProviderStateMixin {
+  late final AnimationController _t = AnimationController(vsync: this, duration: WorkshopSalePraiseBanner.duration);
+  Timer? _close;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.reduceMotion) _t.forward();
+    _close = Timer(WorkshopSalePraiseBanner.duration, widget.onDone);
+  }
+
+  @override
+  void dispose() {
+    _close?.cancel();
+    _t.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.praise;
+    final content = Column(mainAxisSize: MainAxisSize.min, children: [
+      // The speech bubble: who and what they said.
+      CozyPanel(
+        key: const Key('sale-praise-bubble'),
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+        radius: 16,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(p.name, style: const TextStyle(fontSize: 13, color: Cozy.inkSoft, fontWeight: FontWeight.w700)),
+          Text(p.speech, key: const Key('sale-praise-speech'), textAlign: TextAlign.center,
+              style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 18, color: Cozy.ink)),
+        ]),
+      ),
+      const SizedBox(height: 8),
+      SizedBox(
+        width: 150,
+        height: 110,
+        child: Stack(alignment: Alignment.center, children: [
+          if (!widget.reduceMotion)
+            Positioned.fill(child: FadeTransition(
+                opacity: TweenSequence([
+                  TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
+                  TweenSequenceItem(tween: ConstantTween(1.0), weight: 60),
+                  TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 25),
+                ]).animate(_t),
+                child: const CustomPaint(key: Key('sale-praise-sparkle'), painter: SparklePainter()))),
+          Column(mainAxisSize: MainAxisSize.min, children: [
+            const PixelIcon('star', key: Key('sale-praise-star'), size: 64),
+            Text('별 ${p.stars}개!', key: const Key('sale-praise-stars'),
+                style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 24, color: Cozy.cream,
+                    shadows: [Shadow(color: Cozy.woodDark, offset: Offset(2, 2)), Shadow(color: Cozy.woodDark, blurRadius: 4)])),
+          ]),
+        ]),
+      ),
+    ]);
+    final shown = widget.reduceMotion
+        ? content
+        : ScaleTransition(
+            scale: TweenSequence([
+              TweenSequenceItem(tween: Tween(begin: .6, end: 1.08).chain(CurveTween(curve: Curves.easeOut)), weight: 15),
+              TweenSequenceItem(tween: Tween(begin: 1.08, end: 1.0), weight: 10),
+              TweenSequenceItem(tween: ConstantTween(1.0), weight: 75),
+            ]).animate(_t),
+            child: content);
+    return Semantics(
+      liveRegion: true,
+      label: '${p.name}: ${p.speech} 별 ${p.stars}개',
+      excludeSemantics: true,
+      child: IgnorePointer(child: Center(key: const Key('sale-praise'), child: shown)),
+    );
   }
 }
