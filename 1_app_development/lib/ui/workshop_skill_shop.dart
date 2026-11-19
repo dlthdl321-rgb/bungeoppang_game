@@ -216,7 +216,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
           Container(
             key: Key('max-$id'),
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(color: Cozy.honey, borderRadius: BorderRadius.circular(10), border: Border.all(color: Cozy.wood)),
+            decoration: BoxDecoration(color: Cozy.honey, borderRadius: BorderRadius.circular(10), border: Border.all(color: Cozy.honeyDeep)),
             child: const Text('MAX', style: TextStyle(fontWeight: FontWeight.w900, color: Cozy.ink)),
           )
         else ...[
@@ -328,7 +328,8 @@ class _KindTab extends StatelessWidget {
             decoration: BoxDecoration(
               color: selected ? Cozy.honey : Cozy.cream,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: selected ? Cozy.wood : Cozy.tan, width: selected ? 2 : 1),
+              // H41: hairlines, no dark outline on the picked tab.
+              border: Border.all(color: selected ? Cozy.honeyDeep : Cozy.line),
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               PixelIcon(kind == UpgradeKind.tap ? 'tab_tap' : 'tab_auto', size: 28),
@@ -384,7 +385,7 @@ class SkillStepWheel extends StatelessWidget {
           width: width,
           height: rowHeight * 3 + 4,
           decoration: BoxDecoration(
-              color: Cozy.cream, borderRadius: BorderRadius.circular(10), border: Border.all(color: Cozy.wood, width: 2)),
+              color: Cozy.cream, borderRadius: BorderRadius.circular(10), border: Border.all(color: Cozy.woodLight, width: 1.5)),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Stack(children: [

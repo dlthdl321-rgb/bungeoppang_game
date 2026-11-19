@@ -48,12 +48,16 @@ class CosmeticMenuAccess {
   /// Tabs open at this level (붕어빵 Lv.5, 가게 Lv.8; S45-Q6); null: all.
   final bool Function(WardrobeTab)? tabOpen;
 
+  /// Slots open inside an open tab (26번 3차 H42: the 가게 tab shows 배경
+  /// and 시간 from Lv.1, the stove, decoration and lamp from Lv.8); null: all.
+  final bool Function(CosmeticSlot)? slotOpen;
+
   /// What several items cost together, with what the player lacks for all
   /// of them ('모두 사기', 3차 피드백 H15); null: not sold together.
   final WardrobePrice? Function(List<CosmeticDefinition>)? total;
   const CosmeticMenuAccess({required this.equipped,required this.owned,required this.unlocked,
     required this.canApply,required this.price,required this.action,required this.apply,this.requirement,
-    this.listed=_always,this.forSale,this.cost,this.tabOpen,this.total});
+    this.listed=_always,this.forSale,this.cost,this.tabOpen,this.slotOpen,this.total});
   static bool _always(CosmeticDefinition _)=>true;
 }
 
@@ -548,22 +552,22 @@ class MenuPanel extends StatelessWidget {
           if (!hidden.contains(dest))
           Padding(
             padding: const EdgeInsets.only(bottom: 8),
+            // H41: a white card with a hairline, not a wooden frame.
             child: Material(
-              color: Cozy.wood,
-              borderRadius: BorderRadius.circular(12),
+              color: Cozy.cream,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: const BorderSide(color: Cozy.line)),
+              shadowColor: Cozy.shadow,
+              elevation: 1,
               child: InkWell(
                 key: key,
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 onTap: () => onOpen(dest),
                 child: Container(
-                  margin: const EdgeInsets.all(2),
                   constraints: const BoxConstraints(minHeight: 56),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                      color: Cozy.cream,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Cozy.woodLight, width: 1.5)),
                   child: Row(children: [
                     CountBadge(
                         count: claimable[dest] ?? 0,
@@ -595,7 +599,7 @@ class MenuPanel extends StatelessWidget {
                     if (locks.containsKey(dest))
                       const Icon(Icons.lock_rounded,
                           color: Cozy.inkSoft, size: 18),
-                    const Icon(Icons.chevron_right, color: Cozy.wood),
+                    const Icon(Icons.chevron_right_rounded, color: Cozy.caption),
                   ]),
                 ),
               ),

@@ -122,6 +122,9 @@ void main() {
     Future<void> openPhoto(WidgetTester tester) async {
       await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
+      // 26번 3차 H42: '배경 테마' is back in the menu, so scroll to it.
+      await tester.ensureVisible(find.byKey(const Key('menu-photo')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('menu-photo')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('share-card-dialog')), findsOneWidget);

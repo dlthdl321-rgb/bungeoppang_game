@@ -63,6 +63,8 @@ def main():
              '| 칸 | id | 이름 | 무료 | girl 그림 | girl 방식 | girl 노출 | boy 그림 | boy 방식 | boy 노출 |',
              '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |']
     counts = {}
+    # 26번 3차 H42: backgrounds share the catalog but are not avatar art.
+    catalog = {k: v for k, v in catalog.items() if v['slot'] != 'background'}
     for item, row in catalog.items():
         cells = []
         for character in ('girl', 'boy'):

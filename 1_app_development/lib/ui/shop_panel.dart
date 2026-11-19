@@ -78,7 +78,8 @@ class _ShopPanelState extends State<ShopPanel> {
               }, size: 20),
               label: Text(_label(t), style: const TextStyle(fontWeight: FontWeight.w900)),
               showCheckmark: false,
-              shape: StadiumBorder(side: BorderSide(color: t == tab ? Cozy.wood : Cozy.tan, width: t == tab ? 2 : 1.5)),
+              // H41: a hairline pill; the picked one honey (no wooden outline).
+              shape: StadiumBorder(side: BorderSide(color: t == tab ? Cozy.honeyDeep : Cozy.line)),
               backgroundColor: Cozy.cream,
               selected: t == tab,
               selectedColor: Cozy.honey,

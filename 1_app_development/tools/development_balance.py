@@ -114,7 +114,8 @@ def validate(data, catalog):
             require(row['metric'] == key and re.fullmatch(r'[1-9][0-9]*', row['target']) and
                     data['mission_gold_rewards'][row['reward_key']] > 0, f'{scope}/{key}: 미션 목표/보상')
     avatar = data['avatar_catalog']
-    avatar_slots = {'character', 'skin', 'hair', 'top', 'bottom', 'shoes', 'outfit', 'hat', 'accessory', 'tool'}
+    # 26번 3차 H42: backgrounds are sold through the same catalog.
+    avatar_slots = {'character', 'skin', 'hair', 'top', 'bottom', 'shoes', 'outfit', 'hat', 'accessory', 'tool', 'background'}
     require(bool(avatar), '아바타 카탈로그 누락')
     for key, row in avatar.items():
         require(row['slot'] in avatar_slots and type(row['free']) is bool and

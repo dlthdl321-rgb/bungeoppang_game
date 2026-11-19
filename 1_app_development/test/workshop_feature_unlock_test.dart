@@ -91,7 +91,8 @@ void main() {
         expect(await setLevel(c, level), isTrue);
         opened[level] = {for (final f in WorkshopFeature.values) if (c.featureIsOpen(f)) f};
       }
-      expect(opened[1], {WorkshopFeature.wardrobe});
+      // 26번 3차 H42: 배경 테마 opens with the wardrobe.
+      expect(opened[1], {WorkshopFeature.wardrobe, WorkshopFeature.stallBackground});
       expect(opened[2]!.difference(opened[1]!), {WorkshopFeature.skills});
       expect(opened[3]!.difference(opened[2]!), {WorkshopFeature.collection});
       expect(opened[4]!.difference(opened[3]!), {WorkshopFeature.recipes});
@@ -323,7 +324,8 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('메뉴: 도감은 Lv.3 전에도 자물쇠와 함께 보이고, 배경 테마는 Lv.8 전까지 숨김 (3차 H32·H36)', (tester) async {
+    // 26번 3차 H42: 배경 테마 is back as soon as the guide ends (it was hidden until Lv.8).
+    testWidgets('메뉴: 도감은 Lv.3 전에도 자물쇠와 함께 보이고, 배경 테마는 안내가 끝나면 바로 (3차 H32·H36·H42)', (tester) async {
       final c = await mount(tester);
       await c.skipTutorial();
       await tester.pump();
@@ -331,7 +333,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('menu-collection')), findsOneWidget);
       expect(tester.widget<Text>(find.byKey(const Key('menu-lock-achievements:collection'))).data, 'Lv.3에 열려요');
-      expect(find.byKey(const Key('menu-theme')), findsNothing);
+      expect(find.byKey(const Key('menu-theme')), findsOneWidget);
       // 일일 미션·주간 도전 moved to the '오늘' window.
       expect(find.byKey(const Key('menu-daily')), findsNothing);
       expect(find.byKey(const Key('event-entry')), findsNothing);

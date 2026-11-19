@@ -35,7 +35,7 @@
 15. [알려진 문제](#15-알려진-문제)
 16. [기획 중인 변경](#16-기획-중인-변경)
 
-흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19), [33 꾸미기·상점 화면 정리](#33-꾸미기상점-화면-정리--2026-11-19), [34 매일 돌아올 이유](#34-매일-돌아올-이유--2026-11-19), [35 공유 카드](#35-공유-카드--2026-11-19), [36 법률 확인 반영](#36-법률-확인-반영--2026-11-19), [37 3차 피드백 홈·굽기](#37-실기기-3차-녹화-피드백--홈굽기-c-묶음-h17h30--2026-11-19).
+흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19), [33 꾸미기·상점 화면 정리](#33-꾸미기상점-화면-정리--2026-11-19), [34 매일 돌아올 이유](#34-매일-돌아올-이유--2026-11-19), [35 공유 카드](#35-공유-카드--2026-11-19), [36 법률 확인 반영](#36-법률-확인-반영--2026-11-19), [37 3차 피드백 홈·굽기](#37-실기기-3차-녹화-피드백--홈굽기-c-묶음-h17h30--2026-11-19), [38 3차 피드백 E: 공통 테마·충전 상품·배경](#38-3차-피드백-e-공통-테마충전-상품배경--2026-11-19).
 
 ---
 
@@ -406,7 +406,7 @@
 
 | 칸 | 아이템 |
 | --- | --- |
-| background | **clear 맑은 날 0/1**, night 야간 골목 3/1, dusk 보랏빛 해질녘 5/2/100, rain 비 오는 날 6/2, snow 눈 오는 밤 7/3, autumn 가을 골목 9/4, forest 숲길 노점 9/5/1만, cherry 벚꽃 골목 10/6, snowday 눈 오는 낮 11/6, seaside 바닷가 야시장 14/8 |
+| background | **clear 맑은 날 0/1**, night 야간 골목 3/1, dusk 보랏빛 해질녘 5/2/100, rain 비 오는 날 6/2, snow 눈 오는 밤 7/3, autumn 가을 골목 9/4, forest 숲길 노점 9/5/1만, cherry 벚꽃 골목 10/6, snowday 눈 오는 낮 11/6, seaside 바닷가 야시장 14/8 (구형 코인 값. **신규 Workshop은 26번 3차 H42부터 `avatar_catalog`에 slot `background`로 들어가 붕어빵력 1000 + 황금 2(`cosmetic_purchase`)로 팔고, 해금 레벨은 위 레벨 그대로·누적 조건 없음, clear는 무료** — 38장) |
 | stove | **iron 기본 화로 0/1**, castiron 무쇠 화로 6/2, copper 구리 화로 7/3/1000, golden 황금 화로 15/9 |
 | decoration | **none 0/1**, lantern 종이 등불 4/2, starlights 별 전구 5/3, bunting 작은 축제 깃발 8/4/5000, windchime 풍경 9/5, paperlanterns 종이 초롱 줄 10/6, snowman 눈사람 12/7 |
 | lamp | **amberlamp 기본 등불 0/1**, roselamp 분홍 4/2, mintlamp 민트 6/3, lilaclamp 라일락 8/4 |
@@ -553,7 +553,7 @@
 - 결제 흐름: `buyGoldPack`(로그인 필요) → Play 결제 → 서버 `walletRedeem`이 Play API로 확인하고 소모 처리 → 지급. 앱에서는 자동 소모하지 않습니다(`autoConsume: false`).
 - 사용할 때는 요청마다 20자 무작위 id를 붙여 `walletSpend`를 부릅니다. 같은 id는 한 번만 처리됩니다.
 - 신규 Workshop의 황금 획득: 환영 황금(계정당 1회, `ledger/welcome_v1`), 일일·주간 미션, 희귀 판매 추첨. 모두 서버 지갑에서만 늘어나고 앱은 로컬 황금을 만들지 않습니다([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)).
-- 신규 Workshop의 황금 쓰는 곳(26번 3단계): 꾸미기(유료 아바타)와 5단계 이상 스킬. 상점(`ShopPanel`, Workshop 경로)은 **꾸미기 탭으로 열리고**(구형 경로는 장비 탭; 26번 4-5단계부터 Workshop 상점은 꾸미기·충전 두 탭, 꾸미기 탭은 사고 바로 입는 곳, 모든 Workshop 창 위 잔액 줄 황금 옆 '+'가 충전 목록), 충전 탭에 '황금붕어빵력 쓰는 곳: 꾸미기(옷·모자·머리·도구)와 높은 단계 스킬…' 한 줄(`gold-uses`), 약관 줄은 '황금붕어빵력 잔액은 로그인한 카카오 계정에 보관돼요.'(구형 경로의 '꾸미기와 스킬 해금은 돌아와요'는 Workshop에서 쓰지 않음). 메뉴 '로그인·보상 확인' 뒤 잔액이 늘면 '황금붕어빵력 N개를 받았어요. 꾸미기에서 써 보세요.' 알림(환영 황금 안내). 이미 황금으로 1~4단계를 산 사용자는 환불 없이 그대로(DEC-062).
+- 신규 Workshop의 황금 쓰는 곳(26번 3단계): 꾸미기(유료 아바타)와 5단계 이상 스킬. 상점(`ShopPanel`, Workshop 경로)은 **꾸미기 탭으로 열리고**(구형 경로는 장비 탭; 26번 4-5단계부터 Workshop 상점은 꾸미기·충전 두 탭, 꾸미기 탭은 사고 바로 입는 곳, 모든 Workshop 창 위 잔액 줄 황금 옆 '+'가 충전 목록), 충전 탭에 '황금붕어빵력 쓰는 곳: 꾸미기(옷·모자·머리·도구)와 높은 단계 스킬…' 한 줄(`gold-uses`), 약관 줄은 '황금붕어빵력 잔액은 로그인한 카카오 계정에 보관돼요.'(구형 경로의 '꾸미기와 스킬 해금은 돌아와요'는 Workshop에서 쓰지 않음). 메뉴 '로그인·보상 확인' 뒤 잔액이 늘면 '황금붕어빵력 N개를 받았어요. 꾸미기에서 써 보세요.' 알림(환영 황금 안내). 이미 황금으로 1~4단계를 산 사용자는 환불 없이 그대로(DEC-062). **충전 탭 모양(26번 3차 H31, `GoldChargeTab`·`GoldPackCard`·`GoldPackArt`):** 맨 위 황금색(보상) 잔액 카드(아이콘 34 + '보유 황금붕어빵력' + 큰 'N개', `gold-balance`), 로그인 전이면 파란 안내 줄 '로그인하면 충전할 수 있어요'(`gold-offline`), 쓰는 곳 한 줄, 상품마다 카드 한 장(왼쪽 60×60 황금 타일에 상품 그림, 가운데 '황금붕어빵력' + 큰 숫자 '330 개', 오른쪽 꿀색 버튼에 Play 가격·없으면 '구매할 수 없음' 흐린 버튼, `gold-pack-<id>`). 상품 그림은 `ui/gold_pack_1~5.png`(25번 H-E-1 주문)가 들어오면 그것, 없으면 황금 붕어빵 아이콘을 1~5개 쌓은 임시 그림(4·5번은 반짝 표시).
 
 ---
 
@@ -823,9 +823,9 @@
 
 **메뉴 창 아래:** 황금붕어빵력 심사 대기 건수(`menu-pending-gold`), '로그인·보상 확인'(`menu-sync`), 영업 중이면 '영업 종료'(`menu-close-business`). 예전 "가게 관리" 시트는 없앴습니다. 레시피(슈크림·초코) 미션 받기는 레벨 미션 창, 맛별 연습·손기술 진행과 손님 취향 기록·이야기 다시 보기는 도감 창으로 옮겼습니다.
 
-**메뉴 창 목록(Workshop):** 도감 · 업적 · 통계 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션 · 가게 사진 찍기(26번 8단계 공유 카드, 35장. 구형 화면 `GameApp` 메뉴에서는 `hidden:{'photo'}`로 뺌). 온라인 랭킹·친구·공유는 가출시 범위 밖이라 `MenuPanel(hidden:)`으로 뺌(DEC-029, 2026-11-16 5단계). 도감은 Lv.3 전, 배경 테마(가게 꾸미기)는 Lv.8 전까지 같은 방법으로 숨김(26번 2단계, 아래 "처음 5분 해금").
+**메뉴 창 목록(Workshop):** 도감 · 업적 · 통계 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션 · 가게 사진 찍기(26번 8단계 공유 카드, 35장. 구형 화면 `GameApp` 메뉴에서는 `hidden:{'photo'}`로 뺌). 온라인 랭킹·친구·공유는 가출시 범위 밖이라 `MenuPanel(hidden:)`으로 뺌(DEC-029, 2026-11-16 5단계). 도감은 Lv.3 전까지 같은 방법으로 숨김(26번 2단계, 아래 "처음 5분 해금"). 배경 테마는 26번 2단계부터 Lv.8 전까지 숨겼으나 26번 3차 H42부터 `stall_background`(Lv.1)부터 보임.
 
-**Workshop 창**(`showWorkshopWindow`, `lib/ui/workshop_windows.dart`, 키 `workshop-window`): 위 안전 영역 아래 화면 전체 높이. 위에서부터 잔액 알약, 제목 프레임(닫기 버튼), 내용. 잔액 알약(`workshop-balance`, 26번 4-5단계 F31·S45-Q4)은 `CurrencyAmount` 두 개(아이콘 24, 굵은 숫자 19: `balance-buns`·`balance-gold`)와 황금 옆 꿀색 '+'(`balance-gold-plus`, `onGold` → `WorkshopPage._goldPacks` 충전 목록). 제목 양옆은 25번 35번 붕어빵 `ui/title_fish` 48×36(왼쪽은 좌우 뒤집음, `title-fish-left`), 설정 창은 톱니 아이콘. 맨 아래 짙은 나무색 받침(`workshop-window-base`, 화면 폭 전체, 위 테두리 wood 2, 최소 높이 = `NightHome.navHeight` 66, 아래 여백 10 + 안전 영역) 가운데에 '돌아가기'. 받침이 홈 하단 메뉴를 완전히 덮어 버튼 옆으로 메뉴가 비치지 않음.
+**Workshop 창**(`showWorkshopWindow`, `lib/ui/workshop_windows.dart`, 키 `workshop-window`): 위 안전 영역 아래 화면 전체 높이. 위에서부터 잔액 알약, 제목 프레임(닫기 버튼), 내용. 잔액 알약(`workshop-balance`, 26번 4-5단계 F31·S45-Q4)은 `CurrencyAmount` 두 개(아이콘 24, 굵은 숫자 19: `balance-buns`·`balance-gold`)와 황금 옆 꿀색 '+'(`balance-gold-plus`, `onGold` → `WorkshopPage._goldPacks` 충전 목록). 제목 양옆은 25번 35번 붕어빵 `ui/title_fish` 48×36(왼쪽은 좌우 뒤집음, `title-fish-left`), 설정 창은 톱니 아이콘. 맨 아래 받침(`workshop-window-base`, 화면 폭 전체, 최소 높이 = `NightHome.navHeight` 66, 아래 여백 10 + 안전 영역) 가운데에 '돌아가기'. 받침이 홈 하단 메뉴를 완전히 덮어 버튼 옆으로 메뉴가 비치지 않음. 26번 3차 H41부터 받침은 연한 creamDeep + 위 가는 선(line), 닫기 버튼은 흰 동그라미 X(보이는 원 36, 위치는 3차 H38의 `CozyCloseButton.edge`), 창 안 오류·알림 줄은 `CozyNotice`(오류 경고색 `workshop-window-error`, 알림 안내색 `workshop-window-notice`). 홈 위 작은 창(`_popup`)은 반경 20.
 
 **꾸미기·상점 역할 (26번 4-5단계, S45-Q1 B, `lib/ui/workshop_wardrobe.dart` `WorkshopWardrobe`):** 꾸미기 창(하단 '꾸미기', `WardrobeMode.wear`)은 **가진 것(무료 포함)을 먼저, 그 뒤에 파는 아바타 아이템(가격·잠김 표시)** 을 보여 주고 입어 보고·사고·입는 곳(3차 피드백 H15, 2026-11-19: '모두 사기'를 위해 파는 것도 꾸미기에 둠), 상점의 꾸미기 탭(`WardrobeMode.shop`, 키 `shop-wardrobe`)은 **아직 없는 아바타 아이템만** 보여 1건씩 사는 곳(잠긴 것도 눌러 입어 봄). '상점에서 더 보기'(`wardrobe-more-<slot>`)는 그 칸의 파는 것이 꾸미기 격자에 하나도 안 보일 때만 남음(지금은 나오지 않음). 상점은 꾸미기·충전 두 탭(Workshop에서 장비 탭 없음, 도구는 꾸미기의 소품 탭).
 - 배치(위만 고정, 격자만 스크롤, 3차 피드백 H16): 책갈피 탭 줄(`cosmetic-category-<tab>`, `WardrobeTabRow(fill: true)`로 **탭이 폭을 나눠 가져 360 폭에서도 다섯 탭이 다 보임**; 탭 폭이 74(`WardrobePill.iconWidth`) 미만이면 아이콘을 빼고 글만, 글은 줄지 않으면 `FittedBox`로 작게) → 10 → 미리보기(창 높이의 34%, 140~210, 모서리 12, 테두리 황갈색 1.5·입어 보는 중이면 꿀색 2.5) → 6 → **버튼 줄**(높이 34, 아래) → 6 → 작은 책갈피 칸 줄(역시 폭을 나눔)(`cosmetic-slot-<slot>`, 입어 보는 칸에 꿀색 점) → 3열 카드 격자(`wardrobe-grid`). **탭·칸은 시안 (나) '책갈피 탭 + 각진 카드'**(26번 시안 확인 2차, DEC-128): `WardrobeTabRow`가 탭들을 가는 나무색 선(칸 줄은 황갈색 1.5) 위에 세우고, 탭(`WardrobePill`, 이름은 예전 알약 그대로)은 위 모서리만 둥근 7·아래 평평, 고른 탭은 복숭아색(`Cozy.peach`)·밝은 나무색 테두리 1.5·4 더 높음·진한 글, 나머지는 크림·황갈색 테두리 1·회갈색(`Cozy.taupe`) 글. 탭 사이 3. 탭 줄 아래 선은 밝은 나무색 1.5(칸 줄은 황갈색 1). 입어 보는 칸 점은 주황 6(`Cozy.amber`). '모습만 바뀌어요' 글은 없음(G14).
@@ -833,7 +833,7 @@
 - 미리보기 왼쪽 위: 입은 것과 다를 때만 작은 칩 '입어 보는 중'(`cosmetic-preview-status`, `WardrobeRibbon`: 높이 24, 양끝 둥근 알약, 반투명 짙은 바탕(`Cozy.ink` 72%)에 크림 글 12·꿀색 반짝이). 입은 그대로면 아무것도 없음(G15). 예전 되돌리기(`wardrobe-revert`, ↺)는 뜻을 모르겠다는 지적(H13)으로 없애고 '모두 취소'로 바꿈.
 - 버튼 줄(3차 피드백 H14·H15, 미리보기 바로 아래 오른쪽 정렬, 숫자 없음, `WardrobeActionButton` 높이 32·모서리 8·글 13, 사이 6): 입어 보는 것이 없으면 버튼 없이 왼쪽에 흐린 안내 '눌러서 입어 보세요'(상점은 '눌러서 입어 보고, 마음에 들면 사요', `wardrobe-hint`). 입어 보는 중이면 **'모두 취소'**(`wardrobe-cancel-all`, 테두리만) — 입어 본 것을 모두 되돌림, **'모두 사기'**(`wardrobe-buy-all`, 꿀색, 안 산 것을 입어 볼 때만) — 확인 창(`wardrobe-buy-all-dialog`: 아이템마다 아이콘·이름·가격 줄 `wardrobe-buy-row-<id>`, 둘 이상이면 합계 `wardrobe-buy-all-total`, 잠김·황금 모자람·붕어빵력 모자람·연결 없음이면 빨간 이유와 함께 '사고 입기' 꺼짐) → 차례로 1건씩 사고(서버 변경 없음, `CosmeticMenuAccess.apply`) 이어서 가진 것도 모두 입힘, **'모두 적용'**(`wardrobe-apply-all`, 짙은 나무색, 가진 것을 입어 볼 때만) — 가진 것만 칸마다 입힘. 다 입으면 **창이 스스로 닫혀** 홈으로 돌아감(`WardrobePanel.onClose`, '돌아가기'를 눌러야 들어가던 흐름 없앰). 못 입힌 것·안 산 것은 이름을 미리보기 아래 반투명 띠(`wardrobe-message`)로 말하고 입어 보는 중으로 남김. 상점은 '모두 취소'와 마지막으로 누른 아이템의 '사고 바로 입기'(`buy-cosmetic-<id>`, 잠겼으면 'Lv.N 해금', 못 사면 꺼짐) → 확인 창(가격 아이콘·'사면 계속 갖고, 바로 입어요', `wardrobe-buy-confirm`) → 1건 구매 뒤 바로 입힘(창은 닫지 않음).
 - 타일(`WardrobeTile`, 키 `preview-<id>`): **각진 카드**(모서리 4, `WardrobeTile.radius`)에 아이템 아이콘(폭 68% 네모 받침 모서리 4, G5 `CosmeticThumb`), 이름 한 줄, 상태 한 줄. 입는 중 = 진한 테두리 + 오른쪽 위 체크 + '입는 중', 보유 = '보유' 배지, 살 수 있음 = 가격표 한 줄(`CurrencyAmount` 붕어빵력·황금, `FittedBox`로 줄바꿈 없음), 모자람 = 같은 가격표에 모자란 재화 빨강(화면 읽기 '붕어빵력 모자람'), 레벨 잠김 = 아이콘에만 공통 잠금 `LockedOverlay`(빗금+자물쇠) + 빨간 'Lv.N 해금', 눌러서 입어 보기 가능. 고른 타일은 꿀색 테두리.
-- 탭 공개: 붕어빵 탭은 `fish_cosmetics`(Lv.5), 가게 탭은 `stall_cosmetics`(Lv.8)부터 보임(`CosmeticMenuAccess.tabOpen`, S45-Q6). 탭·칸은 체크 표시 없는 책갈피(위 '배치'), 고르면 복숭아색.
+- 탭 공개: 붕어빵 탭은 `fish_cosmetics`(Lv.5)부터 보임(`CosmeticMenuAccess.tabOpen`, S45-Q6). 가게 탭은 26번 3차 H42부터 `stall_background`(Lv.1)부터 보이고 그 안의 배경·밤낮 칸만 열림, 화로·장식·등불 칸은 `stall_cosmetics`(Lv.8)부터(`CosmeticMenuAccess.slotOpen`). 배경은 상점 꾸미기 탭의 가게 칸에서 팔고(입어 보기·사면 바로 입음), 꾸미기 가게 탭·메뉴 '배경 테마'·설정 '배경 바꾸기'(`settings-background`, '지금: 맑은 날', 설정 창 계정 칸 바로 아래)에서 바꿈. 산 배경은 가게 저장 `avatarEquipment['background']`(저장 형식 그대로). 탭·칸은 체크 표시 없는 책갈피(위 '배치'), 고르면 복숭아색.
 - 구형 클리커 경로(`game_app.dart`, access 없음)의 `WardrobePanel`·`ShopPanel`은 예전 모양 그대로.
 
 **상점·꾸미기(Workshop):** 파는 것은 아바타 카탈로그(`avatar_catalog`)뿐. 그 밖의 구형 꾸미기(화로·배경·장식·등불·무늬·토핑)는 가지고 있을 때만 보임(`CosmeticMenuAccess.listed`). 품목이 하나도 없는 상점 탭(지금은 테마)은 숨기고 충전 탭은 항상 둠. 충전 탭에는 구형 클리커 부스트 줄을 두지 않음(`GoldChargeTab(legacyBoost: false)`). 로그인 전에는 '로그인하면 충전할 수 있어요', 상품을 불러오는 동안 가격 자리에 '불러오는 중'.
@@ -866,7 +866,8 @@
 | 특별 주문 (`specialOrders`) | `ordinary_sale.special_order_unlock_level`(Lv.5) | 소개 카드만(주문 규칙은 원래대로) |
 | 붕어빵 꾸미기 (`fishCosmetics`) | `fish_cosmetics`(Lv.5) | 소개 카드만(꾸미기 칸 정리는 4-5단계) |
 | 신선도 (`freshness`) | 재고 묶음이 영업일을 하나 이상 넘김 | 아무것도 잠그지 않음, 소개 카드만 |
-| 가게 꾸미기 (`stallCosmetics`) | `stall_cosmetics`(Lv.8) | 메뉴 창 '배경 테마' 숨김(꾸미기 창 가게 칸은 4-5단계) |
+| 가게 꾸미기 (`stallCosmetics`) | `stall_cosmetics`(Lv.8) | 꾸미기 가게 탭의 화로·장식·등불 칸(26번 3차 H42 전에는 메뉴 '배경 테마'까지 숨김) |
+| 배경 테마 (`stallBackground`, 소개 카드 없음) | `stall_background`(Lv.1, 26번 3차 H42) | 메뉴 창 '배경 테마'·설정 '배경 바꾸기'·꾸미기 가게 탭(배경·밤낮 칸) |
 
 - **공통 잠금 표시** (`lib/ui/lock_overlay.dart` `LockedOverlay`, 4-3단계가 함께 씀): 원래 모습을 투명도 0.5로 흐리게 + 짙은 나무색 0.18 면 + **대각선 빗금 한 줄**(`LockHatchPainter`, 26번 3차 피드백 H27: 굵기 3, `0xff5b3a24` 55%, 옅은 면 0.12. 예전 굵기 6·간격 10 여러 줄) + 큰 자물쇠(`ui/lock_badge.png` 128×128, 25번 13번 생성 그림을 `tools/apply_25_art.py --only locks`로 줄임, 없으면 Material 자물쇠) + 높이 64 이상이면 아래에 잠금 글 상자. 하단 메뉴는 자물쇠 18을 버튼 오른쪽 위 모서리(`Alignment(.82, -.78)`, H27)에 두어 아이콘·글자를 가리지 않고 잠금 글은 숨김(화면 읽기 '잠김, 스킬: Lv.2에 열려요'). 키 `menu-<id>-locked`, `griddle-locked`, `lock-hatch`, `lock-badge`, `lock-caption`. 모양은 두 가지(26번 4-3단계, S43-Q4 '빗금+큰 자물쇠'): `LockStyle.hatch`(기능·꾸미기, 위 설명) / `LockStyle.hidden`(다음 스킬: 그림을 `ColorFiltered`로 `0xff3e2a1d` 실루엣 0.55 + 큰 자물쇠, 빗금 없음, 키 `lock-silhouette`). `maxLock`·`showCaption`·`lockAlignment`·`onTap`을 받고, 잠긴 칸의 손가락은 아래 그림에 닿지 않음(`test/lock_overlay_test.dart`). 4-5단계 꾸미기 잠금도 이 위젯을 쓴다.
 - **재화 표시** (`lib/ui/currency_amount.dart` `CurrencyAmount(Currency.buns|gold, amount, short, missing)`, 26번 4-3단계): 아이콘(`icons/bun.png` / 황금 `icons/gold_bun.png` 72×72, 25번 18번) + 숫자(기본 `compactNumber`, 줄였으면 길게 눌러 정확한 숫자 Tooltip, 모자라면 빨강, 화면 읽기 '붕어빵력 12345, 모자라요'). 스킬 창 비용이 쓰고 4-5단계 잔액 줄·꾸미기 타일이 쓴다.
@@ -966,55 +967,65 @@
 
 **기호 대체 글꼴:** Jua에는 `·` `…` `‘’` `→` `「」` `—` `×` `●○` 같은 문장 부호·기호가 없습니다. 이 글자들은 `BungeoSymbols`(`assets/fonts/BungeoSymbols-Regular.ttf`, 약 36KB)로 그립니다. Noto Sans KR(OFL)에서 굵기 600으로 기호 범위만 잘라 이름을 바꾼 글꼴이고, 라이선스는 `BungeoSymbols-OFL.txt`입니다. 다시 만들 때는 `python tools/build_symbol_font.py <NotoSansKR[wght].ttf>`. 코드에서는 `fontFamily: 'Jua'`를 쓰는 모든 곳(테마·`TextTheme`·직접 지정한 `TextStyle`)에 `fontFamilyFallback: Cozy.fontFallback`을 함께 씁니다. 새 `TextStyle`에 Jua를 지정할 때도 같이 넣어야 합니다(버튼 테마처럼 기본 글자 모양을 물려받지 않는 곳이 있음). `test/font_coverage_test.dart`가 `lib/`와 `config/development_balance.json`의 모든 글자가 두 글꼴 중 하나에 있는지 확인합니다.
 
+**26번 3차 H41(2026-11-19)로 바뀜:** '말풍선·창이 모두 갈색/베이지로 똑같아 올드하다'는 지적에 따라 패널·창의 두꺼운 나무 테두리를 없애고, 따뜻한 흰 면 + 가는 선 1 + 부드러운 그림자로 바꿨다. 메시지 종류마다 색을 나눴다(`CozyTone`). 이름은 그대로 두고 값만 바꿔 모든 화면이 따라온다. 괄호 안은 바꾸기 전 값.
+
 | 이름 | 색 | 용도 |
 | --- | --- | --- |
-| cream | `#FEF1D6` | 기본 배경·패널 안쪽 |
-| creamDeep | `#FEE6BC` | 비활성 |
-| wood | `#7D3419` | 테두리·버튼 |
-| woodLight | `#C1682D` | 얇은 테두리 |
-| woodDark | `#68311F` | 홈 배경·프레임 |
-| ink | `#3A1E1A` | 본문 글자 |
-| inkSoft | `#7A6963` | 보조 글자 |
-| orange | `#FBAF5A` | 강조·진행 막대 |
-| orangeDeep | `#E39E57` | 강조 테두리·테마 기준색 |
-| brick | `#AC3613` | 닫기 버튼·배지 |
-| honeyLight·honey·honeyDeep | `#FFD054`·`#FDBE38`·`#FEB432` | 주 버튼·선택된 탭의 노란 면(위→아래), 슬라이더 채운 부분, `FilledButton` 바탕 |
-| amber | `#F07D0C` | 노란 버튼·선택 탭 아래 경계, 탭 꼭지 |
-| tangerine | `#FD9607` | ON 토글 |
-| tan | `#E9B47E` | 카드 안쪽 연한 선, 고르지 않은 탭·비활성 버튼 테두리 |
-| peach·peachEdge | `#FDD09C`·`#F0B47A` | 효과 칩 바탕·테두리, 크림 버튼 아래 경계 |
-| taupe | `#8A6E62` | OFF 토글, 슬라이더 빈 부분 |
-| knob | `#FFF6E8` | 토글·슬라이더 손잡이 |
-| shadow·shadowDeep | 검정 33%·40% | 패널·창 그림자 |
+| cream | `#FFFAF3` (전 `#FEF1D6`) | 패널·창 면 |
+| creamDeep | `#F4ECE2` (전 `#FEE6BC`) | 비활성, 탭 줄 바탕, 창 아래 받침 |
+| wood | `#6B4532` (전 `#7D3419`) | 강조 테두리·글자 |
+| woodLight | `#DCC6AE` (전 `#C1682D`) | 카드 위 보이는 연한 선 |
+| woodDark | `#3D2B23` (전 `#68311F`) | 홈의 짙은 조각(레벨 상자 등) |
+| ink | `#2F221C` (전 `#3A1E1A`) | 본문 글자 |
+| inkSoft | `#85766C` (전 `#7A6963`) | 보조 글자 |
+| caption | `#A3928A` (새로) | 더 흐린 글자(약관 줄, 메뉴 줄 `>`) |
+| line | `#EADFD2` (새로) | 모든 패널·창의 가는 선 |
+| orange | `#FFB65C` (전 `#FBAF5A`) | 강조·진행 막대 |
+| orangeDeep | `#F29A38` (전 `#E39E57`) | 강조 테두리·테마 기준색 |
+| brick | `#D0533A` (전 `#AC3613`) | 배지·경고 |
+| honeyLight·honey·honeyDeep | `#FFD96B`·`#FFC83D`·`#FFB92E` (전 `#FFD054`·`#FDBE38`·`#FEB432`) | 주 버튼·고른 탭 면, 슬라이더 채운 부분, `FilledButton` 바탕 |
+| amber | `#EB960F` (전 `#F07D0C`) | 주 버튼 아래 2px 턱 |
+| tangerine | `#FFA21A` (전 `#FD9607`) | ON 토글 |
+| tan | `#EBDCCB` (전 `#E9B47E`) | 카드 안쪽 연한 선, 고르지 않은 탭 테두리 |
+| peach·peachEdge | `#FFE7C7`·`#F3D1A8` (전 `#FDD09C`·`#F0B47A`) | 효과 칩 바탕·테두리 |
+| taupe | `#D3C6BA` (전 `#8A6E62`) | OFF 토글, 슬라이더 빈 부분 |
+| knob | `#FFFFFF` (전 `#FFF6E8`) | 토글·슬라이더 손잡이 |
+| shadow·shadowDeep | 검정 14%·25% (전 33%·40%) | 카드(`Cozy.cardShadow`: 검정 8%, 아래 1·흐림 4)·창(검정 18%, 아래 4·흐림 16) 그림자 |
+
+**종류별 색 `CozyTone` (면 / 선 / 글자):** neutral(cream / line / ink), info 안내(`#EDF4FB` / `#C6DBEF` / `#2F6596`), reward 보상·황금(`#FFF5D8` / `#F3D27F` / `#9A6200`), warning 경고·오류(`#FDEEEA` / `#F2C3B8` / `#B23F28`), success 완료(`#EBF6EE` / `#C3E3CD` / `#2E7A4C`). 쓰는 곳: 충전 탭 잔액 카드(reward), '로그인하면 충전할 수 있어요'(info), 결제 알림(success), Workshop 창 오류 줄(warning)·알림 줄(info), '미션 달성!' 알림(success). 다른 화면은 `CozyPanel(tone:)`·`CozyNotice`·`CozyBubble(tone:)`·`CozyChip(tone:)`로 같은 색을 쓴다.
 
 버튼·탭·칩·토글·슬라이더 색은 `3.5_completed_game_mockups/서브UI5종`에서 뽑았습니다. 근거는 `coordination/visual-00-gap.md`와 `coordination/visual-02.md`에 있습니다.
 
 **공통 위젯**
 
-| 위젯 | 모양 |
+| 위젯 | 모양 (26번 3차 H41) |
 | --- | --- |
-| CozyPanel | 반경 12. 나무 테두리 2 + 안쪽 연한 선(tan) 1.5 |
-| CozyRoundButton | 48 원형(나무 테두리 2 포함), 눌림 |
-| CozyFrame | 반경 18/14 |
-| CozyCloseButton | 44 정사각형(짙은 테두리 1.5 + 크림 테두리 3 + 벽돌색), 눌림 |
-| CozyBackButton | 높이 48 이상(여백 3 포함 54), '돌아가기', 아래 경계(peachEdge), 눌림, Key `sheet-back` |
-| CozySettingRow | 설정 한 줄 |
-| CozyOnOff | 84×36 켜기/끄기(tangerine/taupe, knob 손잡이) |
-| CozyPrimaryButton | 주 버튼. 최소 높이 44, 짙은 나무 테두리 2 + 노란 그라데이션 + amber 아래 경계 3, Jua 18. `onPressed`가 null이면 creamDeep 면에 흐린 글자 |
-| CozyButton | 보조 버튼. CozyPrimaryButton과 같은 모양에 크림 면 + peachEdge 아래 경계 |
-| CozyChip | 효과 칩. peach 바탕 + peachEdge 테두리, 반경 8, Jua 14 |
-| CozyTabBar·CozyTab | 같은 폭 탭 한 줄, 높이 44. 선택 탭은 노란 면 + 아래 꼭지, 나머지는 크림. 각 탭의 Key는 `CozyTab.key`로 탭 대상에 붙음 |
-| CozyMenuRow | 메뉴 줄. 최소 높이 64, 아이콘 48, 제목 Jua 22, 오른쪽 `>` |
+| CozyPanel | 반경 14(기본), 면 = `tone.fill`(기본 cream), 선 1 = `tone.edge`(기본 line), 카드 그림자. `tone:`으로 종류 색 |
+| CozyNotice (새로) | 한 줄 메시지 상자: 종류 색 면·선, 반경 10, 앞에 종류 아이콘(안내 i, 보상 선물, 경고 !, 완료 ✓), 글자 13 |
+| CozyBubble (새로) | 말풍선: 반경 14(낮으면 높이의 반), 아래 가운데 꼬리 7, 선 1, 그림자. 기본 흰색(목소리), `tone:`으로 게임 메시지 색. 손님 말풍선(`GuestSpeechBubble`)이 씀 |
+| CozyRoundButton | 48 원형, cream 면 + line 선 + 카드 그림자, 눌림 |
+| CozyFrame | 창: 반경 22, cream 면, line 선 1, 그림자(아래 4·흐림 16). 두꺼운 나무 테두리 없음 |
+| CozyCloseButton | 누르는 칸 44, 보이는 원 36(cream·line·카드 그림자), 짙은 X 22, 눌림 |
+| CozyBackButton | 알약(반경 24), 최소 높이 48, cream·line·카드 그림자, 뒤로 아이콘 22 + '돌아가기' Jua 18, 눌림, Key `sheet-back` |
+| CozySettingRow | 설정 한 줄: 반경 14, line 선 1, 이름 Jua 18 |
+| CozyOnOff | 72×34 켜기/끄기(tangerine/taupe, 테두리 없음, 흰 손잡이 + 그림자) |
+| CozyPrimaryButton | 주 버튼. 최소 높이 44, 꿀색 그라데이션(honeyLight→honey) + honeyDeep 선 1 + amber 아래 턱 2, 짙은 테두리 없음, Jua 18. `onPressed`가 null이면 creamDeep 면에 흐린 글자(턱도 같은 색) |
+| CozyButton | 보조 버튼. 같은 모양에 cream 면 + woodLight 선 + line 턱 |
+| CozyChip | 효과 칩. peach 바탕 + peachEdge 선 1(또는 `tone:` 색), 반경 8, Jua 14 |
+| CozyTabBar·CozyTab | 한 줄 세그먼트: creamDeep 우물(반경 13, line 선) 안에 같은 폭 탭, 고른 탭만 꿀색 알약 + 그림자, 나머지는 흐린 글자. 높이 44(바깥), Jua 17. 각 탭의 Key는 `CozyTab.key` |
+| CozyMenuRow | 메뉴 줄. 최소 높이 64, 아이콘 48, 제목 Jua 20, cream·line·카드 그림자, 오른쪽 흐린 `>` |
+| MenuPanel 줄 | CozyMenuRow와 같은 흰 카드(반경 14, line 선, 그림자 1) |
 | CozyPressable | 위 버튼들이 쓰는 눌림 처리. 누르는 동안 2px 내려감 |
 | CozyMotion | 모션 줄이기 전달. `GameApp`이 설정의 모션 줄이기 값으로 앱 전체를 감쌈. 켜져 있거나 기기 애니메이션 끄기면 눌림·토글 이동을 하지 않음 |
-| 슬라이더(테마) | `CozySliderTrackShape`·`CozySliderThumbShape`. 두께 12, 짙은 테두리, 눈금 없음, 손잡이 반지름 12 |
+| 슬라이더(테마) | `CozySliderTrackShape`·`CozySliderThumbShape`. 두께 10, line 선 1, 빈 부분 creamDeep, 흰 손잡이(반지름 12, honeyDeep 선 1, 흐린 그림자) |
+| 테마 | `FilledButton` 꿀색·honeyDeep 선 1·그림자 없음, `OutlinedButton`·카드·칩은 line/woodLight 선 1, 대화상자 반경 20·line 선, 구분선 line, 스낵바 ink 92% |
 
 **글자 크기**
 
 | 쓰는 곳 | 크기 |
 | --- | --- |
 | 시트 제목 | Jua 28 |
-| 메뉴 줄 제목(CozyMenuRow) | Jua 22 |
+| 메뉴 줄 제목(CozyMenuRow) | Jua 20 (H41 전 22) |
 | 하단 내비 글자 | Jua 15, 아이콘 32 위·이름 아래(넷이 같은 비율로 줄어듦, 26번 4-2단계) |
 | 잔액 표시 | Jua 20 |
 | 주 버튼·탭 | Jua 18 |
@@ -1049,7 +1060,7 @@
 | 효과 | `fx/minifish`, 반짝임 3프레임 `fx/sparkle_1~3`(32×32, 25번 12번, `tools/apply_25_art.py --only sparkles`, 26번 4단계), `fx/fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
 | 짤주머니 | `cook/piping_bag_<batter·redbean·custard·cocoa>[_squeeze].png`(128×192, 손가락 점 (64, 188), `pipingPastes`) |
 | 속 칠 질감 | `mold/paint_<redbean·custard·cocoa>.png`(256×256 불투명 심리스, `tools/apply_25_art.py --only textures`로 v2 생성본을 줄이고 이음매 보정) |
-| 화면 장식 | `ui/wardrobe_bg`(조리 장면 `cook_cut.dart`), 꾸미기 미리보기 방 `ui/wardrobe_room`(1440×864, 128색, 25번 11번, 26번 4-5단계), `ui/offline`, 창 제목 붕어빵 `ui/title_fish`(96×72, 화면 48×36, `TitleFish` — 25번 15번 그림은 '완전 이상'해서 뺐고(DEC-128) 25번 35번 다시 그린 얼굴 없는 붕어빵을 `tools/apply_25_art.py --only title`로 적용(2026-11-19). 파일이 없으면 제목은 장식 없이 가운데), 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 스킬 창 'LEVEL UP' 버튼 `ui/levelup`·`levelup_off`(108×72, 화면 54×36, 25번 33번 생성 그림 `tools/apply_25_art.py --only levelup`, 꺼짐은 켜짐을 회색으로 바꿔 만듦; 임시 그림 도구 `tools/make_levelup_button.py`는 남겨 둠; 예전 둥근 '+' `levelup_plus`는 DEC-128로 지움), 황금붕어빵력 아이콘 `icons/gold_bun`(72×72, 25번 18번, 26번 4-3단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120, 64색 불투명, 25번 22번 생성 그림 `tools/apply_25_art.py --only intro`, 없으면 아이콘) |
+| 화면 장식 | `ui/wardrobe_bg`(조리 장면 `cook_cut.dart`), 꾸미기 미리보기 방 `ui/wardrobe_room`(1440×864, 128색, 25번 11번, 26번 4-5단계), `ui/offline`, 창 제목 붕어빵 `ui/title_fish`(96×72, 화면 48×36, `TitleFish` — 25번 15번 그림은 '완전 이상'해서 뺐고(DEC-128) 25번 35번 다시 그린 얼굴 없는 붕어빵을 `tools/apply_25_art.py --only title`로 적용(2026-11-19). 파일이 없으면 제목은 장식 없이 가운데), 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 스킬 창 'LEVEL UP' 버튼 `ui/levelup`·`levelup_off`(108×72, 화면 54×36, 25번 33번 생성 그림 `tools/apply_25_art.py --only levelup`, 꺼짐은 켜짐을 회색으로 바꿔 만듦; 임시 그림 도구 `tools/make_levelup_button.py`는 남겨 둠; 예전 둥근 '+' `levelup_plus`는 DEC-128로 지움), 황금붕어빵력 아이콘 `icons/gold_bun`(72×72, 25번 18번, 26번 4-3단계), 충전 상품 그림 `ui/gold_pack_1~5`(작은 묶음→큰 묶음, 화면 54×54, 25번 H-E-1 주문 — 없는 동안 `GoldPackArt`가 황금 아이콘을 쌓은 임시 그림), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120, 64색 불투명, 25번 22번 생성 그림 `tools/apply_25_art.py --only intro`, 없으면 아이콘) |
 | 꾸미기 칸 아이콘 (26번 4-5단계, G5) | `cosmetic_icons/<id>.png` 64×64, 남녀 공통, 아바타 아이템마다 한 장 + 빼기 아이템(모자 없음·앞치마 없음·소품 없음)이 같이 쓰는 `none.png`(빈 옷걸이+사선). 지금은 `tools/make_cosmetic_icons.py`가 지금 아바타 레이어에서 자른 **임시** 아이콘(피부톤은 얼굴 없는 마네킹, 캐릭터는 머리 초상). 25번 31번 그림이 오면 같은 경로에 파일만 바꿈(4-7단계 뒤에는 이 도구를 다시 돌리지 않음). `PixelSprites.cosmeticIcon(id)`, 없으면 예전처럼 작은 전신 |
 | 가게 칸 그림 (25번 16번, 26번 4-5단계) | 등불 칸 `stall/lamp_<amber·rose·mint·lilac>.png` 64×96(기둥째 등불), 밤낮 칸 `icons/time_<scenetime·day·night·clock>.png` 64×64. 꾸미기 타일에만 씀(`PixelSprites.stallTile`). 배경 칸은 배경 그림 가운데 정사각형 |
 | 이벤트 배너 | `event/spring·summer·autumn·winter` |
@@ -1722,3 +1733,16 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | H30 황금 붕어빵 | 붕어빵력 칸 둘째 줄에 **황금붕어빵력**(아이콘 `gold_bun` 26 + 숫자 17 진한 금색 + 꿀색 '+' 18, 키 `hud-gold`·`hud-gold-value`). 누르면 충전 목록(`gold`). 값은 계정 `premium.gold`(창 잔액 알약과 같음). 예전 '누적 N개' 줄은 구형 홈에만 | `NightHomeHeaderData.gold` |
 
 확인 그림: `C:\Users\이소이\Desktop\26번_시안_확인\3차\C\`(전후 비교, 390×844·360×800). 미리보기 하네스 `flutter test tools/preview_h_c_test.dart --dart-define=PREVIEW_FONT=C:/Windows/Fonts/malgun.ttf --dart-define=PREVIEW_TAG=after` → `build/preview/h_c/`.
+
+## 38. 3차 피드백 E: 공통 테마·충전 상품·배경 — 2026-11-19
+
+26번 실기기 3차 녹화 피드백 H31·H41·H42(E 묶음). 결정은 00_결정취합 DEC-TBD-hE-1~3(병합 때 번호 확정).
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| H41 공통 테마 | 패널·창·버튼·탭·토글·말풍선을 가는 선 + 흰 면 + 부드러운 그림자로, 종류별 색 `CozyTone`(11장). 화면 파일은 최소만: 메뉴 줄(`public_menus.dart`), 손님 말풍선(`workshop_guests.dart`), 창 받침·닫기·오류 줄(`workshop_windows.dart`), 작은 창 닫기 위치(`workshop_page.dart` `_popup`), 스킬 창 고른 탭·돌림판 테두리(`workshop_skill_shop.dart`), '미션 달성!' 완료 색(`celebration.dart`) | `lib/ui/cozy_style.dart` |
+| H31 충전 상품 | 충전 탭을 잔액 카드 + 상품 카드(그림·큰 숫자·가격 알약)로(8장). 상품 그림 25번 H-E-1 주문, 임시는 아이콘 쌓기 | `lib/ui/gold_widgets.dart`, `pixel_sprites.dart` `uiNames` |
+| H42 배경 되살리기 | 원인: 26번 2단계(커밋 b7ad3e9, 2026-11-18)가 메뉴 '배경 테마'와 꾸미기 가게 탭을 Lv.8(`stall_cosmetics`)까지 숨겼고, 26번 4-5단계 Workshop 상점은 `avatar_catalog`(아바타)만 팔아 배경은 어디서도 살 수 없었다(`cosmetic_purchase`에는 값이 있었음). 고침: 배경 10종을 `avatar_catalog`에 slot `background`로 넣음(clear 무료, 나머지 붕어빵력 1000 + 황금 2, 해금 레벨 1·1·2·2·3·4·5·6·6·8), 새 설정 `feature_unlock_levels.stall_background` = 1(가게 탭의 배경·밤낮 칸), 화로·장식·등불은 그대로 Lv.8. 설정 창 '배경 바꾸기' 줄 추가(10장) | `config/development_balance.json`, `lib/workshop_feature_unlocks.dart` `stallBackground`, `lib/ui/workshop_page.dart` `_cosmetics`·`_audioSettings`, `public_menus.dart` `slotOpen`, `workshop_wardrobe.dart` `_slots` |
+| 서버 | 서버 생성 설정(`firebase/functions/src/generated/development_balance.json`)이 바뀜 → **배포 묶음에 포함, 배포 전 `npm test`**(104개 통과, 배경 구매 테스트 추가). 서버 코드는 바뀌지 않음(구매 검사는 `avatar_catalog`·`cosmetic_purchase`를 그대로 읽음). 슬롯 검사(`lib/development_balance.dart`, `tools/development_balance.py`)에 `background` 추가 | `firebase/functions/test/workshop_service.test.ts` |
+| 저장 | 형식 변경 없음. 산 배경 = 가게 저장 `purchases.owned['cosmetic:<id>']`, 입은 배경 = `avatarEquipment['background']` | 3장 |
+| 확인 | `flutter test tools/preview_theme_test.dart --dart-define=PREVIEW_FONT=C:/Windows/Fonts/malgun.ttf --dart-define=PREVIEW_TAG=after` → `build/preview/theme/`(홈·메뉴·상점 두 탭·가게 배경·꾸미기·설정·오늘·스킬·기록·주간·업적·레벨 미션, 360×800·390×844) | |

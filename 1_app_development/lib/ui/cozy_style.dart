@@ -1,55 +1,98 @@
 import 'package:flutter/material.dart';
 import 'pixel_sprites.dart';
 
-/// Colours of the concept art (3_original_images_and_visual_references/3.2_visual_design_references_20261006):
-/// cream panels in wooden frames, dark chocolate text, orange buttons.
-/// The button and control colours below are sampled from
-/// 3.5_completed_game_mockups/서브UI5종 (coordination/visual-00-gap.md).
+/// The app's colours. 26번 3차 피드백 H41 (2026-11-19): the old look was
+/// brown and beige everywhere (thick wooden outlines on every panel, the
+/// same beige for every bubble and window). Panels are now warm white with a
+/// hairline and a soft shadow, text a deep cocoa, and each kind of message
+/// has its own tint ([CozyTone]: info blue, reward gold, warning coral,
+/// success green). The names stay so every screen follows; the old values
+/// are in MASTER 11장.
 class Cozy {
   Cozy._();
 
   /// Jua lacks punctuation such as `·`, `…`, `→`, `●○`; these come from a
   /// small symbol cut (tools/build_symbol_font.py) instead of a box.
   static const fontFallback = <String>['BungeoSymbols'];
-  static const cream = Color(0xfffef1d6);
-  static const creamDeep = Color(0xfffee6bc);
-  static const wood = Color(0xff7d3419);
-  static const woodLight = Color(0xffc1682d);
-  static const woodDark = Color(0xff68311f);
-  static const ink = Color(0xff3a1e1a);
-  static const inkSoft = Color(0xff7a6963);
-  static const orange = Color(0xfffbaf5a);
-  static const orangeDeep = Color(0xffe39e57);
-  static const brick = Color(0xffac3613);
+
+  /// Panel and window face (warm white).
+  static const cream = Color(0xfffffaf3);
+
+  /// Disabled faces, sunk wells, the unpicked part of a segmented tab row.
+  static const creamDeep = Color(0xfff4ece2);
+
+  /// Strong accents: a picked outline, wooden props on the home.
+  static const wood = Color(0xff6b4532);
+
+  /// A visible but light line (cards on cream).
+  static const woodLight = Color(0xffdcc6ae);
+
+  /// Dark home pieces (level box, bottom strip of a window).
+  static const woodDark = Color(0xff3d2b23);
+  static const ink = Color(0xff2f221c);
+  static const inkSoft = Color(0xff85766c);
+  static const orange = Color(0xffffb65c);
+  static const orangeDeep = Color(0xfff29a38);
+
+  /// Close button face, badges, the warning tone.
+  static const brick = Color(0xffd0533a);
 
   /// Yellow face of the main buttons and the picked tab, top to bottom.
-  static const honeyLight = Color(0xffffd054);
-  static const honey = Color(0xfffdbe38);
-  static const honeyDeep = Color(0xfffeb432);
+  static const honeyLight = Color(0xffffd96b);
+  static const honey = Color(0xffffc83d);
+  static const honeyDeep = Color(0xffffb92e);
 
-  /// The orange ledge under a yellow button; the ON toggle.
-  static const amber = Color(0xfff07d0c);
-  static const tangerine = Color(0xfffd9607);
+  /// The soft orange ledge under a yellow button; the ON toggle.
+  static const amber = Color(0xffeb960f);
+  static const tangerine = Color(0xffffa21a);
 
-  /// Pale inner line of cards and the border of unpicked tabs.
-  static const tan = Color(0xffe9b47e);
+  /// Hairline of cards and the border of unpicked tabs.
+  static const tan = Color(0xffebdccb);
 
   /// Effect chips ("클릭 +2").
-  static const peach = Color(0xfffdd09c);
-  static const peachEdge = Color(0xfff0b47a);
+  static const peach = Color(0xffffe7c7);
+  static const peachEdge = Color(0xfff3d1a8);
 
   /// OFF toggle and the empty part of a slider.
-  static const taupe = Color(0xff8a6e62);
+  static const taupe = Color(0xffd3c6ba);
 
   /// Toggle and slider knobs.
-  static const knob = Color(0xfffff6e8);
+  static const knob = Color(0xffffffff);
 
-  /// Drop shadows under panels (light) and frames (deep).
-  static const shadow = Color(0x55000000);
-  static const shadowDeep = Color(0x66000000);
+  /// Soft drop shadows under panels (light) and windows (deep).
+  static const shadow = Color(0x24000000);
+  static const shadowDeep = Color(0x40000000);
+
+  /// The hairline round every panel (H41: one thin line, no wooden frame).
+  static const line = Color(0xffeadfd2);
+
+  /// The window title's small caption colour and quiet section heads.
+  static const caption = Color(0xffa3928a);
 
   /// How far a chunky button sinks while pressed.
   static const pressDepth = 2.0;
+
+  /// The one soft shadow of a card.
+  static const cardShadow = [BoxShadow(color: Color(0x14000000), offset: Offset(0, 1), blurRadius: 4)];
+}
+
+/// What a message, bubble or card is about; each kind has its own tint so
+/// the windows are no longer all one beige (H41).
+enum CozyTone {
+  /// Plain warm white.
+  neutral(Cozy.cream, Cozy.line, Cozy.ink),
+  /// Explanations and hints ('로그인하면 충전할 수 있어요').
+  info(Color(0xffedf4fb), Color(0xffc6dbef), Color(0xff2f6596)),
+  /// Rewards and gold (출석 보상, 레벨업, 황금붕어빵력).
+  reward(Color(0xfffff5d8), Color(0xfff3d27f), Color(0xff9a6200)),
+  /// Errors and things to fix (저장 확인 필요, 실패).
+  warning(Color(0xfffdeeea), Color(0xfff2c3b8), Color(0xffb23f28)),
+  /// Done and good results (완료, 성공).
+  success(Color(0xffebf6ee), Color(0xffc3e3cd), Color(0xff2e7a4c));
+
+  /// The face, its hairline and the text/icon colour on it.
+  final Color fill, edge, text;
+  const CozyTone(this.fill, this.edge, this.text);
 }
 
 /// Whether the cozy widgets below keep still: the player's 모션 줄이기
@@ -114,7 +157,7 @@ class _CozyPressableState extends State<CozyPressable> {
 /// a [color] strip showing [depth] below it. A rounded [Border] cannot vary
 /// its colour per side, so the ledge is a backing instead.
 class _Ledge extends StatelessWidget {
-  static const depth = 3.0;
+  static const depth = 2.0;
   final Color color;
   final double radius;
   final Widget child;
@@ -129,36 +172,136 @@ class _Ledge extends StatelessWidget {
           Padding(padding: const EdgeInsets.only(bottom: depth), child: child));
 }
 
-/// Cream panel with the double wooden border of the concept HUD and menus:
-/// a wooden outline, then a pale inner line.
+/// A card: warm white with one hairline and a soft shadow (H41; it used to
+/// be a double wooden border). [tone] tints it for a kind of message.
 class CozyPanel extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double radius;
+  final CozyTone tone;
   const CozyPanel(
       {super.key,
       required this.child,
       this.padding = const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      this.radius = 12});
+      this.radius = 14,
+      this.tone = CozyTone.neutral});
 
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(
-            color: Cozy.wood,
+            color: tone.fill,
             borderRadius: BorderRadius.circular(radius),
-            boxShadow: const [
-              BoxShadow(color: Cozy.shadow, offset: Offset(0, 2))
-            ]),
-        padding: const EdgeInsets.all(2),
-        child: Container(
-            decoration: BoxDecoration(
-                color: Cozy.cream,
-                borderRadius: BorderRadius.circular(radius - 2),
-                border: Border.all(color: Cozy.tan, width: 1.5)),
-            padding: padding,
-            child: DefaultTextStyle.merge(
-                style: const TextStyle(color: Cozy.ink), child: child)),
+            border: Border.all(color: tone.edge),
+            boxShadow: Cozy.cardShadow),
+        padding: padding,
+        child: DefaultTextStyle.merge(
+            style: TextStyle(color: tone == CozyTone.neutral ? Cozy.ink : tone.text), child: child),
       );
+}
+
+/// A one-line message in a tinted box with its icon: the info, reward,
+/// warning or success line of a window (H41).
+class CozyNotice extends StatelessWidget {
+  final String text;
+  final CozyTone tone;
+  final Widget? icon;
+  final double fontSize;
+  const CozyNotice(this.text, {super.key, this.tone = CozyTone.info, this.icon, this.fontSize = 13});
+
+  IconData get _glyph => switch (tone) {
+        CozyTone.info || CozyTone.neutral => Icons.info_outline_rounded,
+        CozyTone.reward => Icons.card_giftcard_rounded,
+        CozyTone.warning => Icons.error_outline_rounded,
+        CozyTone.success => Icons.check_circle_outline_rounded,
+      };
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+        decoration: BoxDecoration(
+            color: tone.fill,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: tone.edge)),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: icon ?? Icon(_glyph, size: fontSize + 3, color: tone.text)),
+          const SizedBox(width: 6),
+          Expanded(
+              child: Text(text,
+                  style: TextStyle(fontSize: fontSize, height: 1.3, color: tone.text))),
+        ]),
+      );
+}
+
+/// A speech bubble with a small tail (손님 말, 결과 한마디): white for a
+/// voice, or a [CozyTone] tint for a game message (H41).
+class CozyBubble extends StatelessWidget {
+  final Widget child;
+  final CozyTone tone;
+
+  /// Where the tail points: down from the bubble's bottom centre (null: no
+  /// tail).
+  final bool tail;
+  final EdgeInsetsGeometry padding;
+  const CozyBubble(
+      {super.key,
+      required this.child,
+      this.tone = CozyTone.neutral,
+      this.tail = true,
+      this.padding = const EdgeInsets.symmetric(horizontal: 12, vertical: 7)});
+
+  @override
+  Widget build(BuildContext context) => CustomPaint(
+        painter: _BubblePainter(tone.fill, tone.edge, tail),
+        child: Padding(
+          padding: EdgeInsets.only(bottom: tail ? _BubblePainter.tailHeight : 0),
+          child: Padding(
+              padding: padding,
+              child: DefaultTextStyle.merge(
+                  style: TextStyle(color: tone == CozyTone.neutral ? Cozy.ink : tone.text), child: child)),
+        ),
+      );
+}
+
+class _BubblePainter extends CustomPainter {
+  static const tailHeight = 7.0;
+  final Color fill, edge;
+  final bool tail;
+  const _BubblePainter(this.fill, this.edge, this.tail);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final body = Rect.fromLTWH(0, 0, size.width, size.height - (tail ? tailHeight : 0));
+    final r = body.height / 2 < 14 ? body.height / 2 : 14.0;
+    final path = Path()..addRRect(RRect.fromRectAndRadius(body, Radius.circular(r)));
+    if (tail) {
+      final cx = size.width / 2;
+      path.addPath(
+          Path()
+            ..moveTo(cx - 7, body.bottom - 1)
+            ..lineTo(cx, size.height)
+            ..lineTo(cx + 7, body.bottom - 1)
+            ..close(),
+          Offset.zero);
+    }
+    canvas.drawShadow(path, Cozy.shadow, 3, false);
+    canvas.drawPath(path, Paint()..color = fill);
+    canvas.drawPath(
+        path,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..color = edge);
+    // Hide the seam between the body and the tail.
+    if (tail) {
+      final cx = size.width / 2;
+      canvas.drawRect(Rect.fromLTRB(cx - 6, body.bottom - 2, cx + 6, body.bottom + 0.5), Paint()..color = fill);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BubblePainter old) => old.fill != fill || old.edge != edge || old.tail != tail;
 }
 
 /// Round wooden button of the concept HUD (menu, settings).
@@ -183,12 +326,9 @@ class CozyRoundButton extends StatelessWidget {
           child: Container(
             decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Cozy.woodDark,
-                border: Border.fromBorderSide(
-                    BorderSide(color: Cozy.orangeDeep, width: 2)),
-                boxShadow: [
-                  BoxShadow(color: Cozy.shadow, offset: Offset(0, 2))
-                ]),
+                color: Cozy.cream,
+                border: Border.fromBorderSide(BorderSide(color: Cozy.line)),
+                boxShadow: Cozy.cardShadow),
             child: CozyPressable(
                 onPressed: onPressed,
                 customBorder: const CircleBorder(),
@@ -203,7 +343,7 @@ class CozyRoundButton extends StatelessWidget {
 /// dark chocolate text, cream surfaces with wooden borders and yellow
 /// buttons, chips and toggles.
 ThemeData cozyTheme() {
-  const wood = BorderSide(color: Cozy.wood, width: 2);
+  const line = BorderSide(color: Cozy.woodLight, width: 1);
   final scheme = ColorScheme.fromSeed(
     seedColor: Cozy.orangeDeep,
     primary: Cozy.orangeDeep,
@@ -219,17 +359,20 @@ ThemeData cozyTheme() {
     surfaceContainerHigh: Cozy.creamDeep,
     surfaceContainerHighest: Cozy.creamDeep,
     outline: Cozy.woodLight,
+    outlineVariant: Cozy.line,
   );
   final shape = RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12), side: wood);
+      borderRadius: BorderRadius.circular(12), side: line);
   return ThemeData(
     useMaterial3: true,
     fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
     colorScheme: scheme,
     scaffoldBackgroundColor: Cozy.cream,
     splashFactory: InkRipple.splashFactory,
+    dividerTheme: const DividerThemeData(color: Cozy.line, thickness: 1, space: 16),
     textTheme: const TextTheme()
         .apply(bodyColor: Cozy.ink, displayColor: Cozy.ink, fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback),
+    // H41: a flat honey face with no dark outline; quiet when disabled.
     filledButtonTheme: FilledButtonThemeData(
         style: ButtonStyle(
             backgroundColor: WidgetStateProperty.resolveWith((states) =>
@@ -240,19 +383,20 @@ ThemeData cozyTheme() {
                 states.contains(WidgetState.disabled)
                     ? Cozy.inkSoft
                     : Cozy.ink),
+            elevation: const WidgetStatePropertyAll(0),
             textStyle: const WidgetStatePropertyAll(
                 TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 16)),
             shape: WidgetStateProperty.resolveWith((states) =>
                 RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: states.contains(WidgetState.disabled)
-                        ? const BorderSide(color: Cozy.tan, width: 2)
-                        : const BorderSide(color: Cozy.woodDark, width: 2))))),
+                        ? const BorderSide(color: Cozy.line)
+                        : const BorderSide(color: Cozy.honeyDeep))))),
     outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
             backgroundColor: Cozy.cream,
             foregroundColor: Cozy.ink,
-            side: wood,
+            side: line,
             textStyle: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 16),
             shape: shape)),
     textButtonTheme: TextButtonThemeData(
@@ -260,22 +404,23 @@ ThemeData cozyTheme() {
     chipTheme: ChipThemeData(
         backgroundColor: Cozy.cream,
         selectedColor: Cozy.honey,
-        side: const BorderSide(color: Cozy.woodLight, width: 1.5),
+        side: const BorderSide(color: Cozy.line),
         labelStyle: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, color: Cozy.ink),
         checkmarkColor: Cozy.ink,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
     cardTheme: CardThemeData(
         color: Cozy.cream,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: const BorderSide(color: Cozy.woodLight, width: 1.5))),
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Cozy.line))),
     dialogTheme: DialogThemeData(
         backgroundColor: Cozy.cream,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: const BorderSide(color: Cozy.wood, width: 3))),
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Cozy.line))),
     bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
@@ -287,11 +432,11 @@ ThemeData cozyTheme() {
                 ? Cozy.tangerine
                 : Cozy.taupe),
         trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent)),
-    // The mockup's thick yellow volume bar with a cream knob.
+    // A rounded honey bar with a white knob.
     sliderTheme: SliderThemeData(
-        trackHeight: 12,
+        trackHeight: 10,
         activeTrackColor: Cozy.honey,
-        inactiveTrackColor: Cozy.taupe,
+        inactiveTrackColor: Cozy.creamDeep,
         disabledActiveTrackColor: Cozy.tan,
         disabledInactiveTrackColor: Cozy.creamDeep,
         thumbColor: Cozy.knob,
@@ -306,9 +451,9 @@ ThemeData cozyTheme() {
     progressIndicatorTheme:
         const ProgressIndicatorThemeData(color: Cozy.orangeDeep),
     listTileTheme: const ListTileThemeData(textColor: Cozy.ink),
-    snackBarTheme: const SnackBarThemeData(
-        backgroundColor: Cozy.woodDark,
-        contentTextStyle: TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, color: Cozy.cream)),
+    snackBarTheme: SnackBarThemeData(
+        backgroundColor: Cozy.ink.withValues(alpha: .92),
+        contentTextStyle: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, color: Cozy.cream)),
   );
 }
 
@@ -365,8 +510,8 @@ class CozySliderTrackShape extends SliderTrackShape with BaseSliderTrackShape {
         whole,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = isEnabled ? Cozy.woodDark : Cozy.tan);
+          ..strokeWidth = 1
+          ..color = Cozy.line);
   }
 }
 
@@ -393,48 +538,48 @@ class CozySliderThumbShape extends SliderComponentShape {
       required Size sizeWithOverflow}) {
     final enabled = enableAnimation.value > 0;
     final canvas = context.canvas;
-    canvas.drawCircle(
-        center.translate(0, 2), radius, Paint()..color = Cozy.shadow);
+    canvas.drawCircle(center.translate(0, 1.5), radius,
+        Paint()
+          ..color = Cozy.shadow
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2));
     canvas.drawCircle(
         center, radius, Paint()..color = enabled ? Cozy.knob : Cozy.creamDeep);
     canvas.drawCircle(
         center,
-        radius - 1,
+        radius - .5,
         Paint()
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..color = enabled ? Cozy.woodDark : Cozy.tan);
+          ..strokeWidth = 1
+          ..color = enabled ? Cozy.honeyDeep : Cozy.line);
   }
 }
 
-/// The concept sub-window frame: a cream panel with a thick double wooden
-/// border.
+/// A window: warm white with one hairline, rounded 22, and a deep soft
+/// shadow (H41; it used to be a thick double wooden frame).
 class CozyFrame extends StatelessWidget {
   final Widget child;
   const CozyFrame({super.key, required this.child});
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => DecoratedBox(
         decoration: BoxDecoration(
-            color: Cozy.woodDark,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(22),
             boxShadow: const [
-              BoxShadow(color: Cozy.shadowDeep, offset: Offset(0, 3))
+              BoxShadow(color: Color(0x2e000000), offset: Offset(0, 4), blurRadius: 16)
             ]),
-        padding: const EdgeInsets.all(4),
         // A Material, so list tiles inside can paint their ink.
         child: Material(
             color: Cozy.cream,
             clipBehavior: Clip.antiAlias,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
-                side: const BorderSide(color: Cozy.woodLight, width: 3)),
+                borderRadius: BorderRadius.circular(22),
+                side: const BorderSide(color: Cozy.line)),
             child: child),
       );
 }
 
-/// The concept's red square close button with a white X inside a cream
-/// border and a dark outline.
+/// The round close button: a white disc with a dark X (H41; it was a red
+/// square in a cream and dark frame). 44 to tap, 36 seen.
 class CozyCloseButton extends StatelessWidget {
   final VoidCallback onPressed;
   const CozyCloseButton({super.key, required this.onPressed});
@@ -453,26 +598,22 @@ class CozyCloseButton extends StatelessWidget {
           label: '닫기',
           excludeSemantics: true,
           onTap: onPressed,
-          child: Container(
-            decoration: BoxDecoration(
-                color: Cozy.woodDark,
-                borderRadius: BorderRadius.circular(11),
-                boxShadow: const [
-                  BoxShadow(color: Cozy.shadow, offset: Offset(0, 2))
-                ]),
-            padding: const EdgeInsets.all(1.5),
-            child: CozyPressable(
-              onPressed: onPressed,
-              borderRadius: BorderRadius.circular(10),
+          child: SizedBox.square(
+            dimension: 44,
+            child: Center(
               child: Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                    color: Cozy.brick,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Cozy.cream, width: 2.5)),
-                child: const Icon(Icons.close_rounded,
-                    color: Colors.white, size: 24),
+                decoration: const BoxDecoration(
+                    color: Cozy.cream,
+                    shape: BoxShape.circle,
+                    border: Border.fromBorderSide(BorderSide(color: Cozy.line)),
+                    boxShadow: Cozy.cardShadow),
+                child: CozyPressable(
+                  onPressed: onPressed,
+                  customBorder: const CircleBorder(),
+                  child: const SizedBox.square(
+                      dimension: 36,
+                      child: Icon(Icons.close_rounded, color: Cozy.ink, size: 22)),
+                ),
               ),
             ),
           ),
@@ -480,7 +621,7 @@ class CozyCloseButton extends StatelessWidget {
       );
 }
 
-/// The concept's wooden '↶ 돌아가기' button under a sub-window.
+/// The '↶ 돌아가기' pill under a window: white with a hairline (H41).
 class CozyBackButton extends StatelessWidget {
   final VoidCallback onPressed;
   const CozyBackButton({super.key, required this.onPressed});
@@ -488,38 +629,24 @@ class CozyBackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(
-            color: Cozy.wood,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: const [
-              BoxShadow(color: Cozy.shadow, offset: Offset(0, 2))
-            ]),
+            color: Cozy.cream,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Cozy.line),
+            boxShadow: Cozy.cardShadow),
         child: CozyPressable(
           key: const Key('sheet-back'),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(24),
           onPressed: onPressed,
-          child: Padding(
-            padding: const EdgeInsets.all(3),
-            child: _Ledge(
-              color: Cozy.peachEdge,
-              radius: 11,
-              // 48 in all with the ledge, as before.
-              child: Container(
-                constraints: const BoxConstraints(minHeight: 48 - _Ledge.depth),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 28, vertical: 6),
-                decoration: BoxDecoration(
-                    color: Cozy.cream,
-                    borderRadius: BorderRadius.circular(11),
-                    border: Border.all(color: Cozy.tan, width: 1.5)),
-                child: const Row(mainAxisSize: MainAxisSize.min, children: [
-                  PixelIcon('back', size: 24),
-                  SizedBox(width: 8),
-                  Text('돌아가기',
-                      style: TextStyle(
-                          fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20, color: Cozy.ink)),
-                ]),
-              ),
-            ),
+          child: Container(
+            constraints: const BoxConstraints(minHeight: 48),
+            padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 6),
+            child: const Row(mainAxisSize: MainAxisSize.min, children: [
+              PixelIcon('back', size: 22),
+              SizedBox(width: 8),
+              Text('돌아가기',
+                  style: TextStyle(
+                      fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 18, color: Cozy.ink)),
+            ]),
           ),
         ),
       );
@@ -553,10 +680,10 @@ class CozySettingRow extends StatelessWidget {
           child: Material(
             color: Cozy.cream,
             shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-                side: const BorderSide(color: Cozy.woodLight, width: 1.5)),
+                borderRadius: BorderRadius.circular(14),
+                side: const BorderSide(color: Cozy.line)),
             child: InkWell(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
               onTap: () => onChanged(!value),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 10, 10, 10),
@@ -569,7 +696,7 @@ class CozySettingRow extends StatelessWidget {
                           children: [
                         Text(label,
                             style: const TextStyle(
-                                fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20)),
+                                fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 18)),
                         if (subtitle case final text?)
                           Text(text,
                               style: const TextStyle(
@@ -595,10 +722,10 @@ class CozyOnOff extends StatelessWidget {
     final knob = Container(
         width: 26,
         height: 26,
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
             color: Cozy.knob,
             shape: BoxShape.circle,
-            border: Border.all(color: Cozy.woodDark, width: 2)));
+            boxShadow: [BoxShadow(color: Cozy.shadow, offset: Offset(0, 1), blurRadius: 3)]));
     // Shrinks to fit the pill whatever the font.
     final text = Flexible(
         child: FittedBox(
@@ -611,13 +738,12 @@ class CozyOnOff extends StatelessWidget {
       duration: CozyMotion.reduceOf(context)
           ? Duration.zero
           : const Duration(milliseconds: 150),
-      width: 84,
-      height: 36,
+      width: 72,
+      height: 34,
       padding: const EdgeInsets.symmetric(horizontal: 4),
       decoration: BoxDecoration(
           color: value ? Cozy.tangerine : Cozy.taupe,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: Cozy.woodDark, width: 2)),
+          borderRadius: BorderRadius.circular(17)),
       child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: value
@@ -649,37 +775,38 @@ class _CozyButtonFace extends StatelessWidget {
   Widget build(BuildContext context) {
     final enabled = onPressed != null;
     const radius = 12.0;
-    final (face, ledge) = !enabled
-        ? (const BoxDecoration(color: Cozy.creamDeep), Cozy.tan)
+    // H41: no dark outline. The main button is honey on a soft amber
+    // ledge; the other is white with a hairline; disabled is a flat well.
+    final (face, ledge, edge) = !enabled
+        ? (const BoxDecoration(color: Cozy.creamDeep), Cozy.creamDeep, Cozy.line)
         : primary
             ? (
                 const BoxDecoration(
                     gradient: LinearGradient(
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
-                        colors: [Cozy.honeyLight, Cozy.honey, Cozy.honeyDeep])),
-                Cozy.amber
+                        colors: [Cozy.honeyLight, Cozy.honey])),
+                Cozy.amber,
+                Cozy.honeyDeep
               )
-            : (const BoxDecoration(color: Cozy.cream), Cozy.peachEdge);
+            : (const BoxDecoration(color: Cozy.cream), Cozy.line, Cozy.woodLight);
     return Container(
       decoration: BoxDecoration(
-          color: enabled ? Cozy.woodDark : Cozy.tan,
           borderRadius: BorderRadius.circular(radius),
-          boxShadow: enabled
-              ? const [BoxShadow(color: Cozy.shadow, offset: Offset(0, 2))]
-              : null),
-      padding: const EdgeInsets.all(2),
+          boxShadow: enabled ? Cozy.cardShadow : null),
       child: CozyPressable(
         onPressed: onPressed,
-        borderRadius: BorderRadius.circular(radius - 2),
+        borderRadius: BorderRadius.circular(radius),
         child: _Ledge(
           color: ledge,
-          radius: radius - 2,
+          radius: radius,
           child: Container(
-            constraints: BoxConstraints(minHeight: minHeight - _Ledge.depth),
-            padding: padding,
-            decoration:
-                face.copyWith(borderRadius: BorderRadius.circular(radius - 2)),
+            // The same outer size as before H41 (it had a 2px wooden frame).
+            constraints: BoxConstraints(minHeight: minHeight + 4 - _Ledge.depth),
+            padding: padding.add(const EdgeInsets.symmetric(horizontal: 2)),
+            decoration: face.copyWith(
+                borderRadius: BorderRadius.circular(radius),
+                border: Border.all(color: edge)),
             alignment: Alignment.center,
             child: FittedBox(
               fit: BoxFit.scaleDown,
@@ -756,26 +883,28 @@ class CozyButton extends StatelessWidget {
       padding: padding);
 }
 
-/// The mockup's small effect chip ("클릭 +2", "초당 +5", "30초 2배").
+/// A small effect chip ("클릭 +2", "초당 +5"), peach or a [CozyTone] tint.
 class CozyChip extends StatelessWidget {
   final String label;
   final Widget? icon;
-  const CozyChip({super.key, required this.label, this.icon});
+  final CozyTone? tone;
+  const CozyChip({super.key, required this.label, this.icon, this.tone});
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
         decoration: BoxDecoration(
-            color: Cozy.peach,
+            color: tone?.fill ?? Cozy.peach,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: Cozy.peachEdge, width: 1.5)),
+            border: Border.all(color: tone?.edge ?? Cozy.peachEdge)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           if (icon case final icon?) ...[icon, const SizedBox(width: 4)],
           Flexible(
               child: Text(label,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 14, color: Cozy.ink))),
+                  style: TextStyle(
+                      fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 14,
+                      color: tone?.text ?? Cozy.ink))),
         ]),
       );
 }
@@ -789,9 +918,8 @@ class CozyTab<T> {
   const CozyTab(this.value, this.label, {this.icon, this.key});
 }
 
-/// The mockup's row of equal tabs (장비/꾸미기/테마, 헤어/의상/소품): the
-/// picked one is a yellow button with a small point under it, the others
-/// cream.
+/// A row of equal tabs as one segmented control (H41): a sunk well, the
+/// picked tab a honey pill, the others plain text.
 class CozyTabBar<T> extends StatelessWidget {
   final List<CozyTab<T>> tabs;
   final T selected;
@@ -805,12 +933,19 @@ class CozyTabBar<T> extends StatelessWidget {
       this.height = 44});
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-        for (var i = 0; i < tabs.length; i++) ...[
-          if (i > 0) const SizedBox(width: 4),
-          Expanded(child: _tab(tabs[i])),
-        ],
-      ]);
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(3),
+        decoration: BoxDecoration(
+            color: Cozy.creamDeep,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: Cozy.line)),
+        child: Row(children: [
+          for (var i = 0; i < tabs.length; i++) ...[
+            if (i > 0) const SizedBox(width: 3),
+            Expanded(child: _tab(tabs[i])),
+          ],
+        ]),
+      );
 
   Widget _tab(CozyTab<T> tab) {
     final picked = tab.value == selected;
@@ -820,82 +955,34 @@ class CozyTabBar<T> extends StatelessWidget {
       label: tab.label,
       excludeSemantics: true,
       onTap: onSelected == null ? null : () => onSelected!(tab.value),
-      child: Stack(clipBehavior: Clip.none, children: [
-        Container(
-          decoration: BoxDecoration(
-              color: picked ? Cozy.woodDark : Cozy.tan,
-              borderRadius: BorderRadius.circular(10)),
-          padding: const EdgeInsets.all(1.5),
-          child: CozyPressable(
-            key: tab.key,
-            onPressed: onSelected == null ? null : () => onSelected!(tab.value),
-            borderRadius: BorderRadius.circular(9),
-            child: _Ledge(
-              color: picked ? Cozy.amber : Cozy.peachEdge,
-              radius: 9,
-              child: Container(
-                height: height - _Ledge.depth,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                    gradient: picked
-                        ? const LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [Cozy.honeyLight, Cozy.honeyDeep])
-                        : null,
-                    color: picked ? null : Cozy.cream,
-                    borderRadius: BorderRadius.circular(9)),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    if (tab.icon case final icon?) ...[
-                      icon,
-                      const SizedBox(width: 4)
-                    ],
-                    Text(tab.label,
-                        style: const TextStyle(
-                            fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 18, color: Cozy.ink)),
-                  ]),
-                ),
-              ),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+            color: picked ? Cozy.honey : null,
+            borderRadius: BorderRadius.circular(10),
+            boxShadow: picked ? Cozy.cardShadow : null),
+        child: CozyPressable(
+          key: tab.key,
+          onPressed: onSelected == null ? null : () => onSelected!(tab.value),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            height: height - 3,
+            padding: const EdgeInsets.symmetric(horizontal: 6),
+            alignment: Alignment.center,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (tab.icon case final icon?) ...[icon, const SizedBox(width: 4)],
+                Text(tab.label,
+                    style: TextStyle(
+                        fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 17,
+                        color: picked ? Cozy.ink : Cozy.inkSoft)),
+              ]),
             ),
           ),
         ),
-        if (picked)
-          const Positioned(
-              left: 0,
-              right: 0,
-              bottom: -5,
-              child: IgnorePointer(
-                  child: Center(
-                      child: CustomPaint(
-                          size: Size(12, 7), painter: _TabPointPainter())))),
-      ]),
+      ),
     );
   }
-}
-
-class _TabPointPainter extends CustomPainter {
-  const _TabPointPainter();
-  @override
-  void paint(Canvas canvas, Size size) {
-    final point = Path()
-      ..moveTo(0, 0)
-      ..lineTo(size.width, 0)
-      ..lineTo(size.width / 2, size.height)
-      ..close();
-    canvas.drawPath(point, Paint()..color = Cozy.amber);
-    canvas.drawPath(
-        point,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5
-          ..color = Cozy.woodDark);
-  }
-
-  @override
-  bool shouldRepaint(covariant _TabPointPainter oldDelegate) => false;
 }
 
 /// The mockup's menu row: a big icon, the title and a '>' on a cream card
@@ -920,22 +1007,16 @@ class CozyMenuRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(
-            color: Cozy.wood,
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: const [
-              BoxShadow(color: Cozy.shadow, offset: Offset(0, 2))
-            ]),
-        padding: const EdgeInsets.all(2),
+            color: Cozy.cream,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Cozy.line),
+            boxShadow: Cozy.cardShadow),
         child: CozyPressable(
           onPressed: onPressed,
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(14),
           child: Container(
             constraints: BoxConstraints(minHeight: minHeight),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-                color: Cozy.cream,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Cozy.tan, width: 1.5)),
             child: Row(children: [
               SizedBox(
                   width: iconSize,
@@ -949,7 +1030,7 @@ class CozyMenuRow extends StatelessWidget {
                       children: [
                     Text(title,
                         style: const TextStyle(
-                            fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 22, color: Cozy.ink)),
+                            fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20, color: Cozy.ink)),
                     if (subtitle case final text?)
                       Text(text,
                           key: subtitleKey,
@@ -957,7 +1038,7 @@ class CozyMenuRow extends StatelessWidget {
                               color: Cozy.inkSoft, fontSize: 12)),
                   ])),
               const Icon(Icons.chevron_right_rounded,
-                  color: Cozy.wood, size: 30),
+                  color: Cozy.caption, size: 26),
             ]),
           ),
         ),

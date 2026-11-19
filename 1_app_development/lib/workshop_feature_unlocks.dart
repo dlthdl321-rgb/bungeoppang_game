@@ -28,6 +28,9 @@ enum WorkshopFeature {
   freshness,
   /// 가게 꾸미기: `stall_cosmetics` (Lv.8).
   stallCosmetics,
+  /// The 가게 tab's 배경 and 시간 (and the menu's 배경 테마):
+  /// `stall_background` (Lv.1, 26번 3차 H42). No introduction card.
+  stallBackground,
 }
 
 /// Features with a one-screen introduction card, in the order they are shown
@@ -59,6 +62,7 @@ int? featureUnlockLevel(DevelopmentBalance config, WorkshopFeature feature) {
       DevelopmentBalance.integer(config.section('ordinary_sale'), 'special_order_unlock_level'),
     WorkshopFeature.fishCosmetics => level('fish_cosmetics'),
     WorkshopFeature.stallCosmetics => level('stall_cosmetics'),
+    WorkshopFeature.stallBackground => level('stall_background'),
     WorkshopFeature.griddle => level('six_slot_access'),
     WorkshopFeature.wardrobe || WorkshopFeature.freshness => null,
   };
@@ -70,6 +74,8 @@ bool featureOpen(WorkshopState s, DevelopmentBalance config, WorkshopFeature fea
   final byLevel = level == null || s.level >= level;
   return switch (feature) {
     WorkshopFeature.wardrobe => !s.tutorialActive,
+    // Like the wardrobe it lives in: after the first-run guide.
+    WorkshopFeature.stallBackground => byLevel && !s.tutorialActive,
     // A skill already bought, or a purchase still being settled, keeps the
     // window open whatever the level (old saves, recovery).
     WorkshopFeature.skills => byLevel ||
@@ -156,7 +162,8 @@ WorkshopFeatureIntro featureIntro(WorkshopFeature feature) => switch (feature) {
           '재고는 영업일이 지날수록 값과 손님 만족이 조금씩 줄어요. 오래된 붕어빵부터 손님에게 드려요.',
           'intro_freshness', 'records'),
       WorkshopFeature.stallCosmetics => const WorkshopFeatureIntro('가게 꾸미기가 열렸어요',
-          '꾸미기의 가게 칸에서 배경과 등불을 바꿀 수 있어요. 메뉴의 배경 테마에서도 열 수 있어요.',
+          '꾸미기의 가게 칸에서 화로와 장식, 등불도 바꿀 수 있어요. 배경은 메뉴의 배경 테마에서도 바꿔요.',
           'intro_stall_cosmetics', 'tab_stall'),
       WorkshopFeature.wardrobe => const WorkshopFeatureIntro('꾸미기', '', 'intro_wardrobe', 'tab_outfit'),
+      WorkshopFeature.stallBackground => const WorkshopFeatureIntro('배경 테마', '', 'intro_stall_cosmetics', 'theme'),
     };

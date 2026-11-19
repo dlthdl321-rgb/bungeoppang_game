@@ -104,6 +104,26 @@ test("아바타 구매도 서버 가격·레벨·보유 회차와 승인 증거�
   assert.equal(store.docs.get("users/a/compositeSkills/cosmetic:short")!.owned,1);
 });
 
+// 26번 3차 H42: the backgrounds are sold through the same catalog again.
+test("배경 구매도 같은 꾸미기 카탈로그의 서버 가격·레벨로 검사한다",async()=>{
+  const {store,service}=await setup();store.docs.set("users/a",{gold:10});
+  const entry=(config as unknown as {avatar_catalog:Record<string,{slot:string;unlock_level:number;free:boolean}>}).avatar_catalog.seaside;
+  assert.equal(entry.slot,"background");assert.equal(entry.free,false);
+  const bg={...intent,transaction:"cosmetic_0002",skill:"cosmetic:seaside",buns:config.cosmetic_purchase.seaside.buns,
+    gold:String(config.cosmetic_purchase.seaside.gold)};
+  const proof={source:"trustedServerValidation",verifierVersion:1,account:"a",progress:context.progress,epoch:1,
+    transaction:bg.transaction,fingerprint:purchaseFingerprint(bg),snapshotDigest:"protected",
+    availableBuns:"2000",lifetimeBuns:"2000",phase:"reservation",level:entry.unlock_level-1};
+  const path=evidencePath("a","reservation",bg.transaction);
+  store.docs.set(path,proof);
+  await assert.rejects(service.purchase("a","reserve",{...context,intent:bg}));
+  store.docs.set(path,{...proof,level:entry.unlock_level});
+  await service.purchase("a","reserve",{...context,intent:bg});
+  store.docs.set(evidencePath("a","debit",bg.transaction),{...proof,phase:"debit",level:entry.unlock_level});
+  await service.purchase("a","commit",{...context,intent:bg});
+  assert.equal(store.docs.get("users/a/compositeSkills/cosmetic:seaside")!.owned,1);
+});
+
 test("다른 진행 ID로 같은 일일 목표를 제출해도 계정별 지급을 복제하지 않는다",async()=>{
   const {store,service}=await setup(),payload={scope:"daily",period:"2026-10-16",goal:"taps",gold:1};
   for(const progress of ["progress_0001","progress_0002"]) {

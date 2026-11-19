@@ -71,7 +71,8 @@ class DevelopmentBalance {
       }
     }
     final avatar=result.section('avatar_catalog');
-    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool'};
+    // 26번 3차 H42: backgrounds are sold through the same catalog.
+    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool','background'};
     for(final e in avatar.entries) {
       final row=_map(e.value),level=integer(row,'unlock_level');
       if(row['label'] is! String || (row['label'] as String).isEmpty || !avatarSlots.contains(row['slot']) || row['free'] is! bool ||

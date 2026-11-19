@@ -226,17 +226,22 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // Avatar items show once their art is ready for the vendor worn now
       // (PixelSprites.avatarArtReady); owners keep seeing what they bought.
       // Withdrawn items (26번 3차 H10) stay hidden even when owned.
-      listed:(d)=>avatar(d) && PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id) ||
+      listed:(d)=>avatar(d) && (d.slot==CosmeticSlot.background || PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id)) ||
         owned(d) && !avatarItemWithdrawn(_equipped(CosmeticSlot.character),d.id),
       forSale:avatar,cost:cost,total:total,
       // 26번 4-5단계(S45-Q2): only the level; the production total ('누적',
       // 0 for every item) is not shown.
       requirement:(d)=>avatar(d) ? 'Lv.${(catalog[d.id] as Map)['unlock_level']} 해금' : '',
       // 붕어빵 꾸미기 from Lv.5, 가게 꾸미기 from Lv.8 (S45-Q6): hidden before.
+      // 26번 3차 H42: the 가게 tab opens with its 배경·시간 from Lv.1 (the
+      // backgrounds are sold in the shop again); stove, decoration and lamp
+      // still wait for Lv.8.
       tabOpen:(t)=>switch(t){
         WardrobeTab.bungeoppang=>c.featureIsOpen(WorkshopFeature.fishCosmetics),
-        WardrobeTab.stall=>c.featureIsOpen(WorkshopFeature.stallCosmetics),
+        WardrobeTab.stall=>c.featureIsOpen(WorkshopFeature.stallBackground),
         _=>true},
+      slotOpen:(s)=>s.tab!=WardrobeTab.stall || s==CosmeticSlot.background || s==CosmeticSlot.time ||
+        c.featureIsOpen(WorkshopFeature.stallCosmetics),
       action:(d)=>_equipped(d.slot)==d.id ? '장착 중':!unlocked(d) ? '잠김':owned(d) ? '적용':!avatar(d) ? '살 수 없음':'구매하고 적용',
       apply:(d) async {
         if(!canApply(d))return false;
@@ -253,8 +258,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
   }
   /// 꾸미기 wears what is owned; '상점에서 더 보기' opens the shop at that
   /// slot (26번 4-5단계, S45-Q1 B).
-  Future<void> _wardrobe({WardrobeTab tab=WardrobeTab.hair})=>_window('꾸미기',(ctx)=>WardrobePanel(
-    controller:widget.accountController,access:_cosmetics,initialTab:tab,
+  Future<void> _wardrobe({WardrobeTab tab=WardrobeTab.hair,CosmeticSlot? slot})=>_window('꾸미기',(ctx)=>WardrobePanel(
+    controller:widget.accountController,access:_cosmetics,initialTab:tab,initialSlot:slot,
     onMore:(slot){Navigator.pop(ctx);unawaited(_store(slot:slot));},
     // 3차 피드백 H15: '모두 적용' wears and closes; no back button needed.
     onClose:()=>Navigator.pop(ctx)));
@@ -293,6 +298,12 @@ class _WorkshopPageState extends State<WorkshopPage> {
     return ListView(padding:const EdgeInsets.all(12),children:[
       if(owner!=null)OwnerSettingsSection(owner:owner,closeWindow:()=>Navigator.pop(ctx),
         notify:(m){if(mounted)showCenterToast(context,m);}),
+      // 26번 3차 H42: the background picture is chosen here again (it opens
+      // the wardrobe's 가게 tab at 배경, where owned ones are worn).
+      if(_lockFor('skins:stall')==null)Padding(padding:const EdgeInsets.only(bottom:8),child:CozyMenuRow(
+        key:const Key('settings-background'),icon:const PixelIcon('theme',size:28),iconSize:28,minHeight:52,
+        title:'배경 바꾸기',subtitle:'지금: ${_backgroundName()}',
+        onPressed:(){Navigator.pop(ctx);_open('skins:stall');})),
       SoundSettings(controller:account),
       CozySettingRow(icon:const PixelIcon('vibration',size:28),label:'진동',value:settings.vibration,
         onChanged:(v)=>account.updateSettings(vibration:v)),
@@ -325,6 +336,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
       },icon:const PixelIcon('save',size:28),label:const Text('저장')),
     ]);
   });
+  /// The name of the background worn now ('맑은 날').
+  String _backgroundName() {
+    final id=_equipped(CosmeticSlot.background);
+    return cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.background && d.id==id).firstOrNull?.name ?? id;
+  }
   String _equipped(CosmeticSlot slot) => slot == CosmeticSlot.time ? c.state.sceneTime :
     c.state.avatarEquipment[slot.name] ?? widget.accountController.state.equippedCosmetic(slot);
   /// What the home draws: during a seasonal event its decoration hangs on
@@ -347,7 +363,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
           child:Stack(clipBehavior:Clip.none,children:[
             // 3차 피드백 H38: the close button sits inside the panel, off its
             // border, and the content keeps clear of it.
-            CozyPanel(padding:const EdgeInsets.fromLTRB(16,14,16,14),child:SingleChildScrollView(
+            CozyPanel(radius:20,padding:const EdgeInsets.fromLTRB(16,14,16,14),child:SingleChildScrollView(
               child:Padding(padding:const EdgeInsets.only(top:CozyCloseButton.inset),child:child))),
             Positioned(top:CozyCloseButton.edge,right:CozyCloseButton.edge,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
           ]));
@@ -442,7 +458,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
   String? _lockFor(String destination) => switch(destination) {
     'skills' => c.featureLock(WorkshopFeature.skills),
     'shop' || 'skins' || 'skins:avatar' => c.featureLock(WorkshopFeature.wardrobe),
-    'skins:stall' => c.featureLock(WorkshopFeature.wardrobe) ?? c.featureLock(WorkshopFeature.stallCosmetics),
+    'skins:stall' => c.featureLock(WorkshopFeature.wardrobe) ?? c.featureLock(WorkshopFeature.stallBackground),
     'achievements:collection' => c.featureLock(WorkshopFeature.collection),
     _ => null,
   };
@@ -457,7 +473,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
       case 'skills': unawaited(_shop());
       case 'shop': unawaited(_store());
       case 'skins': case 'skins:avatar': unawaited(_wardrobe());
-      case 'skins:stall': unawaited(_wardrobe(tab:WardrobeTab.stall));
+      case 'skins:stall': unawaited(_wardrobe(tab:WardrobeTab.stall,slot:CosmeticSlot.background));
       case 'settings': unawaited(_audioSettings());
       case 'records': case 'balance': unawaited(_window('생산 기록',(_)=>_records()));
       case 'achievements:collection': unawaited(_window('도감',(_)=>_collection()));

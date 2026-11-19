@@ -84,9 +84,12 @@ void main() {
     expect(()=>quoteWorkshopProduct(config,'cosmetic:short',owned:1,quantity:1),throwsFormatException);
     expect(()=>quoteWorkshopProduct(config,'cosmetic:skin1',owned:0,quantity:1),throwsFormatException);
   });
-  test('신규 아바타 구매로 배경/붕어빵 꾸미기 범위를 몰래 열지 않는다', () {
-    expect(()=>quoteWorkshopProduct(config,'cosmetic:forest',owned:0,quantity:1),throwsFormatException);
+  // 26번 3차 H42: backgrounds are sold through the catalog on purpose now;
+  // the bungeoppang and other stall items stay out.
+  test('신규 꾸미기 구매는 카탈로그에 넣은 배경까지만, 붕어빵·화로 꾸미기 범위를 몰래 열지 않는다', () {
+    expect(quoteWorkshopProduct(config,'cosmetic:forest',owned:0,quantity:1).gold, BigInt.from(2));
     expect(()=>quoteWorkshopProduct(config,'cosmetic:choco',owned:0,quantity:1),throwsFormatException);
+    expect(()=>quoteWorkshopProduct(config,'cosmetic:copper',owned:0,quantity:1),throwsFormatException);
   });
 
 }
