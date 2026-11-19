@@ -186,7 +186,7 @@ void main() {
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   _title('단위 고르기'),
                   Row(children: [
-                    SkillStepWheel(value: 10, onChanged: (_) {}),
+                    SkillStepWheel(skillId: 'tap_1', value: 10, onChanged: (_) {}),
                     const SizedBox(width: 8),
                     const Text('★ 작은 돌림판', style: TextStyle(fontWeight: FontWeight.w800)),
                   ]),
