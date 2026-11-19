@@ -37,7 +37,9 @@ abstract final class OwnerTexts {
   // ② 사장님 이름
   static const nameTitle = '사장님 이름을 정해 주세요';
   static const nameHint = '예: 붕어빵장인';
-  static const nameHelp = '한글·영문·숫자 2~8자 · 다른 사람과 같아도 괜찮아요 · 설정에서 언제든 바꿀 수 있어요';
+  /// 26번 3차 H4: only this line; the 2~8자 rule shows in red under the box
+  /// when a name breaks it (OwnerNameRules.problem).
+  static const nameHelp = '설정에서 언제든 바꿀 수 있어요';
   static const next = '다음';
 
   // ③ 사장님 고르기

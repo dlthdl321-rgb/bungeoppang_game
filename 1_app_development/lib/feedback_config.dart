@@ -29,6 +29,11 @@ const offlineWelcomeAfter = Duration(hours: 24);
 /// Shorter absences settle silently.
 const workshopWelcomeBackAfter = Duration(hours: 2);
 
+/// First-run screens (로그인·이름·캐릭터·선택 정보, 26번 3차 H2): the lowered
+/// home background drawn behind them, with its falling weather. A winter
+/// night stall until 25번 H-A-1 (a first-run illustration) arrives.
+const firstRunBackground = 'snow';
+
 /// After a failed automatic level-up save, wait this long before retrying.
 const autoLevelRetryMs = 10000;
 
