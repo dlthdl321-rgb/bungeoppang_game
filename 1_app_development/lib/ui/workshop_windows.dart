@@ -43,9 +43,9 @@ Future<void> showWorkshopWindow(BuildContext context,{required WorkshopControlle
             ]))),
           const SizedBox(height:10),Expanded(child:Stack(clipBehavior:Clip.none,children:[
             Positioned.fill(child:CozyFrame(child:Column(children:[
-              Padding(padding:const EdgeInsets.fromLTRB(40,10,40,4),child:MediaQuery.withClampedTextScaling(
+              Padding(padding:const EdgeInsets.fromLTRB(52,10,52,4),child:MediaQuery.withClampedTextScaling(
                 maxScaleFactor:1.3,child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                  // 25번 35번 redraw; none until it arrives (시안 확인 2차).
+                  // 25번 35번 redraw (ui/title_fish.png).
                   title=='설정' ? const Padding(padding:EdgeInsets.only(right:6),child:PixelIcon('settings',size:30))
                     : const TitleFish(key:Key('title-fish-left'),width:48,height:36,flip:true),
                   Flexible(child:Text(title,key:const Key('workshop-window-title'),textAlign:TextAlign.center,
@@ -60,7 +60,7 @@ Future<void> showWorkshopWindow(BuildContext context,{required WorkshopControlle
                 child:CozyNotice(controller.notice!,key:const Key('workshop-window-notice'))),
               Expanded(child:content(ctx)),
             ]))),
-            Positioned(top:2,right:2,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
+            Positioned(top:CozyCloseButton.edge,right:CozyCloseButton.edge,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
           ])),
         ]))),
         // At least as tall as the home's bottom menu (NightHome.navHeight).

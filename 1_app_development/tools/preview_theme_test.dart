@@ -109,7 +109,6 @@ void main() {
     ('daily', 5, ['daily-ticket']),
     ('skills', 5, ['menu-skills']),
     ('records', 5, ['menu-menubar', 'menu-records']),
-    ('weekly', 5, ['menu-menubar', 'event-entry']),
     ('achievements', 5, ['menu-menubar', 'menu-achievements']),
     ('missions', 5, ['menu-menubar', 'menu-missions']),
   ];

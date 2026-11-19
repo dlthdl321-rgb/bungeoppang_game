@@ -584,6 +584,12 @@ class CozyCloseButton extends StatelessWidget {
   final VoidCallback onPressed;
   const CozyCloseButton({super.key, required this.onPressed});
 
+  /// 3차 피드백 H38: the button sits this far inside a window's top-right
+  /// corner (never on its border line), and a popup's content starts
+  /// [inset] lower so nothing hides under it.
+  static const edge = 8.0;
+  static const inset = 34.0;
+
   @override
   Widget build(BuildContext context) => Tooltip(
         message: '닫기',

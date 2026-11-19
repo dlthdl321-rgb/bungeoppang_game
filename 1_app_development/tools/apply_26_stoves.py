@@ -20,6 +20,13 @@ generated art:
     python tools/apply_26_stoves.py <26_feedback_generated folder>
     python tools/apply_26_stoves.py <...> --measure   # re-fit (slow)
     python tools/apply_26_stoves.py <...> --preview   # build/apply_26_stove_preview.png
+    python tools/apply_26_stoves.py <...> --low       # 25번 34번 low lid
+
+25번 34번 (--low): the open lid redrawn LOW (tilted back about 30 degrees,
+34_stove_lid_low/<stove>.png, about 1452x1083, plate and lid only) replaces
+only stove_open/<stove>.png, the same way: fitted by its plate
+([LOW_FIT], --low --measure starts from the bounding boxes), lid kept
+above the plate's back edge, stove_empty below.
 
 Run it in 1_app_development. It never writes into the source folder.
 """
@@ -54,6 +61,16 @@ OPEN_FIT = {
     "copper": (0.6500, -2.00, -195.50),
     "castiron": (0.6450, 1.50, -203.50),
     "golden": (0.6450, -2.50, -198.50),
+}
+
+
+# (scale, dx, dy) of the 25번 34번 low-lid pictures, from --low --measure
+# (2026-11-19; gradient match 0.47-0.81 on the plate).
+LOW_FIT = {
+    "iron": (0.6442, 2.90, -202.19),
+    "copper": (0.6505, -2.70, -219.31),
+    "castiron": (0.6471, -0.31, -209.46),
+    "golden": (0.6420, -0.09, -211.47),
 }
 
 
@@ -126,12 +143,26 @@ def closed_stove(name, src):
                             STOVE_SIZE), 24, 230)
 
 
-def open_stove(name, src):
-    s, dx, dy = OPEN_FIT[name]
+def measure_low(name, src):
+    """[LOW_FIT] for 25번 34번, from the plate's bounding box outward."""
+    empty = load(IMAGES / "stove_empty" / f"{name}.png")
+    gen = load(src / f"{name}.png")
+    e = np.asarray(empty)[..., 3] > 128
+    g = np.asarray(gen)[..., 3] > 128
+    ex, ey = np.nonzero(e.any(0))[0], np.nonzero(e.any(1))[0]
+    gx, gy = np.nonzero(g.any(0))[0], np.nonzero(g.any(1))[0]
+    s = (ex.max() - ex.min()) / (gx.max() - gx.min())
+    start = (s, ex.min() - gx.min() * s, ey.max() - gy.max() * s)
+    return _fit(gen, empty, _mask((PLATE_BACK - 6, 470)),
+                np.arange(s - .01, s + .0101, .005), 8, start)
+
+
+def open_stove(name, src, low=False):
+    s, dx, dy = (LOW_FIT if low else OPEN_FIT)[name]
     # The generated picture on the 941x700 canvas: its plate on the bottom
     # 941x470 (stove_empty's plate), its lid in the room above.
-    lid = snap_alpha(place(load(src / f"stove_open_{name}.png"), s, dx,
-                           dy + LID_ROOM, OPEN_SIZE), 24, 230)
+    path = src / (f"{name}.png" if low else f"stove_open_{name}.png")
+    lid = snap_alpha(place(load(path), s, dx, dy + LID_ROOM, OPEN_SIZE), 24, 230)
     a = np.asarray(lid).copy()
     back = LID_ROOM + PLATE_BACK
     a[back + 4:, :, :] = 0              # the generated plate and base
@@ -164,11 +195,29 @@ def main():
                    help="the 26_feedback_generated folder (or its 07_stoves)")
     p.add_argument("--measure", action="store_true")
     p.add_argument("--preview", action="store_true")
+    p.add_argument("--low", action="store_true",
+                   help="25번 34번: only stove_open from 34_stove_lid_low")
     args = p.parse_args()
     src = args.source.resolve()
+    made = {}
+    if args.low:
+        if (src / "34_stove_lid_low").is_dir():
+            src = src / "34_stove_lid_low"
+        for n in STOVES:
+            if args.measure:
+                o = measure_low(n, src)
+                print(f"  {n}: low lid match {o[0]:.4f} scale {o[1]:.4f} dx {o[2]:+.2f} dy {o[3]:+.2f}")
+                LOW_FIT[n] = tuple(float(v) for v in o[1:])
+            opened = open_stove(n, src, low=True)
+            opened.save(IMAGES / "stove_open" / f"{n}.png")
+            made[f"stove_open/{n}"] = opened
+        if args.preview:
+            out = ROOT / "build" / "apply_26_stove_preview.png"
+            preview(made, out)
+            print(f"preview: {out}")
+        return
     if (src / "07_stoves").is_dir():
         src = src / "07_stoves"
-    made = {}
     for kind in ("stove_closed", "stove_open"):
         (IMAGES / kind).mkdir(exist_ok=True)
     for n in STOVES:
