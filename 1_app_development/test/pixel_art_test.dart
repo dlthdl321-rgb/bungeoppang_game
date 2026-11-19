@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/avatar_atlas.dart';
 import 'package:todays_bungeoppang/balance.dart';
+import 'package:todays_bungeoppang/avatar_v2.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
@@ -75,6 +76,10 @@ void main() {
   });
 
   test('사장님: 캐릭터마다 기본 몸과, 꾸미기에 보이는 모든 항목 그림이 같은 캔버스에 놓인다', () {
+    // The v1 vendor (avatar/); v2 is on since 26번 3차 and checks its own
+    // pictures in avatar_v2_test.dart.
+    debugAvatarV2Override = false;
+    addTearDown(() => debugAvatarV2Override = null);
     const canvas = (280.0, 520.0);
     expect(AvatarLook.size.width / AvatarLook.size.height,
         closeTo(canvas.$1 / canvas.$2, .01));

@@ -41,6 +41,11 @@ String avatarV2Base(String character, String skin) =>
 String avatarV2Item(String character, CosmeticSlot slot, String id) =>
     'avatar_v2/$character/${slot.name}_$id.png';
 
+/// What hair style [hair] leaves bare of the head: erased from the base
+/// (26번 3차 H10). Optional: without it the base is drawn whole.
+String avatarV2BaseMask(String character, String hair) =>
+    'avatar_v2/$character/hair_${hair}_basemask.png';
+
 /// Where [hat] presses the hair down: erased from the hair layer only.
 String avatarV2HairMask(String character, String hat) =>
     'avatar_v2/$character/hat_${hat}_hairmask.png';

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/avatar_atlas.dart';
 import 'package:todays_bungeoppang/avatar_motion.dart';
 import 'package:todays_bungeoppang/avatar_rig_config.dart';
+import 'package:todays_bungeoppang/avatar_v2.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/ui/avatar_face.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
@@ -18,7 +19,13 @@ import 'widget_test.dart' show mountGame;
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(PixelSprites.load);
-  tearDown(() => AvatarRigDebug.show.value = false);
+  // These check the v1 rig (26번 4-4); the v2 vendor is on since 26번 3차
+  // and has its own tests (avatar_v2_test.dart).
+  setUp(() => debugAvatarV2Override = false);
+  tearDown(() {
+    AvatarRigDebug.show.value = false;
+    debugAvatarV2Override = null;
+  });
 
   AvatarLook dressed(Map<CosmeticSlot, String> worn,
           {String character = 'girl'}) =>
@@ -26,11 +33,11 @@ void main() {
           ? character
           : worn[s] ?? defaultCosmetics[s]!);
 
-  // The default apron is drawn since stage 26 4-4.
+  // The default apron is drawn since stage 26 4-4; the tongs are gone
+  // since 26번 3차 H8 (the tool default draws nothing).
   const restLook = [
     'avatar/girl/base.png',
     'avatar/girl/outfit_apron.png',
-    'avatar/girl/tool_tongs.png'
   ];
   const winter = {
     CosmeticSlot.hat: 'beanie',
@@ -40,6 +47,7 @@ void main() {
     CosmeticSlot.outfit: 'darkapron',
     CosmeticSlot.shoes: 'sneakers',
     CosmeticSlot.bottom: 'skirt',
+    CosmeticSlot.tool: 'paperbag',
   };
 
   Future<Uint8List> pixels(AvatarRig rig) async {
@@ -53,7 +61,7 @@ void main() {
   }
 
   group('레이어 구성', () {
-    test('기본 차림은 몸 그림·기본 앞치마·집게이고, 얼굴은 그려진 그대로다', () {
+    test('기본 차림은 몸 그림·기본 앞치마이고(집게 없음), 얼굴은 그려진 그대로다', () {
       // The base already wears the default hair, tee, shorts and flats.
       final rig = AvatarRig('girl', frontPose, look: dressed({}));
       expect(rig.sprites.map((s) => s.asset), restLook);

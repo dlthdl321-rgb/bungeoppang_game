@@ -113,20 +113,21 @@ void main() {
     test('필수 그림 목록: 바탕 3 + 노출 아이템 전부(기본 포함) + 머리 뒤 조각, 남녀', () {
       final required = avatarV2Required().toList();
       expect(required.toSet().length, required.length);
-      // 25번 문서 23~30번: 112장 (아이콘 31번은 칸 단위로 따로).
-      expect(required.length, 112);
+      // 25번 문서 23~30번: 110장 (아이콘 31번은 칸 단위로 따로; 집게는 26번 3차
+      // H8로 '도구 없음'이 되어 그림이 없다).
+      expect(required.length, 110);
       for (final c in ['girl', 'boy']) {
         for (final s in ['skin1', 'skin2', 'skin3']) {
           expect(required, contains('avatar_v2/$c/base@$s.png'));
         }
-        for (final id in ['long', 'tee', 'shorts', 'flats', 'apron', 'tongs',
+        for (final id in ['long', 'tee', 'shorts', 'flats', 'apron',
           ..._newBottoms]) {
           expect(required.where((f) => f.startsWith('avatar_v2/$c/') && f.endsWith('_$id.png')),
               isNotEmpty, reason: '$c $id');
         }
         expect(required, contains('avatar_v2/$c/hair_ponytail_back.png'));
         expect(required, isNot(contains('avatar_v2/$c/hair_short_back.png')));
-        for (final blank in ['nohat', 'noapron', 'noacc']) {
+        for (final blank in ['nohat', 'noapron', 'noacc', 'tongs']) {
           expect(required.any((f) => f.endsWith('_$blank.png')), isFalse);
         }
       }
@@ -171,7 +172,9 @@ void main() {
       for (final c in ['girl', 'boy']) {
         for (final d in cosmeticDefinitions.where((d) =>
             d.slot.category == CosmeticCategory.avatar)) {
-          expect(PixelSprites.avatarArtReady(c, d.slot, d.id), isTrue,
+          // 26번 3차 H8: withdrawn items (the golden tongs) stay hidden.
+          expect(PixelSprites.avatarArtReady(c, d.slot, d.id),
+              !avatarItemWithdrawn(c, d.id),
               reason: '$c ${d.id}');
         }
       }
@@ -289,7 +292,9 @@ void main() {
     // tools/avatar_layers.py skin (2026-11-18까지): skin2 비율.
     const oldSkin2 = {
       'girl': [0.9412, 0.7972, 0.6354],
-      'boy': [0.9163, 0.6981, 0.5027],
+      // 26번 3차 H9: the boy's v1 base was rebuilt from his worn pictures
+      // (avatar_layers.py rebase), so his measured skin ratio moved a bit.
+      'boy': [0.9173, 0.7123, 0.5333],
     };
     for (final c in ['girl', 'boy']) {
       final two = (ratios['$c@skin2'] as List).cast<num>();
@@ -344,7 +349,8 @@ void main() {
         expect(
             required.contains(f) ||
                 name.startsWith('face_') ||
-                name.endsWith('_hairmask.png'),
+                name.endsWith('_hairmask.png') ||
+                name.endsWith('_basemask.png'),
             isTrue,
             reason: f);
         final (x, y) = avatarV2TrimOffsets[f] ?? (0, 0);

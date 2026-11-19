@@ -14,6 +14,14 @@ import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
 import '../test/widget_test.dart' show mountGame;
 
+/// Fixed frames instead of pumpAndSettle: the home keeps small looping
+/// animations (since the C bundle), so it never fully settles.
+Future<void> settle(WidgetTester tester) async {
+  for (var i = 0; i < 15; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
 void main() {
   Future<void> fonts(WidgetTester tester) => tester.runAsync(() async {
         Future<void> load(String family, String path) async {
@@ -81,20 +89,20 @@ void main() {
           final nav = tester.state<NavigatorState>(find.byType(Navigator).first);
           while (nav.canPop()) {
             nav.pop();
-            await tester.pumpAndSettle();
+            await settle(tester);
           }
         }
         // '오늘' 창
         await tester.tap(find.byKey(const Key('daily-ticket')));
-        await tester.pumpAndSettle();
+        await settle(tester);
         await shot(tester, 'hd_today_${label}_$w');
         final scroll = find.byKey(const Key('today-scroll'));
         if (scroll.evaluate().isNotEmpty) {
           await tester.drag(scroll, const Offset(0, -500));
-          await tester.pumpAndSettle();
+          await settle(tester);
           await shot(tester, 'hd_today_${label}_${w}_b');
           await tester.drag(scroll, const Offset(0, -900));
-          await tester.pumpAndSettle();
+          await settle(tester);
           await shot(tester, 'hd_today_${label}_${w}_c');
         }
         await close();
@@ -108,7 +116,7 @@ void main() {
           ('menu-missions', 'levelmissions'),
         ]) {
           await tester.tap(find.byKey(const Key('menu-menubar')));
-          await tester.pumpAndSettle();
+          await settle(tester);
           if (key.isNotEmpty) {
             final row = find.byKey(Key(key));
             if (row.evaluate().isEmpty) {
@@ -117,7 +125,7 @@ void main() {
             }
             await tester.ensureVisible(row);
             await tester.tap(row);
-            await tester.pumpAndSettle();
+            await settle(tester);
           }
           await shot(tester, 'hd_${name}_${label}_$w');
           await close();
