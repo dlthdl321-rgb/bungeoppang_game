@@ -6,6 +6,7 @@ import '../economy.dart';
 import '../game_controller.dart';
 import '../models.dart';
 import '../workshop_controller.dart';
+import 'center_toast.dart';
 import 'cozy_style.dart';
 import 'currency_amount.dart';
 import 'lock_overlay.dart';
@@ -46,9 +47,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
   }
 
   void _say(String message) {
-    final messenger = ScaffoldMessenger.of(context);
-    messenger.hideCurrentSnackBar();
-    messenger.showSnackBar(SnackBar(content: Text(message), duration: const Duration(seconds: 2)));
+    showCenterToast(context, message);
   }
 
   @override

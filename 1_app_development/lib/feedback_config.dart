@@ -29,6 +29,11 @@ const offlineWelcomeAfter = Duration(hours: 24);
 /// Shorter absences settle silently.
 const workshopWelcomeBackAfter = Duration(hours: 2);
 
+/// First-run screens (로그인·이름·캐릭터·선택 정보, 26번 3차 H2): the lowered
+/// home background drawn behind them, with its falling weather. A winter
+/// night stall until 25번 37번 (a first-run illustration) arrives.
+const firstRunBackground = 'snow';
+
 /// After a failed automatic level-up save, wait this long before retrying.
 const autoLevelRetryMs = 10000;
 
@@ -50,3 +55,27 @@ class ComboBonus {
 
 // OFF by default: combos are a visual effect only unless this is enabled.
 const comboBonus = ComboBonus(enabled: false, threshold: 20, permille: 1100);
+
+/// 붕어빵 품질 별(26번 3차 피드백 H24): how many of [cookingStarsMax] stars
+/// each bake grade (cooking_result_rules.dart `cookingGrade`) shows on the
+/// result. Presentation only: grades, mastery and prices are unchanged.
+const cookingStarsMax = 3;
+const cookingStarsPerfect = 3;
+const cookingStarsGood = 2;
+const cookingStarsNear = 1;
+const cookingStarsFail = 0;
+
+/// 걸이 축 뒤집기(26번 3차 피드백 H21): the closed mold hangs on an axle
+/// through its two side rings and the finger pushes it up (or down) around
+/// it. One mold height of travel turns it [flipAxleDegreesPerHeight]; once
+/// it has turned [flipAxleDoneDegrees] (past standing on edge) it falls
+/// the rest of the way over on its own. Less than [flipAxleStartPx] of
+/// travel is a touch, not a push.
+const flipAxleDegreesPerHeight = 180.0;
+const flipAxleDoneDegrees = 120.0;
+const flipAxleStartPx = 6.0;
+
+/// The axle's place in the mold picture (mold/*.png, 1200x880): the centres
+/// of the two side rings (measured on mold/closed.png).
+const flipAxleLeftRing = (114.0, 430.0);
+const flipAxleRightRing = (1072.0, 430.0);

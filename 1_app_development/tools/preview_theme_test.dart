@@ -83,15 +83,19 @@ void main() {
     final look = key.startsWith('?');
     final f = find.byKey(Key(look ? key.substring(1) : key));
     await tester.ensureVisible(f.first);
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
     if (look) return;
     await tester.tap(f.first);
-    await tester.pumpAndSettle();
+    for (var i = 0; i < 8; i++) {
+      await tester.pump(const Duration(milliseconds: 250));
+    }
   }
 
   // (이름, 레벨, 누를 키들)
   const screens = <(String, int, List<String>)>[
-    ('menu', 5, ['menu-menu']),
+    ('menu', 5, ['menu-menubar']),
     ('shop_cosmetics', 5, ['menu-shop']),
     ('shop_gold', 5, ['menu-shop', 'shop-tab-gold']),
     ('wardrobe_hair', 5, ['menu-skins']),
@@ -101,13 +105,13 @@ void main() {
     ('settings_background', 1, ['home-settings', '?settings-background']),
     ('settings_background_open', 1, ['home-settings', 'settings-background']),
     ('shop_stall_lv1_more', 1, ['menu-shop', 'cosmetic-category-stall', '?preview-seaside']),
-    ('menu_lv1', 1, ['menu-menu']),
+    ('menu_lv1', 1, ['menu-menubar']),
     ('daily', 5, ['daily-ticket']),
     ('skills', 5, ['menu-skills']),
-    ('records', 5, ['menu-menu', 'menu-records']),
-    ('weekly', 5, ['menu-menu', 'event-entry']),
-    ('achievements', 5, ['menu-menu', 'menu-achievements']),
-    ('missions', 5, ['menu-menu', 'menu-missions']),
+    ('records', 5, ['menu-menubar', 'menu-records']),
+    ('weekly', 5, ['menu-menubar', 'event-entry']),
+    ('achievements', 5, ['menu-menubar', 'menu-achievements']),
+    ('missions', 5, ['menu-menubar', 'menu-missions']),
   ];
 
   for (final size in const [Size(360, 800), Size(390, 844)]) {

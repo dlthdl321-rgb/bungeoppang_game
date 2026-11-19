@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../cooking_result_rules.dart';
 import '../game_audio.dart';
+import '../feedback_config.dart';
 import 'cozy_style.dart';
+import 'pixel_sprites.dart';
 import 'sparkle_art.dart';
 
 /// The bake result's grade on the mold (26번 4단계, MASTER 10장 결과 등급·연출):
@@ -35,6 +37,10 @@ class CookingResultView extends StatefulWidget {
 
   /// Effect length; the big word pops in the first [popMs].
   static const effectMs = 1400, popMs = 300;
+
+  /// The result band (H22): dark wood at 70% so the stall shows through.
+  static const bandColor = Color(0xb3221410);
+  static const bandMaxWidth = 280.0;
 
   /// At most this many particles at once (sparkles + steam + smoke).
   static const maxParticles = 12;
@@ -119,22 +125,62 @@ class _CookingResultViewState extends State<CookingResultView>
   @override
   Widget build(BuildContext context) {
     final grade = widget.grade;
+    final stars = cookingStars(grade);
     final title = Text(cookingGradeTitle(grade),
         key: const Key('mold-result-grade'),
         textAlign: TextAlign.center,
         style: TextStyle(
+            fontFamily: 'Jua',
+            fontFamilyFallback: Cozy.fontFallback,
             color: switch (grade) {
-              CookingGrade.perfect => const Color(0xffffe08a),
+              CookingGrade.perfect => const Color(0xffffd36b),
               CookingGrade.good => Cozy.cream,
               CookingGrade.near => const Color(0xfff3dcc0),
               CookingGrade.fail => const Color(0xffe7d6c8),
             },
-            fontWeight: FontWeight.w900,
-            fontSize: grade == CookingGrade.fail ? 20 : 26,
-            shadows: const [
-              Shadow(color: Cozy.woodDark, blurRadius: 6),
-              Shadow(color: Cozy.woodDark, offset: Offset(1.5, 1.5)),
-            ]));
+            fontSize: grade == CookingGrade.fail ? 19 : 23,
+            height: 1.15));
+    // 26번 3차 피드백 H22·H24: the grade, its stars and the reason in one
+    // translucent band over the mold's top (not loose words on the fish).
+    final band = Container(
+      key: const Key('mold-result-band'),
+      constraints: const BoxConstraints(maxWidth: CookingResultView.bandMaxWidth),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 9),
+      decoration: BoxDecoration(
+          color: CookingResultView.bandColor,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Cozy.cream.withValues(alpha: .22))),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Semantics(
+          label: '별 $cookingStarsMax개 중 $stars개',
+          excludeSemantics: true,
+          child: Row(key: const Key('mold-result-stars'), mainAxisSize: MainAxisSize.min, children: [
+            for (var i = 0; i < cookingStarsMax; i++)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 1.5),
+                child: i < stars
+                    ? const PixelIcon('star', key: Key('mold-result-star-on'), size: 22)
+                    : const Opacity(
+                        opacity: .4,
+                        child: ColorFiltered(
+                            colorFilter: ColorFilter.mode(Color(0xffd9cfc4), BlendMode.srcIn),
+                            child: PixelIcon('star', size: 22))),
+              ),
+          ]),
+        ),
+        const SizedBox(height: 2),
+        AnimatedBuilder(
+            animation: _effect,
+            builder: (context, child) => Transform.scale(
+                scale: _still ? 1 : popScale(grade, _effect.value),
+                child: child),
+            child: title),
+        Text(widget.line,
+            key: const Key('mold-result-caption'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Cozy.cream, fontWeight: FontWeight.w600, fontSize: 13, height: 1.3)),
+      ]),
+    );
     return Stack(clipBehavior: Clip.none, children: [
       if (!_still)
         Positioned.fill(
@@ -146,16 +192,8 @@ class _CookingResultViewState extends State<CookingResultView>
       Align(
           alignment: const Alignment(0, -1),
           child: FractionalTranslation(
-              translation: const Offset(0, -.35),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                AnimatedBuilder(
-                    animation: _effect,
-                    builder: (context, child) => Transform.scale(
-                        scale: _still ? 1 : popScale(grade, _effect.value),
-                        child: child),
-                    child: title),
-                _caption(widget.line, key: const Key('mold-result-caption')),
-              ]))),
+              translation: const Offset(0, -.6),
+              child: IgnorePointer(child: band))),
       if (widget.reaction != null)
         Align(
             alignment: const Alignment(0, 1),
@@ -263,15 +301,3 @@ class CookingResultEffectPainter extends CustomPainter {
   bool shouldRepaint(covariant CookingResultEffectPainter old) =>
       old.grade != grade || old.burnt != burnt || old.t != t;
 }
-
-Widget _caption(String text, {Key? key}) => Text(text,
-    key: key,
-    textAlign: TextAlign.center,
-    style: const TextStyle(
-        color: Cozy.cream,
-        fontWeight: FontWeight.bold,
-        fontSize: 14,
-        shadows: [
-          Shadow(color: Cozy.woodDark, blurRadius: 5),
-          Shadow(color: Cozy.woodDark, offset: Offset(1, 1))
-        ]));

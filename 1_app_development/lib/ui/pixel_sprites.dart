@@ -121,7 +121,10 @@ class PixelSprites {
     'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics',
     // The shop's gold packs, smallest to largest (25번 H-E-1, 26번 3차 H31;
     // until drawn ui/gold_widgets.dart heaps the gold icon instead).
-    'gold_pack_1', 'gold_pack_2', 'gold_pack_3', 'gold_pack_4', 'gold_pack_5'];
+    'gold_pack_1', 'gold_pack_2', 'gold_pack_3', 'gold_pack_4', 'gold_pack_5',
+    // The first-run screens' winter stall illustration (25번 37번, 26번 3차
+    // H2); until drawn they use the lowered snow background.
+    'first_run'];
 
   /// Weekly challenge banners in assets/images/event (160x48), one per
   /// season of weekly_config.dart.

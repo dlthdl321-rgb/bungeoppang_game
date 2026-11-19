@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:todays_bungeoppang/ui/night_home.dart';
 import 'package:todays_bungeoppang/ui/sparkle_art.dart';
 import 'package:todays_bungeoppang/ui/weather_layer.dart';
 
@@ -8,5 +9,6 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   // tests see one still frame instead.
   WeatherLayer.animate = false;
   TwinklingSparkles.animate = false;
+  WorkshopStatusBadge.animate = false;
   await testMain();
 }

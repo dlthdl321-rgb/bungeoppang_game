@@ -28,7 +28,7 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
       CookingPhase.filling => const WorkshopTutorialStep(3, '틀 위를 문질러 속을 짜 넣어요.', 'workshop-mold', below: _stage),
       CookingPhase.secondBatter => const WorkshopTutorialStep(4, '반죽을 한 번 더 문질러 속을 덮어요.', 'workshop-mold', below: _stage),
       CookingPhase.closing => const WorkshopTutorialStep(4, '뚜껑을 닫아요.', 'workshop-mold', below: _stage),
-      CookingPhase.flipping => const WorkshopTutorialStep(5, '틀 둘레로 원을 한 바퀴 그려 틀을 뒤집어요.', 'workshop-mold', below: _stage),
+      CookingPhase.flipping => const WorkshopTutorialStep(5, '틀을 위로 밀어 올려 고리 축을 따라 뒤집어요.', 'workshop-mold', below: _stage),
       CookingPhase.cooking => const WorkshopTutorialStep(6, '노릇하게 익었다 싶을 때 꺼내요.', 'workshop-mold', below: _stage),
       CookingPhase.result => session.practice
           ? const WorkshopTutorialStep(6, "완성! '보관'을 눌러 판매할 재고로 넣어요.", 'mold-store', below: _stage)
@@ -59,3 +59,43 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
       ? const WorkshopTutorialStep(7, '구운 붕어빵을 손님에게 판매해요.', 'sale-button')
       : const WorkshopTutorialStep(7, '모자란 맛은 주문 제작으로 바로 구워요.', 'order-produce');
 }
+
+/// 26번 3차 H6: a short story told before a guide stage, line by line in
+/// the middle of the home (환영 → 무엇을 하는 가게인지 → 연습 권유), so the
+/// first run reads like an opening instead of bare instructions. Not saved:
+/// a chapter shows once per app run while its stage waits for the player.
+enum WorkshopStoryChapter {
+  /// Before the practice bake (stage `cook`, closed, nothing on the mold).
+  welcome,
+  /// After the practice is kept (stage `sell`, still closed).
+  open,
+}
+
+/// The chapter for [s] now, or null: only while the guide waits on the
+/// closed stall with nothing being baked or talked through.
+WorkshopStoryChapter? workshopStoryChapter(WorkshopState s) {
+  if (!s.tutorialActive || s.customerScene != null || s.session != null || s.business.open) return null;
+  return s.tutorial == 'cook' ? WorkshopStoryChapter.welcome : WorkshopStoryChapter.open;
+}
+
+/// The lines of [chapter]; [owner] is the owner name, if any.
+List<String> workshopStoryLines(WorkshopStoryChapter chapter, String? owner) {
+  final name = owner == null || owner.trim().isEmpty ? '사장님' : '${owner.trim()} 사장님';
+  return switch (chapter) {
+    WorkshopStoryChapter.welcome => [
+        '어서 오세요, $name! 환영합니다.',
+        '우리는 오늘부터 이 작은 노점에서 따끈한 붕어빵을 팔 거예요.',
+        '손님을 맞기 전에, 먼저 붕어빵 굽기 연습을 해 볼까요?',
+      ],
+    WorkshopStoryChapter.open => [
+        '잘 구웠어요! 이 정도면 손님에게 내놓아도 되겠어요.',
+        '이제 가게 문을 열고 첫 손님에게 붕어빵을 팔아 볼까요?',
+      ],
+  };
+}
+
+/// The last line's button.
+String workshopStoryAction(WorkshopStoryChapter chapter) => switch (chapter) {
+      WorkshopStoryChapter.welcome => '연습해 볼게요',
+      WorkshopStoryChapter.open => '좋아요',
+    };

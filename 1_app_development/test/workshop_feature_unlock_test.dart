@@ -13,6 +13,7 @@ import 'package:todays_bungeoppang/ui/workshop_windows.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_feature_unlocks.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
+import 'package:todays_bungeoppang/ui/center_toast.dart';
 import 'workshop_controller_test.dart' show Gateway;
 import 'widget_test.dart' show mountGame;
 
@@ -238,6 +239,10 @@ void main() {
 
     testWidgets('새 설치 첫 화면: 스킬·꾸미기·상점은 빗금 자물쇠, 초당·클릭당 숫자는 숨김', (tester) async {
       final c = await mount(tester);
+      // 26번 3차 H6: a new install opens with the welcome story; end it first.
+      await tester.tap(find.byKey(const Key('story-skip')));
+      await tester.pump();
+      await tester.pump(); // the guide card measures the menu after its first frame
       for (final id in ['skills', 'skins', 'shop']) {
         expect(find.byKey(Key('menu-$id-locked')), findsOneWidget, reason: id);
       }
@@ -250,8 +255,8 @@ void main() {
       await tester.pump();
       expect(find.text('스킬: Lv.2에 열려요'), findsOneWidget);
       expect(find.byType(WorkshopSkillShop), findsNothing);
-      // Screen-reader navigation keeps snack bars up: clear it by hand.
-      ScaffoldMessenger.of(tester.element(find.byKey(const Key('home-nav')))).clearSnackBars();
+      // The centre notice (H23) is cleared by hand.
+      CenterToast.hide();
       await tester.pumpAndSettle();
 
       // After the guide: 꾸미기·상점 open, the skills wait for Lv.2.
@@ -295,7 +300,7 @@ void main() {
       await tester.tap(find.byKey(const Key('griddle-locked')));
       await tester.pump();
       expect(find.textContaining('숙련된 붕어빵 틀: 팥을 숙련하면'), findsOneWidget);
-      ScaffoldMessenger.of(tester.element(find.byKey(const Key('home-nav')))).clearSnackBars();
+      CenterToast.hide();
       await tester.pumpAndSettle();
       expect(tester.widget(find.byKey(const Key('griddle-locked'))), isA<LockedOverlay>());
       expect(find.descendant(of: find.byKey(const Key('griddle-locked')), matching: find.byKey(const Key('lock-hatch'))),
@@ -324,7 +329,7 @@ void main() {
       final c = await mount(tester);
       await c.skipTutorial();
       await tester.pump();
-      await tester.tap(find.byKey(const Key('menu-menu')));
+      await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('menu-collection')), findsNothing);
       expect(find.byKey(const Key('menu-theme')), findsOneWidget);
@@ -333,7 +338,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(await setLevel(c, 8, seen: true), isTrue);
       await tester.pump();
-      await tester.tap(find.byKey(const Key('menu-menu')));
+      await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('menu-collection')), findsOneWidget);
       expect(find.byKey(const Key('menu-theme')), findsOneWidget);

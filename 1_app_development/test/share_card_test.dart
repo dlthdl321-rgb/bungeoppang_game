@@ -120,7 +120,7 @@ void main() {
     }
 
     Future<void> openPhoto(WidgetTester tester) async {
-      await tester.tap(find.byKey(const Key('menu-menu')));
+      await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
       // 26번 3차 H42: '배경 테마' is back in the menu, so scroll to it.
       await tester.ensureVisible(find.byKey(const Key('menu-photo')));
@@ -234,7 +234,7 @@ void main() {
         c.state.flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
             difficulty: c.state.flavorMasteries['redbean']!.difficulty, discovered: {0, 1, 2, 3, 4});
       });
-      await tester.tap(find.byKey(const Key('menu-menu')));
+      await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('menu-collection')));
       await tester.pumpAndSettle();

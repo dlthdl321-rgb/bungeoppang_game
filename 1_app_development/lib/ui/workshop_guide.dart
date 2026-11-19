@@ -7,6 +7,7 @@ import '../workshop_tutorial.dart';
 import 'bake_target.dart' show SparklePainter;
 import 'celebration.dart' show CountUpText;
 import 'cozy_style.dart';
+import 'first_run.dart' show FirstRunButton, FirstRunCard;
 import 'pixel_sprites.dart';
 
 /// First-run guide over the real home: a ring around the widget keyed
@@ -93,6 +94,99 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
         placed,
       ]);
     });
+  }
+}
+
+/// The story before a guide stage (26번 3차 H6): one line at a time on a
+/// light card over a dimmed home, '다음' (or a tap anywhere) for the next,
+/// [action] on the last line and '건너뛰기' to end the story at once. Both
+/// end it with [onDone]; the guide's own card follows.
+class WorkshopStoryOverlay extends StatefulWidget {
+  final List<String> lines;
+  final String action;
+  final bool reduceMotion;
+  final VoidCallback onDone;
+  const WorkshopStoryOverlay(
+      {super.key, required this.lines, required this.action, required this.onDone, this.reduceMotion = false});
+  @override
+  State<WorkshopStoryOverlay> createState() => _WorkshopStoryOverlayState();
+}
+
+/// Korean may break between any two syllables; a word joiner between the
+/// letters of each word makes the story wrap at spaces only. It draws
+/// nothing (a default-ignorable character), so no font needs it.
+final _wordJoiner = String.fromCharCode(0x2060);
+String _keepWords(String line) =>
+    line.split(' ').map((w) => w.split('').join(_wordJoiner)).join(' ');
+
+class _WorkshopStoryOverlayState extends State<WorkshopStoryOverlay> {
+  int _line = 0;
+  bool get _last => _line >= widget.lines.length - 1;
+  void _next() => _last ? widget.onDone() : setState(() => _line++);
+
+  @override
+  Widget build(BuildContext context) {
+    final fade = widget.reduceMotion ? Duration.zero : const Duration(milliseconds: 220);
+    return Semantics(
+        key: const Key('story-overlay'),
+        scopesRoute: true,
+        explicitChildNodes: true,
+        child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _next,
+            child: ColoredBox(
+                color: const Color(0x73000000),
+                child: SafeArea(
+                    child: Align(
+                        alignment: const Alignment(0, .35),
+                        child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 400),
+                                child: FirstRunCard(
+                                    key: const Key('story-card'),
+                                    padding: const EdgeInsets.fromLTRB(20, 18, 16, 14),
+                                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                      const PixelIcon('bun', size: 44),
+                                      const SizedBox(height: 8),
+                                      AnimatedSwitcher(
+                                          duration: fade,
+                                          child: Text(_keepWords(widget.lines[_line]),
+                                              key: ValueKey(_line),
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                  fontFamily: 'Jua',
+                                                  fontFamilyFallback: Cozy.fontFallback,
+                                                  fontSize: 19,
+                                                  height: 1.35,
+                                                  color: Cozy.ink))),
+                                      const SizedBox(height: 12),
+                                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                        for (var i = 0; i < widget.lines.length; i++)
+                                          AnimatedContainer(
+                                              duration: fade,
+                                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                                              width: i == _line ? 16 : 6,
+                                              height: 6,
+                                              decoration: BoxDecoration(
+                                                  color: i == _line ? Cozy.amber : const Color(0xffe6cfb0),
+                                                  borderRadius: BorderRadius.circular(3))),
+                                      ]),
+                                      const SizedBox(height: 12),
+                                      Row(children: [
+                                        TextButton(
+                                            key: const Key('story-skip'),
+                                            style: TextButton.styleFrom(foregroundColor: Cozy.inkSoft),
+                                            onPressed: widget.onDone,
+                                            child: const Text('건너뛰기', style: TextStyle(fontSize: 13))),
+                                        const Spacer(),
+                                        FirstRunButton(
+                                            key: const Key('story-next'),
+                                            expand: true,
+                                            onPressed: _next,
+                                            label: _last ? widget.action : '다음'),
+                                      ]),
+                                    ])))))))));
   }
 }
 

@@ -481,7 +481,8 @@ void main() {
       expect(find.byKey(const Key('preview-night')), findsOneWidget);
       Navigator.of(tester.element(find.byKey(const Key('preview-clear')))).pop();
       await tester.pumpAndSettle();
-      await _tap(tester, 'menu-menu');
+      // H28(C): the menu is only in the bottom bar now.
+      await _tap(tester, 'menu-menubar');
       await _tap(tester, 'menu-theme');
       expect(find.byKey(const Key('preview-clear')), findsOneWidget);
     });

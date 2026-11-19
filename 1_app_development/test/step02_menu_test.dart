@@ -65,7 +65,7 @@ void main(){
     for(final route in [('menu-collection','도감'),('menu-achievements','업적'),('menu-records','생산 기록'),
       ('menu-theme','꾸미기'),('menu-daily','일일 미션'),('event-entry','주간 도전'),
       ('menu-missions','레벨 미션')]){
-      await tapKey('menu-menu');expect(c.gridVisible,isFalse);
+      await tapKey('menu-menubar');expect(c.gridVisible,isFalse);
       await tapKey(route.$1);
       expect(tester.widget<Text>(find.byKey(const Key('workshop-window-title'))).data,route.$2);
       if(route.$1=='menu-collection')expect(find.textContaining('맛 도감은 Lv.'),findsNothing);
@@ -74,7 +74,7 @@ void main(){
       expect(tester.takeException(),isNull);await close();expect(c.gridVisible,isTrue);
     }
     // Out of the soft launch (DEC-029): no online ranking, friends or sharing.
-    await tapKey('menu-menu');
+    await tapKey('menu-menubar');
     for(final key in ['menu-ranking','menu-friends','menu-share']){expect(find.byKey(Key(key)),findsNothing);}
     await close();
     expect(account.state.buns,oldLegacy);expect(account.state.support.coins,coins);expect(c.state.buns,oldBuns);
