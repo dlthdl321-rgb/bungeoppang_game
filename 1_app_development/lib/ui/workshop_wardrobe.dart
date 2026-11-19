@@ -21,11 +21,12 @@ enum WardrobeMode {
 }
 
 /// The Workshop's wardrobe and avatar shop (26번 4-5단계, F25~F36, G1·G2·
-/// G5·G8·G14·G15): bookmark tabs, a preview with a '입어 보는 중' ribbon and
-/// '↺' in its top-left corner and the action button in its bottom-right
-/// corner (S45-Q3), bookmark slot tabs, and square-cornered item cards with
-/// the item's icon (시안 확인 2차: (나) 책갈피 탭 + 각진 카드).
-/// Only the tile grid scrolls, so the button never leaves the screen.
+/// G5·G8·G14·G15; 3차 피드백 H13~H16): bookmark tabs that share the width,
+/// a preview with a small '입어 보는 중' chip in its top-left corner, one
+/// slim row of small buttons under it ('모두 취소'·'모두 사기'·'모두 적용';
+/// a hint while nothing is tried on), bookmark slot tabs, and square-cornered
+/// item cards with the item's icon (시안 확인 2차: (나) 책갈피 탭 + 각진
+/// 카드). Only the tile grid scrolls, so the buttons never leave the screen.
 /// Picks are kept per slot across slots and tabs, all drawn together.
 class WorkshopWardrobe extends StatefulWidget {
   final CosmeticMenuAccess access;
@@ -33,8 +34,13 @@ class WorkshopWardrobe extends StatefulWidget {
   final WardrobeTab initialTab;
   final CosmeticSlot? initialSlot;
   final bool animate;
-  /// Wear mode: opens the shop at [CosmeticSlot] ('상점에서 더 보기').
+  /// Wear mode: opens the shop at [CosmeticSlot] ('상점에서 더 보기'). Since
+  /// 3차 피드백 H15 the wardrobe lists what is for sale itself, so the tile
+  /// shows only for a slot whose items for sale are not listed here.
   final void Function(CosmeticSlot slot)? onMore;
+  /// Wear mode: closes the window once everything tried on is worn
+  /// ('모두 적용'/'모두 사기', H15: no going back to wear it).
+  final VoidCallback? onClose;
   const WorkshopWardrobe(
       {super.key,
       required this.access,
@@ -42,7 +48,11 @@ class WorkshopWardrobe extends StatefulWidget {
       this.initialTab = WardrobeTab.hair,
       this.initialSlot,
       this.animate = true,
-      this.onMore});
+      this.onMore,
+      this.onClose});
+
+  /// The preview's corner radius and the action row's height.
+  static const previewRadius = 12.0, actionHeight = 34.0;
 
   @override
   State<WorkshopWardrobe> createState() => _WorkshopWardrobeState();
@@ -56,7 +66,7 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
   final picks = <CosmeticSlot, String>{};
   /// Shop mode: the item the buy button is for.
   String? focus;
-  /// Why some picks could not be worn, after '모두 적용'.
+  /// Why some picks could not be worn or bought.
   String? message;
   bool working = false;
 
@@ -65,15 +75,15 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
 
   bool _forSale(CosmeticDefinition d) => a.forSale?.call(d) ?? !a.owned(d);
 
-  /// The items a slot's grid shows: owned ones to wear, or the ones for
-  /// sale in the shop.
+  /// The items a slot's grid shows: in the wardrobe what is owned first,
+  /// then what is for sale to try on and buy (3차 피드백 H15); in the shop
+  /// only what is for sale.
   List<CosmeticDefinition> _items(CosmeticSlot s) => [
         for (final d in cosmeticDefinitions)
-          if (d.slot == s && a.listed(d) && (shop ? _forSale(d) && !a.owned(d) : a.owned(d))) d
+          if (d.slot == s && a.listed(d) && a.owned(d) && !shop) d,
+        for (final d in cosmeticDefinitions)
+          if (d.slot == s && a.listed(d) && !a.owned(d) && _forSale(d)) d,
       ];
-
-  /// Wear mode: whether the shop has more of [s] to buy.
-  bool _more(CosmeticSlot s) => cosmeticDefinitions.any((d) => d.slot == s && a.listed(d) && _forSale(d) && !a.owned(d));
 
   List<CosmeticSlot> _slots(WardrobeTab t) => [
         for (final s in CosmeticSlot.values)
@@ -99,6 +109,8 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
 
   CosmeticDefinition _def(CosmeticSlot s, String id) => cosmeticDefinitions.firstWhere((d) => d.slot == s && d.id == id);
 
+  List<CosmeticDefinition> get _picked => [for (final e in picks.entries) _def(e.key, e.value)];
+
   void _pick(CosmeticDefinition d) => setState(() {
         message = null;
         if (a.equipped(d.slot) == d.id) {
@@ -109,31 +121,115 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
         if (shop) focus = d.id;
       });
 
-  void _revert() => setState(() {
+  /// '모두 취소' (H13·H15, replacing the unclear '↺'): back to what is worn.
+  void _cancelAll() => setState(() {
         picks.clear();
         focus = null;
         message = null;
       });
 
-  /// Wears every changed slot, one after another; what fails stays tried
-  /// on and is named.
-  Future<void> _applyAll() async {
-    setState(() => working = true);
+  /// Wears [items] one after another; what fails stays tried on. Returns
+  /// the names that failed.
+  Future<List<String>> _wear(Iterable<CosmeticDefinition> items) async {
     final failed = <String>[];
-    for (final e in Map.of(picks).entries) {
-      final d = _def(e.key, e.value);
+    for (final d in items.toList()) {
       if (await a.apply(d)) {
-        picks.remove(e.key);
+        picks.remove(d.slot);
       } else {
         failed.add(d.name);
       }
-      if (!mounted) return;
+      if (!mounted) break;
     }
+    return failed;
+  }
+
+  void _finish(List<String> failed, String why) {
+    if (!mounted) return;
     setState(() {
       working = false;
       picks.removeWhere((s, id) => a.equipped(s) == id);
-      message = failed.isEmpty ? null : '${failed.join(', ')}은(는) 지금 입을 수 없어요.';
+      message = failed.isNotEmpty ? '${failed.join(', ')}$why' : null;
     });
+    if (picks.isEmpty && failed.isEmpty) widget.onClose?.call();
+  }
+
+  /// '모두 적용': wears every owned pick; the window closes when nothing is
+  /// left tried on. Picks not bought yet stay and say so.
+  Future<void> _applyAll() async {
+    setState(() => working = true);
+    final failed = await _wear(_picked.where(a.owned));
+    final unbought = _picked.where((d) => !a.owned(d)).map((d) => d.name).toList();
+    _finish([...failed, ...unbought],
+        unbought.isEmpty ? ' — 지금 입을 수 없어요' : ' — 사야 입을 수 있어요');
+  }
+
+  /// '모두 사기' (H15): one confirmation for every pick not bought yet,
+  /// then they are bought and everything tried on is worn.
+  Future<void> _buyAll() async {
+    final buy = _picked.where((d) => !a.owned(d)).toList();
+    if (buy.isEmpty) return;
+    final sum = a.total?.call(buy);
+    final locked = buy.any((d) => !a.unlocked(d));
+    final ready = !locked && buy.every(a.canApply) && sum != null && !sum.missingBuns && !sum.missingGold;
+    final note = locked
+        ? '잠긴 꾸미기는 아직 살 수 없어요.'
+        : sum != null && sum.missingGold
+            ? '황금붕어빵력이 모자라요.'
+            : sum != null && sum.missingBuns
+                ? '붕어빵력이 모자라요.'
+                : ready
+                    ? '사면 계속 갖고, 입어 본 것을 모두 입어요.'
+                    : '지금은 살 수 없어요. 로그인과 연결을 확인해 주세요.';
+    final ok = await showDialog<bool>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+              key: const Key('wardrobe-buy-all-dialog'),
+              title: Text(buy.length == 1 ? '${buy.single.name} 사기' : '${buy.length}개 모두 사기'),
+              content: SizedBox(
+                width: 320,
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 220),
+                    child: SingleChildScrollView(
+                      child: Column(children: [
+                        for (final d in buy)
+                          WardrobeBuyRow(
+                              item: d,
+                              equipped: a.equipped,
+                              price: a.cost?.call(d),
+                              lock: a.unlocked(d) ? null : a.requirement?.call(d)),
+                      ]),
+                    ),
+                  ),
+                  if (sum != null && buy.length > 1) ...[
+                    const Divider(height: 16, color: Cozy.tan),
+                    Row(children: [
+                      const Text('합계', style: TextStyle(fontWeight: FontWeight.w900, color: Cozy.ink)),
+                      const Spacer(),
+                      WardrobePriceLine(sum, key: const Key('wardrobe-buy-all-total'), size: 20, fontSize: 16),
+                    ]),
+                  ],
+                  const SizedBox(height: 10),
+                  Text(note,
+                      key: const Key('wardrobe-buy-all-note'),
+                      style: TextStyle(
+                          fontSize: 13, fontWeight: FontWeight.w700, color: ready ? Cozy.inkSoft : Cozy.brick)),
+                ]),
+              ),
+              actions: [
+                TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+                FilledButton(
+                    key: const Key('wardrobe-buy-all-confirm'),
+                    onPressed: ready ? () => Navigator.pop(ctx, true) : null,
+                    child: const Text('사고 입기')),
+              ],
+            ));
+    if (ok != true || !mounted) return;
+    setState(() => working = true);
+    final failed = await _wear(buy);
+    if (!mounted) return;
+    if (failed.isNotEmpty) return _finish(failed, ' — 사지 못했어요');
+    _finish(await _wear(_picked.where(a.owned)), ' — 지금 입을 수 없어요');
   }
 
   Future<void> _buy(CosmeticDefinition d) async {
@@ -144,11 +240,7 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
               key: const Key('wardrobe-buy-dialog'),
               title: Text('${d.name} 사기'),
               content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                if (price != null)
-                  Wrap(spacing: 12, children: [
-                    CurrencyAmount(Currency.buns, price.buns, size: 22, fontSize: 18),
-                    if (price.gold > BigInt.zero) CurrencyAmount(Currency.gold, price.gold, size: 22, fontSize: 18),
-                  ]),
+                if (price != null) WardrobePriceLine(price, size: 22, fontSize: 18),
                 const SizedBox(height: 8),
                 const Text('사면 계속 갖고, 바로 입어요.'),
               ]),
@@ -188,50 +280,48 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
           child: Padding(padding: EdgeInsets.all(24), child: Text('지금 살 수 있는 꾸미기를 모두 모았어요.', textAlign: TextAlign.center)));
     }
     return LayoutBuilder(builder: (context, box) {
-      final previewHeight = (box.maxHeight.isFinite ? box.maxHeight * .36 : 200.0).clamp(150.0, 220.0);
+      final previewHeight = (box.maxHeight.isFinite ? box.maxHeight * .34 : 200.0).clamp(140.0, 210.0);
       return Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           WardrobeTabRow(
+            fill: true,
             children: [
               for (final t in tabs)
-                Padding(
-                  padding: const EdgeInsets.only(right: 3),
-                  child: WardrobePill(
-                      key: Key('cosmetic-category-${t.name}'),
-                      label: wardrobeTabLabel(t),
-                      icon: switch (t) {
-                        WardrobeTab.hair => 'tab_hair',
-                        WardrobeTab.outfit => 'tab_outfit',
-                        WardrobeTab.props => 'tab_acc',
-                        WardrobeTab.bungeoppang => 'tab_fish',
-                        WardrobeTab.stall => 'tab_stall',
-                      },
-                      selected: t == tab,
-                      onTap: () => setState(() {
-                            tab = t;
-                            slot = _slots(t).first;
-                          })),
-                ),
+                WardrobePill(
+                    key: Key('cosmetic-category-${t.name}'),
+                    label: wardrobeTabLabel(t),
+                    icon: switch (t) {
+                      WardrobeTab.hair => 'tab_hair',
+                      WardrobeTab.outfit => 'tab_outfit',
+                      WardrobeTab.props => 'tab_acc',
+                      WardrobeTab.bungeoppang => 'tab_fish',
+                      WardrobeTab.stall => 'tab_stall',
+                    },
+                    selected: t == tab,
+                    onTap: () => setState(() {
+                          tab = t;
+                          slot = _slots(t).first;
+                        })),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 10),
           SizedBox(height: previewHeight, child: _previewBox()),
-          const SizedBox(height: 8),
+          const SizedBox(height: 6),
+          SizedBox(height: WorkshopWardrobe.actionHeight, child: _actions()),
+          const SizedBox(height: 6),
           WardrobeTabRow(
             small: true,
+            fill: true,
             children: [
               for (final s in slots)
-                Padding(
-                  padding: const EdgeInsets.only(right: 3),
-                  child: WardrobePill(
-                      key: Key('cosmetic-slot-${s.name}'),
-                      label: cosmeticSlotLabel(s),
-                      small: true,
-                      selected: s == slot,
-                      changed: picks.containsKey(s),
-                      onTap: () => setState(() => slot = s)),
-                ),
+                WardrobePill(
+                    key: Key('cosmetic-slot-${s.name}'),
+                    label: cosmeticSlotLabel(s),
+                    small: true,
+                    selected: s == slot,
+                    changed: picks.containsKey(s),
+                    onTap: () => setState(() => slot = s)),
             ],
           ),
           const SizedBox(height: 8),
@@ -241,9 +331,59 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
     });
   }
 
+  /// The slim row under the preview (H14·H15): small buttons, no counts.
+  Widget _actions() {
+    final picked = _picked;
+    final unbought = picked.where((d) => !a.owned(d)).toList();
+    final focused = shop && focus != null ? picked.where((d) => d.id == focus).firstOrNull : null;
+    final buttons = <Widget>[
+      if (picked.isNotEmpty)
+        WardrobeActionButton(
+            key: const Key('wardrobe-cancel-all'),
+            label: '모두 취소',
+            kind: WardrobeActionKind.quiet,
+            onPressed: working ? null : _cancelAll),
+      if (shop && focused != null)
+        WardrobeActionButton(
+            key: Key('buy-cosmetic-${focused.id}'),
+            label: a.unlocked(focused) ? '사고 바로 입기' : a.requirement?.call(focused) ?? '잠김',
+            kind: WardrobeActionKind.buy,
+            onPressed: working || !a.canApply(focused) ? null : () => _buy(focused)),
+      if (!shop && unbought.isNotEmpty)
+        WardrobeActionButton(
+            key: const Key('wardrobe-buy-all'),
+            label: '모두 사기',
+            kind: WardrobeActionKind.buy,
+            onPressed: working ? null : _buyAll),
+      if (!shop && picked.length > unbought.length)
+        WardrobeActionButton(
+            key: const Key('wardrobe-apply-all'),
+            label: '모두 적용',
+            kind: WardrobeActionKind.apply,
+            onPressed: working ? null : _applyAll),
+    ];
+    return Row(children: [
+      Expanded(
+        child: buttons.isEmpty
+            ? Text(shop ? '눌러서 입어 보고, 마음에 들면 사요' : '눌러서 입어 보세요',
+                key: const Key('wardrobe-hint'),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: Cozy.inkSoft))
+            : const SizedBox.shrink(),
+      ),
+      for (final (i, b) in buttons.indexed) ...[if (i > 0) const SizedBox(width: 6), b],
+    ]);
+  }
+
   Widget _grid() {
     final items = _items(slot);
-    final more = !shop && widget.onMore != null && _more(slot);
+    // Every listed item for sale is in the grid now (H15); the shop link
+    // stays only for a slot with nothing listed here to buy.
+    final more = !shop &&
+        widget.onMore != null &&
+        items.every(a.owned) &&
+        cosmeticDefinitions.any((d) => d.slot == slot && !a.owned(d) && _forSale(d) && a.listed(d));
     return LayoutBuilder(builder: (context, box) {
       const gap = 8.0;
       final w = (box.maxWidth - gap * 2) / 3;
@@ -266,14 +406,14 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
   Widget _tile(CosmeticDefinition d) {
     final worn = a.equipped(d.slot) == d.id;
     final tried = picks[d.slot] == d.id;
-    final unlocked = a.unlocked(d);
-    final price = shop ? a.cost?.call(d) : null;
+    final owned = a.owned(d);
+    final price = owned ? null : a.cost?.call(d);
     final caption = a.requirement?.call(d) ?? '';
     final WardrobeTileState state = worn
         ? WardrobeTileState.worn
-        : !shop
+        : owned && !shop
             ? WardrobeTileState.owned
-            : !unlocked
+            : !a.unlocked(d)
                 ? WardrobeTileState.locked
                 : price != null && (price.missingBuns || price.missingGold)
                     ? WardrobeTileState.short
@@ -291,72 +431,39 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
   }
 
   Widget _previewBox() {
-    final changed = picks.length;
-    final focused = shop && focus != null ? cosmeticDefinitions.where((d) => d.id == focus && picks[d.slot] == d.id).firstOrNull : null;
+    final changed = picks.isNotEmpty;
     return Semantics(
       label: '${wardrobeTabLabel(tab)} 꾸미기 미리보기',
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: changed > 0 ? Cozy.honeyDeep : Cozy.woodLight, width: changed > 0 ? 3 : 2),
-          boxShadow: const [BoxShadow(color: Cozy.shadow, offset: Offset(0, 2), blurRadius: 3)],
+          borderRadius: BorderRadius.circular(WorkshopWardrobe.previewRadius),
+          border: Border.all(color: changed ? Cozy.honeyDeep : Cozy.tan, width: changed ? 2.5 : 1.5),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(WorkshopWardrobe.previewRadius - 1.5),
           child: Stack(fit: StackFit.expand, children: [
             _preview(),
-            if (changed > 0)
-              Positioned(
+            if (changed)
+              const Positioned(
                 left: 8,
                 top: 8,
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  WardrobeRibbon(key: const Key('cosmetic-preview-status'), label: '입어 보는 중'),
-                  const SizedBox(width: 6),
-                  Material(
-                    color: Cozy.cream,
-                    shape: const CircleBorder(side: BorderSide(color: Cozy.woodLight, width: 1.5)),
-                    child: InkWell(
-                      key: const Key('wardrobe-revert'),
-                      customBorder: const CircleBorder(),
-                      onTap: working ? null : _revert,
-                      child: const Padding(
-                          padding: EdgeInsets.all(5),
-                          child: Icon(Icons.undo_rounded, size: 20, color: Cozy.wood, semanticLabel: '되돌리기')),
-                    ),
-                  ),
-                ]),
+                child: WardrobeRibbon(key: Key('cosmetic-preview-status'), label: '입어 보는 중'),
               ),
             if (message != null)
               Positioned(
                 left: 8,
                 right: 8,
-                bottom: 58,
+                bottom: 8,
                 child: Container(
                   key: const Key('wardrobe-message'),
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(color: Cozy.cream.withValues(alpha: .94), borderRadius: BorderRadius.circular(10)),
-                  child: Text(message!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Cozy.brick)),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                      color: Cozy.ink.withValues(alpha: .78), borderRadius: BorderRadius.circular(8)),
+                  child: Text(message!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: Cozy.cream, height: 1.25)),
                 ),
               ),
-            Positioned(
-              right: 8,
-              bottom: 8,
-              child: shop
-                  ? (focused == null
-                      ? const SizedBox.shrink()
-                      : CozyPrimaryButton(
-                          key: Key('buy-cosmetic-${focused.id}'),
-                          minHeight: 40,
-                          fontSize: 16,
-                          onPressed: working || !a.canApply(focused) ? null : () => _buy(focused),
-                          label: a.unlocked(focused) ? '사고 바로 입기' : a.requirement?.call(focused) ?? '잠김'))
-                  : CozyPrimaryButton(
-                      key: const Key('wardrobe-apply-all'),
-                      minHeight: 40,
-                      fontSize: 16,
-                      onPressed: working || changed == 0 ? null : _applyAll,
-                      label: changed == 0 ? '모두 적용' : '모두 적용($changed)'),
-            ),
           ]),
         ),
       ),
@@ -542,28 +649,43 @@ class WardrobePrice {
 /// The five looks of an item tile (F29).
 enum WardrobeTileState { worn, owned, buyable, short, locked }
 
-/// A row of [WardrobePill] bookmark tabs standing on a thin wooden line,
-/// scrolling sideways when they do not fit (시안 확인 2차 (나)).
+/// A row of [WardrobePill] bookmark tabs standing on a thin line (시안 확인
+/// 2차 (나)). With [fill] the tabs share the width (3차 피드백 H16: all of
+/// them show at 360 wide, no tab hidden past the edge); otherwise the row
+/// scrolls sideways when they do not fit.
 class WardrobeTabRow extends StatelessWidget {
   final List<Widget> children;
-  final bool small;
-  const WardrobeTabRow({super.key, required this.children, this.small = false});
+  final bool small, fill;
+  const WardrobeTabRow({super.key, required this.children, this.small = false, this.fill = false});
+
+  /// The gap between two tabs.
+  static const gap = 3.0;
 
   @override
   Widget build(BuildContext context) => Container(
         decoration: BoxDecoration(
-            border: Border(bottom: BorderSide(color: small ? Cozy.tan : Cozy.wood, width: small ? 1.5 : 2))),
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: children),
-        ),
+            border: Border(bottom: BorderSide(color: small ? Cozy.tan : Cozy.woodLight, width: small ? 1 : 1.5))),
+        child: fill
+            ? Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                for (final (i, c) in children.indexed) ...[
+                  if (i > 0) const SizedBox(width: gap),
+                  Expanded(child: c),
+                ],
+              ])
+            : SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+                  for (final c in children) Padding(padding: const EdgeInsets.only(right: gap), child: c),
+                ]),
+              ),
       );
 }
 
 /// A bookmark tab (시안 확인 2차 (나) 책갈피 탭, replacing the G8 pill):
 /// rounded top corners and a flat bottom on the row's line; the chosen tab
 /// is peach and [WardrobePill.raise] taller, the others cream. [changed]
-/// puts a small honey dot on a slot that is being tried on. (The name is
+/// puts a small honey dot on a slot that is being tried on. The icon shows
+/// only when the tab is wide enough for it ([iconWidth]). (The name is
 /// kept from the pill it replaced.)
 class WardrobePill extends StatelessWidget {
   final String label;
@@ -575,6 +697,8 @@ class WardrobePill extends StatelessWidget {
 
   /// Corner radius of the tab's top, and how much taller the chosen tab is.
   static const radius = 7.0, raise = 4.0;
+  /// A tab narrower than this drops its icon and keeps the label.
+  static const iconWidth = 74.0;
 
   @override
   Widget build(BuildContext context) {
@@ -587,31 +711,123 @@ class WardrobePill extends StatelessWidget {
       child: Material(
         color: selected ? Cozy.peach : Cozy.cream,
         shape: RoundedRectangleBorder(
-            borderRadius: top, side: BorderSide(color: selected ? Cozy.wood : Cozy.tan, width: selected ? 2 : 1.5)),
+            borderRadius: top,
+            side: BorderSide(color: selected ? Cozy.woodLight : Cozy.tan, width: selected ? 1.5 : 1)),
         child: InkWell(
           borderRadius: top,
           onTap: onTap,
           child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: (small ? 30 : 36) + (selected ? raise : 0)),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (icon != null) ...[PixelIcon(icon!, size: 20), const SizedBox(width: 4)],
-                Text(label,
-                    style: TextStyle(
-                        fontSize: small ? 14 : 15,
-                        fontWeight: FontWeight.w900,
-                        color: selected ? Cozy.ink : Cozy.wood)),
-                if (changed) ...[
-                  const SizedBox(width: 4),
-                  Container(
-                      key: const Key('slot-changed-dot'),
-                      width: 7,
-                      height: 7,
-                      decoration: BoxDecoration(
-                          color: selected ? Cozy.brick : Cozy.honeyDeep, shape: BoxShape.circle)),
-                ],
-              ]),
+            constraints: BoxConstraints(minHeight: (small ? 30 : 34) + (selected ? raise : 0)),
+            child: LayoutBuilder(builder: (context, box) {
+              final withIcon = icon != null && box.maxWidth >= iconWidth;
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
+                  if (withIcon) ...[PixelIcon(icon!, size: 18), const SizedBox(width: 3)],
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(label,
+                          maxLines: 1,
+                          style: TextStyle(
+                              fontSize: small ? 13.5 : 14.5,
+                              fontWeight: FontWeight.w900,
+                              color: selected ? Cozy.ink : Cozy.taupe)),
+                    ),
+                  ),
+                  if (changed) ...[
+                    const SizedBox(width: 3),
+                    Container(
+                        key: const Key('slot-changed-dot'),
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(color: Cozy.amber, shape: BoxShape.circle)),
+                  ],
+                ]),
+              );
+            }),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The small chip in the preview's corner (G15; 3차 피드백 H13: a plain
+/// rounded chip that keeps its shape, dark and see-through over the room).
+class WardrobeRibbon extends StatelessWidget {
+  final String label;
+  const WardrobeRibbon({super.key, required this.label});
+  @override
+  Widget build(BuildContext context) => Container(
+        height: 24,
+        padding: const EdgeInsets.symmetric(horizontal: 9),
+        decoration: BoxDecoration(
+          color: Cozy.ink.withValues(alpha: .72),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          const Icon(Icons.auto_awesome, size: 12, color: Cozy.honeyLight),
+          const SizedBox(width: 4),
+          Text(label,
+              maxLines: 1,
+              style: const TextStyle(fontSize: 12, height: 1.1, fontWeight: FontWeight.w800, color: Cozy.cream)),
+        ]),
+      );
+}
+
+/// The three looks of the wardrobe's small buttons (H14·H15).
+enum WardrobeActionKind {
+  /// '모두 취소': outline only.
+  quiet,
+  /// '모두 사기', '사고 바로 입기': honey.
+  buy,
+  /// '모두 적용': dark wood.
+  apply,
+}
+
+/// A small flat button for the row under the preview (H14: small, no
+/// count; no thick border or raised face).
+class WardrobeActionButton extends StatelessWidget {
+  final String label;
+  final WardrobeActionKind kind;
+  final VoidCallback? onPressed;
+  const WardrobeActionButton({super.key, required this.label, required this.kind, required this.onPressed});
+
+  static const height = 32.0, radius = 8.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final off = onPressed == null;
+    final (fill, text, edge) = switch (kind) {
+      WardrobeActionKind.quiet => (Colors.transparent, Cozy.inkSoft, Cozy.tan),
+      WardrobeActionKind.buy => (Cozy.honeyLight, Cozy.ink, Cozy.honeyDeep),
+      WardrobeActionKind.apply => (Cozy.wood, Cozy.cream, Cozy.wood),
+    };
+    return Semantics(
+      button: true,
+      enabled: !off,
+      label: label,
+      excludeSemantics: true,
+      child: Opacity(
+        opacity: off ? .45 : 1,
+        child: Material(
+          color: fill,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(radius), side: BorderSide(color: edge, width: 1.2)),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(radius),
+            onTap: onPressed,
+            child: SizedBox(
+              height: height,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: Center(
+                  widthFactor: 1,
+                  child: Text(label,
+                      maxLines: 1, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: text)),
+                ),
+              ),
             ),
           ),
         ),
@@ -620,28 +836,55 @@ class WardrobePill extends StatelessWidget {
   }
 }
 
-/// The small ribbon in the preview's corner (G15).
-class WardrobeRibbon extends StatelessWidget {
-  final String label;
-  const WardrobeRibbon({super.key, required this.label});
+/// A price as icons and numbers on one line.
+class WardrobePriceLine extends StatelessWidget {
+  final WardrobePrice price;
+  final double size, fontSize;
+  const WardrobePriceLine(this.price, {super.key, this.size = 16, this.fontSize = 13});
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.fromLTRB(10, 4, 12, 4),
-        decoration: BoxDecoration(
-          color: Cozy.honeyLight,
-          borderRadius: const BorderRadius.horizontal(left: Radius.circular(12), right: Radius.circular(6)),
-          border: Border.all(color: Cozy.wood, width: 1.5),
-          boxShadow: const [BoxShadow(color: Cozy.shadow, offset: Offset(0, 1.5), blurRadius: 1)],
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.auto_awesome, size: 14, color: Cozy.brick),
-          const SizedBox(width: 3),
-          Text(label, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Cozy.ink)),
+  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
+        CurrencyAmount(Currency.buns, price.buns, missing: price.missingBuns, size: size, fontSize: fontSize),
+        if (price.gold > BigInt.zero) ...[
+          SizedBox(width: size * .4),
+          CurrencyAmount(Currency.gold, price.gold, missing: price.missingGold, size: size, fontSize: fontSize),
+        ],
+      ]);
+}
+
+/// One line of the '모두 사기' confirmation: icon, name, price (or lock).
+class WardrobeBuyRow extends StatelessWidget {
+  final CosmeticDefinition item;
+  final String Function(CosmeticSlot) equipped;
+  final WardrobePrice? price;
+  final String? lock;
+  const WardrobeBuyRow({super.key, required this.item, required this.equipped, this.price, this.lock});
+  @override
+  Widget build(BuildContext context) => Padding(
+        key: Key('wardrobe-buy-row-${item.id}'),
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(children: [
+          Container(
+            width: 34,
+            height: 34,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(color: Cozy.creamDeep, borderRadius: BorderRadius.circular(WardrobeTile.radius)),
+            child: CosmeticThumb(item, equipped),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(item.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Cozy.ink))),
+          if (lock != null)
+            Text(lock!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Cozy.brick))
+          else if (price != null)
+            WardrobePriceLine(price!),
         ]),
       );
 }
 
-/// One item: a square-cornered card (시안 확인 2차 (나)) with its icon on a
+// One item: a square-cornered card (시안 확인 2차 (나)) with its icon on a
 /// square plate, its name and one state line (F28·F29). Locked items stay tappable to try on (the common lock with
 /// 'Lv.N 해금' over the icon only, so the item still shows).
 class WardrobeTile extends StatelessWidget {

@@ -90,7 +90,14 @@ class GameSettings {
         'quietNightNotices': quietNightNotices,
         'notificationPromptDone': notificationPromptDone,
         'sendUsageStats': sendUsageStats,
+        musicDefaultKey: true,
       };
+
+  /// 26번 3차 H7: 배경음 is on from the start. Saves written before this key
+  /// existed (test devices only, before release) get 배경음 turned on once
+  /// when read; from then on the player's own choice is kept. The save
+  /// format stays v13 (an extra settings key, like the notification ones).
+  static const musicDefaultKey = 'musicOnByDefault';
 
   /// Sound settings exist from v8; older saves get the defaults.
   factory GameSettings.fromJson(Object? raw,
@@ -137,7 +144,7 @@ class GameSettings {
     }
     return settings
       ..soundEffects = m['soundEffects'] as bool
-      ..music = m['music'] as bool
+      ..music = m[musicDefaultKey] == true ? m['music'] as bool : true
       ..sfxVolume = volume('sfxVolume')
       ..musicVolume = volume('musicVolume');
   }

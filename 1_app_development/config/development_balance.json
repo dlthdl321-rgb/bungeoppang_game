@@ -583,6 +583,22 @@
     "lilaclamp": {
       "buns": "1000",
       "gold": 2
+    },
+    "girl": {
+      "buns": "1000",
+      "gold": 10
+    },
+    "boy": {
+      "buns": "1000",
+      "gold": 10
+    },
+    "skin2": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "skin3": {
+      "buns": "1000",
+      "gold": 2
     }
   },
   "boost_purchase": {
@@ -1461,14 +1477,14 @@
     "girl": {
       "label": "여자 사장님",
       "slot": "character",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },
     "boy": {
       "label": "남자 사장님",
       "slot": "character",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },
@@ -1482,14 +1498,14 @@
     "skin2": {
       "label": "피부톤 2",
       "slot": "skin",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },
     "skin3": {
       "label": "피부톤 3",
       "slot": "skin",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },
@@ -2106,7 +2122,7 @@
         "label": "첫눈",
         "start": "2026-12-01",
         "end": "2026-12-07",
-        "decoration": "snowman",
+        "decoration": "event_first_snow",
         "greeting": "첫눈 왔어요! 이런 날엔 따끈한 붕어빵이죠.",
         "order_note": "첫눈 기념 주문이에요."
       },
@@ -2116,7 +2132,7 @@
         "label": "크리스마스",
         "start": "2026-12-20",
         "end": "2026-12-26",
-        "decoration": "starlights",
+        "decoration": "event_christmas",
         "greeting": "메리 크리스마스! 붕어빵 선물하러 왔어요.",
         "order_note": "크리스마스 선물용 주문이에요."
       },
@@ -2126,7 +2142,7 @@
         "label": "설날",
         "start": "2027-02-05",
         "end": "2027-02-09",
-        "decoration": "paperlanterns",
+        "decoration": "event_seollal",
         "greeting": "새해 복 많이 받으세요! 세배 다녀오는 길이에요.",
         "order_note": "설날 손님맞이 주문이에요."
       }

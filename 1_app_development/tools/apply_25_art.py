@@ -56,7 +56,8 @@ Run it in 1_app_development. Outputs:
 * assets/images/icons/gold_bun.png (72x72): 25번 18번 황금붕어빵력 icon
   from 18_gold_currency/gold_bun-v2.png (26번 4-3단계, see gold()).
 * assets/images/ui/levelup.png, levelup_off.png (108x72): 25번 33번
-  'LEVEL UP' word button, lit and dark, from 33_levelup/ (see levelup()).
+  'LEVEL UP' word button from 33_levelup/levelup.png; the dark one is
+  recoloured from the lit one (see levelup()).
   Until it is generated tools/make_levelup_button.py draws them. (The
   round '+' of 25번 19번 was replaced by the 2nd mockup check.)
 * assets/images/icons/tab_tap.png (72x72): the existing tab icon's drawn
@@ -524,17 +525,37 @@ def gold(src):
     return {"icons/gold_bun": out}
 
 
+# The dark button's greys (25번 33번): face, outline and letters.
+LEVELUP_OFF_FACE = (0xB7, 0xAC, 0xA5)
+LEVELUP_OFF_INK = (0x6A, 0x60, 0x5B)
+
+
+def levelup_off_from(lit):
+    """The dark button drawn from the lit one, so rim and letters are the
+    same pixels: by brightness, the dark-brown ink becomes grey ink, the
+    honey face and everything lighter (the top band, the shine) the flat
+    grey face, the amber base a grey between. The generated
+    levelup_off.png of 2026-11-19 had two holes through its face."""
+    a = np.asarray(lit).astype(float)
+    lum = a[..., :3] @ np.array([.299, .587, .114])
+    ink, face = 60.0, 185.0
+    t = np.clip((lum - ink) / (face - ink), 0, 1)[..., None]
+    rgb = np.array(LEVELUP_OFF_INK) * (1 - t) + np.array(LEVELUP_OFF_FACE) * t
+    out = np.concatenate([rgb, a[..., 3:]], -1).round().astype(np.uint8)
+    return Image.fromarray(out, "RGBA")
+
+
 def levelup(src):
     """25번 33번: the 'LEVEL UP' word button, lit and dark (3:2, drawn 54x36
-    in the skill row). Both are fitted the same way (alpha over 128) so the
-    rim and the letters stay in one place."""
+    in the skill row). The lit one is fitted (alpha over 128) into 108x72;
+    the dark one is made from it ([levelup_off_from]) so the rim and the
+    letters stay in one place."""
     folder = src / "33_levelup" if (src / "33_levelup").is_dir() else src
-    made = {}
-    for name in ("levelup", "levelup_off"):
-        out = snap_alpha(fit_box(load(folder / f"{name}.png"), 128, LEVELUP_SIZE), 40, 215)
-        (IMAGES / "ui").mkdir(exist_ok=True)
-        out.save(IMAGES / "ui" / f"{name}.png")
-        made[f"ui/{name}"] = out
+    lit = snap_alpha(fit_box(load(folder / "levelup.png"), 128, LEVELUP_SIZE), 40, 215)
+    made = {"ui/levelup": lit, "ui/levelup_off": levelup_off_from(lit)}
+    (IMAGES / "ui").mkdir(exist_ok=True)
+    for key, out in made.items():
+        out.save(IMAGES / f"{key}.png")
     return made
 
 

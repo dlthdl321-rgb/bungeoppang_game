@@ -90,7 +90,12 @@ def validate(data, catalog):
     entries = data['skill_purchase']['entries']
     require(set(entries) == {f'{kind}_{i}' for kind in ('tap', 'auto') for i in range(1, 17)},
             '기존 32개 스킬 누락/가상 ID 추가')
-    require(set(data['cosmetic_purchase']) == set(catalog['spend']['cosmetic']), '꾸미기 가격 누락')
+    # 3차 피드백 H11·H12: the other character and skin tones 2·3 are sold
+    # for the Workshop only (the old gold catalog never sold them).
+    sold_avatar_basics = {key for key, row in data['avatar_catalog'].items()
+                          if row['slot'] in ('character', 'skin') and not row['free']}
+    require(set(data['cosmetic_purchase']) == set(catalog['spend']['cosmetic']) | sold_avatar_basics,
+            '꾸미기 가격 누락')
     require(set(data['boost_purchase']) == set(catalog['spend']['boost']), '부스트 가격 누락')
     require(data['existing_iap_products'] == catalog['products'], '기존 IAP ID/수량 보존 위반')
     for group in (entries, data['cosmetic_purchase'], data['boost_purchase']):
@@ -213,7 +218,9 @@ def validate(data, catalog):
             all(re.fullmatch(r'[1-9][0-9]*', attendance[k]) for k in ('min_buns', 'substitute_min_buns')),
             '출석 보상(7일 주기, 7일째 황금)')
     seen = set()
-    decorations = {'none', 'lantern', 'bunting', 'starlights', 'windchime', 'snowman', 'paperlanterns'}
+    # 판매 장식 + 행사 전용 장식(25번 32번, PixelSprites.eventDecorations)
+    decorations = {'none', 'lantern', 'bunting', 'starlights', 'windchime', 'snowman', 'paperlanterns',
+                   'event_first_snow', 'event_christmas', 'event_seollal'}
     for event in daily['seasonal_events']:
         require(re.fullmatch(r'[a-z0-9_]+', event['id']) and event['id'] not in seen, '행사 ID')
         seen.add(event['id'])

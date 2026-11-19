@@ -4,6 +4,7 @@ import '../game_controller.dart';
 import '../mission_config.dart';
 import '../missions.dart';
 import '../prestige_rules.dart';
+import 'center_toast.dart';
 import 'pixel_sprites.dart';
 import 'support_panels.dart';
 
@@ -52,10 +53,9 @@ class LevelMissions extends StatelessWidget {
                     final target = active.level;
                     final ok = await c.claimLevelUp(target);
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                          content: Text(ok
-                              ? 'Lv.$target 달성 · 코인 ${compactNumber(reward)}개 수령'
-                              : c.error ?? '조건을 확인해 주세요.')));
+                      showCenterToast(context, ok
+                          ? 'Lv.$target 달성 · 코인 ${compactNumber(reward)}개 수령'
+                          : c.error ?? '조건을 확인해 주세요.');
                     }
                   }
                 : null,

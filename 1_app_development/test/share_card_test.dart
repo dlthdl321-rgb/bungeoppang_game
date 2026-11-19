@@ -120,7 +120,7 @@ void main() {
     }
 
     Future<void> openPhoto(WidgetTester tester) async {
-      await tester.tap(find.byKey(const Key('menu-menu')));
+      await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('menu-photo')));
       await tester.pumpAndSettle();
@@ -231,7 +231,7 @@ void main() {
         c.state.flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
             difficulty: c.state.flavorMasteries['redbean']!.difficulty, discovered: {0, 1, 2, 3, 4});
       });
-      await tester.tap(find.byKey(const Key('menu-menu')));
+      await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('menu-collection')));
       await tester.pumpAndSettle();

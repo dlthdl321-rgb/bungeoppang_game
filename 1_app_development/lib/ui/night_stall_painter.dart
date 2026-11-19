@@ -66,6 +66,12 @@ class NightStallPainter extends CustomPainter {
     // On the street at the right, behind the counter: the home screen's
     // cooking cut covers the counter's right end.
     'snowman': [(Offset(128, 66), false)],
+    // Winter events only (25번 32번): strung like starlights. The first
+    // snow's snowman sits at the art's right end; mirrored it stays clear
+    // of the home's '오늘' button at the right.
+    'event_first_snow': [(Offset(0, 104), true)],
+    'event_christmas': [(Offset(0, 104), false)],
+    'event_seollal': [(Offset(0, 104), false)],
   };
 
   /// Decoration art is stored at this many pixels per scene unit
@@ -372,10 +378,17 @@ class GriddlePainter extends CustomPainter {
 /// [PixelSprites.openStove] above the plate, drawn so they stand on the
 /// plate that [GriddlePainter] draws in [plateBox]'s bottom part. The
 /// canvas is the area above the griddle box (its width, the lid's height),
-/// so the griddle box and its cells stay where they were.
+/// so the griddle box and its cells stay where they were. The low lid of
+/// 25번 34번 lies within the box's empty top strip (above the plate's back
+/// edge [plateBack]), so the art is drawn down to that edge, past the
+/// canvas's bottom; the griddle box, drawn after it, keeps its plate on top.
 class GriddleLidPainter extends CustomPainter {
   final String stove;
   const GriddleLidPainter(this.stove);
+
+  /// The plate's back edge in `stove_empty` rows (tools/apply_26_stoves.py
+  /// PLATE_BACK): the lid art reaches down to it.
+  static const plateBack = 186;
 
   /// Height of the lid area over a griddle box [griddleW] wide whose stove
   /// art is [stoveW] pixels wide (the box keeps the art's shape).
@@ -387,9 +400,10 @@ class GriddleLidPainter extends CustomPainter {
     final art = PixelSprites.openStove(stove);
     if (art == null) return;
     final room = PixelSprites.openStoveLidRoom.toDouble();
+    final reach = room + plateBack;
     final scale = size.width / art.width;
-    final src = Rect.fromLTWH(0, 0, art.width.toDouble(), room);
-    final dst = Rect.fromLTWH(0, size.height - room * scale, size.width, room * scale);
+    final src = Rect.fromLTWH(0, 0, art.width.toDouble(), reach);
+    final dst = Rect.fromLTWH(0, size.height - room * scale, size.width, reach * scale);
     canvas.drawImageRect(art, src, dst,
         scale < 1 ? GriddlePainter._rawPaint : (Paint()..filterQuality = FilterQuality.none));
   }

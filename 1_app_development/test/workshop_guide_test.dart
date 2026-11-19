@@ -14,6 +14,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/save_recovery.dart';
 import 'package:todays_bungeoppang/ui/workshop_guide.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
+import 'package:todays_bungeoppang/workshop_tutorial.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'widget_test.dart' show mountGame;
 
@@ -33,6 +34,22 @@ void main() {
     return f.evaluate().isEmpty ? null : tester.widget<Text>(f).data;
   }
   String text(WidgetTester tester) => tester.widget<Text>(find.byKey(const Key('tutorial-text'))).data!;
+  String? storyLine(WidgetTester tester) {
+    final f = find.descendant(of: find.byKey(const Key('story-card')), matching: find.byType(Text));
+    return f.evaluate().isEmpty ? null : tester.widget<Text>(f.first).data!.replaceAll('⁠', '');
+  }
+  /// 26번 3차 H6: reads the story through with '다음' (a tap anywhere also
+  /// works) and returns its lines.
+  Future<List<String>> readStory(WidgetTester tester) async {
+    final lines = <String>[];
+    while (find.byKey(const Key('story-overlay')).evaluate().isNotEmpty) {
+      lines.add(storyLine(tester)!);
+      await tester.tap(find.byKey(const Key('story-next')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+    return lines;
+  }
 
   group('첫 실행 안내', () {
     for (final size in [const Size(360, 640), const Size(390, 844)]) {
@@ -46,6 +63,13 @@ void main() {
         await tester.pumpWidget(GameApp(controller: account, workshop: c));
         await tester.pump();
         await tester.pump();
+        // 26번 3차 H6: the welcome story comes first, the guide card after it.
+        expect(progress(tester), isNull);
+        expect(await readStory(tester), [
+          '어서 오세요, 사장님! 환영합니다.',
+          '우리는 오늘부터 이 작은 노점에서 따끈한 붕어빵을 팔 거예요.',
+          '손님을 맞기 전에, 먼저 붕어빵 굽기 연습을 해 볼까요?',
+        ]);
         expect(progress(tester), '첫 영업 안내 1/7');
         expect(find.byKey(const Key('tutorial-ring')), findsOneWidget);
 
@@ -88,6 +112,8 @@ void main() {
         expect(c.state.tutorial, 'sell');
         expect(repository.saved!['tutorial'], 'sell');
 
+        // The second chapter before opening the stall.
+        expect(await readStory(tester), hasLength(2));
         expect(progress(tester), '첫 영업 안내 7/7');
         expect(text(tester), contains('영업 시작'));
         await tester.tap(find.byKey(const Key('business-open')));
@@ -125,6 +151,14 @@ void main() {
       await tester.pumpWidget(GameApp(controller: account, workshop: c));
       await tester.pump();
       await tester.pump();
+      // The story's own '건너뛰기' ends only the story, not the guide.
+      await tester.tap(find.byKey(const Key('story-skip')));
+      await tester.pump();
+      expect(find.byKey(const Key('story-overlay')), findsNothing);
+      expect(c.state.tutorial, 'cook');
+      // The guide card measures the menu after its first frame.
+      await tester.pump();
+      await tester.pump();
       // Large text: the card stays above the bottom menu.
       expect(tester.getRect(find.byKey(const Key('tutorial-card'))).bottom,
           lessThanOrEqualTo(tester.getRect(find.byKey(const Key('home-nav'))).top));
@@ -141,6 +175,26 @@ void main() {
       expect(again.state.tutorial, 'skipped');
       expect(again.state.tutorialActive, isFalse);
       again.dispose();
+    });
+
+    test('26번 3차 H6: 이야기는 연습 전(환영)과 영업 시작 전에만, 사장님 이름을 넣어 들려준다', () async {
+      final c = WorkshopController(load(), MemoryRepository(), now: () => DateTime.utc(2026, 10, 18));
+      await c.initialize();
+      expect(workshopStoryChapter(c.state), WorkshopStoryChapter.welcome);
+      expect(workshopStoryLines(WorkshopStoryChapter.welcome, '소이').first, '어서 오세요, 소이 사장님! 환영합니다.');
+      expect(workshopStoryLines(WorkshopStoryChapter.welcome, null).first, '어서 오세요, 사장님! 환영합니다.');
+      expect(workshopStoryLines(WorkshopStoryChapter.welcome, null)[1], contains('붕어빵을 팔 거예요'));
+      expect(workshopStoryLines(WorkshopStoryChapter.welcome, null).last, contains('연습을 해 볼까요'));
+      expect(await c.startPractice(), isTrue);
+      expect(workshopStoryChapter(c.state), isNull, reason: '굽는 중에는 끼어들지 않음');
+      await c.command(() { c.state.session = null; c.state.tutorial = 'sell'; });
+      expect(workshopStoryChapter(c.state), WorkshopStoryChapter.open);
+      expect(await c.openBusiness(), isTrue);
+      expect(workshopStoryChapter(c.state), isNull);
+      await c.command(() => c.state.tutorial = 'skipped');
+      expect(await c.closeBusiness(), isTrue);
+      expect(workshopStoryChapter(c.state), isNull, reason: '안내를 건너뛰면 이야기도 없음');
+      c.dispose();
     });
 
     test('안내 중 첫 네임드 손님 판매에는 이야기 장면이 끼지 않는다', () async {

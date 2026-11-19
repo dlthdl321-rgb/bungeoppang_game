@@ -243,9 +243,9 @@ const avatarFaceAnchors = <String, Map<String, (double, double)>>{
   'cook/girl_1.png': {'eyes': (299.5, 154), 'mouth': (299, 185)},
   'cook/girl_2.png': {'eyes': (298.5, 155), 'mouth': (298, 186)},
   'cook/girl_3.png': {'eyes': (302.5, 153), 'mouth': (302, 184)},
-  'cook/girl_4.png': {'eyes': (299.5, 163), 'mouth': (299, 194)},
-  'cook/girl_5.png': {'eyes': (306.5, 161), 'mouth': (306, 192)},
-  'cook/girl_6.png': {'eyes': (311.5, 158), 'mouth': (311, 189)},
+  'cook/girl_4.png': {'eyes': (299.5, 155), 'mouth': (299, 186)},
+  'cook/girl_5.png': {'eyes': (299.5, 154), 'mouth': (299, 185)},
+  'cook/girl_6.png': {'eyes': (298.5, 154), 'mouth': (298, 184)},
 };
 
 /// Every picture in assets/images/avatar/, so the wardrobe knows

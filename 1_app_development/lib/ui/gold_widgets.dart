@@ -5,6 +5,7 @@ import '../online_backend.dart';
 import '../premium_config.dart';
 import '../support_config.dart';
 import '../usage_stats.dart';
+import 'center_toast.dart';
 import 'cozy_style.dart';
 import 'support_panels.dart' show confirmAction;
 
@@ -23,8 +24,7 @@ Future<void> buyWithGold(BuildContext context, GameController c,
   }
   final error = await c.spendGold(kind, itemId);
   if (context.mounted) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(error ?? '$title 완료')));
+    showCenterToast(context, error ?? '$title 완료');
   }
 }
 
@@ -134,8 +134,7 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
                               : () async {
                                   final error = await c.buyGoldPack(p.id);
                                   if (error != null && context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                        SnackBar(content: Text(error)));
+                                    showCenterToast(context, error);
                                   }
                                 },
                           child: Text(packs[p.id]?.price ?? (loading ? '불러오는 중' : '구매할 수 없음'))),

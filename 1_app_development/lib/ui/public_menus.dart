@@ -47,9 +47,13 @@ class CosmeticMenuAccess {
 
   /// Tabs open at this level (붕어빵 Lv.5, 가게 Lv.8; S45-Q6); null: all.
   final bool Function(WardrobeTab)? tabOpen;
+
+  /// What several items cost together, with what the player lacks for all
+  /// of them ('모두 사기', 3차 피드백 H15); null: not sold together.
+  final WardrobePrice? Function(List<CosmeticDefinition>)? total;
   const CosmeticMenuAccess({required this.equipped,required this.owned,required this.unlocked,
     required this.canApply,required this.price,required this.action,required this.apply,this.requirement,
-    this.listed=_always,this.forSale,this.cost,this.tabOpen});
+    this.listed=_always,this.forSale,this.cost,this.tabOpen,this.total});
   static bool _always(CosmeticDefinition _)=>true;
 }
 
@@ -75,11 +79,13 @@ class WardrobePanel extends StatefulWidget {
   final CosmeticSlot? initialSlot;
   /// With [access] in [WardrobeMode.wear]: '상점에서 더 보기' for a slot.
   final void Function(CosmeticSlot slot)? onMore;
+  /// With [access]: closes the window once everything tried on is worn.
+  final VoidCallback? onClose;
   const WardrobePanel(
       {super.key,
       required this.controller,
       this.initialTab = WardrobeTab.hair,this.access,this.mode=WardrobeMode.wear,
-      this.initialSlot,this.onMore});
+      this.initialSlot,this.onMore,this.onClose});
   @override
   State<WardrobePanel> createState() => _WardrobePanelState();
 }
@@ -107,6 +113,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
           initialTab: widget.initialTab,
           initialSlot: widget.initialSlot,
           onMore: widget.onMore,
+          onClose: widget.onClose,
           animate: WeatherLayer.animate && !c.state.settings.reduceMotion);
     }
     final picked = cosmeticDefinitions
@@ -432,8 +439,12 @@ class MenuPanel extends StatelessWidget {
   /// Destinations left out of this build's menu (the soft launch hides the
   /// online ranking, friends and sharing: DEC-029).
   final Set<String> hidden;
+
+  /// Destinations shown but not open yet, with the reason ('Lv.3에 열려요'):
+  /// a small lock and the reason under the title (3차 피드백 H32).
+  final Map<String,String> locks;
   const MenuPanel({super.key, required this.controller, required this.onOpen,
-    this.rewardCounts,this.legacyDescriptions=true,this.hidden=const {}});
+    this.rewardCounts,this.legacyDescriptions=true,this.hidden=const {},this.locks=const {}});
 
   @override
   Widget build(BuildContext context) {
@@ -464,7 +475,8 @@ class MenuPanel extends StatelessWidget {
       ),
       (
         'records',
-        '통계',
+        // 3차 피드백 H44: '통계' → '생산 기록'.
+        '생산 기록',
         null,
         const PixelIcon('records', size: 32),
         const Key('menu-records')
@@ -567,7 +579,12 @@ class MenuPanel extends StatelessWidget {
                                   color: Cozy.ink,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w900)),
-                          if (subtitle != null)
+                          if (locks[dest] case final lock?)
+                            Text(lock,
+                                key: Key('menu-lock-$dest'),
+                                style: const TextStyle(
+                                    color: Cozy.inkSoft, fontSize: 12))
+                          else if (subtitle != null)
                             Text(subtitle,
                                 key: dest == 'event'
                                     ? const Key('event-countdown')
@@ -575,6 +592,9 @@ class MenuPanel extends StatelessWidget {
                                 style: const TextStyle(
                                     color: Cozy.inkSoft, fontSize: 12)),
                         ])),
+                    if (locks.containsKey(dest))
+                      const Icon(Icons.lock_rounded,
+                          color: Cozy.inkSoft, size: 18),
                     const Icon(Icons.chevron_right, color: Cozy.wood),
                   ]),
                 ),

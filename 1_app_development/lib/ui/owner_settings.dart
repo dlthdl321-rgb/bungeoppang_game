@@ -186,10 +186,16 @@ class _RenameDialogState extends State<_RenameDialog> {
           key: const Key('rename-dialog'),
           title: const Text(OwnerTexts.rename),
           content: Column(mainAxisSize: MainAxisSize.min, children: [
-            OwnerNameField(controller: _text, rules: widget.owner.rules),
+            // The broken rule in small red under the box (26번 3차 H4).
+            OwnerNameField(
+                controller: _text,
+                rules: widget.owner.rules,
+                errorText: _problem,
+                onChanged: (_) {
+                  if (_problem != null) setState(() => _problem = null);
+                }),
+            const SizedBox(height: 6),
             const Text(OwnerTexts.nameHelp, style: TextStyle(fontSize: 12, color: Cozy.inkSoft)),
-            if (_problem != null)
-              Text(_problem!, key: const Key('rename-problem'), style: const TextStyle(color: Cozy.brick)),
           ]),
           actions: [
             TextButton(onPressed: () => Navigator.pop(context), child: const Text(OwnerTexts.cancel)),

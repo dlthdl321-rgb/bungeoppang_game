@@ -82,7 +82,9 @@ void main() {
       final pill = tester.getRect(find
           .ancestor(of: find.text('스페셜 붕어빵 제작 시작'), matching: find.byType(Container))
           .first);
-      expect(pill.bottom, closeTo(counter.top - WorkshopHomeLayout.practiceLift, .5));
+      // 26번 3차 피드백 H18: the pill sits on the empty mold, which stays
+      // clear of the counter and the cooking cut.
+      expect(pill.bottom, lessThanOrEqualTo(counter.top - WorkshopHomeLayout.moldGap));
       expect(find.byKey(const Key('counter-action')), findsNothing);
       final open = tester.getRect(find.byKey(const Key('business-open')));
       final sign = tester.getRect(find.byKey(const Key('workshop-status-badge')));
@@ -210,7 +212,7 @@ void main() {
       final caption = tester.getRect(find
           .ancestor(of: find.byKey(const Key('piping-amount')), matching: find.byType(Container))
           .first);
-      final cancel = tester.getRect(find.widgetWithText(TextButton, '제작 취소'));
+      final cancel = tester.getRect(find.byKey(const Key('mold-cancel')));
       expect(caption.bottom, lessThanOrEqualTo(cancel.top - 4 + .5));
       expect(caption.bottom, lessThanOrEqualTo(tester.getRect(find.byKey(const Key('workshop-mold'))).bottom));
       await tester.pumpWidget(const SizedBox.shrink());
