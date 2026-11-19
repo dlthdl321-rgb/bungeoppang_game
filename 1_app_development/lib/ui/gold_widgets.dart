@@ -226,7 +226,7 @@ class GoldPackCard extends StatelessWidget {
 }
 
 /// A gold pack's picture: `ui/gold_pack_<tier>.png` once drawn (25번
-/// H-E-1), until then a heap of the gold bungeoppang icon that grows with
+/// 40번), until then a heap of the gold bungeoppang icon that grows with
 /// the pack (1 to 5).
 class GoldPackArt extends StatelessWidget {
   final int tier;

@@ -119,7 +119,7 @@ class PixelSprites {
     'levelup', 'levelup_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
     'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics',
-    // The shop's gold packs, smallest to largest (25번 H-E-1, 26번 3차 H31;
+    // The shop's gold packs, smallest to largest (25번 40번, 26번 3차 H31;
     // until drawn ui/gold_widgets.dart heaps the gold icon instead).
     'gold_pack_1', 'gold_pack_2', 'gold_pack_3', 'gold_pack_4', 'gold_pack_5',
     // The first-run screens' winter stall illustration (25번 37번, 26번 3차
