@@ -110,9 +110,9 @@ void main() {
       expect(find.text('모습만 바뀌어요 (생산 효과 없음)'), findsNothing);
       expect(find.byKey(const Key('balance-gold-plus')), findsOneWidget);
       expect(find.byKey(const Key('balance-buns')), findsOneWidget);
-      // 시안 확인 2차: the 25번 15번 title fish is out until 35번 redraws it;
-      // the title takes no room for it meanwhile.
-      expect(tester.getSize(find.byKey(const Key('title-fish-left'))), Size.zero);
+      // 25번 35번: the redrawn title fish (ui/title_fish.png) beside the title,
+      // 48x36 plus 6 on each side.
+      expect(tester.getSize(find.byKey(const Key('title-fish-left'))), const Size(48 + 12, 36));
       expect(tester.takeException(), isNull);
     });
 

@@ -9,6 +9,7 @@ import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 
 // 26번 4-2단계 F9: the six cooking frames hold the workbench still
 // (tools/align_cook_cuts.py), and the face anchors moved with the frames.
+// Frames 4-6 were redrawn from frame 1 (25번 10번, --import).
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(PixelSprites.load);
@@ -75,9 +76,6 @@ void main() {
       1: ((323.5, 156.0), (323.0, 187.0)),
       2: ((293.5, 157.0), (293.0, 188.0)),
       3: ((285.5, 155.0), (285.0, 186.0)),
-      4: ((323.5, 137.0), (323.0, 168.0)),
-      5: ((304.5, 135.0), (304.0, 166.0)),
-      6: ((305.5, 134.0), (305.0, 165.0)),
     };
     final json = jsonDecode(File('tools/cook_cut_alignment.json').readAsStringSync())
         as Map<String, dynamic>;
@@ -87,6 +85,26 @@ void main() {
       final anchors = avatarFaceAnchors['cook/girl_$n.png']!;
       expect(anchors['eyes'], (eyes.$1 + move[0], eyes.$2 + move[1]), reason: 'girl_$n eyes');
       expect(anchors['mouth'], (mouth.$1 + move[0], mouth.$2 + move[1]), reason: 'girl_$n mouth');
+    }
+  });
+
+  test('다시 그린 4·5·6번(25번 10번): 머리·얼굴이 1번과 ±2px, 기준점은 잰 값 그대로', () {
+    final json = jsonDecode(File('tools/cook_cut_alignment.json').readAsStringSync())
+        as Map<String, dynamic>;
+    final redraws = json['redraws'] as Map<String, dynamic>;
+    final one = avatarFaceAnchors['cook/girl_1.png']!;
+    for (var n = 4; n <= 6; n++) {
+      final r = redraws['girl_$n'] as Map<String, dynamic>;
+      for (final v in (r['head_offset'] as List).cast<num>()) {
+        expect(v.abs(), lessThanOrEqualTo(2), reason: 'girl_$n head');
+      }
+      final anchors = avatarFaceAnchors['cook/girl_$n.png']!;
+      for (final key in ['eyes', 'mouth']) {
+        final want = ((r['anchors'] as Map)[key] as List).cast<num>();
+        expect(anchors[key], (want[0].toDouble(), want[1].toDouble()), reason: 'girl_$n $key');
+        expect((anchors[key]!.$1 - one[key]!.$1).abs(), lessThanOrEqualTo(2), reason: 'girl_$n $key x');
+        expect((anchors[key]!.$2 - one[key]!.$2).abs(), lessThanOrEqualTo(2), reason: 'girl_$n $key y');
+      }
     }
   });
 

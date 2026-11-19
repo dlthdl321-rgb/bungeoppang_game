@@ -1,10 +1,15 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/avatar_atlas.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
+import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
+import 'package:todays_bungeoppang/workshop_daily.dart';
 
 // All art comes from the user's folders (concept art and the extra art
 // set); avatar items without art are hidden (PixelSprites.avatarArtReady).
@@ -38,6 +43,21 @@ void main() {
       if (d.slot == CosmeticSlot.decoration) {
         expect(NightStallPainter.decorationAt, contains(d.id), reason: d.id);
       }
+    }
+  });
+
+  test('겨울 행사 장식(25번 32번)은 그림·자리가 있고 판매 목록에 없다', () {
+    final config = DevelopmentBalance.fromJson(
+        jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
+    final events = seasonalEvents(config);
+    expect(events.map((e) => e.decoration).toSet(), PixelSprites.eventDecorations.toSet());
+    for (final e in events) {
+      final image = PixelSprites.cosmetic(CosmeticSlot.decoration, e.decoration);
+      expect(image, isNotNull, reason: e.decoration);
+      // starlights' width (540 = 180 scene units x decorationScale).
+      expect(image!.width, 540, reason: e.decoration);
+      expect(NightStallPainter.decorationAt, contains(e.decoration));
+      expect(cosmeticDefinitions.where((d) => d.id == e.decoration), isEmpty);
     }
   });
 
@@ -149,12 +169,15 @@ void main() {
         }
       }
       expect(differ, 0, reason: id);
-      // The lid stands above the plate: something is drawn up there.
+      // The lid is drawn above the plate's back edge, where the empty
+      // griddle is transparent (25번 34번: the low lid lies in the empty
+      // griddle's clear top strip, GriddleLidPainter.plateBack).
       var lid = 0;
-      for (var i = 3; i < skip; i += 4) {
-        if (o.getUint8(i) > 128) lid++;
+      final back = (PixelSprites.openStoveLidRoom + GriddleLidPainter.plateBack) * open.width * 4;
+      for (var i = 3; i < back; i += 4) {
+        if (o.getUint8(i) > 128 && (i < skip || e.getUint8(i - skip) == 0)) lid++;
       }
-      expect(lid, greaterThan(open.width * 60), reason: id);
+      expect(lid, greaterThan(open.width * 40), reason: id);
     }
   });
 
