@@ -115,6 +115,52 @@ void main() {
     });
   });
 
+  group('첫 실행 동의 전에는 모으지 않음(DEC-TBD-legal-2)', () {
+    test('동의 전: 설정이 켬이어도 Analytics 수집을 끄고 이벤트를 남기지 않는다, 동의 뒤 켠다', () {
+      final sink = RecordingSink(), usage = UsageStats(sink, consented: false);
+      usage.setEnabled(true); // GameController.initialize, 기본 켬
+      expect(sink.switches, [false]);
+      expect([usage.enabled, usage.consented, usage.collecting], [true, false, false]);
+      usage.record(UsageEvent.shopOpen);
+      usage.observeProgress(const UsageProgress(bakes: 0, sales: 0, level: 1, tutorial: 'cook'),
+          const UsageProgress(bakes: 1, sales: 0, level: 1, tutorial: 'cook'));
+      expect(sink.events, isEmpty);
+      usage.setConsented(true);
+      usage.setConsented(true); // 저장마다 알려도 Analytics에는 바뀔 때만
+      expect(sink.switches, [false, true]);
+      usage.record(UsageEvent.shopOpen);
+      expect(sink.names, ['shop_open']);
+      // 설정을 끄면 동의가 있어도 끈다.
+      usage.setEnabled(false);
+      expect(sink.switches, [false, true, false]);
+      usage.setEnabled(true);
+      // 계정 삭제·재동의가 필요하면 다시 멈춘다.
+      usage.setConsented(false);
+      expect(sink.switches, [false, true, false, true, false]);
+      usage.record(UsageEvent.payDone, {'product_id': 'gold_60'});
+      expect(sink.names, ['shop_open']);
+    });
+    test('설정을 끈 사람은 동의해도 수집을 켜지 않는다', () {
+      final sink = RecordingSink(), usage = UsageStats(sink, consented: false);
+      usage.setEnabled(false);
+      usage.setConsented(true);
+      expect(sink.switches, [false, false]);
+      expect(usage.collecting, isFalse);
+    });
+    test('main.dart는 동의 전 상태로 시작하고 매니페스트는 수집 꺼짐이 기본', () {
+      expect(File('lib/main.dart').readAsStringSync(), contains('UsageStats(FirebaseUsageStatsSink(), consented: false)'));
+      expect(File('android/app/src/main/AndroidManifest.xml').readAsStringSync(),
+          contains('<meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />'));
+    });
+    test('UsageOwnerAnalytics는 동의 상태를 기록기에 넘긴다', () {
+      final sink = RecordingSink(), usage = UsageStats(sink, consented: false);
+      final owner = UsageOwnerAnalytics(usage);
+      owner.setConsented(true);
+      expect(usage.consented, isTrue);
+      expect(sink.switches, [true]);
+    });
+  });
+
   group('선택 정보 사용자 속성(2-1단계 연결)', () {
     test('성별·연령대만 gender·age_band로, 선택 안 함·없음은 지운다', () {
       final sink = RecordingSink(), owner = UsageOwnerAnalytics(UsageStats(sink));

@@ -32,9 +32,9 @@ class OwnerSettingsSection extends StatelessWidget {
                     skipLabel: OwnerTexts.cancel,
                     saveLabel: OwnerTexts.save,
                     onSkip: () => Navigator.pop(ctx),
-                    onSave: (gender, age, guardian) async {
+                    onSave: (gender, age) async {
                       Navigator.pop(ctx);
-                      await owner.saveOptional(gender: gender, ageBand: age, guardianConsent: guardian);
+                      await owner.saveOptional(gender: gender, ageBand: age);
                       final message = owner.message;
                       if (message != null) {
                         owner.message = null;

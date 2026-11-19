@@ -50,25 +50,25 @@ test("owner name: 2~8 Hangul syllables, Latin letters or digits", () => {
 
 test("accountProfileSet: name and required consent; Google email from the token", async () => {
   const store = new MemoryStore();
-  await setAccountProfile(store, google, { name: "구글사장", consentVersion: requiredConsentVersion }, start);
+  await setAccountProfile(store, google, { name: "구글사장", consentVersion: requiredConsentVersion, over14Confirmed: true }, start);
   assert.deepEqual(store.docs.get(`accountProfiles/${googleUid}`), {
     provider: "google",
     name: "구글사장",
     email: "owner@example.com",
-    requiredConsent: { version: requiredConsentVersion, atMs: start },
+    requiredConsent: { version: requiredConsentVersion, atMs: start, over14: true },
     updatedAtMs: start,
   });
   // A later rename keeps the first consent time.
-  await setAccountProfile(store, google, { name: "새이름", consentVersion: requiredConsentVersion }, start + 1000);
+  await setAccountProfile(store, google, { name: "새이름", consentVersion: requiredConsentVersion, over14Confirmed: true }, start + 1000);
   const doc = store.docs.get(`accountProfiles/${googleUid}`)!;
   assert.equal(doc.name, "새이름");
-  assert.deepEqual(doc.requiredConsent, { version: requiredConsentVersion, atMs: start });
+  assert.deepEqual(doc.requiredConsent, { version: requiredConsentVersion, atMs: start, over14: true });
 });
 
 test("accountProfileSet: Kakao keeps the email authKakao remembered", async () => {
   const store = new MemoryStore();
   await rememberEmail(store, "kakao:42", "k@example.com");
-  await setAccountProfile(store, kakao, { name: "카카오", consentVersion: requiredConsentVersion }, start);
+  await setAccountProfile(store, kakao, { name: "카카오", consentVersion: requiredConsentVersion, over14Confirmed: true }, start);
   assert.equal(store.docs.get("accountProfiles/kakao:42")!.email, "k@example.com");
   await rememberEmail(store, "kakao:42", null);
   assert.equal(store.docs.get("accountProfiles/kakao:42")!.email, undefined);
@@ -82,30 +82,45 @@ test("accountProfileSet: optional gender and age band only with their own consen
   const store = new MemoryStore();
   const path = `accountProfiles/${googleUid}`;
   await setAccountProfile(store, google, {
-    name: "구글사장", consentVersion: requiredConsentVersion, optional: { gender: "female", ageBand: "20s" },
+    name: "구글사장", consentVersion: requiredConsentVersion, over14Confirmed: true, optional: { gender: "female", ageBand: "20s" },
   }, start);
   let doc = store.docs.get(path)!;
   assert.deepEqual([doc.gender, doc.ageBand, doc.optionalConsent], ["female", "20s", { atMs: start }]);
-  await setAccountProfile(store, google, { name: "구글사장", consentVersion: requiredConsentVersion }, start + 5);
+  await setAccountProfile(store, google, { name: "구글사장", consentVersion: requiredConsentVersion, over14Confirmed: true }, start + 5);
   doc = store.docs.get(path)!;
   assert.deepEqual([doc.gender, doc.ageBand, doc.optionalConsent], [undefined, undefined, undefined]);
   await assert.rejects(setAccountProfile(store, google, {
-    name: "구글사장", consentVersion: requiredConsentVersion, optional: { gender: "other", ageBand: "20s" },
+    name: "구글사장", consentVersion: requiredConsentVersion, over14Confirmed: true, optional: { gender: "other", ageBand: "20s" },
   }, start), (e) => code(e) === "invalid-argument");
 });
 
-test("accountProfileSet: under 14 needs the guardian's consent; the terms version must match", async () => {
+test("accountProfileSet: only players who confirmed 만 14세 이상; no under-14 band; the terms version must match", async () => {
   const store = new MemoryStore();
+  const path = "accountProfiles/kakao:42";
+  // Without the 만 14세 이상 tick nothing is saved.
+  for (const over14Confirmed of [undefined, false, "true"]) {
+    await assert.rejects(setAccountProfile(store, kakao, {
+      name: "어린이", consentVersion: requiredConsentVersion, over14Confirmed,
+    }, start), (e) => code(e) === "age-required", String(over14Confirmed));
+  }
+  assert.equal(store.docs.has(path), false);
+  // The under-14 age band is gone, guardian consent or not.
   await assert.rejects(setAccountProfile(store, kakao, {
-    name: "어린이", consentVersion: requiredConsentVersion, optional: { gender: "none", ageBand: "under14" },
-  }, start), (e) => code(e) === "guardian-required");
-  await setAccountProfile(store, kakao, {
-    name: "어린이", consentVersion: requiredConsentVersion,
+    name: "어린이", consentVersion: requiredConsentVersion, over14Confirmed: true,
     optional: { gender: "none", ageBand: "under14", guardianConsent: true },
-  }, start);
-  assert.equal(store.docs.get("accountProfiles/kakao:42")!.guardianConsentAtMs, start);
-  await assert.rejects(setAccountProfile(store, kakao, { name: "어린이", consentVersion: "2020-01-01" }, start),
-    (e) => code(e) === "consent-required");
+  }, start), (e) => code(e) === "invalid-argument");
+  // An older profile's guardian record does not survive the next save.
+  store.docs.set(path, { name: "예전", ageBand: "under14", guardianConsentAtMs: 1, requiredConsent: { version: "2026-11-18", atMs: 1 } });
+  await setAccountProfile(store, kakao, { name: "사장님", consentVersion: requiredConsentVersion, over14Confirmed: true }, start);
+  const doc = store.docs.get(path)!;
+  assert.deepEqual([doc.ageBand, doc.guardianConsentAtMs], [undefined, undefined]);
+  assert.deepEqual(doc.requiredConsent, { version: requiredConsentVersion, atMs: start, over14: true }, "re-consent time");
+  // The consent before the 만 14세 이상 question (2026-11-18) is not enough.
+  for (const consentVersion of ["2020-01-01", "2026-11-18"]) {
+    await assert.rejects(setAccountProfile(store, kakao, { name: "어린이", consentVersion, over14Confirmed: true }, start),
+      (e) => code(e) === "consent-required", consentVersion);
+  }
+  assert.equal(requiredConsentVersion, "2026-11-19");
 });
 
 test("Google uids work with friends, invites and rankings like Kakao uids", async () => {
@@ -126,7 +141,7 @@ test("accountDelete removes everything keyed by the account, both friendship sid
   const mine = await invites.register(store, googleUid, start);
   await friends.setProfile(store, googleUid, { name: "구글사장", look: { hair: "long" } });
   await setAccountProfile(store, google, {
-    name: "구글사장", consentVersion: requiredConsentVersion, optional: { gender: "male", ageBand: "30s" },
+    name: "구글사장", consentVersion: requiredConsentVersion, over14Confirmed: true, optional: { gender: "male", ageBand: "30s" },
   }, start);
   await ranking.submit(store, googleUid, { lifetime: "9000", bestCombo: 3 }, start);
   await invites.register(store, "kakao:42", start);

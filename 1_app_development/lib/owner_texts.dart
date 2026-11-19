@@ -10,6 +10,8 @@ abstract final class OwnerTexts {
   static const agreeAll = '전체 동의';
   static const agreeTerms = '(필수) 이용약관 동의';
   static const agreePrivacy = '(필수) 개인정보 수집·이용 동의';
+  /// 만 14세 미만은 가입 불가(DEC-TBD-legal-1): part of the required consent.
+  static const agreeAge = '(필수) 만 14세 이상입니다';
   static const view = '보기';
   static const privacySummaryTitle = '개인정보 수집·이용 (필수)';
   static const privacySummary =
@@ -21,7 +23,7 @@ abstract final class OwnerTexts {
   static const loginGoogle = 'Google로 시작하기';
   static const continueSignedIn = '동의하고 계속하기';
   static const oneWayNotice = '처음 고른 방법으로 계속 로그인해 주세요. 카카오와 구글 계정은 서로 이어지지 않아요.';
-  static const childNotice = '만 14세 미만이라면 보호자와 함께 읽고 시작해 주세요.';
+  static const childNotice = '만 14세 미만은 지금은 이용할 수 없어요.';
   static const needAgreement = '필수 항목에 모두 동의해 주세요';
   static const loginFailed = '로그인하지 못했어요. 잠시 후 다시 해 주세요';
   static String otherAccount(LoginProvider? provider) =>
@@ -54,12 +56,9 @@ abstract final class OwnerTexts {
   static const optionalSummary =
       '수집 항목: 성별, 연령대\n'
       '목적: 이용자 분석, 공지·계정 안내 (광고·마케팅에는 쓰지 않아요)\n'
-      '이용자 분석은 Google Analytics 사용 통계로 해요(이름·이메일 없이, 14개월 보관)\n'
+      '이용자 분석은 Google Analytics 사용 통계로 해요. 이름·이메일·계정과 연결하지 않고, Google(미국) 서버로 보내져 14개월 보관돼요\n'
       '보관 기간: 직접 지우거나 계정을 삭제할 때까지 (설정에서 바꾸거나 지울 수 있어요)\n'
       '동의하지 않아도 게임을 할 수 있어요.';
-  static const guardianAgree = '보호자(법정대리인)가 이 내용을 읽고 동의했어요';
-  static const guardianNotice = '만 14세 미만은 보호자의 동의가 있어야 선택 정보를 저장할 수 있어요. 동의하지 않으면 저장하지 않고 게임은 그대로 할 수 있어요.';
-  static const guardianSkipped = '보호자 동의가 없어 선택 정보는 저장하지 않았어요.';
   static const skip = '건너뛰기';
   static const saveAndStart = '저장하고 시작';
 
