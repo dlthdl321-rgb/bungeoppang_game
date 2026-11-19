@@ -99,7 +99,9 @@ void main() {
   });
   test('아바타 기본 무료 착용은 저장되고 보유하지 않은 유료 착용은 막는다',() async {
     final c=WorkshopController(config,Repository());addTearDown(c.dispose);await c.initialize();
-    expect(await c.equipAvatar('boy'),isTrue);expect(c.state.avatarEquipment['character'],'boy');
+    // 3차 피드백 H11: the other character is bought; the first-run choice is kept.
+    expect(await c.equipAvatar('boy'),isFalse);expect(c.error,isNull);
+    expect(await c.chooseStarterCharacter('boy'),isTrue);expect(c.state.avatarEquipment['character'],'boy');
     expect(await c.equipAvatar('short'),isFalse);expect(c.error,isNull);
     final restored=WorkshopState.fromJson(c.state.toJson(),config);expect(restored.avatarEquipment['character'],'boy');
     final damaged=c.state.toJson();damaged['avatarEquipment']={'hair':'short'};

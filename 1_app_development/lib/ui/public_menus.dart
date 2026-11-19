@@ -47,9 +47,13 @@ class CosmeticMenuAccess {
 
   /// Tabs open at this level (붕어빵 Lv.5, 가게 Lv.8; S45-Q6); null: all.
   final bool Function(WardrobeTab)? tabOpen;
+
+  /// What several items cost together, with what the player lacks for all
+  /// of them ('모두 사기', 3차 피드백 H15); null: not sold together.
+  final WardrobePrice? Function(List<CosmeticDefinition>)? total;
   const CosmeticMenuAccess({required this.equipped,required this.owned,required this.unlocked,
     required this.canApply,required this.price,required this.action,required this.apply,this.requirement,
-    this.listed=_always,this.forSale,this.cost,this.tabOpen});
+    this.listed=_always,this.forSale,this.cost,this.tabOpen,this.total});
   static bool _always(CosmeticDefinition _)=>true;
 }
 
@@ -75,11 +79,13 @@ class WardrobePanel extends StatefulWidget {
   final CosmeticSlot? initialSlot;
   /// With [access] in [WardrobeMode.wear]: '상점에서 더 보기' for a slot.
   final void Function(CosmeticSlot slot)? onMore;
+  /// With [access]: closes the window once everything tried on is worn.
+  final VoidCallback? onClose;
   const WardrobePanel(
       {super.key,
       required this.controller,
       this.initialTab = WardrobeTab.hair,this.access,this.mode=WardrobeMode.wear,
-      this.initialSlot,this.onMore});
+      this.initialSlot,this.onMore,this.onClose});
   @override
   State<WardrobePanel> createState() => _WardrobePanelState();
 }
@@ -107,6 +113,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
           initialTab: widget.initialTab,
           initialSlot: widget.initialSlot,
           onMore: widget.onMore,
+          onClose: widget.onClose,
           animate: WeatherLayer.animate && !c.state.settings.reduceMotion);
     }
     final picked = cosmeticDefinitions

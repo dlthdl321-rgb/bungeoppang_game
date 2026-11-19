@@ -197,6 +197,17 @@ class _WorkshopPageState extends State<WorkshopPage> {
       return WardrobePrice(q.buns,q.gold,missingBuns:c.state.purchases.available(c.state.buns)<q.buns,
         missingGold:BigInt.from(account.state.premium.gold)<q.gold);
     }
+    // Several items at once ('모두 사기', 3차 피드백 H15).
+    WardrobePrice? total(List<CosmeticDefinition> items){
+      if(items.isEmpty || items.any((d)=>!avatar(d) || owned(d)))return null;
+      var buns=BigInt.zero,gold=BigInt.zero;
+      for(final d in items){
+        final q=quoteWorkshopProduct(c.config,'cosmetic:${d.id}',owned:0,quantity:1);
+        buns+=q.buns;gold+=q.gold;
+      }
+      return WardrobePrice(buns,gold,missingBuns:c.state.purchases.available(c.state.buns)<buns,
+        missingGold:BigInt.from(account.state.premium.gold)<gold);
+    }
     bool canApply(CosmeticDefinition d){
       if(c.inputBusy || c.purchaseBusy || c.error!=null || account.busy || _equipped(d.slot)==d.id || !unlocked(d))return false;
       if(owned(d))return true;
@@ -209,7 +220,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // Avatar items show once their art is ready for the vendor worn now
       // (PixelSprites.avatarArtReady); owners keep seeing what they bought.
       listed:(d)=>avatar(d) && PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id) || owned(d),
-      forSale:avatar,cost:cost,
+      forSale:avatar,cost:cost,total:total,
       // 26번 4-5단계(S45-Q2): only the level; the production total ('누적',
       // 0 for every item) is not shown.
       requirement:(d)=>avatar(d) ? 'Lv.${(catalog[d.id] as Map)['unlock_level']} 해금' : '',
@@ -236,7 +247,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
   /// slot (26번 4-5단계, S45-Q1 B).
   Future<void> _wardrobe({WardrobeTab tab=WardrobeTab.hair})=>_window('꾸미기',(ctx)=>WardrobePanel(
     controller:widget.accountController,access:_cosmetics,initialTab:tab,
-    onMore:(slot){Navigator.pop(ctx);unawaited(_store(slot:slot));}));
+    onMore:(slot){Navigator.pop(ctx);unawaited(_store(slot:slot));},
+    // 3차 피드백 H15: '모두 적용' wears and closes; no back button needed.
+    onClose:()=>Navigator.pop(ctx)));
   Future<void> _store({CosmeticSlot? slot}){
     c.usage.record(UsageEvent.shopOpen); // 사용 통계(26번 5단계), 하루 1번
     return _window('상점',(_)=>ShopPanel(controller:widget.accountController,access:_cosmetics,onOpen:_open,initialSlot:slot));
