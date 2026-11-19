@@ -89,12 +89,13 @@ FACES = {
               ((168, 130, 212, 173), (189, 153))],
         mouth=((137, 177, 168, 191), (152, 184)),
         skin=(138, 150, 165, 172)),
+    # 26번 3차 H9: measured again on the base rebuilt by [rebase].
     'boy_front': dict(
         image='avatar/boy/base.png',
-        eyes=[((91, 135, 136, 174), (115, 157)),
-              ((168, 133, 210, 174), (188, 155))],
-        mouth=((135, 177, 166, 191), (150, 184)),
-        skin=(138, 150, 165, 172)),
+        eyes=[((86, 133, 131, 174), (108, 153)),
+              ((163, 131, 205, 174), (185, 152))],
+        mouth=((130, 176, 162, 191), (146, 184)),
+        skin=(133, 150, 158, 168)),
     # The side (cooking) frames: measured on frame 2, found in the others.
     # 26번 4-2단계 F9 moved frame 2 by (+5, -2) (tools/align_cook_cuts.py,
     # cook_cut_alignment.json); these boxes moved with it.
@@ -159,15 +160,68 @@ def trim(data):
         print(f'trimmed {before} -> {after} bytes')
 
 
+# ---------------------------------------------------------------- rebase
+
+# 26번 3차 피드백 H9 (2026-11-19): the boy's base came from an older
+# picture than his worn pictures - neck bent to one side, head looking
+# turned, one foot askew - and every item cut from the worn pictures sat
+# a little off on it. The new base is put together from two worn pictures
+# of the same set (same pixel grid): the head (base hair, face) of
+# `head` above source row `seam` (just under the chin) and the body of
+# `body` (tee, shorts, shoes) below it. Neither shows an item there.
+# (scale, dx, dy) place it on the 280x520 canvas: body over the old base,
+# soles on row 519. Light grey-white specks the white background left
+# around the hair go too (`specks`, source rows above which they count).
+REBASE = {
+    'boy': dict(head='outfit_chefcoat', body='hair_curly', seam=715,
+                place=(0.30252, 9, -8), specks=715),
+}
+
+
+def rebase(data):
+    import apply_extra_art as X
+    from scipy import ndimage
+    trimmed = data.setdefault('trim', {})
+    for character, r in REBASE.items():
+        head = X.load_cut(WORN_SRC / character / f"{r['head']}.png")
+        body = X.load_cut(WORN_SRC / character / f"{r['body']}.png")
+        src = body.copy()
+        src[:r['seam']] = head[:r['seam']]
+        a = src.astype(np.int32)
+        lum = a[..., :3].sum(-1) / 3
+        light = (a[..., 3] > 0) & (lum > 175) & \
+            ((a[..., :3].max(-1) - a[..., :3].min(-1)) < 40)
+        edge = ndimage.binary_dilation(a[..., 3] == 0, iterations=3)
+        rows = np.arange(a.shape[0])[:, None] < r['specks']
+        specks = light & edge & rows
+        # Whole light blobs that touch the edge, not just their rim.
+        labels, _ = ndimage.label(light & rows)
+        specks = np.isin(labels, np.unique(labels[specks & (labels > 0)]))
+        src[specks, 3] = 0
+        scale, dx, dy = r['place']
+        on = X.warp(src, scale, dx, dy, CANVAS)
+        key = f'avatar/{character}/base.png'
+        save(on, IMAGES / key)
+        trimmed.pop(key, None)
+        print(f'rebase {key}: {r["head"]} head + {r["body"]} body, '
+              f'{int(specks.sum())} speck px cleared')
+
+
 # ---------------------------------------------------------------- fringe
 
 # Canvas boxes (l, t, r, b) where light, grey-white pixels are background
 # left between hair strands, and the canvas row above which light pixels
 # touching the transparent outline are such leftovers too (0: none).
+# `grey` boxes take grey specks too (low saturation, any light), and in
+# `clear` boxes light grey-white background left between the arm and the
+# body is made transparent instead of painted over (26번 3차 H9/H10:
+# the boy rebuilt by [rebase] keeps a few from his worn pictures).
 FRINGE = {
     'girl': dict(boxes=[(36, 203, 94, 323), (222, 203, 280, 323)],
                  edge_above=323),
-    'boy': dict(boxes=[(150, 15, 215, 40), (50, 60, 80, 90)], edge_above=0),
+    'boy': dict(boxes=[(150, 8, 215, 40), (40, 55, 80, 95)], edge_above=0,
+                grey=[(150, 8, 215, 40), (40, 55, 80, 95)],
+                clear=[(78, 300, 100, 365)]),
 }
 
 
@@ -187,11 +241,27 @@ def fringe(data):
         edge = ndimage.binary_dilation(al == 0) & \
             (np.arange(al.shape[0])[:, None] < f['edge_above'] - oy)
         light = (al > 0) & (lum > 170) & ((r - b) < 60)
+        sat = a[..., :3].max(-1) - a[..., :3].min(-1)
+
+        def boxes(name):
+            m = np.zeros(al.shape, bool)
+            for l, t, rr, bb in f.get(name, []):
+                m[max(t - oy, 0):max(bb - oy, 0),
+                  max(l - ox, 0):max(rr - ox, 0)] = True
+            return m
+        clear = boxes('clear') & (al > 0) & (lum > 150) & (sat < 40)
+        if clear.any():
+            a[clear, 3] = 0
+            al = a[..., 3]
+            print(f'fringe {key}: {int(clear.sum())} px cleared')
+        light |= boxes('grey') & (al > 0) & (sat < 30) & (lum > 60)
         where = zone | edge
         cand = light & where
         # The soft rim around each leftover streak goes too.
         cand |= ndimage.binary_dilation(cand) & (lum > 120) & (al > 0) & where
         if not cand.any():
+            if clear.any():
+                save(a, IMAGES / key)
             print(f'fringe {key}: clean')
             continue
         keep = (al > 0) & ~cand
@@ -497,7 +567,7 @@ WORN_ITEMS = {
 # Canvas rows (top, bottom) where each slot may change the figure. Hats
 # reach down the sides of the head (earmuffs), aprons to the knees.
 WORN_ROWS = {
-    'hair': (0, 345),
+    'hair': (0, 360),
     'hat': (0, 215),
     'accessory': (0, 215),
     'outfit': (190, 470),
@@ -507,7 +577,9 @@ WORN_ROWS = {
 }
 # How far (pixels) from the changed item the base may be erased: hair
 # styles take away long hair far from what they add.
-WORN_NEAR = {'hair': 60, 'hat': 15}
+# 26번 3차 H10: a hair style takes ALL the long hair it does not show
+# (60 left strands by the arms: "잔상").
+WORN_NEAR = {'hair': 400, 'hat': 15}
 # Pixels kept around the eyes-and-mouth box that no item may change. A hat
 # keeps the face's columns all the way down (the chin and neck too).
 FACE_PAD = {'hat': 12, 'accessory': 12}
@@ -715,7 +787,7 @@ def derive(data):
 
 # Neck line per character (canvas row): worn body layers keep nothing above
 # it. Only the boy's apron-like pictures reach the chin (girl's start at 215).
-CHIN = {'boy': 208}
+CHIN = {'boy': 200}  # 26번 3차 H9: the rebuilt base's chin ends at 195
 CHIN_SLOTS = ('outfit_', 'top_chefcoat')
 
 
@@ -992,9 +1064,11 @@ def write_dart(data):
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    jobs = args or ['fringe', 'face', 'worn', 'chin', 'derive', 'skin',
-                    'trim']
+    jobs = args or ['rebase', 'fringe', 'face', 'worn', 'chin', 'derive',
+                    'skin', 'trim']
     data = load_data()
+    if 'rebase' in jobs:
+        rebase(data)
     if 'fringe' in jobs:
         fringe(data)
     if 'face' in jobs:

@@ -1608,7 +1608,7 @@
       "unlock_total": "0"
     },
     "tongs": {
-      "label": "붕어빵 집게",
+      "label": "도구 없음",
       "slot": "tool",
       "free": true,
       "unlock_level": 1,

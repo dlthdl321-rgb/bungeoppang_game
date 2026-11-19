@@ -389,6 +389,10 @@ class PixelSprites {
   static bool avatarArtReady(String character, CosmeticSlot slot, String id) {
     // 26번 4-7단계: with the v2 vendor on, what v2 drew (the new bottoms
     // too); while it is off, items only v2 draws stay hidden.
+    // 26번 3차 H8·H10: withdrawn items stay out (cosmetic_config.dart).
+    if (slot != CosmeticSlot.character && avatarItemWithdrawn(character, id)) {
+      return false;
+    }
     if (avatarV2On) {
       final files = avatarV2Shipped;
       if (slot == CosmeticSlot.character) {
@@ -631,10 +635,11 @@ class PixelSprites {
       'assets/images/cosmetic_icons/$id.png';
 
   /// The wardrobe tile icon of avatar item [id] (64x64, both characters;
-  /// 26번 4-5단계, G5): the 'none' hanger for the take-off items, null
+  /// 26번 4-5단계, G5): the 'none' hanger for the take-off items (and the
+  /// tool default, drawn as no tool since 26번 3차 H8), null
   /// when not drawn.
   static ui.Image? cosmeticIcon(String id) => _images[_cosmeticIconPath(
-      const {'nohat', 'noapron', 'noacc'}.contains(id) ? 'none' : id)];
+      const {'nohat', 'noapron', 'noacc', 'tongs'}.contains(id) ? 'none' : id)];
 
   /// The wardrobe tile picture of a stall item when it has its own (lamps:
   /// the whole post lamp; day/night: an icon), else null.
