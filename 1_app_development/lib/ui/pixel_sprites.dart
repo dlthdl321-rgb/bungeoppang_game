@@ -119,7 +119,7 @@ class PixelSprites {
     'levelup', 'levelup_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
     'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics',
-    // The first-run screens' winter stall illustration (25번 H-A-1, 26번 3차
+    // The first-run screens' winter stall illustration (25번 37번, 26번 3차
     // H2); until drawn they use the lowered snow background.
     'first_run'];
 

@@ -80,7 +80,7 @@ class FirstRunFlow extends StatelessWidget {
 }
 
 /// The winter stall behind the first-run steps (26번 3차 H2): the
-/// illustration `ui/first_run.png` (25번 H-A-1) when it is in the app, else
+/// illustration `ui/first_run.png` (25번 37번) when it is in the app, else
 /// the lowered home picture [firstRunBackground], filling the screen, its snow falling
 /// (still with reduced motion) and a light veil so the card stands out.
 class FirstRunBackdrop extends StatelessWidget {
