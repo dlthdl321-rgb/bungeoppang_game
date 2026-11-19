@@ -483,7 +483,7 @@ void main() {
 
     testWidgets('메뉴 창 위에 이름이 보이고, 설정에서 이름을 바꾼다', (tester) async {
       final r = await started(tester);
-      await tester.tap(find.byKey(const Key('menu-menu')));
+      await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text(OwnerTexts.shopOf('붕어빵')), findsOneWidget);

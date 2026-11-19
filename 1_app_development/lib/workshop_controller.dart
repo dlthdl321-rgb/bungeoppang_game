@@ -639,6 +639,18 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   Future<void> initialize() async {
     final saved = await _loadDurable();
     state = saved == null ? WorkshopState.initial(now(), config, _id()) : WorkshopState.fromJson(saved, config);
+    // 26번 3차 피드백 H20: the painted cells are not saved (G2), so a bake
+    // reopened between the first batter and the lid would show the whole
+    // step picture — batter that seems poured before the player came in.
+    // It starts again from pouring the batter (nothing was used up). Only
+    // here, on opening the app: WorkshopState.fromJson also rolls back
+    // failed commands and must keep the session as it was.
+    final open = state.session;
+    if (open != null && const [CookingPhase.filling, CookingPhase.secondBatter, CookingPhase.closing].contains(open.phase)) {
+      state.session = CookingSession.start(id: open.id, flavor: open.flavor, practice: open.practice,
+          fillingSequence: open.fillingSequence);
+      state.phaseMs = 0;
+    }
     // Only server-committed grants reconstructed from the durable purchase
     // ledger can produce skill effects; legacy local purchases are not used.
     final report = saved == null ? null : _settleAwayInto();

@@ -8,6 +8,7 @@ import '../home_presentation.dart';
 import '../mission_alerts.dart';
 import '../missions.dart';
 import '../prestige_rules.dart';
+import 'center_toast.dart';
 import 'bake_target.dart';
 import 'boost_effects.dart';
 import 'cook_cut.dart';
@@ -35,10 +36,13 @@ class NightHomeHeaderData {
   /// Whether the per-second and per-tap numbers show (26번 2단계: they open
   /// with the skill window at Lv.2).
   final bool showRates;
+  /// 황금붕어빵력 beside 붕어빵력 in the HUD (26번 3차 피드백 H30), null
+  /// hides it (the old clicker home).
+  final BigInt? gold;
   const NightHomeHeaderData({required this.level, required this.progressPermille,
     required this.buns, required this.lifetime, required this.autoRate,
     required this.tapRate, required this.status, this.claimable = 0, this.showRates = true,
-    this.statusKind = WorkshopStatusKind.open});
+    this.statusKind = WorkshopStatusKind.open, this.gold});
 }
 
 class NightHome extends StatelessWidget {
@@ -52,7 +56,9 @@ class NightHome extends StatelessWidget {
   /// background shows without its baked mold, so the stage draws the mold.
   /// [counterTop] is the sale counter's top on screen (null when the
   /// background has no measured towel), so the stage keeps clear of it.
-  final Widget Function(Rect? fishOnScreen, bool cleanCounter, double? counterTop)?
+  /// [moldLimit] is the higher of the counter's and the cooking cut's tops
+  /// (26번 3차 피드백 H18): the special mold stays above it.
+  final Widget Function(Rect? fishOnScreen, bool cleanCounter, double? counterTop, double? moldLimit)?
       centerBuilder;
   /// Workshop's sale counter: left of the cooking cut, its top on the red
   /// check towel of the background (DEC-038).
@@ -71,6 +77,12 @@ class NightHome extends StatelessWidget {
   /// 확인 2차: '영업 시작'·'이어서 영업'·'영업 종료' moved up there from the
   /// floating counter button). Null leaves the sign alone.
   final Widget? statusAction;
+
+  /// The HUD's top-left round slot. The old clicker home keeps the menu
+  /// button there; the Workshop home has its menu only in the bottom bar
+  /// (26번 3차 피드백 H28) and puts the special bungeoppang's flavor here
+  /// (H26, WorkshopFlavorButton). Null leaves the slot empty.
+  final Widget? hudLeading;
 
   /// The stall lowered to the towel with guests behind it (26번 4-1단계,
   /// [WorkshopHomeLayout.active]): the lowered background, and [guests]
@@ -110,6 +122,7 @@ class NightHome extends StatelessWidget {
       this.counterAction,
       this.counterSlip,
       this.statusAction,
+      this.hudLeading,
       this.lowStall = false,
       this.guests,
       this.griddleFilled,
@@ -151,7 +164,7 @@ class NightHome extends StatelessWidget {
           final griddleH = workshop
               ? griddleW * (stove?.height ?? 40) / (stove?.width ?? 80)
               : griddleW * 40 / 88;
-          final cookW = w * .32, cookH = w * .27;
+          final cookW = w * WorkshopHomeLayout.cookCutShare, cookH = w * .27;
           final navBottom = navHeight + padding.bottom;
           final griddleBottom = navBottom - 10;
           final cookBottom = griddleBottom + griddleH * .7;
@@ -188,8 +201,11 @@ class NightHome extends StatelessWidget {
                   towelTop - WorkshopHomeLayout.clickerLift - fishRect.height * WorkshopHomeLayout.clickerScale - padding.top,
                   (w + fishRect.width * WorkshopHomeLayout.clickerScale) / 2,
                   towelTop - WorkshopHomeLayout.clickerLift - padding.top);
+          // The cooking cut's top on screen (H18).
+          final cookTop = box.maxHeight - cookBottom - cookH;
+          final moldLimit = towelTop == null || scroll ? null : math.min(towelTop, cookTop);
           final stage = centerBuilder != null
-              ? centerBuilder!(fishRect, cleanCounter, towelTop)
+              ? centerBuilder!(fishRect, cleanCounter, towelTop, moldLimit)
               : _stage(reduce, fishRect);
           return Stack(children: [
             Positioned.fill(
@@ -346,7 +362,7 @@ class NightHome extends StatelessWidget {
       child: Column(children: [
         IntrinsicHeight(
           child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Expanded(flex: 26, child: _levelBadge()),
+            _levelBadge(),
             const SizedBox(width: 6),
             Expanded(flex: 44, child: _balance()),
             if (headerData?.showRates ?? true) ...[
@@ -367,15 +383,19 @@ class NightHome extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         Row(children: [
-          // Claimable mission rewards wait in the menu.
-          CountBadge(
-              count: headerData?.claimable ?? claimableCount(s),
-              badgeKey: const Key('menu-badge'),
-              child: CozyRoundButton(
-                  key: const Key('menu-menu'),
-                  tooltip: '메뉴',
-                  icon: const PixelIcon('menu', size: 28),
-                  onPressed: () => onOpen('menu'))),
+          // Claimable mission rewards wait in the menu. The Workshop home
+          // has its menu only in the bottom bar (H28).
+          if (centerBuilder == null)
+            CountBadge(
+                count: headerData?.claimable ?? claimableCount(s),
+                badgeKey: const Key('menu-badge'),
+                child: CozyRoundButton(
+                    key: const Key('menu-menu'),
+                    tooltip: '메뉴',
+                    icon: const PixelIcon('menu', size: 28),
+                    onPressed: () => onOpen('menu')))
+          else
+            SizedBox(width: 48, child: hudLeading),
           Expanded(
               child: Column(children: [
             if (headerData != null)
@@ -417,6 +437,10 @@ class NightHome extends StatelessWidget {
               fontWeight: FontWeight.w700,
               shadows: [Shadow(color: Colors.black, blurRadius: 3)])));
 
+  /// The level as a round emblem (26번 3차 피드백 H29 '레벨 표시가 낡아
+  /// 보임'): a cream disc with 'Lv' and the number, the level-mission
+  /// progress as a honey ring around it.
+  static const levelSize = 62.0;
   Widget _levelBadge() {
     final s = controller.state;
     final next = activeLevelMission(s);
@@ -428,104 +452,138 @@ class NightHome extends StatelessWidget {
           'Lv.$level 레벨 미션 ${(headerData == null ? next == null : level >= 50) ? '최고 레벨 달성' : '진행 ${progress ~/ 10}%'}',
       excludeSemantics: true,
       onTap: () => onOpen('missions'),
-      child: InkWell(
+      child: GestureDetector(
         key: const Key('level-mission-entry'),
+        behavior: HitTestBehavior.opaque,
         onTap: () => onOpen('missions'),
-        child: Container(
-          decoration: BoxDecoration(
-              color: Cozy.woodDark,
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Cozy.orangeDeep, width: 2)),
-          padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
-          child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FittedBox(
+        child: Center(
+          child: SizedBox.square(
+            dimension: levelSize,
+            child: CustomPaint(
+              key: const Key('level-progress'),
+              painter: _LevelRingPainter(progress / 1000),
+              child: Padding(
+                padding: const EdgeInsets.all(9),
+                child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Text('Lv',
+                      style: TextStyle(
+                          fontSize: 11, height: 1, fontWeight: FontWeight.w800, color: Cozy.woodLight)),
+                  FittedBox(
                     fit: BoxFit.scaleDown,
-                    child: Text.rich(
-                        TextSpan(children: [
-                          const TextSpan(
-                              text: 'Lv. ',
-                              style:
-                                  TextStyle(fontSize: 13, color: Cozy.orange)),
-                          TextSpan(text: '$level'),
-                        ]),
+                    child: Text('$level',
                         key: const Key('current-level'),
                         style: const TextStyle(
-                            color: cream,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900))),
-                const SizedBox(height: 4),
-                LinearProgressIndicator(
-                    key: const Key('level-progress'),
-                    value: progress / 1000,
-                    minHeight: 7,
-                    borderRadius: BorderRadius.circular(4),
-                    color: Cozy.orange,
-                    backgroundColor: Cozy.ink,
-                    semanticsLabel: '레벨 진행 상태',
-                    semanticsValue: '${progress ~/ 10}%'),
-              ]),
+                            fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
+                            color: Cozy.ink, fontSize: 24, height: 1.05)),
+                  ),
+                ]),
+              )),
+            ),
+          ),
         ),
       ),
     );
   }
 
-  Widget _balance() => Semantics(
-        label: '보유 붕어빵 ${exactNumber(headerData?.buns ?? controller.state.buns)}개',
-        onTap: () => onOpen('balance'),
-        excludeSemantics: true,
-        button: true,
-        child: InkWell(
+  /// 붕어빵력 with a big icon and, in the Workshop, 황금붕어빵력 beside it
+  /// (on one line when the card is wide, under it when the rates take the
+  /// room) (26번 3차 피드백 H29·H30). A tap on the gold opens the gold packs.
+  Widget _balance() {
+    final gold = headerData?.gold;
+    final buns = headerData?.buns ?? controller.state.buns;
+    Widget bunRow(double icon, double font) => Semantics(
+          label: '보유 붕어빵력 ${exactNumber(buns)}개',
           onTap: () => onOpen('balance'),
-          child: CozyPanel(
-            padding: const EdgeInsets.fromLTRB(6, 6, 8, 6),
-            child: Row(children: [
-              const PixelIcon('bun', size: 34),
+          excludeSemantics: true,
+          button: true,
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => onOpen('balance'),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              PixelIcon('bun', size: icon),
               const SizedBox(width: 4),
-              Expanded(
-                child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(headerData == null ? '보유 붕어빵' : '붕어빵력',
-                          style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: Cozy.inkSoft)),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.baseline,
-                            textBaseline: TextBaseline.alphabetic,
-                            children: [
-                              Text(compactNumber(headerData?.buns ?? controller.state.buns),
-                                  key: const Key('balance-value'),
-                                  style: const TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.w900,
-                                      color: Cozy.ink)),
-                              const Text('개',
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w800,
-                                      color: Cozy.ink)),
-                            ]),
-                      ),
-                      FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                            '누적 ${compactNumber(headerData?.lifetime ?? controller.state.lifetime)}개',
-                            key: const Key('lifetime-value'),
-                            style: const TextStyle(
-                                fontSize: 10, color: Cozy.inkSoft)),
-                      ),
-                    ]),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(compactNumber(buns),
+                            key: const Key('balance-value'),
+                            style: TextStyle(fontSize: font, fontWeight: FontWeight.w900, color: Cozy.ink)),
+                        const Text('개',
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Cozy.ink)),
+                      ]),
+                ),
               ),
             ]),
           ),
-        ),
-      );
+        );
+    Widget goldRow(BigInt gold, double icon) => Semantics(
+          label: '황금붕어빵력 ${exactNumber(gold)}개, 충전',
+          onTap: () => onOpen('gold'),
+          excludeSemantics: true,
+          button: true,
+          child: GestureDetector(
+            key: const Key('hud-gold'),
+            behavior: HitTestBehavior.opaque,
+            onTap: () => onOpen('gold'),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              PixelIcon('gold_bun', size: icon),
+              const SizedBox(width: 4),
+              Flexible(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(compactNumber(gold),
+                      key: const Key('hud-gold-value'),
+                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w900, color: Color(0xffa8700c))),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Container(
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(shape: BoxShape.circle, color: Cozy.honey),
+                child: const Icon(Icons.add, size: 14, color: Cozy.ink),
+              ),
+            ]),
+          ),
+        );
+    return CozyPanel(
+      padding: const EdgeInsets.fromLTRB(6, 3, 8, 3),
+      child: Builder(builder: (context) {
+        if (gold == null) {
+          return Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+            bunRow(36, 26),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                  '누적 ${compactNumber(headerData?.lifetime ?? controller.state.lifetime)}개',
+                  key: const Key('lifetime-value'),
+                  style: const TextStyle(fontSize: 10, color: Cozy.inkSoft)),
+            ),
+          ]);
+        }
+        // Wide (no rates column): both on one line, gold at the right.
+        if (!(headerData?.showRates ?? true)) {
+          return Row(children: [
+            Expanded(child: bunRow(42, 28)),
+            Container(width: 1, height: 30, color: Cozy.tan, margin: const EdgeInsets.symmetric(horizontal: 8)),
+            Flexible(child: goldRow(gold, 28)),
+          ]);
+        }
+        return Column(mainAxisAlignment: MainAxisAlignment.center, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          bunRow(36, 24),
+          Padding(padding: const EdgeInsets.only(left: 6), child: goldRow(gold, 22)),
+        ]);
+      }),
+    );
+  }
 
   Widget _rate(Key key, IconData icon, String label, BigInt value) => CozyPanel(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
@@ -572,6 +630,10 @@ class NightHome extends StatelessWidget {
   /// same pair, shrunk by the one factor the longest (or, with large text,
   /// tallest) label needs, so the four icons look the same size.
   static const navIconSize = 32.0, navLabelSize = 15.0;
+
+  /// A locked bottom-menu button's padlock (26번 3차 피드백 H27: small, in
+  /// the corner, never over the name).
+  static const navLockSize = 18.0;
   static const _navItems = <(String, String, String)>[
     ('menu', '메뉴', 'nav_menu'),
     ('skills', '스킬', 'nav_skill'),
@@ -606,8 +668,10 @@ class NightHome extends StatelessWidget {
       height: 1.15);
 
   Widget _nav(double bottomInset) {
-    final claimable =
-        centerBuilder == null ? claimableCount(controller.state) : 0;
+    // The Workshop home's only menu button carries the reward count (H28).
+    final claimable = centerBuilder == null
+        ? claimableCount(controller.state)
+        : headerData?.claimable ?? 0;
     return Padding(
       key: const Key('home-nav'),
       padding: EdgeInsets.fromLTRB(8, 0, 8, 6 + bottomInset),
@@ -634,12 +698,11 @@ class NightHome extends StatelessWidget {
                                 key: Key('menu-$id-locked'),
                                 caption: '$label: ${navLocks[id]}',
                                 showCaption: false,
-                                maxLock: 34,
-                                onTap: () => ScaffoldMessenger.maybeOf(context)
-                                  ?..hideCurrentSnackBar()
-                                  ..showSnackBar(SnackBar(
-                                      content: Text('$label: ${navLocks[id]}'),
-                                      duration: const Duration(seconds: 2))),
+                                // Small, in the top-right corner: the icon
+                                // and the name stay readable (H27).
+                                maxLock: navLockSize,
+                                lockAlignment: const Alignment(.82, -.78),
+                                onTap: () => showCenterToast(context, '$label: ${navLocks[id]}'),
                                 child: _NavButton(
                                     id: id,
                                     label: label,
@@ -754,43 +817,130 @@ class _ComboLabel extends StatelessWidget {
   }
 }
 
-/// The business state over the stall (26번 4-1단계 F7): a small wooden
-/// sign in the HUD's colours with a coloured dot, big enough to read at a
-/// glance. Key workshop-status is the text.
-class WorkshopStatusBadge extends StatelessWidget {
+/// The level emblem's ring: a dark rim with the level-mission progress in
+/// honey from 12 o'clock, around a cream disc.
+class _LevelRingPainter extends CustomPainter {
+  final double progress;
+  _LevelRingPainter(this.progress);
+  @override
+  void paint(Canvas canvas, Size size) {
+    final c = size.center(Offset.zero);
+    final r = size.shortestSide / 2;
+    canvas.drawCircle(c.translate(0, 2), r, Paint()..color = const Color(0x40000000));
+    canvas.drawCircle(c, r, Paint()..color = Cozy.woodDark);
+    canvas.drawCircle(c, r - 7, Paint()..color = Cozy.cream);
+    final ring = Rect.fromCircle(center: c, radius: r - 3.5);
+    canvas.drawArc(ring, 0, 2 * math.pi, false, Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..color = const Color(0x33fef1d6));
+    if (progress > 0) {
+      canvas.drawArc(ring, -math.pi / 2, 2 * math.pi * progress.clamp(0.0, 1.0), false, Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round
+        ..color = Cozy.honey);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_LevelRingPainter old) => old.progress != progress;
+}
+
+/// The business state over the stall (26번 4-1단계 F7 → 3차 피드백 H17): a
+/// sign, not a button. Unlike the HUD's wooden round buttons and the honey
+/// '영업 시작' it is a dark glass plate with a thin light edge, and its lamp
+/// lights up green and glows slowly while open (grey and still before
+/// opening, a red plate for a save to check). Key workshop-status is the text.
+class WorkshopStatusBadge extends StatefulWidget {
   final String text;
   final WorkshopStatusKind kind;
   const WorkshopStatusBadge({super.key, required this.text, required this.kind});
 
+  /// False in tests: the lamp shows one still frame (pumpAndSettle).
+  static bool animate = true;
+
+  /// One slow breath of the lamp's glow while open.
+  static const glowMs = 1600;
+  static const lampOn = Color(0xff7ed957);
+
+  @override
+  State<WorkshopStatusBadge> createState() => _WorkshopStatusBadgeState();
+}
+
+class _WorkshopStatusBadgeState extends State<WorkshopStatusBadge> with SingleTickerProviderStateMixin {
+  late final AnimationController _glow =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: WorkshopStatusBadge.glowMs), value: 1);
+
+  void _sync() {
+    final on = widget.kind == WorkshopStatusKind.open && WorkshopStatusBadge.animate &&
+        !(MediaQuery.maybeDisableAnimationsOf(context) ?? false);
+    if (on) {
+      if (!_glow.isAnimating) _glow.repeat(reverse: true);
+    } else {
+      _glow.stop();
+      _glow.value = 1;
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync();
+  }
+
+  @override
+  void didUpdateWidget(WorkshopStatusBadge old) {
+    super.didUpdateWidget(old);
+    _sync();
+  }
+
+  @override
+  void dispose() {
+    _glow.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final kind = widget.kind;
     final error = kind == WorkshopStatusKind.error;
+    final open = kind == WorkshopStatusKind.open;
     final dot = switch (kind) {
-      WorkshopStatusKind.open => const Color(0xff7ed957),
-      WorkshopStatusKind.preparing => const Color(0xffb9ad9f),
+      WorkshopStatusKind.open => WorkshopStatusBadge.lampOn,
+      WorkshopStatusKind.preparing => const Color(0xff9c938a),
       WorkshopStatusKind.error => Cozy.cream,
     };
     return Semantics(
-      label: '가게 상태 $text',
+      label: '가게 상태 ${widget.text}',
       excludeSemantics: true,
       child: Container(
         key: const Key('workshop-status-badge'),
-        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-        padding: const EdgeInsets.fromLTRB(10, 4, 12, 5),
+        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+        padding: const EdgeInsets.fromLTRB(10, 5, 12, 5),
         decoration: BoxDecoration(
-            color: error ? Cozy.brick : Cozy.woodDark,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: error ? Cozy.cream : Cozy.orangeDeep, width: 2),
-            boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 4, offset: Offset(0, 2))]),
+            color: error ? Cozy.brick : const Color(0xb3221410),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Cozy.cream.withValues(alpha: error ? .8 : .28), width: 1)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Container(width: 10, height: 10,
-              decoration: BoxDecoration(color: dot, shape: BoxShape.circle,
-                  border: Border.all(color: Cozy.ink.withValues(alpha: .5)))),
-          const SizedBox(width: 6),
-          Flexible(child: Text(text, key: const Key('workshop-status'), maxLines: 1, softWrap: false,
+          AnimatedBuilder(
+            animation: _glow,
+            builder: (context, _) => Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(color: dot, shape: BoxShape.circle, boxShadow: [
+                  if (open)
+                    BoxShadow(
+                        color: WorkshopStatusBadge.lampOn.withValues(alpha: .35 + .45 * _glow.value),
+                        blurRadius: 4 + 6 * _glow.value,
+                        spreadRadius: 1 + 1.5 * _glow.value),
+                ])),
+          ),
+          const SizedBox(width: 7),
+          Flexible(child: Text(widget.text, key: const Key('workshop-status'), maxLines: 1, softWrap: false,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
-                  fontSize: 16, color: Cozy.cream))),
+              style: TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
+                  fontSize: 15, letterSpacing: .5, color: open || error ? Cozy.cream : const Color(0xffd9cfc4)))),
         ]),
       ),
     );

@@ -149,7 +149,9 @@ void main() {
       final c = await mount(tester);
       expect(key('idle-mold'), findsOneWidget);
       expect(find.text('스페셜 붕어빵 제작 시작'), findsOneWidget);
-      expect(find.byType(DropdownButton<String>), findsOneWidget);
+      // 26번 3차 피드백 H26: the flavor button at the HUD's top-left.
+      expect(key('flavor-button'), findsOneWidget);
+      expect(find.byType(DropdownButton<String>), findsNothing);
       expect(find.text('+${c.tapRate} 붕어빵력'), findsNothing);
       expect(key('workshop-clicker'), findsNothing);
       expect(key('floating-fish'), findsNothing);
@@ -178,7 +180,7 @@ void main() {
       expect(key('idle-mold'), findsNothing);
       expect(key('workshop-mold-action'), findsNothing);
       expect(find.text('스페셜 붕어빵 제작 시작'), findsNothing);
-      expect(find.byType(DropdownButton<String>), findsNothing);
+      expect(key('flavor-button'), findsNothing);
       // The griddle is out (not idle); before a flavor is mastered it shows
       // the common lock instead of cells (26번 2단계).
       expect(key('griddle-locked'), findsOneWidget);
