@@ -7,18 +7,21 @@ import '../cosmetic_config.dart';
 import '../share_card.dart';
 import '../usage_stats.dart';
 import 'avatar_painter.dart';
-import 'cook_cut.dart';
 import 'cozy_style.dart';
 import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'workshop_home_layout.dart';
 import 'workshop_mold_stage.dart' show ResultLook;
 
-/// The share card (26번 8단계, DEC-048): laid out at [size] (4:5) and
-/// captured at 1080×1350 (`share.card_width`). The top 70% is the stall
-/// with the vendor, the bungeoppang and the guest; the bottom 30% the badge,
-/// the title, one line and the store line. No owner name, account, level,
-/// currency, date or device detail (ShareCardData).
+/// The share card (26번 8단계, DEC-048; 3차 피드백 H43 재설계 A안): laid out
+/// at [size] (4:5) and captured at 1080×1350 (`share.card_width`). The top
+/// is a photo of the street in front of the stall with **the player's own
+/// vendor standing big in front**, smiling with the tool raised (the pose,
+/// [vendorFace]·lift; its own pose art is 25번 H-D-2), the bungeoppang held
+/// up beside it with sparkles and the guest on the right. The bottom is a
+/// light band with the badge, the title, one line and the store line. No
+/// owner name, account, level, currency, date or device detail
+/// (ShareCardData).
 class ShareCardView extends StatelessWidget {
   final ShareCardData data;
   final ShareCardTexts texts;
@@ -26,7 +29,10 @@ class ShareCardView extends StatelessWidget {
 
   /// The card's layout size; the capture scales it to 1080×1350.
   static const size = Size(360, 450);
-  static const pictureHeight = 315.0;
+  static const pictureHeight = 318.0;
+
+  /// The vendor's face in the card: talking, a little open mouth.
+  static const vendorFace = {'mouth': 'small'};
 
   String _equipped(CosmeticSlot slot) => data.equipped[slot.name] ?? _defaults[slot] ?? 'none';
   static const _vendor = AvatarLook();
@@ -46,111 +52,120 @@ class ShareCardView extends StatelessWidget {
     CosmeticSlot.tool: _vendor.tool,
   };
 
+  static const _paper = Color(0xfffffaf0);
+
   @override
   Widget build(BuildContext context) {
     final guest = data.guestArt == null ? null : PixelSprites.guest(data.guestArt!, 'happy');
-    final shop = data.moment == ShareMoment.shop;
+    // Every card holds a bungeoppang up; the shop photo a medium one.
+    final variant = data.variant ?? 2;
     // Its own Material: the card is also drawn outside any screen (preview).
     return SizedBox.fromSize(
       size: size,
-      child: Material(type: MaterialType.transparency, child: DecoratedBox(
-        decoration: const BoxDecoration(color: Cozy.wood),
+      child: Material(type: MaterialType.transparency, child: ColoredBox(
+        color: _paper,
         child: Padding(
-          padding: const EdgeInsets.all(6),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: ColoredBox(
-              color: Cozy.cream,
-              child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-                SizedBox(
-                  height: pictureHeight - 6,
-                  child: Stack(clipBehavior: Clip.hardEdge, children: [
-                    // The stall's view at the card's width, cut to the street
-                    // and the counter top (scene y 130..290; the concept
-                    // backgrounds' pixels 260..557).
+          padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            SizedBox(
+              height: pictureHeight - 10,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Stack(clipBehavior: Clip.hardEdge, children: [
+                  // The street in front of the stall (scene y 130..290; the
+                  // concept backgrounds' pixels 260..557).
+                  Positioned(
+                      left: 0,
+                      right: 0,
+                      top: -246,
+                      height: NightStallPainter.sceneSize.height * 2 * (340 / 360),
+                      child: CustomPaint(
+                          painter: NightStallPainter(
+                              background: _equipped(CosmeticSlot.background),
+                              night: false,
+                              stove: null,
+                              decoration: _equipped(CosmeticSlot.decoration),
+                              cleanCounter: true,
+                              lowStall: WorkshopHomeLayout.active))),
+                  // A soft floor shadow so the vendor stands on the street.
+                  Positioned(
+                      left: 36, bottom: 6, width: 120, height: 18,
+                      child: DecoratedBox(decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(60),
+                          gradient: const RadialGradient(colors: [Color(0x55000000), Color(0x00000000)])))),
+                  if (guest != null)
                     Positioned(
-                        left: 0,
                         right: 0,
-                        top: -252,
-                        height: NightStallPainter.sceneSize.height * 2 * (348 / 360),
-                        child: CustomPaint(
-                            painter: NightStallPainter(
-                                background: _equipped(CosmeticSlot.background),
-                                night: false,
-                                stove: null,
-                                decoration: _equipped(CosmeticSlot.decoration),
-                                cleanCounter: true,
-                                lowStall: WorkshopHomeLayout.active))),
-                    // The vendor in the cooking cut's window.
-                    Positioned(
-                        left: shop ? 104 : 10,
-                        bottom: shop ? 18 : 12,
-                        width: shop ? 140 : 104,
-                        height: shop ? 120 : 90,
-                        child: _VendorWindow(look: AvatarLook.of(_equipped))),
-                    if (guest != null)
-                      Positioned(
-                          right: 4,
-                          bottom: 0,
-                          width: 128,
-                          height: 160,
-                          child: RawImage(
-                              key: const Key('share-card-guest'),
-                              image: guest,
-                              fit: BoxFit.contain,
-                              alignment: Alignment.bottomCenter,
-                              filterQuality: FilterQuality.medium)),
-                    if (data.variant case final variant?)
-                      Positioned(
-                          left: guest == null ? 104 : 86,
-                          bottom: 20,
-                          width: 170,
-                          height: 120,
+                        bottom: 0,
+                        width: 120,
+                        height: 158,
+                        child: RawImage(
+                            key: const Key('share-card-guest'),
+                            image: guest,
+                            fit: BoxFit.contain,
+                            alignment: Alignment.bottomCenter,
+                            filterQuality: FilterQuality.medium)),
+                  // The player's vendor, big, in its pose.
+                  Positioned(
+                      left: 22,
+                      bottom: 12,
+                      width: 146,
+                      height: 270,
+                      child: CustomPaint(
+                          key: const Key('share-card-vendor'),
+                          painter: _PosePainter(AvatarLook.of(_equipped)))),
+                  // The bungeoppang held out in the vendor's tongs, with sparkles.
+                  Positioned(
+                      left: 124,
+                      top: guest == null ? 130 : 138,
+                      width: guest == null ? 150 : 120,
+                      height: guest == null ? 106 : 86,
+                      child: Transform.rotate(
+                          angle: -.18,
                           child: CustomPaint(
                               key: const Key('share-card-fish'),
-                              painter: ShareFishPainter(variant: variant, shine: data.shine))),
-                    Positioned(left: 10, top: 10, child: _Badge(data.moment.badge)),
-                  ]),
-                ),
-                Container(height: 3, color: Cozy.tan),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(data.title,
-                          key: const Key('share-card-title'),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                              fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 24, color: Cozy.ink)),
-                      const SizedBox(height: 2),
-                      if (data.line != null)
-                        Text(data.speaker == null ? data.line! : '${data.speaker}: "${data.line}"',
-                            key: const Key('share-card-line'),
-                            maxLines: 2,
+                              painter: ShareFishPainter(variant: variant, shine: data.shine)))),
+                  const Positioned.fill(child: IgnorePointer(child: CustomPaint(painter: _SparklePainter()))),
+                  Positioned(left: 10, top: 10, child: _Badge(data.moment.badge)),
+                ]),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(6, 10, 6, 10),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(data.title,
+                      key: const Key('share-card-title'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                          fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 24, color: Cozy.ink)),
+                  const SizedBox(height: 2),
+                  if (data.line != null)
+                    Text(data.speaker == null ? data.line! : '${data.speaker}: "${data.line}"',
+                        key: const Key('share-card-line'),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
+                            fontSize: 15, height: 1.25, color: Cozy.inkSoft)),
+                  const Spacer(),
+                  Row(children: [
+                    const SizedBox(width: 24, height: 18, child: CustomPaint(painter: ShareFishPainter(variant: 2))),
+                    const SizedBox(width: 6),
+                    Expanded(
+                        child: Text(texts.storeLine,
+                            key: const Key('share-card-store'),
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                                 fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
-                                fontSize: 15, height: 1.25, color: Cozy.inkSoft)),
-                      const Spacer(),
-                      Row(children: [
-                        const SizedBox(width: 26, height: 20, child: CustomPaint(painter: ShareFishPainter(variant: 2))),
-                        const SizedBox(width: 6),
-                        Expanded(
-                            child: Text(texts.storeLine,
-                                key: const Key('share-card-store'),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: const TextStyle(
-                                    fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
-                                    fontSize: 15, color: Cozy.wood))),
-                      ]),
-                    ]),
-                  ),
-                ),
-              ]),
+                                fontSize: 14, color: Cozy.woodLight))),
+                  ]),
+                ]),
+              ),
             ),
-          ),
+          ]),
         ),
       )),
     );
@@ -165,32 +180,57 @@ class _Badge extends StatelessWidget {
         key: const Key('share-card-badge'),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
         decoration: BoxDecoration(
-            color: Cozy.honey,
+            color: Colors.white.withValues(alpha: .92),
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Cozy.wood, width: 2),
-            boxShadow: const [BoxShadow(color: Cozy.shadow, offset: Offset(0, 2))]),
+            boxShadow: const [BoxShadow(color: Color(0x33000000), blurRadius: 6, offset: Offset(0, 2))]),
         child: Text(text,
             style: const TextStyle(
-                fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 18, color: Cozy.ink)),
+                fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 17, color: Cozy.brick)),
       );
 }
 
-/// The vendor as in the home's cooking cut, standing still.
-class _VendorWindow extends StatelessWidget {
+/// The vendor standing, smiling, the tool raised (AvatarLook.paint lift).
+class _PosePainter extends CustomPainter {
   final AvatarLook look;
-  const _VendorWindow({required this.look});
+  _PosePainter(this.look);
   @override
-  Widget build(BuildContext context) => Container(
-        decoration: BoxDecoration(
-            color: Cozy.wood,
-            borderRadius: BorderRadius.circular(6),
-            boxShadow: const [BoxShadow(color: Color(0x66000000), offset: Offset(0, 2))]),
-        padding: const EdgeInsets.all(3),
-        child: ClipRRect(
-            borderRadius: BorderRadius.circular(3),
-            child: CustomPaint(key: const Key('share-card-vendor'), size: Size.infinite,
-                painter: CookCutPainter(look: look))),
-      );
+  void paint(Canvas canvas, Size size) {
+    const art = AvatarLook.size;
+    final scale = math.min(size.width / art.width, size.height / art.height);
+    canvas.save();
+    canvas.translate((size.width - art.width * scale) / 2, size.height - art.height * scale);
+    canvas.scale(scale);
+    look.paint(canvas, Offset.zero, lift: 1, face: ShareCardView.vendorFace);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(covariant _PosePainter old) => old.look != look;
+}
+
+/// A few four-point sparkles around the held bungeoppang.
+class _SparklePainter extends CustomPainter {
+  const _SparklePainter();
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = Colors.white;
+    final glow = Paint()..color = const Color(0x88fff3b0);
+    for (final (x, y, r) in const [(.44, .36, 9.0), (.8, .4, 7.0), (.58, .74, 6.0), (.88, .16, 5.0)]) {
+      final c = Offset(size.width * x, size.height * y);
+      canvas.drawCircle(c, r * .9, glow);
+      final path = Path()
+        ..moveTo(c.dx, c.dy - r)
+        ..quadraticBezierTo(c.dx, c.dy, c.dx + r, c.dy)
+        ..quadraticBezierTo(c.dx, c.dy, c.dx, c.dy + r)
+        ..quadraticBezierTo(c.dx, c.dy, c.dx - r, c.dy)
+        ..quadraticBezierTo(c.dx, c.dy, c.dx, c.dy - r)
+        ..close();
+      canvas.drawPath(path, paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter old) => false;
 }
 
 /// A finished bungeoppang (fish/redbean scales) in its doneness color, with

@@ -323,22 +323,31 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('메뉴: 도감은 Lv.3, 배경 테마는 Lv.8 전까지 숨김', (tester) async {
+    testWidgets('메뉴: 도감은 Lv.3 전에도 자물쇠와 함께 보이고, 배경 테마는 Lv.8 전까지 숨김 (3차 H32·H36)', (tester) async {
       final c = await mount(tester);
       await c.skipTutorial();
       await tester.pump();
       await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('menu-collection')), findsNothing);
+      expect(find.byKey(const Key('menu-collection')), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const Key('menu-lock-achievements:collection'))).data, 'Lv.3에 열려요');
       expect(find.byKey(const Key('menu-theme')), findsNothing);
-      expect(find.byKey(const Key('menu-daily')), findsOneWidget);
-      await tester.tap(find.byTooltip('닫기').last);
+      // 일일 미션·주간 도전 moved to the '오늘' window.
+      expect(find.byKey(const Key('menu-daily')), findsNothing);
+      expect(find.byKey(const Key('event-entry')), findsNothing);
+      // Locked 도감 still opens: the pages dimmed under its level.
+      await tester.tap(find.byKey(const Key('menu-collection')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('collection-locked')), findsOneWidget);
+      expect(find.byKey(const Key('collection-redbean')), findsOneWidget);
+      Navigator.of(tester.element(find.byKey(const Key('collection-locked')))).pop();
       await tester.pumpAndSettle();
       expect(await setLevel(c, 8, seen: true), isTrue);
       await tester.pump();
       await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('menu-collection')), findsOneWidget);
+      expect(find.byKey(const Key('menu-lock-achievements:collection')), findsNothing);
       expect(find.byKey(const Key('menu-theme')), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     });

@@ -418,8 +418,8 @@ class _GameHomeState extends State<GameHome> {
                           ),
                         ),
                         Positioned(
-                            top: -8,
-                            right: -6,
+                            top: CozyCloseButton.edge,
+                            right: CozyCloseButton.edge,
                             child: CozyCloseButton(
                                 onPressed: () => Navigator.pop(ctx))),
                       ]),
@@ -617,8 +617,8 @@ class _GameHomeState extends State<GameHome> {
                     ),
                   ),
                   Positioned(
-                      top: -8,
-                      right: -6,
+                            top: CozyCloseButton.edge,
+                            right: CozyCloseButton.edge,
                       child:
                           CozyCloseButton(onPressed: () => Navigator.pop(ctx))),
                 ]),
