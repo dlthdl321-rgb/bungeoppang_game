@@ -1,5 +1,11 @@
 """Synthesized griddle sizzle loop (CC0), no samples or downloads.
 
+NOT USED NOW: since 2026-11-18 assets/audio/sizzle_loop.wav is a recording
+(Freesound 117602 'Crepe Making' by mefrancis13, CC0) made with
+tools/make_seamless_loop.py. Running this script with the default --output
+overwrites that recording; it is kept as a fallback (pass --output elsewhere
+to compare).
+
 Run from 1_app_development:  python tools/generate_cooking_sound.py
 Writes assets/audio/sizzle_loop.wav: 20 s, 44.1 kHz mono 16-bit, fixed seed.
 
@@ -12,7 +18,6 @@ Layers (26번 4-6단계, F38 'more realistic, the seam joins naturally'):
   2. spits: tiny 1-5 ms clicks, 15-40 per second,
   3. bubbles: soft 300-900 Hz pops, 2-5 per second,
   4. griddle hum: quiet 80-200 Hz rumble.
-A recorded sizzle can replace it later with tools/make_seamless_loop.py.
 Needs: pip install --user numpy
 """
 import argparse

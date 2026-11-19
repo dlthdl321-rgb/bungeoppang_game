@@ -149,7 +149,8 @@ abstract class SoundPolicy implements GameAudio {
   }
 }
 
-/// Seamless 20 s griddle loop (tools/generate_cooking_sound.py).
+/// Seamless 16.4 s griddle loop, a recorded crepe sizzle (Freesound 117602,
+/// CC0) made with tools/make_seamless_loop.py.
 const cookingLoopAsset = 'audio/sizzle_loop.wav';
 
 class AudioplayersAudio extends SoundPolicy {
