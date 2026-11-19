@@ -41,7 +41,7 @@ enum LoginProvider {
 /// account profile (functions/src/account.ts accountProfileSet). Gender and
 /// age band go only with the separate optional consent. [over14Confirmed]:
 /// the player ticked '(필수) 만 14세 이상입니다' with the required consent
-/// (the server refuses the profile without it, DEC-TBD-legal-1).
+/// (the server refuses the profile without it, DEC-125).
 class AccountProfileUpdate {
   final String name, consentVersion;
   final bool over14Confirmed;

@@ -68,7 +68,7 @@ class UsageStats {
   final Map<UsageEvent, String> _dailySent = {};
 
   /// [consented]: whether the first-run required consent is already done.
-  /// main.dart passes false (DEC-TBD-legal-2): nothing is collected — not
+  /// main.dart passes false (DEC-126): nothing is collected — not
   /// even Analytics' own first_open/session_start, the manifest keeps
   /// collection off — until [OwnerAccount] reports the consent with
   /// [setConsented]. Tests that do not care leave it true.

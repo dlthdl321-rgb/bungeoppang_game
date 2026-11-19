@@ -9,7 +9,7 @@ import { Doc, Store } from "./store";
 // holds what the first-run screens collect: the owner name (사장님 이름), the
 // login email (Kakao account_email or the Google account's verified address),
 // the required consent version with the player's own 만 14세 이상 confirmation
-// (players under 14 are not accepted, DEC-TBD-legal-1) and, only with the
+// (players under 14 are not accepted, DEC-125) and, only with the
 // separate optional consent, the player's gender and age band. The email is never shown to other players
 // and never sent to analytics. Purpose: player statistics and notices about
 // the account; no marketing.
@@ -61,7 +61,7 @@ function optionalInfo(raw: unknown): OptionalInfo | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== "object" || Array.isArray(raw)) throw new AccountError("invalid-argument", "bad optional info");
   const { gender, ageBand } = raw as Record<string, unknown>;
-  // No 만 14세 미만 band: players under 14 cannot sign up (DEC-TBD-legal-1).
+  // No 만 14세 미만 band: players under 14 cannot sign up (DEC-125).
   if (!genders.includes(gender as never) || !ageBands.includes(ageBand as never)) {
     throw new AccountError("invalid-argument", "bad gender or age band");
   }

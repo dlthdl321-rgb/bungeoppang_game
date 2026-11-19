@@ -26,7 +26,7 @@ final rules = OwnerNameRules.fromJson(
 
 class Analytics implements OwnerAnalytics {
   final calls = <(String?, String?)>[];
-  /// Every consent state OwnerAccount reported (DEC-TBD-legal-2).
+  /// Every consent state OwnerAccount reported (DEC-126).
   final consents = <bool>[];
   @override
   void setUserProperties({String? gender, String? ageBand}) => calls.add((gender, ageBand));
@@ -207,7 +207,7 @@ void main() {
       await tap(tester, const Key('login-kakao'));
       expect(r.fake.signIns, 0);
       await tap(tester, const Key('consent-privacy'));
-      // 약관·개인정보만으로는 안 됨: 만 14세 이상 확인이 필요(DEC-TBD-legal-1).
+      // 약관·개인정보만으로는 안 됨: 만 14세 이상 확인이 필요(DEC-125).
       expect(find.text(OwnerTexts.agreeAge), findsOneWidget);
       expect(find.byKey(const Key('first-run-child-notice')), findsOneWidget);
       expect(find.text(OwnerTexts.childNotice), findsOneWidget);

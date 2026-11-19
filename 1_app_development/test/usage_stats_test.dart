@@ -115,7 +115,7 @@ void main() {
     });
   });
 
-  group('첫 실행 동의 전에는 모으지 않음(DEC-TBD-legal-2)', () {
+  group('첫 실행 동의 전에는 모으지 않음(DEC-126)', () {
     test('동의 전: 설정이 켬이어도 Analytics 수집을 끄고 이벤트를 남기지 않는다, 동의 뒤 켠다', () {
       final sink = RecordingSink(), usage = UsageStats(sink, consented: false);
       usage.setEnabled(true); // GameController.initialize, 기본 켬

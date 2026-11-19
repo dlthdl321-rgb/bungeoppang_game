@@ -10,7 +10,7 @@ abstract final class OwnerTexts {
   static const agreeAll = '전체 동의';
   static const agreeTerms = '(필수) 이용약관 동의';
   static const agreePrivacy = '(필수) 개인정보 수집·이용 동의';
-  /// 만 14세 미만은 가입 불가(DEC-TBD-legal-1): part of the required consent.
+  /// 만 14세 미만은 가입 불가(DEC-125): part of the required consent.
   static const agreeAge = '(필수) 만 14세 이상입니다';
   static const view = '보기';
   static const privacySummaryTitle = '개인정보 수집·이용 (필수)';

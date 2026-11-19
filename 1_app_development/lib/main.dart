@@ -43,7 +43,7 @@ Future<void> main() async {
       : const NoOnlineBackend();
   // 사용 통계(26번 5단계): Firebase Analytics only where Firebase started,
   // for every player (signed in or not); the setting can turn it off. It
-  // starts only after the first-run required consent (DEC-TBD-legal-2):
+  // starts only after the first-run required consent (DEC-126):
   // OwnerAccount.load()/saves call setConsented.
   final usage = online.configured
       ? UsageStats(FirebaseUsageStatsSink(), consented: false)

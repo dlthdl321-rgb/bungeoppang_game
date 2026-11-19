@@ -13,7 +13,7 @@ import 'online_backend.dart';
 /// The terms and privacy notice the required consent refers to. Bump it when
 /// either changes so every player agrees again (server: account.ts).
 /// 2026-11-19: '(필수) 만 14세 이상입니다' joins the required consent
-/// (만 14세 미만은 가입 불가, DEC-TBD-legal-1), so everyone confirms it once.
+/// (만 14세 미만은 가입 불가, DEC-125), so everyone confirms it once.
 const requiredConsentVersion = '2026-11-19';
 
 /// Gender the player may tell (optional; not the character choice).
@@ -29,7 +29,7 @@ enum PlayerGender {
 }
 
 /// Age band the player may tell (optional). There is no 만 14세 미만 band:
-/// players under 14 cannot sign up (DEC-TBD-legal-1). A save from before
+/// players under 14 cannot sign up (DEC-125). A save from before
 /// that still holding 'under14' is dropped on reading ([OptionalInfo.fromJson]).
 enum AgeBand {
   teen('14_19', '14~19세'),
@@ -105,7 +105,7 @@ class OptionalInfo {
         'agreedAtMs': agreedAtMs,
       };
 
-  /// The saved answers, or null for a save from before DEC-TBD-legal-1 that
+  /// The saved answers, or null for a save from before DEC-125 that
   /// chose 'under14' (with the old guardian tick): those are forgotten, here
   /// and, through the next profile push, on the server.
   static OptionalInfo? fromJson(Object? raw) {

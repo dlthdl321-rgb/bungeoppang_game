@@ -164,7 +164,7 @@ class _LoginStepState extends State<_LoginStep> {
           label: OwnerTexts.agreePrivacy,
           onChanged: (v) => setState(() => _privacy = v),
           onView: () => showConsentSummary(context, OwnerTexts.privacySummaryTitle, OwnerTexts.privacySummary)),
-      // 만 14세 미만은 가입 불가(DEC-TBD-legal-1).
+      // 만 14세 미만은 가입 불가(DEC-125).
       ConsentRow(
           key: const Key('consent-age'),
           value: _age,
@@ -355,7 +355,7 @@ class _CharacterStepState extends State<_CharacterStep> {
   }
 }
 
-/// Gender, age band (no 만 14세 미만 band, DEC-TBD-legal-1) and the optional
+/// Gender, age band (no 만 14세 미만 band, DEC-125) and the optional
 /// consent. Used by the first run and by the settings.
 class OptionalInfoForm extends StatefulWidget {
   final OptionalInfo? initial;

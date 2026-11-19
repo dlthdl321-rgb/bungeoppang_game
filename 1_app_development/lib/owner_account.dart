@@ -19,7 +19,7 @@ enum OwnerStep { offline, login, name, character, optional, done }
 abstract class OwnerAnalytics {
   /// Null clears a property (no consent or skipped).
   void setUserProperties({String? gender, String? ageBand});
-  /// The first-run required consent is done (DEC-TBD-legal-2): usage
+  /// The first-run required consent is done (DEC-126): usage
   /// statistics start only then.
   void setConsented(bool consented);
 }

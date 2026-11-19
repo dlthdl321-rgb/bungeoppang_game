@@ -289,7 +289,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
         value:settings.quietNightNotices,onChanged:(v)=>_setNotice(quiet:v)),
       // 26번 5단계(DEC-046): on by default, no first-run notice; off stops
       // Firebase Analytics collection (privacy_policy.md '사용 통계'). It
-      // starts only after the first-run consent (DEC-TBD-legal-2).
+      // starts only after the first-run consent (DEC-126).
       CozySettingRow(key:const Key('settings-usage-stats'),icon:const Icon(Icons.insights_outlined),label:'사용 통계 보내기',
         subtitle:'게임을 고치는 데 쓰는 사용 기록이에요(이름·계정과 연결하지 않아요)',value:settings.sendUsageStats,
         onChanged:(v)=>account.updateSettings(sendUsageStats:v)),
