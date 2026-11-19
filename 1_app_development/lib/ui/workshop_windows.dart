@@ -45,7 +45,7 @@ Future<void> showWorkshopWindow(BuildContext context,{required WorkshopControlle
             Positioned.fill(child:CozyFrame(child:Column(children:[
               Padding(padding:const EdgeInsets.fromLTRB(52,10,52,4),child:MediaQuery.withClampedTextScaling(
                 maxScaleFactor:1.3,child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                  // 25번 35번 redraw; none until it arrives (시안 확인 2차).
+                  // 25번 35번 redraw (ui/title_fish.png).
                   title=='설정' ? const Padding(padding:EdgeInsets.only(right:6),child:PixelIcon('settings',size:30))
                     : const TitleFish(key:Key('title-fish-left'),width:48,height:36,flip:true),
                   Flexible(child:Text(title,key:const Key('workshop-window-title'),textAlign:TextAlign.center,

@@ -218,7 +218,9 @@ def validate(data, catalog):
             all(re.fullmatch(r'[1-9][0-9]*', attendance[k]) for k in ('min_buns', 'substitute_min_buns')),
             '출석 보상(7일 주기, 7일째 황금)')
     seen = set()
-    decorations = {'none', 'lantern', 'bunting', 'starlights', 'windchime', 'snowman', 'paperlanterns'}
+    # 판매 장식 + 행사 전용 장식(25번 32번, PixelSprites.eventDecorations)
+    decorations = {'none', 'lantern', 'bunting', 'starlights', 'windchime', 'snowman', 'paperlanterns',
+                   'event_first_snow', 'event_christmas', 'event_seollal'}
     for event in daily['seasonal_events']:
         require(re.fullmatch(r'[a-z0-9_]+', event['id']) and event['id'] not in seen, '행사 ID')
         seen.add(event['id'])

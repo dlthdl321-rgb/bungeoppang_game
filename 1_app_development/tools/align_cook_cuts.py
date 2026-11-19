@@ -34,6 +34,10 @@ nothing.
 
     python tools/align_cook_cuts.py           # align + json + preview
     python tools/align_cook_cuts.py --check   # only report (exit 1 if not aligned)
+    python tools/align_cook_cuts.py --import <10_cook folder>
+        # 25번 10번 redraws (girl_4..6.png, any square size, drawn from
+        # frame 1): scaled and placed so head, feet and workbench lie on
+        # frame 1's, face anchors measured on the eyes and mouth
 
 Run it in 1_app_development.
 """
@@ -187,10 +191,71 @@ def boys():
             for n, (dx, dy), rep in zip(range(1, FRAMES + 1), moves, report(after))}
 
 
+# Frame 1's feet box (506 pixels) and the eye/mouth boxes around its
+# anchors, for --import.
+FEET = (380, 420, 500, 505)
+FACE_BOX = {"eyes": 30, "mouth": 14}
+
+
+def import_redraws(folder):
+    """25번 10번: redrawn frames from [folder] (girl_<n>.png, square, drawn
+    on frame 1 as reference but at a slightly different size) replace
+    cook/girl_<n>.png. For each, the scale (1.00-1.03 of 506) and the
+    whole-pixel place that put its feet on frame 1's, then the one with
+    the smallest head offset; the eye and mouth anchors are measured where
+    frame 1's eyes and mouth are found in it."""
+    ref_img = Image.open(IMAGES / "cook" / "girl_1.png").convert("RGBA")
+    ref = premul(ref_img)
+    data = json.loads(LAYERS.read_text("utf-8"))
+    ref_anchor = data["anchors"]["cook/girl_1.png"]
+    result = {}
+    for path in sorted(Path(folder).glob("girl_[2-6].png")):
+        n = int(path.stem.split("_")[1])
+        src = Image.open(path).convert("RGBA").convert("RGBa")
+        best = None
+        for step in range(7):
+            side = round(SIZE * (1 + step * .005))
+            big = src.resize((side, side), Image.LANCZOS).convert("RGBA")
+            fx, fy = find(ref, FEET, premul(big), start=(0, side - SIZE), reach=12)
+            img = Image.new("RGBA", (SIZE, SIZE))
+            img.paste(big, (-fx, -fy))
+            head = find(ref, HEAD, premul(img), reach=12)
+            feet = find(ref, FEET, premul(img), reach=6)
+            err = max(map(abs, head + feet))
+            if best is None or err < best[0]:
+                best = (err, side, (-fx, -fy), head, feet, img)
+        err, side, at, head, feet, img = best
+        img.save(IMAGES / "cook" / path.name)
+        p = premul(img)
+        anchor = {}
+        for key, (x, y) in ref_anchor.items():
+            r = FACE_BOX[key]
+            box = (int(x - r), int(y - r // 2), int(x + r), int(y + r // 2))
+            dx, dy = find(ref, box, p, reach=6)
+            anchor[key] = [x + dx, y + dy]
+        data["anchors"][f"cook/{path.name}"] = anchor
+        result[path.stem] = {"source": path.name, "size": side, "at": list(at),
+                             "head_offset": list(head), "feet_offset": list(feet),
+                             "workbench": list(workbench(img)), "anchors": anchor}
+        print(f"  {path.name}: {side}px at {at}, head {head}, feet {feet}, "
+              f"workbench {workbench(img)}, anchors {anchor}")
+    LAYERS.write_text(json.dumps(data, indent=1, ensure_ascii=False) + "\n", "utf-8")
+    write_dart()
+    out = json.loads(OUT_JSON.read_text("utf-8"))
+    out["redraws"] = {"note": "25번 10번 redraws (2026-11-19), imported with --import",
+                      **result}
+    OUT_JSON.write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", "utf-8")
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("--check", action="store_true")
+    p.add_argument("--import", dest="redraws", type=Path,
+                   help="folder with redrawn girl_<n>.png (25번 10번)")
     args = p.parse_args()
+    if args.redraws:
+        import_redraws(args.redraws)
+        return
     paths = [IMAGES / "cook" / f"girl_{n}.png" for n in range(1, FRAMES + 1)]
     frames = [Image.open(path).convert("RGBA") for path in paths]
     moves = fit(frames)

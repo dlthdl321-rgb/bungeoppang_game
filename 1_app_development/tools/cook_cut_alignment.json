@@ -164,5 +164,104 @@
    ]
   }
  },
- "boy_note": "boy moves are in 1254 original pixels; head_after_506 = head offset from boy_1 after the move (506 pixels). Variants boy_<n>_<item>.png use their frame move."
+ "boy_note": "boy moves are in 1254 original pixels; head_after_506 = head offset from boy_1 after the move (506 pixels). Variants boy_<n>_<item>.png use their frame move.",
+ "redraws": {
+  "note": "25번 10번 redraws (2026-11-19), imported with --import",
+  "girl_4": {
+   "source": "girl_4.png",
+   "size": 511,
+   "at": [
+    0,
+    1
+   ],
+   "head_offset": [
+    -1,
+    1
+   ],
+   "feet_offset": [
+    0,
+    0
+   ],
+   "workbench": [
+    66,
+    324,
+    357,
+    486
+   ],
+   "anchors": {
+    "eyes": [
+     299.5,
+     155.0
+    ],
+    "mouth": [
+     299,
+     186
+    ]
+   }
+  },
+  "girl_5": {
+   "source": "girl_5.png",
+   "size": 511,
+   "at": [
+    0,
+    0
+   ],
+   "head_offset": [
+    0,
+    0
+   ],
+   "feet_offset": [
+    0,
+    0
+   ],
+   "workbench": [
+    67,
+    340,
+    356,
+    484
+   ],
+   "anchors": {
+    "eyes": [
+     299.5,
+     154.0
+    ],
+    "mouth": [
+     299,
+     185
+    ]
+   }
+  },
+  "girl_6": {
+   "source": "girl_6.png",
+   "size": 511,
+   "at": [
+    0,
+    0
+   ],
+   "head_offset": [
+    -1,
+    0
+   ],
+   "feet_offset": [
+    0,
+    0
+   ],
+   "workbench": [
+    67,
+    348,
+    356,
+    484
+   ],
+   "anchors": {
+    "eyes": [
+     298.5,
+     154.0
+    ],
+    "mouth": [
+     298,
+     184
+    ]
+   }
+  }
+ }
 }

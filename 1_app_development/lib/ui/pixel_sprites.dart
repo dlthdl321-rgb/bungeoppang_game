@@ -105,8 +105,8 @@ class PixelSprites {
 
   /// Screen art in assets/images/ui: the wardrobe preview's stall interior
   /// (120x72), the offline reward bag (64x48) and the fish beside window
-  /// titles (96x72, 25번 35번: not in the app until redrawn, 시안 확인 2차 —
-  /// titles show none meanwhile), the big padlock of locked things
+  /// titles (96x72, 25번 35번 redraw, tools/apply_25_art.py --only title),
+  /// the big padlock of locked things
   /// (128x128, 25번 13번, lib/ui/lock_overlay.dart), the skill window's
   /// 'LEVEL UP' button, and the feature introduction cards' pictures
   /// (160x120, 25번 22번; until drawn the card shows an icon).
@@ -115,7 +115,7 @@ class PixelSprites {
     // 26번 4-5단계); wardrobe_bg stays for the cooking scene.
     'wardrobe_room',
     // The skill window's 'LEVEL UP' word button, lit and dark (108x72, drawn
-    // 54x36; temporary art by tools/make_levelup_button.py until 25번 33번).
+    // 54x36; 25번 33번 by tools/apply_25_art.py --only levelup).
     'levelup', 'levelup_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
     'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics',
@@ -229,10 +229,18 @@ class PixelSprites {
   static Iterable<CosmeticDefinition> _slot(CosmeticSlot slot) =>
       cosmeticDefinitions.where((d) => d.slot == slot);
 
+  /// Stall decorations only the winter events hang (25번 32번,
+  /// `daily_return.seasonal_events[].decoration`): not for sale, so no
+  /// [CosmeticDefinition]; `deco/<id>.png` like the others.
+  static const eventDecorations = ['event_first_snow', 'event_christmas', 'event_seollal'];
+
   static Iterable<String> get _paths sync* {
     for (final d in cosmeticDefinitions) {
       final path = _cosmeticPath(d);
       if (path != null) yield path;
+    }
+    for (final id in eventDecorations) {
+      yield 'assets/images/deco/$id.png';
     }
     for (final flavor in _slot(CosmeticSlot.fish)) {
       for (final pattern in _slot(CosmeticSlot.pattern)) {
@@ -417,6 +425,9 @@ class PixelSprites {
         if (image != null || !artStandIns.containsKey(id)) return image;
         return cosmetic(slot, artStandIns[id]!);
       }
+    }
+    if (slot == CosmeticSlot.decoration && eventDecorations.contains(id)) {
+      return _images['assets/images/deco/$id.png'];
     }
     return null;
   }
