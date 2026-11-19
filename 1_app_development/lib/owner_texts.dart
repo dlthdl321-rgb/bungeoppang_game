@@ -44,7 +44,8 @@ abstract final class OwnerTexts {
 
   // ③ 사장님 고르기
   static const characterTitle = '어떤 사장님으로 시작할까요?';
-  static const characterHelp = '꾸미기에서 언제든 바꿀 수 있어요';
+  // 3차 피드백 H11: the first choice stays; the other one is bought.
+  static const characterHelp = '한 번 고르면 바꿀 수 없어요';
   static const girl = '여자 사장님';
   static const boy = '남자 사장님';
   static const startWith = '이 사장님으로 시작';
