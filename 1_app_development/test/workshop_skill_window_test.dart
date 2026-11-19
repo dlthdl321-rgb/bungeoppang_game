@@ -72,7 +72,7 @@ void main() {
       expect(find.byKey(Key(old)), findsNothing);
     }
     expect(find.byType(ChoiceChip), findsNothing);
-    expect(find.byKey(const Key('skill-step')), findsOneWidget);
+    expect(find.byKey(const Key('skill-step-tap_1')), findsOneWidget);
     expect(_button(tester, 'tap_1').enabled, isFalse);
     await tester.tap(find.byKey(const Key('buy-tap_1')));
     await tester.pump();
@@ -130,34 +130,34 @@ void main() {
     final big = BigInt.from(10).pow(90);
     final (c, account) = await _open(tester, const Size(390, 844), buns: big);
     expect(_button(tester, 'tap_1').enabled, isTrue);
-    expect(_level(tester, 'tap_1'), 'Lv.0/1000 · +1/클릭');
-    await tester.tap(find.byKey(const Key('buy-tap_1')));
-    await tester.pumpAndSettle();
+    expect(_level(tester, 'tap_1'), 'Lv.0/1000\n+1/클릭');
+    await _tap(tester, 'buy-tap_1');
     expect(c.state.purchases.owned['tap_1'], 1);
-    await _tap(tester, 'step-10');
+    await _tap(tester, 'step-tap_1-10');
     expect(_button(tester, 'tap_1').quantity, 10);
-    await tester.tap(find.byKey(const Key('buy-tap_1')));
-    await tester.pumpAndSettle();
+    // 시안 확인 2차: each skill has its own wheel; the next one stays ×1.
+    expect(_button(tester, 'tap_2').quantity, 1);
+    await _tap(tester, 'buy-tap_1');
     expect(c.state.purchases.owned['tap_1'], 11);
-    await _tap(tester, 'step-100');
+    await _tap(tester, 'step-tap_1-100');
     for (var i = 0; i < 9; i++) {
-      await tester.tap(find.byKey(const Key('buy-tap_1')));
-      await tester.pumpAndSettle();
+      await _tap(tester, 'buy-tap_1');
     }
     expect(c.state.purchases.owned['tap_1'], 911);
-    await tester.tap(find.byKey(const Key('buy-tap_1')));
-    await tester.pumpAndSettle();
+    await _tap(tester, 'buy-tap_1');
     expect(c.state.purchases.owned['tap_1'], 1000);
     expect(find.byKey(const Key('max-tap_1')), findsOneWidget);
     expect(find.byKey(const Key('buy-tap_1')), findsNothing);
-    expect(_level(tester, 'tap_1'), 'Lv.1000/1000 · +1/클릭');
+    expect(_level(tester, 'tap_1'), 'Lv.1000/1000\n+1/클릭');
     // 995 with ×10 offers five levels.
     await _buy(c, 'auto_1', 995);
     await _tap(tester, 'kind-auto');
-    await _tap(tester, 'step-10');
-    await _tap(tester, 'step-1');
-    await _tap(tester, 'step-10');
+    await _tap(tester, 'step-auto_1-10');
+    await _tap(tester, 'step-auto_1-1');
+    await _tap(tester, 'step-auto_1-10');
     expect(_button(tester, 'auto_1').quantity, 5);
+    // The choice is kept while the app runs (memory only), per skill.
+    expect(c.skillSteps, {'tap_1': 100, 'auto_1': 10});
     expect(account.state.premium.gold, 0);
   });
 
@@ -202,7 +202,8 @@ void main() {
       await tester.pumpAndSettle();
       if (kind == 'auto') await _tap(tester, 'kind-auto');
       for (final s in skillLevelUpSteps.where((s) => s > 1 && s <= step)) {
-        await _tap(tester, 'step-$s');
+        // 시안 확인 2차: the wheel of the first skill that can still level up.
+        await _tap(tester, 'step-${kind == 'auto' ? 'auto_1' : 'tap_2'}-$s');
       }
       await expectLater(find.byType(GameApp), matchesGoldenFile('goldens/skill_shop_$name.png'));
       expect(tester.takeException(), isNull);

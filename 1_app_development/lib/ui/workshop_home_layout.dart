@@ -69,8 +69,20 @@ class WorkshopHomeLayout {
   static const actionMinWidth = 160.0;
   static const actionHeight = 44.0;
 
-  /// Room the practice start pill leaves under itself before opening, so it
-  /// sits above the floating '영업 시작' button.
+  /// '영업 시작'·'이어서 영업'·'영업 종료' are not the floating button: a
+  /// small button beside the business-state sign in the HUD (26번 시안 확인
+  /// 2차, 2026-11-19 '너무 큼 → 작게, 화면 상단으로'), [businessHeight] tall
+  /// with [businessFontSize] text.
+  static const businessHeight = 32.0;
+  static const businessFontSize = 14.0;
+
+  /// The '오늘' slip hangs this far under the HUD's settings button, right
+  /// edges lined up (26번 시안 확인 2차).
+  static const slipGap = 6.0;
+
+  /// Room the practice start pill leaves under itself before opening: the
+  /// floating counter button's place (empty before opening since '영업 시작'
+  /// moved to the HUD, kept so the pill does not jump).
   static const practiceLift = actionHeight + actionGap + 10;
 
   /// The first-run guide card's left edge: clear of the old left queue

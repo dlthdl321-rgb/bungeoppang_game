@@ -62,9 +62,15 @@ class NightHome extends StatelessWidget {
   /// on the screen just above the counter (26번 4-1단계 F6, S4-1-Q6).
   final Widget? counterAction;
 
-  /// A small slip at the right edge just above the cooking cut, beside the
-  /// counter (26번 7단계: the '오늘' slip for 오늘의 주문서·출석).
+  /// A small slip just under the HUD's settings button, right edges lined
+  /// up (26번 7단계: the '오늘' slip for 오늘의 주문서·출석; moved there from
+  /// above the cooking cut by the 2nd mockup check, 2026-11-19).
   final Widget? counterSlip;
+
+  /// A small button beside the business-state sign in the HUD (26번 시안
+  /// 확인 2차: '영업 시작'·'이어서 영업'·'영업 종료' moved up there from the
+  /// floating counter button). Null leaves the sign alone.
+  final Widget? statusAction;
 
   /// The stall lowered to the towel with guests behind it (26번 4-1단계,
   /// [WorkshopHomeLayout.active]): the lowered background, and [guests]
@@ -103,6 +109,7 @@ class NightHome extends StatelessWidget {
       this.counter,
       this.counterAction,
       this.counterSlip,
+      this.statusAction,
       this.lowStall = false,
       this.guests,
       this.griddleFilled,
@@ -125,6 +132,9 @@ class NightHome extends StatelessWidget {
     final largeText = MediaQuery.textScalerOf(context).scale(16) > 19;
     final padding = MediaQuery.paddingOf(context);
     final e = equipped ?? state.equippedCosmetic;
+    // The '오늘' slip follows the HUD's settings button wherever the HUD
+    // lays it out (text size, scrolling stage).
+    final settingsLink = LayerLink();
     return Scaffold(
       backgroundColor: Cozy.woodDark,
       body: RepaintBoundary(
@@ -265,7 +275,7 @@ class NightHome extends StatelessWidget {
                     ? SingleChildScrollView(
                         key: const Key('home-scroll'),
                         child: Column(children: [
-                          header ?? _hud(),
+                          header ?? _hud(settingsLink),
                           SizedBox(
                               height: centerBuilder != null
                                   ? 460
@@ -275,7 +285,7 @@ class NightHome extends StatelessWidget {
                               child: stage),
                         ]))
                     : Column(children: [
-                        header ?? _hud(),
+                        header ?? _hud(settingsLink),
                         Expanded(child: stage),
                       ])),
             if (low && guests != null && towelTop != null)
@@ -298,13 +308,18 @@ class NightHome extends StatelessWidget {
                 width: w,
                 bottom: actionBottom,
                 child: Center(child: counterAction!)),
-            // Above the cooking cut, and above the floating action where
-            // the screen is narrow enough for the two to meet.
-            if (counterSlip != null && vendor != null) Positioned(
-                right: side + 8,
-                bottom: math.max(cookBottom + cookH + 2,
-                    actionBottom + WorkshopHomeLayout.actionHeight + 4),
-                child: counterSlip!),
+            // Under the settings button, over the stage and the guests' tap
+            // targets (2nd mockup check).
+            if (counterSlip != null && header == null) Positioned(
+                left: 0,
+                top: 0,
+                child: CompositedTransformFollower(
+                    link: settingsLink,
+                    showWhenUnlinked: false,
+                    targetAnchor: Alignment.bottomRight,
+                    followerAnchor: Alignment.topRight,
+                    offset: const Offset(0, WorkshopHomeLayout.slipGap),
+                    child: counterSlip!)),
             if (vendor == null) Positioned(
                 right: side + 8,
                 width: cookW,
@@ -324,7 +339,7 @@ class NightHome extends StatelessWidget {
     );
   }
 
-  Widget _hud() {
+  Widget _hud(LayerLink settingsLink) {
     final s = controller.state;
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
@@ -363,7 +378,11 @@ class NightHome extends StatelessWidget {
                   onPressed: () => onOpen('menu'))),
           Expanded(
               child: Column(children: [
-            if (headerData != null) WorkshopStatusBadge(text: headerData!.status, kind: headerData!.statusKind),
+            if (headerData != null)
+              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Flexible(child: WorkshopStatusBadge(text: headerData!.status, kind: headerData!.statusKind)),
+                if (statusAction != null) statusAction!,
+              ]),
             if (headerData == null && s.prestige.stars > 0)
               _note(const Key('home-prestige'),
                   '명성 별 ${s.prestige.stars} · 생산 +${(prestigePermille(s) - 1000) ~/ 10}%'),
@@ -374,10 +393,14 @@ class NightHome extends StatelessWidget {
                 Flexible(child: _note(const Key('home-title'), '칭호 · $title')),
               ]),
           ])),
-          CozyRoundButton(
-              tooltip: '설정',
-              icon: const PixelIcon('settings', size: 28),
-              onPressed: () => onOpen('settings')),
+          CompositedTransformTarget(
+            link: settingsLink,
+            child: CozyRoundButton(
+                key: const Key('home-settings'),
+                tooltip: '설정',
+                icon: const PixelIcon('settings', size: 28),
+                onPressed: () => onOpen('settings')),
+          ),
         ]),
       ]),
     );
@@ -612,7 +635,6 @@ class NightHome extends StatelessWidget {
                                 caption: '$label: ${navLocks[id]}',
                                 showCaption: false,
                                 maxLock: 34,
-                                lockAlignment: const Alignment(-.55, 0),
                                 onTap: () => ScaffoldMessenger.maybeOf(context)
                                   ?..hideCurrentSnackBar()
                                   ..showSnackBar(SnackBar(

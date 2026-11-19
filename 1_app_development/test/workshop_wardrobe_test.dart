@@ -14,6 +14,7 @@ import 'package:todays_bungeoppang/ui/avatar_painter.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/public_menus.dart';
+import 'package:todays_bungeoppang/ui/workshop_wardrobe.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'widget_test.dart' show mountGame;
@@ -109,8 +110,9 @@ void main() {
       expect(find.text('모습만 바뀌어요 (생산 효과 없음)'), findsNothing);
       expect(find.byKey(const Key('balance-gold-plus')), findsOneWidget);
       expect(find.byKey(const Key('balance-buns')), findsOneWidget);
-      // The window title's fish is the 25번 15번 one, 48 wide.
-      expect(tester.getSize(find.byKey(const Key('title-fish-left'))), const Size(48, 36));
+      // 시안 확인 2차: the 25번 15번 title fish is out until 35번 redraws it;
+      // the title takes no room for it meanwhile.
+      expect(tester.getSize(find.byKey(const Key('title-fish-left'))), Size.zero);
       expect(tester.takeException(), isNull);
     });
 
@@ -271,10 +273,12 @@ void main() {
       await _open(tester, const Size(390, 844), level: 8);
       await _tap(tester, 'menu-skins');
       await _tap(tester, 'cosmetic-category-stall');
+      // 시안 확인 2차: a wide stall scene filling the box, no vendor.
       final box = tester.getRect(find.byKey(const Key('preview-stall')));
       final scene = tester.getRect(find.byKey(const Key('preview-stall-scene')));
-      expect(box.contains(scene.topLeft) && box.contains(scene.bottomRight - const Offset(.1, .1)), isTrue);
-      expect(scene.height, closeTo(box.height, 1));
+      expect(scene, box);
+      final painter = tester.widget<CustomPaint>(find.byKey(const Key('preview-stall-scene'))).painter;
+      expect(painter, isA<StallPreviewPainter>());
     });
   });
 

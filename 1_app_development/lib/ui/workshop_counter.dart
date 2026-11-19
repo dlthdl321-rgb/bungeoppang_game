@@ -148,19 +148,27 @@ class _WaitRing extends CustomPainter {
 class _CounterContent {
   final String title, detail;
   final Widget action;
-  const _CounterContent(this.title, this.detail, this.action);
+  /// The action opens or closes the business: it sits small beside the
+  /// business-state sign ([WorkshopBusinessButton]), not floating.
+  final bool business;
+  const _CounterContent(this.title, this.detail, this.action, {this.business = false});
 
-  static _CounterContent? of(WorkshopController c, VoidCallback onCloseBusiness) {
+  /// [small] builds the action at the HUD button's size
+  /// ([WorkshopHomeLayout.businessHeight]).
+  static _CounterContent? of(WorkshopController c, VoidCallback onCloseBusiness, {bool small = false}) {
     final s = c.state;
     if (s.session != null) return null;
     final now = c.now(), idle = !c.inputBusy && c.error == null && !c.gameplayPaused;
     final stock = s.inventory.batches.values.fold<int>(0, (n, b) => n + b.quantity);
+    // The small one is businessHeight tall in all: the button's 2px wooden
+    // outline adds 4 to its face.
+    final height = small ? WorkshopHomeLayout.businessHeight - 4 : WorkshopHomeLayout.actionHeight;
+    final font = small ? WorkshopHomeLayout.businessFontSize : 17.0;
+    final pad = EdgeInsets.symmetric(horizontal: small ? 10 : 18);
     Widget primary(Key key, String label, VoidCallback? onPressed) => CozyPrimaryButton(key: key,
-        onPressed: onPressed, label: label, minHeight: WorkshopHomeLayout.actionHeight, fontSize: 17,
-        padding: const EdgeInsets.symmetric(horizontal: 18));
+        onPressed: onPressed, label: label, minHeight: height, fontSize: font, padding: pad);
     Widget secondary(Key key, String label, VoidCallback? onPressed) => CozyButton(key: key,
-        onPressed: onPressed, label: label, minHeight: WorkshopHomeLayout.actionHeight, fontSize: 17,
-        padding: const EdgeInsets.symmetric(horizontal: 18));
+        onPressed: onPressed, label: label, minHeight: height, fontSize: font, padding: pad);
     if (c.error != null) {
       return _CounterContent('저장 확인이 필요해요', '진행은 그대로 있어요',
           primary(const Key('counter-reload'), '다시 확인', c.busy ? null : c.reloadAfterError));
@@ -169,7 +177,8 @@ class _CounterContent {
       final continuing = s.business.open;
       return _CounterContent(continuing ? '새 영업일이 밝았어요' : '오늘 영업 준비',
           '재고 $stock개 · 준비품 ${s.inventory.prepared.length}묶음',
-          primary(const Key('business-open'), continuing ? '이어서 영업' : '영업 시작', idle ? c.openBusiness : null));
+          primary(const Key('business-open'), continuing ? '이어서 영업' : '영업 시작', idle ? c.openBusiness : null),
+          business: true);
     }
     if (c.photoReactionSale case final sale?) {
       return _CounterContent('태오: 와, 냄새 좋다.', '……아! 또 사진 전에 먹었네.',
@@ -177,7 +186,8 @@ class _CounterContent {
     }
     if (s.customers.isEmpty) {
       return _CounterContent(c.lastSaleFeedback ?? '손님을 기다리는 중이에요', '재고 $stock개',
-          secondary(const Key('business-close'), '영업 종료', idle ? onCloseBusiness : null));
+          secondary(const Key('business-close'), '영업 종료', idle ? onCloseBusiness : null),
+          business: true);
     }
     final order = s.customers.first, ready = c.saleReadyCount(order), missing = missingFlavor(c, order);
     // The name and what they want; the time left is the bar over the guest
@@ -235,7 +245,8 @@ class WorkshopSaleCounter extends StatelessWidget {
 
 /// The counter's one action, floating centred on the screen above the
 /// counter (S4-1-Q6): at least 160 wide and 44 tall. Hidden with the
-/// counter while the big mold is in use.
+/// counter while the big mold is in use, and while the next step is opening
+/// or closing the business ([WorkshopBusinessButton] at the top).
 class WorkshopCounterAction extends StatelessWidget {
   final WorkshopController controller;
   final VoidCallback onCloseBusiness;
@@ -244,12 +255,36 @@ class WorkshopCounterAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final content = _CounterContent.of(controller, onCloseBusiness);
-    if (content == null) return const SizedBox.shrink();
+    if (content == null || content.business) return const SizedBox.shrink();
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.3,
       child: ConstrainedBox(
         key: const Key('counter-action'),
         constraints: const BoxConstraints(minWidth: WorkshopHomeLayout.actionMinWidth, maxWidth: 260),
+        child: content.action,
+      ),
+    );
+  }
+}
+
+/// '영업 시작'·'이어서 영업'·'영업 종료' as a small button beside the
+/// business-state sign at the top (26번 시안 확인 2차, 2026-11-19: the
+/// floating one was too big and sat in the middle of the stall). Nothing
+/// otherwise; hidden with the counter while the big mold is in use.
+class WorkshopBusinessButton extends StatelessWidget {
+  final WorkshopController controller;
+  final VoidCallback onCloseBusiness;
+  const WorkshopBusinessButton({super.key, required this.controller, required this.onCloseBusiness});
+
+  @override
+  Widget build(BuildContext context) {
+    final content = _CounterContent.of(controller, onCloseBusiness, small: true);
+    if (content == null || !content.business) return const SizedBox.shrink();
+    return MediaQuery.withClampedTextScaling(
+      maxScaleFactor: 1.2,
+      child: Padding(
+        key: const Key('business-toggle'),
+        padding: const EdgeInsets.only(right: 4),
         child: content.action,
       ),
     );

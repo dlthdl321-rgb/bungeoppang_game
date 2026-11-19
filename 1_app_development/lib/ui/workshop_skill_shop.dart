@@ -13,12 +13,14 @@ import 'pixel_sprites.dart';
 
 /// The Workshop skill window (26번 4-3단계, F12~F19): a list of skills to
 /// level up, not things to buy. Two tabs (클릭 생산·자동 생산) share one
-/// layout; a small wheel beside them picks how many levels one '+' adds
-/// (×1·×10·×100, [skillLevelUpSteps]). Each row: picture, name,
-/// 'Lv.12/1000 · +60/클릭' (one level's effect), the price of the chosen
-/// step and a round '+' that is lit only when the level-up can go through.
-/// A dark '+' still answers with the reason. Of the locked skills only the
-/// next one shows, as a silhouette under the padlock with its condition.
+/// layout. Each row: picture, name, 'Lv.12/1000 · +60/클릭' (one level's
+/// effect), the price of the chosen step, the skill's own small wheel that
+/// picks how many levels one press adds (×1·×10·×100, [skillLevelUpSteps];
+/// 시안 확인 2차: one wheel per skill, remembered in
+/// [WorkshopController.skillSteps] while the app runs) and a 'LEVEL UP'
+/// button that is lit only when the level-up can go through. A dark button
+/// still answers with the reason. Of the locked skills only the next one
+/// shows, as a silhouette under the padlock with its condition.
 class WorkshopSkillShop extends StatefulWidget {
   final WorkshopController controller;
   final GameController account;
@@ -29,7 +31,8 @@ class WorkshopSkillShop extends StatefulWidget {
 
 class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
   UpgradeKind _kind = UpgradeKind.tap;
-  int _step = skillLevelUpSteps.first;
+
+  int _step(String id) => widget.controller.skillSteps[id] ?? skillLevelUpSteps.first;
 
   /// Leading tiers whose tap and auto skills cost no gold (DEC-041: 4).
   static int _freeTiers(WorkshopController c) {
@@ -72,10 +75,9 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
         child: Row(children: [
           for (final kind in UpgradeKind.values) ...[
+            if (kind != UpgradeKind.values.first) const SizedBox(width: 6),
             Expanded(child: _KindTab(kind: kind, selected: kind == _kind, onTap: () => setState(() => _kind = kind))),
-            const SizedBox(width: 6),
           ],
-          SkillStepWheel(value: _step, onChanged: (step) => setState(() => _step = step)),
         ]),
       ),
       Expanded(
@@ -159,7 +161,8 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
     final c = widget.controller, account = widget.account, id = skill.id;
     final rule = c.config.skill(id);
     final maxed = owned >= cap;
-    final quantity = skillLevelUpQuantity(_step, owned: owned, cap: cap);
+    final step = _step(id);
+    final quantity = skillLevelUpQuantity(step, owned: owned, cap: cap);
     final quote = maxed ? null : quoteCompositeSkill(c.config, id, owned: owned, quantity: quantity);
     final buns = c.state.purchases.available(c.state.buns), gold = BigInt.from(account.state.premium.gold);
     final reason = maxed ? null : _blocked(unlocked: unlocked, id: id, quote: quote, buns: buns, gold: gold);
@@ -195,9 +198,11 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Cozy.ink)),
             if (unlocked)
-              Text('Lv.$owned/$cap · +${compactNumber(DevelopmentBalance.decimal(rule, 'effect'))}/$unit',
+              // Two short lines so the per-skill wheel leaves them room
+              // (시안 확인 2차): the level, then one level's effect.
+              Text('Lv.$owned/$cap\n+${compactNumber(DevelopmentBalance.decimal(rule, 'effect'))}/$unit',
                   key: Key('level-$id'),
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 12, color: Cozy.inkSoft, fontWeight: FontWeight.w700))
             else
@@ -223,6 +228,14 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
               if (quote.gold > BigInt.zero) CurrencyAmount(Currency.gold, quote.gold, missing: quote.gold > gold),
             ]),
           const SizedBox(width: 6),
+          if (unlocked) ...[
+            SkillStepWheel(
+                key: Key('skill-step-$id'),
+                skillId: id,
+                value: step,
+                onChanged: (next) => setState(() => c.skillSteps[id] = next)),
+            const SizedBox(width: 4),
+          ],
           LevelUpButton(
             key: Key('buy-$id'),
             enabled: reason == null,
@@ -247,18 +260,21 @@ String unlockGoalText(DevelopmentBalance config, String id) {
   return '누적 $goal${digitEnd ? '' : ' '}개';
 }
 
-/// The round '+' (25번 19번 `ui/levelup_plus.png` / `levelup_plus_off.png`).
-/// Always pressable: a dark '+' explains itself through [onPressed].
-/// [quantity] over one shows as a small '×10' tag.
+/// The 'LEVEL UP' word button (시안 확인 2차, 25번 33번: `ui/levelup.png`
+/// lit / `ui/levelup_off.png` dark, [width] x [height] at the row's height;
+/// the art is 3:2). Always pressable: a dark button explains itself through
+/// [onPressed]. The step shows on the wheel beside it.
 class LevelUpButton extends StatelessWidget {
   final bool enabled;
   final int quantity;
   final VoidCallback onPressed;
   const LevelUpButton({super.key, required this.enabled, required this.quantity, required this.onPressed});
 
+  static const width = 54.0, height = 36.0;
+
   @override
   Widget build(BuildContext context) {
-    final art = PixelSprites.screenArt(enabled ? 'levelup_plus' : 'levelup_plus_off');
+    final art = PixelSprites.screenArt(enabled ? 'levelup' : 'levelup_off');
     return Semantics(
       button: true,
       enabled: enabled,
@@ -267,34 +283,25 @@ class LevelUpButton extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onPressed,
-        child: SizedBox.square(
-          dimension: 44,
-          child: Stack(clipBehavior: Clip.none, alignment: Alignment.center, children: [
-            if (art != null)
-              PixelArt(art, width: 40, height: 40)
-            else
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: enabled ? Cozy.honey : const Color(0xffb7aca5),
-                    border: Border.all(color: enabled ? Cozy.wood : const Color(0xff6f6560), width: 2)),
-                child: const Icon(Icons.add, color: Cozy.cream, size: 26),
-              ),
-            if (quantity > 1)
-              Positioned(
-                right: -2,
-                bottom: -2,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 3),
-                  decoration: BoxDecoration(
-                      color: Cozy.cream, borderRadius: BorderRadius.circular(6), border: Border.all(color: Cozy.wood)),
-                  child: Text('×$quantity',
-                      style: const TextStyle(fontSize: 10, height: 1.2, fontWeight: FontWeight.w900, color: Cozy.ink)),
-                ),
-              ),
-          ]),
+        child: SizedBox(
+          width: width,
+          height: height + 8,
+          child: Center(
+            child: art != null
+                ? PixelArt(art, width: width, height: height)
+                : Container(
+                    width: width,
+                    height: height,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                        color: enabled ? Cozy.honey : const Color(0xffb7aca5),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: enabled ? Cozy.wood : const Color(0xff6f6560), width: 2)),
+                    child: const Text('LEVEL\nUP',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 11, height: 1, fontWeight: FontWeight.w900, color: Cozy.ink)),
+                  ),
+          ),
         ),
       ),
     );
@@ -340,15 +347,17 @@ class _KindTab extends StatelessWidget {
       );
 }
 
-/// The small vertical wheel that picks the level-up step (S43-Q8): the
-/// chosen '×10' sits in the middle band with its neighbours above and
-/// below; a swipe up or down moves one step, a tap on a neighbour picks it.
+/// A skill's small vertical wheel that picks its level-up step (S43-Q8,
+/// one per skill since 시안 확인 2차): the chosen '×10' sits in the middle
+/// band with its neighbours above and below; a swipe up or down moves one
+/// step, a tap on a neighbour picks it. Keys `step-<skill>-<step>`.
 class SkillStepWheel extends StatelessWidget {
+  final String skillId;
   final int value;
   final ValueChanged<int> onChanged;
-  const SkillStepWheel({super.key, required this.value, required this.onChanged});
+  const SkillStepWheel({super.key, required this.skillId, required this.value, required this.onChanged});
 
-  static const rowHeight = 16.0, width = 52.0;
+  static const rowHeight = 14.0, width = 40.0;
 
   void _move(int by) {
     final i = skillLevelUpSteps.indexOf(value) + by;
@@ -360,7 +369,6 @@ class SkillStepWheel extends StatelessWidget {
     final index = skillLevelUpSteps.indexOf(value);
     final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     return Semantics(
-      key: const Key('skill-step'),
       label: '한 번에 올릴 레벨',
       value: '×$value',
       increasedValue: index + 1 < skillLevelUpSteps.length ? '×${skillLevelUpSteps[index + 1]}' : null,
@@ -396,7 +404,7 @@ class SkillStepWheel extends StatelessWidget {
                 child: Column(children: [
                   for (final step in skillLevelUpSteps)
                     GestureDetector(
-                      key: Key('step-$step'),
+                      key: Key('step-$skillId-$step'),
                       behavior: HitTestBehavior.opaque,
                       onTap: () => onChanged(step),
                       child: SizedBox(
@@ -404,7 +412,7 @@ class SkillStepWheel extends StatelessWidget {
                         child: Center(
                           child: Text('×$step',
                               style: TextStyle(
-                                  fontSize: step == value ? 13 : 10.5,
+                                  fontSize: step == value ? 12 : 9.5,
                                   height: 1,
                                   fontWeight: step == value ? FontWeight.w900 : FontWeight.w700,
                                   color: step == value ? Cozy.ink : Cozy.inkSoft)),

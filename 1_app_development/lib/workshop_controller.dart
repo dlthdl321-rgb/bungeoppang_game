@@ -475,6 +475,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// moment ([departureAgeMs]).
   ({String customerId, bool happy, int atMs})? guestDeparture;
   int get departureAgeMs => guestDeparture == null ? 1 << 30 : _mono - guestDeparture!.atMs;
+  /// The level-up step (×1·×10·×100, [skillLevelUpSteps]) each skill's own
+  /// wheel shows in the skill window, by skill id (26번 시안 확인 2차).
+  /// Memory only: kept while the app runs, not saved; ×1 when missing.
+  final Map<String, int> skillSteps = {};
   bool busy = false, foreground = true, disposed = false;
   bool _gridVisible = true;
   bool get gridVisible => _gridVisible;
