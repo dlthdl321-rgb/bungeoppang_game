@@ -378,6 +378,10 @@ class PixelSprites {
   static bool avatarArtReady(String character, CosmeticSlot slot, String id) {
     // 26번 4-7단계: with the v2 vendor on, what v2 drew (the new bottoms
     // too); while it is off, items only v2 draws stay hidden.
+    // 26번 3차 H8·H10: withdrawn items stay out (cosmetic_config.dart).
+    if (slot != CosmeticSlot.character && avatarItemWithdrawn(character, id)) {
+      return false;
+    }
     if (avatarV2On) {
       final files = avatarV2Shipped;
       if (slot == CosmeticSlot.character) {
@@ -393,8 +397,6 @@ class PixelSprites {
       return avatarArtFiles.contains('avatar/$id/base.png');
     }
     if (!avatarArtFiles.contains('avatar/$character/base.png')) return false;
-    // 26번 3차 H10: broken v1 art is taken out (cosmetic_config.dart).
-    if (avatarItemWithdrawn(character, id)) return false;
     if (blankCosmetics.contains(id) || defaultCosmetics[slot] == id) {
       return true;
     }

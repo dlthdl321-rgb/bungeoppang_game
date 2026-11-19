@@ -192,7 +192,12 @@ class AvatarRig {
       if (sprite != null) out.add(sprite);
     }
 
-    add(avatarV2Base(character, skin), RigLayer.base);
+    // 26번 3차 H10: what the worn hair leaves bare of the head goes
+    // (avatarV2BaseMask, made by tools/avatar_v2.py basemask).
+    final scalp = make(avatarV2BaseMask(character, look.worn(CosmeticSlot.hair)),
+        RigLayer.base);
+    add(avatarV2Base(character, skin), RigLayer.base,
+        erase: scalp == null ? const [] : [scalp]);
     for (final channel in rigChannels) {
       final frame = face[channel.id] ?? channel.rest;
       final anchor = avatarV2FaceAnchors[character]?[channel.id];
@@ -206,7 +211,9 @@ class AvatarRig {
         : make(avatarV2HairMask(character, hat), RigLayer.hair);
     for (final MapEntry(key: slot, value: layer) in rigSlotLayers.entries) {
       final id = look.worn(slot);
-      if (blankCosmetics.contains(id)) continue;
+      if (blankCosmetics.contains(id) || avatarItemWithdrawn(character, id)) {
+        continue;
+      }
       final main = avatarV2Item(character, slot, id);
       add(main, layer,
           erase: slot == CosmeticSlot.hair && hairMask != null

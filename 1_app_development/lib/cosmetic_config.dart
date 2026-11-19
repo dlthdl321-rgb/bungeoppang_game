@@ -311,11 +311,11 @@ const blankCosmetics = {
   'clock',
 };
 
-/// Avatar items taken out of the shop and the wardrobe because their v1
-/// art is broken on that character (26번 3차 녹화 피드백 H8·H10): no one
-/// can buy or pick them, a save that owns one keeps it (ownership is not
-/// touched), and the vendor wearing one is drawn without it (the slot's
-/// look from the base). Their redraw is 25번 24~31번 (the v2 vendor).
+/// Avatar items taken out of the shop and the wardrobe on that character
+/// (26번 3차 녹화 피드백 H8·H10): the golden tongs ("집게를 지워"), and any
+/// item whose art is broken. No one can buy or pick them, a save that owns
+/// one keeps it (ownership is not touched), and the vendor wearing one is
+/// drawn without it. A redraw goes to 25번 and the entry comes out.
 const withdrawnAvatarItems = <String, Set<String>>{
   'girl': {'goldtongs'},
   'boy': {'goldtongs'},

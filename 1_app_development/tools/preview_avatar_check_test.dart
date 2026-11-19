@@ -5,6 +5,7 @@
 // game's own painter so each tile can be checked by eye.
 //   flutter test tools/preview_avatar_check_test.dart
 //   AVATAR_CHECK_TAG=before flutter test tools/preview_avatar_check_test.dart
+//   AVATAR_CHECK_V2=1 ... (the v2 vendor, 26번 4-7단계, before it is on)
 // Writes build/avatar_check/<tag>/<sheet>.png. A tile on red is an item the
 // shop and wardrobe do not list (PixelSprites.avatarArtReady false).
 import 'dart:io';
@@ -12,6 +13,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/avatar_v2.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
@@ -24,6 +26,11 @@ void main() {
     await (FontLoader('Jua')..addFont(Future.value(jua))).load();
     await PixelSprites.load();
     final tag = Platform.environment['AVATAR_CHECK_TAG'] ?? 'now';
+    // AVATAR_CHECK_V2=1 draws the v2 vendor even before avatarV2Ready.
+    if (Platform.environment['AVATAR_CHECK_V2'] == '1') {
+      // ignore: invalid_use_of_visible_for_testing_member
+      debugAvatarV2Override = true;
+    }
     final dir = 'build/avatar_check/$tag';
     List<String> ids(CosmeticSlot slot) => [
           for (final d in cosmeticDefinitions)

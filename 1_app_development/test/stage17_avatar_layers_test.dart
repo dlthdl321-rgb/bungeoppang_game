@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/avatar_atlas.dart';
 import 'package:todays_bungeoppang/avatar_motion.dart';
 import 'package:todays_bungeoppang/avatar_rig_config.dart';
+import 'package:todays_bungeoppang/avatar_v2.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/ui/avatar_face.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
@@ -18,7 +19,13 @@ import 'widget_test.dart' show mountGame;
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(PixelSprites.load);
-  tearDown(() => AvatarRigDebug.show.value = false);
+  // These check the v1 rig (26번 4-4); the v2 vendor is on since 26번 3차
+  // and has its own tests (avatar_v2_test.dart).
+  setUp(() => debugAvatarV2Override = false);
+  tearDown(() {
+    AvatarRigDebug.show.value = false;
+    debugAvatarV2Override = null;
+  });
 
   AvatarLook dressed(Map<CosmeticSlot, String> worn,
           {String character = 'girl'}) =>

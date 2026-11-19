@@ -127,13 +127,57 @@ def out_dir(demo):
     return BUILD / 'demo' / 'images' if demo else IMAGES
 
 
-def shrink(path):
+# 26번 3차 (2026-11-19): 24~30번 came drawn on the 23번 bases as generated
+# (880x1787), not on the normalized 1120x2080 canvas. Such a source gets
+# the same scale + shift its character's base got from
+# tools/normalize_avatar_base.py (23_avatar_base/normalized/report.json), so
+# it lands where the normalized base is.
+RAW = {}  # character -> (scale, dx, dy), filled by main() from the report
+RAW_SOLE = {}  # character -> last opaque row of the raw skin1 base
+SOLE_SLOTS = ('shoes_',)
+
+
+def to_4x(path, character):
+    """[path] as a 4x RGBA array: as it is, or placed like its character's
+    raw base (RAW); None when neither fits."""
+    img = Image.open(path)
+    want = (CANVAS[0] * SCALE, CANVAS[1] * SCALE)
+    if img.size == want:
+        return np.array(img.convert('RGBA'))
+    if character in RAW and img.size == RAW[character][3]:
+        import normalize_avatar_base as N
+        s, dx, dy, _ = RAW[character]
+        arr = np.array(img.convert('RGBA'))
+        if arr[..., 3].min() == 255:
+            arr = X.load_cut(path)
+        if path.stem.startswith(SOLE_SLOTS) and character in RAW_SOLE:
+            # 26번 3차 H9·H10: the boy's shoes were drawn ~50px below his
+            # soles and came out cut at the canvas foot; shoes stand on the
+            # base's soles.
+            rows = np.nonzero((arr[..., 3] > 127).any(1))[0]
+            lift = int(rows.max()) - RAW_SOLE[character]
+            if lift > 0:
+                arr = shift(arr, 0, -lift)
+        saved = N.CANVAS
+        try:
+            return N.place(arr, s, dx, dy)
+        finally:
+            N.CANVAS = saved
+    return None
+
+
+def shrink(path, character=None):
     """A 4x source on the 280x520 canvas (area average, then clean edges:
     alpha 0/255 so no halo), or None with the reason."""
     img = Image.open(path)
     want = (CANVAS[0] * SCALE, CANVAS[1] * SCALE)
     if img.size != want:
-        return None, f'{img.size[0]}x{img.size[1]} (필요 {want[0]}x{want[1]})'
+        arr = to_4x(path, character) if character else None
+        if arr is None:
+            return None, f'{img.size[0]}x{img.size[1]} (필요 {want[0]}x{want[1]})'
+        small = X.area_sample(arr, *CANVAS)
+        small[..., 3] = np.where(small[..., 3] >= 128, 255, 0)
+        return small.astype(np.uint8), None
     arr = np.array(img.convert('RGBA'))
     if arr[..., 3].min() == 255:  # white background: clear it
         arr = X.load_cut(path)
@@ -232,7 +276,8 @@ def base_full(c, skin, demo):
     path = out_dir(demo) / f'avatar_v2/{c}/base@{skin}.png'
     if not path.exists():
         return None
-    return np.array(Image.open(path).convert('RGBA'))
+    # Back on its full canvas: trim may have run already.
+    return full(path, load_data() if not demo else {}, demo)
 
 
 def skin_pixels(c, demo):
@@ -242,6 +287,34 @@ def skin_pixels(c, demo):
         return None
     diff = np.abs(one[..., :3].astype(int) - three[..., :3]).sum(-1)
     return (one[..., 3] > 0) & (diff > 30)
+
+
+def despeck(arr):
+    """Light grey-white pixels on a hair layer's rim: the white background
+    of the generated picture left between strands (26번 3차 H10)."""
+    from scipy import ndimage
+    a = arr.astype(np.int32)
+    rgb = a[..., :3]
+    light = (a[..., 3] > 0) & (rgb.mean(-1) > 185) &         (rgb.max(-1) - rgb.min(-1) < 45)
+    rim = ndimage.binary_dilation(a[..., 3] == 0, iterations=2)
+    labels, _ = ndimage.label(light)
+    hit = np.unique(labels[light & rim])
+    out = arr.copy()
+    out[np.isin(labels, hit[hit > 0]), 3] = 0
+    return out
+
+
+# 26번 3차 H10: items centred on a face anchor. The glasses came drawn
+# over the mouth; their box's centre goes on the eyes' anchor.
+ON_ANCHOR = {'accessory_glasses': 'eyes'}
+
+
+def on_anchor(arr, anchor):
+    ys, xs = np.nonzero(arr[..., 3] > 0)
+    if len(xs) == 0:
+        return arr
+    cx, cy = (xs.min() + xs.max() + 1) / 2, (ys.min() + ys.max() + 1) / 2
+    return shift(arr, int(round(anchor[0] - cx)), int(round(anchor[1] - cy)))
 
 
 def items(data, src, demo):
@@ -255,19 +328,35 @@ def items(data, src, demo):
             f'avatar_v2/{c}/base@skin1.png', {}).get('shift', (0, 0)))
         skin = skin_pixels(c, demo)
         for slot, folder in FOLDERS.items():
+            # --only=<slot>[,<slot>]: redo just those slots.
+            only = [a.split('=', 1)[1].split(',') for a in sys.argv
+                    if a.startswith('--only=')]
+            if only and slot not in only[0]:
+                continue
             for path in sorted((src / folder / c).glob(f'{slot}_*.png')):
+                if path.stem[len(slot) + 1:] in BLANK:
+                    continue  # drawn as nothing (the tongs, 3차 H8)
                 key = f'avatar_v2/{c}/{path.name}'
-                arr, why = shrink(path)
+                arr, why = shrink(path, c)
                 if arr is None:
                     report[key] = {'state': f'규격 미달 {why}'}
                     print(f'items {key}: skipped, {why}')
                     continue
                 arr = shift(arr, *shift_by)
-                # Only what differs from the base (drawn on it or alone).
-                d = np.sqrt(((arr[..., :3].astype(np.int32) -
-                              base[..., :3]) ** 2).sum(-1))
-                same = (arr[..., 3] > 0) & (base[..., 3] > 0) & (d < CHANGED)
-                arr[same, 3] = 0
+                # Only what differs from the base, for a picture drawn ON
+                # the base (it covers most of the figure). A picture of the
+                # item alone keeps every pixel: beige shorts over the legs
+                # are close to skin and came out holed (26번 3차 H10).
+                on_base = (arr[..., 3] > 0)[base[..., 3] > 0].mean() > .5
+                if on_base:
+                    d = np.sqrt(((arr[..., :3].astype(np.int32) -
+                                  base[..., :3]) ** 2).sum(-1))
+                    same = (arr[..., 3] > 0) & (base[..., 3] > 0) &                         (d < CHANGED)
+                    arr[same, 3] = 0
+                if slot == 'hair':
+                    arr = despeck(arr)
+                if path.stem in ON_ANCHOR:
+                    arr = on_anchor(arr, data['anchors'][c][ON_ANCHOR[path.stem]])
                 # Skin painted into the item: item pixels over the base's
                 # skin that still look like skin (they would not follow the
                 # other skin tones).
@@ -279,6 +368,105 @@ def items(data, src, demo):
                 report[key] = {'state': state, 'pixels': int((arr[..., 3] > 0).sum())}
                 save(arr, out_dir(demo) / key)
                 print(f'items {key}: {state}')
+
+
+# ---------------------------------------------------------------- bare
+
+# 26번 3차 H10 (2026-11-19): the 23번 bases wear a grey head cover, a grey
+# vest and grey shorts as placeholders, and the 24~27번 layers drawn for
+# them do not always cover them (grey above the hair, a grey neckline over
+# the tee collar). The game always wears hair, a top and a bottom, so the
+# placeholders are never meant to show: the head cover goes (with its
+# outline, above BARE['forehead']) and the vest and shorts become skin
+# (each tone from its own nearest skin), with the seam lines inside them.
+BARE = {'forehead': {'girl': 108, 'boy': 108},  # above the eyebrows
+        'grey_sat': 28, 'grey_lum': (80, 245),
+        'face': (95, 125, 215, 200)}  # l, t, r, b: eye whites are grey too
+
+
+def bare(data, demo):
+    from scipy import ndimage
+    for c in CHARACTERS:
+        tones = {s: base_full(c, s, demo) for s in SKINS}
+        if any(t is None for t in tones.values()):
+            continue
+        one = tones['skin1'].astype(np.int32)
+        alpha = one[..., 3] > 0
+        rgb = one[..., :3]
+        sat = rgb.max(-1) - rgb.min(-1)
+        lum = rgb.mean(-1)
+        lo, hi = BARE['grey_lum']
+        grey = alpha & (sat < BARE['grey_sat']) & (lum >= lo) & (lum <= hi)
+        fl, ft, fr, fb = BARE['face']
+        grey[ft:fb, fl:fr] = False
+        skin = skin_pixels(c, demo)
+        rows = np.arange(alpha.shape[0])[:, None]
+        top = rows < BARE['forehead'][c]
+        # Head cover: the grey above the forehead and the dark outline
+        # around it (the hair layer draws the head's outline).
+        cap = top & alpha & (grey | (lum < 110)) & ~skin
+        cap = ndimage.binary_dilation(cap, iterations=1) & top & alpha &             ~(skin & (sat >= BARE['grey_sat']))
+        # Vest and shorts: the grey, plus the seams between them and the
+        # skin (dark pixels next to the grey, away from the outer outline).
+        under = grey & ~top
+        inner = ndimage.binary_erosion(alpha, iterations=2)
+        seam = ndimage.binary_dilation(under, iterations=3) & inner &             ~(skin & (lum >= 140)) & ~under & ~top
+        seam[ft:fb, fl:fr] = False
+        under |= seam
+        body = skin & ~top & (rows > fb) & (lum >= 140)
+        for s, arr in tones.items():
+            out = arr.copy()
+            out[cap] = 0
+            # One flat skin colour (each tone's own): a neckline or hem gap
+            # shows plain skin, never a smear of edge colours.
+            out[under, :3] = np.median(arr[body][:, :3], axis=0).astype(np.uint8)
+            key = f'avatar_v2/{c}/base@{s}.png'
+            save(out, out_dir(demo) / key)
+            data.setdefault('trim', {}).pop(key, None)
+        print(f'bare {c}: head cover {int(cap.sum())} px cleared, '
+              f'vest and shorts {int(under.sum())} px to skin')
+
+
+# 26번 3차 H10: a hair style drawn a little inside the bare head lets the
+# scalp show above or beside it. hair_<id>_basemask.png erases from the
+# BASE what that hair leaves bare above the ears (rows < BASEMASK['above'])
+# outside the face (an ellipse round the eyes anchor, radii 'face').
+BASEMASK = {'above': 138, 'face': (60, 48), 'brow': 50}
+
+
+def basemask(data, demo):
+    from scipy import ndimage
+    for c in CHARACTERS:
+        base = base_full(c, 'skin1', demo)
+        folder = out_dir(demo) / 'avatar_v2' / c
+        if base is None:
+            continue
+        ex, ey = data['anchors'][c]['eyes']
+        rx, ry = BASEMASK['face']
+        ys, xs = np.mgrid[0:CANVAS[1], 0:CANVAS[0]]
+        face = ((xs - ex) / rx) ** 2 + ((ys - ey) / ry) ** 2 <= 1
+        for path in sorted(folder.glob('hair_*.png')):
+            if path.stem.endswith(('_back', '_basemask')):
+                continue
+            hair = full(path, data, demo)[..., 3] > 0
+            back = path.with_name(f'{path.stem}_back.png')
+            if back.exists():
+                hair |= full(back, data, demo)[..., 3] > 0
+            hair = ndimage.binary_fill_holes(hair)
+            # The forehead's skin stays (a short fringe shows it); skin of
+            # the bare head beside the hair (temples above the ears) goes.
+            keep = skin_pixels(c, demo) & (np.abs(xs - ex) <= BASEMASK['brow'])
+            mask = (base[..., 3] > 0) & (ys < BASEMASK['above']) & ~face &                 ~hair & ~keep
+            # One pixel wider (not into the face or kept skin): the game
+            # draws the mask smoothed, which left a faint rim.
+            mask |= ndimage.binary_dilation(mask) & (base[..., 3] > 0) &                 ~face & ~keep & ~hair
+            mask |= ndimage.binary_dilation(mask, iterations=2) &                 (base[..., 3] == 0)
+            out = np.zeros(base.shape, np.uint8)
+            out[mask] = (0, 0, 0, 255)
+            key = path.with_name(f'{path.stem}_basemask.png')
+            save(out, key)
+            print(f'basemask {key.relative_to(out_dir(demo)).as_posix()}: '
+                  f'{int(mask.sum())} px')
 
 
 # ---------------------------------------------------------------- hairmask
@@ -637,6 +825,14 @@ def main():
         src = Path(sys.argv[sys.argv.index('--src') + 1])
         args = [a for a in args if Path(a) != src]
     data = load_data()
+    report = src / '23_avatar_base' / 'normalized' / 'report.json'
+    if report.exists():
+        for c, m in json.loads(report.read_text('utf-8'))['characters'].items():
+            raw = src / '23_avatar_base' / c / 'base_skin1.png'
+            if raw.exists():
+                RAW[c] = (m['scale'], m['dx'], m['dy'], Image.open(raw).size)
+                a = np.array(Image.open(raw).convert('RGBA'))[..., 3] > 127
+                RAW_SOLE[c] = int(np.nonzero(a.any(1))[0].max())
     if demo:
         import shutil
         shutil.rmtree(BUILD / 'demo', ignore_errors=True)
@@ -645,12 +841,16 @@ def main():
         data = {k: v for k, v in data.items() if k in ('anchors', 'hat_hair')}
         jobs = ['align', 'items', 'hairmask', 'face', 'trim']
     else:
-        jobs = args or ['align', 'items', 'hairmask', 'face', 'icons', 'trim',
-                        'atlas']
+        jobs = args or ['align', 'items', 'bare', 'basemask', 'hairmask',
+                        'face', 'icons', 'trim', 'atlas']
     if 'align' in jobs:
         align(data, src, demo)
     if 'items' in jobs:
         items(data, src, demo)
+    if 'bare' in jobs:
+        bare(data, demo)
+    if 'basemask' in jobs:
+        basemask(data, demo)
     if 'hairmask' in jobs:
         hairmask(data, demo)
     if 'face' in jobs:

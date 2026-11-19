@@ -172,7 +172,9 @@ void main() {
       for (final c in ['girl', 'boy']) {
         for (final d in cosmeticDefinitions.where((d) =>
             d.slot.category == CosmeticCategory.avatar)) {
-          expect(PixelSprites.avatarArtReady(c, d.slot, d.id), isTrue,
+          // 26번 3차 H8: withdrawn items (the golden tongs) stay hidden.
+          expect(PixelSprites.avatarArtReady(c, d.slot, d.id),
+              !avatarItemWithdrawn(c, d.id),
               reason: '$c ${d.id}');
         }
       }
@@ -290,7 +292,9 @@ void main() {
     // tools/avatar_layers.py skin (2026-11-18까지): skin2 비율.
     const oldSkin2 = {
       'girl': [0.9412, 0.7972, 0.6354],
-      'boy': [0.9163, 0.6981, 0.5027],
+      // 26번 3차 H9: the boy's v1 base was rebuilt from his worn pictures
+      // (avatar_layers.py rebase), so his measured skin ratio moved a bit.
+      'boy': [0.9173, 0.7123, 0.5333],
     };
     for (final c in ['girl', 'boy']) {
       final two = (ratios['$c@skin2'] as List).cast<num>();
@@ -345,7 +349,8 @@ void main() {
         expect(
             required.contains(f) ||
                 name.startsWith('face_') ||
-                name.endsWith('_hairmask.png'),
+                name.endsWith('_hairmask.png') ||
+                name.endsWith('_basemask.png'),
             isTrue,
             reason: f);
         final (x, y) = avatarV2TrimOffsets[f] ?? (0, 0);
