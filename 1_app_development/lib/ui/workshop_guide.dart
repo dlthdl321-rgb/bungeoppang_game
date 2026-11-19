@@ -113,9 +113,11 @@ class WorkshopStoryOverlay extends StatefulWidget {
 }
 
 /// Korean may break between any two syllables; a word joiner between the
-/// letters of each word makes the story wrap at spaces only.
+/// letters of each word makes the story wrap at spaces only. It draws
+/// nothing (a default-ignorable character), so no font needs it.
+final _wordJoiner = String.fromCharCode(0x2060);
 String _keepWords(String line) =>
-    line.split(' ').map((w) => w.split('').join('⁠')).join(' ');
+    line.split(' ').map((w) => w.split('').join(_wordJoiner)).join(' ');
 
 class _WorkshopStoryOverlayState extends State<WorkshopStoryOverlay> {
   int _line = 0;

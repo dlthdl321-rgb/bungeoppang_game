@@ -237,6 +237,10 @@ void main() {
 
     testWidgets('새 설치 첫 화면: 스킬·꾸미기·상점은 빗금 자물쇠, 초당·클릭당 숫자는 숨김', (tester) async {
       final c = await mount(tester);
+      // 26번 3차 H6: a new install opens with the welcome story; end it first.
+      await tester.tap(find.byKey(const Key('story-skip')));
+      await tester.pump();
+      await tester.pump(); // the guide card measures the menu after its first frame
       for (final id in ['skills', 'skins', 'shop']) {
         expect(find.byKey(Key('menu-$id-locked')), findsOneWidget, reason: id);
       }

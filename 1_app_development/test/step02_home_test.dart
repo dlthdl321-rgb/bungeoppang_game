@@ -54,6 +54,8 @@ void main() {
       await c.initialize();
       await tester.pumpWidget(GameApp(controller:account,workshop:c));
       await tester.pump();
+      // 26번 3차 H6: a new install opens with the welcome story; end it first.
+      await tester.tap(find.byKey(const Key('story-skip')));await tester.pump();await tester.pump();
       expect(find.byType(NightHome),findsOneWidget);
       expect(find.byType(BakeTarget),findsNothing);
       expect(find.byKey(const Key('menu-menu')),findsOneWidget);
