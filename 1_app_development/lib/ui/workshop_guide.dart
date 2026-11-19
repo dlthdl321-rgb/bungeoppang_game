@@ -236,8 +236,10 @@ class WorkshopFeatureIntroCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12), border: Border.all(color: Cozy.woodLight, width: 2)),
                 padding: const EdgeInsets.all(8),
                 alignment: Alignment.center,
+                // 25번 22번 pictures are 160x120: drawn 1:1 (a PixelArt
+                // without a size would be laid out at zero size).
                 child: art != null
-                    ? PixelArt(art, key: const Key('feature-intro-art'))
+                    ? PixelArt(art, key: const Key('feature-intro-art'), width: 160, height: 120)
                     : PixelIcon(intro.fallbackIcon, key: const Key('feature-intro-standin'), size: 88),
               ),
               const SizedBox(height: 10),

@@ -266,7 +266,9 @@ void main() {
       await tester.pump();
       expect(find.byKey(const Key('feature-intro-skills')), findsOneWidget);
       expect(find.textContaining('카카오 로그인 후 레벨업'), findsOneWidget);
-      expect(find.byKey(const Key('feature-intro-standin')), findsOneWidget, reason: '그림 전에는 기존 아이콘');
+      // 25번 22번 그림이 들어와 기존 아이콘 대신 160×120 그림이 1:1로 보인다.
+      expect(find.byKey(const Key('feature-intro-standin')), findsNothing);
+      expect(tester.getSize(find.byKey(const Key('feature-intro-art'))), const Size(160, 120));
       await tester.tap(find.byKey(const Key('feature-intro-ok')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('feature-intro-skills')), findsNothing);

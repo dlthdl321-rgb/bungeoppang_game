@@ -15,6 +15,7 @@ snaps the alpha so there is no halo:
     python tools/apply_25_art.py <26_feedback_generated> --only sparkles --preview
     python tools/apply_25_art.py <26_feedback_generated> --only gold --only levelup --only tabs --preview
     python tools/apply_25_art.py <26_feedback_generated> --only room --only title --only stall16 --preview
+    python tools/apply_25_art.py <26_feedback_generated> --only intro --preview
 
 Run it in 1_app_development. Outputs:
 
@@ -64,6 +65,10 @@ Run it in 1_app_development. Outputs:
 * assets/images/stall/lamp_<amber|rose|mint|lilac>.png (64x96) and
   assets/images/icons/time_<scenetime|day|night|clock>.png (64x64):
   25번 16번 wardrobe tiles of the stall tab.
+* assets/images/ui/intro_<id>.png (160x120, opaque, 64 colours): 25번
+  22번 feature introduction card pictures from 22_intro_cards/ (1448x1086,
+  dots about 9 source pixels = exactly 1448/160), box-averaged so each output
+  pixel is one source dot, then 64 flat colours without dither (see intro()).
 """
 import argparse
 import sys
@@ -609,6 +614,32 @@ def stall16(src):
     return made
 
 
+# ---------------------------------------------------------------- 26번 2단계
+
+INTRO_SIZE = (160, 120)
+INTROS = ["skills", "griddle", "collection", "recipes", "special_orders",
+          "fish_cosmetics", "freshness", "stall_cosmetics"]
+
+
+def intro(src):
+    """25번 22번: the feature introduction cards' pictures (lib/ui/
+    workshop_guide.dart draws them 1:1 in the 200x150 frame). The sources
+    are an exact 4:3 with a cream background, so no crop: BOX sampling
+    averages each ~9x9 source dot into one pixel (Lanczos rings at the dark
+    outlines), and a 64-colour median-cut palette without dither keeps the
+    clusters flat like pixel art."""
+    folder = src / "22_intro_cards" if (src / "22_intro_cards").is_dir() else src
+    made = {}
+    for name in INTROS:
+        img = Image.open(folder / f"intro_{name}.png").convert("RGB")
+        small = img.resize(INTRO_SIZE, Image.BOX)
+        out = small.quantize(64, method=Image.Quantize.MEDIANCUT,
+                             dither=Image.Dither.NONE)
+        out.save(IMAGES / "ui" / f"intro_{name}.png", optimize=True)
+        made[f"ui/intro_{name}"] = out.convert("RGBA")
+    return made
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("source", type=Path, help="the 25_generated folder")
@@ -616,7 +647,7 @@ def main():
     p.add_argument("--measure", action="store_true",
                    help="re-measure STOVE_FIT (slow, a few minutes)")
     steps = ["stoves", "bags", "drips", "rings", "textures", "locks", "sparkles",
-             "gold", "levelup", "tabs", "room", "title", "stall16"]
+             "gold", "levelup", "tabs", "room", "title", "stall16", "intro"]
     p.add_argument("--only", choices=steps, action="append",
                    help="run only these steps (repeatable)")
     args = p.parse_args()
@@ -645,7 +676,8 @@ def main():
         print("sparkles")
         made.update(sparkles(src))
     for step, run_step in (("gold", gold), ("levelup", levelup), ("tabs", tabs),
-                           ("room", room), ("title", title), ("stall16", stall16)):
+                           ("room", room), ("title", title), ("stall16", stall16),
+                           ("intro", intro)):
         if step in run and args.only:
             print(step)
             made.update(run_step(src))
