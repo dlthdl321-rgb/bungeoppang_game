@@ -4,6 +4,7 @@ import '../economy.dart';
 import '../game_controller.dart';
 import '../models.dart';
 import '../online_backend.dart';
+import 'center_toast.dart';
 import 'gold_widgets.dart';
 import 'pixel_sprites.dart';
 
@@ -133,9 +134,8 @@ class _SkillShopState extends State<SkillShop> {
                               ? await c.buyMaximum(u)
                               : await c.buyUpgrade(u, q.amount);
                           if (!ok && mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                                content: Text(c.error ??
-                                    '구매 조건이 바뀌었어요. 다시 확인해 주세요.')));
+                            showCenterToast(context, c.error ??
+                                '구매 조건이 바뀌었어요. 다시 확인해 주세요.');
                           }
                         }
                       : null,
