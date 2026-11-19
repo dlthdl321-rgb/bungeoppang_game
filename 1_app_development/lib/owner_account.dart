@@ -84,6 +84,14 @@ class OwnerAccount extends ChangeNotifier {
   bool busy = false, offline = false;
   /// The last problem to show on the current screen, or null.
   String? message;
+
+  /// Hides [message] (the name box clears its problem once typing again).
+  void clearMessage() {
+    if (message == null) return;
+    message = null;
+    notifyListeners();
+  }
+
   /// A first name to offer: the login nickname, cleaned up.
   String nameDraft = '';
 

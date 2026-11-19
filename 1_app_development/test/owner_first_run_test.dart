@@ -246,6 +246,10 @@ void main() {
       await tap(tester, const Key('optional-skip'));
       expect(r.owner.step, OwnerStep.done);
       expect(gameShown(), isTrue);
+      // 26번 3차 H6: the welcome story (with the owner name), then the guide.
+      expect(find.byWidgetPredicate((w) => w is Text && w.data?.replaceAll('⁠', '') == '어서 오세요, 붕어빵장인 사장님! 환영합니다.'),
+          findsOneWidget, reason: '이야기형 안내로 이어짐');
+      await tap(tester, const Key('story-skip'));
       expect(find.byKey(const Key('tutorial-card')), findsOneWidget, reason: '2단계 첫 실행 안내로 이어짐');
       // The server profile has the name and the consent, nothing optional.
       final sent = r.fake.accountProfiles['kakao:1001']!;
@@ -331,7 +335,7 @@ void main() {
       // The picker starts on what the shop already wears.
       final boy = tester.widget<AnimatedContainer>(
           find.descendant(of: find.byKey(const Key('character-boy')), matching: find.byType(AnimatedContainer)));
-      expect((boy.decoration as BoxDecoration).border!.top.width, 4);
+      expect((boy.decoration as BoxDecoration).border!.top.width, 2, reason: '고른 카드는 주황 2px 테두리(26번 3차)');
       await tap(tester, const Key('first-run-character-start'));
       await tap(tester, const Key('optional-skip'));
       expect(gameShown(), isTrue);
@@ -496,7 +500,9 @@ void main() {
       await tap(tester, const Key('settings-rename'));
       await tester.enterText(find.descendant(of: find.byKey(const Key('rename-dialog')), matching: find.byType(TextField)), '병신');
       await tap(tester, const Key('rename-save'));
-      expect(find.byKey(const Key('rename-problem')), findsOneWidget);
+      // The problem shows in small red under the box (26번 3차 H4).
+      expect(find.descendant(of: find.byKey(const Key('rename-dialog')), matching: find.text('다른 이름을 써 주세요')),
+          findsOneWidget);
       await tester.enterText(find.descendant(of: find.byKey(const Key('rename-dialog')), matching: find.byType(TextField)), '새가게');
       await tap(tester, const Key('rename-save'));
       expect(r.owner.profile.name, '새가게');

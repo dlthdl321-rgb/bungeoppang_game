@@ -105,6 +105,23 @@ void main() {
       }
     });
 
+    test('26번 3차 H7: 배경음은 처음부터 켜져 있고, 표시 없는 예전 저장의 꺼진 배경음은 한 번 켠다', () {
+      expect(GameState.initial(now).settings.music, isTrue, reason: '새 설치');
+      final off = GameState.initial(now)..settings.music = false;
+      final json = plainJson(off);
+      final settings = json['settings'] as Map;
+      expect(settings[GameSettings.musicDefaultKey], isTrue);
+      // The player's own 'off' after this change is kept.
+      expect(GameState.fromJson(json).settings.music, isFalse);
+      // A save from before the change (no key): 배경음 on once, then kept.
+      settings.remove(GameSettings.musicDefaultKey);
+      final migrated = GameState.fromJson(json);
+      expect(migrated.settings.music, isTrue);
+      expect(migrated.settings.musicVolume, off.settings.musicVolume);
+      migrated.settings.music = false;
+      expect(GameState.fromJson(plainJson(migrated)).settings.music, isFalse);
+    });
+
     test('v8 소리 설정 왕복과 손상값 거부', () {
       final s = GameState.initial(now)
         ..settings.soundEffects = false
