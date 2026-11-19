@@ -568,7 +568,7 @@ class WorkshopMoldArt extends CustomPainter {
 /// the right pin and, before a push, a small curved arrow ([hint]). Drawn
 /// in the mold picture's coordinates (WorkshopMoldArt.fit), so it follows
 /// the mold's place and size. A stand-in until the new mold art with its
-/// own axle (25번 주문 H-C-1) is in.
+/// own axle (25번 36번 주문) is in.
 class MoldAxlePainter extends CustomPainter {
   final double grow, progress;
   final bool front, hint;
