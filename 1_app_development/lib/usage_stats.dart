@@ -64,26 +64,50 @@ class UsageStats {
   final UsageStatsSink sink;
   final DateTime Function() _now;
   bool _enabled = true;
+  bool _consented;
   final Map<UsageEvent, String> _dailySent = {};
-  UsageStats(this.sink, {DateTime Function()? now})
-      : _now = now ?? (() => DateTime.now().toUtc());
+
+  /// [consented]: whether the first-run required consent is already done.
+  /// main.dart passes false (DEC-126): nothing is collected — not
+  /// even Analytics' own first_open/session_start, the manifest keeps
+  /// collection off — until [OwnerAccount] reports the consent with
+  /// [setConsented]. Tests that do not care leave it true.
+  UsageStats(this.sink, {DateTime Function()? now, bool consented = true})
+      : _now = now ?? (() => DateTime.now().toUtc()),
+        _consented = consented;
 
   /// Sends nothing (builds without Firebase, most tests).
   static final UsageStats none = UsageStats(const NoUsageStatsSink());
 
+  /// The '사용 통계 보내기' setting (기본 켬).
   bool get enabled => _enabled;
+  /// The first-run required consent is done (see the constructor).
+  bool get consented => _consented;
+  /// Analytics actually collects: the setting is on and the consent is done.
+  bool get collecting => _enabled && _consented;
 
   /// 설정 '사용 통계 보내기'. 끄면 Analytics 수집 자체를 멈춘다
-  /// (setAnalyticsCollectionEnabled(false)); 켜면 다시 모은다.
+  /// (setAnalyticsCollectionEnabled(false)); 켜면 다시 모은다(첫 실행 동의
+  /// 뒤에만, [setConsented]).
   void setEnabled(bool enabled) {
     _enabled = enabled;
-    _quietly(() => sink.setEnabled(enabled));
+    _quietly(() => sink.setEnabled(collecting));
+  }
+
+  /// 첫 실행 필수 동의(약관·개인정보·만 14세 이상)를 마쳤는지. [OwnerAccount]
+  /// tells it on every load and save; only a change reaches Analytics. A
+  /// player who has to agree again (a new [requiredConsentVersion]) or who
+  /// deleted the account stops collection until the consent is given.
+  void setConsented(bool consented) {
+    if (consented == _consented) return;
+    _consented = consented;
+    _quietly(() => sink.setEnabled(collecting));
   }
 
   /// One event. Daily-once events are skipped after the first send of the
   /// Korean (KST) day in this run.
   void record(UsageEvent event, [Map<String, Object> parameters = const {}]) {
-    if (!_enabled) return;
+    if (!collecting) return;
     if (_dailyOnce.contains(event)) {
       final day = _kstDay(_now());
       if (_dailySent[event] == day) return;

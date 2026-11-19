@@ -8,8 +8,9 @@ import { Doc, Store } from "./store";
 // accountProfiles/{uid} is server-only (firestore.rules denies the app) and
 // holds what the first-run screens collect: the owner name (사장님 이름), the
 // login email (Kakao account_email or the Google account's verified address),
-// the required consent version and, only with the separate optional consent,
-// the player's gender and age band. The email is never shown to other players
+// the required consent version with the player's own 만 14세 이상 confirmation
+// (players under 14 are not accepted, DEC-125) and, only with the
+// separate optional consent, the player's gender and age band. The email is never shown to other players
 // and never sent to analytics. Purpose: player statistics and notices about
 // the account; no marketing.
 //
@@ -20,7 +21,7 @@ import { Doc, Store } from "./store";
 
 export class AccountError extends Error {
   constructor(
-    readonly code: "invalid-argument" | "consent-required" | "guardian-required",
+    readonly code: "invalid-argument" | "consent-required" | "age-required",
     message: string,
   ) {
     super(message);
@@ -32,9 +33,12 @@ export const ownerNameMin = 2;
 export const ownerNameMax = 8;
 const ownerNamePattern = /^[가-힣A-Za-z0-9]+$/;
 export const genders = ["female", "male", "none"] as const;
-export const ageBands = ["under14", "14_19", "20s", "30s", "40s", "50plus", "none"] as const;
-/** The terms and privacy notice the required consent refers to (lib/owner_profile.dart). */
-export const requiredConsentVersion = "2026-11-18";
+export const ageBands = ["14_19", "20s", "30s", "40s", "50plus", "none"] as const;
+/**
+ * The terms and privacy notice the required consent refers to
+ * (lib/owner_profile.dart). 2026-11-19: adds the 만 14세 이상 confirmation.
+ */
+export const requiredConsentVersion = "2026-11-19";
 
 export const accountProfilePath = (uid: string) => `accountProfiles/${uid}`;
 
@@ -51,21 +55,17 @@ export function cleanOwnerName(raw: unknown): string {
 interface OptionalInfo {
   gender: (typeof genders)[number];
   ageBand: (typeof ageBands)[number];
-  guardian: boolean;
 }
 
 function optionalInfo(raw: unknown): OptionalInfo | null {
   if (raw === null || raw === undefined) return null;
   if (typeof raw !== "object" || Array.isArray(raw)) throw new AccountError("invalid-argument", "bad optional info");
-  const { gender, ageBand, guardianConsent } = raw as Record<string, unknown>;
+  const { gender, ageBand } = raw as Record<string, unknown>;
+  // No 만 14세 미만 band: players under 14 cannot sign up (DEC-125).
   if (!genders.includes(gender as never) || !ageBands.includes(ageBand as never)) {
     throw new AccountError("invalid-argument", "bad gender or age band");
   }
-  // 만 14세 미만: only with the legal guardian's consent (개인정보보호법 22조의2).
-  if (ageBand === "under14" && guardianConsent !== true) {
-    throw new AccountError("guardian-required", "a guardian has to agree for players under 14");
-  }
-  return { gender: gender as OptionalInfo["gender"], ageBand: ageBand as OptionalInfo["ageBand"], guardian: ageBand === "under14" };
+  return { gender: gender as OptionalInfo["gender"], ageBand: ageBand as OptionalInfo["ageBand"] };
 }
 
 /**
@@ -75,33 +75,37 @@ function optionalInfo(raw: unknown): OptionalInfo | null {
  */
 export async function setAccountProfile(
   store: Store, who: SignedInAccount,
-  input: { name?: unknown; consentVersion?: unknown; optional?: unknown }, now: number,
+  input: { name?: unknown; consentVersion?: unknown; over14Confirmed?: unknown; optional?: unknown }, now: number,
 ) {
   if (input.consentVersion !== requiredConsentVersion) {
     throw new AccountError("consent-required", "the current terms have to be agreed to");
+  }
+  // 만 14세 미만은 가입 불가(개인정보 보호법 22조의2를 피하는 A안): the player
+  // ticked '(필수) 만 14세 이상입니다'; kept with the consent as its record.
+  if (input.over14Confirmed !== true) {
+    throw new AccountError("age-required", "only players aged 14 or over can sign up");
   }
   const name = cleanOwnerName(input.name);
   const optional = optionalInfo(input.optional);
   await store.run(async (tx) => {
     const old = (await tx.get(accountProfilePath(who.uid))) ?? {};
     const oldConsent = old.requiredConsent as { version?: unknown; atMs?: unknown } | undefined;
+    const consentAtMs =
+      oldConsent?.version === requiredConsentVersion && typeof oldConsent.atMs === "number" ? oldConsent.atMs : now;
     const oldOptional = old.optionalConsent as { atMs?: unknown } | undefined;
     const email = who.email ?? (typeof old.email === "string" ? old.email : undefined);
     const doc: Doc = {
       provider: who.provider satisfies LoginProvider,
       name,
       ...(email ? { email } : {}),
-      requiredConsent: {
-        version: requiredConsentVersion,
-        atMs: oldConsent?.version === requiredConsentVersion && typeof oldConsent.atMs === "number" ? oldConsent.atMs : now,
-      },
+      // over14: the player confirmed 만 14세 이상 together with this consent.
+      requiredConsent: { version: requiredConsentVersion, atMs: consentAtMs, over14: true },
       updatedAtMs: now,
     };
     if (optional) {
       doc.optionalConsent = { atMs: typeof oldOptional?.atMs === "number" ? oldOptional.atMs : now };
       doc.gender = optional.gender;
       doc.ageBand = optional.ageBand;
-      if (optional.guardian) doc.guardianConsentAtMs = typeof old.guardianConsentAtMs === "number" ? old.guardianConsentAtMs : now;
     }
     tx.set(accountProfilePath(who.uid), doc);
   });

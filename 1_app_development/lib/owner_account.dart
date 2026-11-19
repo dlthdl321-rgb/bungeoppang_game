@@ -17,8 +17,11 @@ enum OwnerStep { offline, login, name, character, optional, done }
 /// 26번 5단계 connects it to Firebase Analytics ([UsageOwnerAnalytics]).
 /// Never the email or the name.
 abstract class OwnerAnalytics {
-  /// Null clears a property (no consent, skipped or under 14).
+  /// Null clears a property (no consent or skipped).
   void setUserProperties({String? gender, String? ageBand});
+  /// The first-run required consent is done (DEC-126): usage
+  /// statistics start only then.
+  void setConsented(bool consented);
 }
 
 /// 26번 5단계: the optional info as the Analytics user properties gender and
@@ -31,6 +34,8 @@ class UsageOwnerAnalytics implements OwnerAnalytics {
   void setUserProperties({String? gender, String? ageBand}) => usage.setUserProperties(
       gender: gender == PlayerGender.none.id ? null : gender,
       ageBand: ageBand == AgeBand.none.id ? null : ageBand);
+  @override
+  void setConsented(bool consented) => usage.setConsented(consented);
 }
 
 /// Is there a connection? A DNS lookup with a short timeout; tests pass a
@@ -99,11 +104,16 @@ class OwnerAccount extends ChangeNotifier {
   void _apply() {
     game.ownerName = profile.name;
     game.preferredLogin = profile.provider;
+    analytics?.setConsented(requiredConsentDone);
     final info = profile.optional;
-    analytics?.setUserProperties(
-        gender: info?.gender.id,
-        ageBand: info == null || info.ageBand == AgeBand.under14 ? null : info.ageBand.id);
+    analytics?.setUserProperties(gender: info?.gender.id, ageBand: info?.ageBand.id);
   }
+
+  /// The current required consent (terms, privacy, 만 14세 이상) was given on
+  /// this device. Builds without the login do not ask it (and send no
+  /// statistics either).
+  bool get requiredConsentDone =>
+      !loginRequired || profile.consentVersion == requiredConsentVersion;
 
   /// Builds without Firebase (development, tests of the old screens) skip
   /// the login and the server-only optional info.
@@ -247,25 +257,15 @@ class OwnerAccount extends ChangeNotifier {
     return null;
   }
 
-  /// The optional answers with their consent. Under 14 without the
-  /// guardian's consent nothing is stored and the game goes on.
-  Future<void> saveOptional(
-      {required PlayerGender gender, required AgeBand ageBand, required bool guardianConsent}) async {
-    final blocked = ageBand == AgeBand.under14 && !guardianConsent;
+  /// The optional answers with their consent.
+  Future<void> saveOptional({required PlayerGender gender, required AgeBand ageBand}) async {
     await _run(() async {
       profile
         ..optionalAsked = true
-        ..optional = blocked
-            ? null
-            : OptionalInfo(
-                gender: gender,
-                ageBand: ageBand,
-                guardianConsent: ageBand == AgeBand.under14,
-                agreedAtMs: now().millisecondsSinceEpoch)
+        ..optional = OptionalInfo(gender: gender, ageBand: ageBand, agreedAtMs: now().millisecondsSinceEpoch)
         ..serverSynced = false;
       await _save();
     });
-    if (blocked) message = OwnerTexts.guardianSkipped;
     unawaited(pushProfile());
   }
 
@@ -295,9 +295,10 @@ class OwnerAccount extends ChangeNotifier {
       await online.saveAccountProfile(AccountProfileUpdate(
           name: name,
           consentVersion: consent,
+          // The current consent always comes with the 만 14세 이상 tick.
+          over14Confirmed: consent == requiredConsentVersion,
           gender: info?.gender.id,
-          ageBand: info?.ageBand.id,
-          guardianConsent: info?.guardianConsent ?? false));
+          ageBand: info?.ageBand.id));
       if (profile.name == name && profile.optional == info) {
         profile.serverSynced = true;
         await repository.save(profile);

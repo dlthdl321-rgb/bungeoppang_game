@@ -35,7 +35,7 @@
 15. [알려진 문제](#15-알려진-문제)
 16. [기획 중인 변경](#16-기획-중인-변경)
 
-흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19), [33 꾸미기·상점 화면 정리](#33-꾸미기상점-화면-정리--2026-11-19), [34 매일 돌아올 이유](#34-매일-돌아올-이유--2026-11-19), [35 공유 카드](#35-공유-카드--2026-11-19).
+흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19), [33 꾸미기·상점 화면 정리](#33-꾸미기상점-화면-정리--2026-11-19), [34 매일 돌아올 이유](#34-매일-돌아올-이유--2026-11-19), [35 공유 카드](#35-공유-카드--2026-11-19), [36 법률 확인 반영](#36-법률-확인-반영--2026-11-19).
 
 ---
 
@@ -44,7 +44,7 @@
 | 원칙 | 내용 | 지키는 곳 |
 | --- | --- | --- |
 | 광고·오류 수집 SDK 금지, 분석은 Firebase Analytics만 | ads, admob, crashlytics, sentry, 그 밖의 analytics 계열 금지. Firebase는 core/auth/functions/app_check와 **analytics**(26번 5단계, DEC-045·046)만 허용(app_check는 23번 7단계, Play Integrity). Analytics는 광고 ID·SSAID 수집과 개인화 광고 신호를 매니페스트 meta-data로 끄고, 라이브러리가 넣는 `AD_ID`·`ACCESS_ADSERVICES_*` 권한은 `tools:node="remove"`로 뺌. `setUserId`는 쓰지 않음. 카카오는 로그인용만. 구글은 `google_sign_in`(로그인만, 26번 2-1단계. 금지 단어에 걸리지 않아 허용 목록 추가 없음) | `test/no_tracking_sdk_test.dart` |
-| 첫 실행 로그인 필수 (26번 2-1단계) | 온라인 빌드는 새 설치·업데이트 뒤 첫 실행에 필수 동의 + 카카오 또는 구글 로그인을 마쳐야 게임에 들어감. 한 번 로그인하면 저장된 로그인으로 오프라인 플레이. 필수 동의(이용약관·개인정보 수집·이용)와 선택 동의(성별·연령대)는 따로 받음. 앱 안에서 계정 삭제 가능(Play 정책). 이메일은 서버 프로필에만, 화면·분석에 쓰지 않음 | `lib/owner_account.dart`, `test/owner_first_run_test.dart` |
+| 첫 실행 로그인 필수 (26번 2-1단계) | 온라인 빌드는 새 설치·업데이트 뒤 첫 실행에 필수 동의('만 14세 이상입니다' 확인 포함, 만 14세 미만 가입 불가 — 36장) + 카카오 또는 구글 로그인을 마쳐야 게임에 들어감. 한 번 로그인하면 저장된 로그인으로 오프라인 플레이. 필수 동의(이용약관·개인정보 수집·이용)와 선택 동의(성별·연령대)는 따로 받음. 앱 안에서 계정 삭제 가능(Play 정책). 이메일은 서버 프로필에만, 화면·분석에 쓰지 않음 | `lib/owner_account.dart`, `test/owner_first_run_test.dart` |
 | 손님 알림은 기기 안에서만 | 26번 5-1단계: `flutter_local_notifications`(+`timezone`, UTC만)로 앱이 꺼진 동안 올 손님을 기기 안에 예약. 서버 푸시·Firebase Messaging 없음, 정보를 어디에도 보내지 않음. 권한은 `POST_NOTIFICATIONS`(Android 13+ 실행 중 요청)·`RECEIVE_BOOT_COMPLETED`(재부팅 뒤 재예약)뿐, 정확한 알람 권한(`SCHEDULE_EXACT_ALARM`·`USE_EXACT_ALARM`) 없음(몇 분 늦을 수 있음) | `test/no_tracking_sdk_test.dart`, `lib/customer_notifier.dart` |
 | 현실 보상 없음 | 현금·상품·포인트를 지급하지 않음. 공유에도 보상 없음 | README |
 | 경제는 BigInt | 가격·생산·보상은 BigInt로 계산하고, 배율은 정수 천분율(‰)로 계산(`effectScale` = 1000). double 금지. 저장할 때는 10진 문자열 | `economy.dart`, `config_values.dart` |
@@ -149,7 +149,7 @@
 | 항목 | 값 |
 | --- | --- |
 | DB | sqflite `todays_bungeoppang_owner.db`, 테이블 `owner(id, body)` 한 줄(JSON). 계정·가게 저장과 따로라 **계정 저장 v13·가게 schema 8은 그대로** |
-| JSON | `schema` 1. `account`(`kakao:<번호>` 또는 구글 uid)·`provider`(`kakao`/`google`, 둘은 함께 있거나 함께 없음), `consentVersion`(필수 동의 판, 지금 `2026-11-18` = `requiredConsentVersion`)·`consentAtMs`, `name`(사장님 이름), `characterChosen`, `optionalAsked`, `optional`(`gender`·`ageBand`·`guardianConsent`·`agreedAtMs`, 만 14세 미만이면 보호자 동의 필수), `serverSynced`(서버 프로필에 보냈는지) |
+| JSON | `schema` 1. `account`(`kakao:<번호>` 또는 구글 uid)·`provider`(`kakao`/`google`, 둘은 함께 있거나 함께 없음), `consentVersion`(필수 동의 판, 지금 `2026-11-19` = `requiredConsentVersion`, 이 판부터 '만 14세 이상' 확인 포함)·`consentAtMs`, `name`(사장님 이름), `characterChosen`, `optionalAsked`, `optional`(`gender`·`ageBand`·`agreedAtMs`. 연령대에 `under14` 없음), `serverSynced`(서버 프로필에 보냈는지). 옛 기록의 `optional.guardianConsent`는 읽을 때 무시하고 쓰지 않음, `ageBand: under14`+보호자 체크였던 선택 정보는 읽을 때 버리고 `serverSynced=false`로(다음 동기화에 서버 연령대도 지움, 36장) |
 | 읽기 실패 | 모양이 틀리거나 DB를 못 읽으면 빈 기록으로 보고 첫 실행 질문을 다시 함(게임 진행은 다른 저장이라 영향 없음, 복구 화면으로 가지 않음) |
 | 캐릭터 | 고른 값은 가게 저장 `avatarEquipment.character`(`WorkshopController.equipAvatar`)에 들어가 꾸미기와 같음. 이 기록은 물었는지만 |
 | 기존 저장 | 로그인 없이 하던 저장은 그대로 두고, 로그인한 계정이 이 기기 가게의 주인이 됨. 가게 저장에 이미 `rewardAccount`·`purchases.account`가 있으면 그 계정만 받음(다른 계정이면 로그아웃시키고 안내) |
@@ -601,11 +601,11 @@
 
 | 순서 | 화면 | 조건·저장 |
 | --- | --- | --- |
-| ① 동의 + 로그인 | 전체 동의 / (필수) 이용약관 [보기] / (필수) 개인정보 수집·이용 [보기] → '카카오로 시작하기'·'Google로 시작하기'(필수 둘 다 체크해야 켜짐). '처음 고른 방법으로 계속 로그인해 주세요…', '만 14세 미만이라면 보호자와 함께…', 약관·방침 전문 링크 | 누르면 먼저 인터넷 확인(`lookupInternet`, DNS 4초). 없으면 ② 대신 오프라인 화면. 이미 로그인한 사용자(업데이트 전 카카오 로그인)는 로그인 버튼 대신 '동의하고 계속하기'. 다른 계정이 이 기기 가게의 주인이면 로그아웃시키고 '이 기기의 가게는 다른 ○○ 계정에…' |
+| ① 동의 + 로그인 | 전체 동의 / (필수) 이용약관 [보기] / (필수) 개인정보 수집·이용 [보기] / (필수) 만 14세 이상입니다(키 `consent-age`) → '카카오로 시작하기'·'Google로 시작하기'(필수 셋 다 체크해야 켜짐, 전체 동의는 셋을 함께). 만 14세 이상을 체크하지 않은 동안 그 아래 빨간 글 '만 14세 미만은 지금은 이용할 수 없어요.'(키 `first-run-child-notice`). '처음 고른 방법으로 계속 로그인해 주세요…', 약관·방침 전문 링크 | 누르면 먼저 인터넷 확인(`lookupInternet`, DNS 4초). 없으면 ② 대신 오프라인 화면. 이미 로그인한 사용자(업데이트 전 카카오 로그인)는 로그인 버튼 대신 '동의하고 계속하기'. 다른 계정이 이 기기 가게의 주인이면 로그아웃시키고 '이 기기의 가게는 다른 ○○ 계정에…' |
 | 오프라인 | '인터넷 연결이 필요해요' + '다시 시도' | 로그인 전에만. 로그인 뒤에는 Firebase 세션이 기기에 남아 오프라인 플레이 |
 | ② 사장님 이름 | 입력칸(로그인 닉네임에서 허용 글자만 남긴 값이 기본값, '사장님' 꼬리말), 2~8자 안내 | `OwnerNameRules`(아래) |
 | ③ 사장님 고르기 | 여자/남자 사장님 그림 두 장(`AvatarPainter`), 지금 입은 캐릭터가 기본 선택 | `equipAvatar('girl'/'boy')` |
-| ④ 선택 정보 | 성별(여성·남성·선택 안 함)·연령대(만 14세 미만~50대 이상·선택 안 함), 수집 항목·목적·보관 기간 상자, (선택) 동의 체크, 만 14세 미만이면 보호자 동의 체크. '건너뛰기'와 '저장하고 시작'이 같은 크기 | 동의 체크·두 값을 골라야 저장 켜짐. 만 14세 미만 + 보호자 동의 없음 → 저장하지 않고 '보호자 동의가 없어 선택 정보는 저장하지 않았어요.' |
+| ④ 선택 정보 | 성별(여성·남성·선택 안 함)·연령대(14~19세~50대 이상·선택 안 함, 만 14세 미만 항목 없음), 수집 항목·목적·보관 기간 상자('Google(미국) 서버로 보내져 14개월 보관' 포함), (선택) 동의 체크. '건너뛰기'와 '저장하고 시작'이 같은 크기 | 동의 체크·두 값을 골라야 저장 켜짐 |
 | 끝 | 게임 + 2단계 첫 실행 안내 | 알림 권한 질문(5-1)은 안내가 끝난 뒤 그대로 |
 
 온라인 설정이 없는 빌드(개발용)는 ①·④ 없이 ②·③만. 테스트용 `GameApp`에 `owner`를 넘기지 않으면 바로 게임.
@@ -622,14 +622,14 @@
 - `inviteProfiles`, `inviteCodes`, `players`, `inviteTickets`, `inviteAccepts`, `inviteEvents`
 - `friends/{uid}/list`, `visitsSent`, `visits/{uid}/inbox`
 - `rankings/{board}/entries`, `rankingSubmits`
-- `accountProfiles/{uid}` (26번 2-1단계): `provider`, `name`, `email`(있을 때), `requiredConsent{version, atMs}`, 선택 동의 시 `optionalConsent{atMs}`·`gender`·`ageBand`(만 14세 미만이면 `guardianConsentAtMs`), `updatedAtMs`
+- `accountProfiles/{uid}` (26번 2-1단계): `provider`, `name`, `email`(있을 때), `requiredConsent{version, atMs, over14}`(`over14: true` = 만 14세 이상 확인, 36장), 선택 동의 시 `optionalConsent{atMs}`·`gender`·`ageBand`, `updatedAtMs`. 문서를 통째로 다시 쓰므로 예전 `guardianConsentAtMs`·`under14`는 다음 저장 때 사라짐
 
 ### 서버 함수 (`firebase/functions/src/index.ts`)
 
 | 함수 | 역할 |
 | --- | --- |
 | authKakao | 카카오 토큰 → Firebase 토큰(+ 동의한 이메일 기억) |
-| accountProfileSet | (26번 2-1단계) 사장님 이름·필수 동의 판·선택 정보 저장. 선택 정보를 안 보내면 지움. 동의 판이 다르면 `consent-required`, 만 14세 미만에 보호자 동의 없으면 `guardian-required` |
+| accountProfileSet | (26번 2-1단계) 사장님 이름·필수 동의 판·선택 정보 저장. 선택 정보를 안 보내면 지움. 동의 판이 `2026-11-19`가 아니면 `consent-required`, `over14Confirmed: true`가 없으면 `age-required`(둘 다 `failed-precondition`), 연령대 `under14`는 `invalid-argument`(36장) |
 | accountDelete | (26번 2-1단계) uid로 된 문서 전부(`users/{uid}`·인코딩한 `users/{…}` 하위 전부, 친구 양쪽·하루 방문 표시, 내 아이디 코드·최근 초대 링크, 방문함, 초대 기록, 프로필, 랭킹 3개, `accountProfiles`)와 Firebase 인증 사용자 삭제. 결제 기록 `purchases/*`만 법정 보관. 다시 불러도 안전 |
 | walletSync / walletRedeem / walletSpend | 황금 붕어빵 잔액·결제 확인·사용 |
 | inviteRegister / inviteCreateTicket / inviteAccept / inviteLevelOne / inviteFetchEvents | 초대 |
@@ -810,7 +810,7 @@
 
 **설정 창 맨 위 '계정' (26번 2-1단계, `lib/ui/owner_settings.dart` `OwnerSettingsSection`, `WorkshopPage(owner:)`가 있을 때만):** '사장님 이름: ○○' + '이름 바꾸기'(같은 규칙, 틀리면 창 안에 이유), '카카오/구글 계정으로 로그인 중', '성별·연령대 (선택): …' + '바꾸기'(첫 실행 ④와 같은 양식)·'지우기'(서버에서도 지움), 이용약관·개인정보처리방침(앱 안 `assets/legal/` 사본을 제목·목록·표 줄로 보여 줌, `test/owner_first_run_test.dart`가 문서 폴더 원본과 같은지 확인), '로그아웃'(확인 뒤 설정 창을 닫고 로그인 화면, 진행은 기기에 남음), '계정 삭제'(지워지는 것·되돌릴 수 없음 안내 + '위 내용을 확인했어요' 체크 뒤 '삭제하기', 인터넷 없으면 '계정 삭제는 인터넷에 연결된 상태에서만…'). 첫 실행 골든 `test/goldens/first_run_{login,name,character,optional}_390x844.png`·`first_run_login_360x640.png`(`test/first_run_golden_test.dart`, 실제 글꼴).
 
-**설정 창 '사용 통계 보내기' (26번 5단계, DEC-046, 키 `settings-usage-stats`):** 손님 알림 세 줄('밤 알림 끄기') 바로 아래, '배경 시간' 위. 아이콘 `Icons.insights_outlined`, 설명 '게임을 고치는 데 쓰는 이름 없는 사용 기록이에요', 기본 켬, 첫 실행 안내 없음. 끄면 `GameSettings.sendUsageStats=false` 저장 뒤 `setAnalyticsCollectionEnabled(false)`(저장에 실패하면 원래 값으로 되돌린 값을 Analytics에 알림). 계정 저장 v13 그대로(없으면 켬).
+**설정 창 '사용 통계 보내기' (26번 5단계, DEC-046, 키 `settings-usage-stats`):** 손님 알림 세 줄('밤 알림 끄기') 바로 아래, '배경 시간' 위. 아이콘 `Icons.insights_outlined`, 설명 '게임을 고치는 데 쓰는 사용 기록이에요(이름·계정과 연결하지 않아요)'(36장에서 '이름 없는' 표현을 바꿈), 기본 켬, 첫 실행 안내 없음(수집은 첫 실행 필수 동의 뒤부터, 36장). 끄면 `GameSettings.sendUsageStats=false` 저장 뒤 `setAnalyticsCollectionEnabled(false)`(저장에 실패하면 원래 값으로 되돌린 값을 Analytics에 알림). 계정 저장 v13 그대로(없으면 켬).
 
 **메뉴 창 아래:** 황금붕어빵력 심사 대기 건수(`menu-pending-gold`), '로그인·보상 확인'(`menu-sync`), 영업 중이면 '영업 종료'(`menu-close-business`). 예전 "가게 관리" 시트는 없앴습니다. 레시피(슈크림·초코) 미션 받기는 레벨 미션 창, 맛별 연습·손기술 진행과 손님 취향 기록·이야기 다시 보기는 도감 창으로 옮겼습니다.
 
@@ -1527,7 +1527,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 처음 5분 기능 해금 | 하나씩 열기: 안내 중 굽기·영업·손님·판매·큰 붕어빵 / 안내 끝 꾸미기·상점 / Lv.2 스킬 창·초당 숫자 / 첫 숙련 6구 / Lv.3 도감 / Lv.4 레시피 / Lv.5 특별 주문·붕어빵 꾸미기 / 재고 하루 경과 시 신선도 안내 / Lv.8 가게 꾸미기. 핵심 진행은 레벨로 잠그지 않음. 새 설정 키 `feature_unlock_levels.skill_shop`(2), 공통 잠금 표시·소개 카드 | DEC-043 | 26번 2단계 **구현 완료**(2026-11-18, 10장 "처음 5분 해금", 3장 schema 8) |
 | 초반 손님 간격 | 예외 없음. 튜토리얼 뒤 레벨과 관계없이 일반 30초~5분(DEC-106, 처음엔 1~15분)·네임드 30분~3시간 | DEC-044 | 26번 5-1단계 |
 | 측정 방식 | `firebase_analytics` 도입(1장 원칙·`no_tracking_sdk_test`를 이 패키지만 허용으로), 광고 ID·SSAID·개인화 광고 신호 끔. 이벤트 10개 이하. 자체 서버 집계·`metrics_report.py`는 만들지 않음 | DEC-045 | 26번 5단계 **구현 완료**(2026-11-19, 32장) |
-| 측정 대상·기본값·보관 | 로그인과 상관없이 모두, 기본 켬, 첫 실행 안내 없음, 설정 '사용 통계 보내기'로 끔(`setAnalyticsCollectionEnabled(false)`). 보관 14개월(Analytics 무료판 최대) | DEC-046 | 26번 5단계 **구현 완료**(2026-11-19, 32장) |
+| 측정 대상·기본값·보관 | 로그인과 상관없이 모두(첫 실행 필수 동의 뒤부터, DEC-126·36장), 기본 켬, 첫 실행 안내 없음, 설정 '사용 통계 보내기'로 끔(`setAnalyticsCollectionEnabled(false)`). 보관 14개월(Analytics 무료판 최대) | DEC-046 | 26번 5단계 **구현 완료**(2026-11-19, 32장) |
 | 매일 돌아올 이유 | 오늘의 특별 주문(주문서 카드) + 손님 이야기 하루 한 조각 + 겨울 계절 행사(장식·인사·주문 문구) + 출석 보상(7일째 황금 1, 서버 검증) | DEC-047 | 26번 7단계 |
 | 매일 돌아올 이유 구현 세부 | 오늘의 주문서 Lv.5부터 KST 하루 1장(날짜+설치 고정, 영업 중 재고 납품, 붕어빵력 + 의뢰 단골 친밀도 +3, 황금 없음) / 출석 7칸 '도장 찍기'(걸러도 이어짐, 1~6칸 붕어빵력, 7칸 황금 1 서버 검증·직전 출석 황금에서 7일 이상, 서버 없는 빌드는 붕어빵력) / 이야기·후일담·선택 사건 합쳐 영업일당 1개 / 행사 날짜는 설정 `daily_return.seasonal_events`에만 | DEC-107~110 | 26번 7단계 (34장) |
 | 공유 카드 | 넣음, 보상 없음. 완벽 결과·이야기·도감 완성·가게 사진 네 곳, 1080×1350 | DEC-048 | 26번 8단계 **구현함**(2026-11-19, 35장) |
@@ -1597,7 +1597,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 화면 | ① 필수 동의 + 카카오/구글 ② 사장님 이름 ③ 여자/남자 사장님 ④ 선택 성별·연령대 → 2단계 첫 실행 안내 | `lib/ui/first_run.dart` |
 | 상태 | `OwnerAccount`(`step`, `signIn`·`acceptConsent`·`setName`·`chooseCharacter`·`saveOptional`·`skipOptional`·`clearOptional`·`signOut`·`deleteAccount`·`pushProfile`) | `lib/owner_account.dart` |
 | 문구 | 첫 실행·계정 설정 문구 한 곳 | `lib/owner_texts.dart` |
-| 분석 연결 지점 | `OwnerAnalytics.setUserProperties(gender, ageBand)` — 선택 동의한 값만, 만 14세 미만 연령대는 보내지 않음, 이메일·이름은 절대 안 보냄. 26번 5단계에서 `UsageOwnerAnalytics`로 Firebase Analytics 사용자 속성 `gender`·`age_band`에 연결('선택 안 함'은 지움, 32장) | `lib/owner_account.dart` |
+| 분석 연결 지점 | `OwnerAnalytics.setUserProperties(gender, ageBand)` — 선택 동의한 값만(만 14세 미만 연령대는 36장에서 없앰), 이메일·이름은 절대 안 보냄. `OwnerAnalytics.setConsented(bool)` — 필수 동의 여부(36장).  26번 5단계에서 `UsageOwnerAnalytics`로 Firebase Analytics 사용자 속성 `gender`·`age_band`에 연결('선택 안 함'은 지움, 32장) | `lib/owner_account.dart` |
 | 서버 | `auth.ts`(구글 허용), `account.ts`(`setAccountProfile`·`rememberEmail`·`deleteAccount`), `kakao.ts`(이메일), `index.ts`(`accountProfileSet`·`accountDelete`). **배포 필요** | `firebase/functions/src` |
 | 테스트 | 앱 `test/owner_first_run_test.dart` 25개·`test/first_run_golden_test.dart` 2개(골든 5장), 서버 `test/account.test.ts` 8개 + `kakao.test.ts` 3개 추가·수정 | |
 
@@ -1608,13 +1608,14 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 항목 | 내용 | 위치 |
 | --- | --- | --- |
 | 패키지 | `firebase_analytics` 12.6.1(firebase_core 4.15.x와 맞는 12.x 마지막 안정판, 고정). 하위 `firebase_analytics_platform_interface` 6.0.7·`firebase_analytics_web` 0.6.1+13. Android 쪽은 `play-services-measurement` 23.2.0 계열 | `pubspec.yaml` |
-| 매니페스트 | meta-data `firebase_analytics_collection_enabled` false(게임이 설정을 읽고 `setAnalyticsCollectionEnabled`를 부르기 전엔 수집 안 함, 그 뒤엔 Firebase가 마지막 값을 기억), `google_analytics_adid_collection_enabled`·`google_analytics_ssaid_collection_enabled`·`google_analytics_default_allow_ad_personalization_signals` 모두 false. `AD_ID`·`ACCESS_ADSERVICES_AD_ID`·`_ATTRIBUTION`·`_TOPICS` 권한 `tools:node="remove"`. 선택 라이브러리 `android.ext.adservices`(Privacy Sandbox)도 `tools:node="remove"`. 병합 뒤 새로 생기는 것: 권한 `com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE`(설치 경로), `AppMeasurementReceiver`·`AppMeasurementService`·`AppMeasurementJobService`, 구성 요소 `AnalyticsConnectorRegistrar`·`FlutterFirebaseAppRegistrar`(analytics). `ACCESS_NETWORK_STATE`·`WAKE_LOCK`은 원래 있음 | `android/app/src/main/AndroidManifest.xml` |
+| 매니페스트 | meta-data `firebase_analytics_collection_enabled` false(첫 실행 필수 동의를 마치고 설정이 켬일 때 `setAnalyticsCollectionEnabled(true)`를 부르기 전엔 수집 안 함 — 자동 `first_open`·`session_start`도, 그 뒤엔 Firebase가 마지막 값을 기억하므로 동의 전 상태에서는 시작할 때마다 false를 다시 알림, 36장), `google_analytics_adid_collection_enabled`·`google_analytics_ssaid_collection_enabled`·`google_analytics_default_allow_ad_personalization_signals` 모두 false. `AD_ID`·`ACCESS_ADSERVICES_AD_ID`·`_ATTRIBUTION`·`_TOPICS` 권한 `tools:node="remove"`. 선택 라이브러리 `android.ext.adservices`(Privacy Sandbox)도 `tools:node="remove"`. 병합 뒤 새로 생기는 것: 권한 `com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE`(설치 경로), `AppMeasurementReceiver`·`AppMeasurementService`·`AppMeasurementJobService`, 구성 요소 `AnalyticsConnectorRegistrar`·`FlutterFirebaseAppRegistrar`(analytics). `ACCESS_NETWORK_STATE`·`WAKE_LOCK`은 원래 있음 | `android/app/src/main/AndroidManifest.xml` |
 | Firebase 앱 ID 리소스 | 이 앱은 `google-services.json`을 쓰지 않으므로 `android/app/build.gradle.kts`가 `--dart-define`의 Firebase 키 4개를 문자열 리소스 `google_app_id`·`google_api_key`·`gcm_defaultSenderId`·`project_id`로 넣음(`buildFeatures.resValues`, 네 값이 모두 있을 때만). Analytics가 앱 ID를 이 리소스에서 읽음. Firebase가 같은 값으로 기본 앱을 먼저 만들고 Dart `Firebase.initializeApp(options:)`은 apiKey가 같아 그 앱을 그대로 씀 | `android/app/build.gradle.kts` |
 | 기록기 | `UsageStats`(이벤트·하루 1번·평생 1번 판정, 끄기) + `UsageStatsSink`(`FirebaseUsageStatsSink` / 아무것도 안 보내는 `NoUsageStatsSink`: 키 없는 빌드·테스트). 모든 호출은 기다리지 않고 오류를 삼킴 | `lib/usage_stats.dart`, `lib/firebase_usage_stats.dart` |
 | 이벤트 10종 | `first_bake`(첫 굽기 결과), `first_sale`(첫 판매), `tutorial_done`(`result`: done/skipped), `level_reached`(`level`: 3·5·10), `shop_open`(상점 창, 한국 날짜로 하루 1번), `pay_view`(황금 충전 탭·충전 목록, 하루 1번), `pay_done`(`product_id`만, 금액 없음, 서버 확인 뒤 결제마다), `special_order_done`(오늘의 주문서 납품, `event`: 행사 ID 또는 none, 26번 7단계), `event_join`(행사 기간 첫 접속, 행사마다 1번, `event`: 행사 ID), `share`(공유 카드를 공유 창으로 보냄, 하루 1번, `moment`: perfect·story·collection·shop, 26번 8단계 — 이것으로 10개 상한). 첫 실행·재방문은 Analytics 자동 `first_open`·`session_start`. 9단계 `ad_reward`는 출시 후 별도 브랜치에서 다시 셈(하나를 빼거나 합쳐야 함) | `UsageEvent` |
 | 보내는 때 | Workshop 진행 6종은 `WorkshopController.command`가 **저장에 성공한 뒤** `finally`에서 명령 전후 `UsageProgress`(굽기 수·판매 수·레벨·안내 상태·오늘 납품한 주문서 날짜·들어온 행사)를 비교해 보냄(명령·저장 트랜잭션 안에서 보내지 않음, 실패한 명령은 안 보냄). 구형 저장(schema 5 이하)을 안내 끝으로 읽는 경로·다시 열기는 명령이 아니라 아무것도 안 보냄. `shop_open`은 `WorkshopPage._store`, `pay_view`는 `GoldChargeTab.initState`·`_goldPacks`, `pay_done`은 `PremiumCommands`의 서버 지급 성공 뒤 | `workshop_controller.dart`, `ui/workshop_page.dart`, `ui/gold_widgets.dart`, `premium_controller.dart` |
-| 사용자 속성 | 선택 정보 동의 시 `gender`·`age_band`('선택 안 함'·만 14세 미만 연령대는 null로 지움). `setUserId`는 쓰지 않음 | `UsageOwnerAnalytics` |
-| 끄기 | `GameSettings.sendUsageStats`(기본 true). 시작 때와 바꿀 때 `setAnalyticsCollectionEnabled`. 끈 동안은 기록기가 이벤트를 넘기지 않음(사용자 속성은 넘기지만 Analytics 수집이 꺼져 있어 보내지 않음) | `game_controller.dart` |
+| 사용자 속성 | 선택 정보 동의 시 `gender`·`age_band`('선택 안 함'은 null로 지움). `setUserId`는 쓰지 않음 | `UsageOwnerAnalytics` |
+| 끄기 | `GameSettings.sendUsageStats`(기본 true). 시작 때와 바꿀 때 `setAnalyticsCollectionEnabled(설정 && 동의)`. 끈 동안은 기록기가 이벤트를 넘기지 않음(사용자 속성은 넘기지만 Analytics 수집이 꺼져 있어 보내지 않음) | `game_controller.dart` |
+| 첫 실행 동의 전 (36장) | `main.dart`가 `UsageStats(FirebaseUsageStatsSink(), consented: false)`로 만듦 → `GameController.initialize`의 `setEnabled(설정)`은 `false`를 알림. `OwnerAccount`가 읽기·저장마다 `setConsented(requiredConsentDone)`(= 로그인 없는 빌드이거나 `consentVersion == requiredConsentVersion`)을 알리고, 값이 바뀔 때만 Analytics에 `setAnalyticsCollectionEnabled(collecting)`. 재동의가 필요한 기존 사용자·계정 삭제 뒤에도 다시 멈춤. `collecting = enabled && consented`가 거짓이면 이벤트를 넘기지 않음 | `usage_stats.dart`, `owner_account.dart`, `main.dart` |
 | 보관·보기 | Analytics 이벤트 데이터 보존 14개월(무료판 최대, 콘솔에서 설정). 10년 보관은 BigQuery 내보내기로만 가능(online_setup.md '사용 통계') | — |
 | 테스트 | `test/usage_stats_test.dart`(이름 규칙·하루 1번·끄기·오류 격리·진행 비교·사용자 속성·Workshop 한 바퀴·저장 실패·skip·구형 저장·설정 호환·충전 탭), `test/no_tracking_sdk_test.dart`(허용 목록 3개 추가, 매니페스트 끄기 스위치·광고 권한 제거, release/profile 병합 매니페스트) | |
 
@@ -1666,3 +1667,18 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 그림 | 새 그림 없음(기존 배경·조리 컷·손님·붕어빵 그림, 나무 테두리는 코드). 메뉴 줄 아이콘은 Material `photo_camera_outlined`. 장식 테두리가 필요하면 25번 다음 번호로 주문 | — |
 | 테스트 | `test/share_card_test.dart`(9개: 설정·공유 글, 하루 1번, 골든 축소본 3장 `share_card_{perfect,story,shop}_360x450`, 메뉴 가게 사진 → 1080×1350 PNG·스토어 주소·보상 없음·이벤트 하루 1번, 공유 실패 안내·상태 불변, 완벽 결과에만 '자랑하기'·손님 반응, 이야기·도감 완성) | |
 | 미리보기 | `flutter test tools/preview_share_test.dart --dart-define=PREVIEW_FONT=C:/Windows/Fonts/malgun.ttf` → `build/preview/share_card_{perfect,story,collection,shop}.png`(실제 크기) | |
+
+## 36. 법률 확인 반영 — 2026-11-19
+
+출시 전 법률 확인 메모(만 14세 미만 필수 정보, 사용 통계 기본 켬)에 대한 사용자 결정(2026-11-19) 반영. 결정은 00_결정취합 `DEC-125~127`, 결과 표는 26번 문서 '법률 확인 반영'. **법률 자문이 아니며 근거 조항은 변호사 확인 권장**(23번 8단계 사용자 할 일).
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 만 14세 미만 가입 불가 (A안) | 필수 동의에 '(필수) 만 14세 이상입니다'(전체 동의에 포함). 체크 안 하면 로그인·'동의하고 계속하기' 버튼이 꺼지고 '만 14세 미만은 지금은 이용할 수 없어요.' 안내. 선택 정보 연령대에서 '만 14세 미만'과 보호자 체크·`guardian-required`를 없앰 | `owner_texts.dart`, `ui/first_run.dart`, `owner_profile.dart` |
+| 서버 확인 기록 | `accountProfileSet` 입력 `over14Confirmed: true` 필수(`age-required`), `requiredConsent.over14: true`로 저장. 앱은 `consentVersion == requiredConsentVersion`이면 `over14Confirmed: true`를 보냄(현재 판 동의는 반드시 이 체크를 거침). **서버 배포 필요**(옛 서버는 새 앱의 `2026-11-19` 동의를 `consent-required`로 거절 → 프로필 저장만 실패하고 다음 시작에 다시 시도) | `firebase/functions/src/account.ts`, `online_backend.dart` `AccountProfileUpdate` |
+| 재동의 | `requiredConsentVersion` `2026-11-18` → `2026-11-19`(앱·서버). 기존 사용자는 업데이트 뒤 첫 실행에 ① 화면(이미 로그인이면 '동의하고 계속하기')에서 세 항목에 다시 동의해야 게임에 들어감 | `owner_profile.dart`, `account.ts` |
+| 옛 만 14세 미만 기록 | 기기 기록의 `ageBand: under14`(+보호자 체크) 선택 정보는 읽을 때 버리고 서버 동기화로 지움. 계정 자체는 자동 삭제하지 않음(알게 되면 운영자가 삭제 — 처리방침 8절) | `OptionalInfo.fromJson` |
+| 사용 통계 시작 시점 | 기본 켬 유지, 단 첫 실행 필수 동의 뒤에 수집 시작(32장 '첫 실행 동의 전'). 매니페스트 `firebase_analytics_collection_enabled=false`는 그대로라 동의 전에는 자동 `first_open`도 남지 않고, 동의 뒤 수집을 켤 때 Analytics가 `first_open`을 남김(Firebase 동작, 9단계 DebugView로 확인할 것) | `usage_stats.dart` |
+| 문구 | 설정 설명 '게임을 고치는 데 쓰는 사용 기록이에요(이름·계정과 연결하지 않아요)', 선택 동의 상자 '…이름·이메일·계정과 연결하지 않고, Google(미국) 서버로 보내져 14개월 보관돼요' | `ui/workshop_page.dart`, `owner_texts.dart` |
+| 문서 | 개인정보처리방침 1-0절(처리 근거 구분: 동의/동의 없이/법령), 1-2절 국외 이전 한 줄, 1-3절 '이름·계정과 연결하지 않은 기록'·동의 뒤 수집·자동 수집 장치, 7-1절 국외 이전 법정 항목 표(이전 근거 조항 포함), 8절 만 14세 미만 가입 불가·알게 되면 삭제. 이용약관 2-1절 이용 자격. Play 데이터 보안·online_setup.md 16-8(카카오 14세 필터, 보조)·17장·18-4 | `privacy_policy.md`, `terms_of_service.md`, `assets/legal/` 사본 |
+| 테스트 | `owner_first_run_test`(14세 체크 없이 로그인 불가·전체 동의·재동의·옛 under14 기록·연령대 항목 없음·동의 전 통계 멈춤), `usage_stats_test`('첫 실행 동의 전에는 모으지 않음' 4개), 서버 `account.test.ts`(만 14세 이상 확인·under14 거절·옛 보호자 기록 지움·옛 동의 판 거절) | |

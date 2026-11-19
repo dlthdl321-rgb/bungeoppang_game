@@ -39,27 +39,25 @@ enum LoginProvider {
 
 /// What the first-run screens and the settings send to the server's
 /// account profile (functions/src/account.ts accountProfileSet). Gender and
-/// age band go only with the separate optional consent.
+/// age band go only with the separate optional consent. [over14Confirmed]:
+/// the player ticked '(필수) 만 14세 이상입니다' with the required consent
+/// (the server refuses the profile without it, DEC-125).
 class AccountProfileUpdate {
   final String name, consentVersion;
+  final bool over14Confirmed;
   final String? gender, ageBand;
-  final bool guardianConsent;
   const AccountProfileUpdate(
       {required this.name,
       required this.consentVersion,
+      required this.over14Confirmed,
       this.gender,
-      this.ageBand,
-      this.guardianConsent = false});
+      this.ageBand});
   bool get hasOptional => gender != null && ageBand != null;
   Map<String, Object?> toJson() => {
         'name': name,
         'consentVersion': consentVersion,
-        if (hasOptional)
-          'optional': {
-            'gender': gender,
-            'ageBand': ageBand,
-            if (guardianConsent) 'guardianConsent': true,
-          },
+        'over14Confirmed': over14Confirmed,
+        if (hasOptional) 'optional': {'gender': gender, 'ageBand': ageBand},
       };
 }
 

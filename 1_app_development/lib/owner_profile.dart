@@ -12,7 +12,9 @@ import 'online_backend.dart';
 
 /// The terms and privacy notice the required consent refers to. Bump it when
 /// either changes so every player agrees again (server: account.ts).
-const requiredConsentVersion = '2026-11-18';
+/// 2026-11-19: '(필수) 만 14세 이상입니다' joins the required consent
+/// (만 14세 미만은 가입 불가, DEC-125), so everyone confirms it once.
+const requiredConsentVersion = '2026-11-19';
 
 /// Gender the player may tell (optional; not the character choice).
 enum PlayerGender {
@@ -26,9 +28,10 @@ enum PlayerGender {
       values.where((v) => v.id == id).firstOrNull;
 }
 
-/// Age band the player may tell (optional). Under 14 needs a guardian.
+/// Age band the player may tell (optional). There is no 만 14세 미만 band:
+/// players under 14 cannot sign up (DEC-125). A save from before
+/// that still holding 'under14' is dropped on reading ([OptionalInfo.fromJson]).
 enum AgeBand {
-  under14('under14', '만 14세 미만'),
   teen('14_19', '14~19세'),
   twenties('20s', '20대'),
   thirties('30s', '30대'),
@@ -93,31 +96,29 @@ class OwnerNameRules {
 class OptionalInfo {
   final PlayerGender gender;
   final AgeBand ageBand;
-  /// For [AgeBand.under14]: the legal guardian agreed (required then).
-  final bool guardianConsent;
   final int agreedAtMs;
-  const OptionalInfo(
-      {required this.gender,
-      required this.ageBand,
-      this.guardianConsent = false,
-      required this.agreedAtMs});
+  const OptionalInfo({required this.gender, required this.ageBand, required this.agreedAtMs});
 
   Map<String, Object?> toJson() => {
         'gender': gender.id,
         'ageBand': ageBand.id,
-        'guardianConsent': guardianConsent,
         'agreedAtMs': agreedAtMs,
       };
 
-  static OptionalInfo fromJson(Object? raw) {
+  /// The saved answers, or null for a save from before DEC-125 that
+  /// chose 'under14' (with the old guardian tick): those are forgotten, here
+  /// and, through the next profile push, on the server.
+  static OptionalInfo? fromJson(Object? raw) {
     if (raw is! Map) throw const FormatException('선택 정보 형식 오류');
-    final gender = PlayerGender.byId(raw['gender']), age = AgeBand.byId(raw['ageBand']);
-    final guardian = raw['guardianConsent'], at = raw['agreedAtMs'];
-    if (gender == null || age == null || guardian is! bool || at is! int ||
-        (age == AgeBand.under14 && !guardian)) {
+    final gender = PlayerGender.byId(raw['gender']), at = raw['agreedAtMs'];
+    final ageId = raw['ageBand'], age = AgeBand.byId(ageId);
+    final guardian = raw['guardianConsent'];
+    if (gender == null || at is! int || (guardian != null && guardian is! bool)) {
       throw const FormatException('선택 정보 형식 오류');
     }
-    return OptionalInfo(gender: gender, ageBand: age, guardianConsent: guardian, agreedAtMs: at);
+    if (ageId == 'under14' && guardian == true) return null;
+    if (age == null) throw const FormatException('선택 정보 형식 오류');
+    return OptionalInfo(gender: gender, ageBand: age, agreedAtMs: at);
   }
 }
 
@@ -178,6 +179,10 @@ class OwnerProfile {
     if ((account == null) != (provider == null) || account == '') {
       throw const FormatException('사장님 정보 형식 오류: account');
     }
+    final rawOptional = json['optional'];
+    final optional = rawOptional == null ? null : OptionalInfo.fromJson(rawOptional);
+    // A dropped old under-14 answer still has to be cleared on the server.
+    final dropped = rawOptional != null && optional == null;
     return OwnerProfile()
       ..account = account
       ..provider = provider
@@ -186,7 +191,7 @@ class OwnerProfile {
       ..name = nullable<String>('name')
       ..characterChosen = flag('characterChosen')
       ..optionalAsked = flag('optionalAsked')
-      ..optional = json['optional'] == null ? null : OptionalInfo.fromJson(json['optional'])
-      ..serverSynced = flag('serverSynced');
+      ..optional = optional
+      ..serverSynced = flag('serverSynced') && !dropped;
   }
 }
