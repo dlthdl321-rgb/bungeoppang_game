@@ -56,10 +56,12 @@ void main(){
     await tapKey('kind-auto');await tapKey('step-auto_1-10');await tapKey('step-auto_1-100');
     expect(find.byKey(const Key('skill-auto_1')),findsOneWidget);await close();
     await tapKey('menu-skins');expect(find.byKey(const Key('cosmetic-category-hair')),findsOneWidget);
-    await tapKey('preview-boy');expect(c.state.avatarEquipment['character'],isNot('boy'));
-    // 26번 4-5단계: '모두 적용' on the preview wears every changed slot.
-    await tapKey('wardrobe-apply-all');expect(c.state.avatarEquipment['character'],'boy');
-    await close();
+    // 3차 피드백 H11: the boy is bought now; an owned pick shows '모두 적용'.
+    await tapKey('cosmetic-category-outfit');await tapKey('cosmetic-slot-outfit');
+    await tapKey('preview-noapron');expect(c.state.avatarEquipment['outfit'],isNot('noapron'));
+    // '모두 적용' wears every changed slot and closes the window (H15).
+    await tapKey('wardrobe-apply-all');expect(c.state.avatarEquipment['outfit'],'noapron');
+    expect(find.byKey(const Key('workshop-window-title')),findsNothing);
     for(final route in [('menu-collection','도감'),('menu-achievements','업적'),('menu-records','생산 기록'),
       ('menu-theme','꾸미기'),('menu-daily','일일 미션'),('event-entry','주간 도전'),
       ('menu-missions','레벨 미션')]){

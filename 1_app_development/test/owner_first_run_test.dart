@@ -320,7 +320,8 @@ void main() {
         for (var i = 0; i < 25; i++) {
           shop.tap();
         }
-        expect(await shop.equipAvatar('boy'), isTrue);
+        // A save from before 3차 피드백 H11 that wore the boy owns him.
+        expect(await shop.chooseStarterCharacter('boy'), isTrue);
         expect(shop.state.taps, 25);
         before = shop.state.toJson();
       });
