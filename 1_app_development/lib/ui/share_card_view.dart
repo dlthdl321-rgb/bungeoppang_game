@@ -17,7 +17,7 @@ import 'workshop_mold_stage.dart' show ResultLook;
 /// at [size] (4:5) and captured at 1080×1350 (`share.card_width`). The top
 /// is a photo of the street in front of the stall with **the player's own
 /// vendor standing big in front**, smiling with the tool raised (the pose,
-/// [vendorFace]·lift; its own pose art is 25번 H-D-2), the bungeoppang held
+/// [vendorFace]·lift; its own pose art is 25번 39번), the bungeoppang held
 /// up beside it with sparkles and the guest on the right. The bottom is a
 /// light band with the badge, the title, one line and the store line. No
 /// owner name, account, level, currency, date or device detail

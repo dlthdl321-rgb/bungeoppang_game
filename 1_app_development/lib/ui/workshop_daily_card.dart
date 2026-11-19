@@ -150,7 +150,7 @@ class WorkshopDailyCard extends StatelessWidget {
 }
 
 /// The stamp mark (H40): the attendance's own sign, apart from the order
-/// slip and the calendar of the '오늘' button. Pixel art is 25번 H-D-1.
+/// slip and the calendar of the '오늘' button. Pixel art is 25번 38번.
 class AttendanceStampIcon extends StatelessWidget {
   final double size;
   const AttendanceStampIcon({super.key, this.size = 26});
@@ -158,7 +158,7 @@ class AttendanceStampIcon extends StatelessWidget {
   Widget build(BuildContext context) => Icon(Icons.approval_rounded, size: size, color: _AttendanceBox.ink);
 }
 
-/// The order slip's sign (H40). Pixel art is 25번 H-D-1.
+/// The order slip's sign (H40). Pixel art is 25번 38번.
 class DailyOrderIcon extends StatelessWidget {
   final double size;
   const DailyOrderIcon({super.key, this.size = 26});
