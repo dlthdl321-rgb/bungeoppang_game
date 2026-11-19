@@ -82,7 +82,7 @@ void main() {
     expect(wardrobe.owned['cosmetic:short'],1);
     expect(WorkshopPurchases.fromJson(wardrobe.toJson(),config).owned,wardrobe.owned);
     expect(()=>quoteWorkshopProduct(config,'cosmetic:short',owned:1,quantity:1),throwsFormatException);
-    expect(()=>quoteWorkshopProduct(config,'cosmetic:boy',owned:0,quantity:1),throwsFormatException);
+    expect(()=>quoteWorkshopProduct(config,'cosmetic:skin1',owned:0,quantity:1),throwsFormatException);
   });
   test('신규 아바타 구매로 배경/붕어빵 꾸미기 범위를 몰래 열지 않는다', () {
     expect(()=>quoteWorkshopProduct(config,'cosmetic:forest',owned:0,quantity:1),throwsFormatException);
