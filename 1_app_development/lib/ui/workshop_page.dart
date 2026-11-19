@@ -55,6 +55,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
   WorkshopController get c => widget.controller;
   int _windowCount=0;
   final _homeKey=GlobalKey();
+  /// Story chapters already told in this run (26번 3차 H6, not saved).
+  final _storySeen=<WorkshopStoryChapter>{};
   bool _awayShowing=false;
   /// The welcome-back card, once per report, after the frame that noticed it.
   void _showAwayReport() {
@@ -653,7 +655,14 @@ class _WorkshopPageState extends State<WorkshopPage> {
       vendor:CookCut(equipped:_equipped,taps:BigInt.from(s.taps),
         reduceMotion:reduceMotion,greeting:s.customers.isNotEmpty));
     final praise=c.salePraise;
-    return Stack(children:[home,if(step!=null)Positioned.fill(child:WorkshopTutorialOverlay(step:step,home:_homeKey,
+    // 26번 3차 H6: the story first, then the guide's card.
+    final chapter=workshopStoryChapter(s);
+    final story=chapter!=null && !_storySeen.contains(chapter) ? chapter : null;
+    return Stack(children:[home,if(story!=null)Positioned.fill(child:WorkshopStoryOverlay(key:ValueKey(story),
+      lines:workshopStoryLines(story,widget.accountController.ownerName),action:workshopStoryAction(story),
+      reduceMotion:reduceMotion || MediaQuery.disableAnimationsOf(context),
+      onDone:()=>setState(()=>_storySeen.add(story))))
+    else if(step!=null)Positioned.fill(child:WorkshopTutorialOverlay(step:step,home:_homeKey,
       cardLeft:WorkshopHomeLayout.guideLeft(low),
       onSkip:c.inputBusy || c.error!=null ? null : c.skipTutorial)),
       if(praise!=null)Positioned.fill(child:WorkshopSalePraiseBanner(key:ObjectKey(praise),praise:praise,

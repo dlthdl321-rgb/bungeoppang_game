@@ -78,7 +78,14 @@ void main() {
       expect(c.state.session!.phase, CookingPhase.result);
     }
 
-    // 1. 새 설치: 안내 1단계, 영업 준비 중 두 틀.
+    // 1. 새 설치: 환영 이야기(26번 3차 H6, 화면 아무 곳이나 눌러 넘김) →
+    // 안내 1단계, 영업 준비 중 두 틀.
+    expect(key('story-overlay'), findsOneWidget);
+    for (var i = 0; i < 3; i++) {
+      await tester.tapAt(const Offset(195, 120));
+      await tester.pump();
+    }
+    expect(key('story-overlay'), findsNothing);
     expect(c.state.tutorial, 'cook');
     expect(c.state.business.open, isFalse);
     expect(key('tutorial-card'), findsOneWidget);
@@ -96,6 +103,7 @@ void main() {
     await tapKey('mold-store');
     expect(c.state.session, isNull);
     expect(c.state.tutorial, 'sell');
+    await tapKey('story-skip');
     expect(tutorialText(), contains("'영업 시작'"));
 
     // 숙련(익힘 5단계 발견, 연습·손기술 횟수)까지 남은 연습은 명령으로 채운다
