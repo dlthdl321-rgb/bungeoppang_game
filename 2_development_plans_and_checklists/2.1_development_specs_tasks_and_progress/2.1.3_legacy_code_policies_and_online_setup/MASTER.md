@@ -1089,7 +1089,7 @@
 | SDK | minSdk 24 · targetSdk 36 · compileSdk 36 (Flutter 3.47.5 기본값, `build.gradle.kts`가 `flutter.*`를 따름) |
 | 앱 버전 | `pubspec.yaml` `version: 0.1.0+1`. `+` 뒤 versionCode는 Play 업로드마다 +1(재사용 불가), versionName은 가출시 동안 `0.1.x`, 정식 출시 `1.0.0` |
 | release 서명 | `android/key.properties`(커밋 금지)의 업로드 키로만 서명. 파일이 없거나 항목·키 파일이 없으면 release 작업(`flutter build appbundle/apk --release`, `flutter run --release`)이 "Release build stopped (release 빌드 중단)" 오류로 멈춤. debug 키로 대체하지 않음. debug·profile은 키 없이 빌드됨. 키 만들기·빌드·설치: [release_signing.md](release_signing.md) |
-| 권한(메인 매니페스트) | `INTERNET`(온라인 가출시, DEC-027), `POST_NOTIFICATIONS`·`RECEIVE_BOOT_COMPLETED`(26번 5-1 손님 알림), 광고 ID·광고 서비스 권한 4개는 `tools:node="remove"`로 제거(26번 5단계). 병합 결과(라이브러리가 넣는 `VIBRATE`·`USE_BIOMETRIC`·`USE_FINGERPRINT`·`BIND_GET_INSTALL_REFERRER_SERVICE` 포함)는 23번 6단계 '26번 반영 뒤 권한 다시 확인' 표(2026-11-19) |
+| 권한(메인 매니페스트) | `INTERNET`(온라인 가출시, DEC-027), `POST_NOTIFICATIONS`·`RECEIVE_BOOT_COMPLETED`(26번 5-1 손님 알림), 광고 ID·광고 서비스 권한 4개는 `tools:node="remove"`로 제거(26번 5단계). 병합 결과(라이브러리가 넣는 `VIBRATE`·`USE_BIOMETRIC`·`USE_FINGERPRINT`·`BIND_GET_INSTALL_REFERRER_SERVICE` 포함)는 23번 6단계 '26번 반영 뒤 권한 다시 확인' 표(2026-11-19, profile로 확인한 뒤 같은 날 업로드 키 release APK로도 확인 — 13개 같음) |
 
 **자주 쓰는 명령**
 

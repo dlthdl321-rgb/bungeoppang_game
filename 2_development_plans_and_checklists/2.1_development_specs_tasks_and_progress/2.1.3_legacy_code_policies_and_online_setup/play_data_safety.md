@@ -12,13 +12,13 @@
 | 인앱결제 | Google Play 결제(`in_app_purchase`) | 황금 붕어빵 5개 소비성 상품 |
 | Firebase | Auth(카카오 로그인으로 만든 커스텀 토큰), Cloud Functions만 | Firestore는 서버(Functions)만 접근. 앱 직접 접근 차단(`firebase/firestore.rules`). 순위표도 서버에 저장 |
 | 카카오 SDK | `kakao_flutter_sdk_user`(로그인만). 친구·메시지 API 안 씀 | 카카오 회원번호와(동의 시) 닉네임·이메일을 서버가 카카오 API로 확인 |
-| 구글 로그인 (26번 2-1단계) | `google_sign_in` 7.2.0(Credential Manager 계정 선택만) → Firebase Auth Google 공급자 | 계정 ID·확인된 이메일. 광고·분석 기능 없음, 금지 단어에 걸리지 않아 `no_tracking_sdk_test` 허용 목록 변경 없음. 병합 매니페스트 확인은 release 빌드 뒤 |
+| 구글 로그인 (26번 2-1단계) | `google_sign_in` 7.2.0(Credential Manager 계정 선택만) → Firebase Auth Google 공급자 | 계정 ID·확인된 이메일. 광고·분석 기능 없음, 금지 단어에 걸리지 않아 `no_tracking_sdk_test` 허용 목록 변경 없음. release 병합 매니페스트(2026-11-19)에서 이 라이브러리가 `USE_BIOMETRIC`·`USE_FINGERPRINT`(일반 권한)를 더함, 광고·분석 항목 없음 |
 | 네트워크 | INTERNET 권한 있음(Firebase) | release 병합 매니페스트에서 확인 |
-| 광고 ID | 없음 | Analytics가 넣는 `AD_ID`·`ACCESS_ADSERVICES_AD_ID`·`_ATTRIBUTION`·`_TOPICS` 권한과 `android.ext.adservices` 라이브러리를 `tools:node="remove"`로 빼고, `google_analytics_adid_collection_enabled`·`ssaid`·개인화 광고 신호를 false로. 병합 매니페스트에 `AD_ID` 없음(테스트로 검사, 2026-11-19 profile 병합 매니페스트로 확인) |
-| 그 밖의 권한 | `ACCESS_NETWORK_STATE`, `com.android.vending.BILLING`, `WAKE_LOCK`, `READ_GSERVICES`, `c2dm.permission.RECEIVE` | 2026-10-07 release 빌드 병합 매니페스트. 뒤의 세 개는 Firebase SDK(설치 ID·서버 통신)가 넣음. 푸시 알림 기능은 쓰지 않음 |
+| 광고 ID | 없음 | Analytics가 넣는 `AD_ID`·`ACCESS_ADSERVICES_AD_ID`·`_ATTRIBUTION`·`_TOPICS` 권한과 `android.ext.adservices` 라이브러리를 `tools:node="remove"`로 빼고, `google_analytics_adid_collection_enabled`·`ssaid`·개인화 광고 신호를 false로. 병합 매니페스트에 `AD_ID` 없음(테스트로 검사, 2026-11-19 profile 병합 매니페스트와 업로드 키 release 병합 매니페스트로 확인) |
+| 그 밖의 권한 | `ACCESS_NETWORK_STATE`, `com.android.vending.BILLING`, `WAKE_LOCK`, `READ_GSERVICES`, `c2dm.permission.RECEIVE`, `POST_NOTIFICATIONS`·`RECEIVE_BOOT_COMPLETED`·`VIBRATE`(손님 알림), `BIND_GET_INSTALL_REFERRER_SERVICE`(Analytics), `USE_BIOMETRIC`·`USE_FINGERPRINT`(구글 로그인 라이브러리 androidx.credentials → androidx.biometric, 앱은 생체 인증을 쓰지 않음, DEC-120), `앱패키지.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`(androidx.core, 앱 내부 전용) — `INTERNET` 포함 13개 | 2026-11-19 업로드 키 release APK(`aapt dump badging`, 23번 6단계 '26번 반영 뒤 권한' 표와 같음). `WAKE_LOCK`·`READ_GSERVICES`·`c2dm.permission.RECEIVE`는 Firebase SDK(설치 ID·서버 통신·Analytics)가 넣음. 푸시 알림 기능은 쓰지 않음 |
 | Firebase 설치 ID·앱 인스턴스 ID | Firebase SDK가 기기별 설치 ID를 만들어 서버 호출에 쓰고, Analytics가 앱 인스턴스 ID로 같은 기기의 통계를 이음 | 양식의 **'기기 또는 기타 ID'에 '예'**(26번 5단계부터, 분석 목적) |
 | 새 권한 (26번 5단계) | `com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE`(Analytics 설치 경로, Play 스토어 설치 출처). 그 밖에 `AppMeasurement` 수신기·서비스 3개 | 2026-11-19 profile 병합 매니페스트(업로드 키 없이 같은 라이브러리 병합) |
-| 손님 알림 (2026-11-18, 26번 5-1단계) | `flutter_local_notifications`로 **기기 안에서만** 예약. 서버 푸시·Firebase Messaging 없음, 수집·전송하는 데이터 없음 → **데이터 보안 양식 답변은 바뀌지 않음**. 새 권한 `POST_NOTIFICATIONS`·`RECEIVE_BOOT_COMPLETED`(플러그인이 `VIBRATE`도 넣음), 정확한 알람 권한 없음 | `test/no_tracking_sdk_test.dart`. release 병합 매니페스트 권한 표는 23번 6단계 검사를 다시 돌려 갱신 |
+| 손님 알림 (2026-11-18, 26번 5-1단계) | `flutter_local_notifications`로 **기기 안에서만** 예약. 서버 푸시·Firebase Messaging 없음, 수집·전송하는 데이터 없음 → **데이터 보안 양식 답변은 바뀌지 않음**. 새 권한 `POST_NOTIFICATIONS`·`RECEIVE_BOOT_COMPLETED`(플러그인이 `VIBRATE`도 넣음), 정확한 알람 권한 없음 | `test/no_tracking_sdk_test.dart`. release 병합 매니페스트 권한은 2026-11-19 업로드 키 release APK로 다시 확인(23번 6단계 표와 같음) |
 
 `test/no_tracking_sdk_test.dart`는 허용 목록 밖의 Firebase·결제 패키지와 광고·분석 SDK·광고 ID가 들어오면 실패합니다.
 
