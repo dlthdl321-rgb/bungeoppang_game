@@ -6,6 +6,8 @@ import '../game_controller.dart';
 import '../workshop_controller.dart';
 import '../cosmetic_config.dart';
 import '../workshop_purchases.dart';
+import 'center_toast.dart';
+import 'flavor_picker.dart';
 import 'night_home.dart';
 import 'workshop_mold_stage.dart';
 import 'cozy_style.dart';
@@ -124,7 +126,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
         // asks again on its own.
         await account.updateSettings(notificationPromptDone:true);
         if(accept==true && !granted && mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text(noticeDeniedText)));
+          showCenterToast(context,noticeDeniedText);
         }
       } finally {_leaveWindow();_noticeAsking=false;}
     });
@@ -133,7 +135,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
   Future<void> _setNotice({bool? regular,bool? named,bool? quiet}) async {
     final account=widget.accountController,notifier=widget.notifier;
     if((regular==true || named==true) && notifier!=null && !await notifier.requestPermission()) {
-      if(mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text(noticeDeniedText)));
+      if(mounted) showCenterToast(context,noticeDeniedText);
       return;
     }
     if(regular==true || named==true) _permissionChecks++;
@@ -166,7 +168,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     final message=await account.signInOnline();
     if (!mounted) return;
     if (message!=null || !account.online.signedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(message ?? '로그인 후 확인할 수 있어요.')));return;
+      showCenterToast(context,message ?? '로그인 후 확인할 수 있어요.');return;
     }
     await c.syncRewards();
     if (!mounted) return;
@@ -178,7 +180,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     final gained=account.state.premium.gold-before;
     // Welcome gold (and other server gold) lands here: point it at 꾸미기.
     final note=walletMessage ?? (gained>0 ? '황금붕어빵력 $gained개를 받았어요. 꾸미기에서 써 보세요.' : null);
-    if (note!=null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(note)));
+    if (note!=null) showCenterToast(context,note);
   }
   CosmeticMenuAccess get _cosmetics {
     final account=widget.accountController,catalog=c.config.section('avatar_catalog');
@@ -263,7 +265,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
       final message = await account.signInOnline();
       if (!mounted) return;
       if (message != null || !account.online.signedIn) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message ?? '로그인 후 이용할 수 있어요.')));
+        showCenterToast(context, message ?? '로그인 후 이용할 수 있어요.');
         return;
       }
       account.usage.record(UsageEvent.payView); // 사용 통계(26번 5단계), 하루 1번
@@ -276,7 +278,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
           trailing: FilledButton(onPressed: () async {
             Navigator.pop(context);
             final error = await account.buyGoldPack(pack.id);
-            if (mounted && error != null) ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(error)));
+            if (mounted && error != null) showCenterToast(this.context, error);
           }, child: const Text('구매'))),
       ])));
     } finally { _leaveWindow(); }
@@ -286,7 +288,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     final owner=widget.owner;
     return ListView(padding:const EdgeInsets.all(12),children:[
       if(owner!=null)OwnerSettingsSection(owner:owner,closeWindow:()=>Navigator.pop(ctx),
-        notify:(m){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(m)));}),
+        notify:(m){if(mounted)showCenterToast(context,m);}),
       SoundSettings(controller:account),
       CozySettingRow(icon:const PixelIcon('vibration',size:28),label:'진동',value:settings.vibration,
         onChanged:(v)=>account.updateSettings(vibration:v)),
@@ -299,7 +301,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
         subtitle:'이름 있는 손님이 오면 알려요',value:settings.notifyNamedGuests,onChanged:(v)=>_setNotice(named:v)),
       if(widget.notifier case final notifier? when settings.notifyNamedGuests || settings.notifyRegularGuests)
         NoticePermissionHint(notifier:notifier,revision:_permissionChecks,
-          denied:(){if(mounted)ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text(noticeDeniedText)));}),
+          denied:(){if(mounted)showCenterToast(context,noticeDeniedText);}),
       CozySettingRow(key:const Key('settings-quiet-night'),icon:const Icon(Icons.bedtime_outlined),label:'밤 알림 끄기 (밤 10시~아침 8시)',
         value:settings.quietNightNotices,onChanged:(v)=>_setNotice(quiet:v)),
       // 26번 5단계(DEC-046): on by default, no first-run notice; off stops
@@ -443,7 +445,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
   void _open(String destination) {
     // 도감 opens before its level to show what is coming (H32).
     if(destination!='achievements:collection')if(_lockFor(destination) case final reason?) {
-      ScaffoldMessenger.of(context)..hideCurrentSnackBar()..showSnackBar(SnackBar(content:Text(reason),duration:const Duration(seconds:2)));
+      showCenterToast(context,reason);
       return;
     }
     switch(destination) {
@@ -616,13 +618,18 @@ class _WorkshopPageState extends State<WorkshopPage> {
         // The guests show themselves now: no '· 주문 N' (F7).
         status:c.error!=null ? '저장 확인 필요' : s.business.open ? '영업 중' : '영업 준비',
         statusKind:c.error!=null ? WorkshopStatusKind.error : s.business.open ? WorkshopStatusKind.open : WorkshopStatusKind.preparing,
-        showRates:c.featureIsOpen(WorkshopFeature.skills)),
+        showRates:c.featureIsOpen(WorkshopFeature.skills),
+        // 황금붕어빵력 beside 붕어빵력 (26번 3차 피드백 H30).
+        gold:BigInt.from(widget.accountController.state.premium.gold)),
+      // The menu is only in the bottom bar (H28); the special bungeoppang's
+      // flavor takes the top-left slot (H26).
+      hudLeading:WorkshopFlavorButton(controller:c),
       navLocks:{for(final id in const ['skills','skins','shop']) if(_lockFor(id) case final reason?) id:reason},
       lowStall:low,
       guests:(clicker,taps)=>WorkshopGuestLayer(controller:c,onOpenCustomer:_customerCard,taps:taps,clicker:clicker,
         reduceMotion:reduceMotion || MediaQuery.disableAnimationsOf(context)),
-      centerBuilder:(fish,clean,counterTop)=>Stack(children:[
-        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,
+      centerBuilder:(fish,clean,counterTop,moldLimit)=>Stack(children:[
+        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,moldLimit:moldLimit,
           lowStall:low,reduceMotion:reduceMotion,onSharePerfect:_sharePerfect,
           vibration:widget.accountController.state.settings.vibration)),
         // The old layout: below the flavor row, clear of the counter strip.

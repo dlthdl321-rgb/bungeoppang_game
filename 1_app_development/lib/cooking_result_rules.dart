@@ -1,3 +1,4 @@
+import 'feedback_config.dart';
 import 'cooking_paint.dart';
 import 'cooking_session.dart';
 import 'development_balance.dart';
@@ -122,4 +123,13 @@ String cookingGradeEvent(CookingGrade grade) => switch (grade) {
       CookingGrade.good => 'result_good',
       CookingGrade.near => 'result_near',
       CookingGrade.fail => 'result_fail',
+    };
+
+/// How many stars (of [cookingStarsMax]) a bake of [grade] shows
+/// (26번 3차 피드백 H24, feedback_config.dart).
+int cookingStars(CookingGrade grade) => switch (grade) {
+      CookingGrade.perfect => cookingStarsPerfect,
+      CookingGrade.good => cookingStarsGood,
+      CookingGrade.near => cookingStarsNear,
+      CookingGrade.fail => cookingStarsFail,
     };

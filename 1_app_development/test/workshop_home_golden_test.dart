@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -81,7 +80,7 @@ void main() {
       await serve(c);
       await tester.pump();
       await shoot(tester, 'open_${tag(size)}');
-      await tester.tap(find.byKey(const Key('menu-menu')));
+      await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
       await shoot(tester, 'menu_${tag(size)}');
       await tester.pumpWidget(const SizedBox.shrink());
@@ -98,8 +97,8 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  // 24번 6단계: 원 그려 뒤집기 도중(반 바퀴), 가장 작은 화면.
-  testWidgets('원 그려 뒤집기 도중 골든 360x640', (tester) async {
+  // 24번 6단계 → 26번 3차 피드백 H21: 걸이 축 밀어 뒤집기 도중, 가장 작은 화면.
+  testWidgets('축 밀어 뒤집기 도중 골든 360x640', (tester) async {
     final c = await mount(tester, const Size(360, 640));
     expect(await c.startPractice(), isTrue);
     var s = c.state.session!;
@@ -110,13 +109,12 @@ void main() {
     final flipping = s;
     await c.command(() => c.state.session = flipping);
     await tester.pump();
+    // 26번 3차 피드백 H21: pushed a third of the way over its axle.
     final box = tester.getRect(find.byType(FlipCircleControl));
-    final r = box.width * .55;
-    Offset at(double a) => box.center + Offset(math.sin(a * math.pi / 180), -math.cos(a * math.pi / 180)) * r;
-    // Starts on the mold (in the dead zone, ignored), then circles.
-    final gesture = await tester.startGesture(box.center + Offset(0, -box.height * .3));
-    for (var a = 0.0; a <= 180; a += 15) {
-      await gesture.moveTo(at(a));
+    final start = box.center + Offset(0, box.height * .2);
+    final gesture = await tester.startGesture(start);
+    for (var d = 0.0; d <= box.height * .3; d += 8) {
+      await gesture.moveTo(start - Offset(0, d));
       await tester.pump();
     }
     await shoot(tester, 'flipping_360x640');

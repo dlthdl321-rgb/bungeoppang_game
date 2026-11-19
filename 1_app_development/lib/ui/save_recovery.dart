@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'center_toast.dart';
 import 'cozy_style.dart';
 
 /// Which startup read failed; decides what "처음부터 시작" sets aside.
@@ -124,7 +125,7 @@ class _SaveRecoveryAppState extends State<SaveRecoveryApp> {
                         onPressed: () async {
                           await Clipboard.setData(ClipboardData(text: widget.failure.report(widget.attempts)));
                           if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('오류 내용을 복사했어요.')));
+                            showCenterToast(context, '오류 내용을 복사했어요.');
                           }
                         }),
                     if (widget.attempts > 0 && widget.onStartFresh != null) ...[

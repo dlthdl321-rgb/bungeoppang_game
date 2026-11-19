@@ -85,6 +85,17 @@ class WorkshopHomeLayout {
   /// moved to the HUD, kept so the pill does not jump).
   static const practiceLift = actionHeight + actionGap + 10;
 
+  /// The special bungeoppang mold (26번 3차 피드백 H18 '조리 컷과 6구를
+  /// 가리지 않게'): its whole picture stays [moldGap] above the higher of
+  /// the sale counter's top and the cooking cut's top, rising at most until
+  /// its top is [moldTopRoom] under the HUD (the bake's title line). The
+  /// keep / throw away / cancel buttons sit [moldButtonGap] under it, left
+  /// of the cooking cut ([cookCutShare] of the width, 8 from the right).
+  static const moldGap = 8.0;
+  static const moldTopRoom = 34.0;
+  static const moldButtonGap = 6.0;
+  static const cookCutShare = .32;
+
   /// The first-run guide card's left edge: clear of the old left queue
   /// (72), or the plain screen margin in the new layout.
   static double guideLeft(bool active) => active ? 12.0 : 72.0;
