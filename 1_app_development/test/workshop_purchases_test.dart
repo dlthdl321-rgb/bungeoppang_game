@@ -82,7 +82,7 @@ void main() {
     expect(wardrobe.owned['cosmetic:short'],1);
     expect(WorkshopPurchases.fromJson(wardrobe.toJson(),config).owned,wardrobe.owned);
     expect(()=>quoteWorkshopProduct(config,'cosmetic:short',owned:1,quantity:1),throwsFormatException);
-    expect(()=>quoteWorkshopProduct(config,'cosmetic:boy',owned:0,quantity:1),throwsFormatException);
+    expect(()=>quoteWorkshopProduct(config,'cosmetic:skin1',owned:0,quantity:1),throwsFormatException);
   });
   // 26번 3차 H42: backgrounds are sold through the catalog on purpose now;
   // the bungeoppang and other stall items stay out.
