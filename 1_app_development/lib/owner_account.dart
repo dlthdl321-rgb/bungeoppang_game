@@ -242,12 +242,13 @@ class OwnerAccount extends ChangeNotifier {
     return null;
   }
 
-  /// The 여자/남자 사장님 choice: worn in the shop at once (the wardrobe can
-  /// change it later).
+  /// The 여자/남자 사장님 choice: worn in the shop at once and the shop's
+  /// for good. The other one is bought in 꾸미기 (3차 피드백 H11); once the
+  /// choice is made, this only wears what is owned.
   Future<String?> chooseCharacter(String id) async {
     final shop = workshop;
-    if (shop != null && shop.state.avatarEquipment[CosmeticSlot.character.name] != id &&
-        !await shop.equipAvatar(id)) {
+    if (shop != null &&
+        !await (profile.characterChosen ? shop.equipAvatar(id) : shop.chooseStarterCharacter(id))) {
       return message = shop.notice ?? '사장님을 고르지 못했어요';
     }
     await _run(() async {
