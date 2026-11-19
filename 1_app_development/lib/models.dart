@@ -54,6 +54,10 @@ class GameSettings {
   /// after the first-run guide was answered. Saves without them get these
   /// defaults; the save format stays v13.
   bool notifyRegularGuests, notifyNamedGuests, quietNightNotices, notificationPromptDone;
+  /// 사용 통계 보내기(26번 5단계, DEC-046): on by default, no first-run
+  /// notice; off stops Firebase Analytics collection. Saves without it get
+  /// true; the save format stays v13.
+  bool sendUsageStats;
   GameSettings(
       {this.vibration = true,
       this.holdToBake = false,
@@ -68,7 +72,8 @@ class GameSettings {
       this.notifyRegularGuests = false,
       this.notifyNamedGuests = true,
       this.quietNightNotices = true,
-      this.notificationPromptDone = false});
+      this.notificationPromptDone = false,
+      this.sendUsageStats = true});
   Map<String, dynamic> toJson() => {
         'vibration': vibration,
         'holdToBake': holdToBake,
@@ -84,6 +89,7 @@ class GameSettings {
         'notifyNamedGuests': notifyNamedGuests,
         'quietNightNotices': quietNightNotices,
         'notificationPromptDone': notificationPromptDone,
+        'sendUsageStats': sendUsageStats,
       };
 
   /// Sound settings exist from v8; older saves get the defaults.
@@ -102,7 +108,8 @@ class GameSettings {
         notifyRegularGuests: flag('notifyRegularGuests', false),
         notifyNamedGuests: flag('notifyNamedGuests', true),
         quietNightNotices: flag('quietNightNotices', true),
-        notificationPromptDone: flag('notificationPromptDone', false));
+        notificationPromptDone: flag('notificationPromptDone', false),
+        sendUsageStats: flag('sendUsageStats', true));
     if (!withSound) return settings;
     int volume(String key) {
       final v = m[key];
@@ -137,7 +144,7 @@ class GameSettings {
 }
 
 class GameState {
-  static const formatVersion = 13;
+  static const formatVersion = 14;
   BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
   int level, snapshotSequence;
   Map<String, int> upgradeCounts;

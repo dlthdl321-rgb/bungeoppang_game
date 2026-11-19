@@ -16,7 +16,11 @@ class WorkshopTutorialOverlay extends StatefulWidget {
   final WorkshopTutorialStep step;
   final GlobalKey home;
   final VoidCallback? onSkip;
-  const WorkshopTutorialOverlay({super.key, required this.step, required this.home, required this.onSkip});
+  /// The card's left edge: 72 clear of the old left line, 12 in the
+  /// guests-at-the-stall layout (WorkshopHomeLayout.guideLeft).
+  final double cardLeft;
+  const WorkshopTutorialOverlay({super.key, required this.step, required this.home, required this.onSkip,
+      this.cardLeft = 72});
   @override
   State<WorkshopTutorialOverlay> createState() => _WorkshopTutorialOverlayState();
 }
@@ -81,7 +85,7 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
         place = _CardPlace.top(target.bottom + 10);
       }
       final placed = Positioned.fill(child: CustomSingleChildLayout(
-          delegate: _CardLayout(place, limit: limit), child: card));
+          delegate: _CardLayout(place, limit: limit, left: widget.cardLeft), child: card));
       return Stack(children: [
         if (target != null)
           Positioned.fill(child: IgnorePointer(child: CustomPaint(
@@ -104,13 +108,14 @@ class _CardPlace {
   int get hashCode => Object.hash(y, top);
 }
 
-/// Lays the card out 72px from the left (clear of the customer queue) and
-/// slides it up or down to stay above [limit], the bottom menu's top.
+/// Lays the card out [left] from the left (72 clears the old customer
+/// line) and slides it up or down to stay above [limit], the bottom menu's
+/// top.
 class _CardLayout extends SingleChildLayoutDelegate {
-  static const left = 72.0, right = 12.0, edge = 8.0;
+  static const right = 12.0, edge = 8.0;
   final _CardPlace place;
-  final double limit;
-  const _CardLayout(this.place, {required this.limit});
+  final double limit, left;
+  const _CardLayout(this.place, {required this.limit, this.left = 72});
   double _limit(Size size) => limit.clamp(edge * 2, size.height - edge);
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) => BoxConstraints(
@@ -123,7 +128,7 @@ class _CardLayout extends SingleChildLayoutDelegate {
     return Offset(left, wanted.clamp(edge, (bottom - child.height).clamp(edge, double.infinity)));
   }
   @override
-  bool shouldRelayout(_CardLayout old) => old.place != place || old.limit != limit;
+  bool shouldRelayout(_CardLayout old) => old.place != place || old.limit != limit || old.left != left;
 }
 
 class _RingPainter extends CustomPainter {
@@ -188,6 +193,11 @@ class WorkshopWelcomeBackCard extends StatelessWidget {
               if (report.arrivals > 0)
                 Text('자리 비운 동안 손님 ${report.arrivals}명이 왔어요.',
                     key: const Key('welcome-back-arrivals'), textAlign: TextAlign.center),
+              // 26번 7단계: the '오늘' slip at the counter has something new.
+              if (report.newOrder)
+                const Text('오늘의 주문서가 도착했어요.', key: Key('welcome-back-order'), textAlign: TextAlign.center),
+              if (report.stampReady)
+                const Text('오늘 출석 도장을 찍을 수 있어요.', key: Key('welcome-back-stamp'), textAlign: TextAlign.center),
               Text(report.waiting > 0
                   ? '판매는 가게에 계실 때만 해요. 기다리던 손님 ${report.waiting}명은 그대로 있어요.'
                   : '판매는 가게에 계실 때만 해요.',

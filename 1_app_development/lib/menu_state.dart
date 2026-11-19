@@ -36,7 +36,13 @@ class WardrobeState {
       throw const FormatException('잘못된 꾸미기 보유 목록');
     }
     final s = WardrobeState._(raw.cast<String>().toSet(), {});
-    final equipped = m['equipped'] as Map;
+    final equipped = Map<dynamic, dynamic>.of(m['equipped'] as Map);
+    // v14 (26번 4-5단계): the chef coat and padded vest became tops. An
+    // older save wearing one as its apron wears it as the top, no apron.
+    if (version < 14 && movedToTop.contains(equipped[CosmeticSlot.outfit.name])) {
+      equipped[CosmeticSlot.top.name] = equipped[CosmeticSlot.outfit.name];
+      equipped[CosmeticSlot.outfit.name] = 'noapron';
+    }
     bool added(CosmeticSlot slot) => cosmeticSlotSince(slot) > version;
     s.owned.addAll([
       for (final d in _wardrobeCatalog)

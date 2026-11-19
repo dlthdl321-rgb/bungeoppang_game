@@ -21,6 +21,9 @@ dependencies:
   in_app_purchase: ^3.3.1
   kakao_flutter_sdk_user: ^2.0.1
   firebase_app_check: ^0.4.9
+  # 26번 5단계(DEC-045·046): 사용 통계는 Firebase Analytics만. 광고 ID·SSAID·개인화 광고 신호는
+  # AndroidManifest에서 끈다. firebase_core 4.15.x와 맞는 12.x 마지막 안정판으로 고정.
+  firebase_analytics: 12.6.1
   # 26번 5-1단계: 손님 도착 기기 안 예약 알림(서버 푸시·Firebase 메시징 아님). 시각은 UTC로만 넘긴다.
   flutter_local_notifications: 22.3.3
   timezone: 0.11.2
@@ -63,6 +66,10 @@ flutter:
     # (tools/apply_25_art.py, 25번 필요한 그림 1번).
     - assets/images/stove_empty/
     - assets/images/stove_fish/
+    # Closed (cold) and open (lid up) griddles, 26번 4-2단계 F8
+    # (tools/apply_26_stoves.py, 25번 필요한 그림 7번).
+    - assets/images/stove_closed/
+    - assets/images/stove_open/
     - assets/images/icons/
     - assets/images/topping/
     - assets/images/skills/
@@ -81,3 +88,10 @@ flutter:
     # Home stage: mold-free backgrounds and the big mold (tools/make_home_stage_art.py).
     - assets/images/bg_clean/
     - assets/images/mold/
+    # 26번 4-1단계: the stall lowered to the towel and the guests standing
+    # at it (tools/apply_26_home_art.py, 25번 필요한 그림 20번·6번).
+    - assets/images/bg_low/
+    - assets/images/customer/
+    # 26번 4-5단계: wardrobe item icons (tools/make_cosmetic_icons.py
+    # temporary ones until 25번 필요한 그림 31번).
+    - assets/images/cosmetic_icons/

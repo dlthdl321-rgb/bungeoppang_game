@@ -7,17 +7,30 @@ import 'online_backend.dart';
 import 'owner_profile.dart';
 import 'owner_repository.dart';
 import 'owner_texts.dart';
+import 'usage_stats.dart';
 import 'workshop_controller.dart';
 
 /// Where the first run stands (26번 2-1단계). The game shows once [done].
 enum OwnerStep { offline, login, name, character, optional, done }
 
-/// Where the optional gender and age band would go as analytics user
-/// properties. 26번 5단계 (Firebase Analytics) connects it; until then the
-/// app passes nothing and nothing is sent. Never the email or the name.
+/// Where the optional gender and age band go as analytics user properties.
+/// 26번 5단계 connects it to Firebase Analytics ([UsageOwnerAnalytics]).
+/// Never the email or the name.
 abstract class OwnerAnalytics {
   /// Null clears a property (no consent, skipped or under 14).
   void setUserProperties({String? gender, String? ageBand});
+}
+
+/// 26번 5단계: the optional info as the Analytics user properties gender and
+/// age_band ('선택 안 함' sends nothing). The '사용 통계 보내기' switch stops
+/// the whole Analytics collection, these included.
+class UsageOwnerAnalytics implements OwnerAnalytics {
+  final UsageStats usage;
+  const UsageOwnerAnalytics(this.usage);
+  @override
+  void setUserProperties({String? gender, String? ageBand}) => usage.setUserProperties(
+      gender: gender == PlayerGender.none.id ? null : gender,
+      ageBand: ageBand == AgeBand.none.id ? null : ageBand);
 }
 
 /// Is there a connection? A DNS lookup with a short timeout; tests pass a

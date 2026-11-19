@@ -20,6 +20,20 @@ val dartDefines: Map<String, String> =
         .associate { it[0] to it.getOrElse(1) { "" } }
 val kakaoNativeAppKey = dartDefines["KAKAO_NATIVE_APP_KEY"].orEmpty()
 
+// 26번 5단계: Firebase Analytics reads the app ID from the string resource
+// google_app_id that google-services.json would make. This app has no such
+// file (online_setup.md 1-4), so the same four --dart-define values the Dart
+// side uses (firebase_online_backend.dart) become those resources. Firebase
+// then starts the default app natively with the same options, and Dart's
+// Firebase.initializeApp(options:) reuses it. Builds without the keys get no
+// resources and Analytics stays off.
+val firebaseResources: Map<String, String> = mapOf(
+    "google_app_id" to dartDefines["FIREBASE_APP_ID"].orEmpty(),
+    "google_api_key" to dartDefines["FIREBASE_API_KEY"].orEmpty(),
+    "gcm_defaultSenderId" to dartDefines["FIREBASE_SENDER_ID"].orEmpty(),
+    "project_id" to dartDefines["FIREBASE_PROJECT_ID"].orEmpty(),
+).takeIf { values -> values.values.all { it.isNotEmpty() } }.orEmpty()
+
 // Release builds are signed only with the Play upload key described in
 // android/key.properties (never committed; see android/.gitignore and
 // 2_development_plans_and_checklists/.../2.1.3_legacy_code_policies_and_online_setup/
@@ -44,6 +58,8 @@ val uploadKeyProblem: String? = when {
 android {
     namespace = "com.todaybungeoppang.app"
     compileSdk = flutter.compileSdkVersion
+    // resValue for the Firebase string resources (firebaseResources above).
+    buildFeatures { resValues = true }
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -68,6 +84,7 @@ android {
         versionName = flutter.versionName
         manifestPlaceholders["kakaoNativeAppKey"] =
             kakaoNativeAppKey.ifEmpty { "-not-configured" }
+        firebaseResources.forEach { (name, value) -> resValue("string", name, value) }
     }
 
     signingConfigs {

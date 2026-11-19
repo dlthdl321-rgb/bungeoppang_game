@@ -54,6 +54,7 @@ abstract final class OwnerTexts {
   static const optionalSummary =
       '수집 항목: 성별, 연령대\n'
       '목적: 이용자 분석, 공지·계정 안내 (광고·마케팅에는 쓰지 않아요)\n'
+      '이용자 분석은 Google Analytics 사용 통계로 해요(이름·이메일 없이, 14개월 보관)\n'
       '보관 기간: 직접 지우거나 계정을 삭제할 때까지 (설정에서 바꾸거나 지울 수 있어요)\n'
       '동의하지 않아도 게임을 할 수 있어요.';
   static const guardianAgree = '보호자(법정대리인)가 이 내용을 읽고 동의했어요';

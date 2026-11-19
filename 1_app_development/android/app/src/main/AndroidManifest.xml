@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Online test release (DEC-027): Firebase Auth/Functions, Kakao login and
          Play Billing need the network. -->
     <uses-permission android:name="android.permission.INTERNET"/>
@@ -8,6 +9,12 @@
          reboot. No exact-alarm permission: inexact timing may be minutes late. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- 26번 5단계(DEC-045·046): Firebase Analytics 사용 통계에는 광고 ID를 쓰지 않는다.
+         Analytics 라이브러리가 병합 때 넣는 광고 ID·광고 서비스 권한을 뺀다. -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_AD_ID" tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_ATTRIBUTION" tools:node="remove"/>
+    <uses-permission android:name="android.permission.ACCESS_ADSERVICES_TOPICS" tools:node="remove"/>
     <application
         android:label="오늘의 붕어빵"
         android:icon="@mipmap/ic_launcher">
@@ -44,6 +51,16 @@
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON"/>
             </intent-filter>
         </receiver>
+        <!-- 26번 5단계: Analytics는 광고 ID·SSAID를 모으지 않고 개인화 광고 신호도 보내지 않는다.
+             사용 통계 끄기는 설정 창 스위치(setAnalyticsCollectionEnabled)로 한다. -->
+        <!-- Off until the game reads the '사용 통계 보내기' setting and calls
+             setAnalyticsCollectionEnabled (that value is then kept by Firebase). -->
+        <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
+        <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
+        <meta-data android:name="google_analytics_ssaid_collection_enabled" android:value="false" />
+        <!-- The Privacy Sandbox ad services library Analytics may use is left out too. -->
+        <uses-library android:name="android.ext.adservices" android:required="false" tools:node="remove" />
+        <meta-data android:name="google_analytics_default_allow_ad_personalization_signals" android:value="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

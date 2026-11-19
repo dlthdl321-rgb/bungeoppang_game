@@ -147,7 +147,7 @@ WorkshopFeatureIntro featureIntro(WorkshopFeature feature) => switch (feature) {
           '레벨 미션 창에서 레시피 미션을 마치면 새 맛을 받을 수 있어요. 새 맛도 연습하면 숙련할 수 있어요.',
           'intro_recipes', 'mission'),
       WorkshopFeature.specialOrders => const WorkshopFeatureIntro('특별 주문이 와요',
-          '이제 가끔 손님이 익힘을 콕 집어 주문해요. 주문에 적힌 익힘으로 구워 드리면 더 기뻐해요.',
+          '이제 손님이 익힘을 콕 집어 주문해요. 판매대 옆 ‘오늘’ 쪽지에는 하루 한 장 오늘의 주문서가 와요.',
           'intro_special_orders', 'daily'),
       WorkshopFeature.fishCosmetics => const WorkshopFeatureIntro('붕어빵 꾸미기',
           '꾸미기의 붕어빵 칸에서 붕어빵 모양을 바꿀 수 있어요. 모습만 바뀌고 생산 효과는 없어요.',

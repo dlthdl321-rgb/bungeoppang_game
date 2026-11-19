@@ -35,13 +35,15 @@
 15. [알려진 문제](#15-알려진-문제)
 16. [기획 중인 변경](#16-기획-중인-변경)
 
+흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19), [33 꾸미기·상점 화면 정리](#33-꾸미기상점-화면-정리--2026-11-19), [34 매일 돌아올 이유](#34-매일-돌아올-이유--2026-11-19), [35 공유 카드](#35-공유-카드--2026-11-19).
+
 ---
 
 ## 1. 개발 원칙
 
 | 원칙 | 내용 | 지키는 곳 |
 | --- | --- | --- |
-| 광고·추적 SDK 금지 | ads, admob, analytics, crashlytics, sentry 등 금지. Firebase는 core/auth/functions/app_check만 허용(app_check는 23번 7단계, Play Integrity). 카카오는 로그인용만. 구글은 `google_sign_in`(로그인만, 26번 2-1단계. 금지 단어에 걸리지 않아 허용 목록 추가 없음) | `test/no_tracking_sdk_test.dart` |
+| 광고·오류 수집 SDK 금지, 분석은 Firebase Analytics만 | ads, admob, crashlytics, sentry, 그 밖의 analytics 계열 금지. Firebase는 core/auth/functions/app_check와 **analytics**(26번 5단계, DEC-045·046)만 허용(app_check는 23번 7단계, Play Integrity). Analytics는 광고 ID·SSAID 수집과 개인화 광고 신호를 매니페스트 meta-data로 끄고, 라이브러리가 넣는 `AD_ID`·`ACCESS_ADSERVICES_*` 권한은 `tools:node="remove"`로 뺌. `setUserId`는 쓰지 않음. 카카오는 로그인용만. 구글은 `google_sign_in`(로그인만, 26번 2-1단계. 금지 단어에 걸리지 않아 허용 목록 추가 없음) | `test/no_tracking_sdk_test.dart` |
 | 첫 실행 로그인 필수 (26번 2-1단계) | 온라인 빌드는 새 설치·업데이트 뒤 첫 실행에 필수 동의 + 카카오 또는 구글 로그인을 마쳐야 게임에 들어감. 한 번 로그인하면 저장된 로그인으로 오프라인 플레이. 필수 동의(이용약관·개인정보 수집·이용)와 선택 동의(성별·연령대)는 따로 받음. 앱 안에서 계정 삭제 가능(Play 정책). 이메일은 서버 프로필에만, 화면·분석에 쓰지 않음 | `lib/owner_account.dart`, `test/owner_first_run_test.dart` |
 | 손님 알림은 기기 안에서만 | 26번 5-1단계: `flutter_local_notifications`(+`timezone`, UTC만)로 앱이 꺼진 동안 올 손님을 기기 안에 예약. 서버 푸시·Firebase Messaging 없음, 정보를 어디에도 보내지 않음. 권한은 `POST_NOTIFICATIONS`(Android 13+ 실행 중 요청)·`RECEIVE_BOOT_COMPLETED`(재부팅 뒤 재예약)뿐, 정확한 알람 권한(`SCHEDULE_EXACT_ALARM`·`USE_EXACT_ALARM`) 없음(몇 분 늦을 수 있음) | `test/no_tracking_sdk_test.dart`, `lib/customer_notifier.dart` |
 | 현실 보상 없음 | 현금·상품·포인트를 지급하지 않음. 공유에도 보상 없음 | README |
@@ -53,7 +55,7 @@
 | 테스트 기준 유지 | 테스트 목표나 골든 허용치를 낮추지 않음 | README |
 | 개발자 전용 기능 | 초대 시뮬레이터 등은 `developerTools`(= `!kReleaseMode`)일 때만 | `game_controller.dart` |
 
-**바뀔 예정(2026-11-18 결정, 아직 구현 전):** 첫 줄 '광고·추적 SDK 금지'는 26번 5단계에서 **`firebase_analytics`만 허용**(광고 ID·SSAID 수집 끔, 설정에서 끌 수 있음, 그 밖의 분석·광고·오류 수집 SDK는 계속 금지)으로 바뀐다(DEC-045·046). 광고 SDK는 출시 빌드에 넣지 않는다(DEC-028 유지, 출시 후 별도 브랜치 DEC-049). 지금 코드와 `no_tracking_sdk_test`는 위 표 그대로다.
+**2026-11-19 26번 5단계로 바뀜:** 첫 줄은 원래 '광고·추적 SDK 금지'였고, DEC-045·046에 따라 `firebase_analytics`만 허용으로 바꿨다(32장). 광고 SDK는 출시 빌드에 넣지 않는다(DEC-028 유지, 출시 후 별도 브랜치 DEC-049).
 
 ---
 
@@ -75,7 +77,7 @@
 ### 시작 순서 (`lib/main.dart`)
 
 1. 세로 고정.
-2. `withOnline = Android && firebaseConfigured`. 온라인이면 `KakaoSdk.init` 후 `FirebaseOnlineBackend.create()`. 아니면 `NoOnlineBackend`·`NoRankingService`·`NoBillingService`.
+2. `withOnline = Android && firebaseConfigured`. 온라인이면 `KakaoSdk.init` 후 `FirebaseOnlineBackend.create()`. 아니면 `NoOnlineBackend`·`NoRankingService`·`NoBillingService`. 사용 통계는 Firebase가 켜진 빌드만 `UsageStats(FirebaseUsageStatsSink())`, 아니면 `UsageStats.none`(32장). 같은 기록기를 `GameController(usage:)`·`WorkshopController(usage:)`·`OwnerAccount(analytics: UsageOwnerAnalytics(usage))`에 넘김.
 3. `GameController(SqliteGameRepository(), SystemTimeService(), …)` 생성.
 4. `PixelSprites.load()`로 이미지를 미리 읽음.
 5. `controller.initialize()` → 설정 파일(+ `config/owner_name_rules.json`) → `WorkshopController.initialize()` → `OwnerAccount.load()`(첫 실행 기록, 26번 2-1단계) → `runApp(GameApp)`. `GameApp`은 `OwnerGate`로 첫 실행 화면(로그인·이름·캐릭터·선택 정보)을 마칠 때까지 게임 대신 보여 줌. 셋 중 하나라도 읽지 못하면 두 DB를 닫고 `SaveRecoveryApp`(`ui/save_recovery.dart`, 3장 "저장 손상 대처").
@@ -113,7 +115,7 @@
 | --- | --- |
 | DB | sqflite `todays_bungeoppang.db` |
 | 테이블 | `snapshots(slot, sequence, body)`. 슬롯 `current`, `backup` |
-| 저장 형식 버전 | `GameState.formatVersion = 13` (`models.dart`) |
+| 저장 형식 버전 | `GameState.formatVersion = 14` (`models.dart`) |
 | 밸런스 버전 | `economyBalanceVersion = 3` |
 | 보조 시스템 버전 | `supportConfigVersion = 'support-v2'` (v1도 읽음) |
 | 주간 버전 | `weeklyConfigVersion = 'weekly-v1'` (다르면 읽기 실패) |
@@ -132,12 +134,14 @@
 | 항목 | 값 |
 | --- | --- |
 | DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
-| JSON 저장 형식 | `schema` 8. 1~7을 읽고 8로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 8만 받음) |
+| JSON 저장 형식 | `schema` 10. 1~9를 읽고 10으로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 10만 받음, 보호 목록 `[2,…,10]`) |
 | schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
 | 결과 등급 (26번 4단계) | 저장 변경 없음: 등급은 화면에서 계산하고, 주문 손님 반응 연결은 메모리에만 둠 |
 | 제작 세션 `session` (CookingSession schema 1, 24번 5단계 G1) | 짤주머니 세 단계의 칠한 양을 **추가 필드**로 저장: `firstBatterCoverage`·`firstBatterAmount`, `fillingCoverage`·`fillingAmount`, `secondBatterCoverage`·`secondBatterAmount`(permille, 단계를 마치면 둘 다 있음, 0 < 덮음 ≤ 1000, 덮음 ≤ 양 ≤ 9000). 예전 `firstBatterMs`·`secondBatterMs`·`fillingDurationMs`는 읽기만 하고 새로 쓰지 않음(같은 단계에 두 종류가 함께 있으면 거절). 단계 완료 = 둘 중 하나가 있음. 예전 저장·진행 중 세션은 그대로 이어서 하고, ms로 끝난 반죽 단계는 손기술 실패. Workshop schema 6·`user_version` 4·생산 저널 형식 변경 없음 |
 | schema 6 (2026-11-11) | 첫 실행 안내 `tutorial`: `cook` → `sell` → `done`, 또는 `skipped`. 새 설치는 `cook`. schema 5 이하는 `done`으로 올리고, 그 버전에 `tutorial`이 있으면 거절. 판매 기록이 있는데 `cook`/`sell`이면 거절 |
 | schema 7 (2026-11-18, 26번 5-1단계) | 손님 시계 `regularClock`·`namedClock`(`{nextAt: UTC ms 또는 null, seed, draws}`)과 직전 네임드 `lastNamedVisitor`. 7에 셋 중 하나라도 없거나 6 이하에 있으면 거절. 닫힌 가게·안내 중인데 `nextAt`이 있거나, `nextAt`이 정산 시각 + 최대 간격보다 멀면 거절. `lastNamedVisitor`는 만난 손님만. 6 이하 이전: 시드는 진행 ID(`grid.runId`)에서 만들고 시계는 멈춘 채(null) 두어 불러온 뒤 첫 정산 시각부터 셈, `lastNamedVisitor`는 관계 기록의 가장 늦은 방문. `arrivalMs`는 안내 중 손님 간격용으로 그대로 |
+| schema 9 (2026-11-19, 26번 4-5단계, G12) | 필드 추가 없음. 요리사 복(`chefcoat`)·패딩 조끼(`padding`)가 앞치마(`outfit`) 칸에서 상의(`top`) 칸으로 옮겨 감(`movedToTop`). 8 이하에서 `avatarEquipment.outfit`이 둘 중 하나면 `top`=그 id, `outfit`=`noapron`으로 읽음(보이는 모습 유지, 보유 `purchases.owned['cosmetic:<id>']`는 id 그대로라 변화 없음). 9에서 `outfit`이 둘 중 하나면 칸 불일치로 거절 |
+| schema 10 (2026-11-19, 26번 7단계) | 매일 기록 `daily`: `day`(마지막으로 본 KST 날짜), `order`(오늘의 주문서 `{day, npc, flavor, variant 1~3, quantity, event, reward, businessIndex}`, 납품하면 `reward`(붕어빵력 10진 문자열)·`businessIndex`가 함께 생김), `stamps`(출석 칸 0~7)·`stampDay`(마지막 도장 날짜, 둘은 0/null을 함께), `events`(들어온 행사 ID, 정렬). 9 이하는 빈 기록으로 읽음(첫 명령에서 오늘 날짜·주문서가 채워짐), 9 이하에 `daily`가 있거나 10에 없으면 거절. 날짜가 정산 시각의 KST 날짜보다 뒤, 가지지 않은 맛, 만나지 않은 손님, 모르는 행사 ID, 단골 주문서를 납품했는데 관계 기록 `special:<날짜>`가 없음(또는 납품 전인데 있음)이면 거절. 황금 심사 `pendingGold['attendance:<날짜>']`(출석 7칸째)는 `{scope:'attendance', period, goal:'day7', gold, revision}` 다섯 키만, 날짜 ≤ `stampDay`. 구매 보호 대상 아님 |
 | schema 8 (2026-11-18, 26번 2단계) | 이미 본 기능 소개 카드 `featureIntros`(`WorkshopFeature` 이름 목록, 정렬해 저장: `skills`·`griddle`·`collection`·`recipes`·`specialOrders`·`fishCosmetics`·`freshness`·`stallCosmetics`). 8에 없거나, 모르는 이름·중복이 있거나, 7 이하에 있으면 거절. 7 이하 이전: 불러온 상태에서 **이미 열린 기능은 본 것으로 채움**(고레벨 기존 저장은 카드 0장, 낮은 레벨은 앞으로 열릴 카드만). 첫 판매 칭찬(`salePraise`)은 저장하지 않음 |
 
 **첫 실행 기록 저장** (26번 2-1단계, `lib/owner_profile.dart` `OwnerProfile`, `lib/owner_repository.dart`)
@@ -177,6 +181,7 @@
 | v11 | 꾸미기 칸: character |
 | v12 | 꾸미기 칸: lamp, time, top, bottom, shoes, accessory |
 | v13 | 독립 음악 선택·굽기 채널 설정만 추가. 구형 v1~12 파싱/자산 유지, 실제 이전·실행 검수 미실행 |
+| v14 | 26번 4-5단계(G12): 필드 추가 없음. 13 이하에서 `wardrobe.equipped.outfit`이 `chefcoat`·`padding`이면 `top`=그 id, `outfit`=`noapron`(`menu_state.dart`). 14에서 앞치마 칸에 두 아이템이 있으면 거절 |
 | (버전 없음) | premium: 키가 없으면 기본값, 잘못된 값이면 오류 |
 
 ### 시간 규칙
@@ -192,6 +197,7 @@
 | 돌아오기 환영 창 | 24시간 이상 떠나 있었고 획득량이 있을 때(구형 홈) | `offlineWelcomeAfter` |
 | Workshop 복귀 안내 | 영업 시계로 2시간 이상 비웠다가 돌아왔을 때 한 번(앱 다시 열기·백그라운드 복귀 모두). 비운 시간, 영업 중이면 쌓인 붕어빵력(오프라인 효율·상한 함께 표시), 닫혀 있으면 쌓이지 않았다는 문구, '자리 비운 동안 손님 N명이 왔어요.'(0명이면 없음, `welcome-back-arrivals`), 기다리는 손님 수. 판매와 손님 기다림은 앱이 앞에 있을 때만 흐르므로 판매 수는 없음 |
 | Workshop 손님 도착 (26번 5-1단계) | 실제 시간. 30장 "손님 방문 간격·알림" | `lib/workshop_arrivals.dart` |
+| 매일 돌아올 이유 하루 경계 (26번 7단계) | 정산 시각(`business.settledUtc`, 앞으로만 감)의 KST 날짜(`WorkshopController.today`). 기기 시계를 되돌려도 지난 날이 다시 열리지 않고, 며칠을 비워도 출석은 돌아온 날 한 칸·주문서는 오늘 하나. 영업일 번호와 따로(닫혀 있어도 출석은 됨, 납품은 영업 중에만). 34장 | `lib/workshop_daily.dart` |
 | Workshop 영업일 넘김 (26번 5-1단계) | 영업을 열어 두면 KST 자정 뒤 저절로 다음 영업일(재고 나이·준비품 수락·미션 '영업한 날'까지 영업 시작과 같이). 며칠을 비워도 한 번만 넘김. 닫혀 있으면 지금처럼 '영업 시작' | `BusinessProgress.nextDay`, `WorkshopController._startBusinessDay` | `workshopWelcomeBackAfter`, `WorkshopController.awayReport`, `ui/workshop_guide.dart` `WorkshopWelcomeBackCard` |
 
 ---
@@ -244,11 +250,15 @@
 - 목표 밸런스는 Lv.10까지 약 21~22일입니다(`test/economy_simulation_test.dart`).
 - 신규 Workshop 경로: 스킬은 붕어빵력+황금붕어빵력 두 재화 가격(`skill_purchase`). **1~4단계(`tap_1`~`tap_4`, `auto_1`~`auto_4`)는 황금 0**이라 붕어빵력만으로 사고 몇 번째든 황금 0, **5~16단계는 황금 2·3·4개(4단계씩) + 10번마다 1개 증가**(DEC-041, 26번 3단계). 황금 공식은 `기본 황금 > 0`일 때만 `기본 황금 + ⌊n / gold_step_purchase_count⌋ × gold_step_amount`, 기본 황금이 0이면 0(앱 `lib/development_rules.dart` `quoteCompositeSkill`, 서버 `development_contracts.ts` `validateDevelopmentCompositeQuote` 같은 식). 황금 0은 스킬에만 허용하고 꾸미기·부스트는 계속 황금 1 이상이어야 한다(설정 검사 `lib/development_balance.dart`·`tools/development_balance.py`, 저널 `PurchaseJournal.start`, 영수증 `compositeReceiptMatches`, 서버 `parseCompositeIntent`).
 - 성장 확인(`test/workshop_progression_simulation_test.dart`, 탭 2회/초·1분 1판매·가장 싼 스킬부터 분당 3개까지 구매): 황금 0인 서버로 Lv.5 4분·Lv.10 9분, 스킬 황금 소비 0. 첫 황금 스킬인 5단계는 탭 Lv.15·자동 Lv.19에서 열림(탭 1회/초면 Lv.17·21). 환영 황금(`welcome_reward.gold` = 10)은 스킬에 쓰이지 않고 꾸미기(가장 싼 유료 아바타 황금 2)에 쓴다. Lv.1~5 승급은 스킬 없이 30분 안에 가능([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)). 손님 간격이 바뀌면(5-1단계) 다시 확인한다.
-- 스킬 창(`lib/ui/workshop_windows.dart` `WorkshopSkillShop`): 황금 0이면 버튼·자세히 보기에 황금 줄을 숨기고 '붕어빵력만 있으면 돼요.', 맨 위에 '1~N단계 스킬은 붕어빵력만으로 레벨업해요…'(N은 설정에서 계산). 온라인 빌드에서 로그인 전이면 '카카오 로그인 후 레벨업할 수 있어요.' + '카카오 로그인' 버튼(`GameController.signInOnline`). 로그인 전 `purchaseSkill`은 거래를 만들지 않고 같은 안내만 남긴다. 모양 개편('+' 레벨업 등)은 26번 4-3단계.
+- 스킬 창(`lib/ui/workshop_skill_shop.dart` `WorkshopSkillShop`, `workshop_windows.dart`가 다시 내보냄; 26번 4-3단계 F12~F19): '사는 목록'이 아니라 **레벨을 올리는 목록**. 위 줄 = 탭 버튼 '클릭 생산'·'자동 생산'(키 `kind-tap/kind-auto`, 체크 표시 없는 직접 만든 탭, 아이콘 28px, 고른 탭은 꿀색) + 오른쪽 작은 세로 돌림판 `SkillStepWheel`(키 `skill-step`, 값 `step-1/10/100`, 위아래로 밀거나 이웃 값을 눌러 한 칸씩; 두 탭 공통). 단위 `skillLevelUpSteps = [1, 10, 100]`은 Dart 상수(`lib/development_rules.dart`, 설정 파일 아님). 한 번에 올리는 양 `skillLevelUpQuantity` = min(단위, 1000 − 레벨) — 995에서 ×10은 5. 서버(`development_contracts.ts`)가 `cap − owned` 이하면 받으므로 서버 변경 없음. '최대(살 수 있는 만큼)'·1개/10개/최대 칩·'자세히 보기'·'스킬 구매는 온라인 연결…' 문장은 없앰. 칸(키 `skill-$id`, 높이 약 60px): 왼쪽 그림 40px, 가운데 이름 + 'Lv.12/1000 · +60/클릭'(키 `level-$id`, 이 스킬 한 레벨 효과, 자동은 '/초'), 오른쪽 비용(`CurrencyAmount`: 붕어빵력·황금 아이콘 + 줄인 숫자, 모자라면 빨강 `0xffc0392b`, 줄였으면 길게 눌러 정확한 숫자, 황금 0이면 황금 줄 없음, 키 `cost-$id`) + 둥근 '+'(`LevelUpButton`, 키 `buy-$id`, `ui/levelup_plus.png`·`levelup_plus_off.png` 64×64, ×10·×100이면 오른쪽 아래 '×10' 꼬리표). '+'는 해금·온라인 구매 연결·로그인·오류 없음·바쁘지 않음·두 재화 충분일 때만 켜짐. 꺼진 '+'를 누르면 스낵바로 이유: '누적 N개 만들면 열려요.' / '인터넷에 연결하면 레벨업할 수 있어요.' / '카카오 로그인 후 레벨업할 수 있어요.' / '붕어빵력이 3.2만 모자라요.'(황금도 같은 식) / '잠시 뒤에 다시 눌러 주세요.'. 1000이면 '+' 대신 'MAX' 배지(키 `max-$id`). 잠긴 스킬은 **바로 다음 하나만** 보이고(S43-Q3) 그 뒤는 숨김: 그림 대신 공통 잠금 `LockedOverlay(style: LockStyle.hidden)`(키 `skill-lock-$id`, 실루엣 + 큰 자물쇠) + '누적 100만 개 만들면 해금'(키 `unlock-$id`, `compactNumber`라 '누적 2000조 개'). 조기 해금 없음(S43-Q5). 위쪽 안내: 황금 0 단계가 있으면 '1~N단계 스킬은 붕어빵력만으로 레벨업해요. 황금붕어빵력은 N+1단계부터 필요해요.'(키 `skill-gold-note`, N은 설정에서 계산), 온라인 빌드에서 로그인 전이면 '카카오 로그인 후 레벨업할 수 있어요.' + '카카오 로그인' 버튼(키 `skill-sign-in`, `GameController.signInOnline`), 정산 안 된 거래는 '레벨업 확인 대기: 스킬 이름'(꾸미기는 '구매 확인 대기') + 복구·취소 확인. 로그인 전 `purchaseSkill`은 거래를 만들지 않고 같은 안내만 남긴다. 확인 실패·복구 문구는 스킬이면 '레벨업 확인이 남아 있어요…'·'레벨업 복구 확인이 필요해요', 꾸미기(`cosmetic:`)는 '구매'. 저장(`purchases.owned` = 레벨)·서버 함수 이름은 그대로. 한 화면에 보이는 칸: 390×844 7칸, 360×640 4칸(전에는 390×844에서 약 2칸, `test/workshop_skill_window_test.dart`가 확인). 구형 `lib/ui/skill_shop.dart` `SkillShop`(구형 `GameHome`)은 고치지 않음.
 
 ---
 
 ## 5. 미션·일일·주간·업적·환생
+
+### 매일 돌아올 이유 (Workshop, 26번 7단계)
+
+오늘의 주문서·출석 도장·이야기 하루 한 조각·겨울 행사. 규칙·설정값·화면은 [34장](#34-매일-돌아올-이유--2026-11-19). 아래 레벨 미션~환생은 구형 홈 기록입니다.
 
 ### 레벨 미션 (`lib/mission_config.dart`)
 
@@ -273,11 +283,13 @@
 
 ### 일일 미션 (`lib/support_config.dart` `dailyDefinitions`)
 
+신규 Workshop 미션 창은 `config/development_balance.json` `mission_targets`의 label을 보여 줍니다. 26번 4-3단계에서 일일 `purchases` '스킬 구매 수량' → '스킬 레벨업 횟수', 주간 '주간 스킬 구매 수량' → '주간 스킬 레벨업 횟수'로 바꿈(id·집계 그대로, 레벨 수를 셈: ×10 한 번 = 10).
+
 | id | 내용 | 목표 | 보상 |
 | --- | --- | --- | --- |
 | taps | 붕어빵 탭 | 50 | 2코인 |
 | production | 오늘 붕어빵 생산 | 1000 | 3코인 |
-| purchases | 스킬 구매 수량 | 3 | 2코인 |
+| purchases | 스킬 레벨업 횟수 | 3 | 2코인 |
 | auto | 기본 초당 생산 | 10 | 3코인 |
 | (전체 완료) | | | 10코인 (`dailyAllReward`) |
 
@@ -362,7 +374,7 @@
 > 18단계 기획: 꾸미기를 붕어빵력으로 사도록 바꾸고, 배경과 음악 선택을 분리합니다([16장](#16-기획-중인-변경)).
 > 26번 4-6단계: 배경음악은 모든 배경·시간에 같은 곡 'Warm Bungeoppang Stall' 하나입니다(`audio/bgm_warm_stall.ogg`). 아래 표의 '음악' 열(분위기)은 코드 구조로만 남아 있고 지금은 모두 같은 곡을 틉니다. 설정의 '배경음 선택' 드롭다운은 없앴습니다(저장값은 그대로 읽음, [12장 소리](#12-이미지소리)).
 
-- 해금 조건: 레벨 ≥ `unlockLevel` 그리고 누적 생산 ≥ `unlockProduction`.
+- 해금 조건: 레벨 ≥ `unlockLevel` 그리고 누적 생산 ≥ `unlockProduction`. 신규 Workshop의 아바타는 `avatar_catalog`의 `unlock_level`·`unlock_total`(누적 생산, 지금 모두 "0")이고, 화면에는 **'Lv.N 해금'만** 보임(26번 4-5단계 S45-Q2: '누적' 표시는 지움, 값 0과 서버 검사는 그대로).
 - 코인으로 삽니다. 황금 붕어빵으로 사면 가격은 코인 × 5이고 해금 조건을 건너뜁니다.
 - 기본 아이템과 character, skin, time 칸의 아이템은 무료이고 수집 개수에서 빠집니다.
 
@@ -378,6 +390,8 @@
 | --- | --- |
 | hair | character, skin, hair, hat |
 | outfit | top, bottom, shoes, outfit |
+
+칸 이름(화면): pattern은 **'틀'**(26번 4-5단계 S45-Q5, 전에는 '무늬'), outfit은 '앞치마'. id·enum은 저장값이라 그대로.
 | props | accessory, tool |
 | bungeoppang | pattern, topping |
 | stall | 노점 칸 전부 |
@@ -393,15 +407,15 @@
 | decoration | **none 0/1**, lantern 종이 등불 4/2, starlights 별 전구 5/3, bunting 작은 축제 깃발 8/4/5000, windchime 풍경 9/5, paperlanterns 종이 초롱 줄 10/6, snowman 눈사람 12/7 |
 | lamp | **amberlamp 기본 등불 0/1**, roselamp 분홍 4/2, mintlamp 민트 6/3, lilaclamp 라일락 8/4 |
 | time | **scenetime 배경 그대로**, day 낮, night_time 밤, clock 기기 시간(19~06시 밤) |
-| pattern | **scales 기본 비늘 0/1**, heartscale 하트 비늘 5/2, starmark 별 도장 8/4, crispgrid 바삭 격자 11/6 |
+| pattern | **scales 기본 모양 0/1**(26번 4-5단계, 전 '기본 비늘'), heartscale 하트 비늘 5/2, starmark 별 도장 8/4, crispgrid 바삭 격자 11/6 |
 | topping | **plain 0/1**, sugar 슈가파우더 4/2, choco 초코 드리즐 7/3, almond 아몬드 슬라이스 9/5, sprinkle 무지개 스프링클 13/8 |
 | character | **girl 여자 사장님**, boy 남자 사장님 |
-| skin | **skin1**, skin2, skin3 |
+| skin | **skin1**, skin2, skin3 (26번 4-7단계 G4: skin3 = 2026-11-18까지의 skin2 색, skin2 = skin1과 그 사이의 연한 새 색, id 그대로) |
 | hair | **long 긴 생머리 0/1**, short 짧은 머리 3/1, ponytail 묶은 머리 5/2, curly 곱슬머리 8/5 |
-| top | **tee 흰 티셔츠 0/1**, creamlong 크림 긴팔 3/2, pinksweater 분홍 니트 6/3, sagesweater 세이지 니트 6/4, creamsweater 꽈배기 니트 8/5, cardigan 카디건 10/6 |
-| bottom | **shorts 베이지 반바지 0/1**, skirt 주름치마 4/2, widepants 와이드 바지 6/3, brownpants 갈색 바지 7/4 |
+| top | **tee 흰 티셔츠 0/1**, creamlong 크림 긴팔 3/2, pinksweater 분홍 니트 6/3, sagesweater 세이지 니트 6/4, creamsweater 꽈배기 니트 8/5, cardigan 카디건 10/6, padding 패딩 조끼 6/3, chefcoat 요리사 복 12/7 (padding·chefcoat는 26번 4-5단계 G12에서 outfit → top, 그림 `avatar/<성별>/top_<id>.png`, 앞치마를 위에 겹쳐 입을 수 있음) |
+| bottom | **shorts 베이지 반바지 0/1**, skirt 주름치마 4/2, widepants 와이드 바지 6/3, brownpants 갈색 바지 7/4, jeans 연청 청바지 5/2, denimshorts 데님 반바지 5/3, joggers 회색 조거 바지 6/3, checkskirt 빨강 체크 치마 7/4, cargopants 카키 카고 바지 8/5, longskirt 크림 롱스커트 9/6 (새 6종은 26번 4-7단계 G11, 가격·레벨 임시값, 서버 `avatar_catalog`·`cosmetic_purchase`에도 있음. **v2 아바타 그림에만 있어 v2가 켜지기 전에는 꾸미기·상점에서 숨김**. brownpants는 v2에서 '갈색 골덴 일자 바지'로 다시 그림, 이름은 그림이 들어올 때 바꿈) |
 | shoes | **flats 갈색 단화 0/1**, sneakers 흰 운동화 4/2, boots 앵클부츠 7/4, furboots 털 부츠 10/7 |
-| outfit | **apron 기본 앞치마 0/1**(26번 4-4부터 그림으로 입혀짐), noapron 앞치마 없음 0/1(무료, 그림 없음), darkapron 초코 앞치마 5/2, padding 패딩 조끼 6/3, creamapron 크림 앞치마 7/4, stripe 줄무늬 앞치마 9/5, waistapron 허리 앞치마 9/5, chefcoat 요리사 복 12/7 |
+| outfit | **apron 기본 앞치마 0/1**(26번 4-4부터 그림으로 입혀짐), noapron 앞치마 없음 0/1(무료, 그림 없음), darkapron 초코 앞치마 5/2, creamapron 크림 앞치마 7/4, stripe 줄무늬 앞치마 9/5, waistapron 허리 앞치마 9/5 (앞치마만) |
 | hat | **nohat 0/1**, beanie 털 비니 3/2, bandana 크림 두건 4/2, earmuffs 귀마개 6/3, redbandana 빨간 두건 6/3, ballcap 크림 야구모자 7/4, newsboy 헌팅캡 8/4, blackcap 검정 야구모자 9/6, chefhat 요리사 모자 10/6, santa 산타 모자 14/9 |
 | accessory | **noacc 0/1**, ribbon 분홍 리본 4/2, fishpin 붕어빵 머리핀 5/3, glasses 동그란 안경 6/3, scarf 분홍 목도리 8/5, mittens 털장갑 9/6, crossbag 크로스백 11/7 |
 | tool | **tongs 붕어빵 집게 0/1**, paperbag 붕어빵 봉투 8/5, fishhold 갓 구운 붕어빵 12/8, goldtongs 황금 집게 15/9 |
@@ -419,7 +433,7 @@
 | 1 | behind | 아이템 뒤 조각 `<slot>_<id>_back.png` |
 | 2 | base | 포즈 그림(몸·얼굴·기본 머리·기본 옷). 피부톤이 skin2·3이면 `base@<skin>.png` |
 | 2-1 | (_cut) | 착용 중인 아이템의 `<slot>_<id>_cut.png` 마스크로 base에서 가려질 픽셀을 지움(`BlendMode.dstOut`, base만 담은 `saveLayer` 안). 머리·얼굴·옷은 지우지 않음 |
-| 3 | hair | 머리 모양 `hair_<short·ponytail·curly>.png`(긴 생머리 `long`은 base 그대로). 긴 머리는 hair의 `_cut`이 지움 |
+| 3 | hair | 머리 모양 `hair_<short·ponytail·curly>.png`(긴 생머리 `long`은 base 그대로). 긴 머리는 hair의 `_cut`이 지움. (v2 순서는 아래 '맨 바탕 아바타 v2') |
 | 4 | eyes | 눈 프레임 |
 | 5 | mouth | 입 프레임 |
 | 6~12 | bottom, shoes, top, outfit, hat, accessory, tool | 칸별 아이템(`rigSlotLayers`). tool만 탭할 때 올라감 |
@@ -431,7 +445,21 @@
 - character는 base 그림을 고릅니다. skin은 그림마다 피부색만 바꾼 복사본 `<파일>@skin2.png`·`@skin3.png`를 고릅니다(`rigSkinPicture`, 복사본이 없는 그림은 원래 그림). 복사본은 base, 정면 얼굴 부분 그림, 피부가 보이는 hair·hat 레이어에만 있습니다. hair는 hair 레이어입니다(26번 4-4, 2026-11-18).
 - **입은 모습(worn) 레이어:** 3.3 원본 폴더의 '입은 모습' 전신 그림(`avatar/<성별>/<slot>_<id>.png`)을 base에 겹쳐(머리 아래 몸으로 맞춤) 바뀐 픽셀만 아이템 레이어로, base에서 사라진 픽셀은 `_cut` 마스크로 만듭니다(`tools/avatar_layers.py worn`, `WORN_ITEMS`). `_cut`은 base 가장자리 밖·아이템 아래로 2픽셀 넓혀서 축소해 그려도 옛 외곽선이 남지 않습니다. 모자·액세서리는 얼굴(눈·입 상자 + 12픽셀)을 바꾸지 않습니다. 어느 레이어가 worn으로 만들어졌는지는 생성 파일 `avatarWornLayers`, 에셋 목록은 `avatarArtFiles`(둘 다 `lib/avatar_atlas.dart`).
 - **꾸미기에 보이는 조건(`PixelSprites.avatarArtReady`):** 기본값·그림 없는 아이템(`blankCosmetics`)·skin1·긴 생머리는 늘 보임. skin2·3은 `base@<skin>.png`, hat·hair는 worn 레이어(`avatarWornOnlySlots`), 나머지는 그림 파일이 있어야 보입니다. 지금 캐릭터 기준이고, 이미 산 아이템은 그림이 없어도 보입니다(`workshop_page.dart` `_cosmetics` `listed`). 그림이 들어오면 `python tools/avatar_layers.py`만 다시 돌리면 코드 변경 없이 보입니다. 2026-11-18: 털 비니·크림 두건·크림 야구모자·헌팅캡도 '쓴 모습' 레이어가 생겨(25번 17번) 지금 숨기는 아바타 아이템은 없음.
-- 조리 장면(cook 측면 6장)은 옷·피부가 그려진 그림이라 피부톤·머리·아이템을 반영하지 않습니다(26번 4-4 '이번엔 정면만', 후속).
+- 조리 장면(cook 측면 6장)은 옷·피부가 그려진 그림이라 피부톤·머리·아이템을 반영하지 않습니다(26번 4-4 '이번엔 정면만', 4-7에서도 범위 밖 — 후속 단계).
+- **남자 턱(26번 4-7단계 G3):** 남자 사장님의 앞치마 5종·요리사 복 worn 레이어(와 `_cut`)가 194행부터 시작해 원본 그림의 다른 턱·목을 덮어 그려 얼굴 아래가 납작하게 잘려 보였습니다. `tools/avatar_layers.py chin`이 `CHIN = {'boy': 208}`(목선) 위를 지웁니다(worn 다음, derive·skin 전에 돌림). 화면 배율 문제는 아님(게임 그리기 = 에셋 픽셀, `tools/avatar_v2.py faceaudit`).
+
+### 맨 바탕 아바타 v2 (26번 4-7단계)
+
+파일: 규칙 `lib/avatar_v2.dart`, 생성 `lib/avatar_v2_atlas.dart`(직접 고치지 않음), 도구 `tools/avatar_v2.py`·`tools/avatar_v2.json`, 그림 `assets/images/avatar_v2/<girl·boy>/`(25번 문서 23~31번)
+
+- **방식:** 머리·옷 없는 맨 바탕(민소매 이너·속바지·맨발, 피부톤마다 `base@skin1~3.png` 한 장씩) 위에 모든 아이템(기본 흰 티·반바지·단화·긴 생머리·기본 앞치마 포함)을 '입은 모습' 레이어로 얹습니다. `_cut`·`@skin` 복사본을 쓰지 않습니다.
+- **켜는 스위치:** 필수 그림 112장(바탕 6 + 노출 아바타 아이템 전부 × 남녀 + 긴·묶은·곱슬 머리 뒤 조각 `hair_<id>_back.png`, `avatarV2Required`)이 **모두** 있을 때만 생성 상수 `avatarV2Ready = true`. 하나라도 없으면 정면 아바타 전체가 v1(위 표)로 그려지고 섞이지 않습니다. 조리 장면은 v2와 무관(늘 v1). 2026-11-19 현재 0/112 → 꺼짐.
+- **v2 그리기 순서(`rigV2Order`):** behind(머리 뒤 조각) → base → eyes → mouth → bottom → shoes → top → outfit(앞치마) → **hair** → hat → accessory → tool → front. 표정 파츠는 바탕 바로 위(앞머리가 눈 위를 덮음), 앞치마는 상의 위(요리사 복 위 앞치마 가능).
+- **모자와 머리:** 모자마다 `hat_<id>_hairmask.png`(도구가 모자 실루엣으로 만듦). 그리기 때 **머리 레이어에서만** 그 영역을 지움(`RigSprite.erase`, saveLayer 안 dstOut). 바탕·뒤 조각은 안 지움(묶은 머리 꽁지는 모자 뒤로 남음). 규칙 `avatar_v2.json` `hat_hair`: 기본 `cover`(모자 열에서 모자 아랫선 위의 머리 지움), `earmuffs`는 `band`(귀마개 자리만), `keep` 상자로 예외.
+- **표정 파츠:** skin1 바탕에서 v1과 같은 상자로 만들고 skin2·3은 바탕끼리의 색 비율로 피부만 바꿈: `avatar_v2/<성별>/face_<eyes_half·eyes_closed·mouth_small·mouth_wide>@<skin>.png`. 앵커는 v1과 같음(`avatarV2FaceAnchors`: 여자 눈 153.5,155·입 152,184 / 남자 눈 151.5,156·입 150,184).
+- **보이는 조건:** v2가 켜지면 `avatarArtReady`가 v2 파일 기준(새 하의 6종 포함). 꺼져 있으면 v1 규칙(새 하의는 그림이 없어 숨김).
+- **아이콘(25번 31번):** `tools/avatar_v2.py icons`가 칸 단위로 그 칸 아이콘이 모두 있을 때만 `cosmetic_icons/<id>.png`를 덮어씀(지금은 4-5 임시 아이콘, 피부톤 2·3 아이콘만 새 색으로 다시 만듦).
+- **도구 순서:** `python tools/avatar_v2.py --src <26_feedback_generated>` = align(4배 원본 1120×2080 → 280×520, 크기 변경 없이 발바닥 y=519·얼굴을 v1 얼굴 위치에 평행 이동, skin2·3은 skin1과 같은 이동) → items(바탕과 다른 픽셀만, 바탕 피부 위 피부색은 경고) → hairmask → face → icons → trim → atlas(파일 목록·`avatarV2Ready`, 그림이 있으면 pubspec에 `avatar_v2/` 추가). 규격이 다른 원본은 '규격 미달'로 건너뜀. `--demo`는 v1 그림으로 만든 대역으로 도구만 점검(build/에만 씀). `faceaudit`은 얼굴 좌우 폭(G3) 검사.
 
 **포즈(`RigPose`)**
 
@@ -440,7 +468,7 @@
 | front | `avatar/<character>/base.png` | front | 그림 |
 | cook1~6 | `cook/<character>_1~6.png` | side | 안 그림(프레임에 옷이 그려져 있음) |
 
-얼굴 기준점은 `avatarFaceAnchors[포즈 그림]['eyes'·'mouth']`입니다. 없으면 얼굴 프레임을 그리지 않고 그림 속 얼굴을 그대로 둡니다.
+얼굴 기준점은 `avatarFaceAnchors[포즈 그림]['eyes'·'mouth']`입니다. 없으면 얼굴 프레임을 그리지 않고 그림 속 얼굴을 그대로 둡니다. cook1~6 기준점은 26번 4-2단계에서 조리 컷을 옮긴 만큼 같이 옮김(`tools/align_cook_cuts.py`가 `tools/avatar_layers.json` anchors를 고치고 `avatar_layers.py write`로 생성 파일 갱신, 얼굴 측정 상자 `FACES['girl_side']`도 2번 컷 이동 (+5, −2)만큼 옮김). 남자 사장님 조리 컷(3.3 `cook/boy_1~6.png`)은 아직 앱에 없고(`cookCharacters = ['girl']`) 옮길 값만 json `boy`에 저장.
 
 **얼굴 채널(`rigChannels`)**
 
@@ -457,7 +485,7 @@
 
 | 클립 | 트랙 | 쓰는 곳 |
 | --- | --- | --- |
-| talk | mouth: small 90 → wide 110 → small 80 → closed 70 → wide 100 → small 90 → closed 120 (ms, 반복) | 손님이 와 있는 동안 조리 장면 사장님(`CookCut.greeting`), 인사하는 손님, 꾸미기 미리보기를 누를 때 |
+| talk | mouth: small 90 → wide 110 → small 80 → closed 70 → wide 100 → small 90 → closed 120 (ms, 반복) | 손님이 와 있는 동안 조리 장면 사장님(`CookCut.greeting`), 인사하는 손님 (꾸미기 미리보기는 26번 4-5단계 G2부터 눌러도 말하지 않음, 눈 깜빡임만) |
 | blink | eyes: half 40 → closed 70 → half 40 | 자동. 간격 `blinkGapMs` 2400~5200ms 무작위 |
 | cheer | eyes closed + mouth wide 520ms(같은 시계) | 정의만 있음 |
 
@@ -517,7 +545,7 @@
 - 결제 흐름: `buyGoldPack`(로그인 필요) → Play 결제 → 서버 `walletRedeem`이 Play API로 확인하고 소모 처리 → 지급. 앱에서는 자동 소모하지 않습니다(`autoConsume: false`).
 - 사용할 때는 요청마다 20자 무작위 id를 붙여 `walletSpend`를 부릅니다. 같은 id는 한 번만 처리됩니다.
 - 신규 Workshop의 황금 획득: 환영 황금(계정당 1회, `ledger/welcome_v1`), 일일·주간 미션, 희귀 판매 추첨. 모두 서버 지갑에서만 늘어나고 앱은 로컬 황금을 만들지 않습니다([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)).
-- 신규 Workshop의 황금 쓰는 곳(26번 3단계): 꾸미기(유료 아바타)와 5단계 이상 스킬. 상점(`ShopPanel`, Workshop 경로)은 **꾸미기 탭으로 열리고**(구형 경로는 장비 탭), 충전 탭에 '황금붕어빵력 쓰는 곳: 꾸미기(옷·모자·머리·도구)와 높은 단계 스킬…' 한 줄(`gold-uses`), 약관 줄은 '황금붕어빵력 잔액은 로그인한 카카오 계정에 보관돼요.'(구형 경로의 '꾸미기와 스킬 해금은 돌아와요'는 Workshop에서 쓰지 않음). 메뉴 '로그인·보상 확인' 뒤 잔액이 늘면 '황금붕어빵력 N개를 받았어요. 꾸미기에서 써 보세요.' 알림(환영 황금 안내). 이미 황금으로 1~4단계를 산 사용자는 환불 없이 그대로(DEC-062).
+- 신규 Workshop의 황금 쓰는 곳(26번 3단계): 꾸미기(유료 아바타)와 5단계 이상 스킬. 상점(`ShopPanel`, Workshop 경로)은 **꾸미기 탭으로 열리고**(구형 경로는 장비 탭; 26번 4-5단계부터 Workshop 상점은 꾸미기·충전 두 탭, 꾸미기 탭은 사고 바로 입는 곳, 모든 Workshop 창 위 잔액 줄 황금 옆 '+'가 충전 목록), 충전 탭에 '황금붕어빵력 쓰는 곳: 꾸미기(옷·모자·머리·도구)와 높은 단계 스킬…' 한 줄(`gold-uses`), 약관 줄은 '황금붕어빵력 잔액은 로그인한 카카오 계정에 보관돼요.'(구형 경로의 '꾸미기와 스킬 해금은 돌아와요'는 Workshop에서 쓰지 않음). 메뉴 '로그인·보상 확인' 뒤 잔액이 늘면 '황금붕어빵력 N개를 받았어요. 꾸미기에서 써 보세요.' 알림(환영 황금 안내). 이미 황금으로 1~4단계를 산 사용자는 환불 없이 그대로(DEC-062).
 
 ---
 
@@ -526,6 +554,7 @@
 - 온라인 기능은 **Android 빌드에 키 5개가 모두 들어 있을 때만** 켜집니다. 이런 빌드는 첫 실행에 로그인을 반드시 거칩니다(아래 "첫 실행 로그인"). 구글 로그인은 선택 키 `GOOGLE_SERVER_CLIENT_ID`가 있을 때만 버튼이 보입니다. 아니면 오프라인 게임으로 동작합니다. 키는 `--dart-define-from-file=dart_defines/online.json`으로 넣습니다(13장 "온라인 빌드").
 - 서버 지역은 `asia-northeast3`(서울), 런타임은 Node 22입니다.
 - 운영 설정(Firebase·카카오·Play 결제·App Check)을 처음부터 하는 순서는 [online_setup.md](online_setup.md)(23번 7단계, 초보자용)입니다.
+- **사용 통계(26번 5단계):** Firebase가 켜진 빌드는 로그인 여부와 상관없이 Firebase Analytics로 이벤트 7종을 보냅니다(기본 켬, 설정에서 끔). 서버 함수·Firestore는 쓰지 않고 Google Analytics 콘솔에서 봅니다. 자세한 내용은 32장, 콘솔 설정은 [online_setup.md](online_setup.md) '사용 통계'.
 
 ### App Check (23번 7단계)
 
@@ -644,11 +673,15 @@
 
 | 요소 | 위치·크기 | 키 | 파일 |
 | --- | --- | --- | --- |
-| 스페셜 붕어빵 무대 | HUD 아래 중앙. 배경에 그려진 붕어빵 자리에 맞춤. 영업 상태별(DEC-035, 아래 "두 틀 규칙"): 영업 준비 중 빈 틀 + 맛 선택 + '스페셜 붕어빵 제작 시작'(버튼 아래끝 = 판매 카운터 윗변 − 4, 24번 4단계. 행주 값이 없는 배경이면 예전처럼 틀 아래 경계에 걸침), 영업 중 세션이 없으면 틀 없이 떠 있는 큰 붕어빵(클리커, 틀 자리에서 틀 높이×0.75 위), 제작 세션 중에는 틀과 단계 조작. 새 영업일 이어서 영업 전에는 빈 틀만 | `workshop-center-stage`, `workshop-mold-action`, `workshop-clicker` | `ui/workshop_mold_stage.dart` `WorkshopMoldStage`·`WorkshopClicker` |
-| 손님 줄 | 무대 왼쪽, 폭 64, 위 48·아래 56 여백. 맨 앞이 위. 배지 52(남은 시간 고리, 맨 앞은 노란 면) + "N번" + 맛 첫 글자·수량. '맞이' 버튼은 **첫 실행 안내 중이고 줄이 비었을 때만**(26번 5-1단계 S5-1-Q2). 안내가 끝나면 손님은 실제 시간 시계로만 옴(30장). 줄은 일반 3 + 네임드 1까지 | `customer-N`, `customer-welcome` | `ui/workshop_counter.dart` `WorkshopCustomerQueue` |
-| 판매 카운터 | 왼쪽 8, 폭 = w − 16 − (조리 컷 폭 + 8), **위 = 배경 왼쪽 빨간 체크 행주의 윗변**(DEC-038, 아래 "행주 윗변"), 높이는 내용대로. 행주 값이 없는 배경(장면 크기 픽셀 그림·새 배경)이면 예전처럼 아래 = 굽는 판 바닥 + 굽는 판 높이×0.66. 스페셜 붕어빵 제작 중에는 숨김 | `sale-counter` | `WorkshopSaleCounter` |
-| 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 굽는 판 폭 = w − 16(왼쪽 8), 높이 = 폭 × 그림 높이/폭(941×470), 그림이 상자를 꽉 채워 칸 위치·터치 영역도 같은 비율로 커짐(DEC-038). 바탕은 **빈 굽는 판 그림**(`assets/images/stove_empty/<화로>.png`, 25번 1번 생성 그림을 `tools/apply_25_art.py`로 원래 화로 위치에 맞춤: 칸이 붕어빵 모양 홈)이고, 굽는 칸에만 원래 그림의 붕어빵만 남긴 층(`stove_fish/<화로>.png`, 없으면 `stove/<화로>.png`)을 그 칸 자리(`griddleFishClips`)에서 잘라 겹쳐 그림(`GriddlePainter(filled:)`, `workshopGriddleFilled`). 홈 중심과 `griddleCavities` 차이는 그림 px로 가로 −9~+3, 세로 −3~+1(25번 1번). 영업 준비 중(새 영업일 이어서 영업 전 포함)에는 칸을 하나도 그리지 않음: 빈 굽는 판 그림만, 글자·면·터치 없음(`griddle-idle`). 영업 중 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면(제작 중 등) 검은 반투명 면만. **숙련한 맛이 하나도 없으면**(26번 2단계, S2-Q2) 빈 칸 대신 굽는 판 그림 전체에 공통 잠금(`griddle-locked`, 빗금 + 큰 자물쇠 + '팥을 숙련하면 열려요 (연습 n/m · 손기술 n/m)')을 덮고, 누르면 같은 글을 짧은 알림으로. 굽는 중인 칸(옛 저장)은 잠금 위에 그대로 그려 꺼내기·폐기 가능. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
-| 손님 창 | 손님 배지를 누르면 뜨는 작은 창: 주문 줄(드린 수/주문 수), 대사, '이웃 이야기 확인', 맛별 '주문 제작'(영업 중·세션 없을 때만. 누르면 창을 닫고 그 주문 하나를 만드는 동안만 스페셜 붕어빵 틀이 나옴. 결과를 닫으면 다시 클리커). 카운터의 '맛 제작'(`order-produce`)도 같은 주문 제작 | `customer-card`, `customer-produce-<맛>` | `WorkshopCustomerCard` |
+| 스페셜 붕어빵 무대 | HUD 아래 중앙. 배경에 그려진 붕어빵 자리에 맞춤. 영업 상태별(DEC-035, 아래 "두 틀 규칙"): 영업 준비 중 빈 틀 + 맛 선택 + '스페셜 붕어빵 제작 시작'(버튼 아래끝 = 판매 카운터 윗변 − 60, 가운데 뜬 카운터 버튼 위 10. 24번 4단계의 − 4를 26번 4-1단계에서 바꿈(`WorkshopHomeLayout.practiceLift`). 행주 값이 없는 배경이면 예전처럼 틀 아래 경계에 걸침), 영업 중 세션이 없으면 틀 없이 떠 있는 큰 붕어빵(클리커. 예전 구도: 틀 자리에서 틀 높이×0.75 위. **새 구도(26번 4-1단계, 아래 '손님 표시')**: 틀 자리의 0.8배, 가로 가운데, 아래끝 = 판매 카운터 윗변 − 54(`WorkshopHomeLayout.clickerScale`·`clickerLift`), 손님은 그 뒤), 제작 세션 중에는 틀과 단계 조작. 새 영업일 이어서 영업 전에는 빈 틀만 | `workshop-center-stage`, `workshop-mold-action`, `workshop-clicker` | `ui/workshop_mold_stage.dart` `WorkshopMoldStage`·`WorkshopClicker` |
+| 손님 표시 (새 구도) | **26번 4-1단계(DEC-095)**. 낮춘 배경 14장(`bg_low/`)이 모두 읽혔을 때만(`WorkshopHomeLayout.active` = `enabled` && `PixelSprites.lowStallReady`, S4-1-Q4) 켜짐. 손님 그림(256×320, `customer/<id>_<normal·happy·sad>`)이 매대 뒤에 서고 그림 아래끝 = 판매 카운터 윗변(행주). 맨 앞 손님은 가로 가운데, 폭 = min(w×0.46, 220)이고 (층 높이 − 88 − 122)/1.25 이하·112 이상(HUD를 피함), 카운터 윗변보다 88(`frontLift`) 위에 섬. 뒤 손님은 자리 순서로 (가로 ±0.62×앞 폭, 0.8배, 10 위) → (±0.3, 0.66배, 40 위)(`backPlaces`, S4-1-Q1 '맨 앞 크게 + 뒤 작게'). 줄 최대 = 일반 3 + 네임드 1(30장). 머리 위 남은 시간 막대(폭 0.46, 높이 7, 25% 아래면 벽돌색, 표정도 `sad`, S4-1-Q3). 판매 직후 기쁜 얼굴·시간 초과는 슬픈 얼굴로 1.5초 동안 맨 앞에서 흐려지며 떠남(`guestDeparture`, 메모리만, 모션 줄이기면 흐려짐 없음). 스페셜 붕어빵 제작 중에는 투명도 0.4. 그림 층은 무대 아래(터치 없음), 터치 영역은 무대 위의 같은 자리 머리 쪽 42%(클리커와 겹치면 클리커 윗변까지)이고 누르면 손님 창. 손님이 없으면 배경과 큰 붕어빵만. 주문 제작 결과의 손님 반응은 그 손님 머리 위 말풍선(`guest-reaction`, 머리 위끝에서 34 아래 걸침) | `customer-guests`, `customer-guest-taps`, `customer-N`(터치), `customer-art-N`, `customer-time-<주문 id>`, `customer-leaving`, `guest-reaction` | `ui/workshop_guests.dart` `WorkshopGuestLayer`, 수치 `ui/workshop_home_layout.dart` `WorkshopHomeLayout` |
+| 손님 줄 (예전 구도) | 낮춘 배경이 다 없을 때만(`WorkshopHomeLayout.active` false). 무대 왼쪽, 폭 64, 위 48·아래 56 여백. 맨 앞이 위. 배지 52(이름 첫 글자, 남은 시간 고리, 맨 앞은 노란 면) + 맛 첫 글자·수량('N번'은 26번 4-1단계 F2에서 없앰). '맞이' 버튼은 **첫 실행 안내 중이고 줄이 비었을 때만**(26번 5-1단계 S5-1-Q2). 안내가 끝나면 손님은 실제 시간 시계로만 옴(30장). 줄은 일반 3 + 네임드 1까지. 23번 3단계 B안의 왼쪽 세로 줄은 새 구도에서 DEC-095로 대체됨 | `customer-queue`, `customer-N`, `customer-welcome` | `ui/workshop_counter.dart` `WorkshopCustomerQueue` |
+| 판매 카운터 | 왼쪽 8, 폭 = w − 16 − (조리 컷 폭 + 8), **위 = 배경 왼쪽 빨간 체크 행주의 윗변**(DEC-038, 아래 "행주 윗변"), 높이는 내용대로. 행주 값이 없는 배경(장면 크기 픽셀 그림·새 배경)이면 예전처럼 아래 = 굽는 판 바닥 + 굽는 판 높이×0.66. 스페셜 붕어빵 제작 중에는 숨김. 버튼은 카운터 밖(아래 줄) | `sale-counter` | `WorkshopSaleCounter` |
+| '오늘' 쪽지 (26번 7단계) | 조리 컷 오른쪽 위 끝(오른쪽 8), 아래끝 = max(조리 컷 윗변 + 2, 카운터 버튼 윗변 + 4)라 좁은 화면에서도 카운터 버튼과 겹치지 않음. 폭 52, 크림 판에 `icons/daily` 26 + '오늘'(Jua 13), 출석 도장이나 오늘의 주문서가 남아 있으면 오른쪽 위 빨간 점(12). 첫 실행 안내 중·스페셜 붕어빵 제작 중에는 숨김. 누르면 작은 창(`daily-card`): 행사 띠(행사 중) → 출석 도장 7칸(7칸째 황금 아이콘)·'도장 찍기' → 오늘의 주문서(의뢰인·행사 문구·'맛 익힘 N개'·보상·맞는 재고, '주문서 굽기'·'납품하기'). 34장 | `daily-ticket`, `daily-ticket-dot`, `daily-card`, `attendance-stamp`, `attendance-box-N`, `daily-order-deliver`, `daily-order-bake` | `ui/workshop_daily_card.dart`, `NightHome.counterSlip` |
+| 카운터 버튼 | **26번 4-1단계 F6(S4-1-Q6 '버튼만 화면 가운데')**: 카운터의 다음 행동 버튼 하나를 화면 가로 가운데에 띄움. 아래끝 = 판매 카운터 윗변 − 6(`actionGap`), 폭 160~260, 높이 44, 글자 17. 두 구도 모두 같음 | `counter-action`(안의 버튼 키는 아래 '판매 카운터' 표) | `WorkshopCounterAction` |
+| 가게 상태 간판 | **26번 4-1단계 F7**: HUD 아래 줄 가운데 나무 간판(짙은 나무색, 주황 테두리 2, 둥근 12, 그림자), 앞에 점(영업 중 초록·영업 준비 회색), 글 Jua 16 크림색 '영업 중'/'영업 준비'('· 주문 N'은 없앰). 저장 오류면 벽돌색 간판 '저장 확인 필요'. 구형 홈의 `_note`(`home-prestige` 등)는 그대로 | `workshop-status`(글), `workshop-status-badge` | `night_home.dart` `WorkshopStatusBadge` |
+| 숙련된 붕어빵 틀 칸 | 굽는 판 그림의 6칸 위. 굽는 판 폭 = w − 16(왼쪽 8), 높이 = 폭 × 그림 높이/폭(941×470), 그림이 상자를 꽉 채워 칸 위치·터치 영역도 같은 비율로 커짐(DEC-038). 바탕은 **빈 굽는 판 그림**(`assets/images/stove_empty/<화로>.png`, 25번 1번 생성 그림을 `tools/apply_25_art.py`로 원래 화로 위치에 맞춤: 칸이 붕어빵 모양 홈)이고, 굽는 칸에만 원래 그림의 붕어빵만 남긴 층(`stove_fish/<화로>.png`, 없으면 `stove/<화로>.png`)을 그 칸 자리(`griddleFishClips`)에서 잘라 겹쳐 그림(`GriddlePainter(filled:)`, `workshopGriddleFilled`). 홈 중심과 `griddleCavities` 차이는 그림 px로 가로 −9~+3, 세로 −3~+1(25번 1번). **판 그림 상태(26번 4-2단계 F8, DEC-099, `workshopGriddleOpen`)**: 영업 준비 중(새 영업일 이어서 영업 전 포함)과 숙련 전(잠김)에는 **닫히고 불 꺼진 판**(`stove_closed/<화로>.png` 941×470, `GriddlePainter(closed: true)`, 그림이 없으면 빈 굽는 판 위 검은 반투명 0.45), 영업 중 + 쓸 수 있음(숙련한 맛 있음, 또는 굽는 칸이 남은 옛 저장)이면 **열리고 불 켜진 판**: 바탕은 위의 빈 굽는 판 그대로(칸·붕어빵 층 그대로)이고 뚜껑은 굽는 판 상자 **위로** 따로 그림(`GriddleLidPainter`, 키 `griddle-lid`, `stove_open/<화로>.png` 941×700의 위 230px, 높이 = 굽는 판 폭 × 230/941, 390 폭에서 약 91). 층 순서: 손님 그림 → 뚜껑 → 굽는 판 → HUD·무대 → 카운터·카운터 버튼·조리 컷이라 뚜껑은 대부분 판매 카운터·조리 컷 뒤에 가려짐(S4-2-Q2 '가려지는 대로', 결과 표 참고). 굽는 판 상자·칸 위치는 상태와 상관없이 그대로. 영업 준비 중에는 칸을 하나도 그리지 않음: 닫힌 판 그림만, 글자·면·터치 없음(`griddle-idle`). 영업 중 빈 칸은 글자 없음: 누를 수 있으면(영업 중·세션 없음) 옅은 크림색 면(투명도 0.18)과 크림색 테두리(투명도 0.7, 두께 1.5), 누를 수 없으면(제작 중 등) 검은 반투명 면만. **숙련한 맛이 하나도 없으면**(26번 2단계, S2-Q2) 빈 칸 대신 (닫힌) 굽는 판 그림 전체에 공통 잠금(`griddle-locked`, 빗금 + 큰 자물쇠 + '팥을 숙련하면 열려요 (연습 n/m · 손기술 n/m)')을 덮고, 누르면 같은 글을 짧은 알림으로. 굽는 중인 칸(옛 저장)은 잠금 위에 그대로 그려 꺼내기·폐기 가능. 굽는 칸은 번호·익힘·'수확'/'폐기' 글자와 갈색(탄 칸은 검정) 면. 화면 읽기 라벨: 빈 칸 '숙련된 붕어빵 틀 N번 칸 굽기 시작', 굽는 칸 'N번 맛 익힘 · 수확/폐기' | `workshop-cell-N` | `WorkshopGriddleLayer` |
+| 손님 창 | 손님(그림 머리 쪽 또는 예전 배지)을 누르면 뜨는 작은 창. 제목은 별명 전체(`customerName`, 'N번' 없음, 키 `customer-card-title`): 주문 줄(드린 수/주문 수), 대사, '이웃 이야기 확인', 맛별 '주문 제작'(영업 중·세션 없을 때만. 누르면 창을 닫고 그 주문 하나를 만드는 동안만 스페셜 붕어빵 틀이 나옴. 결과를 닫으면 다시 클리커). 카운터의 '맛 제작'(`order-produce`)도 같은 주문 제작 | `customer-card`, `customer-produce-<맛>` | `WorkshopCustomerCard` |
 | 재고 창 | 카운터 글자를 누르면 뜨는 작은 창: 오래된 순 묶음(맛·익힘·개수·경과 영업일), 준비품 | `stock-card` | `WorkshopStockList` |
 
 **두 틀 규칙 (DEC-035·036, 24번 3단계):**
@@ -739,7 +772,7 @@
 | `flip_dead_zone_permille` | 150 | 틀 중심에서 틀 그림 폭의 15% 안쪽 움직임 무시 |
 | `filling_inputs` | 4 | 옛 속 방향 순서 길이(저장 토큰 호환용, 화면에 안 보임) |
 | `batter_input_passes` | 2 | 반죽 두 번 구조 기록용(코드에서 읽지 않음, G6에서 유지) |
-| `checkpoint_ms` | 1000 | 제작 중 저장 간격 |
+| `checkpoint_ms` | 1000 | 제작 중 저장 간격. 이 주기 저장 중에는 `busy`가 켜져도 화면은 `inputBusy`(= `busy && !_savingCheckpoint`)로 판단해 버튼·손님·6구 칸·클리커가 깜빡이지 않음. 저장 중 들어온 명령은 저장이 끝난 뒤 실행되고, 안내 문구(`notice`)는 사용자 명령에서만 지움(주기·수명 저장은 `keepNotice`). 26번 4-1단계 F1 |
 | `products_per_completed_result`, `minimum_cooling_ms` | 1, 0 | 결과 1개당 재고 수, 식힘 시간 |
 
 삭제(24번 5단계): `mastery_difficulties[*].batter_target_ms`·`batter_tolerance_permille`, `manual_cooking.filling_capacity_ms`·`touch_batter_tick_ms`·`tilt_sampling_ms`·`tilt_activation_degrees`·`tilt_dead_zone_degrees`. `tools/development_balance.py`가 다시 생기지 않게 검사하고, 서버 생성본(`firebase/functions/src/generated/development_balance.json`)과 14번 문서를 같은 도구로 다시 만듭니다. 서버 코드는 제작 값을 읽지 않으며 `metadata.revision`은 `development-provisional-3` 그대로입니다(G8).
@@ -759,7 +792,9 @@
 
 화면 y 변환(`towelTopOnScreen`, 배경을 화면을 덮게 아래 맞춤으로 그리는 식과 같음): s = max(180/335, 400/762), k = max(W/180, H/400), 화면 y = (H − 400k) + (400 − 762s + y·s)·k. 어떤 그림인지는 `PixelSprites.sceneBackground`가 고른 그림(밤·깨끗한 카운터 포함)으로 정합니다. 맑은 날 낮 기본 배경(bg_clean/clear)에서 카운터 윗변: 360x640 384.2, 360x800 544.2, 390x844 566.9, 412x915 622.3.
 
-**판매 카운터:** 1줄 제목(Jua 15), 1줄 설명(12, 안내 문구가 있으면 벽돌색으로 대신), 오른쪽에 다음 행동 버튼 하나(최대 폭 104, 높이 44). 상태 순서:
+**낮춘 배경 (26번 4-1단계 F5, 25번 20번):** 새 구도는 `assets/images/bg_low/<id>.png` 14장(335×762, 불투명, 구운 틀 없음, 매대·수저통·나무 상자가 행주 높이로 내려옴)을 씁니다. `python tools/apply_26_home_art.py <26_feedback_generated> --only backgrounds --measure`가 생성 원본을 335 폭으로 줄인 뒤 그림마다 잰 행주 윗변(`TOWEL_AT_335`, 335 폭 기준 460~576)을 524로 옮겨 만들어서, `towelTops`의 `bg_low/<id>`는 **모두 524**입니다(DEC-038 규칙 그대로, 값만 이 표에 더함). 행주가 524보다 위인 그림(clear·snowday·rain·seaside)만 키우고(왼쪽 끝 고정, 오른쪽 자름), 아래로 모자란 줄은 굽는 판 뒤에 가려지는 매대 앞면 줄을 반복합니다. 그래서 카운터 윗변 화면 값은 위 bg_clean/clear와 같습니다. 맑은 날은 `clear-v2`(25번 20번 'v2 우선'). 밤 그림이 없는 배경은 `lowStallBackground`가 낮 그림을 어둡게 그림.
+
+**판매 카운터 (26번 4-1단계 F6):** 제목(Jua 16, 최대 2줄, 잘림·흐림 없음), 설명(12, 최대 2줄, 안내 문구가 있으면 벽돌색으로 대신, 키 `counter-notice`), 글자 크기 1.3배 상한. 다음 행동 버튼 하나는 카운터 밖 화면 가운데에 뜸(위 표 '카운터 버튼', 예전: 오른쪽 최대 폭 104). 손님 이름은 짧은 이름(`customerShortName`, S4-1-Q2: '도윤'·'막례 할머니', 무기명은 '일반 손님'), 남은 초는 글에서 빼고 손님 머리 위 막대로. 상태 순서:
 
 | 상태 | 제목 / 설명 | 버튼 |
 | --- | --- | --- |
@@ -767,21 +802,32 @@
 | 영업 전·새 영업일 | 오늘 영업 준비 / 새 영업일이 밝았어요, 재고·준비품 | 영업 시작 / 이어서 영업 (`business-open`) |
 | 태오 사진 반응 | 태오 대사 | 반응 확인 (`photo-reaction`) |
 | 손님 없음 | 마지막 판매 한마디 또는 '손님을 기다리는 중이에요', 재고 | 영업 종료 (`business-close`) |
-| 맨 앞 손님 | 이름 (남은 초) / "팥 1/2, 재고 3" | 드릴 재고가 있으면 'N개 먼저 판매' 또는 '판매 완료'(`sale-button`), 없으면 '맛 제작'(`order-produce`) |
+| 맨 앞 손님 | 짧은 이름 · 주문("도윤 · 팥 1/2") / "재고 3개" | 드릴 재고가 있으면 'N개 먼저 판매' 또는 '판매 완료'(`sale-button`), 없으면 '맛 제작'(`order-produce`) |
 
 **메뉴 창 위 (26번 2-1단계):** 사장님 이름이 있으면 '○○ 사장님의 가게'(`menu-owner-name`). 이름이 보이는 곳은 이 한 곳.
 
 **설정 창 맨 위 '계정' (26번 2-1단계, `lib/ui/owner_settings.dart` `OwnerSettingsSection`, `WorkshopPage(owner:)`가 있을 때만):** '사장님 이름: ○○' + '이름 바꾸기'(같은 규칙, 틀리면 창 안에 이유), '카카오/구글 계정으로 로그인 중', '성별·연령대 (선택): …' + '바꾸기'(첫 실행 ④와 같은 양식)·'지우기'(서버에서도 지움), 이용약관·개인정보처리방침(앱 안 `assets/legal/` 사본을 제목·목록·표 줄로 보여 줌, `test/owner_first_run_test.dart`가 문서 폴더 원본과 같은지 확인), '로그아웃'(확인 뒤 설정 창을 닫고 로그인 화면, 진행은 기기에 남음), '계정 삭제'(지워지는 것·되돌릴 수 없음 안내 + '위 내용을 확인했어요' 체크 뒤 '삭제하기', 인터넷 없으면 '계정 삭제는 인터넷에 연결된 상태에서만…'). 첫 실행 골든 `test/goldens/first_run_{login,name,character,optional}_390x844.png`·`first_run_login_360x640.png`(`test/first_run_golden_test.dart`, 실제 글꼴).
 
+**설정 창 '사용 통계 보내기' (26번 5단계, DEC-046, 키 `settings-usage-stats`):** 손님 알림 세 줄('밤 알림 끄기') 바로 아래, '배경 시간' 위. 아이콘 `Icons.insights_outlined`, 설명 '게임을 고치는 데 쓰는 이름 없는 사용 기록이에요', 기본 켬, 첫 실행 안내 없음. 끄면 `GameSettings.sendUsageStats=false` 저장 뒤 `setAnalyticsCollectionEnabled(false)`(저장에 실패하면 원래 값으로 되돌린 값을 Analytics에 알림). 계정 저장 v13 그대로(없으면 켬).
+
 **메뉴 창 아래:** 황금붕어빵력 심사 대기 건수(`menu-pending-gold`), '로그인·보상 확인'(`menu-sync`), 영업 중이면 '영업 종료'(`menu-close-business`). 예전 "가게 관리" 시트는 없앴습니다. 레시피(슈크림·초코) 미션 받기는 레벨 미션 창, 맛별 연습·손기술 진행과 손님 취향 기록·이야기 다시 보기는 도감 창으로 옮겼습니다.
 
-**메뉴 창 목록(Workshop):** 도감 · 업적 · 통계 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션. 온라인 랭킹·친구·공유는 가출시 범위 밖이라 `MenuPanel(hidden:)`으로 뺌(DEC-029, 2026-11-16 5단계). 도감은 Lv.3 전, 배경 테마(가게 꾸미기)는 Lv.8 전까지 같은 방법으로 숨김(26번 2단계, 아래 "처음 5분 해금").
+**메뉴 창 목록(Workshop):** 도감 · 업적 · 통계 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션 · 가게 사진 찍기(26번 8단계 공유 카드, 35장. 구형 화면 `GameApp` 메뉴에서는 `hidden:{'photo'}`로 뺌). 온라인 랭킹·친구·공유는 가출시 범위 밖이라 `MenuPanel(hidden:)`으로 뺌(DEC-029, 2026-11-16 5단계). 도감은 Lv.3 전, 배경 테마(가게 꾸미기)는 Lv.8 전까지 같은 방법으로 숨김(26번 2단계, 아래 "처음 5분 해금").
 
-**Workshop 창**(`showWorkshopWindow`, `lib/ui/workshop_windows.dart`, 키 `workshop-window`): 위 안전 영역 아래 화면 전체 높이. 위에서부터 잔액 알약, 제목 프레임(닫기 버튼), 내용. 맨 아래 짙은 나무색 받침(`workshop-window-base`, 화면 폭 전체, 위 테두리 wood 2, 최소 높이 = `NightHome.navHeight` 66, 아래 여백 10 + 안전 영역) 가운데에 '돌아가기'. 받침이 홈 하단 메뉴를 완전히 덮어 버튼 옆으로 메뉴가 비치지 않음.
+**Workshop 창**(`showWorkshopWindow`, `lib/ui/workshop_windows.dart`, 키 `workshop-window`): 위 안전 영역 아래 화면 전체 높이. 위에서부터 잔액 알약, 제목 프레임(닫기 버튼), 내용. 잔액 알약(`workshop-balance`, 26번 4-5단계 F31·S45-Q4)은 `CurrencyAmount` 두 개(아이콘 24, 굵은 숫자 19: `balance-buns`·`balance-gold`)와 황금 옆 꿀색 '+'(`balance-gold-plus`, `onGold` → `WorkshopPage._goldPacks` 충전 목록). 제목 양옆은 25번 15번 붕어빵 `ui/title_fish` 48×36(왼쪽은 좌우 뒤집음, `title-fish-left`), 설정 창은 톱니 아이콘. 맨 아래 짙은 나무색 받침(`workshop-window-base`, 화면 폭 전체, 위 테두리 wood 2, 최소 높이 = `NightHome.navHeight` 66, 아래 여백 10 + 안전 영역) 가운데에 '돌아가기'. 받침이 홈 하단 메뉴를 완전히 덮어 버튼 옆으로 메뉴가 비치지 않음.
+
+**꾸미기·상점 역할 (26번 4-5단계, S45-Q1 B, `lib/ui/workshop_wardrobe.dart` `WorkshopWardrobe`):** 꾸미기 창(하단 '꾸미기', `WardrobeMode.wear`)은 **가진 것(무료 포함)만** 입어 보고 입는 곳, 상점의 꾸미기 탭(`WardrobeMode.shop`, 키 `shop-wardrobe`)은 **아직 없는 아바타 아이템을 사는 곳**(잠긴 것도 눌러 입어 봄). 꾸미기 창 칸의 마지막 타일 '상점에서 더 보기'(`wardrobe-more-<slot>`)는 꾸미기 창을 닫고 상점을 그 칸으로 엶. 상점은 꾸미기·충전 두 탭(Workshop에서 장비 탭 없음, 도구는 꾸미기의 소품 탭).
+- 배치(위만 고정, 격자만 스크롤): 알약 탭 줄(`cosmetic-category-<tab>`, 가로 스크롤) → 미리보기(창 높이의 36%, 150~220) → 알약 칸 줄(`cosmetic-slot-<slot>`, 입어 보는 칸에 꿀색 점) → 3열 타일 격자(`wardrobe-grid`). '모습만 바뀌어요' 글은 없음(G14).
+- 미리보기: 사장님 탭은 매대 없는 방 `ui/wardrobe_room`(25번 11번) 위 전신(G1), 누르면 말하지 않음(G2). 붕어빵 탭은 붕어빵 크게. 가게 탭은 세로 홈 장면(180×400)을 **통째로** 상자 높이에 맞춤(`preview-stall-scene`, F33). 고른 것은 칸마다 기억(`picks`)해 탭·칸을 바꿔도 함께 그림.
+- 미리보기 왼쪽 위: 입은 것과 다를 때만 리본 '입어 보는 중'(`cosmetic-preview-status`)과 되돌리기(`wardrobe-revert`). 입은 그대로면 아무것도 없음(G15).
+- 미리보기 오른쪽 아래(S45-Q3): 꾸미기는 '모두 적용(N)'(`wardrobe-apply-all`, N = 바뀐 칸 수, 0이면 꺼짐) — 칸마다 차례로 입히고 못 입힌 것은 이름을 미리보기 아래에 말하고(`wardrobe-message`) 입어 보는 중으로 남김. 사는 일 없음(서버 변경 없음). 상점은 마지막으로 누른 아이템의 '사고 바로 입기'(`buy-cosmetic-<id>`, 잠겼으면 'Lv.N 해금', 못 사면 꺼짐) → 확인 창(가격 아이콘·'사면 계속 갖고, 바로 입어요', `wardrobe-buy-confirm`) → 1건 구매 뒤 바로 입힘.
+- 타일(`WardrobeTile`, 키 `preview-<id>`): 둥근 카드에 아이템 아이콘(폭 68% 동그란 받침, G5 `CosmeticThumb`), 이름 한 줄, 상태 한 줄. 입는 중 = 진한 테두리 + 오른쪽 위 체크 + '입는 중', 보유 = '보유' 배지, 살 수 있음 = 가격표 한 줄(`CurrencyAmount` 붕어빵력·황금, `FittedBox`로 줄바꿈 없음), 모자람 = 같은 가격표에 모자란 재화 빨강(화면 읽기 '붕어빵력 모자람'), 레벨 잠김 = 아이콘에만 공통 잠금 `LockedOverlay`(빗금+자물쇠) + 빨간 'Lv.N 해금', 눌러서 입어 보기 가능. 고른 타일은 꿀색 테두리.
+- 탭 공개: 붕어빵 탭은 `fish_cosmetics`(Lv.5), 가게 탭은 `stall_cosmetics`(Lv.8)부터 보임(`CosmeticMenuAccess.tabOpen`, S45-Q6). 칩은 체크 표시 없는 크림 알약, 고르면 꿀색(G8).
+- 구형 클리커 경로(`game_app.dart`, access 없음)의 `WardrobePanel`·`ShopPanel`은 예전 모양 그대로.
 
 **상점·꾸미기(Workshop):** 파는 것은 아바타 카탈로그(`avatar_catalog`)뿐. 그 밖의 구형 꾸미기(화로·배경·장식·등불·무늬·토핑)는 가지고 있을 때만 보임(`CosmeticMenuAccess.listed`). 품목이 하나도 없는 상점 탭(지금은 테마)은 숨기고 충전 탭은 항상 둠. 충전 탭에는 구형 클리커 부스트 줄을 두지 않음(`GoldChargeTab(legacyBoost: false)`). 로그인 전에는 '로그인하면 충전할 수 있어요', 상품을 불러오는 동안 가격 자리에 '불러오는 중'.
 
-골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%), 그리고 25번 그림 적용 때 더한 `workshop_home_filling_390x844`(속을 짜는 도중, 넘침·짜는 중 짤주머니)와 `workshop_home_griddle_390x844`(영업 중 1·4번 칸만 굽는 중), 26번 4단계에서 더한 `workshop_home_result_<perfect·good·near·fail>_390x844`(결과 등급별, 모션 줄이기라 효과 없이 글·익힘 색·넘침 방울·윤기)와 반짝이 시안 `sparkle_options.png`(`test/sparkle_options_golden_test.dart`). 26번 4단계 반짝이 교체로 `workshop_home_open_*`·`workshop_home_griddle_390x844`·`workshop_counter_*`·`home_*`(맑은 하늘 날씨·`BakeTarget`)을 다시 만듦. 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄이 카운터 위, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 26번 2단계에서 `workshop_counter_*` 3장과 `workshop_home_*` 13장을 모두 다시 만듦(이유: Lv.1 새 상태라 초당·클릭당 숫자가 숨고 하단 메뉴 '스킬'에 빗금 자물쇠, 숙련 전 굽는 판에 공통 잠금과 남은 숙련 글이 덮임. `griddle` 골든은 숙련 상태라 칸 그대로, 소개 카드는 본 것으로 둠). 웨이브 4 병합(2·4단계)에서 두 변경이 함께 보이도록 `workshop_counter_*`·`workshop_home_open_*`·`workshop_home_griddle_390x844`·`workshop_home_result_*` 12장을 다시 만듦. 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
+골든: `test/goldens/workshop_counter_{360x800,390x844,412x915}.png`(`test/workshop_counter_test.dart`, 테스트 글꼴). 실제 글꼴(Jua·BungeoSymbols·Material 아이콘)을 불러 찍는 `test/goldens/workshop_home_{open,menu}_{360x640,360x800,390x844,412x915}.png`, `workshop_home_{ready,baking}_390x844.png`, `workshop_home_flipping_360x640.png`(`test/workshop_home_golden_test.dart`): 영업 중 홈(손님 2·재고 1, 떠 있는 큰 붕어빵), 메뉴 창, 영업 준비(빈 틀·빈 굽는 판 그림), 스페셜 붕어빵 제작 중, 원 그려 뒤집기 반 바퀴(모션 줄이기 상태라 틀은 돌지 않고 고리 56%), 그리고 25번 그림 적용 때 더한 `workshop_home_filling_390x844`(속을 짜는 도중, 넘침·짜는 중 짤주머니)와 `workshop_home_griddle_390x844`(영업 중 1·4번 칸만 굽는 중), 26번 4단계에서 더한 `workshop_home_result_<perfect·good·near·fail>_390x844`(결과 등급별, 모션 줄이기라 효과 없이 글·익힘 색·넘침 방울·윤기)와 반짝이 시안 `sparkle_options.png`(`test/sparkle_options_golden_test.dart`). 26번 4단계 반짝이 교체로 `workshop_home_open_*`·`workshop_home_griddle_390x844`·`workshop_counter_*`·`home_*`(맑은 하늘 날씨·`BakeTarget`)을 다시 만듦. 24번 4단계에서 굽는 판 폭·카운터 높이·빈 굽는 판 그림으로 13장 모두 다시 만듦. 배치 숫자는 `test/workshop_home_layout_test.dart`가 4개 해상도에서 확인(굽는 판 폭 = 화면 폭 − 16, 카운터 윗변 = 행주 윗변, 시작 버튼 아래끝 = 카운터 윗변 − 4, 칸이 카운터 아래·하단 메뉴 위, 손님 줄(예전 구도)·손님 그림 아래끝(새 구도, ±1)이 카운터 윗변, 맨 앞 손님 가로 가운데, 손님 머리가 HUD 아래, 제작 단계 안내 글 아래끝 ≤ '제작 취소' 버튼 윗변 − 4). 26번 2단계에서 `workshop_counter_*` 3장과 `workshop_home_*` 13장을 모두 다시 만듦(이유: Lv.1 새 상태라 초당·클릭당 숫자가 숨고 하단 메뉴 '스킬'에 빗금 자물쇠, 숙련 전 굽는 판에 공통 잠금과 남은 숙련 글이 덮임. `griddle` 골든은 숙련 상태라 칸 그대로, 소개 카드는 본 것으로 둠). 웨이브 4 병합(2·4단계)에서 두 변경이 함께 보이도록 `workshop_counter_*`·`workshop_home_open_*`·`workshop_home_griddle_390x844`·`workshop_home_result_*` 12장을 다시 만듦. **26번 4-1단계**에서 `workshop_counter_*` 3장과 `workshop_home_*` 17장을 모두 다시 만듦(이유: 낮춘 배경·매대 앞 손님·클리커 0.8배 내림, 카운터 버튼 가운데·카운터 2줄 글, 상태 간판, 무기명 '일반 손님', 결과 손님 반응을 손님 머리 위 말풍선으로). 새 골든 6장: `workshop_home_empty_{360x640,412x915}`(손님 0명 빈 매대), `workshop_home_guests_max_390x844`(손님 4명), `workshop_home_sold_390x844`(판매 직후 기쁜 손님이 떠나는 중), `workshop_home_reaction_390x844`(주문 제작 결과 손님 말풍선), `workshop_home_old_layout_390x844`(낮춘 배경이 다 없을 때 예전 구도). **26번 4-2단계**에서 `workshop_home_*` 23장 모두·`workshop_counter_*` 3장·`home_{360x800,390x844,412x915}`·`skill_shop_{tap,auto}_390x844`·`skill_shop_states_360x800`을 다시 만듦(이유: 하단 메뉴 아이콘 위·이름 아래와 nav_* 아이콘, 영업 준비·숙련 전 닫힌 판, `griddle` 골든의 열린 판·뚜껑, 위치를 맞춘 조리 컷). **26번 7단계**에서 `workshop_counter_*` 3장과 `workshop_home_*` 중 안내가 끝난 상태 15장(open 4·menu 4·empty 2·ready·griddle·guests_max·sold·old_layout)을 다시 만듦(이유: 조리 컷 위 '오늘' 쪽지와 빨간 점. 메뉴 창은 뒤에 비치는 홈만 바뀜. `skill_shop_*` 3장·`wardrobe_hair`·`wardrobe_stall`·`shop_avatar`도 창 가장자리에 비치는 빨간 점 6px로 다시 만듦), 새 골든 `workshop_daily_card_390x844`(`test/workshop_daily_test.dart`, 크리스마스 행사 중 쪽지 카드). **26번 8단계**에서 `workshop_home_menu_{360x800,390x844,412x915}`(메뉴 '가게 사진 찍기' 줄, 360x640은 줄이 화면 밖이라 그대로)과 `workshop_home_result_perfect_390x844`·`workshop_home_reaction_390x844`(완벽 결과의 '자랑하기' 버튼)를 다시 만듦. 새 골든 `share_card_{perfect,story,shop}_360x450`(`test/share_card_test.dart`, 공유 카드 축소본). 이 골든과 `workshop_counter_*` 골든은 `WorkshopController(monotonicMs: () => 0)`으로 단조 시계를 멈춰 '현재 단계 경과'와 손님 대기 고리가 실제 시간에 따라 바뀌지 않음.
 
 **첫 실행 안내** (`lib/workshop_tutorial.dart` 단계 계산, `lib/ui/workshop_guide.dart` `WorkshopTutorialOverlay`): 홈 위에 겹친 층. 대상 위젯을 꿀색 고리로 두르고 작은 카드(“첫 영업 안내 N/7”, 한 줄 설명, '건너뛰기')를 띄움. 카드만 터치를 받고 게임은 그대로 조작됨. 저장하는 것은 `tutorial` 값뿐이고 단계는 매 프레임 상태에서 계산.
 
@@ -792,7 +838,7 @@
 | 1(영업 중) | `cook`인데 이미 영업 중(DEC-037): 손님 없으면 '영업 중에는 손님 주문을 받아 구워요. 손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요.', 손님이 있으면 판매할 재고가 있으면 판매, 없으면 '손님 주문은 주문 제작으로 바로 구워요.' 주문 제작 결과를 닫으면 `sell` | `workshop-clicker`, `sale-button`, `order-produce` |
 | 7 | `sell`: 영업 시작 → 첫 손님 기다리기('첫 손님을 기다려요. 손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요.') → 판매(재고 없으면 주문 제작) | `business-open`, `workshop-clicker`, `sale-button`, `order-produce` |
 
-카드 위치: 스페셜 붕어빵 제작 단계는 무대(`workshop-center-stage`) 바로 아래, 그 밖에는 대상의 넓은 쪽. 왼쪽 72(손님 줄 피함)·오른쪽 12. 어떤 글자 크기에서도 하단 메뉴(`home-nav`) 위 6에서 멈추도록 위로 밀어 올림. 이야기 장면 중에는 숨김. 연습 결과를 보관하거나 주문 제작 결과를 닫으면 `sell`, 첫 판매 완료(주문을 다 채운 판매)면 `done`. 안내 중 첫 판매는 네임드 손님이어도 이야기·후일담·선택 장면을 붙이지 않고, 손님 맞이에서도 선택 장면을 굴리지 않음.
+카드 위치: 스페셜 붕어빵 제작 단계는 무대(`workshop-center-stage`) 바로 아래, 그 밖에는 대상의 넓은 쪽. 왼쪽 72(예전 구도: 손님 줄 피함), 새 구도는 왼쪽 12(`WorkshopHomeLayout.guideLeft`)·오른쪽 12. 어떤 글자 크기에서도 하단 메뉴(`home-nav`) 위 6에서 멈추도록 위로 밀어 올림. 이야기 장면 중에는 숨김. 연습 결과를 보관하거나 주문 제작 결과를 닫으면 `sell`, 첫 판매 완료(주문을 다 채운 판매)면 `done`. 안내 중 첫 판매는 네임드 손님이어도 이야기·후일담·선택 장면을 붙이지 않고, 손님 맞이에서도 선택 장면을 굴리지 않음.
 
 **처음 5분 해금** (26번 2단계, DEC-043 A. 하나씩 열기, `lib/workshop_feature_unlocks.dart`): 화면·창·컨트롤러가 모두 `featureOpen`/`featureLockReason`(`WorkshopController.featureIsOpen`·`featureLock`) 하나로 판단. 핵심 진행(굽기·판매·영업·연습)은 레벨로 잠그지 않음(`tools/development_balance.py`가 `manual_practice`·`core_*`·`mastery_progress`·`six_slot_access` = 1을 검사, `skill_shop`은 2~5만 허용).
 
@@ -809,7 +855,9 @@
 | 신선도 (`freshness`) | 재고 묶음이 영업일을 하나 이상 넘김 | 아무것도 잠그지 않음, 소개 카드만 |
 | 가게 꾸미기 (`stallCosmetics`) | `stall_cosmetics`(Lv.8) | 메뉴 창 '배경 테마' 숨김(꾸미기 창 가게 칸은 4-5단계) |
 
-- **공통 잠금 표시** (`lib/ui/lock_overlay.dart` `LockedOverlay`, 4-3단계가 함께 씀): 원래 모습을 투명도 0.5로 흐리게 + 짙은 나무색 0.18 면 + 45° 사선 빗금(`LockHatchPainter`, 굵기 6·간격 10, `0xff5b3a24` 35%, 25번 13번 덮개 값을 코드로) + 큰 자물쇠(`ui/lock_badge.png` 128×128, 25번 13번 생성 그림을 `tools/apply_25_art.py --only locks`로 줄임, 없으면 Material 자물쇠) + 높이 64 이상이면 아래에 잠금 글 상자. 하단 메뉴는 자물쇠 최대 34를 아이콘 자리(`Alignment(-.55, 0)`)에 두어 글자를 가리지 않고 잠금 글은 숨김(화면 읽기 '잠김, 스킬: Lv.2에 열려요'). 키 `menu-<id>-locked`, `griddle-locked`, `lock-hatch`, `lock-badge`, `lock-caption`. 모양은 `LockStyle.hatch` 하나(4-3이 실루엣을 더함).
+- **공통 잠금 표시** (`lib/ui/lock_overlay.dart` `LockedOverlay`, 4-3단계가 함께 씀): 원래 모습을 투명도 0.5로 흐리게 + 짙은 나무색 0.18 면 + 45° 사선 빗금(`LockHatchPainter`, 굵기 6·간격 10, `0xff5b3a24` 35%, 25번 13번 덮개 값을 코드로) + 큰 자물쇠(`ui/lock_badge.png` 128×128, 25번 13번 생성 그림을 `tools/apply_25_art.py --only locks`로 줄임, 없으면 Material 자물쇠) + 높이 64 이상이면 아래에 잠금 글 상자. 하단 메뉴는 자물쇠 최대 34를 아이콘 자리(`Alignment(-.55, 0)`)에 두어 글자를 가리지 않고 잠금 글은 숨김(화면 읽기 '잠김, 스킬: Lv.2에 열려요'). 키 `menu-<id>-locked`, `griddle-locked`, `lock-hatch`, `lock-badge`, `lock-caption`. 모양은 두 가지(26번 4-3단계, S43-Q4 '빗금+큰 자물쇠'): `LockStyle.hatch`(기능·꾸미기, 위 설명) / `LockStyle.hidden`(다음 스킬: 그림을 `ColorFiltered`로 `0xff3e2a1d` 실루엣 0.55 + 큰 자물쇠, 빗금 없음, 키 `lock-silhouette`). `maxLock`·`showCaption`·`lockAlignment`·`onTap`을 받고, 잠긴 칸의 손가락은 아래 그림에 닿지 않음(`test/lock_overlay_test.dart`). 4-5단계 꾸미기 잠금도 이 위젯을 쓴다.
+- **재화 표시** (`lib/ui/currency_amount.dart` `CurrencyAmount(Currency.buns|gold, amount, short, missing)`, 26번 4-3단계): 아이콘(`icons/bun.png` / 황금 `icons/gold_bun.png` 72×72, 25번 18번) + 숫자(기본 `compactNumber`, 줄였으면 길게 눌러 정확한 숫자 Tooltip, 모자라면 빨강, 화면 읽기 '붕어빵력 12345, 모자라요'). 스킬 창 비용이 쓰고 4-5단계 잔액 줄·꾸미기 타일이 쓴다.
+- **스킬 창 골든** `test/goldens/skill_shop_{tap,auto}_390x844.png`·`skill_shop_states_360x800.png`(`test/workshop_skill_window_test.dart`, 실제 글꼴; 26번 4-3단계에서 새로 만듦): tap = MAX·올릴 수 있음·돈 부족·해금됨 Lv.0·잠김(실루엣), auto = ×10 + 황금이 필요한 5단계를 못 사는 상태, states = 360 폭·×100·두 재화. 시안 비교 `flutter test tools/preview_skill_shop_test.dart` → `build/preview/skill_shop_options.png`(칸 2안·단위 고르기 2안·잠금 3안).
 - **기능 소개 카드** (`ui/workshop_guide.dart` `WorkshopFeatureIntroCard`, 키 `feature-intro-<id>`): 그림 200×150 틀 + 제목 + 두 문장 + '알겠어요'(`feature-intro-ok`). 그림은 `ui/intro_<id>.png`(25번 22번, 아직 없음) — 없으면 기존 아이콘(`skill`·`bun`·`achievements`·`mission`·`daily`·`tab_fish`·`records`·`tab_stall`)을 88로 그린 임시 그림(`feature-intro-standin`). 안내가 끝난 뒤, 다른 창·복귀 카드·알림 질문·이야기 장면·스페셜 붕어빵 제작·첫 판매 칭찬이 없을 때 한 장씩(여러 개면 표 순서), 바깥을 눌러도 닫히지 않음. 닫으면 `markIntroSeen`으로 저장(schema 8 `featureIntros`). 손님 알림 질문은 소개 카드가 떠 있으면 기다림. 스킬 카드 문구에 '카카오 로그인 후 레벨업'(S3-Q3).
 - **첫 판매 칭찬** (S2-Q4, `WorkshopSalePraiseBanner`, 키 `sale-praise`): 안내를 끝내는 첫 판매에만. 화면 가운데에 손님 이름·성공 대사 말풍선(`sale-praise-speech`) + 큰 별(`icons/star`, 64) + '별 N개!' + 둘레 반짝이(`SparklePainter`, `fx/sparkle`) 2초, 커졌다 돌아오는 연출. 모션 줄이기(설정 또는 기기)면 반짝이·연출 없이 정지 표시. 터치는 막지 않음. 저장하지 않음(`WorkshopController.salePraise`, 다시 켜면 없음). 그 뒤 판매는 예전처럼 카운터 한 줄(`lastSaleFeedback`).
 - 새 설치 첫 화면 비교(26번 2단계 결과 표): HUD·하단 메뉴에서 바로 쓸 수 있는 버튼 8 → 5(화면 전체 12 → 9: 맛 선택·제작 시작·영업 시작·건너뛰기 포함), HUD 숫자 6 → 4(초당·클릭당 숨김).
@@ -853,7 +901,7 @@
 - 누르고 있으면 250ms마다 굽습니다. Space/Enter 키로도 구울 수 있습니다.
 - 콤보 표시는 위 8px에 나옵니다. 콤보 20 이상, 50 이상에서 글자 크기와 색이 바뀝니다.
 
-**하단 내비게이션**: 버튼 4개가 같은 폭으로 놓입니다.
+**하단 내비게이션**: 버튼 4개가 같은 폭으로 놓입니다. 버튼 안은 **아이콘 위, 이름 아래**(26번 4-2단계 F10): 아이콘은 여백을 잘라 96×96을 채운 `icons/nav_menu·nav_skill·nav_skins·nav_shop.png`(`tools/fit_nav_icons.py`, 그림 긴 변 87~88px. 원본 `menu`·`skill`·`tab_outfit`·`shop`은 다른 화면용으로 그대로) 32, 이름 Jua 15(줄 높이 1.15). 가장 긴 이름('꾸미기')이 버튼 폭에, 아이콘 + 가장 높은 이름이 버튼 높이(60 − 7)에 들어가도록 **넷이 같은 비율**로 줄임(`NightHome.navScale`, 글자 크기 설정 반영) → 네 아이콘이 늘 같은 크기(예전: 버튼마다 따로 줄어 번개·앞치마가 훨씬 작게 보임). 잠긴 버튼은 자물쇠(최대 34)가 아이콘 자리를 덮음.
 
 | id | 표시 | 키 |
 | --- | --- | --- |
@@ -888,7 +936,7 @@
 | invite | 초대(개발자 전용) | `ui/invite_panel.dart` |
 | settings | 설정 | `game_app.dart` `_settings` |
 
-**메뉴 목록 순서:** 도감 · 업적 · 통계 · 온라인 랭킹 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션 · 친구 · 공유
+**메뉴 목록 순서:** 도감 · 업적 · 통계 · 온라인 랭킹 · 배경 테마 · 일일 미션 · 주간 도전 · 레벨 미션 · 친구 · 공유 · 가게 사진 찍기(`photo`, Workshop 전용)
 
 **모든 화면 위에 뜨는 것**(`ui/celebration.dart`)
 - 축하 배너: 화면 중앙보다 위, 최대 폭 320.
@@ -952,7 +1000,7 @@
 | --- | --- |
 | 시트 제목 | Jua 28 |
 | 메뉴 줄 제목(CozyMenuRow) | Jua 22 |
-| 하단 내비 글자 | Jua 21 |
+| 하단 내비 글자 | Jua 15, 아이콘 32 위·이름 아래(넷이 같은 비율로 줄어듦, 26번 4-2단계) |
 | 잔액 표시 | Jua 20 |
 | 주 버튼·탭 | Jua 18 |
 | 메뉴 줄 제목(현재 MenuPanel) | 18 굵게 |
@@ -973,20 +1021,25 @@
 | --- | --- |
 | 붕어빵 | `fish/redbean.png`, 무늬는 `fish/redbean@<pattern>.png` |
 | 토핑 | `topping/<id>.png` |
-| 배경 | `bg/<id>.png`, 밤 `bg/<id>_night.png` |
-| 화로 | `stove/<id>.png`, 빈 굽는 판 `stove_empty/<id>.png`·붕어빵만 `stove_fish/<id>.png`(941×470, `tools/apply_25_art.py`) |
+| 배경 | `bg/<id>.png`, 밤 `bg/<id>_night.png`. 매대를 행주 높이로 내린 새 구도 배경 `bg_low/<id>.png` 14장(335×762, `tools/apply_26_home_art.py --only backgrounds`, 25번 20번, 26번 4-1단계) |
+| 손님 | `customer/<npc_* 8명·walkin_1~4>_<normal·happy·sad>.png`(256×320 RGBA, 몸 아래끝이 그림 아래끝, 세 표정 같은 자리. `tools/apply_26_home_art.py --only customers`, 25번 6번. walkin_1은 3.3 원본 `customer/order·receive`를 잘라 씀) — 무기명 손님 그림은 주문 id로 4종 중 하나(`guestArtId`) |
+| 화로 | `stove/<id>.png`, 빈 굽는 판 `stove_empty/<id>.png`·붕어빵만 `stove_fish/<id>.png`(941×470, `tools/apply_25_art.py`), 닫히고 불 꺼진 판 `stove_closed/<id>.png`(941×470)·열린 판 `stove_open/<id>.png`(941×700, 아래 941×470 = `stove_empty`와 같은 픽셀, 위 230px 뚜껑)(25번 7번, `tools/apply_26_stoves.py`, 26번 4-2단계) |
 | 장식 | `deco/<id>.png` (위치는 `night_stall_painter.dart` `decorationAt`) |
 | 등불 | `stall/postlamp_<색>.png` (id는 `<색>lamp`) |
 | 아바타 | `avatar/<girl·boy>/base.png`, `avatar/<character>/<slot>_<id>.png` (여백을 잘라내고 위치는 `avatarTrimOffsets`), 앞/뒤 조각 `_front`·`_back`, 지울 마스크 `_cut`, 피부톤 복사본 `@skin2`·`@skin3` |
 | 얼굴 부분 | `parts/<character>_<front·side>_<eyes·mouth>_<frame>.png` (위치는 `avatarPartPivots`, `avatarFaceAnchors`) |
+| 아바타 v2 (26번 4-7단계) | `avatar_v2/<girl·boy>/base@<skin1·2·3>.png`, `<slot>_<id>.png`(기본 아이템 포함), 머리 뒤 조각 `hair_<long·ponytail·curly>_back.png`, 모자별 `hat_<id>_hairmask.png`, 표정 `face_<eyes·mouth>_<frame>@<skin>.png`. 위치 `avatarV2TrimOffsets`·`avatarV2PartPivots`(`lib/avatar_v2_atlas.dart`). 필수 112장이 다 있어야 쓰임(`avatarV2Ready`), 그림이 생기면 도구가 pubspec에 폴더를 더함 |
 | 스킬 | `skills/tap_N.png`, `skills/auto_N.png` |
 | 아이콘 | `icons/<name>.png` (이름을 `iconNames`에 등록) |
 | 효과 | `fx/minifish`, 반짝임 3프레임 `fx/sparkle_1~3`(32×32, 25번 12번, `tools/apply_25_art.py --only sparkles`, 26번 4단계), `fx/fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
 | 짤주머니 | `cook/piping_bag_<batter·redbean·custard·cocoa>[_squeeze].png`(128×192, 손가락 점 (64, 188), `pipingPastes`) |
 | 속 칠 질감 | `mold/paint_<redbean·custard·cocoa>.png`(256×256 불투명 심리스, `tools/apply_25_art.py --only textures`로 v2 생성본을 줄이고 이음매 보정) |
-| 화면 장식 | `ui/wardrobe_bg, offline, title_fish`, 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120 예정, 25번 22번, 없으면 아이콘) |
+| 화면 장식 | `ui/wardrobe_bg`(조리 장면 `cook_cut.dart`), 꾸미기 미리보기 방 `ui/wardrobe_room`(1440×864, 128색, 25번 11번, 26번 4-5단계), `ui/offline`, 창 제목 붕어빵 `ui/title_fish`(96×72, 25번 15번, 화면 48×36), 큰 자물쇠 `ui/lock_badge`(128×128, 26번 2단계), 스킬 창 '+' `ui/levelup_plus`·`levelup_plus_off`(64×64, 25번 19번, 26번 4-3단계), 황금붕어빵력 아이콘 `icons/gold_bun`(72×72, 25번 18번, 26번 4-3단계), 기능 소개 그림 `ui/intro_<skills·griddle·collection·recipes·special_orders·fish_cosmetics·freshness·stall_cosmetics>`(160×120 예정, 25번 22번, 없으면 아이콘) |
+| 꾸미기 칸 아이콘 (26번 4-5단계, G5) | `cosmetic_icons/<id>.png` 64×64, 남녀 공통, 아바타 아이템마다 한 장 + 빼기 아이템(모자 없음·앞치마 없음·소품 없음)이 같이 쓰는 `none.png`(빈 옷걸이+사선). 지금은 `tools/make_cosmetic_icons.py`가 지금 아바타 레이어에서 자른 **임시** 아이콘(피부톤은 얼굴 없는 마네킹, 캐릭터는 머리 초상). 25번 31번 그림이 오면 같은 경로에 파일만 바꿈(4-7단계 뒤에는 이 도구를 다시 돌리지 않음). `PixelSprites.cosmeticIcon(id)`, 없으면 예전처럼 작은 전신 |
+| 가게 칸 그림 (25번 16번, 26번 4-5단계) | 등불 칸 `stall/lamp_<amber·rose·mint·lilac>.png` 64×96(기둥째 등불), 밤낮 칸 `icons/time_<scenetime·day·night·clock>.png` 64×64. 꾸미기 타일에만 씀(`PixelSprites.stallTile`). 배경 칸은 배경 그림 가운데 정사각형 |
 | 이벤트 배너 | `event/spring·summer·autumn·winter` |
-| 조리 장면 | `cook/girl_1~6.png` (700ms 간격 반복) |
+| 조리 장면 | `cook/girl_1~6.png` (700ms 간격 반복). 26번 4-2단계 F9: 작업대(나무 상자)의 가운데·아래끝이 6장 모두 같은 자리가 되도록 장마다 정수 픽셀로 옮김(`tools/align_cook_cuts.py`, 값 `tools/cook_cut_alignment.json`, 공통 이동 (−24, −2)). 남은 머리 흔들림: 2·3번 ≤3px, 4번 세로 9, 5번 7·7, 6번 12·4(그림 자체의 자세 차이 → 25번 10번 재생성 요청) |
+| 하단 메뉴 아이콘 | `icons/nav_menu·nav_skill·nav_skins·nav_shop.png`(96×96, 그림 긴 변 87~88, `tools/fit_nav_icons.py`: 2배 이상이면 정수배 최근접(`skill` ×3 = 57×87), 아니면 Lanczos. 26번 4-2단계 F10) |
 
 - 모든 경로는 `assets/images/` 아래이고, **새 폴더는 `pubspec.yaml`의 assets에도 등록**해야 합니다.
 - 파일이 없으면 오류 없이 그려지지 않습니다.
@@ -1035,7 +1088,7 @@
 | SDK | minSdk 24 · targetSdk 36 · compileSdk 36 (Flutter 3.47.5 기본값, `build.gradle.kts`가 `flutter.*`를 따름) |
 | 앱 버전 | `pubspec.yaml` `version: 0.1.0+1`. `+` 뒤 versionCode는 Play 업로드마다 +1(재사용 불가), versionName은 가출시 동안 `0.1.x`, 정식 출시 `1.0.0` |
 | release 서명 | `android/key.properties`(커밋 금지)의 업로드 키로만 서명. 파일이 없거나 항목·키 파일이 없으면 release 작업(`flutter build appbundle/apk --release`, `flutter run --release`)이 "Release build stopped (release 빌드 중단)" 오류로 멈춤. debug 키로 대체하지 않음. debug·profile은 키 없이 빌드됨. 키 만들기·빌드·설치: [release_signing.md](release_signing.md) |
-| 권한(메인 매니페스트) | `INTERNET`(온라인 가출시, DEC-027). 병합 결과는 23번 6단계 결과 표 |
+| 권한(메인 매니페스트) | `INTERNET`(온라인 가출시, DEC-027), `POST_NOTIFICATIONS`·`RECEIVE_BOOT_COMPLETED`(26번 5-1 손님 알림), 광고 ID·광고 서비스 권한 4개는 `tools:node="remove"`로 제거(26번 5단계). 병합 결과(라이브러리가 넣는 `VIBRATE`·`USE_BIOMETRIC`·`USE_FINGERPRINT`·`BIND_GET_INSTALL_REFERRER_SERVICE` 포함)는 23번 6단계 '26번 반영 뒤 권한 다시 확인' 표(2026-11-19) |
 
 **자주 쓰는 명령**
 
@@ -1060,8 +1113,9 @@
 2. 릴리스·debug APK 빌드는 추가로 `GRADLE_USER_HOME=D:\DevMoved\GradleCache`, `PUB_CACHE=C:\PubCacheBungeoppang`을 지정합니다(2026-11-17 debug APK도 이것 없이는 Gradle 데몬·`jni` CMake가 한글 사용자 폴더에서 실패). 빌드 뒤 기본 캐시로 `flutter pub get`을 다시 실행해 테스트 환경을 되돌립니다.
    `C:\GradleCache`는 `D:\DevMoved\GradleCache`로 가는 정션이다. 정션 경로를 Gradle 홈으로 쓰면 `*.gradle.kts`를 고친 뒤 다시 컴파일할 때 `Unresolved reference 'println'`·`'orEmpty'`처럼 Kotlin 표준 함수를 전부 못 찾고 실패한다(스크립트를 안 고치면 예전 컴파일 결과를 재사용해서 성공하므로 늦게 드러남). 2026-11-17 23번 6단계에서 확인, 실제 경로로 바꾸면 통과.
 3. `processDebugResources`가 `Unable to delete directory … .ap_`(다른 프로세스가 사용 중)로 실패하면 방금 만든 파일의 일시적 잠금입니다. 코드를 고치지 말고 같은 명령을 다시 실행합니다(2026-11-03 재실행으로 통과).
+4. 영문 경로의 작업 폴더(worktree, 예: `D:\s26wt\s6`)에서는 `subst`가 필요 없고 2번의 두 환경 변수만 지정하면 됩니다(2026-11-19 26번 6단계: debug APK 6분 22초·약 211MB, profile APK 3분 21초·128.9MB). 업로드 키 없이 release와 같은 라이브러리 병합 결과를 보려면 `flutter build apk --profile` 뒤 `C:\Android\sdk\build-tools\36.0.0\aapt.exe dump badging build\app\outputs\flutter-apk\app-profile.apk`와 `build\app\outputs\logs\manifest-merger-profile-report.txt`(권한마다 넣은 라이브러리)를 봅니다.
 
-**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 7단계, App Check·키 파일 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 698개 통과·건너뜀 0(약 7~12분). `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 86개 통과, 에뮬레이터 통합 8개 통과입니다.
+**분석 제외:** `analysis_options.yaml`은 `firebase/local_tools/**`(Firebase CLI가 받은 Dart 템플릿)를 분석하지 않습니다. 2026-11-17(23번 7단계, App Check·키 파일 뒤) 기준 `flutter analyze`는 error·warning 0(info 72), `flutter test`는 698개 통과·건너뜀 0(약 7~12분). 2026-11-19(26번 웨이브 9 병합 `862908e` 뒤, 26번 6단계) 기준 `flutter analyze` error·warning 0(info 71), 마지막 전체 `flutter test`는 웨이브 9 병합 때 904개 통과·5개 건너뜀(v2 골든 4개 포함), 서버 `npm test` 103개 통과. `no_tracking_sdk_test`의 release 병합 매니페스트 검사는 `build/app/intermediates/…/release/` 산출물(26번 5단계부터는 업로드 키 없이 만들 수 있는 `flutter build apk --profile`의 `…/profile/processProfileManifest/` 산출물도, 둘 중 새것)이 매니페스트·`build.gradle.kts`·`pubspec.lock`보다 새것일 때만 실행되고, 없으면 1개 건너뜀으로 나온다. 서버 `npm test`는 86개 통과, 에뮬레이터 통합 8개 통과입니다.
 
 **온라인 빌드:** 키는 `1_app_development/dart_defines/online.json`(gitignore. `online.example.json`을 복사해 채움. 키 7개: `FIREBASE_API_KEY`·`FIREBASE_APP_ID`·`FIREBASE_SENDER_ID`·`FIREBASE_PROJECT_ID`·`KAKAO_NATIVE_APP_KEY`·선택 `APP_CHECK_DEBUG_TOKEN`·선택 `GOOGLE_SERVER_CLIENT_ID`(26번 2-1단계, Firebase 구글 로그인의 웹 클라이언트 ID. 없으면 구글 버튼이 숨음))에 두고 파일째 넘깁니다. 이 앱은 `google-services.json`을 쓰지 않고 Firebase 설정을 이 키들로 넣습니다.
 ```
@@ -1151,6 +1205,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
    - 배경: `musicMoodFor`, 밤 이미지
    - 등불: `postlampColors`
 4. 코인 가격이 있으면 서버 가격표를 다시 만들고 서버를 배포합니다.
+   - **아바타 v2(26번 4-7단계 이후):** 25번 문서 23~30번 형식(확정 바탕을 첨부해 같은 1120×2080 캔버스에 **그 아이템만**, 남녀 각 1장, 몸 뒤로 가는 머리는 `_back` 따로)으로 그림을 주문 → `4_image_generation_results_and_backups/26_feedback_generated/<번호>_<이름>/<성별>/<slot>_<id>.png`에 넣고 `python tools/avatar_v2.py --src <그 폴더>` → 칸 아이콘(31번 형식 512×512)도 같은 칸 전부 → `test/avatar_v2_test.dart`·`avatar_golden_test.dart` v2 골든(`--update-goldens`) 확인. 새 아이템은 `avatarV2Required`에 자동으로 들어가므로 그림이 없으면 v2 전체가 꺼집니다(섞이지 않게). 모자는 `avatar_v2.json` `hat_hair` 규칙을 확인합니다.
 5. 아바타 아이템이 몸을 감싸면(목도리 뒤쪽, 후드 위로 내려오는 머리) `<slot>_<id>_back.png`/`_front.png`를 같은 캔버스에 추가합니다. 위치·크기·회전·순서를 따로 맞춰야 하면 `rigPlacements`에 적습니다. 그다음 `tools/avatar_layers.py trim`을 실행합니다.
 6. 새 얼굴 프레임(예: 눈 `wink`)은 `RigChannel.frames`에 이름을 넣고 `parts/<character>_<view>_<channel>_<frame>.png`와 피벗을 추가합니다(`tools/avatar_layers.py`의 `FACES`에서 만들거나, 직접 그린 그림의 피벗을 `avatar_layers.json`에 적고 다시 실행). 새 모션은 `MotionClip`을 정의하고 `AvatarFace`(`talking`, `onTap`)나 `AvatarMotion.play`로 재생합니다.
 7. **새 칸(slot)을 만드는 것은 큰 작업입니다.**
@@ -1208,8 +1263,8 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 | 항목 | 결정 | DEC |
 | --- | --- | --- |
 | 온라인 | Firebase·카카오 로그인·Play 결제 켬. 황금은 서버 검증 후 지급 유지, 로컬 황금 생성 없음 | DEC-027 |
-| 광고 | 제외. SDK 미도입·광고 버튼 숨김. 1장 '광고·추적 SDK 금지'와 `no_tracking_sdk_test` 유지. 2026-11-18: 광고는 출시 후 첫 업데이트(별도 브랜치, DEC-049), 분석은 `firebase_analytics`만 허용으로 바뀔 예정(DEC-045) | DEC-028 |
-| 레벨 | Lv.1~50 전체(11~50은 임시 곡선). 2026-11-18 유지 재확인 | DEC-029, DEC-050 |
+| 광고 | 제외. SDK 미도입·광고 버튼 숨김. 1장 '광고·추적 SDK 금지'와 `no_tracking_sdk_test` 유지. 2026-11-18: 광고는 출시 후 첫 업데이트(별도 브랜치, DEC-049), 분석은 `firebase_analytics`만 허용(DEC-045, 2026-11-19 26번 5단계 구현, 32장) | DEC-028 |
+| 레벨 | Lv.1~50 전체(11~50은 임시 곡선). 2026-11-18 유지 재확인. 2026-11-19 26번 6단계 확인: Lv.50이면 레벨 창에 '최고 레벨에 도달했어요.'만 보이고 분점 '준비 중' 문구는 없음(할 일 1 건너뜀) | DEC-029, DEC-050 |
 | 맛 | 팥 기본, 슈크림·초코 획득 경로 유지 | DEC-029 |
 | 손님 | 네임드 8명 전체 + 무기명 | DEC-029 |
 | 유료·온라인 노출 | 황금 상점(IAP)·유료 아바타 노출. 랭킹·친구·초대 숨김. 2026-11-18: 그림이 준비 안 된 유료 아바타는 숨김(모자 4종은 그림 적용으로 풀림, 지금 숨김 없음) | DEC-029, DEC-066 |
@@ -1222,7 +1277,7 @@ flutter build appbundle --release --dart-define-from-file=dart_defines/online.js
 
 v13은 오디오 설정 musicSelection/cookingSound/cookingVolume만 추가한다. v1~12 자산 파싱은 유지하고 구형 자동 배경 모드를 보존한다. 사업 운영·숙련·재고/복합 거래의 실제 저장 이전은 포함하지 않는다. 변경·다운그레이드/실제 SQLite 검수는 미실행이다.
 
-설정 화면의 배경음 선택은 배경/시간대와 독립이며 ‘배경에 맞춤’으로 기존 모드로 돌아간다. 굽기 루프는 실제 활동 소스가 있을 때만 별도 player로 출력하고 설정/음량·전경에 따라 정지한다. 실제 신규 스페셜 붕어빵/숙련된 붕어빵 제작 활동 전달은 미연결이다. 오디오 기본값은 development_balance.json에서 development_audio_defaults.dart로 생성한다. sizzle_loop.wav는 generate_cooking_sound.py로 직접 합성(CC0)했다. 26번 4-6단계에서 4초·양 끝 25ms를 0으로 줄이던 방식(4초마다 소리가 잠깐 꺼짐)을 20초 44.1kHz 원형 합성(이음매 없음)으로 바꿨고, 배경음 선택 드롭다운을 없애 새 곡 하나로 통일했다([12장 소리](#12-이미지소리)).
+설정 화면의 배경음 선택은 배경/시간대와 독립이며 ‘배경에 맞춤’으로 기존 모드로 돌아간다. 굽기 루프는 실제 활동 소스가 있을 때만 별도 player로 출력하고 설정/음량·전경에 따라 정지한다. 실제 신규 스페셜 붕어빵/숙련된 붕어빵 제작 활동 전달은 미연결이다. 오디오 기본값은 development_balance.json에서 development_audio_defaults.dart로 생성한다. sizzle_loop.wav는 처음에 generate_cooking_sound.py로 직접 합성(CC0)했다. 26번 4-6단계에서 4초·양 끝 25ms를 0으로 줄이던 방식(4초마다 소리가 잠깐 꺼짐)을 20초 44.1kHz 원형 합성(이음매 없음)으로 바꿨고(2026-11-19 DEC-124로 CC0 녹음 'Crepe Making' 16.40초 반복으로 다시 바꿈, 합성 도구는 예비), 배경음 선택 드롭다운을 없애 새 곡 하나로 통일했다([12장 소리](#12-이미지소리)).
 
 development_balance.dart/asset 로더와 development_rules.dart는 새 복합 견적·익힘·숙련·신선도·KST 날짜·복구 라우팅 계산의 소스를 제공한다. 실제 서버 지갑/광고/신규 게임 흐름 연결은 하지 않았다. [15번 소스 구현·검수 대기](../15_현재환경소스구현과검수대기.md)를 따른다. 테스트 코드는 작성했으나 앱 실행·컴파일/Flutter/서버 테스트·빌드·실기기는 미실행이다.
 
@@ -1374,7 +1429,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 
 ## 24. 판매 루프 홈 화면과 부분 판매 — 2026-11-09
 
-[23번 가출시 작업](../23_가출시우선작업프롬프트.md) 3단계. 사용자 선택: 홈 배치 **B안(왼쪽 세로 손님 줄 + 굽는 판 위 판매 카운터)**. 화면 배치는 10장 "Workshop 홈".
+[23번 가출시 작업](../23_가출시우선작업프롬프트.md) 3단계. 사용자 선택: 홈 배치 **B안(왼쪽 세로 손님 줄 + 굽는 판 위 판매 카운터)**. 화면 배치는 10장 "Workshop 홈". (2026-11-18 26번 4-1단계 DEC-095로 대체됨: 낮춘 배경이 모두 있으면 손님이 매대 앞에 서는 구도, 왼쪽 줄은 예전 구도에서만)
 
 | 항목 | 내용 | 위치 |
 | --- | --- | --- |
@@ -1427,7 +1482,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 항목 | 결정 | 구현 단계 |
 | --- | --- | --- |
 | 용어 | 큰 틀 제작 → 스페셜 붕어빵 제작, 6구 제작 → 숙련된 붕어빵 제작. 코드 이름·Key는 그대로 (DEC-039). **2단계 구현 완료**: 화면·안내·튜토리얼·오류 글 적용, 숙련된 붕어빵 틀 빈 칸 글자 제거(강조 면·테두리만) | 2 |
-| 영업 준비 중 | 스페셜 붕어빵 틀로 연습 제작만. '+붕어빵력' 버튼 없음. 숙련된 붕어빵 틀은 빈 틀(칸 글자·터치 없음) (DEC-035·036). **3단계 구현 완료**(10장 "두 틀 규칙") | 3 |
+| 영업 준비 중 | 스페셜 붕어빵 틀로 연습 제작만. '+붕어빵력' 버튼 없음. 숙련된 붕어빵 틀은 빈 틀(칸 글자·터치 없음) (DEC-035·036). **3단계 구현 완료**(10장 "두 틀 규칙"). 26번 4-2단계(DEC-099)부터 이 빈 틀 그림은 **닫히고 불 꺼진 판** | 3 |
 | 영업 중 | 틀 없이 큰 붕어빵 = 클리커(`c.tap`·탭 효과, 1초 15번 초과분은 효과만, `server_validation.max_taps_per_second`). 손님 창 '주문 제작' 동안만 틀이 나오고 클리커 탭은 막힘. 연습 제작은 명령에서도 거부. `orderFlash` 없앰 (DEC-035·036). **3단계 구현 완료**: `WorkshopController.clickerTap`, `WorkshopClicker` | 3 |
 | 제작 중 영업 시작 | 거부. `openBusiness`에서도 막고 '스페셜 붕어빵을 다 만든 뒤 영업을 시작해요' (DEC-035). **3단계 구현 완료** | 3 |
 | 튜토리얼 | 흐름 유지. 7단계 손님 기다리기에 '손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요'. `cook` 단계에서 이미 영업 중이면 주문 제작 안내. schema 6 유지 (DEC-037). **3단계 구현 완료** | 3 |
@@ -1468,21 +1523,27 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 스킬 황금 조건 | 황금 재화·손님 희귀 황금·미션 황금·IAP 유지. 탭·자동 스킬 1~4단계는 붕어빵력만(몇 번을 사도 황금 0, 10번마다 +1 증가도 없음). 5~16단계는 지금 황금 가격 유지 | DEC-041 | 26번 3단계 **구현 완료**(2026-11-18). 5단계 개방은 시뮬레이션상 Lv.15~21(처음 적은 'Lv.23~25' 정정) |
 | 출시 목표일 | 날짜 없음, 완성도 우선. 26번 단계를 순서대로 끝내고 6단계(비공개 테스트 업로드)를 맨 끝에. 4-1~4-6·7·8도 업로드 전 | DEC-042 | 진행 순서(코드 없음) |
 | 처음 5분 기능 해금 | 하나씩 열기: 안내 중 굽기·영업·손님·판매·큰 붕어빵 / 안내 끝 꾸미기·상점 / Lv.2 스킬 창·초당 숫자 / 첫 숙련 6구 / Lv.3 도감 / Lv.4 레시피 / Lv.5 특별 주문·붕어빵 꾸미기 / 재고 하루 경과 시 신선도 안내 / Lv.8 가게 꾸미기. 핵심 진행은 레벨로 잠그지 않음. 새 설정 키 `feature_unlock_levels.skill_shop`(2), 공통 잠금 표시·소개 카드 | DEC-043 | 26번 2단계 **구현 완료**(2026-11-18, 10장 "처음 5분 해금", 3장 schema 8) |
-| 초반 손님 간격 | 예외 없음. 튜토리얼 뒤 레벨과 관계없이 일반 1~15분·네임드 30분~3시간 | DEC-044 | 26번 5-1단계 |
-| 측정 방식 | `firebase_analytics` 도입(1장 원칙·`no_tracking_sdk_test`를 이 패키지만 허용으로), 광고 ID·SSAID·개인화 광고 신호 끔. 이벤트 10개 이하. 자체 서버 집계·`metrics_report.py`는 만들지 않음 | DEC-045 | 26번 5단계 |
-| 측정 대상·기본값·보관 | 로그인과 상관없이 모두, 기본 켬, 첫 실행 안내 없음, 설정 '사용 통계 보내기'로 끔(`setAnalyticsCollectionEnabled(false)`). 보관 14개월(Analytics 무료판 최대) | DEC-046 | 26번 5단계 |
+| 초반 손님 간격 | 예외 없음. 튜토리얼 뒤 레벨과 관계없이 일반 30초~5분(DEC-106, 처음엔 1~15분)·네임드 30분~3시간 | DEC-044 | 26번 5-1단계 |
+| 측정 방식 | `firebase_analytics` 도입(1장 원칙·`no_tracking_sdk_test`를 이 패키지만 허용으로), 광고 ID·SSAID·개인화 광고 신호 끔. 이벤트 10개 이하. 자체 서버 집계·`metrics_report.py`는 만들지 않음 | DEC-045 | 26번 5단계 **구현 완료**(2026-11-19, 32장) |
+| 측정 대상·기본값·보관 | 로그인과 상관없이 모두, 기본 켬, 첫 실행 안내 없음, 설정 '사용 통계 보내기'로 끔(`setAnalyticsCollectionEnabled(false)`). 보관 14개월(Analytics 무료판 최대) | DEC-046 | 26번 5단계 **구현 완료**(2026-11-19, 32장) |
 | 매일 돌아올 이유 | 오늘의 특별 주문(주문서 카드) + 손님 이야기 하루 한 조각 + 겨울 계절 행사(장식·인사·주문 문구) + 출석 보상(7일째 황금 1, 서버 검증) | DEC-047 | 26번 7단계 |
-| 공유 카드 | 넣음, 보상 없음. 완벽 결과·이야기·도감 완성·가게 사진 네 곳, 1080×1350 | DEC-048 | 26번 8단계 |
+| 매일 돌아올 이유 구현 세부 | 오늘의 주문서 Lv.5부터 KST 하루 1장(날짜+설치 고정, 영업 중 재고 납품, 붕어빵력 + 의뢰 단골 친밀도 +3, 황금 없음) / 출석 7칸 '도장 찍기'(걸러도 이어짐, 1~6칸 붕어빵력, 7칸 황금 1 서버 검증·직전 출석 황금에서 7일 이상, 서버 없는 빌드는 붕어빵력) / 이야기·후일담·선택 사건 합쳐 영업일당 1개 / 행사 날짜는 설정 `daily_return.seasonal_events`에만 | DEC-107~110 | 26번 7단계 (34장) |
+| 공유 카드 | 넣음, 보상 없음. 완벽 결과·이야기·도감 완성·가게 사진 네 곳, 1080×1350 | DEC-048 | 26번 8단계 **구현함**(2026-11-19, 35장) |
+| 공유 카드 구현 세부 | 카드 미리보기 창 → '공유하기' = 휴대폰 공유 창(사진첩 저장·권한 없음). 위 70% 가게 거리·사장님·붕어빵·손님, 아래 30% 배지·제목·대사 한 줄·'오늘의 붕어빵 · 곧 Google Play에서'(설정 `share.store_line_mode`). 개인 정보 없음, 상태 변화 없음, 사용 통계 `share` 하루 1번 | DEC-111~113 | 26번 8단계 (35장) |
 | 보상형 광고 | 출시 후 첫 업데이트. 별도 브랜치 `s26/9-ads`에만, 출시 빌드에 광고 SDK 없음(DEC-028 유지). 충전 탭 + 황금 부족 안내, 광고 ID 안 씀, 만 13세 이상 | DEC-049 | 26번 9단계 |
-| 출시 범위 | Lv.50 전체 유지(DEC-029). 26번 6단계 할 일 1 건너뜀 | DEC-050 | — |
-| 손님 방문 간격·알림 | 실제 시간: 일반 1~15분·네임드 30분~3시간, 자리 일반 3·네임드 1, 기다림은 켠 순간부터, 자정 자동 영업일 넘김, 네임드 하루 1회 제한·무기명 30% 폐지(직전 손님 제외), 튜토리얼 뒤 '맞이' 버튼 없음, 기기 안 알림(일반 끔·네임드 켬·밤 22~8시 끔 기본), 희귀 황금 3배. **구현 완료** (30장) | DEC-051~060 | 26번 5-1단계 |
+| 출시 범위 | Lv.50 전체 유지(DEC-029). 26번 6단계 할 일 1 건너뜀 | DEC-050 | 26번 6단계 확인(2026-11-19, 코드 변경 없음) |
+| 출시 범위 정리·23번 복귀 | 26번 서버 변경(2-1·3·4-4·4-5·4-7·5-1·7)은 단계마다 따로 배포하지 않고 한 번에, **서버 먼저·앱 나중**([online_setup.md](online_setup.md) 18장). 첫 업로드는 `0.1.0+1` 그대로. 23번 문서에 '26번 흥행 개선 반영' 표·6단계 '26번 반영 뒤 권한' 표·8단계 '가져갈 것' 표·9단계 검수표(처음5분·결제·통계·홈·스킬·꾸미기·매일·공유) 추가. 구글 로그인 라이브러리(androidx.credentials)가 가져오는 `USE_BIOMETRIC`·`USE_FINGERPRINT`(일반 권한)는 그대로 둠 | DEC-119~120 | 26번 6단계 **완료**(2026-11-19, 문서·빌드 확인만, 코드 변경 없음). 다음은 23번 7단계 콘솔 → 8 → 9 |
+| 손님 방문 간격·알림 | 실제 시간: 일반 30초~5분(DEC-106)·네임드 30분~3시간, 자리 일반 3·네임드 1, 기다림은 켠 순간부터, 자정 자동 영업일 넘김, 네임드 하루 1회 제한·무기명 30% 폐지(직전 손님 제외), 튜토리얼 뒤 '맞이' 버튼 없음, 기기 안 알림(일반 끔·네임드 켬·밤 22~8시 끔 기본), 희귀 황금 3배. **구현 완료** (30장) | DEC-051~060 | 26번 5-1단계 |
 | 스킬 황금 0 산식·검증 | 기본 황금 0이면 몇 번째든 0(10번마다 증가 없음). 황금 0은 스킬만 허용, 꾸미기·부스트는 1 이상. 앱·서버 같은 식, **서버 먼저 배포 후 앱** | DEC-061 | 26번 3단계 (4장) |
 | 기존 구매자 | 황금으로 1~4단계를 산 사용자는 환불 없이 그대로 | DEC-062 | 26번 3단계 |
 | 환영 황금 용도 | 10개 그대로, 꾸미기에 쓰도록 안내('꾸미기에서 써 보세요'), 충전 탭 '쓰는 곳' 한 줄, Workshop 상점은 꾸미기 탭으로 열림 | DEC-063 | 26번 3단계 (8장) |
 | 스킬 레벨업 로그인 | 지금처럼 로그인 필요(DEC-021). 스킬 창에 '카카오 로그인 후 레벨업할 수 있어요' + 로그인 버튼, 로그인 전 구매는 거래를 만들지 않음 | DEC-064 | 26번 3단계 (4장) |
 | 성장 속도 | 그대로. 황금 0 서버로 Lv.10 9분, 5단계 개방 Lv.15~21. 5-1(손님 간격) 뒤 다시 확인 | DEC-065 | 26번 3단계·5-1 |
 | 아바타 그림 매칭 | 머리 = 입은 모습 레이어 + `_cut`, 피부톤 = 도구 색 치환 복사본(`@skin2·3`), 정면만. 기본 앞치마를 그림으로 입히고 무료 '앞치마 없음'(`noapron`) 추가. 그림이 준비 안 된 유료 아바타는 꾸미기·상점에서 숨김(보유자에겐 보임). **구현함**(7장, 2026-11-18) | DEC-066~068 | 26번 4-4단계 |
-| 배경음악·굽는 소리·효과음 | 새 곡 'Warm Bungeoppang Stall' 하나로 모든 분위기 통일(Suno 유료 요금제, 출시 빌드에 넣음, 출처 12장), 설정 '배경음 선택' 없앰(저장값 유지), 굽는 소리 20초 이음매 없는 합성, 효과음 4종을 결과음과 같은 '진짜 물건 소리 + 살짝 귀엽게' 계열·크기로. **구현함**(12장, 2026-11-18) | DEC-TBD-4-6-1~3 | 26번 4-6단계 |
+| 배경음악·굽는 소리·효과음 | 새 곡 'Warm Bungeoppang Stall' 하나로 모든 분위기 통일(Suno 유료 요금제, 출시 빌드에 넣음, 출처 12장), 설정 '배경음 선택' 없앰(저장값 유지), 굽는 소리 이음매 없는 반복(처음 20초 합성 → DEC-124로 CC0 녹음 'Crepe Making' 16.40초), 효과음 4종을 결과음과 같은 '진짜 물건 소리 + 살짝 귀엽게' 계열·크기로. **구현함**(12장, 2026-11-18) | DEC-089~091·DEC-124 | 26번 4-6단계 |
+| 스킬 창 레벨업 방식 | 스킬 창은 레벨업 목록: 칸 = 그림·이름·'Lv.12/1000 · +60/클릭'·비용·둥근 '+'. 단위 ×1·×10·×100 작은 돌림판(창 위 하나), 실제 양 = min(단위, 1000 − 레벨), '최대' 없음. 모자라면 '+' 끔·모자란 비용 빨강·꺼진 '+'는 이유 안내. 'Lv.' 통일, 미션 '스킬 레벨업 횟수'. 잠긴 스킬은 다음 하나만 실루엣+자물쇠, 조기 해금 없음. 공통 잠금 `LockedOverlay`(hatch·hidden)·재화 `CurrencyAmount`. **구현함**(4장, 10장, 2026-11-18) | DEC-092~094 | 26번 4-3단계 |
+| 홈 손님·매대·판매 카운터 | 낮춘 배경 14장(`bg_low/`)이 모두 있으면 손님이 매대 앞에 섬(맨 앞 크게·뒤 0.8배, 최대 4명, 머리 위 남은 시간 막대·반응 말풍선), 클리커 0.8배로 카운터 위, 매대·대사는 짧은 이름, 카운터는 글만 + 버튼은 화면 가운데, 상태는 나무 간판, 주기 저장 중 깜빡임 없음(`inputBusy`). **구현함**(10장, 12장, 24장, 2026-11-18) | DEC-095~098 | 26번 4-1단계 |
+| 사용 통계 구현 세부 | `firebase_analytics` 12.6.1, 광고 ID·SSAID·광고 서비스 권한 제거, dart-define으로 `google_app_id` 리소스, 설정을 읽은 뒤 수집 켬, 직접 이벤트 7종, 선택 정보 `gender`·`age_band`, 설정 '사용 통계 보내기'. **구현함**(32장, 2026-11-19) | DEC-084~088 | 26번 5단계 |
 
 2026-11-18 26번 1단계 기록(문서만, 코드·설정 변경 없음). 추천안으로 확정한 세부(묻지 않은 것)와 1단계 밖 단계의 답은 00_결정취합.md 「26번 2차 구현 전 확정」 소절에 있고, 각 단계가 구현할 때 이 표에 줄을 더한다.
 
@@ -1499,6 +1560,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 지문 | 업로드 키 SHA-1 `17:17:AB:A9:DB:2D:31:40:06:0F:2D:4F:DE:48:89:16:3F:25:4C:42`(카카오 키 해시 `FxerqdstMUAGDy1P3kiJFj8lTEI=`), 이 PC debug 키 SHA-1 `04:1A:06:46:C2:D5:37:58:6C:A1:C5:6E:EA:97:21:33:62:08:82:DB`(`BBoGRsLVN1hsocVu6pchM2IIgts=`). Play 앱 서명 키는 첫 업로드 뒤 |
 | 도구 | `firebase/firebase_local.cmd`(로컬 Firebase CLI), `tools/kakao_key_hash.ps1`(SHA-1 → 카카오 키 해시) |
 | 미완료 | 운영 Firebase에서 테스트 구매 1건 서버 확인·지급·복구(online_setup.md 11장 표) — 사용자 콘솔 작업 뒤 확인 |
+| 26번 배포 묶음 (2026-11-19) | 26번 서버 변경은 아직 배포 전. 4장 배포는 online_setup.md 18장(검사 `npm test` → `firebase_local.cmd deploy --only "functions,firestore"` → 그 뒤에만 AAB)으로 한 번에. 16장(구글 로그인)·17장(Analytics)도 이 묶음 전에 |
 
 ## 30. 손님 방문 간격·알림 — 2026-11-18
 
@@ -1506,7 +1568,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 
 | 규칙 | 내용 | 코드 |
 | --- | --- | --- |
-| 손님 시계 | 일반(무기명)·네임드 두 개가 따로 돎. 간격 = `min + hash(seed, draws) % (max − min + 1)`(고정 32비트 해시)이라 미리 정해짐 → 알림 예약 시각 = 실제 도착 시각. 일반 `regular_min_ms` 60000~`regular_max_ms` 900000, 네임드 `named_min_ms` 1800000~`named_max_ms` 10800000 | `lib/workshop_arrivals.dart` `ArrivalClock`·`WorkshopArrivals` |
+| 손님 시계 | 일반(무기명)·네임드 두 개가 따로 돎. 간격 = `min + hash(seed, draws) % (max − min + 1)`(고정 32비트 해시)이라 미리 정해짐 → 알림 예약 시각 = 실제 도착 시각. 일반 `regular_min_ms` 30000~`regular_max_ms` 300000(30초~5분, DEC-106 — 처음엔 1~15분), 네임드 `named_min_ms` 1800000~`named_max_ms` 10800000 | `lib/workshop_arrivals.dart` `ArrivalClock`·`WorkshopArrivals` |
 | 자리 | 일반 `regular_slots` 3, 네임드 `named_slots` 1. 켜 있을 때도 같은 자리. 자리가 차면 그 시계가 멈추고(`nextAt` null), 판매·시간 초과로 자리가 나면 그 순간부터 다음 간격. 예전 레벨별 `max_queue` 열은 없앰 | `WorkshopArrivals.resume`·`arrived` |
 | 시간 기준 | 영업 정산 시각(`business.settledUtc`, 뒤로 안 감)까지의 사건을 시각 순서로 처리. 기기 시계를 되돌려도 지난 도착이 다시 생기지 않고, 앞당겨도 자리 수에서 막힘. 앱이 꺼져 있어도 흐름(복귀·재실행 때 한꺼번에) | `WorkshopController._syncArrivals` |
 | 기다림 | 꺼진 동안 온 손님도 `order_wait_ms`를 다 가진 채 생기고, 기다림은 앱이 앞에 있을 때만 줄어듦(켠 순간부터) | `_advanceMemory` |
@@ -1517,12 +1579,12 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 짧은 이름 | `customer_content.json` `short_name`: 도윤·윤하 씨·막례 할머니·오 작가님(이야기 뒤 서진 씨)·태오 씨·은채 씨·민재 씨·수아 씨. 조사 이/가는 받침으로(`withSubjectParticle`) | `WorkshopCustomerCatalog.shortName` |
 | 알림 예약 | 앱이 `paused`/`hidden`이 될 때만(inactive 아님) 저장 뒤 `upcomingArrivals(preview_horizon_ms 24시간)`으로 올 손님(일반 ≤3·네임드 ≤1)을 계산 → 끈 종류 빼기, 일반은 `regular_max_notices` 3번까지, 밤 끄기 켜면 기기 시각 `quiet_start_minute` 1320(22:00)~`quiet_end_minute` 480(08:00) 알림만 건너뜀(손님은 옴) → 모두 취소 후 예약. `resumed`에서 모두 취소. 영업 닫힘·안내 중·이야기 장면 중이면 예약 없음 | `ui/game_app.dart` `_scheduleNotices`, `planCustomerNotices` |
 | 알림 문구 | 제목 '오늘의 붕어빵'. 일반 '손님이 붕어빵을 사러 왔어요! 가게로 가 볼까요?', 네임드 '{짧은 이름}{이/가} 찾아왔어요. 따끈한 붕어빵을 기다려요.' 누르면 앱이 홈으로 열리고 손님이 기다림. 채널 '손님 알림'. 아이콘 `res/drawable-<dpi>/ic_stat_customer.png`(흰 붕어빵 실루엣 24~96px, 25번 21번, `tools/notification_icon.py`로 생성) | `lib/customer_notifier.dart` |
-| 알림 드라이버 | `CustomerNotifier`(schedule·cancelAll·requestPermission). 앱은 `LocalCustomerNotifier`(Android만, `inexactAllowWhileIdle`, UTC `TZDateTime`), 테스트는 가짜. 예약 실패는 게임을 막지 않음. `build.gradle.kts` core library desugaring, 매니페스트에 예약·부팅 수신기 | `main.dart`, `android/app` |
-| 설정 화면 | 설정 창 '모션 줄이기' 아래 '일반 손님 알림'(기본 끔), '단골 손님 알림'(기본 켬), '밤 알림 끄기 (밤 10시~아침 8시)'(기본 켬). 켤 때 권한을 묻고, 거절되면 그대로 꺼진 채 '휴대폰 설정에서 이 앱의 알림을 허용해야 받을 수 있어요.' 저장은 `GameSettings` `notifyRegularGuests`·`notifyNamedGuests`·`quietNightNotices`·`notificationPromptDone`(없으면 기본값, 계정 저장 v13 그대로) | `ui/workshop_page.dart` `_audioSettings`·`_setNotice` |
-| 권한 묻기 | 안내가 끝나고(또는 건너뛰고) 첫 판매가 끝난 뒤 한 번 창 '손님 알림 — 손님이 찾아오면 알려 드릴까요? 앱을 꺼 둬도 단골손님이 오면 알림으로 알려 드려요.' [나중에][알림 받기]. 어느 쪽이든 다시 묻지 않음. '알림 받기' → Android 13+ 권한 창, 허용이면 기본값 그대로. 거절이나 '나중에'면 두 알림 끔(거절이면 위 안내 문구) | `_askNotifications` (`notice-prompt`) |
+| 알림 드라이버 | `CustomerNotifier`(schedule·cancelAll·requestPermission·hasPermission — 묻지 않고 지금 허용됐는지, Android `areNotificationsEnabled`·iOS `checkPermissions`). 앱은 `LocalCustomerNotifier`(Android만, `inexactAllowWhileIdle`, UTC `TZDateTime`), 테스트는 가짜. 예약 실패는 게임을 막지 않음. `build.gradle.kts` core library desugaring, 매니페스트에 예약·부팅 수신기 | `main.dart`, `android/app` |
+| 설정 화면 | 설정 창 '모션 줄이기' 아래 '일반 손님 알림'(기본 끔), '단골 손님 알림'(기본 켬), '밤 알림 끄기 (밤 10시~아침 8시)'(기본 켬). 켤 때 권한을 묻고, 거절되면 그대로 꺼진 채 '휴대폰 설정에서 이 앱의 알림을 허용해야 받을 수 있어요.' 일반·단골 중 하나라도 켜져 있는데 휴대폰이 알림을 막고 있으면 단골 스위치 아래에 '알림 권한이 필요해요 — 휴대폰이 이 앱의 알림을 막고 있어 켜 둔 알림이 오지 않아요.' + '권한 허용하기'(`settings-notice-permission`, 누를 때만 다시 요청, 거절이면 위 안내). 설정 창을 열 때와 앱이 앞으로 돌아올 때 다시 확인(DEC-105, `ui/notice_permission_hint.dart`). 저장은 `GameSettings` `notifyRegularGuests`·`notifyNamedGuests`·`quietNightNotices`·`notificationPromptDone`(없으면 기본값, 계정 저장 v13 그대로) | `ui/workshop_page.dart` `_audioSettings`·`_setNotice` |
+| 권한 묻기 | 안내가 끝나고(또는 건너뛰고) 첫 판매가 끝난 뒤 한 번 창 '손님 알림 — 손님이 찾아오면 알려 드릴까요? 앱을 꺼 둬도 단골손님이 오면 알림으로 알려 드려요.' [나중에][알림 받기]. 어느 쪽이든 다시 묻지 않음(다음 실행 때도). '알림 받기' → Android 13+ 권한 창. 허용·거절·'나중에' 모두 스위치는 그대로(단골 켬·일반 끔 기본값, DEC-105). '나중에'는 권한 창을 띄우지 않고, 거절이면 위 안내 문구. 권한이 없는 상태는 설정 창의 '알림 권한이 필요해요' 줄로 보임 | `_askNotifications` (`notice-prompt`) |
 | 희귀 황금 | 별 1~5 확률 300·600·900·1200·1500(3·6·9·12·15%), 하루 최대 10 그대로. 서버 생성본 갱신(revision 그대로) — **서버를 다시 배포하기 전까지 서버는 옛 확률(1~5%)로 추첨** | `rare_gold_sale`, `firebase/functions/src/generated/development_balance.json` |
 
-테스트: `test/workshop_arrivals_test.dart`(시계 범위·결정성, 1분·15분·3시간, 자리 상한·재시작, 시계 되돌림·1년 앞당김, 영업 닫힘, 자정 넘김·새 영업일 손님·미션, 기다림은 켠 순간부터, 미리보기 = 실제 도착, 이야기 장면 보류, 안내 → 시계 시작, schema 6→7·잘못된 7 거절, 밤 판정, 알림 계획, 설정 저장, 수명주기 예약·취소, 권한 묻기 2가지), `test/workshop_customers_test.dart`(소개 하루 2명·하루 1회 없음·직전 제외·1명뿐·짧은 이름·조사), `test/no_tracking_sdk_test.dart`(권한 3개·정확한 알람 없음·메시징 없음), `test/workshop_progression_simulation_test.dart`(8분마다 판매: Lv.5 32분·Lv.10 72분), 서버 `test/sale_rewards.test.ts`(생성본 확률 = 앱). 에뮬레이터 알림 수신 확인은 26번 5-1단계 결과 표. 확인용 debug 빌드: `flutter build apk --debug --dart-define=CUSTOMER_NOTICE_SELFTEST=true`(13장대로 `GRADLE_USER_HOME`·`PUB_CACHE` 영문 경로) — 앱을 내리면 진짜 예약에 더해 1분 뒤 '[시험] …' 알림 하나를 예약(`main.dart` `_SelfTestNotifier`, release에서는 꺼짐). AVD `TodayBungeoppang_API35`가 없으면 `avdmanager create avd -n TodayBungeoppang_API35 -k "system-images;android-35;default;x86_64"`로 만든다.
+테스트: `test/workshop_arrivals_test.dart`(시계 범위·결정성, 30초·5분·3시간, 자리 상한·재시작, 시계 되돌림·1년 앞당김, 영업 닫힘, 자정 넘김·새 영업일 손님·미션, 기다림은 켠 순간부터, 미리보기 = 실제 도착, 이야기 장면 보류, 안내 → 시계 시작, schema 6→7·잘못된 7 거절, 밤 판정, 알림 계획, 설정 저장, 수명주기 예약·취소, 권한 묻기 3가지(허용·거절·나중에 — 단골 켬 유지), 설정 권한 안내(거절·복귀 뒤 사라짐·스위치 끄면 숨김), 내린 뒤 일반 손님 15분 안 최대 3명), `test/workshop_customers_test.dart`(소개 하루 2명·하루 1회 없음·직전 제외·1명뿐·짧은 이름·조사), `test/no_tracking_sdk_test.dart`(권한 3개·정확한 알람 없음·메시징 없음), `test/workshop_progression_simulation_test.dart`(평균 간격 3분마다 판매: Lv.5 12분·Lv.10 27분), 서버 `test/sale_rewards.test.ts`(생성본 확률 = 앱). 에뮬레이터 알림 수신 확인은 26번 5-1단계 결과 표. 확인용 debug 빌드: `flutter build apk --debug --dart-define=CUSTOMER_NOTICE_SELFTEST=true`(13장대로 `GRADLE_USER_HOME`·`PUB_CACHE` 영문 경로) — 앱을 내리면 진짜 예약에 더해 1분 뒤 '[시험] …' 알림 하나를 예약(`main.dart` `_SelfTestNotifier`, release에서는 꺼짐). AVD `TodayBungeoppang_API35`가 없으면 `avdmanager create avd -n TodayBungeoppang_API35 -k "system-images;android-35;default;x86_64"`로 만든다.
 
 ## 31. 첫 실행 로그인·사장님 이름·캐릭터 — 2026-11-18
 
@@ -1533,6 +1595,71 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 화면 | ① 필수 동의 + 카카오/구글 ② 사장님 이름 ③ 여자/남자 사장님 ④ 선택 성별·연령대 → 2단계 첫 실행 안내 | `lib/ui/first_run.dart` |
 | 상태 | `OwnerAccount`(`step`, `signIn`·`acceptConsent`·`setName`·`chooseCharacter`·`saveOptional`·`skipOptional`·`clearOptional`·`signOut`·`deleteAccount`·`pushProfile`) | `lib/owner_account.dart` |
 | 문구 | 첫 실행·계정 설정 문구 한 곳 | `lib/owner_texts.dart` |
-| 분석 연결 지점 | `OwnerAnalytics.setUserProperties(gender, ageBand)` — 선택 동의한 값만, 만 14세 미만 연령대는 보내지 않음, 이메일·이름은 절대 안 보냄. 26번 5단계에서 Firebase Analytics에 연결(지금은 아무것도 보내지 않음) | `lib/owner_account.dart` |
+| 분석 연결 지점 | `OwnerAnalytics.setUserProperties(gender, ageBand)` — 선택 동의한 값만, 만 14세 미만 연령대는 보내지 않음, 이메일·이름은 절대 안 보냄. 26번 5단계에서 `UsageOwnerAnalytics`로 Firebase Analytics 사용자 속성 `gender`·`age_band`에 연결('선택 안 함'은 지움, 32장) | `lib/owner_account.dart` |
 | 서버 | `auth.ts`(구글 허용), `account.ts`(`setAccountProfile`·`rememberEmail`·`deleteAccount`), `kakao.ts`(이메일), `index.ts`(`accountProfileSet`·`accountDelete`). **배포 필요** | `firebase/functions/src` |
 | 테스트 | 앱 `test/owner_first_run_test.dart` 25개·`test/first_run_golden_test.dart` 2개(골든 5장), 서버 `test/account.test.ts` 8개 + `kakao.test.ts` 3개 추가·수정 | |
+
+## 32. 사용 통계(Firebase Analytics) — 2026-11-19
+
+26번 5단계(DEC-045·046, DEC-084~088). 목적은 "어디까지 와서 그만두는지". 원칙은 1장 첫 줄, 설정은 10장 '사용 통계 보내기', 개인정보는 [privacy_policy.md](privacy_policy.md) 1-3절·[play_data_safety.md](play_data_safety.md).
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 패키지 | `firebase_analytics` 12.6.1(firebase_core 4.15.x와 맞는 12.x 마지막 안정판, 고정). 하위 `firebase_analytics_platform_interface` 6.0.7·`firebase_analytics_web` 0.6.1+13. Android 쪽은 `play-services-measurement` 23.2.0 계열 | `pubspec.yaml` |
+| 매니페스트 | meta-data `firebase_analytics_collection_enabled` false(게임이 설정을 읽고 `setAnalyticsCollectionEnabled`를 부르기 전엔 수집 안 함, 그 뒤엔 Firebase가 마지막 값을 기억), `google_analytics_adid_collection_enabled`·`google_analytics_ssaid_collection_enabled`·`google_analytics_default_allow_ad_personalization_signals` 모두 false. `AD_ID`·`ACCESS_ADSERVICES_AD_ID`·`_ATTRIBUTION`·`_TOPICS` 권한 `tools:node="remove"`. 선택 라이브러리 `android.ext.adservices`(Privacy Sandbox)도 `tools:node="remove"`. 병합 뒤 새로 생기는 것: 권한 `com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE`(설치 경로), `AppMeasurementReceiver`·`AppMeasurementService`·`AppMeasurementJobService`, 구성 요소 `AnalyticsConnectorRegistrar`·`FlutterFirebaseAppRegistrar`(analytics). `ACCESS_NETWORK_STATE`·`WAKE_LOCK`은 원래 있음 | `android/app/src/main/AndroidManifest.xml` |
+| Firebase 앱 ID 리소스 | 이 앱은 `google-services.json`을 쓰지 않으므로 `android/app/build.gradle.kts`가 `--dart-define`의 Firebase 키 4개를 문자열 리소스 `google_app_id`·`google_api_key`·`gcm_defaultSenderId`·`project_id`로 넣음(`buildFeatures.resValues`, 네 값이 모두 있을 때만). Analytics가 앱 ID를 이 리소스에서 읽음. Firebase가 같은 값으로 기본 앱을 먼저 만들고 Dart `Firebase.initializeApp(options:)`은 apiKey가 같아 그 앱을 그대로 씀 | `android/app/build.gradle.kts` |
+| 기록기 | `UsageStats`(이벤트·하루 1번·평생 1번 판정, 끄기) + `UsageStatsSink`(`FirebaseUsageStatsSink` / 아무것도 안 보내는 `NoUsageStatsSink`: 키 없는 빌드·테스트). 모든 호출은 기다리지 않고 오류를 삼킴 | `lib/usage_stats.dart`, `lib/firebase_usage_stats.dart` |
+| 이벤트 10종 | `first_bake`(첫 굽기 결과), `first_sale`(첫 판매), `tutorial_done`(`result`: done/skipped), `level_reached`(`level`: 3·5·10), `shop_open`(상점 창, 한국 날짜로 하루 1번), `pay_view`(황금 충전 탭·충전 목록, 하루 1번), `pay_done`(`product_id`만, 금액 없음, 서버 확인 뒤 결제마다), `special_order_done`(오늘의 주문서 납품, `event`: 행사 ID 또는 none, 26번 7단계), `event_join`(행사 기간 첫 접속, 행사마다 1번, `event`: 행사 ID), `share`(공유 카드를 공유 창으로 보냄, 하루 1번, `moment`: perfect·story·collection·shop, 26번 8단계 — 이것으로 10개 상한). 첫 실행·재방문은 Analytics 자동 `first_open`·`session_start`. 9단계 `ad_reward`는 출시 후 별도 브랜치에서 다시 셈(하나를 빼거나 합쳐야 함) | `UsageEvent` |
+| 보내는 때 | Workshop 진행 6종은 `WorkshopController.command`가 **저장에 성공한 뒤** `finally`에서 명령 전후 `UsageProgress`(굽기 수·판매 수·레벨·안내 상태·오늘 납품한 주문서 날짜·들어온 행사)를 비교해 보냄(명령·저장 트랜잭션 안에서 보내지 않음, 실패한 명령은 안 보냄). 구형 저장(schema 5 이하)을 안내 끝으로 읽는 경로·다시 열기는 명령이 아니라 아무것도 안 보냄. `shop_open`은 `WorkshopPage._store`, `pay_view`는 `GoldChargeTab.initState`·`_goldPacks`, `pay_done`은 `PremiumCommands`의 서버 지급 성공 뒤 | `workshop_controller.dart`, `ui/workshop_page.dart`, `ui/gold_widgets.dart`, `premium_controller.dart` |
+| 사용자 속성 | 선택 정보 동의 시 `gender`·`age_band`('선택 안 함'·만 14세 미만 연령대는 null로 지움). `setUserId`는 쓰지 않음 | `UsageOwnerAnalytics` |
+| 끄기 | `GameSettings.sendUsageStats`(기본 true). 시작 때와 바꿀 때 `setAnalyticsCollectionEnabled`. 끈 동안은 기록기가 이벤트를 넘기지 않음(사용자 속성은 넘기지만 Analytics 수집이 꺼져 있어 보내지 않음) | `game_controller.dart` |
+| 보관·보기 | Analytics 이벤트 데이터 보존 14개월(무료판 최대, 콘솔에서 설정). 10년 보관은 BigQuery 내보내기로만 가능(online_setup.md '사용 통계') | — |
+| 테스트 | `test/usage_stats_test.dart`(이름 규칙·하루 1번·끄기·오류 격리·진행 비교·사용자 속성·Workshop 한 바퀴·저장 실패·skip·구형 저장·설정 호환·충전 탭), `test/no_tracking_sdk_test.dart`(허용 목록 3개 추가, 매니페스트 끄기 스위치·광고 권한 제거, release/profile 병합 매니페스트) | |
+
+## 33. 꾸미기·상점 화면 정리 — 2026-11-19
+
+26번 4-5단계(F25~F36, 2차 녹화 G1·G2·G5·G8·G12~G15, DEC-100~104). 배치는 10장 '꾸미기·상점 역할', 칸·이름은 7장, 저장은 3장(계정 v14·가게 schema 9), 그림은 12장.
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 역할 | 꾸미기 = 가진 것 입기(여러 칸 '모두 적용'), 상점 꾸미기 탭 = 사고 바로 입기. 구매는 지금처럼 1건씩(서버 변경 없음) | `lib/ui/workshop_wardrobe.dart`, `public_menus.dart`(`CosmeticMenuAccess.forSale·cost·tabOpen`), `shop_panel.dart`, `workshop_page.dart` |
+| 누적 조건 | 화면에서만 뺌('Lv.N 해금'). `unlock_total` 값 0과 서버 검사는 그대로 | `workshop_page.dart` `_cosmetics.requirement` |
+| 칸 이동 | 요리사 복·패딩 조끼 outfit → top(`movedToTop`), 설정 `avatar_catalog` slot, 서버 생성 JSON, 그림 파일 이름 `top_*`, `tools/avatar_layers.py` `WORN_ITEMS`·`WORN_ROWS['top']`, `concept_avatar.py`. **서버 생성 설정이 바뀌어 배포 묶음에 포함** | `cosmetic_config.dart`, `config/development_balance.json`, `firebase/functions/src/generated/development_balance.json` |
+| 잔액 줄·제목 | 모든 Workshop 창 공통(10장) | `workshop_windows.dart` |
+| 그림 적용 | `python tools/apply_25_art.py ../4_image_generation_results_and_backups/26_feedback_generated --only room --only title --only stall16 --preview` | `tools/apply_25_art.py` |
+| 테스트 | `test/workshop_wardrobe_test.dart`(17개, 골든 `wardrobe_hair_390x844`·`wardrobe_stall_390x844`·`shop_avatar_390x844`), 창 골든 다시 만듦(`skill_shop_*` 3장·`workshop_home_menu_*` 4장: 잔액 줄·제목 붕어빵) | |
+| 시안 | `tools/preview_wardrobe_options_test.dart` → `build/preview/wardrobe_options.png` | |
+
+## 34. 매일 돌아올 이유 — 2026-11-19
+
+26번 7단계(DEC-047·DEC-107~110, S7-Q1 주문서 카드·S7-Q2 7일째 황금 1·S7-Q3 장식+인사+주문 문구). 설정은 `config/development_balance.json` `daily_return`(행사 날짜는 이 설정에만, 코드에 날짜 없음), 저장은 3장 schema 10, 화면은 10장 '오늘' 쪽지.
+
+| 항목 | 규칙 | 위치 |
+| --- | --- | --- |
+| 하루 경계 | 정산 시각의 KST 날짜(`today`). 시계를 되돌리면 그대로, 앞당기면 그 날로(여러 날 지나도 한 번). 첫 실행 안내 중에는 아무것도 열리지 않음. 모든 명령 뒤와 복귀 때 `_observeDaily`가 날짜·행사·주문서만 기록(보상 없음) | `WorkshopController._observeDaily` |
+| 오늘의 주문서 | **특별 주문(Lv.5, `ordinary_sale.special_order_unlock_level`, 기능 소개 카드 '특별 주문이 와요')부터** 하루 1장. 날짜 + 설치(`grid.runId`)로 고정(`makeDailyOrder`, 같은 날은 언제 봐도 같음): 가진 맛 중 하나, 익힘 1~3(부드러움·미디엄·바삭함), 1~`quantity_max`(2)개, 의뢰인은 만난 단골 중 한 명(없으면 '동네 손님'), 행사 중이면 행사 ID. **영업 중에만** 재고에서 맞는 맛·익힘(5영업일 미만, 오래된 것부터)을 '납품하기'. '주문서 굽기'는 영업 중 큰 틀에서 그 맛을 주문 제작(손님 없이, 결과는 재고로). 보상: 붕어빵력 = max(초당 자동 생산 × `reward_seconds` 600, `min_buns` 200) + 의뢰 단골 친밀도 `affinity` 3(관계 기록 `special:<날짜>`, 자기 칸 `special` 하루 상한 `customer_relationships.special_daily_cap` 3, 판매·대화 상한과 따로). **황금 없음**. 하루 1번, 납품하지 않으면 다음 날 새 주문서로 바뀜 | `lib/workshop_daily.dart`, `deliverDailyOrder`, `startDailyOrderProduction`, `WorkshopRelationships.specialOrder` |
+| 출석 도장 | 7칸(`cycle_days`). KST 하루 처음 '도장 찍기'로 다음 칸(자동 아님, 쪽지 빨간 점으로 알림). 하루를 걸러도 이어지고, 7칸 뒤 다음 도장은 1칸부터. 1~6칸: 붕어빵력 max(초당 × `buns_seconds` 300, `min_buns` 100). 7칸: **황금 `gold` 1** — 서버가 있는 빌드는 `pendingGold['attendance:<날짜>']`로 신청해 미션 황금처럼 서버 검증 뒤 지갑에(쪽지에서 찍으면 로그인 상태일 때 바로 `syncRewards`), 서버가 없는 빌드는 붕어빵력 max(초당 × `substitute_seconds` 1800, `substitute_min_buns` 600)로 대신(첫 실행 로그인이 필수라 출시 빌드는 황금) | `stampAttendance`, `attendanceClaim` |
+| 이야기 하루 한 조각 | 이야기 장면·후일담·선택 사건을 합쳐 영업일당 `story_daily_limit` 1개(`storiesOpenedToday`: 그날 `storyDays`·`followupDays`·`lastChoiceDay` + 지금 보이는 장면). 넘치면 그 손님 판매 뒤 장면 대신 '내일 ○○가(이) 이야기를 이어 갈 것 같아요.'(짧은 이름, 카운터 안내 줄), 다음 영업일 그 손님 판매 때 열림. 저장 변경 없음 | `_afterNamedSale`, `_spawnCustomer` |
+| 겨울 행사 | `seasonal_events`: 첫눈 `first_snow_2026` 12/1~12/7(눈사람), 크리스마스 `christmas_2026` 12/20~12/26(별 전구), 설날 `seollal_2027` 2027-02-05~02-09(종이 초롱 줄). 기간 안(양 끝 포함, KST)이면 ① 홈의 가게 장식을 행사 장식으로 바꿔 그림(가진 장식과 상관없이, 입은 장식 기록·꾸미기 창은 그대로 `WorkshopPage._homeEquipped`. 기존 장식 그림 재사용 — 전용 그림은 25번 32번) ② 손님 창 첫 줄에 행사 인사 ③ 그날 주문서에 행사 문구(`order_note`)와 쪽지 카드 위 행사 띠. 새 재화·판매 없음. 날짜를 바꾸려면 설정만 고치고 `python 1_app_development/tools/development_balance.py` | `activeSeasonalEvent`, `WorkshopPage._homeEquipped` |
+| 복귀 안내 | 2시간 이상 비웠다 돌아오면 카드에 '오늘의 주문서가 도착했어요.'·'오늘 출석 도장을 찍을 수 있어요.' | `WorkshopAwayReport.newOrder·stampReady` |
+| 사용 통계 | `special_order_done`(`event`), `event_join`(`event`) — 32장 | `usage_stats.dart` |
+| 서버 | 출석 황금은 보상 종류 `mission`의 새 목표(`scope:'attendance'`, `goal:'day7'`): `plausibility_validator.ts`가 보상량(설정 `gold`)·기간(미션과 같은 KST 날짜 유예 `mission_claim_grace_days`)을 확인, `workshop_missions.ts`가 계정당 날짜 하나(`attendance:<날짜>`)와 **직전 출석 황금에서 7일 이상**(`users/<계정>/workshopAttendance/latest`)일 때만 지급(아니면 `unverifiable`). 타당성 한도에 지난 KST 날짜 수(+2) × (초당 × (600 + 1800) + 200 + 600)을 더함. **서버 배포 필요**(함수·생성 설정) | `firebase/functions/src/plausibility_validator.ts`, `workshop_missions.ts`, `workshop_service.ts` |
+| 테스트 | `test/workshop_daily_test.dart`(11개: 사흘 흐름, 시계 되돌리기·앞당기기, 자정 걸침, 오프라인 5일, 씨앗 고정·가진 맛, 행사 안/밖/없음, 안내 중, 출석 7칸 서버 유무, 저장 9→10·거절, 쪽지 화면, 카드 골든), 서버 `test/plausibility_validator.test.ts` 3개 | |
+| 미리보기 | `flutter test tools/preview_daily_test.dart --dart-define=PREVIEW_FONT=C:/Windows/Fonts/malgun.ttf` → `build/preview/daily_{home,card}_{christmas,plain}.png` | |
+
+## 35. 공유 카드 — 2026-11-19
+
+26번 8단계(DEC-048·S8-Q1, DEC-111~113). 내가 구운 붕어빵·이야기·도감·가게를 카드 한 장으로 휴대폰 공유 창에 보낸다. **보상 없음**(1장 '공유에도 보상 없음'), 게임 상태·저장 형식 변경 없음. 홍보 자료는 [27번 문서](../27_홍보자료준비.md).
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 여는 곳 | ① 완벽 결과 화면 '자랑하기'(`mold-share`, 등급 perfect일 때만) ② 이야기 장면(다시 보기 포함) '자랑하기'(`story-share`) ③ 도감에서 다섯 익힘을 다 찾은 맛의 '도감 완성 자랑하기'(`collection-share-<맛>`, 팥 미디엄은 처음부터 아는 것으로 셈) ④ 메뉴 '가게 사진 찍기'(`menu-photo`) | `ui/workshop_mold_stage.dart` `onSharePerfect`, `ui/workshop_page.dart` `_share*`, `ui/public_menus.dart` |
+| 창 | 카드 미리보기(창 폭에 맞춰 축소) + '닫기'·'공유하기'. '공유하기'는 카드를 그 자리에서 찍어 PNG로 만들고 `share_plus` 파일 공유(`XFile.fromData`, `todays_bungeoppang_<moment>.png`)로 공유 창을 엶. 사진첩 저장 버튼이 없어 저장 권한·새 패키지 없음. 실패(예외·`unavailable`)면 창 안에 '공유 창을 열지 못했어요. 잠시 뒤 다시 해 주세요.', 카드는 그대로 | `ui/share_card_view.dart` `ShareCardDialog`, `invite_sharing.dart` `CardSharer`·`SharePlusCardSharer`, `share_card.dart` `ShareCards.sharer`(테스트가 바꿈) |
+| 카드 | 360×450으로 배치해 3배(설정 `share.card_width` 1080 ÷ 360)로 찍음 → **1080×1350(4:5)**. 위 70%: 홈과 같은 배경·장식(행사 중이면 행사 장식, `_homeEquipped`)의 거리 풍경(배경 그림 세로 260~557px 구간, 행주·매대 윗면까지) + 왼쪽 아래 조리 컷 창의 사장님(입은 옷 그대로, 정지 그림) + 붕어빵(완벽 = 미디엄 + 윤기, 도감 = 바삭함 색, 가게 사진은 붕어빵 대신 큰 조리 컷) + 오른쪽 손님 그림(완벽 결과의 주문 손님·이야기 손님, `happy` 얼굴) + 왼쪽 위 배지('완벽!'·'이야기'·'도감 완성'·'우리 가게'). 아래 30%: 제목(‘팥 붕어빵’·이야기 이름·‘팥 붕어빵 도감’·‘우리 가게’), 대사 한 줄(완벽 = 주문 손님 반응, 없으면 등급 문구 / 이야기 = 장면에서 사장님이 아닌 첫 대사, 없으면 '○○의 이야기를 들었어요.' / 도감 = '다섯 가지 익힘을 모두 찾았어요.' / 가게 = 행사 인사 또는 '따끈한 붕어빵 구워 놓고 기다릴게요!'), 맨 아래 작은 붕어빵 + 스토어 문구 | `ShareCardView`, `ShareFishPainter` |
+| 넣지 않는 것 | 사장님 이름·아이디·레벨·재화·날짜·기기 정보. 손님 이름은 게임 속 인물 이름 | `ShareCardData` |
+| 스토어 문구 | 설정 `share.store_line_mode` `soon` → '오늘의 붕어빵 · 곧 Google Play에서'(지금), `live` → '오늘의 붕어빵 · Google Play에서 만나요'(정식 출시 뒤 이 값만 바꾸고 `python 1_app_development/tools/development_balance.py`). 공유 글 = 순간별 한 줄('완벽한 팥 붕어빵을 구웠어요!' 등) + 스토어 문구 + `share.store_url`(`https://play.google.com/store/apps/details?id=com.todaybungeoppang.app`). 서버는 이 설정을 읽지 않음(생성본만 갱신) | `config/development_balance.json` `share`, `ShareCardTexts` |
+| 사용 통계 | `share`(공유 창을 연 뒤, KST 하루 1번, `moment`만) — 32장 | `usage_stats.dart` |
+| 개인정보 | 개인정보처리방침 1-3절 이벤트 목록과 5절 '게임 장면 그림'(앱 `assets/legal/`·문서 두 곳) | `privacy_policy.md` |
+| 그림 | 새 그림 없음(기존 배경·조리 컷·손님·붕어빵 그림, 나무 테두리는 코드). 메뉴 줄 아이콘은 Material `photo_camera_outlined`. 장식 테두리가 필요하면 25번 다음 번호로 주문 | — |
+| 테스트 | `test/share_card_test.dart`(9개: 설정·공유 글, 하루 1번, 골든 축소본 3장 `share_card_{perfect,story,shop}_360x450`, 메뉴 가게 사진 → 1080×1350 PNG·스토어 주소·보상 없음·이벤트 하루 1번, 공유 실패 안내·상태 불변, 완벽 결과에만 '자랑하기'·손님 반응, 이야기·도감 완성) | |
+| 미리보기 | `flutter test tools/preview_share_test.dart --dart-define=PREVIEW_FONT=C:/Windows/Fonts/malgun.ttf` → `build/preview/share_card_{perfect,story,collection,shop}.png`(실제 크기) | |

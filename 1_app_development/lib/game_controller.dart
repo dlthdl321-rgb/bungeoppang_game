@@ -32,6 +32,7 @@ import 'feedback_config.dart';
 import 'game_events.dart';
 import 'prestige_rules.dart';
 import 'ranking_config.dart';
+import 'usage_stats.dart';
 
 part 'invite_controller.dart';
 part 'boost_controller.dart';
@@ -99,6 +100,9 @@ class GameController extends ChangeNotifier {
 
   /// Google Play Billing for 황금 붕어빵 packs (premium_controller.dart).
   final BillingService billing;
+
+  /// 사용 통계(26번 5단계). Follows the '사용 통계 보내기' setting.
+  final UsageStats usage;
   StreamSubscription<BillingPurchase>? _billingSub;
 
   /// Last wallet message for the shop ('충전 완료', ...), or null.
@@ -123,8 +127,10 @@ class GameController extends ChangeNotifier {
       bool? developerTools,
       math.Random? goldenRandom,
       this.online = const NoOnlineBackend(),
-      this.billing = const NoBillingService()})
-      : developerTools = developerTools ?? !kReleaseMode,
+      this.billing = const NoBillingService(),
+      UsageStats? usage})
+      : usage = usage ?? UsageStats.none,
+        developerTools = developerTools ?? !kReleaseMode,
         _goldenRandom = goldenRandom ?? math.Random(),
         invitationRepository =
             invitationRepository ?? MockInvitationRepository();
@@ -150,6 +156,7 @@ class GameController extends ChangeNotifier {
       rethrow;
     }
     _lastMono = clock.monotonicMilliseconds;
+    usage.setEnabled(state.settings.sendUsageStats);
     // Initialization is a transition from an inactive session. A real
     // stopwatch is usually non-zero after loading, so it cannot identify it.
     _away = true;
@@ -590,7 +597,8 @@ class GameController extends ChangeNotifier {
       bool? notifyRegularGuests,
       bool? notifyNamedGuests,
       bool? quietNightNotices,
-      bool? notificationPromptDone}) async {
+      bool? notificationPromptDone,
+      bool? sendUsageStats}) async {
     final previous = _settingsQueue;
     final done = Completer<void>();
     _settingsQueue = done.future;
@@ -617,8 +625,11 @@ class GameController extends ChangeNotifier {
       s.notifyNamedGuests = notifyNamedGuests ?? s.notifyNamedGuests;
       s.quietNightNotices = quietNightNotices ?? s.quietNightNotices;
       s.notificationPromptDone = notificationPromptDone ?? s.notificationPromptDone;
+      s.sendUsageStats = sendUsageStats ?? s.sendUsageStats;
       // Restore the previous settings if this one-shot save fails.
       await _commit(before);
+      // The kept value, also when the save failed and restored the old one.
+      if (sendUsageStats != null) usage.setEnabled(state.settings.sendUsageStats);
     } finally {
       done.complete();
     }

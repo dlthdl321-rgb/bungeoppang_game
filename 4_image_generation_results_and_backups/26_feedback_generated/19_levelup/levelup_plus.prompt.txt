@@ -1,0 +1,4 @@
+Pixel art round game button, 64x64, transparent background.
+levelup_plus: a chunky round honey-yellow (#FDBE38) button with a thick cream
+"+" sign, darker amber rim and a soft top highlight, looks pressable.
+No text except the exact + symbol.

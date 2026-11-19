@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../avatar_atlas.dart';
 import '../avatar_rig_config.dart';
+import '../avatar_v2.dart';
+import '../avatar_v2_atlas.dart';
 import '../cosmetic_config.dart';
 import 'pixel_sprites.dart';
 
@@ -103,8 +105,13 @@ class RigSprite {
 
   /// Where the picture's top-left sits in its own (untrimmed) canvas.
   final Offset trim;
+
+  /// Masks erased from this picture alone (v2: the worn hat's hairmask on
+  /// the hair layer), drawn with it in a group of its own.
+  final List<RigSprite> erase;
   const RigSprite(this.asset, this.image, this.layer, this.placement,
-      this.anchor, this.pivot, this.trim);
+      this.anchor, this.pivot, this.trim,
+      {this.erase = const []});
 
   /// The picture's box in rig pixels, ignoring rotation.
   Rect get bounds {
@@ -145,11 +152,80 @@ class AvatarRig {
   /// The pictures to draw, back to front. Missing pictures are left out, so
   /// a face frame without art shows the face as drawn. A picture with a
   /// copy for the worn skin ([rigSkinPicture]) draws that copy.
-  List<RigSprite> get sprites => _sprites(cuts: false);
+  List<RigSprite> get sprites =>
+      v2 ? _v2Sprites() : _sprites(cuts: false);
+
+  /// Whether this rig draws the v2 vendor (26번 4-7단계): the front pose
+  /// wearing items, once every v2 picture is there ([avatarV2On]).
+  bool get v2 => avatarV2On && pose.view == frontPose.view && pose.wearsItems;
 
   /// Masks of the worn items ([rigCutPicture]): drawn over the base to
   /// erase what the items hide, before the hair, the face and the items.
-  List<RigSprite> get cuts => _sprites(cuts: true);
+  List<RigSprite> get cuts => v2 ? const [] : _sprites(cuts: true);
+
+  /// The v2 pictures, back to front ([rigV2Order]): the bare base for the
+  /// worn skin, its own face frames, then every worn item (the defaults
+  /// too). The hat's hairmask goes with the hair layer only.
+  List<RigSprite> _v2Sprites() {
+    final out = <RigSprite>[];
+    final look = this.look ?? const AvatarLook();
+    final skin = look.skin;
+    RigSprite? make(String asset, RigLayer layer,
+        {(double, double)? anchor, List<RigSprite> erase = const []}) {
+      final image = PixelSprites.byPath(asset);
+      if (image == null) return null;
+      final at = anchor ?? (0.0, 0.0);
+      final (tx, ty) = image.width == rigFrontCanvas.$1 &&
+              image.height == rigFrontCanvas.$2
+          ? (0, 0)
+          : avatarV2TrimOffsets[asset] ?? (0, 0);
+      final (px, py) = avatarV2PartPivots[asset] ?? (0.0, 0.0);
+      return RigSprite(asset, image, layer, const RigPlacement(),
+          Offset(at.$1, at.$2), Offset(px, py),
+          Offset(tx.toDouble(), ty.toDouble()),
+          erase: erase);
+    }
+
+    void add(String asset, RigLayer layer,
+        {(double, double)? anchor, List<RigSprite> erase = const []}) {
+      final sprite = make(asset, layer, anchor: anchor, erase: erase);
+      if (sprite != null) out.add(sprite);
+    }
+
+    add(avatarV2Base(character, skin), RigLayer.base);
+    for (final channel in rigChannels) {
+      final frame = face[channel.id] ?? channel.rest;
+      final anchor = avatarV2FaceAnchors[character]?[channel.id];
+      if (anchor == null || frame == channel.rest) continue;
+      add(avatarV2Feature(character, skin, channel.id, frame), channel.layer,
+          anchor: anchor);
+    }
+    final hat = look.worn(CosmeticSlot.hat);
+    final hairMask = blankCosmetics.contains(hat)
+        ? null
+        : make(avatarV2HairMask(character, hat), RigLayer.hair);
+    for (final MapEntry(key: slot, value: layer) in rigSlotLayers.entries) {
+      final id = look.worn(slot);
+      if (blankCosmetics.contains(id)) continue;
+      final main = avatarV2Item(character, slot, id);
+      add(main, layer,
+          erase: slot == CosmeticSlot.hair && hairMask != null
+              ? [hairMask]
+              : const []);
+      for (final MapEntry(key: half, value: halfLayer)
+          in rigItemHalves.entries) {
+        add(main.replaceFirst('.png', '_$half.png'), halfLayer);
+      }
+    }
+    final indexed = out.indexed.toList()
+      ..sort((a, b) {
+        final byLayer = rigV2Order
+            .indexOf(a.$2.layer)
+            .compareTo(rigV2Order.indexOf(b.$2.layer));
+        return byLayer != 0 ? byLayer : a.$1.compareTo(b.$1);
+      });
+    return [for (final (_, s) in indexed) s];
+  }
 
   List<RigSprite> _sprites({required bool cuts}) {
     final out = <RigSprite>[], masks = <RigSprite>[];
@@ -235,6 +311,21 @@ class AvatarRig {
       final src = Rect.fromLTWH(0, 0, w, h);
       final box = Rect.fromLTWH((s.trim.dx - s.pivot.dx) * scale,
           (s.trim.dy - s.pivot.dy) * scale, w * scale, h * scale);
+      if (s.erase.isNotEmpty) {
+        // The picture and its masks in a group of their own, so the masks
+        // erase only it (v2 hair under a hat), never the body or face.
+        canvas.saveLayer(null, Paint());
+        draw(RigSprite(s.asset, s.image, s.layer, s.placement, s.anchor,
+            s.pivot, s.trim), paint);
+        final erase = Paint()
+          ..filterQuality = paint.filterQuality
+          ..blendMode = BlendMode.dstOut;
+        for (final m in s.erase) {
+          draw(m, erase);
+        }
+        canvas.restore();
+        return;
+      }
       if (p.rotation == 0 && p.scale == 1) {
         canvas.drawImageRect(s.image, src, box.shift(origin), paint);
         return;

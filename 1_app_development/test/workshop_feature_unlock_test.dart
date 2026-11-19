@@ -174,7 +174,7 @@ void main() {
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue);
       expect(c.pendingIntro, isNull);
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue, reason: '두 번 눌러도 그대로');
-      expect(repository.saved!['schema'], 8);
+      expect(repository.saved!['schema'], 10);
       expect(repository.saved!['featureIntros'], ['collection', 'skills']);
       c.dispose();
       final again = await open(repository);
@@ -189,17 +189,17 @@ void main() {
       await c.skipTutorial();
       expect(await setLevel(c, 12), isTrue);
       await award(c);
-      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros');
+      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily');
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.featureIntros, containsAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders',
           'fishCosmetics', 'stallCosmetics']));
       expect(pendingFeatureIntro(migrated, config), isNull);
-      expect(migrated.toJson()['schema'], 8);
+      expect(migrated.toJson()['schema'], 10);
       // A low-level old save still gets the cards still to come.
       final low = await open();
       addTearDown(low.dispose);
       await low.skipTutorial();
-      final lowOld = low.state.toJson()..['schema'] = 7..remove('featureIntros');
+      final lowOld = low.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily');
       final lowMigrated = WorkshopState.fromJson(lowOld, config)..level = 2;
       expect(pendingFeatureIntro(lowMigrated, config), WorkshopFeature.skills);
     });

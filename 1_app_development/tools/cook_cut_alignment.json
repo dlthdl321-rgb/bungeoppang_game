@@ -1,0 +1,168 @@
+{
+ "note": "26번 4-2단계 F9: cook/girl_<n>.png moved by whole pixels onto frame 1's workbench (bottom edge, middle), plus the common move; applied once, face anchors moved the same. boy: measured only (not in the app yet).",
+ "common": [
+  -24,
+  -2
+ ],
+ "girl": {
+  "girl_1": {
+   "move": [
+    -24,
+    -2
+   ],
+   "workbench_after": [
+    67,
+    340,
+    357,
+    485
+   ],
+   "head_after": [
+    0,
+    0
+   ]
+  },
+  "girl_2": {
+   "move": [
+    5,
+    -2
+   ],
+   "workbench_after": [
+    67,
+    332,
+    357,
+    487
+   ],
+   "head_after": [
+    -1,
+    1
+   ]
+  },
+  "girl_3": {
+   "move": [
+    17,
+    -2
+   ],
+   "workbench_after": [
+    67,
+    340,
+    357,
+    485
+   ],
+   "head_after": [
+    3,
+    0
+   ]
+  },
+  "girl_4": {
+   "move": [
+    -24,
+    26
+   ],
+   "workbench_after": [
+    67,
+    338,
+    357,
+    486
+   ],
+   "head_after": [
+    0,
+    9
+   ]
+  },
+  "girl_5": {
+   "move": [
+    2,
+    26
+   ],
+   "workbench_after": [
+    65,
+    338,
+    360,
+    485
+   ],
+   "head_after": [
+    7,
+    7
+   ]
+  },
+  "girl_6": {
+   "move": [
+    6,
+    24
+   ],
+   "workbench_after": [
+    61,
+    346,
+    363,
+    485
+   ],
+   "head_after": [
+    12,
+    4
+   ]
+  }
+ },
+ "boy": {
+  "boy_1": {
+   "move": [
+    0,
+    0
+   ],
+   "head_after_506": [
+    0,
+    0
+   ]
+  },
+  "boy_2": {
+   "move": [
+    72,
+    10
+   ],
+   "head_after_506": [
+    -9,
+    0
+   ]
+  },
+  "boy_3": {
+   "move": [
+    102,
+    0
+   ],
+   "head_after_506": [
+    2,
+    -8
+   ]
+  },
+  "boy_4": {
+   "move": [
+    0,
+    67
+   ],
+   "head_after_506": [
+    5,
+    15
+   ]
+  },
+  "boy_5": {
+   "move": [
+    64,
+    69
+   ],
+   "head_after_506": [
+    2,
+    11
+   ]
+  },
+  "boy_6": {
+   "move": [
+    74,
+    62
+   ],
+   "head_after_506": [
+    10,
+    11
+   ]
+  }
+ },
+ "boy_note": "boy moves are in 1254 original pixels; head_after_506 = head offset from boy_1 after the move (506 pixels). Variants boy_<n>_<item>.png use their frame move."
+}

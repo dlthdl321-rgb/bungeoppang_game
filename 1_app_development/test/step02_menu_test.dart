@@ -36,7 +36,8 @@ void main(){
     expect(tester.getTopLeft(find.byKey(const Key('workshop-window-base'))).dy,
       lessThanOrEqualTo(tester.getTopLeft(find.byKey(const Key('home-nav'))).dy));
     expect(tester.getSize(find.byKey(const Key('workshop-window-base'))).width,360);
-    expect(find.byKey(const Key('shop-tab-gear')),findsOneWidget);
+    // 26번 4-5단계: the workshop shop sells avatar items in 꾸미기 only.
+    expect(find.byKey(const Key('shop-tab-gear')),findsNothing);
     // 26번 3단계: the workshop shop opens on 꾸미기, where gold buys avatar items.
     expect(tester.widget<ChoiceChip>(find.byKey(const Key('shop-tab-cosmetics'))).selected,isTrue);
     // Stall themes are not on sale in the soft launch: no empty tab, no '판매 준비 중'.
@@ -49,14 +50,14 @@ void main(){
     await tapKey('menu-skills');expect(find.byType(WorkshopSkillShop),findsOneWidget);
     // DEC-041: tiers 1~4 cost no gold, so the button shows no '+ 황금 0'.
     expect(find.byKey(const Key('skill-gold-note')),findsOneWidget);
-    expect(find.descendant(of:find.byKey(const Key('buy-tap_1')),matching:find.textContaining('황금')),findsNothing);
-    await tapKey('kind-auto');await tapKey('quantity-ten');await tapKey('quantity-maximum');
+    expect(find.descendant(of:find.byKey(const Key('skill-tap_1')),matching:find.textContaining('황금')),findsNothing);
+    // 26번 4-3단계: the 1개/10개/최대 chips became the ×1·×10·×100 wheel.
+    await tapKey('kind-auto');await tapKey('step-10');await tapKey('step-100');
     expect(find.byKey(const Key('skill-auto_1')),findsOneWidget);await close();
     await tapKey('menu-skins');expect(find.byKey(const Key('cosmetic-category-hair')),findsOneWidget);
     await tapKey('preview-boy');expect(c.state.avatarEquipment['character'],isNot('boy'));
-    final apply=find.byKey(const Key('buy-cosmetic-boy'));
-    await tester.scrollUntilVisible(apply,250,scrollable:find.byType(Scrollable).last);
-    await tester.tap(apply);await tester.pumpAndSettle();expect(c.state.avatarEquipment['character'],'boy');
+    // 26번 4-5단계: '모두 적용' on the preview wears every changed slot.
+    await tapKey('wardrobe-apply-all');expect(c.state.avatarEquipment['character'],'boy');
     await close();
     for(final route in [('menu-collection','도감'),('menu-achievements','업적'),('menu-records','생산 기록'),
       ('menu-theme','꾸미기'),('menu-daily','일일 미션'),('event-entry','주간 도전'),

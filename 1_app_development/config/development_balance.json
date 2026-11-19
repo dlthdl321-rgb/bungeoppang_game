@@ -456,6 +456,30 @@
       "buns": "1000",
       "gold": 2
     },
+    "jeans": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "denimshorts": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "joggers": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "checkskirt": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "cargopants": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "longskirt": {
+      "buns": "1000",
+      "gold": 2
+    },
     "sneakers": {
       "buns": "1000",
       "gold": 2
@@ -767,8 +791,8 @@
     "customer_archetype_count": 8
   },
   "customer_arrivals": {
-    "regular_min_ms": 60000,
-    "regular_max_ms": 900000,
+    "regular_min_ms": 30000,
+    "regular_max_ms": 300000,
     "named_min_ms": 1800000,
     "named_max_ms": 10800000,
     "regular_slots": 3,
@@ -1513,7 +1537,7 @@
     },
     "padding": {
       "label": "패딩 조끼",
-      "slot": "outfit",
+      "slot": "top",
       "free": false,
       "unlock_level": 3,
       "unlock_total": "0"
@@ -1527,7 +1551,7 @@
     },
     "chefcoat": {
       "label": "요리사 복",
-      "slot": "outfit",
+      "slot": "top",
       "free": false,
       "unlock_level": 7,
       "unlock_total": "0"
@@ -1649,6 +1673,48 @@
       "slot": "bottom",
       "free": false,
       "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "jeans": {
+      "label": "연청 청바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "denimshorts": {
+      "label": "데님 반바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "joggers": {
+      "label": "회색 조거 바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "checkskirt": {
+      "label": "빨강 체크 치마",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "cargopants": {
+      "label": "카키 카고 바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 5,
+      "unlock_total": "0"
+    },
+    "longskirt": {
+      "label": "크림 롱스커트",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 6,
       "unlock_total": "0"
     },
     "flats": {
@@ -1814,7 +1880,7 @@
         "reward_key": "daily_production"
       },
       "purchases": {
-        "label": "스킬 구매 수량",
+        "label": "스킬 레벨업 횟수",
         "metric": "purchases",
         "target": "3",
         "reward_key": "daily_purchases"
@@ -1840,7 +1906,7 @@
         "reward_key": "weekly_days"
       },
       "purchases": {
-        "label": "주간 스킬 구매 수량",
+        "label": "주간 스킬 레벨업 횟수",
         "metric": "purchases",
         "target": "20",
         "reward_key": "weekly_purchases"
@@ -1884,7 +1950,8 @@
     "own_portion_extra_quantity": 1,
     "holiday_visit_basis_points": 3000,
     "friendly_dialogue_stage": 2,
-    "regular_dialogue_stage": 3
+    "regular_dialogue_stage": 3,
+    "special_daily_cap": 3
   },
   "customer_choice_conditions": {
     "npc_yunha": {
@@ -2015,5 +2082,62 @@
   },
   "welcome_reward": {
     "gold": 10
+  },
+  "daily_return": {
+    "special_order": {
+      "reward_seconds": 600,
+      "min_buns": "200",
+      "affinity": 3,
+      "quantity_max": 2
+    },
+    "story_daily_limit": 1,
+    "attendance": {
+      "cycle_days": 7,
+      "buns_seconds": 300,
+      "min_buns": "100",
+      "gold": 1,
+      "substitute_seconds": 1800,
+      "substitute_min_buns": "600"
+    },
+    "seasonal_events": [
+      {
+        "id": "first_snow_2026",
+        "kind": "first_snow",
+        "label": "첫눈",
+        "start": "2026-12-01",
+        "end": "2026-12-07",
+        "decoration": "snowman",
+        "greeting": "첫눈 왔어요! 이런 날엔 따끈한 붕어빵이죠.",
+        "order_note": "첫눈 기념 주문이에요."
+      },
+      {
+        "id": "christmas_2026",
+        "kind": "christmas",
+        "label": "크리스마스",
+        "start": "2026-12-20",
+        "end": "2026-12-26",
+        "decoration": "starlights",
+        "greeting": "메리 크리스마스! 붕어빵 선물하러 왔어요.",
+        "order_note": "크리스마스 선물용 주문이에요."
+      },
+      {
+        "id": "seollal_2027",
+        "kind": "seollal",
+        "label": "설날",
+        "start": "2027-02-05",
+        "end": "2027-02-09",
+        "decoration": "paperlanterns",
+        "greeting": "새해 복 많이 받으세요! 세배 다녀오는 길이에요.",
+        "order_note": "설날 손님맞이 주문이에요."
+      }
+    ]
+  },
+  "share": {
+    "card_width": 1080,
+    "card_height": 1350,
+    "store_line_mode": "soon",
+    "store_line_soon": "오늘의 붕어빵 · 곧 Google Play에서",
+    "store_line_live": "오늘의 붕어빵 · Google Play에서 만나요",
+    "store_url": "https://play.google.com/store/apps/details?id=com.todaybungeoppang.app"
   }
 }

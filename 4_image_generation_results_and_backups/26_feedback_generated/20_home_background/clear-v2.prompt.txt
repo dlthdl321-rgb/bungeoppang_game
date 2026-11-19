@@ -1,0 +1,12 @@
+Use case: precise-object-edit. Edit the supplied pixel-art background of a
+Korean bungeoppang street stall seen from behind the counter (335x762).
+Lower the wooden counter: the counter's top surface must start at about
+y=520, level with the top edge of the red-and-white checked towel on the left,
+so that NO wooden counter is visible above that height. Fill the freed area
+above with the continuation of the sunny street scene (pavement, shop fronts,
+plants) so a customer could stand there behind the counter. Move the metal
+utensil cup (left) and the small wooden crate (right) down so they sit on the
+new counter edge, partly hanging over the front. Keep the awning, the hanging
+lantern, the street, the sky, the towel position, the palette and the pixel
+texture unchanged. No people, no text.
+Targeted correction: retain EXACTLY the source left towel TOP at y=524 on the requested 762px canvas (68.77% of total image height). The wooden countertop must START at y=520 (68.24% of total image height), not at 75% of the canvas. Do not lower the towel. No white border at any edge; full-bleed opaque artwork.

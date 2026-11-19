@@ -145,22 +145,24 @@ void main() {
       }
     });
 
-    test('수집 대상은 66종(붕어빵 7, 사장님 38, 가게 21), 캐릭터·피부톤은 제외', () {
-      expect(collectibleCosmeticCount, 66);
+    test('수집 대상은 72종(붕어빵 7, 사장님 44, 가게 21), 캐릭터·피부톤은 제외', () {
+      // 26번 4-7단계: 하의 6종 추가(v2 그림 전에는 꾸미기 창에서 숨김).
+      expect(collectibleCosmeticCount, 72);
       expect(collectibleCount(CosmeticCategory.bungeoppang), 7); // No flavours.
-      expect(collectibleCount(CosmeticCategory.avatar), 38);
+      expect(collectibleCount(CosmeticCategory.avatar), 44);
       expect(collectibleCount(CosmeticCategory.stall), 21); // + 등불 3
       expect(
           cosmeticDefinitions.fold(BigInt.zero, (a, d) => a + d.cost),
-          BigInt.from(505));
+          BigInt.from(545)); // + 하의 6종 5+5+6+7+8+9
       expect(inSlot(CosmeticSlot.skin).every((d) => d.free), isTrue);
       expect(inSlot(CosmeticSlot.character).map((d) => d.id), ['girl', 'boy']);
       expect(inSlot(CosmeticSlot.character).every((d) => d.free), isTrue);
       final stage12Coins = cosmeticDefinitions
           .where((d) => stage12Slots.contains(d.slot))
           .fold(BigInt.zero, (a, d) => a + d.cost);
-      // 145 at stage 12, plus stage 14's items in those slots and short.
-      expect(stage12Coins, BigInt.from(223));
+      // 145 at stage 12, plus stage 14's items in those slots and short,
+      // less the chef coat and padded vest (18), tops since 26번 4-5단계.
+      expect(stage12Coins, BigInt.from(205));
     });
   });
 
@@ -323,7 +325,7 @@ void main() {
       expect(await c.buyOrEquipCosmetic('goldtongs'), isTrue);
       expect(achievementMet(c.state, def('avatar-5')), isTrue);
       expect(await c.claimAchievement('avatar-5'), isTrue);
-      expect(achievementTarget(def('cosmetics-all')), BigInt.from(66));
+      expect(achievementTarget(def('cosmetics-all')), BigInt.from(72));
     });
 
     test('레벨업 알림은 새로 열린 꾸미기를 분류별 한 줄로 알린다', () async {
@@ -338,7 +340,7 @@ void main() {
       expect(events.last.kind, GameEventKind.levelUp);
       expect(events.last.details, [
         '새 붕어빵 꾸미기 · 하트 비늘, 슈가파우더',
-        '새 사장님 꾸미기 · 묶은 머리, 털 비니, 크림 긴팔 외 5개',
+        '새 사장님 꾸미기 · 묶은 머리, 털 비니, 크림 긴팔 외 6개',
         '새 가게 꾸미기 · 보랏빛 해질녘, 종이 등불, 무쇠 화로 외 2개',
       ]);
     });

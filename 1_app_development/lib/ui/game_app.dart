@@ -479,7 +479,8 @@ class _GameHomeState extends State<GameHome> {
   }
 
   Widget _body(String destination) => switch (destination) {
-        'menu' => MenuPanel(controller: c, onOpen: _switchTo),
+        // The share card's '가게 사진 찍기' is the Workshop's (26번 8단계).
+        'menu' => MenuPanel(controller: c, onOpen: _switchTo, hidden: const {'photo'}),
         'skills' => SkillShop(controller: c),
         'friends' => FriendsPanel(controller: c),
         'shop' => ShopPanel(controller: c, onOpen: _open),

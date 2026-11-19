@@ -33,13 +33,18 @@ class NightStallPainter extends CustomPainter {
   /// Prefer the copy of [background] without the baked mold (the home
   /// stage then draws its own; see PixelSprites.hasCleanBackground).
   final bool cleanCounter;
+
+  /// The picture with the stall lowered to the towel (assets/images/bg_low,
+  /// 26번 4-1단계); it has no baked mold either.
+  final bool lowStall;
   const NightStallPainter(
       {this.background = 'clear',
       this.night,
       this.stove = 'iron',
       this.decoration = 'none',
       this.avatar,
-      this.cleanCounter = false});
+      this.cleanCounter = false,
+      this.lowStall = false});
 
   static const sceneSize = Size(180, 400);
 
@@ -99,7 +104,7 @@ class NightStallPainter extends CustomPainter {
   /// (335x762 pixels), measured by tools/towel_top.py: the first row where
   /// the cloth covers 60% of columns 28..40. The Workshop sale counter's top
   /// sits on it (DEC-038).
-  static const towelTops = {
+  static final towelTops = <String, int>{
     'bg/autumn': 520,
     'bg/autumn_night': 518,
     'bg/cherry': 523,
@@ -115,15 +120,19 @@ class NightStallPainter extends CustomPainter {
     'bg/snow': 530,
     'bg/snowday': 530,
     'bg_clean/clear': 524,
+    // tools/apply_26_home_art.py moves each lowered picture so the towel's
+    // top is at 524 (its TOWEL_AT_335 table, checked on its preview sheet).
+    for (final id in PixelSprites.lowStallBackgrounds) 'bg_low/$id': 524,
   };
 
   /// Where the towel's top edge shows on a [size] screen for the picture
   /// [sceneBackground] picks, or null when that picture has no measured
   /// towel (scene-sized pixel art or a new background).
   static double? towelTopOnScreen(Size size, String background, bool? night,
-      {bool clean = false}) {
-    final (image, _) =
-        PixelSprites.sceneBackground(background, night, clean: clean);
+      {bool clean = false, bool low = false}) {
+    final (image, _) = low
+        ? PixelSprites.lowStallBackground(background, night)
+        : PixelSprites.sceneBackground(background, night, clean: clean);
     final path = PixelSprites.pathOf(image);
     if (image == null || path == null) return null;
     final key = path
@@ -176,8 +185,9 @@ class NightStallPainter extends CustomPainter {
     canvas.save();
     canvas.translate(origin.dx, origin.dy);
     canvas.scale(scale);
-    final (image, darken) =
-        PixelSprites.sceneBackground(background, night, clean: cleanCounter);
+    final (image, darken) = lowStall
+        ? PixelSprites.lowStallBackground(background, night)
+        : PixelSprites.sceneBackground(background, night, clean: cleanCounter);
     _drawBackground(canvas, image);
     if (darken) {
       // No night picture yet: the day one under a deep blue night wash.
@@ -224,7 +234,8 @@ class NightStallPainter extends CustomPainter {
       stove != oldDelegate.stove ||
       decoration != oldDelegate.decoration ||
       avatar != oldDelegate.avatar ||
-      cleanCounter != oldDelegate.cleanCounter;
+      cleanCounter != oldDelegate.cleanCounter ||
+      lowStall != oldDelegate.lowStall;
 }
 
 /// The stall's frame from the concept art: a striped awning across the top
@@ -290,17 +301,33 @@ class GriddlePainter extends CustomPainter {
   /// ([PixelSprites.stoveFish]), so the drawn hollow stays around it; from
   /// the full art when that layer is missing.
   final Set<int>? filled;
-  const GriddlePainter(this.stove, {this.filled});
+
+  /// The griddle closed and cold (26번 4-2단계 F8, DEC-099): the
+  /// closed art ([PixelSprites.closedStove]) instead of the plate, no
+  /// bungeoppang. Without that art: the empty plate under a dark veil.
+  final bool closed;
+  const GriddlePainter(this.stove, {this.filled, this.closed = false});
 
   @override
   void paint(Canvas canvas, Size size) {
     final image = PixelSprites.cosmetic(CosmeticSlot.stove, stove);
     if (image == null) return;
-    final empty = filled == null ? null : PixelSprites.emptyStove(stove);
+    final empty = filled == null && !closed ? null : PixelSprites.emptyStove(stove);
     final scale =
         math.min(size.width / image.width, size.height / image.height);
     final w = image.width * scale, h = image.height * scale;
     final dst = Rect.fromLTWH((size.width - w) / 2, size.height - h, w, h);
+    if (closed) {
+      final art = PixelSprites.closedStove(stove);
+      if (art != null) {
+        _draw(canvas, art, dst, scale);
+        return;
+      }
+      _draw(canvas, empty ?? image, dst, scale);
+      canvas.drawRect(dst, Paint()..color = Colors.black.withValues(alpha: .45)
+        ..blendMode = BlendMode.srcATop);
+      return;
+    }
     if (empty == null) {
       _draw(canvas, image, dst, scale);
       return;
@@ -336,5 +363,38 @@ class GriddlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant GriddlePainter oldDelegate) =>
-      stove != oldDelegate.stove || !setEquals(filled, oldDelegate.filled);
+      stove != oldDelegate.stove ||
+      closed != oldDelegate.closed ||
+      !setEquals(filled, oldDelegate.filled);
+}
+
+/// The open griddle's lid (26번 4-2단계 F8): the rows of
+/// [PixelSprites.openStove] above the plate, drawn so they stand on the
+/// plate that [GriddlePainter] draws in [plateBox]'s bottom part. The
+/// canvas is the area above the griddle box (its width, the lid's height),
+/// so the griddle box and its cells stay where they were.
+class GriddleLidPainter extends CustomPainter {
+  final String stove;
+  const GriddleLidPainter(this.stove);
+
+  /// Height of the lid area over a griddle box [griddleW] wide whose stove
+  /// art is [stoveW] pixels wide (the box keeps the art's shape).
+  static double heightFor(double griddleW, double stoveW) =>
+      griddleW * PixelSprites.openStoveLidRoom / stoveW;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final art = PixelSprites.openStove(stove);
+    if (art == null) return;
+    final room = PixelSprites.openStoveLidRoom.toDouble();
+    final scale = size.width / art.width;
+    final src = Rect.fromLTWH(0, 0, art.width.toDouble(), room);
+    final dst = Rect.fromLTWH(0, size.height - room * scale, size.width, room * scale);
+    canvas.drawImageRect(art, src, dst,
+        scale < 1 ? GriddlePainter._rawPaint : (Paint()..filterQuality = FilterQuality.none));
+  }
+
+  @override
+  bool shouldRepaint(covariant GriddleLidPainter oldDelegate) =>
+      stove != oldDelegate.stove;
 }

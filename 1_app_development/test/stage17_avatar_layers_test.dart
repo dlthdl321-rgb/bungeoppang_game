@@ -35,8 +35,9 @@ void main() {
   const winter = {
     CosmeticSlot.hat: 'beanie',
     CosmeticSlot.accessory: 'scarf',
-    CosmeticSlot.top: 'cardigan',
-    CosmeticSlot.outfit: 'padding',
+    // 26번 4-5단계(G12): the padded vest is a top; an apron goes over it.
+    CosmeticSlot.top: 'padding',
+    CosmeticSlot.outfit: 'darkapron',
     CosmeticSlot.shoes: 'sneakers',
     CosmeticSlot.bottom: 'skirt',
   };
@@ -130,9 +131,11 @@ void main() {
         }
         mouths.add(sprites.last.anchor);
       }
-      // One shared mouth picture, placed per frame (frame 1's head is 30
-      // pixels right of frame 2's, measured by tools/avatar_layers.py).
-      expect(mouths[0] - mouths[1], const Offset(30, -1));
+      // One shared mouth picture, placed per frame (measured by
+      // tools/avatar_layers.py, then moved with the frames by
+      // tools/align_cook_cuts.py: frame 1's head is now 1 pixel right of
+      // frame 2's instead of 30, 26번 4-2단계 F9).
+      expect(mouths[0] - mouths[1], const Offset(1, -1));
     });
 
     test('서버 외형(아이템 id)과 저장된 차림은 같은 레이어가 된다', () {
@@ -306,15 +309,18 @@ void main() {
               d.id != 'ballcap' &&
               (d.slot.category != CosmeticCategory.avatar ||
                   PixelSprites.avatarArtReady('girl', d.slot, d.id)));
+      // 26번 4-5단계: locked items are tried on in the shop's 꾸미기 tab.
       await tester.pumpWidget(MaterialApp(
-          home: Scaffold(body: WardrobePanel(controller: c, access: access))));
+          home: Scaffold(
+              body: WardrobePanel(
+                  controller: c, access: access, mode: WardrobeMode.shop))));
       await tester.tap(find.byKey(const Key('cosmetic-slot-hat')));
       await tester.pump();
       expect(find.byKey(const Key('preview-ballcap')), findsNothing);
       await tester.ensureVisible(find.byKey(const Key('preview-chefhat')));
       await tester.tap(find.byKey(const Key('preview-chefhat')));
       await tester.pump();
-      expect(find.text('미리보기 · 미장착'), findsOneWidget);
+      expect(find.text('입어 보는 중'), findsOneWidget);
       final painter = tester
           .widget<CustomPaint>(find.byKey(const Key('preview-avatar-face')))
           .painter! as AvatarPainter;

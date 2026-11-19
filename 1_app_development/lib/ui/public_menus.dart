@@ -8,7 +8,6 @@ import '../home_presentation.dart';
 import '../menu_rules.dart';
 import '../mission_alerts.dart';
 import '../weekly_config.dart';
-import '../avatar_rig_config.dart';
 import 'avatar_face.dart';
 import 'avatar_painter.dart';
 import 'count_badge.dart';
@@ -18,24 +17,39 @@ import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'support_panels.dart';
 import 'weather_layer.dart';
+import 'workshop_wardrobe.dart';
+export 'workshop_wardrobe.dart' show WardrobeMode, WardrobePrice, WorkshopWardrobe;
 
 /// The concept art's wardrobe (3.5_completed_game_mockups/꾸미기): tabs 헤어 / 의상 / 소품 /
 /// 붕어빵 / 가게 (approved D3), a preview on top, a 3-column grid of items and
 /// an '적용' button for the picked one. Picking only previews; nothing is
-/// bought or equipped until '적용'.
+/// bought or equipped until '적용'. With [CosmeticMenuAccess] (the Workshop)
+/// the panel is [WorkshopWardrobe] (26번 4-5단계): 꾸미기 wears what is
+/// owned, several slots at once with '모두 적용(N)'; the shop's 꾸미기 tab
+/// sells avatar items and wears them as soon as they are bought.
 class CosmeticMenuAccess {
   final String Function(CosmeticSlot) equipped;
   final bool Function(CosmeticDefinition) owned, unlocked, canApply;
   final String Function(CosmeticDefinition) price, action;
   final Future<bool> Function(CosmeticDefinition) apply;
+  /// Why a locked item is locked ('Lv.5 해금'; 26번 4-5단계: no '누적').
   final String Function(CosmeticDefinition)? requirement;
 
   /// Items this build shows at all; items nobody can buy yet stay out of
   /// the wardrobe and the shop instead of reading '판매 준비 중'.
   final bool Function(CosmeticDefinition) listed;
+
+  /// Items the shop sells (the avatar catalog); null: everything not owned.
+  final bool Function(CosmeticDefinition)? forSale;
+
+  /// An item's price as icons and numbers, with what the player lacks.
+  final WardrobePrice? Function(CosmeticDefinition)? cost;
+
+  /// Tabs open at this level (붕어빵 Lv.5, 가게 Lv.8; S45-Q6); null: all.
+  final bool Function(WardrobeTab)? tabOpen;
   const CosmeticMenuAccess({required this.equipped,required this.owned,required this.unlocked,
     required this.canApply,required this.price,required this.action,required this.apply,this.requirement,
-    this.listed=_always});
+    this.listed=_always,this.forSale,this.cost,this.tabOpen});
   static bool _always(CosmeticDefinition _)=>true;
 }
 
@@ -56,10 +70,16 @@ class WardrobePanel extends StatefulWidget {
   final GameController controller;
   final WardrobeTab initialTab;
   final CosmeticMenuAccess? access;
+  /// With [access]: wear what is owned, or the shop's avatar items.
+  final WardrobeMode mode;
+  final CosmeticSlot? initialSlot;
+  /// With [access] in [WardrobeMode.wear]: '상점에서 더 보기' for a slot.
+  final void Function(CosmeticSlot slot)? onMore;
   const WardrobePanel(
       {super.key,
       required this.controller,
-      this.initialTab = WardrobeTab.hair,this.access});
+      this.initialTab = WardrobeTab.hair,this.access,this.mode=WardrobeMode.wear,
+      this.initialSlot,this.onMore});
   @override
   State<WardrobePanel> createState() => _WardrobePanelState();
 }
@@ -80,6 +100,15 @@ class _WardrobePanelState extends State<WardrobePanel> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.access case final access?) {
+      return WorkshopWardrobe(
+          access: access,
+          mode: widget.mode,
+          initialTab: widget.initialTab,
+          initialSlot: widget.initialSlot,
+          onMore: widget.onMore,
+          animate: WeatherLayer.animate && !c.state.settings.reduceMotion);
+    }
     final picked = cosmeticDefinitions
         .firstWhere((d) => d.slot == slot && d.id == _shown(slot));
     return SingleChildScrollView(
@@ -280,14 +309,13 @@ class _WardrobePanelState extends State<WardrobePanel> {
                 fit: BoxFit.cover,
                 child: PixelArt(PixelSprites.screenArt('wardrobe_bg'),
                     width: 120, height: 72)),
-            // Blinks by itself and talks when tapped; trying items on
-            // keeps whatever motion is playing.
+            // Blinks by itself; tapping no longer makes it talk (26번
+            // 4-5단계, G2). Trying items on keeps the blink going.
             Padding(
                 padding: const EdgeInsets.all(8),
                 child: AvatarFace(
                     animate: WeatherLayer.animate &&
                         !c.state.settings.reduceMotion,
-                    onTap: talkClip,
                     builder: (context, face) => CustomPaint(
                         key: const Key('preview-avatar-face'),
                         painter:
@@ -308,8 +336,11 @@ class _WardrobePanelState extends State<WardrobePanel> {
   }
 }
 
-/// [item] on its own subject: the pastry or the vendor wearing it with
-/// everything else [equipped], or the stall part's own art.
+/// [item]'s tile picture: the pastry wearing it, the avatar item's own
+/// icon (26번 4-5단계, G5: `cosmetic_icons/<id>.png`, not a tiny dressed
+/// vendor; the vendor wearing it only while an icon is missing), or the
+/// stall part's own art (a background as its middle square, lamps and
+/// day/night as their tile pictures).
 class CosmeticThumb extends StatelessWidget {
   final CosmeticDefinition item;
   final String Function(CosmeticSlot) equipped;
@@ -325,8 +356,17 @@ class CosmeticThumb extends StatelessWidget {
               skin: shown(CosmeticSlot.fish),
               pattern: shown(CosmeticSlot.pattern),
               topping: shown(CosmeticSlot.topping))),
-      CosmeticCategory.avatar => CustomPaint(
-          size: Size.infinite, painter: AvatarPainter(AvatarLook.of(shown))),
+      CosmeticCategory.avatar => switch (PixelSprites.cosmeticIcon(item.id)) {
+          final icon? => CustomPaint(
+              key: Key('icon-${item.id}'),
+              size: Size.infinite,
+              painter: _FitImagePainter(icon)),
+          null => CustomPaint(
+              size: Size.infinite, painter: AvatarPainter(AvatarLook.of(shown))),
+        },
+      _ when PixelSprites.stallTile(item) != null => CustomPaint(
+          size: Size.infinite,
+          painter: _FitImagePainter(PixelSprites.stallTile(item)!)),
       _ when item.slot == CosmeticSlot.time => Icon(
           switch (item.id) {
             'night_time' => Icons.nightlight_round,
@@ -338,8 +378,10 @@ class CosmeticThumb extends StatelessWidget {
           size: 36),
       CosmeticCategory.stall => switch (
             PixelSprites.cosmetic(item.slot, item.id)) {
-          final image? =>
-            CustomPaint(size: Size.infinite, painter: _FitImagePainter(image)),
+          final image? => CustomPaint(
+              size: Size.infinite,
+              painter: _FitImagePainter(image,
+                  cover: item.slot == CosmeticSlot.background)),
           null => const Icon(Icons.block, color: Cozy.inkSoft),
         },
     };
@@ -349,10 +391,24 @@ class CosmeticThumb extends StatelessWidget {
 /// One sprite fitted into the canvas, centred, pixels kept crisp.
 class _FitImagePainter extends CustomPainter {
   final ui.Image image;
-  const _FitImagePainter(this.image);
+  /// Fill the box with the picture's middle (a tall background as a
+  /// square thumbnail) instead of fitting all of it.
+  final bool cover;
+  const _FitImagePainter(this.image, {this.cover = false});
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (cover) {
+      final k = math.max(size.width / image.width, size.height / image.height);
+      final w = size.width / k, h = size.height / k;
+      final src = Rect.fromLTWH((image.width - w) / 2, (image.height - h) / 2, w, h);
+      canvas.save();
+      canvas.clipRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(8)));
+      canvas.drawImageRect(image, src, Offset.zero & size,
+          Paint()..filterQuality = FilterQuality.none);
+      canvas.restore();
+      return;
+    }
     final scale =
         math.min(size.width / image.width, size.height / image.height);
     final w = image.width * scale, h = image.height * scale;
@@ -361,7 +417,8 @@ class _FitImagePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _FitImagePainter old) => image != old.image;
+  bool shouldRepaint(covariant _FitImagePainter old) =>
+      image != old.image || cover != old.cover;
 }
 
 /// The concept art's menu (서브UI 메뉴): 도감, 업적, 통계, 배경 테마, then
@@ -460,6 +517,14 @@ class MenuPanel extends StatelessWidget {
         null,
         const PixelIcon('share', size: 32),
         const Key('menu-share')
+      ),
+      // 26번 8단계 공유 카드(보상 없음): the stall as a picture to share.
+      (
+        'photo',
+        '가게 사진 찍기',
+        null,
+        const Icon(Icons.photo_camera_outlined, color: Cozy.orangeDeep, size: 32),
+        const Key('menu-photo')
       ),
     ];
     // A short list: built eagerly (not lazily) so every entry exists even

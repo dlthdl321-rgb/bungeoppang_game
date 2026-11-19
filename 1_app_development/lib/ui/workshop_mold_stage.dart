@@ -22,6 +22,7 @@ import 'cozy_style.dart';
 import 'pixel_sprites.dart';
 import 'sparkle_art.dart';
 import 'tap_effects.dart';
+import 'workshop_home_layout.dart';
 
 /// Presentation only. All commands still pass through WorkshopController.
 ///
@@ -42,12 +43,22 @@ class WorkshopMoldStage extends StatefulWidget {
   /// The practice start button sits 4 above it (24번 4단계).
   final double? counterTop;
   final bool cleanCounter, reduceMotion, vibration;
+
+  /// The new home layout (26번 4-1단계): the clicker sits just above the
+  /// counter at 0.8 (S4-1-Q5) and the order customer's words go in a
+  /// bubble over the guest (WorkshopGuestLayer) instead of under the result.
+  final bool lowStall;
+
+  /// '자랑하기' on a perfect result (26번 8단계 공유 카드); null hides it.
+  final void Function(ResultLook look)? onSharePerfect;
   const WorkshopMoldStage(
       {super.key,
       required this.controller,
       required this.fishOnScreen,
       this.counterTop,
       this.cleanCounter = false,
+      this.lowStall = false,
+      this.onSharePerfect,
       this.reduceMotion = false,
       this.vibration = false});
 
@@ -146,10 +157,11 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                       ? Align(alignment: const Alignment(0, 1.25),
                           child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))
                       // The counter's top is on the towel (DEC-038): the
-                      // button's bottom stays 4 above it.
+                      // button's bottom stays 4 above the counter's own
+                      // floating button (26번 4-1단계 F6).
                       : Stack(clipBehavior: Clip.none, children: [
                           Positioned(left: 0, right: 0,
-                              bottom: rect.bottom - (counterLocal - 4),
+                              bottom: rect.bottom - (counterLocal - WorkshopHomeLayout.practiceLift),
                               child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))),
                         ])
                   : Center(child: _caption(label))));
@@ -218,7 +230,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 sessionId: session.id,
                 grade: look!.grade,
                 line: cookingGradeLine(c.config, session, look.grade, variant: look.variant),
-                reaction: c.resultReaction(look.grade),
+                reaction: widget.lowStall ? null : c.resultReaction(look.grade),
                 burnt: look.variant == provisionalDonenessLabels.length - 1,
                 reduceMotion: widget.reduceMotion,
                 vibration: widget.vibration);
@@ -232,7 +244,17 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
         // mold's place and must still be hit-testable there.
         if (clicker)
           Positioned.fromRect(
-              rect: floating ? rect.shift(Offset(0, -rect.height * .75)) : rect,
+              rect: !floating
+                  ? rect
+                  : widget.lowStall && counterLocal != null
+                      // Just above the counter's button row, 0.8 of the
+                      // mold's place, the guests behind it (S4-1-Q5).
+                      ? Rect.fromCenter(
+                          center: Offset(box.maxWidth / 2,
+                              counterLocal - WorkshopHomeLayout.clickerLift - rect.height * WorkshopHomeLayout.clickerScale / 2),
+                          width: rect.width * WorkshopHomeLayout.clickerScale,
+                          height: rect.height * WorkshopHomeLayout.clickerScale)
+                      : rect.shift(Offset(0, -rect.height * .75)),
               child: WorkshopClicker(
                   controller: c,
                   floating: floating,
@@ -282,6 +304,11 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                     TextButton(
                         onPressed: blocked ? null : () => c.storeResult(false),
                         child: _caption('버리기')),
+                  if (look!.grade == CookingGrade.perfect && widget.onSharePerfect != null)
+                    TextButton(
+                        key: const Key('mold-share'),
+                        onPressed: () => widget.onSharePerfect!(look),
+                        child: _caption('자랑하기')),
                 ] else
                   TextButton(
                       onPressed: blocked
@@ -703,6 +730,19 @@ Set<int> workshopGriddleFilled(WorkshopController c) {
   };
 }
 
+/// Whether the griddle shows open with its flames on (26번 4-2단계 F8,
+/// S4-2-Q1 '닫힌 판·불 꺼짐', DEC-099): only while the stall is open
+/// and the griddle can be used (a flavor mastered, S2-Q2's one rule in
+/// [WorkshopController.featureIsOpen]), or a cell is still cooking (old
+/// saves may take it out). Before opening, and while it is locked, it is
+/// closed and cold.
+bool workshopGriddleOpen(WorkshopController c) {
+  final s = c.state;
+  if (!s.business.permitsProducts(c.now())) return false;
+  return c.featureIsOpen(WorkshopFeature.griddle) ||
+      s.grid.cells.any((cell) => cell.cooking);
+}
+
 class WorkshopGriddleLayer extends StatelessWidget {
   final WorkshopController controller;
   final String stove;
@@ -727,7 +767,7 @@ class WorkshopGriddleLayer extends StatelessWidget {
         // still to go. A cell already cooking (old saves) can still be
         // taken out.
         final lock = c.featureLock(WorkshopFeature.griddle);
-        final idle = !c.busy &&
+        final idle = !c.inputBusy &&
             c.error == null &&
             !c.gameplayPaused &&
             s.session == null;

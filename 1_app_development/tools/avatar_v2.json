@@ -1,0 +1,116 @@
+{
+ "anchors": {
+  "girl": {
+   "eyes": [
+    153.5,
+    155.0
+   ],
+   "mouth": [
+    152,
+    184
+   ]
+  },
+  "boy": {
+   "eyes": [
+    151.5,
+    156.0
+   ],
+   "mouth": [
+    150,
+    184
+   ]
+  }
+ },
+ "hat_hair": {
+  "_": "cover: hair above the hat's lower edge in its columns is erased; band: only under the hat itself (+keep boxes, canvas l,t,r,b, never erased). Back halves (hair_*_back) are never erased, so a ponytail stays behind any hat.",
+  "default": {
+   "mode": "cover",
+   "keep": []
+  },
+  "earmuffs": {
+   "mode": "band",
+   "keep": []
+  }
+ },
+ "ready": false,
+ "missing": 112,
+ "align": {
+  "avatar_v2/girl/base@skin1.png": {
+   "state": "규격 미달 880x1787 (필요 1120x2080)"
+  },
+  "avatar_v2/girl/base@skin2.png": {
+   "state": "규격 미달 880x1787 (필요 1120x2080)"
+  },
+  "avatar_v2/girl/base@skin3.png": {
+   "state": "규격 미달 880x1786 (필요 1120x2080)"
+  },
+  "avatar_v2/boy/base@skin1.png": {
+   "state": "규격 미달 880x1787 (필요 1120x2080)"
+  },
+  "avatar_v2/boy/base@skin2.png": {
+   "state": "규격 미달 880x1787 (필요 1120x2080)"
+  },
+  "avatar_v2/boy/base@skin3.png": {
+   "state": "규격 미달 880x1787 (필요 1120x2080)"
+  }
+ },
+ "items": {},
+ "pivots": {},
+ "icons": {
+  "character": "대기 (없음: girl, boy)",
+  "skin": "대기 (없음: skin1, skin2, skin3)",
+  "hair": "대기 (없음: long, short, ponytail, curly)",
+  "outfit": "대기 (없음: apron, stripe, darkapron, creamapron, waistapron)",
+  "hat": "대기 (없음: beanie, earmuffs, chefhat, santa, bandana, redbandana, ballcap, newsboy, blackcap)",
+  "tool": "대기 (없음: tongs, goldtongs, paperbag, fishhold)",
+  "top": "대기 (없음: tee, creamlong, pinksweater, sagesweater, creamsweater, cardigan, padding, chefcoat)",
+  "bottom": "대기 (없음: shorts, skirt, widepants, brownpants, jeans, denimshorts, joggers, checkskirt, cargopants, longskirt)",
+  "shoes": "대기 (없음: flats, sneakers, boots, furboots)",
+  "accessory": "대기 (없음: ribbon, fishpin, glasses, scarf, mittens, crossbag)"
+ },
+ "trim": {},
+ "faceaudit": {
+  "girl v1 asset": {
+   "rows": "192~213",
+   "left_mean": 22.0,
+   "right_mean": 19.3,
+   "diff_mean": -2.7,
+   "diff_max": -11.0
+  },
+  "girl concept sheet": {
+   "rows": "192~213",
+   "left_mean": 22.0,
+   "right_mean": 19.3,
+   "diff_mean": -2.7,
+   "diff_max": -11.0
+  },
+  "girl game render": {
+   "rows": "192~213",
+   "left_mean": 22.0,
+   "right_mean": 19.3,
+   "diff_mean": -2.7,
+   "diff_max": -11.0
+  },
+  "boy v1 asset": {
+   "rows": "192~207",
+   "left_mean": 31.2,
+   "right_mean": 26.9,
+   "diff_mean": -4.3,
+   "diff_max": -13.0
+  },
+  "boy concept sheet": {
+   "rows": "192~205",
+   "left_mean": 33.9,
+   "right_mean": 32.0,
+   "diff_mean": -1.9,
+   "diff_max": -4.0
+  },
+  "boy game render": {
+   "rows": "192~213",
+   "left_mean": 31.1,
+   "right_mean": 23.7,
+   "diff_mean": -7.5,
+   "diff_max": -15.0
+  }
+ }
+}

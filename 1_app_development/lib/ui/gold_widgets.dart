@@ -4,6 +4,7 @@ import '../game_controller.dart';
 import '../online_backend.dart';
 import '../premium_config.dart';
 import '../support_config.dart';
+import '../usage_stats.dart';
 import 'cozy_style.dart';
 import 'support_panels.dart' show confirmAction;
 
@@ -72,6 +73,13 @@ class GoldChargeTab extends StatefulWidget {
 class _GoldChargeTabState extends State<GoldChargeTab> {
   late final Future<List<StoreProduct>> _packs =
       widget.controller.goldPacks();
+
+  @override
+  void initState() {
+    super.initState();
+    // 사용 통계(26번 5단계): the charge tab was opened, once a day.
+    widget.controller.usage.record(UsageEvent.payView);
+  }
 
   @override
   Widget build(BuildContext context) {

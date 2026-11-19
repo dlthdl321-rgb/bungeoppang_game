@@ -17,20 +17,28 @@ import 'lock_overlay.dart';
 import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'weather_layer.dart';
+import 'workshop_home_layout.dart';
 
 /// Home screen laid out like the concept art (3.5_completed_game_mockups/메인UI_화면): striped
 /// awning and HUD on top, the big bungeoppang in the middle, the griddle and
 /// the vendor's cooking cut at the bottom, and a menu bar under them.
+/// What the Workshop status badge says (26번 4-1단계 F7).
+enum WorkshopStatusKind { open, preparing, error }
+
 class NightHomeHeaderData {
   final int level, progressPermille, claimable;
   final BigInt buns, lifetime, autoRate, tapRate;
   final String status;
+  /// The badge's look: green dot in business, grey before opening, red for
+  /// a save that needs checking.
+  final WorkshopStatusKind statusKind;
   /// Whether the per-second and per-tap numbers show (26번 2단계: they open
   /// with the skill window at Lv.2).
   final bool showRates;
   const NightHomeHeaderData({required this.level, required this.progressPermille,
     required this.buns, required this.lifetime, required this.autoRate,
-    required this.tapRate, required this.status, this.claimable = 0, this.showRates = true});
+    required this.tapRate, required this.status, this.claimable = 0, this.showRates = true,
+    this.statusKind = WorkshopStatusKind.open});
 }
 
 class NightHome extends StatelessWidget {
@@ -50,10 +58,34 @@ class NightHome extends StatelessWidget {
   /// check towel of the background (DEC-038).
   final Widget? counter;
 
+  /// The counter's one action button (sell, bake, open…), floating centred
+  /// on the screen just above the counter (26번 4-1단계 F6, S4-1-Q6).
+  final Widget? counterAction;
+
+  /// A small slip at the right edge just above the cooking cut, beside the
+  /// counter (26번 7단계: the '오늘' slip for 오늘의 주문서·출석).
+  final Widget? counterSlip;
+
+  /// The stall lowered to the towel with guests behind it (26번 4-1단계,
+  /// [WorkshopHomeLayout.active]): the lowered background, and [guests]
+  /// laid out over the street down to the counter's top.
+  final bool lowStall;
+  /// Called twice: the pictures (taps false) under the stage, and their tap
+  /// targets (taps true) over it. [clicker] is the lowered clicker's place
+  /// in the same coordinates (null without a baked-fish place), so the tap
+  /// targets keep off it.
+  final Widget Function(Rect? clicker, bool taps)? guests;
+
   /// Null draws the stove art as it is. Otherwise the empty griddle with a
   /// bungeoppang only in these cavities (Workshop: the cooking cells; empty
   /// before opening). See GriddlePainter.filled.
   final Set<int>? griddleFilled;
+
+  /// Null draws the griddle as before. False: closed and cold (the lid
+  /// over the plate, no flames); true: open with the flames on and the lid
+  /// standing above the griddle box, behind the counter (26번 4-2단계 F8,
+  /// [workshopGriddleOpen]). The griddle box and its cells do not move.
+  final bool? griddleOpen;
   final String Function(CosmeticSlot)? equipped;
   /// Bottom-menu buttons still locked, by destination id, with the reason
   /// ('Lv.2에 열려요'). They show the common hatched lock (26번 2단계) and
@@ -69,7 +101,12 @@ class NightHome extends StatelessWidget {
       this.vendor,
       this.centerBuilder,
       this.counter,
+      this.counterAction,
+      this.counterSlip,
+      this.lowStall = false,
+      this.guests,
       this.griddleFilled,
+      this.griddleOpen,
       this.equipped,
       this.navLocks = const {}});
 
@@ -114,18 +151,33 @@ class NightHome extends StatelessWidget {
           final scroll = largeText || fishArea < 360;
           // Large text scrolls the stage, so the fish keeps its own place.
           final night = isNightTime(e(CosmeticSlot.time), DateTime.now());
+          final low = lowStall && centerBuilder != null;
           final cleanCounter = centerBuilder != null &&
-              PixelSprites.hasCleanBackground(e(CosmeticSlot.background), night);
+              (low || PixelSprites.hasCleanBackground(e(CosmeticSlot.background), night));
           // The sale counter's top sits on the background's towel (DEC-038).
           final towelTop = counter == null
               ? null
               : NightStallPainter.towelTopOnScreen(
                   box.biggest, e(CosmeticSlot.background), night,
-                  clean: cleanCounter);
+                  clean: cleanCounter, low: low);
+          // Without a measured towel the counter sits above the griddle's
+          // first row; the floating action keeps above it the same way.
+          final counterBottom = griddleBottom + griddleH * .66;
+          final actionBottom = towelTop == null
+              ? counterBottom + 52 + WorkshopHomeLayout.actionGap
+              : box.maxHeight - towelTop + WorkshopHomeLayout.actionGap;
           final fishRect = scroll && centerBuilder == null
               ? null
               : NightStallPainter.bakedFishOnScreen(
                   box.biggest, e(CosmeticSlot.background));
+          // The lowered clicker (WorkshopMoldStage, S4-1-Q5) in the guest
+          // layer's coordinates.
+          final clicker = towelTop == null || fishRect == null ? null
+              : Rect.fromLTRB(
+                  (w - fishRect.width * WorkshopHomeLayout.clickerScale) / 2,
+                  towelTop - WorkshopHomeLayout.clickerLift - fishRect.height * WorkshopHomeLayout.clickerScale - padding.top,
+                  (w + fishRect.width * WorkshopHomeLayout.clickerScale) / 2,
+                  towelTop - WorkshopHomeLayout.clickerLift - padding.top);
           final stage = centerBuilder != null
               ? centerBuilder!(fishRect, cleanCounter, towelTop)
               : _stage(reduce, fishRect);
@@ -139,7 +191,8 @@ class NightHome extends StatelessWidget {
                             night: night,
                             stove: null,
                             decoration: e(CosmeticSlot.decoration),
-                            cleanCounter: cleanCounter)))),
+                            cleanCounter: cleanCounter,
+                            lowStall: low)))),
             Positioned.fill(
                 child: IgnorePointer(
                     child: RepaintBoundary(
@@ -160,6 +213,27 @@ class NightHome extends StatelessWidget {
                   child: IgnorePointer(
                       child: GuestArrivalLayer(
                           controller: controller, reduceMotion: reduce))),
+            // Guests stand on the street, their feet hidden behind the
+            // counter: under the HUD, the stage and the counter.
+            if (low && guests != null && towelTop != null)
+              Positioned(
+                  left: side,
+                  width: w,
+                  top: padding.top,
+                  height: math.max(0.0, towelTop - padding.top),
+                  child: guests!(clicker, false)),
+            // The open lid stands above the griddle box: over the guests,
+            // under the stage and the counter (26번 4-2단계 F8).
+            if (griddleOpen == true && stove != null)
+              Positioned(
+                  left: side + (w - griddleW) / 2,
+                  width: griddleW,
+                  bottom: griddleBottom + griddleH,
+                  height: GriddleLidPainter.heightFor(griddleW, stove.width.toDouble()),
+                  child: IgnorePointer(
+                      child: CustomPaint(
+                          key: const Key('griddle-lid'),
+                          painter: GriddleLidPainter(e(CosmeticSlot.stove))))),
             Positioned(
                 left: side + (w - griddleW) / 2,
                 width: griddleW,
@@ -169,7 +243,8 @@ class NightHome extends StatelessWidget {
                     child: CustomPaint(
                         key: const Key('griddle'),
                         painter: GriddlePainter(e(CosmeticSlot.stove),
-                            filled: griddleFilled)))),
+                            filled: griddleFilled,
+                            closed: griddleOpen == false)))),
             Positioned(
                 left: side + (w - griddleW) / 2,
                 width: griddleW,
@@ -203,14 +278,33 @@ class NightHome extends StatelessWidget {
                         header ?? _hud(),
                         Expanded(child: stage),
                       ])),
+            if (low && guests != null && towelTop != null)
+              Positioned(
+                  left: side,
+                  width: w,
+                  top: padding.top,
+                  height: math.max(0.0, towelTop - padding.top),
+                  child: guests!(clicker, true)),
             if (counter != null) Positioned(
                 left: side + 8,
                 width: w - 16 - (vendor == null ? 0 : cookW + 8),
                 top: towelTop,
                 // A background without a measured towel: just above the
                 // griddle's first row of cells, as before.
-                bottom: towelTop == null ? griddleBottom + griddleH * .66 : null,
+                bottom: towelTop == null ? counterBottom : null,
                 child: counter!),
+            if (counterAction != null) Positioned(
+                left: side,
+                width: w,
+                bottom: actionBottom,
+                child: Center(child: counterAction!)),
+            // Above the cooking cut, and above the floating action where
+            // the screen is narrow enough for the two to meet.
+            if (counterSlip != null && vendor != null) Positioned(
+                right: side + 8,
+                bottom: math.max(cookBottom + cookH + 2,
+                    actionBottom + WorkshopHomeLayout.actionHeight + 4),
+                child: counterSlip!),
             if (vendor == null) Positioned(
                 right: side + 8,
                 width: cookW,
@@ -269,7 +363,7 @@ class NightHome extends StatelessWidget {
                   onPressed: () => onOpen('menu'))),
           Expanded(
               child: Column(children: [
-            if (headerData != null) _note(const Key('workshop-status'), headerData!.status),
+            if (headerData != null) WorkshopStatusBadge(text: headerData!.status, kind: headerData!.statusKind),
             if (headerData == null && s.prestige.stars > 0)
               _note(const Key('home-prestige'),
                   '명성 별 ${s.prestige.stars} · 생산 +${(prestigePermille(s) - 1000) ~/ 10}%'),
@@ -450,6 +544,44 @@ class NightHome extends StatelessWidget {
         ])),
       ]);
 
+  /// The bottom menu's icon size and label size before any shrinking
+  /// (26번 4-2단계 F10): the icon above its label. Every button uses the
+  /// same pair, shrunk by the one factor the longest (or, with large text,
+  /// tallest) label needs, so the four icons look the same size.
+  static const navIconSize = 32.0, navLabelSize = 15.0;
+  static const _navItems = <(String, String, String)>[
+    ('menu', '메뉴', 'nav_menu'),
+    ('skills', '스킬', 'nav_skill'),
+    ('skins', '꾸미기', 'nav_skins'),
+    ('shop', '상점', 'nav_shop'),
+  ];
+
+  /// The shrink factor (at most 1) that fits the longest label in a button
+  /// [inner] wide and the icon over the tallest label in [innerHeight].
+  static double navScale(BuildContext context, double inner, double innerHeight) {
+    final scaler = MediaQuery.textScalerOf(context);
+    var widest = 0.0, tallest = 0.0;
+    for (final (_, label, _) in _navItems) {
+      final painter = TextPainter(
+          text: TextSpan(text: label, style: _navLabelStyle(navLabelSize)),
+          textDirection: TextDirection.ltr,
+          textScaler: scaler)
+        ..layout();
+      widest = math.max(widest, painter.width);
+      tallest = math.max(tallest, painter.height);
+      painter.dispose();
+    }
+    return math.min(1.0,
+        math.min(inner / widest, innerHeight / (navIconSize + tallest)));
+  }
+
+  static TextStyle _navLabelStyle(double size) => TextStyle(
+      color: Cozy.ink,
+      fontFamily: 'Jua',
+      fontFamilyFallback: Cozy.fontFallback,
+      fontSize: size,
+      height: 1.15);
+
   Widget _nav(double bottomInset) {
     final claimable =
         centerBuilder == null ? claimableCount(controller.state) : 0;
@@ -458,15 +590,18 @@ class NightHome extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(8, 0, 8, 6 + bottomInset),
       child: SizedBox(
         height: navHeight - 6,
-        child: Row(children: [
-          for (final (id, label, icon) in const <(String, String, Widget)>[
-            ('menu', '메뉴', PixelIcon('menu', size: 28)),
-            ('skills', '스킬', PixelIcon('skill', size: 34)),
-            ('skins', '꾸미기', PixelIcon('tab_outfit', size: 34)),
-            ('shop', '상점', PixelIcon('shop', size: 28)),
-          ]) ...[
+        child: LayoutBuilder(builder: (context, box) {
+          // Button width less its 2 margin, 1.5 border and 4 breathing room
+          // at each side.
+          final inner = (box.maxWidth - 6 * (_navItems.length - 1)) / _navItems.length - 15;
+          // Height less the 2 margin and 1.5 border at top and bottom.
+          final k = navScale(context, inner, box.maxHeight - 7);
+          return Row(children: [
+          for (final (id, label, iconName) in _navItems) ...[
             if (id != 'menu') const SizedBox(width: 6),
-            Expanded(
+            Builder(builder: (context) {
+              final icon = PixelIcon(iconName, size: navIconSize * k);
+              return Expanded(
                 child: CountBadge(
                     count: id == 'menu' ? claimable : 0,
                     badgeKey: const Key('menubar-badge'),
@@ -487,15 +622,19 @@ class NightHome extends StatelessWidget {
                                     id: id,
                                     label: label,
                                     icon: icon,
+                                    labelSize: navLabelSize * k,
                                     onPressed: () {})))
                         : _NavButton(
                             // The HUD's round menu button already uses menu-menu.
                             id: id == 'menu' ? 'menubar' : id,
                             label: label,
                             icon: icon,
-                            onPressed: () => onOpen(id)))),
+                            labelSize: navLabelSize * k,
+                            onPressed: () => onOpen(id))));
+            }),
           ],
-        ]),
+        ]);
+        }),
       ),
     );
   }
@@ -504,11 +643,13 @@ class NightHome extends StatelessWidget {
 class _NavButton extends StatelessWidget {
   final String id, label;
   final Widget icon;
+  final double labelSize;
   final VoidCallback onPressed;
   const _NavButton(
       {required this.id,
       required this.label,
       required this.icon,
+      required this.labelSize,
       required this.onPressed});
   @override
   Widget build(BuildContext context) => Semantics(
@@ -532,12 +673,9 @@ class _NavButton extends StatelessWidget {
               child: Center(
                 child: FittedBox(
                   fit: BoxFit.scaleDown,
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
                     icon,
-                    const SizedBox(width: 4),
-                    Text(label,
-                        style: const TextStyle(
-                            color: Cozy.ink, fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 21)),
+                    Text(label, style: NightHome._navLabelStyle(labelSize)),
                   ]),
                 ),
               ),
@@ -591,5 +729,48 @@ class _ComboLabel extends StatelessWidget {
         builder: (_, scale, child) =>
             Transform.scale(scale: scale, child: child),
         child: label);
+  }
+}
+
+/// The business state over the stall (26번 4-1단계 F7): a small wooden
+/// sign in the HUD's colours with a coloured dot, big enough to read at a
+/// glance. Key workshop-status is the text.
+class WorkshopStatusBadge extends StatelessWidget {
+  final String text;
+  final WorkshopStatusKind kind;
+  const WorkshopStatusBadge({super.key, required this.text, required this.kind});
+
+  @override
+  Widget build(BuildContext context) {
+    final error = kind == WorkshopStatusKind.error;
+    final dot = switch (kind) {
+      WorkshopStatusKind.open => const Color(0xff7ed957),
+      WorkshopStatusKind.preparing => const Color(0xffb9ad9f),
+      WorkshopStatusKind.error => Cozy.cream,
+    };
+    return Semantics(
+      label: '가게 상태 $text',
+      excludeSemantics: true,
+      child: Container(
+        key: const Key('workshop-status-badge'),
+        margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+        padding: const EdgeInsets.fromLTRB(10, 4, 12, 5),
+        decoration: BoxDecoration(
+            color: error ? Cozy.brick : Cozy.woodDark,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: error ? Cozy.cream : Cozy.orangeDeep, width: 2),
+            boxShadow: const [BoxShadow(color: Color(0x66000000), blurRadius: 4, offset: Offset(0, 2))]),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(width: 10, height: 10,
+              decoration: BoxDecoration(color: dot, shape: BoxShape.circle,
+                  border: Border.all(color: Cozy.ink.withValues(alpha: .5)))),
+          const SizedBox(width: 6),
+          Flexible(child: Text(text, key: const Key('workshop-status'), maxLines: 1, softWrap: false,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
+                  fontSize: 16, color: Cozy.cream))),
+        ]),
+      ),
+    );
   }
 }

@@ -67,6 +67,7 @@ Git으로 관리하는 문서는 이 안내에서 전체 목록을 관리한다.
 - [2.1_development_specs_tasks_and_progress/24_제작조작화면용어변경프롬프트.md](<2.1_development_specs_tasks_and_progress/24_제작조작화면용어변경프롬프트.md>): 제작 조작(짤주머니 색칠·원 그려 뒤집기)·화면 배치·용어 변경 단계별 프롬프트와 결과, 7단계 아래 실기기 확인표
 - [2.1_development_specs_tasks_and_progress/25_필요한그림프롬프트.md](<2.1_development_specs_tasks_and_progress/25_필요한그림프롬프트.md>): 아직 그린 그림이 없어 임시 그림으로 대신하는 그림 목록과 생성 프롬프트. 새로 필요한 그림은 여기에 추가
 - [2.1_development_specs_tasks_and_progress/26_흥행개선단계별프롬프트.md](<2.1_development_specs_tasks_and_progress/26_흥행개선단계별프롬프트.md>): 처음 5분 단순화·결제 구조·굽기 손맛·최소 측정·재방문·공유·보상형 광고를 단계별로 적용하는 작업 지시문
+- [2.1_development_specs_tasks_and_progress/27_홍보자료준비.md](<2.1_development_specs_tasks_and_progress/27_홍보자료준비.md>): 짧은 영상 대본 3개, 휴대폰 화면 녹화 방법, 스토어 짧은·긴 설명 초안, 스크린샷 8장 구성, 올릴 곳과 시기(26번 8단계)
 - [2.3_art_completion_and_backup_reports/2.3.1_generated_art_completion_records/eyelash_completed.txt](<2.3_art_completion_and_backup_reports/2.3.1_generated_art_completion_records/eyelash_completed.txt>)
 - [2.3_art_completion_and_backup_reports/2.3.1_generated_art_completion_records/eyelash_completed_verified.txt](<2.3_art_completion_and_backup_reports/2.3.1_generated_art_completion_records/eyelash_completed_verified.txt>)
 - [2.3_art_completion_and_backup_reports/2.3.2_character_edit_backup_guide/README_KO.txt](<2.3_art_completion_and_backup_reports/2.3.2_character_edit_backup_guide/README_KO.txt>)
