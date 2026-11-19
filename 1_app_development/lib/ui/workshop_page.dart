@@ -208,7 +208,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
     return CosmeticMenuAccess(equipped:_equipped,owned:owned,unlocked:unlocked,canApply:canApply,price:price,
       // Avatar items show once their art is ready for the vendor worn now
       // (PixelSprites.avatarArtReady); owners keep seeing what they bought.
-      listed:(d)=>avatar(d) && PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id) || owned(d),
+      // Withdrawn items (26번 3차 H10) stay hidden even when owned.
+      listed:(d)=>avatar(d) && PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id) ||
+        owned(d) && !avatarItemWithdrawn(_equipped(CosmeticSlot.character),d.id),
       forSale:avatar,cost:cost,
       // 26번 4-5단계(S45-Q2): only the level; the production total ('누적',
       // 0 for every item) is not shown.

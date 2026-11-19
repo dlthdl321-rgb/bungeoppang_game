@@ -393,6 +393,8 @@ class PixelSprites {
       return avatarArtFiles.contains('avatar/$id/base.png');
     }
     if (!avatarArtFiles.contains('avatar/$character/base.png')) return false;
+    // 26번 3차 H10: broken v1 art is taken out (cosmetic_config.dart).
+    if (avatarItemWithdrawn(character, id)) return false;
     if (blankCosmetics.contains(id) || defaultCosmetics[slot] == id) {
       return true;
     }
@@ -617,10 +619,11 @@ class PixelSprites {
       'assets/images/cosmetic_icons/$id.png';
 
   /// The wardrobe tile icon of avatar item [id] (64x64, both characters;
-  /// 26번 4-5단계, G5): the 'none' hanger for the take-off items, null
+  /// 26번 4-5단계, G5): the 'none' hanger for the take-off items (and the
+  /// tool default, drawn as no tool since 26번 3차 H8), null
   /// when not drawn.
   static ui.Image? cosmeticIcon(String id) => _images[_cosmeticIconPath(
-      const {'nohat', 'noapron', 'noacc'}.contains(id) ? 'none' : id)];
+      const {'nohat', 'noapron', 'noacc', 'tongs'}.contains(id) ? 'none' : id)];
 
   /// The wardrobe tile picture of a stall item when it has its own (lamps:
   /// the whole post lamp; day/night: an icon), else null.

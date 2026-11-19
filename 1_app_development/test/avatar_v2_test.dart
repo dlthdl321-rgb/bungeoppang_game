@@ -113,20 +113,21 @@ void main() {
     test('필수 그림 목록: 바탕 3 + 노출 아이템 전부(기본 포함) + 머리 뒤 조각, 남녀', () {
       final required = avatarV2Required().toList();
       expect(required.toSet().length, required.length);
-      // 25번 문서 23~30번: 112장 (아이콘 31번은 칸 단위로 따로).
-      expect(required.length, 112);
+      // 25번 문서 23~30번: 110장 (아이콘 31번은 칸 단위로 따로; 집게는 26번 3차
+      // H8로 '도구 없음'이 되어 그림이 없다).
+      expect(required.length, 110);
       for (final c in ['girl', 'boy']) {
         for (final s in ['skin1', 'skin2', 'skin3']) {
           expect(required, contains('avatar_v2/$c/base@$s.png'));
         }
-        for (final id in ['long', 'tee', 'shorts', 'flats', 'apron', 'tongs',
+        for (final id in ['long', 'tee', 'shorts', 'flats', 'apron',
           ..._newBottoms]) {
           expect(required.where((f) => f.startsWith('avatar_v2/$c/') && f.endsWith('_$id.png')),
               isNotEmpty, reason: '$c $id');
         }
         expect(required, contains('avatar_v2/$c/hair_ponytail_back.png'));
         expect(required, isNot(contains('avatar_v2/$c/hair_short_back.png')));
-        for (final blank in ['nohat', 'noapron', 'noacc']) {
+        for (final blank in ['nohat', 'noapron', 'noacc', 'tongs']) {
           expect(required.any((f) => f.endsWith('_$blank.png')), isFalse);
         }
       }

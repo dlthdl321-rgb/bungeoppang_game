@@ -265,7 +265,11 @@ class AvatarRig {
     if (look != null && pose.wearsItems) {
       for (final MapEntry(key: slot, value: layer) in rigSlotLayers.entries) {
         final id = look.worn(slot);
-        if (blankCosmetics.contains(id)) continue;
+        // Withdrawn items (26번 3차 H10) are drawn as not worn.
+        if (blankCosmetics.contains(id) ||
+            avatarItemWithdrawn(character, id)) {
+          continue;
+        }
         final main = PixelSprites.avatarPartPath(character, slot, id);
         add(main, layer);
         add(rigCutPicture(main), RigLayer.base, into: masks);

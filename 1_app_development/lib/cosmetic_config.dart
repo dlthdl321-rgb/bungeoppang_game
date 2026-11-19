@@ -167,7 +167,9 @@ const cosmeticDefinitions = [
   CosmeticDefinition('earmuffs', '귀마개', CosmeticSlot.hat, '6', 3),
   CosmeticDefinition('chefhat', '요리사 모자', CosmeticSlot.hat, '10', 6),
   CosmeticDefinition('santa', '산타 모자', CosmeticSlot.hat, '14', 9),
-  CosmeticDefinition('tongs', '붕어빵 집게', CosmeticSlot.tool, '0', 1),
+  // 26번 3차 H8: the tongs in the vendor's hand are gone ("집게를 지워"):
+  // the tool default keeps its id for saves but draws nothing.
+  CosmeticDefinition('tongs', '도구 없음', CosmeticSlot.tool, '0', 1),
   CosmeticDefinition('goldtongs', '황금 집게', CosmeticSlot.tool, '15', 9),
   // Stage 14: the concept art (개발에셋 261006_1905_01). Prices estimated.
   CosmeticDefinition('tee', '흰 티셔츠', CosmeticSlot.top, '0', 1),
@@ -297,6 +299,7 @@ int cosmeticSlotSince(CosmeticSlot slot) => stage14Slots.contains(slot)
 /// amberlamp keeps the lamps drawn in the background itself.
 const blankCosmetics = {
   'none',
+  'tongs',
   'plain',
   'nohat',
   'noacc',
@@ -307,6 +310,19 @@ const blankCosmetics = {
   'night_time',
   'clock',
 };
+
+/// Avatar items taken out of the shop and the wardrobe because their v1
+/// art is broken on that character (26번 3차 녹화 피드백 H8·H10): no one
+/// can buy or pick them, a save that owns one keeps it (ownership is not
+/// touched), and the vendor wearing one is drawn without it (the slot's
+/// look from the base). Their redraw is 25번 24~31번 (the v2 vendor).
+const withdrawnAvatarItems = <String, Set<String>>{
+  'girl': {'goldtongs'},
+  'boy': {'goldtongs'},
+};
+
+bool avatarItemWithdrawn(String character, String id) =>
+    withdrawnAvatarItems[character]?.contains(id) ?? false;
 
 /// Whether the [time] choice shows the night, or null to keep each
 /// background's own time ('scenetime'). 'clock' follows the device: night

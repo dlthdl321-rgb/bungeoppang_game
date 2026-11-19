@@ -12,7 +12,7 @@ const avatarV2Files = <String>{
 };
 
 /// Whether every required v2 picture is there (avatarV2Required in
-/// lib/avatar_v2.dart). 106 of 112 missing.
+/// lib/avatar_v2.dart). 104 of 110 missing.
 const avatarV2Ready = false;
 
 /// Where each trimmed v2 picture sits on the 280x520 canvas.

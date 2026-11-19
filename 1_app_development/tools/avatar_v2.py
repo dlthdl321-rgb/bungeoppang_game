@@ -72,7 +72,8 @@ FOLDERS = {'hair': '24_hair', 'hat': '25_hats', 'top': '26_tops',
            'bottom': '27_bottoms', 'shoes': '28_shoes', 'outfit': '29_aprons',
            'accessory': '30_props', 'tool': '30_props'}
 ITEM_SLOTS = tuple(FOLDERS)
-BLANK = {'nohat', 'noacc', 'noapron'}
+# 'tongs' draws nothing since 26번 3차 H8 (cosmetic_config.dart blankCosmetics).
+BLANK = {'nohat', 'noacc', 'noapron', 'tongs'}
 CHANGED = 40  # RGB distance from the base that makes an item pixel
 SKIN_WARN = 25  # skin-coloured pixels an item may have before a warning
 
