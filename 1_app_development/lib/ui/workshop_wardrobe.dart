@@ -21,9 +21,10 @@ enum WardrobeMode {
 }
 
 /// The Workshop's wardrobe and avatar shop (26번 4-5단계, F25~F36, G1·G2·
-/// G5·G8·G14·G15): pill tabs, a preview with a '입어 보는 중' ribbon and
+/// G5·G8·G14·G15): bookmark tabs, a preview with a '입어 보는 중' ribbon and
 /// '↺' in its top-left corner and the action button in its bottom-right
-/// corner (S45-Q3), pill slot chips, and item tiles with the item's icon.
+/// corner (S45-Q3), bookmark slot tabs, and square-cornered item cards with
+/// the item's icon (시안 확인 2차: (나) 책갈피 탭 + 각진 카드).
 /// Only the tile grid scrolls, so the button never leaves the screen.
 /// Picks are kept per slot across slots and tabs, all drawn together.
 class WorkshopWardrobe extends StatefulWidget {
@@ -191,12 +192,11 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
       return Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(children: [
+          WardrobeTabRow(
+            children: [
               for (final t in tabs)
                 Padding(
-                  padding: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.only(right: 3),
                   child: WardrobePill(
                       key: Key('cosmetic-category-${t.name}'),
                       label: wardrobeTabLabel(t),
@@ -213,17 +213,17 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
                             slot = _slots(t).first;
                           })),
                 ),
-            ]),
+            ],
           ),
           const SizedBox(height: 8),
           SizedBox(height: previewHeight, child: _previewBox()),
           const SizedBox(height: 8),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(children: [
+          WardrobeTabRow(
+            small: true,
+            children: [
               for (final s in slots)
                 Padding(
-                  padding: const EdgeInsets.only(right: 6),
+                  padding: const EdgeInsets.only(right: 3),
                   child: WardrobePill(
                       key: Key('cosmetic-slot-${s.name}'),
                       label: cosmeticSlotLabel(s),
@@ -232,7 +232,7 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
                       changed: picks.containsKey(s),
                       onTap: () => setState(() => slot = s)),
                 ),
-            ]),
+            ],
           ),
           const SizedBox(height: 8),
           Expanded(child: _grid()),
@@ -364,8 +364,9 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
   }
 
   /// Each tab previews its own subject: the pastry up close, the vendor in
-  /// the shop's back room (25번 11번, no counter), or the whole stall scene
-  /// fitted in (F33: nothing cut off).
+  /// the shop's back room (25번 11번, no counter), or the stall itself
+  /// (시안 확인 2차: no vendor, a wide stall scene where the stall items
+  /// show — [StallPreviewPainter]).
   Widget _preview() {
     final fish = CustomPaint(
         painter: FishPainter(
@@ -395,22 +396,140 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
       WardrobeTab.stall => ColoredBox(
           key: const Key('preview-stall'),
           color: Cozy.woodDark,
-          child: Center(
-            child: AspectRatio(
+          child: CustomPaint(
               key: const Key('preview-stall-scene'),
-              aspectRatio: NightStallPainter.sceneSize.width / NightStallPainter.sceneSize.height,
-              child: CustomPaint(
-                  painter: NightStallPainter(
-                      background: _shown(CosmeticSlot.background),
-                      night: isNightTime(_shown(CosmeticSlot.time), DateTime.now()),
-                      stove: _shown(CosmeticSlot.stove),
-                      decoration: _shown(CosmeticSlot.decoration),
-                      avatar: AvatarLook.of(_shown)),
-                  foregroundPainter: StallFramePainter(lamp: _shown(CosmeticSlot.lamp))),
-            ),
-          )),
+              size: Size.infinite,
+              painter: StallPreviewPainter(
+                  background: _shown(CosmeticSlot.background),
+                  night: isNightTime(_shown(CosmeticSlot.time), DateTime.now()),
+                  stove: _shown(CosmeticSlot.stove),
+                  decoration: _shown(CosmeticSlot.decoration),
+                  lamp: _shown(CosmeticSlot.lamp)))),
     };
   }
+}
+
+/// The 가게 tab's preview (시안 확인 2차, 2026-11-19: the tall home scene
+/// squeezed into the wide box looked odd, with the vendor in front): a
+/// wide stall scene made of the stall items themselves. The background's
+/// street down to the counter fills the box (its towel row at
+/// [counterShare] of the height), the decoration hangs from the top (string
+/// kinds across the width, a pair of lanterns or chimes inward of the
+/// lamps, the snowman standing at the right on the counter), the lamp
+/// glass shows as the whole post lamp at both edges, and the griddle sits
+/// on the counter a little left of the middle. No vendor.
+class StallPreviewPainter extends CustomPainter {
+  final String background, stove, decoration, lamp;
+  final bool? night;
+  const StallPreviewPainter(
+      {required this.background, required this.night, required this.stove, required this.decoration, required this.lamp});
+
+  /// Where the counter's top (the background's towel row) shows, as a
+  /// share of the box height.
+  static const counterShare = .68;
+  /// The griddle's width as a share of the box width, its centre at
+  /// [stoveCentre] of the width; it may take at most [stoveMaxHeight] of
+  /// the height and its bottom sits [stoveBottom] above the box's bottom.
+  static const stoveWidth = .5, stoveCentre = .45, stoveMaxHeight = .52, stoveBottom = 2.0;
+  /// The post lamps at both edges: this share of the height, [edge] in.
+  static const lampHeight = .42, edge = 2.0;
+  /// Hanging decorations hang [hangTop] below the box's top; a pair hangs
+  /// with its outer edges at [pairInset] of the width from each side.
+  static const hangTop = 4.0, pairInset = .17;
+  /// Decorations that stand on the counter at the right (their right edge
+  /// at [standRight] of the width) instead of hanging.
+  static const standing = {'snowman'};
+  static const standRight = .86;
+  /// A decoration this many scene units wide or more is a string across.
+  static const stringWidth = 150.0;
+  /// Where a background without a measured towel has its counter's top,
+  /// as a share of its height (the concept backgrounds: 524 of 762).
+  static const towelShare = .69;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = Cozy.woodDark);
+    // Scene units (the 180-wide stall scene) to box pixels.
+    final k = size.width / NightStallPainter.sceneSize.width;
+    final low = PixelSprites.lowStallBackground(background, night);
+    final (image, darken) = low.$1 != null ? low : PixelSprites.sceneBackground(background, night, clean: true);
+    if (image != null) {
+      final iw = image.width.toDouble(), ih = image.height.toDouble();
+      var sw = iw, sh = iw * size.height / size.width;
+      if (sh > ih) {
+        sh = ih;
+        sw = ih * size.width / size.height;
+      }
+      final path = PixelSprites.pathOf(image)?.replaceFirst('assets/images/', '').replaceFirst(RegExp(r'\.png$'), '');
+      final towel = NightStallPainter.towelTops[path]?.toDouble() ?? ih * towelShare;
+      final top = (towel - counterShare * sh).clamp(0.0, ih - sh);
+      canvas.drawImageRect(image, Rect.fromLTWH((iw - sw) / 2, top, sw, sh), Offset.zero & size,
+          Paint()..filterQuality = FilterQuality.medium);
+      if (darken) {
+        canvas.drawRect(
+            Offset.zero & size,
+            Paint()
+              ..color = const Color(0xff4a4f8f)
+              ..blendMode = BlendMode.multiply);
+      }
+    }
+    final counterY = size.height * counterShare;
+    final deco = PixelSprites.cosmetic(CosmeticSlot.decoration, decoration);
+    final ds = deco == null
+        ? Size.zero
+        : Size(deco.width / NightStallPainter.decorationScale * k, deco.height / NightStallPainter.decorationScale * k);
+    void drawDeco(Rect dst, {bool mirror = false}) {
+      if (!mirror) return PixelSprites.draw(canvas, deco, dst);
+      canvas.save();
+      canvas.translate(dst.left + dst.right, 0);
+      canvas.scale(-1, 1);
+      PixelSprites.draw(canvas, deco, dst);
+      canvas.restore();
+    }
+
+    final string = deco != null && ds.width / k >= stringWidth;
+    final stands = deco != null && standing.contains(decoration);
+    if (string) drawDeco(Offset(0, hangTop) & Size(size.width, ds.height * size.width / ds.width));
+    if (stands) drawDeco(Offset(size.width * standRight - ds.width, counterY - ds.height) & ds);
+    final lamps = cosmeticDefinitions.where((d) => d.slot == CosmeticSlot.lamp);
+    final lampArt = lamps.isEmpty
+        ? null
+        : PixelSprites.stallTile(lamps.firstWhere((d) => d.id == lamp, orElse: () => lamps.first));
+    if (lampArt != null) {
+      final h = size.height * lampHeight, w = h * lampArt.width / lampArt.height;
+      PixelSprites.draw(canvas, lampArt, Rect.fromLTWH(edge, hangTop, w, h));
+      canvas.save();
+      canvas.translate(size.width, 0);
+      canvas.scale(-1, 1);
+      PixelSprites.draw(canvas, lampArt, Rect.fromLTWH(edge, hangTop, w, h));
+      canvas.restore();
+    }
+    if (deco != null && !string && !stands) {
+      final pair = NightStallPainter.decorationAt[decoration] ?? const <(Offset, bool)>[];
+      for (final (i, (_, mirror)) in pair.indexed) {
+        final left = i == 0 ? size.width * pairInset : size.width * (1 - pairInset) - ds.width;
+        drawDeco(Offset(left, hangTop) & ds, mirror: mirror);
+      }
+    }
+    final griddle = PixelSprites.cosmetic(CosmeticSlot.stove, stove);
+    if (griddle != null) {
+      var w = size.width * stoveWidth, h = w * griddle.height / griddle.width;
+      if (h > size.height * stoveMaxHeight) {
+        h = size.height * stoveMaxHeight;
+        w = h * griddle.width / griddle.height;
+      }
+      PixelSprites.draw(
+          canvas, griddle, Rect.fromLTWH(size.width * stoveCentre - w / 2, size.height - stoveBottom - h, w, h));
+    }
+  }
+
+  @override
+  bool shouldRepaint(StallPreviewPainter old) =>
+      old.background != background ||
+      old.night != night ||
+      old.stove != stove ||
+      old.decoration != decoration ||
+      old.lamp != lamp;
 }
 
 /// A wardrobe price with what the player lacks marked.
@@ -423,9 +542,29 @@ class WardrobePrice {
 /// The five looks of an item tile (F29).
 enum WardrobeTileState { worn, owned, buyable, short, locked }
 
-/// A rounded pill chip (G8): cream, honey when picked with a tiny fish,
-/// no checkmark. [changed] puts a small honey dot on a slot that is being
-/// tried on.
+/// A row of [WardrobePill] bookmark tabs standing on a thin wooden line,
+/// scrolling sideways when they do not fit (시안 확인 2차 (나)).
+class WardrobeTabRow extends StatelessWidget {
+  final List<Widget> children;
+  final bool small;
+  const WardrobeTabRow({super.key, required this.children, this.small = false});
+
+  @override
+  Widget build(BuildContext context) => Container(
+        decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: small ? Cozy.tan : Cozy.wood, width: small ? 1.5 : 2))),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: children),
+        ),
+      );
+}
+
+/// A bookmark tab (시안 확인 2차 (나) 책갈피 탭, replacing the G8 pill):
+/// rounded top corners and a flat bottom on the row's line; the chosen tab
+/// is peach and [WardrobePill.raise] taller, the others cream. [changed]
+/// puts a small honey dot on a slot that is being tried on. (The name is
+/// kept from the pill it replaced.)
 class WardrobePill extends StatelessWidget {
   final String label;
   final String? icon;
@@ -434,50 +573,51 @@ class WardrobePill extends StatelessWidget {
   const WardrobePill(
       {super.key, required this.label, required this.selected, required this.onTap, this.icon, this.small = false, this.changed = false});
 
+  /// Corner radius of the tab's top, and how much taller the chosen tab is.
+  static const radius = 7.0, raise = 4.0;
+
   @override
-  Widget build(BuildContext context) => Semantics(
-        button: true,
-        selected: selected,
-        label: label,
-        excludeSemantics: true,
-        child: Material(
-          color: selected ? Cozy.honey : Cozy.cream,
-          shape: StadiumBorder(side: BorderSide(color: selected ? Cozy.wood : Cozy.tan, width: selected ? 2 : 1.5)),
-          elevation: selected ? 1.5 : 0,
-          shadowColor: Cozy.shadow,
-          child: InkWell(
-            customBorder: const StadiumBorder(),
-            onTap: onTap,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: small ? 34 : 40),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: small ? 12 : 14, vertical: 4),
-                child: Row(mainAxisSize: MainAxisSize.min, children: [
-                  if (icon != null) ...[PixelIcon(icon!, size: 20), const SizedBox(width: 4)],
-                  if (selected && icon == null) ...[
-                    PixelArt(PixelSprites.screenArt('title_fish'), width: 16, height: 12),
-                    const SizedBox(width: 4),
-                  ],
-                  Text(label,
-                      style: TextStyle(
-                          fontSize: small ? 14 : 15,
-                          fontWeight: FontWeight.w900,
-                          color: selected ? Cozy.ink : Cozy.wood)),
-                  if (changed) ...[
-                    const SizedBox(width: 4),
-                    Container(
-                        key: const Key('slot-changed-dot'),
-                        width: 7,
-                        height: 7,
-                        decoration: BoxDecoration(
-                            color: selected ? Cozy.brick : Cozy.honeyDeep, shape: BoxShape.circle)),
-                  ],
-                ]),
-              ),
+  Widget build(BuildContext context) {
+    const top = BorderRadius.vertical(top: Radius.circular(radius));
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        color: selected ? Cozy.peach : Cozy.cream,
+        shape: RoundedRectangleBorder(
+            borderRadius: top, side: BorderSide(color: selected ? Cozy.wood : Cozy.tan, width: selected ? 2 : 1.5)),
+        child: InkWell(
+          borderRadius: top,
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: (small ? 30 : 36) + (selected ? raise : 0)),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (icon != null) ...[PixelIcon(icon!, size: 20), const SizedBox(width: 4)],
+                Text(label,
+                    style: TextStyle(
+                        fontSize: small ? 14 : 15,
+                        fontWeight: FontWeight.w900,
+                        color: selected ? Cozy.ink : Cozy.wood)),
+                if (changed) ...[
+                  const SizedBox(width: 4),
+                  Container(
+                      key: const Key('slot-changed-dot'),
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                          color: selected ? Cozy.brick : Cozy.honeyDeep, shape: BoxShape.circle)),
+                ],
+              ]),
             ),
           ),
         ),
-      );
+      ),
+    );
+  }
 }
 
 /// The small ribbon in the preview's corner (G15).
@@ -501,8 +641,8 @@ class WardrobeRibbon extends StatelessWidget {
       );
 }
 
-/// One item: its icon on a round plate, its name and one state line
-/// (F28·F29). Locked items stay tappable to try on (the common lock with
+/// One item: a square-cornered card (시안 확인 2차 (나)) with its icon on a
+/// square plate, its name and one state line (F28·F29). Locked items stay tappable to try on (the common lock with
 /// 'Lv.N 해금' over the icon only, so the item still shows).
 class WardrobeTile extends StatelessWidget {
   final String name, lockCaption;
@@ -520,6 +660,9 @@ class WardrobeTile extends StatelessWidget {
       this.selected = false,
       this.price,
       this.lockCaption = ''});
+
+  /// The card's and the plate's corner radius ('각진 카드').
+  static const radius = 4.0;
 
   String get _stateLabel => switch (state) {
         WardrobeTileState.worn => '입는 중',
@@ -540,7 +683,7 @@ class WardrobeTile extends StatelessWidget {
         height: side,
         decoration: BoxDecoration(
           color: selected ? Cozy.peach : Cozy.creamDeep,
-          shape: BoxShape.circle,
+          borderRadius: BorderRadius.circular(WardrobeTile.radius),
         ),
         padding: EdgeInsets.all(side * .1),
         child: picture,
@@ -561,11 +704,12 @@ class WardrobeTile extends StatelessWidget {
       child: Material(
         color: Cozy.cream,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14), side: BorderSide(color: border, width: worn || selected ? 2.5 : 1.2)),
+            borderRadius: BorderRadius.circular(WardrobeTile.radius),
+            side: BorderSide(color: border, width: worn || selected ? 2.5 : 1.2)),
         elevation: selected ? 2 : .5,
         shadowColor: Cozy.shadow,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(WardrobeTile.radius),
           onTap: onTap,
           child: Stack(children: [
             Padding(
@@ -642,9 +786,10 @@ class WardrobeMoreTile extends StatelessWidget {
   Widget build(BuildContext context) => Material(
         color: Cozy.creamDeep,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(14), side: const BorderSide(color: Cozy.woodLight, width: 1.5)),
+            borderRadius: BorderRadius.circular(WardrobeTile.radius),
+            side: const BorderSide(color: Cozy.woodLight, width: 1.5)),
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(WardrobeTile.radius),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.fromLTRB(4, 10, 4, 8),

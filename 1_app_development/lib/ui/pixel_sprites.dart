@@ -104,16 +104,19 @@ class PixelSprites {
   static const pipingBagTip = Offset(64, 188);
 
   /// Screen art in assets/images/ui: the wardrobe preview's stall interior
-  /// (120x72), the offline reward bag (64x48) and the small fish beside
-  /// panel titles (16x12), the big padlock of locked things (128x128, 25번
-  /// 13번, lib/ui/lock_overlay.dart), the skill window's '+' button, and the feature introduction cards'
-  /// pictures (160x120, 25번 22번; until drawn the card shows an icon).
+  /// (120x72), the offline reward bag (64x48) and the fish beside window
+  /// titles (96x72, 25번 35번: not in the app until redrawn, 시안 확인 2차 —
+  /// titles show none meanwhile), the big padlock of locked things
+  /// (128x128, 25번 13번, lib/ui/lock_overlay.dart), the skill window's
+  /// 'LEVEL UP' button, and the feature introduction cards' pictures
+  /// (160x120, 25번 22번; until drawn the card shows an icon).
   static const uiNames = ['wardrobe_bg', 'offline', 'title_fish', 'lock_badge',
     // The wardrobe preview's room without the counter (1440x864, 25번 11번,
     // 26번 4-5단계); wardrobe_bg stays for the cooking scene.
     'wardrobe_room',
-    // The skill window's round '+' level-up button, on and off (64x64, 25번 19번).
-    'levelup_plus', 'levelup_plus_off',
+    // The skill window's 'LEVEL UP' word button, lit and dark (108x72, drawn
+    // 54x36; temporary art by tools/make_levelup_button.py until 25번 33번).
+    'levelup', 'levelup_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
     'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics'];
 
@@ -680,6 +683,26 @@ class PixelImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox.square(
       dimension: size, child: CustomPaint(painter: _IconPainter(image)));
+}
+
+/// The fish beside a window title (`ui/title_fish.png`, 25번 35번), facing
+/// right or [flip]ped to face left. Takes no room at all while the picture
+/// is not in the app (시안 확인 2차: the old one was taken out until the
+/// redraw arrives), so the title stays centred.
+class TitleFish extends StatelessWidget {
+  final double width, height;
+  final bool flip;
+  const TitleFish({super.key, required this.width, required this.height, this.flip = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final art = PixelSprites.screenArt('title_fish');
+    if (art == null) return const SizedBox.shrink();
+    final fish = PixelArt(art, width: width, height: height);
+    return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: flip ? Transform.flip(flipX: true, child: fish) : fish);
+  }
 }
 
 /// Any loaded sprite fitted into [width] x [height], centred, keeping its

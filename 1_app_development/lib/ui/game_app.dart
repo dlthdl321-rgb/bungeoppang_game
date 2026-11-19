@@ -399,11 +399,7 @@ class _GameHomeState extends State<GameHome> {
                                 child: _clamped(Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      PixelArt(
-                                          PixelSprites.screenArt('title_fish'),
-                                          width: 30,
-                                          height: 23),
-                                      const SizedBox(width: 8),
+                                      const TitleFish(width: 30, height: 23),
                                       Flexible(
                                           child: Text(
                                               titles[destination
@@ -414,11 +410,7 @@ class _GameHomeState extends State<GameHome> {
                                                   fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
                                                   fontSize: 28,
                                                   color: Cozy.ink))),
-                                      const SizedBox(width: 8),
-                                      PixelArt(
-                                          PixelSprites.screenArt('title_fish'),
-                                          width: 30,
-                                          height: 23),
+                                      const TitleFish(width: 30, height: 23),
                                     ])),
                               ),
                               Expanded(child: _body(destination)),

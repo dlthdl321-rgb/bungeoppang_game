@@ -45,11 +45,13 @@ Future<void> showWorkshopWindow(BuildContext context,{required WorkshopControlle
             Positioned.fill(child:CozyFrame(child:Column(children:[
               Padding(padding:const EdgeInsets.fromLTRB(40,10,40,4),child:MediaQuery.withClampedTextScaling(
                 maxScaleFactor:1.3,child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                  title=='설정' ? const PixelIcon('settings',size:30) : Transform.flip(flipX:true,
-                    child:PixelArt(PixelSprites.screenArt('title_fish'),key:const Key('title-fish-left'),width:48,height:36)),const SizedBox(width:6),
+                  // 25번 35번 redraw; none until it arrives (시안 확인 2차).
+                  title=='설정' ? const Padding(padding:EdgeInsets.only(right:6),child:PixelIcon('settings',size:30))
+                    : const TitleFish(key:Key('title-fish-left'),width:48,height:36,flip:true),
                   Flexible(child:Text(title,key:const Key('workshop-window-title'),textAlign:TextAlign.center,
-                    style:const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,fontSize:28,color:Cozy.ink))),const SizedBox(width:6),
-                  title=='설정' ? const PixelIcon('settings',size:30) : PixelArt(PixelSprites.screenArt('title_fish'),width:48,height:36),
+                    style:const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,fontSize:28,color:Cozy.ink))),
+                  title=='설정' ? const Padding(padding:EdgeInsets.only(left:6),child:PixelIcon('settings',size:30))
+                    : const TitleFish(width:48,height:36),
                 ]))),
               if(controller.error!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:12),child:Text(controller.error!)),
               if(controller.notice!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:12),child:Text(controller.notice!)),

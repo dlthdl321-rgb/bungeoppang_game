@@ -75,14 +75,28 @@ void main() {
       final towel = NightStallPainter.towelTopOnScreen(size, 'clear', null, low: true);
       expect(towel, isNotNull);
       expect(counter.top, closeTo(towel!, .01));
-      // Before opening: the practice button ends 4 above the counter's
-      // floating '영업 시작' (26번 4-1단계).
+      // Before opening: the practice button keeps its place over the
+      // floating button's room (26번 4-1단계); '영업 시작' itself is small
+      // beside the '영업 준비' sign, right of it, inside the HUD row and
+      // clear of the settings button (시안 확인 2차).
       final pill = tester.getRect(find
           .ancestor(of: find.text('스페셜 붕어빵 제작 시작'), matching: find.byType(Container))
           .first);
-      final action = tester.getRect(find.byKey(const Key('counter-action')));
       expect(pill.bottom, closeTo(counter.top - WorkshopHomeLayout.practiceLift, .5));
-      expect(pill.bottom, lessThanOrEqualTo(action.top - 4 + .5));
+      expect(find.byKey(const Key('counter-action')), findsNothing);
+      final open = tester.getRect(find.byKey(const Key('business-open')));
+      final sign = tester.getRect(find.byKey(const Key('workshop-status-badge')));
+      final settings = tester.getRect(find.byKey(const Key('home-settings')));
+      expect(open.height, closeTo(WorkshopHomeLayout.businessHeight, .5));
+      expect(open.left, greaterThanOrEqualTo(sign.right));
+      expect(open.right, lessThanOrEqualTo(settings.left));
+      expect(open.center.dy, closeTo(sign.center.dy, 2));
+      expect(open.bottom, lessThan(pill.top));
+      // The '오늘' slip hangs under the settings button, right edges lined up.
+      final slip = tester.getRect(find.byKey(const Key('daily-ticket')));
+      expect(slip.top, closeTo(settings.bottom + WorkshopHomeLayout.slipGap, .5));
+      expect(slip.right, closeTo(settings.right, .5));
+      expect(slip.bottom, lessThan(counter.top));
       // The counter stays above the griddle's cells, the cells above the menu
       // (cells show once a flavor is mastered, 26번 2단계).
       await master(c);
@@ -118,10 +132,16 @@ void main() {
       expect(find.byKey(const Key('customer-guests')), findsOneWidget);
       expect(find.byKey(const Key('customer-0')), findsNothing);
       final counter = tester.getRect(find.byKey(const Key('sale-counter')));
-      final action = tester.getRect(find.byKey(const Key('counter-action')));
+      // No guest: the next step is '영업 종료', small at the top (시안 확인
+      // 2차), so the floating button's room above the counter is empty.
+      expect(find.byKey(const Key('counter-action')), findsNothing);
+      final close = tester.getRect(find.byKey(const Key('business-close')));
+      final actionTop = counter.top - WorkshopHomeLayout.actionGap - WorkshopHomeLayout.actionHeight;
       final clicker = tester.getRect(find.byKey(const Key('workshop-clicker')));
       final hud = tester.getRect(find.byKey(const Key('level-mission-entry')));
-      expect(clicker.bottom, lessThanOrEqualTo(action.top + .5));
+      expect(close.height, closeTo(WorkshopHomeLayout.businessHeight, .5));
+      expect(close.bottom, lessThan(clicker.top));
+      expect(clicker.bottom, lessThanOrEqualTo(actionTop + .5));
       expect(clicker.top, greaterThanOrEqualTo(hud.bottom));
       expect(clicker.center.dx, closeTo(size.width / 2, 2));
       final max = c.arrivalRules.slots(ArrivalKind.regular) + c.arrivalRules.slots(ArrivalKind.named);

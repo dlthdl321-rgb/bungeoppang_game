@@ -55,13 +55,17 @@ Run it in 1_app_development. Outputs:
   (26번 4단계), from 26_feedback_generated/12_sparkle/ (see sparkles()).
 * assets/images/icons/gold_bun.png (72x72): 25번 18번 황금붕어빵력 icon
   from 18_gold_currency/gold_bun-v2.png (26번 4-3단계, see gold()).
-* assets/images/ui/levelup_plus.png, levelup_plus_off.png (64x64): 25번
-  19번 '+' level-up button, on and off, from 19_levelup/ (see levelup()).
+* assets/images/ui/levelup.png, levelup_off.png (108x72): 25번 33번
+  'LEVEL UP' word button, lit and dark, from 33_levelup/ (see levelup()).
+  Until it is generated tools/make_levelup_button.py draws them. (The
+  round '+' of 25번 19번 was replaced by the 2nd mockup check.)
 * assets/images/icons/tab_tap.png (72x72): the existing tab icon's drawn
   part (29x36) doubled with nearest sampling (25번 19번: no new art).
 * assets/images/ui/wardrobe_room.png (1440x864, 128 colours): 25번 11번,
   the wardrobe preview's shop interior without the counter (26번 4-5단계).
-* assets/images/ui/title_fish.png (96x72): 25번 15번 title fish.
+* assets/images/ui/title_fish.png (96x72): 25번 35번 redrawn title fish
+  (35_title_fish/, falling back to 15번's 15_title/). Not in the app until
+  the redraw arrives (2nd mockup check: the 15번 one looked wrong).
 * assets/images/stall/lamp_<amber|rose|mint|lilac>.png (64x96) and
   assets/images/icons/time_<scenetime|day|night|clock>.png (64x64):
   25번 16번 wardrobe tiles of the stall tab.
@@ -493,7 +497,7 @@ def locks(src):
 
 ICON_SIZE = 72
 GOLD_SIDE = 62          # widest side of the gold fish: 86% of the canvas
-PLUS_SIZE = 64
+LEVELUP_SIZE = (108, 72)
 
 
 def fit_square(img, low, side, canvas):
@@ -521,12 +525,13 @@ def gold(src):
 
 
 def levelup(src):
-    """25번 19번: the round '+' button, on and off. Both are cut the same
-    way (alpha over 128) so the rim and the cross stay in one place."""
-    folder = src / "19_levelup" if (src / "19_levelup").is_dir() else src
+    """25번 33번: the 'LEVEL UP' word button, lit and dark (3:2, drawn 54x36
+    in the skill row). Both are fitted the same way (alpha over 128) so the
+    rim and the letters stay in one place."""
+    folder = src / "33_levelup" if (src / "33_levelup").is_dir() else src
     made = {}
-    for name in ("levelup_plus", "levelup_plus_off"):
-        out = snap_alpha(fit_square(load(folder / f"{name}.png"), 128, PLUS_SIZE - 2, PLUS_SIZE), 40, 215)
+    for name in ("levelup", "levelup_off"):
+        out = snap_alpha(fit_box(load(folder / f"{name}.png"), 128, LEVELUP_SIZE), 40, 215)
         (IMAGES / "ui").mkdir(exist_ok=True)
         out.save(IMAGES / "ui" / f"{name}.png")
         made[f"ui/{name}"] = out
@@ -589,9 +594,11 @@ def room(src):
 
 
 def title(src):
-    """25번 15번: the cute fish beside window titles, facing right (the left
-    one is flipped in code), 96x72."""
-    folder = src / "15_title" if (src / "15_title").is_dir() else src
+    """25번 35번 (redraw of 15번): the fish beside window titles, facing right
+    (the left one is flipped in code), 96x72. Without a 35_title_fish folder
+    it falls back to 15번's 15_title, which the user rejected — pass the
+    folder with the redraw."""
+    folder = next((src / f for f in ("35_title_fish", "15_title") if (src / f).is_dir()), src)
     out = snap_alpha(fit_box(load(folder / "title_fish.png"), 40, TITLE_SIZE), 40, 215)
     out.save(IMAGES / "ui" / "title_fish.png")
     return {"ui/title_fish": out}

@@ -582,10 +582,12 @@ class _WorkshopPageState extends State<WorkshopPage> {
         if(!low)Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
       ]),
       counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock,onCloseBusiness:_closeBusiness),
-      // The '오늘' slip (오늘의 주문서·출석, 26번 7단계) beside the counter,
-      // over the cooking cut's top right.
+      // The '오늘' slip (오늘의 주문서·출석, 26번 7단계) under the settings
+      // button (시안 확인 2차).
       counterSlip:WorkshopDailyTicket(controller:c,onOpen:_daily),
       counterAction:WorkshopCounterAction(controller:c,onCloseBusiness:_closeBusiness),
+      // '영업 시작'·'영업 종료' small beside the '영업 중' sign (시안 확인 2차).
+      statusAction:WorkshopBusinessButton(controller:c,onCloseBusiness:_closeBusiness),
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
       // The griddle art is empty; only cooking cells show a bungeoppang, and
       // none before opening (24번 4단계).

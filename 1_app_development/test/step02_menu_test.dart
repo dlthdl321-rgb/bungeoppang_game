@@ -51,8 +51,9 @@ void main(){
     // DEC-041: tiers 1~4 cost no gold, so the button shows no '+ 황금 0'.
     expect(find.byKey(const Key('skill-gold-note')),findsOneWidget);
     expect(find.descendant(of:find.byKey(const Key('skill-tap_1')),matching:find.textContaining('황금')),findsNothing);
-    // 26번 4-3단계: the 1개/10개/최대 chips became the ×1·×10·×100 wheel.
-    await tapKey('kind-auto');await tapKey('step-10');await tapKey('step-100');
+    // 26번 4-3단계: the 1개/10개/최대 chips became the ×1·×10·×100 wheel
+    // (one per skill since 시안 확인 2차).
+    await tapKey('kind-auto');await tapKey('step-auto_1-10');await tapKey('step-auto_1-100');
     expect(find.byKey(const Key('skill-auto_1')),findsOneWidget);await close();
     await tapKey('menu-skins');expect(find.byKey(const Key('cosmetic-category-hair')),findsOneWidget);
     await tapKey('preview-boy');expect(c.state.avatarEquipment['character'],isNot('boy'));
