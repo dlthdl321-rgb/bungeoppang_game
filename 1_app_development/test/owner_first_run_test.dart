@@ -26,8 +26,12 @@ final rules = OwnerNameRules.fromJson(
 
 class Analytics implements OwnerAnalytics {
   final calls = <(String?, String?)>[];
+  /// Every consent state OwnerAccount reported (DEC-TBD-legal-2).
+  final consents = <bool>[];
   @override
   void setUserProperties({String? gender, String? ageBand}) => calls.add((gender, ageBand));
+  @override
+  void setConsented(bool consented) => consents.add(consented);
 }
 
 class FirstRun {
@@ -149,7 +153,38 @@ void main() {
       expect(() => OwnerProfile.fromJson(broken((m) => m['provider'] = 'apple')), throwsFormatException);
       expect(() => OwnerProfile.fromJson(broken((m) => m['account'] = null)), throwsFormatException);
       expect(() => OwnerProfile.fromJson(broken((m) => (m['optional'] as Map)['ageBand'] = 'under14')),
-          throwsFormatException, reason: '보호자 동의 없는 만 14세 미만');
+          throwsFormatException, reason: '보호자 체크도 없는 만 14세 미만은 옛 저장에도 없던 값');
+      expect(() => OwnerProfile.fromJson(broken((m) => (m['optional'] as Map)['ageBand'] = 'kid')), throwsFormatException);
+    });
+
+    test('옛 저장의 만 14세 미만 선택 정보(보호자 체크)는 읽을 때 버리고 서버에서도 지우게 한다', () {
+      final old = {
+        'schema': 1, 'account': 'kakao:1001', 'provider': 'kakao', 'consentVersion': '2026-11-18',
+        'consentAtMs': 5, 'name': '붕어빵', 'characterChosen': true, 'optionalAsked': true,
+        'optional': {'gender': 'none', 'ageBand': 'under14', 'guardianConsent': true, 'agreedAtMs': 7},
+        'serverSynced': true,
+      };
+      final p = OwnerProfile.fromJson(old);
+      expect(p.optional, isNull);
+      expect(p.optionalAsked, isTrue);
+      expect(p.serverSynced, isFalse, reason: '다음 동기화에 서버 연령대도 지움');
+      // An older adult answer with the old guardianConsent: false still reads.
+      final adult = OwnerProfile.fromJson({...old, 'optional': {'gender': 'male', 'ageBand': '30s', 'guardianConsent': false, 'agreedAtMs': 7}});
+      expect(adult.optional!.ageBand, AgeBand.thirties);
+      expect(adult.serverSynced, isTrue);
+      expect(adult.optional!.toJson().containsKey('guardianConsent'), isFalse);
+    });
+
+    test('필수 동의 판은 만 14세 이상 확인이 들어간 2026-11-19, 연령대에 만 14세 미만이 없다', () {
+      expect(requiredConsentVersion, '2026-11-19');
+      expect(AgeBand.values.map((a) => a.id), isNot(contains('under14')));
+      expect(AgeBand.values.map((a) => a.label).where((l) => l.contains('미만')), isEmpty);
+      final json = const AccountProfileUpdate(name: '붕어빵', consentVersion: requiredConsentVersion, over14Confirmed: true,
+          gender: 'female', ageBand: '20s').toJson();
+      expect(json, {
+        'name': '붕어빵', 'consentVersion': requiredConsentVersion, 'over14Confirmed': true,
+        'optional': {'gender': 'female', 'ageBand': '20s'},
+      });
     });
 
     test('읽을 수 없는 기록은 새 설치처럼 다시 묻는다', () async {
@@ -172,8 +207,20 @@ void main() {
       await tap(tester, const Key('login-kakao'));
       expect(r.fake.signIns, 0);
       await tap(tester, const Key('consent-privacy'));
+      // 약관·개인정보만으로는 안 됨: 만 14세 이상 확인이 필요(DEC-TBD-legal-1).
+      expect(find.text(OwnerTexts.agreeAge), findsOneWidget);
+      expect(find.byKey(const Key('first-run-child-notice')), findsOneWidget);
+      expect(find.text(OwnerTexts.childNotice), findsOneWidget);
+      await tap(tester, const Key('login-kakao'));
+      await tap(tester, const Key('login-google'));
+      expect(r.fake.signIns, 0, reason: '만 14세 이상 체크 없이는 로그인 불가');
+      expect(r.owner.step, OwnerStep.login);
+      expect(r.analytics.consents.contains(true), isFalse, reason: '동의 전에는 사용 통계를 모으지 않음');
+      await tap(tester, const Key('consent-age'));
+      expect(find.byKey(const Key('first-run-child-notice')), findsNothing);
       await tap(tester, const Key('login-kakao'));
       expect(r.fake.signIns, 1);
+      expect(r.analytics.consents.last, isTrue, reason: '필수 동의를 마친 뒤 사용 통계 시작');
       expect(r.owner.step, OwnerStep.name);
       expect(gameShown(), isFalse);
       await tester.pumpWidget(const SizedBox.shrink());
@@ -202,7 +249,8 @@ void main() {
       expect(find.byKey(const Key('tutorial-card')), findsOneWidget, reason: '2단계 첫 실행 안내로 이어짐');
       // The server profile has the name and the consent, nothing optional.
       final sent = r.fake.accountProfiles['kakao:1001']!;
-      expect([sent.name, sent.consentVersion, sent.hasOptional], ['붕어빵장인', requiredConsentVersion, false]);
+      expect([sent.name, sent.consentVersion, sent.over14Confirmed, sent.hasOptional],
+          ['붕어빵장인', requiredConsentVersion, true, false]);
       expect(r.profiles.stored!['serverSynced'], isTrue);
       // The online sync shows the owner name to friends and rankings.
       await r.game.syncOnline();
@@ -302,6 +350,51 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
+    testWidgets('전체 동의는 만 14세 이상까지 함께 체크하고, 하나를 풀면 로그인 버튼이 꺼진다', (tester) async {
+      final r = await mountFirstRun(tester);
+      await tap(tester, const Key('consent-all'));
+      expect(tester.widget<Checkbox>(find.descendant(of: find.byKey(const Key('consent-age')), matching: find.byType(Checkbox))).value,
+          isTrue);
+      await tap(tester, const Key('consent-age'));
+      await tap(tester, const Key('login-kakao'));
+      expect(r.fake.signIns, 0);
+      expect(find.text(OwnerTexts.needAgreement), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('예전 동의(만 14세 이상 확인 전)로 가입한 사용자는 업데이트 뒤 다시 동의해야 게임에 들어간다', (tester) async {
+      final net = backend()..signedIn = true..loginProvider = LoginProvider.kakao;
+      final r = await mountFirstRun(tester,
+          online: net,
+          profile: OwnerProfile()
+            ..account = 'kakao:1001'
+            ..provider = LoginProvider.kakao
+            ..consentVersion = '2026-11-18'
+            ..consentAtMs = 1
+            ..name = '붕어빵'
+            ..characterChosen = true
+            ..optionalAsked = true
+            ..serverSynced = true,
+          before: (shop) => shop.command(() => shop.state.tutorial = 'done'));
+      expect(r.owner.step, OwnerStep.login);
+      expect(gameShown(), isFalse);
+      expect(r.analytics.consents, [false], reason: '재동의 전에는 사용 통계를 멈춤');
+      await tap(tester, const Key('consent-terms'));
+      await tap(tester, const Key('consent-privacy'));
+      await tap(tester, const Key('first-run-continue'));
+      expect(r.owner.step, OwnerStep.login, reason: '만 14세 이상 체크 없이는 계속할 수 없음');
+      await tap(tester, const Key('consent-age'));
+      await tap(tester, const Key('first-run-continue'));
+      expect(r.owner.step, OwnerStep.done);
+      expect(gameShown(), isTrue);
+      expect(r.owner.profile.consentVersion, requiredConsentVersion);
+      expect(r.analytics.consents.last, isTrue);
+      await tester.pump();
+      final sent = r.fake.accountProfiles['kakao:1001']!;
+      expect([sent.consentVersion, sent.over14Confirmed], [requiredConsentVersion, true]);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
     testWidgets('이미 로그인해 있던 사용자는 동의만 받고 이름·캐릭터로 간다', (tester) async {
       final net = backend()..signedIn = true..loginProvider = LoginProvider.kakao;
       final r = await mountFirstRun(tester, online: net);
@@ -352,30 +445,12 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('만 14세 미만은 보호자 동의가 없으면 저장하지 않고 게임은 계속', (tester) async {
-      final r = await toOptional(tester);
-      await tap(tester, const Key('gender-male'));
-      await tap(tester, const Key('age-under14'));
-      expect(find.text(OwnerTexts.guardianNotice), findsOneWidget);
-      await tap(tester, const Key('consent-optional'));
-      await tap(tester, const Key('optional-save'));
-      expect(gameShown(), isTrue);
-      expect(r.owner.profile.optional, isNull);
-      expect(r.fake.accountProfiles['kakao:1001']!.hasOptional, isFalse);
-      await tester.pumpWidget(const SizedBox.shrink());
-    });
-
-    testWidgets('만 14세 미만 + 보호자 동의: 저장하고 서버에 보호자 동의를 함께 보낸다, 분석에는 연령대를 보내지 않음', (tester) async {
-      final r = await toOptional(tester);
-      await tap(tester, const Key('gender-none'));
-      await tap(tester, const Key('age-under14'));
-      await tap(tester, const Key('consent-optional'));
-      await tap(tester, const Key('consent-guardian'));
-      await tap(tester, const Key('optional-save'));
-      expect(r.owner.profile.optional!.guardianConsent, isTrue);
-      final sent = r.fake.accountProfiles['kakao:1001']!;
-      expect([sent.ageBand, sent.guardianConsent], ['under14', true]);
-      expect(r.analytics.calls.last, ('none', null));
+    testWidgets('연령대에 만 14세 미만 항목과 보호자 체크가 없다', (tester) async {
+      await toOptional(tester);
+      expect(find.byKey(const Key('age-under14')), findsNothing);
+      expect(find.byKey(const Key('consent-guardian')), findsNothing);
+      expect(find.textContaining('만 14세 미만'), findsNothing);
+      expect(find.byKey(const Key('age-teen')), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
     });
   });

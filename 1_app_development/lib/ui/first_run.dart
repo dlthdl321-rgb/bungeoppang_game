@@ -136,8 +136,8 @@ class _LoginStep extends StatefulWidget {
 }
 
 class _LoginStepState extends State<_LoginStep> {
-  bool _terms = false, _privacy = false;
-  bool get _agreed => _terms && _privacy;
+  bool _terms = false, _privacy = false, _age = false;
+  bool get _agreed => _terms && _privacy && _age;
   @override
   Widget build(BuildContext context) {
     final owner = widget.owner, online = owner.online;
@@ -150,7 +150,7 @@ class _LoginStepState extends State<_LoginStep> {
           value: _agreed,
           strong: true,
           label: OwnerTexts.agreeAll,
-          onChanged: (v) => setState(() => _terms = _privacy = v)),
+          onChanged: (v) => setState(() => _terms = _privacy = _age = v)),
       const Divider(height: 8),
       ConsentRow(
           key: const Key('consent-terms'),
@@ -164,6 +164,17 @@ class _LoginStepState extends State<_LoginStep> {
           label: OwnerTexts.agreePrivacy,
           onChanged: (v) => setState(() => _privacy = v),
           onView: () => showConsentSummary(context, OwnerTexts.privacySummaryTitle, OwnerTexts.privacySummary)),
+      // 만 14세 미만은 가입 불가(DEC-TBD-legal-1).
+      ConsentRow(
+          key: const Key('consent-age'),
+          value: _age,
+          label: OwnerTexts.agreeAge,
+          onChanged: (v) => setState(() => _age = v)),
+      if (!_age)
+        const Text(OwnerTexts.childNotice,
+            key: Key('first-run-child-notice'),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Cozy.brick)),
       const SizedBox(height: 10),
       if (signedIn)
         CozyPrimaryButton(
@@ -198,8 +209,6 @@ class _LoginStepState extends State<_LoginStep> {
       _Message(owner.message),
       const SizedBox(height: 10),
       const Text(OwnerTexts.oneWayNotice, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Cozy.inkSoft)),
-      const SizedBox(height: 4),
-      const Text(OwnerTexts.childNotice, textAlign: TextAlign.center, style: TextStyle(fontSize: 13, color: Cozy.inkSoft)),
       Row(mainAxisAlignment: MainAxisAlignment.center, children: [
         TextButton(
             key: const Key('first-run-terms'),
@@ -346,13 +355,13 @@ class _CharacterStepState extends State<_CharacterStep> {
   }
 }
 
-/// Gender, age band, the optional consent and (under 14) the guardian's
+/// Gender, age band (no 만 14세 미만 band, DEC-TBD-legal-1) and the optional
 /// consent. Used by the first run and by the settings.
 class OptionalInfoForm extends StatefulWidget {
   final OptionalInfo? initial;
   final bool busy;
   /// Called with the answers once the consent is given.
-  final void Function(PlayerGender gender, AgeBand ageBand, bool guardian) onSave;
+  final void Function(PlayerGender gender, AgeBand ageBand) onSave;
   final VoidCallback onSkip;
   final String skipLabel, saveLabel;
   const OptionalInfoForm(
@@ -370,7 +379,7 @@ class OptionalInfoForm extends StatefulWidget {
 class _OptionalInfoFormState extends State<OptionalInfoForm> {
   late PlayerGender? _gender = widget.initial?.gender;
   late AgeBand? _age = widget.initial?.ageBand;
-  late bool _consent = widget.initial != null, _guardian = widget.initial?.guardianConsent ?? false;
+  late bool _consent = widget.initial != null;
 
   bool get _ready => _consent && _gender != null && _age != null;
 
@@ -408,14 +417,6 @@ class _OptionalInfoFormState extends State<OptionalInfoForm> {
             value: _consent,
             label: OwnerTexts.agreeOptional,
             onChanged: (v) => setState(() => _consent = v)),
-        if (_age == AgeBand.under14) ...[
-          const Text(OwnerTexts.guardianNotice, style: TextStyle(fontSize: 13, color: Cozy.brick)),
-          ConsentRow(
-              key: const Key('consent-guardian'),
-              value: _guardian,
-              label: OwnerTexts.guardianAgree,
-              onChanged: (v) => setState(() => _guardian = v)),
-        ],
         const SizedBox(height: 10),
         Row(children: [
           // The skip button is as big as the save button (easy to find).
@@ -429,7 +430,7 @@ class _OptionalInfoFormState extends State<OptionalInfoForm> {
           Expanded(
               child: CozyPrimaryButton(
                   key: const Key('optional-save'),
-                  onPressed: widget.busy || !_ready ? null : () => widget.onSave(_gender!, _age!, _guardian),
+                  onPressed: widget.busy || !_ready ? null : () => widget.onSave(_gender!, _age!),
                   label: widget.saveLabel,
                   minHeight: 50)),
         ]),
@@ -444,8 +445,7 @@ class _OptionalStep extends StatelessWidget {
         OptionalInfoForm(
             busy: owner.busy,
             onSkip: owner.skipOptional,
-            onSave: (gender, age, guardian) =>
-                owner.saveOptional(gender: gender, ageBand: age, guardianConsent: guardian)),
+            onSave: (gender, age) => owner.saveOptional(gender: gender, ageBand: age)),
       ]);
 }
 
