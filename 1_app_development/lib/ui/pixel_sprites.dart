@@ -118,7 +118,10 @@ class PixelSprites {
     // 54x36; temporary art by tools/make_levelup_button.py until 25번 33번).
     'levelup', 'levelup_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
-    'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics'];
+    'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics',
+    // The shop's gold packs, smallest to largest (25번 H-E-1, 26번 3차 H31;
+    // until drawn ui/gold_widgets.dart heaps the gold icon instead).
+    'gold_pack_1', 'gold_pack_2', 'gold_pack_3', 'gold_pack_4', 'gold_pack_5'];
 
   /// Weekly challenge banners in assets/images/event (160x48), one per
   /// season of weekly_config.dart.

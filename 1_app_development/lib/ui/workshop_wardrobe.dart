@@ -77,7 +77,7 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
 
   List<CosmeticSlot> _slots(WardrobeTab t) => [
         for (final s in CosmeticSlot.values)
-          if (s.shown && s.tab == t && (!shop || _items(s).isNotEmpty)) s
+          if (s.shown && s.tab == t && (a.slotOpen?.call(s) ?? true) && (!shop || _items(s).isNotEmpty)) s
       ];
 
   List<WardrobeTab> get _tabs => [

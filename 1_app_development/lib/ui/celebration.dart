@@ -257,7 +257,9 @@ class _CelebrationHostState extends State<CelebrationHost>
       color: Colors.transparent,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 360),
+        // H41: a done/good message in the success tint.
         child: CozyPanel(
+          tone: CozyTone.success,
           padding: const EdgeInsets.fromLTRB(10, 8, 12, 8),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
             const PixelIcon('check', size: 28),

@@ -53,11 +53,14 @@ Future<void> showWorkshopWindow(BuildContext context,{required WorkshopControlle
                   title=='설정' ? const Padding(padding:EdgeInsets.only(left:6),child:PixelIcon('settings',size:30))
                     : const TitleFish(width:48,height:36),
                 ]))),
-              if(controller.error!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:12),child:Text(controller.error!)),
-              if(controller.notice!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:12),child:Text(controller.notice!)),
+              // H41: a tinted line per kind (warning, info) instead of plain text.
+              if(controller.error!=null)Padding(padding:const EdgeInsets.fromLTRB(12,0,12,6),
+                child:CozyNotice(controller.error!,key:const Key('workshop-window-error'),tone:CozyTone.warning)),
+              if(controller.notice!=null)Padding(padding:const EdgeInsets.fromLTRB(12,0,12,6),
+                child:CozyNotice(controller.notice!,key:const Key('workshop-window-notice'))),
               Expanded(child:content(ctx)),
             ]))),
-            Positioned(top:-8,right:-6,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
+            Positioned(top:2,right:2,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
           ])),
         ]))),
         // At least as tall as the home's bottom menu (NightHome.navHeight).
@@ -65,7 +68,8 @@ Future<void> showWorkshopWindow(BuildContext context,{required WorkshopControlle
           constraints:const BoxConstraints(minHeight:NightHome.navHeight),
           margin:const EdgeInsets.only(top:8),
           padding:EdgeInsets.fromLTRB(16,8,16,10+MediaQuery.viewPaddingOf(context).bottom),
-          decoration:const BoxDecoration(color:Cozy.woodDark,border:Border(top:BorderSide(color:Cozy.wood,width:2))),
+          // H41: a quiet light strip with a hairline (it was dark wood).
+          decoration:const BoxDecoration(color:Cozy.creamDeep,border:Border(top:BorderSide(color:Cozy.line))),
           child:Center(child:MediaQuery.withClampedTextScaling(maxScaleFactor:1.3,
             child:CozyBackButton(onPressed:()=>Navigator.pop(ctx))))),
       ]))));

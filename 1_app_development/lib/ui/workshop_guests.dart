@@ -185,7 +185,7 @@ class _GuestPicture extends StatelessWidget {
           child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(shape: BoxShape.circle, color: Cozy.cream,
-                border: Border.all(color: Cozy.wood, width: 3)),
+                border: Border.all(color: Cozy.line, width: 2)),
             child: Text(name.characters.first,
                 style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 28, color: Cozy.ink)),
           ),
@@ -213,32 +213,18 @@ class GuestTimeBarPainter extends CustomPainter {
   bool shouldRepaint(GuestTimeBarPainter old) => old.left != left;
 }
 
-/// A cream speech bubble with a tail pointing down at the guest.
+/// A white speech bubble with a tail pointing down at the guest (H41:
+/// the shared [CozyBubble], no thick brown outline).
 class GuestSpeechBubble extends StatelessWidget {
   final String text;
   const GuestSpeechBubble({super.key, required this.text});
   @override
-  Widget build(BuildContext context) => Column(mainAxisSize: MainAxisSize.min, children: [
-        Container(
-          constraints: const BoxConstraints(maxWidth: 300),
+  Widget build(BuildContext context) => ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 300),
+        child: CozyBubble(
           padding: const EdgeInsets.fromLTRB(12, 6, 12, 7),
-          decoration: BoxDecoration(color: Cozy.cream, borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Cozy.wood, width: 2)),
           child: Text(text, textAlign: TextAlign.center,
               style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 15, color: Cozy.ink)),
         ),
-        CustomPaint(size: const Size(16, 8), painter: _TailPainter()),
-      ]);
-}
-
-class _TailPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final path = Path()..moveTo(0, -2)..lineTo(size.width, -2)..lineTo(size.width / 2, size.height)..close();
-    canvas.drawPath(path, Paint()..color = Cozy.cream);
-    canvas.drawPath(Path()..moveTo(0, -1)..lineTo(size.width / 2, size.height)..lineTo(size.width, -1),
-        Paint()..color = Cozy.wood..style = PaintingStyle.stroke..strokeWidth = 2);
-  }
-  @override
-  bool shouldRepaint(_TailPainter old) => false;
+      );
 }

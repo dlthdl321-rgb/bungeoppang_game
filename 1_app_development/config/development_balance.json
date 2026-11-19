@@ -1388,6 +1388,7 @@
     "full_recipe_collection_ui": 3,
     "fish_cosmetics": 5,
     "stall_cosmetics": 8,
+    "stall_background": 1,
     "friends": 10,
     "ranking": 10,
     "rewarded_ads": 1,
@@ -1860,6 +1861,76 @@
     "fishhold": {
       "label": "갓 구운 붕어빵",
       "slot": "tool",
+      "free": false,
+      "unlock_level": 8,
+      "unlock_total": "0"
+    },
+    "clear": {
+      "label": "맑은 날",
+      "slot": "background",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "night": {
+      "label": "야간 골목",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "dusk": {
+      "label": "보랏빛 해질녘",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "rain": {
+      "label": "비 오는 날",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "snow": {
+      "label": "눈 오는 밤",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "autumn": {
+      "label": "가을 골목",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "forest": {
+      "label": "숲길 노점",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 5,
+      "unlock_total": "0"
+    },
+    "cherry": {
+      "label": "벚꽃 골목",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 6,
+      "unlock_total": "0"
+    },
+    "snowday": {
+      "label": "눈 오는 낮",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 6,
+      "unlock_total": "0"
+    },
+    "seaside": {
+      "label": "바닷가 야시장",
+      "slot": "background",
       "free": false,
       "unlock_level": 8,
       "unlock_total": "0"

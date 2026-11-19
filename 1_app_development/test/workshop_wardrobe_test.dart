@@ -264,21 +264,61 @@ void main() {
   });
 
   group('가게 탭 (F33·S45-Q6)', () {
-    testWidgets('Lv.7에는 가게 탭이 없고 Lv.8부터, 미리보기는 장면 전체가 상자 안', (tester) async {
+    // 26번 3차 H42: 배경·밤낮 from Lv.1; 화로·장식·등불 still from Lv.8.
+    testWidgets('Lv.7 가게 탭은 배경·밤낮만, Lv.8부터 화로·장식·등불, 미리보기는 장면 전체가 상자 안', (tester) async {
       await _open(tester, const Size(390, 844), level: 7);
       await _tap(tester, 'menu-skins');
-      expect(find.byKey(const Key('cosmetic-category-stall')), findsNothing);
       expect(find.byKey(const Key('cosmetic-category-bungeoppang')), findsOneWidget);
+      await _tap(tester, 'cosmetic-category-stall');
+      expect(find.byKey(const Key('cosmetic-slot-background')), findsOneWidget);
+      expect(find.byKey(const Key('cosmetic-slot-time')), findsOneWidget);
+      for (final slot in ['stove', 'decoration', 'lamp']) {
+        expect(find.byKey(Key('cosmetic-slot-$slot')), findsNothing, reason: slot);
+      }
       await tester.pumpWidget(const SizedBox());
       await _open(tester, const Size(390, 844), level: 8);
       await _tap(tester, 'menu-skins');
       await _tap(tester, 'cosmetic-category-stall');
+      expect(find.byKey(const Key('cosmetic-slot-lamp')), findsOneWidget);
       // 시안 확인 2차: a wide stall scene filling the box, no vendor.
       final box = tester.getRect(find.byKey(const Key('preview-stall')));
       final scene = tester.getRect(find.byKey(const Key('preview-stall-scene')));
       expect(scene, box);
       final painter = tester.widget<CustomPaint>(find.byKey(const Key('preview-stall-scene'))).painter;
       expect(painter, isA<StallPreviewPainter>());
+    });
+  });
+
+  // 26번 3차 H42: the backgrounds vanished at 26번 2단계 (가게 꾸미기 from
+  // Lv.8, b7ad3e9) and were never in the Workshop shop (avatar catalog
+  // only). They are sold and chosen again from Lv.1.
+  group('배경 되살리기 (H42)', () {
+    testWidgets('Lv.1 상점 가게 탭에서 배경을 사면 바로 입고 홈 배경이 바뀐다', (tester) async {
+      final (c, _) = await _open(tester, const Size(390, 844), level: 1, gold: 5, buns: BigInt.from(5000));
+      await _tap(tester, 'menu-shop');
+      await _tap(tester, 'cosmetic-category-stall');
+      for (final id in ['night', 'dusk', 'rain', 'snow', 'autumn', 'forest', 'cherry', 'snowday', 'seaside']) {
+        expect(find.byKey(Key('preview-$id')), findsOneWidget, reason: id);
+      }
+      await _tap(tester, 'preview-night');
+      await _tap(tester, 'buy-cosmetic-night');
+      await _tap(tester, 'wardrobe-buy-confirm');
+      expect(c.ownsAvatar('night'), isTrue, reason: c.notice);
+      expect(c.state.avatarEquipment['background'], 'night');
+    });
+
+    testWidgets('설정의 배경 바꾸기와 메뉴의 배경 테마가 Lv.1부터 꾸미기 배경 칸을 연다', (tester) async {
+      await _open(tester, const Size(390, 844), level: 1);
+      await _tap(tester, 'home-settings');
+      expect(find.text('지금: 맑은 날'), findsOneWidget);
+      await _tap(tester, 'settings-background');
+      expect(find.byKey(const Key('preview-clear')), findsOneWidget);
+      expect(find.byKey(const Key('wardrobe-more-background')), findsOneWidget);
+      Navigator.of(tester.element(find.byKey(const Key('preview-clear')))).pop();
+      await tester.pumpAndSettle();
+      await _tap(tester, 'menu-menu');
+      await _tap(tester, 'menu-theme');
+      expect(find.byKey(const Key('preview-clear')), findsOneWidget);
     });
   });
 
