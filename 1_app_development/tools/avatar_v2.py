@@ -9,7 +9,8 @@ skin tone, and every item - the defaults too - is its own worn layer.
 
 Jobs (safe to run again, in this order; no job = all):
 
-  align     23번 bases (1120x2080, 4x the game) -> 280x520. Only a shift,
+  align     23번 bases (1120x2080, 4x the game; 23_avatar_base/normalized/
+            from tools/normalize_avatar_base.py when there) -> 280x520. Only a shift,
             never a resize: the soles land on row 519 and the eyes on the
             anchor of avatar_v2.json. skin2/3 take skin1's shift.
   items     24~30번 item pictures -> the same 280x520 canvas, shifted like
@@ -178,10 +179,19 @@ def save(arr, path):
 
 def align(data, src, demo):
     report = data.setdefault('align', {})
+    norm_dir = src / '23_avatar_base' / 'normalized'
+    norm_report = norm_dir / 'report.json'
+    measured = (json.loads(norm_report.read_text('utf-8'))['characters']
+                if norm_report.exists() else {})
     for c in CHARACTERS:
         offset = None
         for skin in SKINS:
-            path = src / '23_avatar_base' / c / f'base_{skin}.png'
+            # The bases normalized to the 4x canvas and anchors by
+            # tools/normalize_avatar_base.py come first (25번 23번 확정본).
+            path = norm_dir / c / f'base_{skin}.png'
+            normalized = path.exists() and c in measured
+            if not normalized:
+                path = src / '23_avatar_base' / c / f'base_{skin}.png'
             key = f'avatar_v2/{c}/base@{skin}.png'
             if not path.exists():
                 report[key] = {'state': '없음'}
@@ -193,13 +203,24 @@ def align(data, src, demo):
                 continue
             sole, fx, _ = landmarks(arr, c)
             if offset is None:  # skin1 (or the first there) sets the shift
-                offset = (0 if fx is None else -fx, SOLE_ROW - sole)
+                # A normalized base already has its eyes on the anchor
+                # (measured on its own eyes): only the soles may move. The
+                # v1 face match is for bases drawn like the v1 face.
+                offset = (0 if normalized or fx is None else -fx,
+                          SOLE_ROW - sole)
             arr = shift(arr, *offset)
             sole, fx, fy = landmarks(arr, c)
             # Left over after the shift: the soles decide the height, so a
             # face drawn higher or lower than v1's shows up in eyes_y.
             err = {'sole': sole - SOLE_ROW, 'eyes_x': fx, 'eyes_y': fy}
-            report[key] = {'state': 'ok', 'shift': list(offset), 'error': err}
+            if normalized:  # its own eyes (4x error / 4), v1 match kept
+                ex, ey = measured[c]['error_after']['eyes']
+                err = {'sole': sole - SOLE_ROW,
+                       'eyes_x': round(ex / SCALE + offset[0], 2),
+                       'eyes_y': round(ey / SCALE, 2),
+                       'v1_face_x': fx, 'v1_face_y': fy}
+            report[key] = {'state': 'ok', 'shift': list(offset), 'error': err,
+                           'source': path.relative_to(src).as_posix()}
             save(arr, out_dir(demo) / key)
             print(f'align {key}: shift {offset}, error {err}')
 
@@ -468,7 +489,9 @@ def atlas(data):
     lines.append('};')
     DART.write_text('\n'.join(lines) + '\n', 'utf-8', newline='\n')
     if files:
-        text = PUBSPEC.read_text('utf-8')
+        text = PUBSPEC.read_bytes().decode('utf-8')
+        eol = '\r\n' if '\r\n' in text else '\n'  # keep the file's line ends
+        text = text.replace('\r\n', '\n')
         if 'assets/images/avatar_v2/girl/' not in text:
             text = text.replace(
                 '    - assets/images/avatar/boy/\n',
@@ -476,7 +499,7 @@ def atlas(data):
                 '    # 26번 4-7단계: the vendor from a bare base (tools/avatar_v2.py).\n'
                 '    - assets/images/avatar_v2/girl/\n'
                 '    - assets/images/avatar_v2/boy/\n')
-            PUBSPEC.write_text(text, 'utf-8', newline='\n')
+            PUBSPEC.write_bytes(text.replace('\n', eol).encode('utf-8'))
     print(f'atlas: {len(files)} files, ready={ready}, missing {len(missing)}')
 
 

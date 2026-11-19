@@ -83,6 +83,9 @@ flutter:
     # Vendor parts cut from the concept sheets (tools/concept_avatar.py).
     - assets/images/avatar/girl/
     - assets/images/avatar/boy/
+    # 26번 4-7단계: the vendor from a bare base (tools/avatar_v2.py).
+    - assets/images/avatar_v2/girl/
+    - assets/images/avatar_v2/boy/
     # Eye and mouth frames laid over the vendor's face (tools/avatar_layers.py).
     - assets/images/parts/
     # Home stage: mold-free backgrounds and the big mold (tools/make_home_stage_art.py).

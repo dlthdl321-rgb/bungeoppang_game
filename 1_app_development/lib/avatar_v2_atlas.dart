@@ -3,14 +3,26 @@
 
 /// Every picture in assets/images/avatar_v2/ (26번 4-7단계).
 const avatarV2Files = <String>{
+  'avatar_v2/boy/base@skin1.png',
+  'avatar_v2/boy/base@skin2.png',
+  'avatar_v2/boy/base@skin3.png',
+  'avatar_v2/girl/base@skin1.png',
+  'avatar_v2/girl/base@skin2.png',
+  'avatar_v2/girl/base@skin3.png',
 };
 
 /// Whether every required v2 picture is there (avatarV2Required in
-/// lib/avatar_v2.dart). 112 of 112 missing.
+/// lib/avatar_v2.dart). 106 of 112 missing.
 const avatarV2Ready = false;
 
 /// Where each trimmed v2 picture sits on the 280x520 canvas.
 const avatarV2TrimOffsets = <String, (int, int)>{
+  'avatar_v2/boy/base@skin1.png': (62, 33),
+  'avatar_v2/boy/base@skin2.png': (62, 33),
+  'avatar_v2/boy/base@skin3.png': (62, 33),
+  'avatar_v2/girl/base@skin1.png': (67, 49),
+  'avatar_v2/girl/base@skin2.png': (67, 49),
+  'avatar_v2/girl/base@skin3.png': (67, 49),
 };
 
 /// The point of each v2 face part that lands on its anchor.

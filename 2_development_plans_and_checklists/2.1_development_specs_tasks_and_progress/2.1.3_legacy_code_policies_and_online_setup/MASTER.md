@@ -453,13 +453,14 @@
 파일: 규칙 `lib/avatar_v2.dart`, 생성 `lib/avatar_v2_atlas.dart`(직접 고치지 않음), 도구 `tools/avatar_v2.py`·`tools/avatar_v2.json`, 그림 `assets/images/avatar_v2/<girl·boy>/`(25번 문서 23~31번)
 
 - **방식:** 머리·옷 없는 맨 바탕(민소매 이너·속바지·맨발, 피부톤마다 `base@skin1~3.png` 한 장씩) 위에 모든 아이템(기본 흰 티·반바지·단화·긴 생머리·기본 앞치마 포함)을 '입은 모습' 레이어로 얹습니다. `_cut`·`@skin` 복사본을 쓰지 않습니다.
-- **켜는 스위치:** 필수 그림 112장(바탕 6 + 노출 아바타 아이템 전부 × 남녀 + 긴·묶은·곱슬 머리 뒤 조각 `hair_<id>_back.png`, `avatarV2Required`)이 **모두** 있을 때만 생성 상수 `avatarV2Ready = true`. 하나라도 없으면 정면 아바타 전체가 v1(위 표)로 그려지고 섞이지 않습니다. 조리 장면은 v2와 무관(늘 v1). 2026-11-19 현재 0/112 → 꺼짐.
+- **켜는 스위치:** 필수 그림 112장(바탕 6 + 노출 아바타 아이템 전부 × 남녀 + 긴·묶은·곱슬 머리 뒤 조각 `hair_<id>_back.png`, `avatarV2Required`)이 **모두** 있을 때만 생성 상수 `avatarV2Ready = true`. 하나라도 없으면 정면 아바타 전체가 v1(위 표)로 그려지고 섞이지 않습니다. 조리 장면은 v2와 무관(늘 v1). 2026-11-19 현재 **6/112**(확정 바탕 6장만, `pubspec.yaml`에 `avatar_v2/girl/`·`boy/` 폴더 등록됨) → 꺼짐.
 - **v2 그리기 순서(`rigV2Order`):** behind(머리 뒤 조각) → base → eyes → mouth → bottom → shoes → top → outfit(앞치마) → **hair** → hat → accessory → tool → front. 표정 파츠는 바탕 바로 위(앞머리가 눈 위를 덮음), 앞치마는 상의 위(요리사 복 위 앞치마 가능).
 - **모자와 머리:** 모자마다 `hat_<id>_hairmask.png`(도구가 모자 실루엣으로 만듦). 그리기 때 **머리 레이어에서만** 그 영역을 지움(`RigSprite.erase`, saveLayer 안 dstOut). 바탕·뒤 조각은 안 지움(묶은 머리 꽁지는 모자 뒤로 남음). 규칙 `avatar_v2.json` `hat_hair`: 기본 `cover`(모자 열에서 모자 아랫선 위의 머리 지움), `earmuffs`는 `band`(귀마개 자리만), `keep` 상자로 예외.
 - **표정 파츠:** skin1 바탕에서 v1과 같은 상자로 만들고 skin2·3은 바탕끼리의 색 비율로 피부만 바꿈: `avatar_v2/<성별>/face_<eyes_half·eyes_closed·mouth_small·mouth_wide>@<skin>.png`. 앵커는 v1과 같음(`avatarV2FaceAnchors`: 여자 눈 153.5,155·입 152,184 / 남자 눈 151.5,156·입 150,184).
 - **보이는 조건:** v2가 켜지면 `avatarArtReady`가 v2 파일 기준(새 하의 6종 포함). 꺼져 있으면 v1 규칙(새 하의는 그림이 없어 숨김).
 - **아이콘(25번 31번):** `tools/avatar_v2.py icons`가 칸 단위로 그 칸 아이콘이 모두 있을 때만 `cosmetic_icons/<id>.png`를 덮어씀(지금은 4-5 임시 아이콘, 피부톤 2·3 아이콘만 새 색으로 다시 만듦).
-- **도구 순서:** `python tools/avatar_v2.py --src <26_feedback_generated>` = align(4배 원본 1120×2080 → 280×520, 크기 변경 없이 발바닥 y=519·얼굴을 v1 얼굴 위치에 평행 이동, skin2·3은 skin1과 같은 이동) → items(바탕과 다른 픽셀만, 바탕 피부 위 피부색은 경고) → hairmask → face → icons → trim → atlas(파일 목록·`avatarV2Ready`, 그림이 있으면 pubspec에 `avatar_v2/` 추가). 규격이 다른 원본은 '규격 미달'로 건너뜀. `--demo`는 v1 그림으로 만든 대역으로 도구만 점검(build/에만 씀). `faceaudit`은 얼굴 좌우 폭(G3) 검사.
+- **바탕 정규화(25번 23번 확정본):** 생성 바탕(약 880×1787)은 먼저 `python tools/normalize_avatar_base.py`가 성별마다 skin1 하나의 균일 배율 + 평행 이동으로 1120×2080에 놓음(발바닥 마지막 행 2079, 두 눈 중심 = 4배 앵커, 입은 따라감·오차 기록). skin2·3은 skin1 모양에 자기 피부색만 칠함(채널별 선형 맞춤) → 세 장은 피부 픽셀만 다름. 결과 `4_image_generation_results_and_backups/26_feedback_generated/23_avatar_base/normalized/<성별>/base_skin1~3.png`·`report.json`·`compare.png`. 2026-11-19 값: 여자 배율 1.1460, 남자 1.2365, 입 오차(게임 px) 여자 (1.75, 1.25)·남자 (1.5, 3.38), 눈 0.25 이하, 발 0.
+- **도구 순서:** `python tools/avatar_v2.py --src <26_feedback_generated>` = align(4배 원본 1120×2080 → 280×520, `23_avatar_base/normalized/`가 있으면 그것을 쓰고 이미 앵커에 있으므로 발바닥만 맞춤(눈 오차는 정규화 측정값, v1 얼굴 대조는 `v1_face_x/y`로 기록), 없으면 크기 변경 없이 발바닥 y=519·얼굴을 v1 얼굴 위치에 평행 이동, skin2·3은 skin1과 같은 이동) → items(바탕과 다른 픽셀만, 바탕 피부 위 피부색은 경고) → hairmask → face → icons → trim → atlas(파일 목록·`avatarV2Ready`, 그림이 있으면 pubspec에 `avatar_v2/` 추가). 규격이 다른 원본은 '규격 미달'로 건너뜀. `--demo`는 v1 그림으로 만든 대역으로 도구만 점검(build/에만 씀). `faceaudit`은 얼굴 좌우 폭(G3) 검사.
 
 **포즈(`RigPose`)**
 
@@ -1028,7 +1029,7 @@
 | 등불 | `stall/postlamp_<색>.png` (id는 `<색>lamp`) |
 | 아바타 | `avatar/<girl·boy>/base.png`, `avatar/<character>/<slot>_<id>.png` (여백을 잘라내고 위치는 `avatarTrimOffsets`), 앞/뒤 조각 `_front`·`_back`, 지울 마스크 `_cut`, 피부톤 복사본 `@skin2`·`@skin3` |
 | 얼굴 부분 | `parts/<character>_<front·side>_<eyes·mouth>_<frame>.png` (위치는 `avatarPartPivots`, `avatarFaceAnchors`) |
-| 아바타 v2 (26번 4-7단계) | `avatar_v2/<girl·boy>/base@<skin1·2·3>.png`, `<slot>_<id>.png`(기본 아이템 포함), 머리 뒤 조각 `hair_<long·ponytail·curly>_back.png`, 모자별 `hat_<id>_hairmask.png`, 표정 `face_<eyes·mouth>_<frame>@<skin>.png`. 위치 `avatarV2TrimOffsets`·`avatarV2PartPivots`(`lib/avatar_v2_atlas.dart`). 필수 112장이 다 있어야 쓰임(`avatarV2Ready`), 그림이 생기면 도구가 pubspec에 폴더를 더함 |
+| 아바타 v2 (26번 4-7단계) | `avatar_v2/<girl·boy>/base@<skin1·2·3>.png`, `<slot>_<id>.png`(기본 아이템 포함), 머리 뒤 조각 `hair_<long·ponytail·curly>_back.png`, 모자별 `hat_<id>_hairmask.png`, 표정 `face_<eyes·mouth>_<frame>@<skin>.png`. 위치 `avatarV2TrimOffsets`·`avatarV2PartPivots`(`lib/avatar_v2_atlas.dart`). 필수 112장이 다 있어야 쓰임(`avatarV2Ready`), 그림이 생기면 도구가 pubspec에 폴더를 더함(2026-11-19 확정 바탕 6장만 들어감, 꺼짐) |
 | 스킬 | `skills/tap_N.png`, `skills/auto_N.png` |
 | 아이콘 | `icons/<name>.png` (이름을 `iconNames`에 등록) |
 | 효과 | `fx/minifish`, 반짝임 3프레임 `fx/sparkle_1~3`(32×32, 25번 12번, `tools/apply_25_art.py --only sparkles`, 26번 4단계), `fx/fairy_up, fairy_down, butter_glow`, 넘침 방울 `fx/overflow_<batter·redbean·custard·cocoa>`(32×48), 뒤집기 고리 `fx/flip_ring, flip_ring_fill`(512×512) |
