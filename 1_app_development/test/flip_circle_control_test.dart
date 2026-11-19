@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/flip_circle_control.dart';
 
-/// 원 그려 뒤집기 조작(24번 6단계, DEC-034) 위젯: 320도에서 flip_ms 연출 뒤 명령,
-/// 손 떼면 0도, 취소·차단·두 번째 손가락·화면 읽기·모션 줄이기·진동.
+/// 걸이 축 뒤집기 조작(26번 3차 피드백 H21, 예전 24번 6단계 원 그리기) 위젯: 밀어 올려
+/// flipAxleDoneDegrees(120도)를 넘으면 flip_ms 동안 마저 넘어간 뒤 명령, 손 떼면 원위치,
+/// 취소·차단·두 번째 손가락·화면 읽기·모션 줄이기·진동.
 void main() {
   final config = DevelopmentBalance.fromJson(jsonDecode(
       File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
@@ -36,24 +36,21 @@ void main() {
       tester.widget<Text>(find.byKey(const Key('flip-caption'))).data!;
   FlipCircleControlState state(WidgetTester tester) =>
       tester.state<FlipCircleControlState>(find.byType(FlipCircleControl));
-  double turn(WidgetTester tester) {
-    final rotate = find.descendant(of: find.byType(FlipCircleControl), matching: find.byType(Transform));
-    if (rotate.evaluate().isEmpty) return 0;
-    final m = tester.widget<Transform>(rotate.first).transform;
-    return math.atan2(m.entry(1, 0), m.entry(0, 0)) * 180 / math.pi;
-  }
+  double turn(WidgetTester tester) => state(tester).turn;
 
-  /// Draws [degrees] (sign = direction) on a circle of [radius] from the top
-  /// and returns the gesture still down.
-  Future<TestGesture> draw(WidgetTester tester, double degrees,
-      {double radius = 90, int pointer = 1}) async {
-    final c = centre(tester);
-    Offset at(double a) => c + Offset(math.sin(a * math.pi / 180), -math.cos(a * math.pi / 180)) * radius;
-    final gesture = await tester.startGesture(at(0), pointer: pointer);
+  /// The mold's height on screen in the 300x200 test box (WorkshopMoldArt.fit).
+  const moldHeight = 532 * (200 / 532);
+
+  /// Pushes the mold [degrees] over its axle (up > 0) in small steps and
+  /// returns the gesture still down.
+  Future<TestGesture> push(WidgetTester tester, double degrees, {int pointer = 1}) async {
+    final start = centre(tester) + const Offset(0, 40);
+    final gesture = await tester.startGesture(start, pointer: pointer);
     await tester.pump();
-    final step = degrees >= 0 ? 15.0 : -15.0;
-    for (var a = step; degrees >= 0 ? a <= degrees : a >= degrees; a += step) {
-      await gesture.moveTo(at(a));
+    final distance = degrees / 180 * moldHeight;
+    final steps = (distance.abs() / 8).ceil();
+    for (var i = 1; i <= steps; i++) {
+      await gesture.moveTo(start - Offset(0, distance * i / steps));
       await tester.pump();
     }
     return gesture;
@@ -61,21 +58,20 @@ void main() {
 
   testWidgets('탭만으로는 뒤집히지 않는다', (tester) async {
     await tester.pumpWidget(view());
-    expect(caption(tester), '틀 둘레로 원을 한 바퀴 그려 뒤집어요');
+    expect(caption(tester), '틀을 위로 밀어 올려 뒤집어요');
     await tester.tap(find.byType(FlipCircleControl));
     await tester.pump(Duration(milliseconds: flipMs * 2));
     expect(flips, 0);
     expect(state(tester).flipping, isFalse);
   });
-  testWidgets('원을 그리면 틀이 따라 돌고, 320도에서 flip_ms 연출 뒤 한 번 뒤집는다', (tester) async {
+  testWidgets('밀어 올리면 틀이 축을 따라 돌고, 120도를 넘으면 flip_ms 동안 넘어간 뒤 한 번 뒤집는다', (tester) async {
     await tester.pumpWidget(view());
-    final gesture = await draw(tester, 180);
-    expect(caption(tester), matches(RegExp(r'^뒤집기 5\d% · 손을 떼면 처음부터$')));
-    expect(turn(tester).abs(), closeTo(180, 1));
-    for (var a = 195.0; a <= 330; a += 15) {
-      await gesture.moveTo(centre(tester) + Offset(math.sin(a * math.pi / 180), -math.cos(a * math.pi / 180)) * 90);
-      await tester.pump();
-    }
+    final gesture = await push(tester, 60);
+    expect(caption(tester), matches(RegExp(r'^뒤집기 (49|50)% · 손을 떼면 처음부터$')));
+    expect(turn(tester), closeTo(60, 2));
+    expect(find.byKey(const Key('flip-turn')), findsOneWidget);
+    await gesture.moveBy(Offset(0, -moldHeight * 70 / 180));
+    await tester.pump();
     expect(state(tester).flipping, isTrue);
     expect(caption(tester), '뒤집는 중…');
     await tester.pump(Duration(milliseconds: flipMs - 50));
@@ -84,73 +80,76 @@ void main() {
     await tester.pump();
     expect(flips, 1);
     // 남은 움직임과 손 떼기는 아무것도 바꾸지 않는다.
-    await gesture.moveTo(centre(tester) + const Offset(0, 90));
+    await gesture.moveBy(const Offset(0, 90));
     await gesture.up();
     await tester.pump(Duration(milliseconds: flipMs * 2));
     expect(flips, 1);
   });
-  testWidgets('반시계 방향으로 그려도 뒤집힌다', (tester) async {
+  testWidgets('아래로 당겨도 뒤집힌다', (tester) async {
     await tester.pumpWidget(view());
-    final gesture = await draw(tester, -330);
+    final gesture = await push(tester, -130);
+    expect(state(tester).flipping, isTrue);
     await tester.pump(Duration(milliseconds: flipMs + 10));
     await tester.pump();
     expect(flips, 1);
     await gesture.up();
   });
-  testWidgets('중간에 손을 떼면 0도로 돌아가고 틀도 원위치', (tester) async {
+  testWidgets('중간에 손을 떼면 틀이 제자리로 돌아온다', (tester) async {
     await tester.pumpWidget(view());
-    final gesture = await draw(tester, 240);
-    expect(turn(tester).abs(), greaterThan(100));
+    final gesture = await push(tester, 100);
+    expect(turn(tester), greaterThan(90));
     await gesture.up();
     await tester.pump();
-    expect(state(tester).circle, isNull);
+    expect(state(tester).axle, isNull);
     expect(turn(tester), 0);
-    expect(caption(tester), '틀 둘레로 원을 한 바퀴 그려 뒤집어요');
+    expect(caption(tester), '틀을 위로 밀어 올려 뒤집어요');
     await tester.pump(Duration(milliseconds: flipMs * 2));
     expect(flips, 0);
-    // 다시 그리면 처음부터 센다: 120도로는 부족.
-    final again = await draw(tester, 120);
-    expect(state(tester).circle!.degrees, closeTo(120, 1));
+    // 다시 밀면 처음부터 센다.
+    final again = await push(tester, 40);
+    expect(state(tester).axle!.degrees, closeTo(40, 2));
     await again.up();
   });
-  testWidgets('중심 가까이에서 맴돌면 뒤집히지 않는다', (tester) async {
+  testWidgets('조금 움직이는 것은 미는 것으로 보지 않는다', (tester) async {
     await tester.pumpWidget(view());
-    final gesture = await draw(tester, 720, radius: 8);
-    expect(state(tester).circle!.degrees, 0);
+    final gesture = await tester.startGesture(centre(tester));
+    await gesture.moveBy(const Offset(4, -4));
+    await tester.pump();
+    expect(state(tester).axle!.degrees, 0);
     await gesture.up();
     await tester.pump(Duration(milliseconds: flipMs * 2));
     expect(flips, 0);
   });
   testWidgets('두 번째 손가락은 각도를 바꾸지 않는다', (tester) async {
     await tester.pumpWidget(view());
-    final first = await draw(tester, 90, pointer: 1);
-    final before = state(tester).circle!.degrees;
-    final second = await draw(tester, 300, pointer: 2);
-    expect(state(tester).circle!.degrees, before);
+    final first = await push(tester, 50, pointer: 1);
+    final before = state(tester).axle!.degrees;
+    final second = await push(tester, 150, pointer: 2);
+    expect(state(tester).axle!.degrees, before);
     await second.up();
     await tester.pump(Duration(milliseconds: flipMs * 2));
     expect(flips, 0);
     await first.up();
   });
-  testWidgets('포인터 취소·단계 변경·앱 비활성은 0도로 되돌린다', (tester) async {
+  testWidgets('포인터 취소·단계 변경·앱 비활성은 제자리로 되돌린다', (tester) async {
     await tester.pumpWidget(view());
-    final cancelled = await draw(tester, 200);
+    final cancelled = await push(tester, 80);
     await cancelled.cancel();
     await tester.pump();
-    expect(state(tester).circle, isNull);
+    expect(state(tester).axle, isNull);
 
-    final stale = await draw(tester, 200);
+    final stale = await push(tester, 80);
     await tester.pumpWidget(view(token: 1));
-    expect(state(tester).circle, isNull);
-    await stale.moveTo(centre(tester) + const Offset(-90, 0));
+    expect(state(tester).axle, isNull);
+    await stale.moveBy(const Offset(0, -150));
     await stale.up();
-    expect(state(tester).circle, isNull);
+    expect(state(tester).axle, isNull);
 
-    final away = await draw(tester, 200);
+    final away = await push(tester, 80);
     try {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
-      expect(state(tester).circle, isNull);
+      expect(state(tester).axle, isNull);
     } finally {
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     }
@@ -160,33 +159,33 @@ void main() {
   });
   testWidgets('연출 중 일시정지(차단)되면 보내지 않고 원위치', (tester) async {
     await tester.pumpWidget(view());
-    final gesture = await draw(tester, 330);
+    final gesture = await push(tester, 130);
     expect(state(tester).flipping, isTrue);
     await tester.pump(Duration(milliseconds: flipMs ~/ 2));
     await tester.pumpWidget(view(blocked: true));
     await tester.pump(Duration(milliseconds: flipMs * 2));
     expect(flips, 0);
     expect(state(tester).flipping, isFalse);
-    expect(state(tester).circle, isNull);
+    expect(state(tester).axle, isNull);
     await gesture.up();
-    // 차단된 틀은 그리기를 시작하지 않는다.
-    final late = await draw(tester, 330);
-    expect(state(tester).circle, isNull);
+    // 차단된 틀은 밀기를 시작하지 않는다.
+    final late = await push(tester, 130);
+    expect(state(tester).axle, isNull);
     await late.up();
     await tester.pump(Duration(milliseconds: flipMs * 2));
     expect(flips, 0);
   });
-  testWidgets('명령이 거부되면 다시 그릴 수 있게 0도로 돌아간다', (tester) async {
+  testWidgets('명령이 거부되면 다시 밀 수 있게 제자리로 돌아간다', (tester) async {
     answer = false;
     await tester.pumpWidget(view());
-    final gesture = await draw(tester, 330);
+    final gesture = await push(tester, 130);
     await gesture.up();
     await tester.pump(Duration(milliseconds: flipMs + 10));
     await tester.pump();
     expect(flips, 1);
     expect(state(tester).flipping, isFalse);
-    expect(state(tester).circle, isNull);
-    expect(caption(tester), '틀 둘레로 원을 한 바퀴 그려 뒤집어요');
+    expect(state(tester).axle, isNull);
+    expect(caption(tester), '틀을 위로 밀어 올려 뒤집어요');
   });
   testWidgets('화면 읽기 두 번 활성화로 뒤집는다', (tester) async {
     final semantics = tester.ensureSemantics();
@@ -201,19 +200,13 @@ void main() {
   });
   testWidgets('모션 줄이기면 틀이 돌지 않지만 판정과 대기 시간은 같다', (tester) async {
     await tester.pumpWidget(view(reduceMotion: true));
-    final gesture = await draw(tester, 180);
-    expect(find.descendant(of: find.byType(FlipCircleControl), matching: find.byType(Transform)),
-        findsNothing);
-    expect(state(tester).circle!.degrees, closeTo(180, 1));
-    await gesture.moveTo(centre(tester) + const Offset(-90, 0));
-    await tester.pump();
-    await gesture.moveTo(centre(tester) + const Offset(-64, -64));
-    await tester.pump();
-    await gesture.moveTo(centre(tester) + const Offset(0, -90));
+    final gesture = await push(tester, 60);
+    expect(find.byKey(const Key('flip-turn')), findsNothing);
+    expect(state(tester).axle!.degrees, closeTo(60, 2));
+    await gesture.moveBy(Offset(0, -moldHeight * 70 / 180));
     await tester.pump();
     expect(state(tester).flipping, isTrue);
-    expect(find.descendant(of: find.byType(FlipCircleControl), matching: find.byType(Transform)),
-        findsNothing);
+    expect(find.byKey(const Key('flip-turn')), findsNothing);
     await tester.pump(Duration(milliseconds: flipMs - 50));
     expect(flips, 0);
     await tester.pump(const Duration(milliseconds: 60));
@@ -230,13 +223,13 @@ void main() {
     addTearDown(() => tester.binding.defaultBinaryMessenger
         .setMockMethodCallHandler(SystemChannels.platform, null));
     await tester.pumpWidget(view(vibration: true));
-    final gesture = await draw(tester, 330);
+    final gesture = await push(tester, 130);
     await gesture.up();
     await tester.pump(Duration(milliseconds: flipMs + 10));
     expect(calls, ['HapticFeedbackType.selectionClick']);
     calls.clear();
     await tester.pumpWidget(view(token: 1));
-    final quiet = await draw(tester, 330);
+    final quiet = await push(tester, 130);
     await quiet.up();
     await tester.pump(Duration(milliseconds: flipMs + 10));
     expect(flips, 2);

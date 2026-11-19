@@ -90,22 +90,22 @@ class _LockBadge extends StatelessWidget {
   }
 }
 
-/// Diagonal stripes from bottom-left to top-right: 6px warm-brown lines at
-/// 35% with 10px gaps (25번 13번 tile), fixed to the box so they never crawl.
+/// One diagonal stripe from the bottom-left corner to the top-right over a
+/// light warm tint (26번 3차 피드백 H27 '빗금은 하나만': the old many 6px
+/// stripes looked busy). The same single stripe marks every lock in the app.
 class LockHatchPainter extends CustomPainter {
   const LockHatchPainter();
-  static const line = 6.0, gap = 10.0;
+  static const line = 3.0, tint = .12, alpha = .55;
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(Offset.zero & size, Paint()..color = Cozy.woodDark.withValues(alpha: .18));
-    final paint = Paint()
-      ..color = LockedOverlay.stripe.withValues(alpha: .35)
-      ..strokeWidth = line;
-    // Stripes run at 45°: their spacing across is (line + gap).
-    final step = (line + gap) * math.sqrt2;
-    for (var x = -size.height; x < size.width + size.height; x += step) {
-      canvas.drawLine(Offset(x, size.height), Offset(x + size.height, 0), paint);
-    }
+    canvas.drawRect(Offset.zero & size, Paint()..color = Cozy.woodDark.withValues(alpha: tint));
+    // Kept a little inside the corners so the rounded edge stays clean.
+    final inset = math.min(size.shortestSide * .12, 10.0);
+    canvas.drawLine(Offset(inset, size.height - inset), Offset(size.width - inset, inset),
+        Paint()
+          ..color = LockedOverlay.stripe.withValues(alpha: alpha)
+          ..strokeWidth = line
+          ..strokeCap = StrokeCap.round);
   }
   @override
   bool shouldRepaint(LockHatchPainter old) => false;

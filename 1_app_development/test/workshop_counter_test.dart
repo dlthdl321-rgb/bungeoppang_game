@@ -137,7 +137,7 @@ void main() {
     final c = await mount(tester, const Size(360, 800));
     await c.openBusiness();
     await tester.pump();
-    await tester.tap(find.byKey(const Key('menu-menu')));
+    await tester.tap(find.byKey(const Key('menu-menubar')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('menu-management')), findsNothing);
     expect(find.byKey(const Key('menu-pending-gold')), findsOneWidget);

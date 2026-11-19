@@ -1,73 +1,53 @@
 import 'dart:math' as math;
 
-import 'development_balance.dart';
+import 'feedback_config.dart';
 
-/// One circle drawn around the special bungeoppang mold to flip it
-/// (24번 6단계, DEC-034). Pure: the screen feeds finger points relative to
-/// the mold's centre and reads [degrees] / [done].
+/// One push of the special bungeoppang mold over its axle to flip it
+/// (26번 3차 피드백 H21, replacing 24번 6단계's circle drawn round the
+/// mold). Pure: the screen feeds the finger's screen y and reads
+/// [degrees] / [done].
 ///
-/// The angle swept around the centre adds up with its sign (clockwise on
-/// screen is positive), so turning back takes degrees off and either
-/// direction may finish. Points closer to the centre than [deadRadius] are
-/// ignored and also break the chain: the next point outside starts from
-/// itself, so circling at the centre or cutting straight across it adds
-/// nothing. Once [targetDegrees] is reached the circle is [done] and later
-/// points change nothing until [reset].
-class FlipCircle {
-  final double deadRadius;
-  final int targetDegrees;
+/// The mold hangs on an axle through its side rings; the finger pushes
+/// its edge up (or down). Travel of one mold [height] turns it
+/// [flipAxleDegreesPerHeight] degrees, with its sign (up > 0), so pulling
+/// back takes the turn off and either way may finish. Under
+/// [flipAxleStartPx] of travel nothing turns (a touch, not a push). Once
+/// the turn reaches [doneDegrees] it is [done] and later moves change
+/// nothing until [reset].
+class FlipAxle {
+  final double height, startY;
+  final double doneDegrees;
   double _degrees = 0;
-  double? _last;
   bool _done = false;
 
-  FlipCircle({required this.deadRadius, required this.targetDegrees}) {
-    if (!deadRadius.isFinite || deadRadius < 0 || targetDegrees <= 0) {
-      throw const FormatException('뒤집기 원 설정 오류');
+  FlipAxle({required this.height, required this.startY, this.doneDegrees = flipAxleDoneDegrees}) {
+    if (!height.isFinite || height <= 0 || !startY.isFinite || doneDegrees <= 0 || doneDegrees > 180) {
+      throw const FormatException('뒤집기 축 설정 오류');
     }
   }
 
-  /// [moldWidth] is the mold picture's width in the same units as the points.
-  factory FlipCircle.forMold(DevelopmentBalance config, double moldWidth) {
-    final manual = config.section('manual_cooking');
-    return FlipCircle(
-        deadRadius: moldWidth * DevelopmentBalance.integer(manual, 'flip_dead_zone_permille') / 1000,
-        targetDegrees: DevelopmentBalance.integer(manual, 'flip_turn_degrees'));
-  }
-
-  /// Signed swept angle in degrees (clockwise on screen > 0).
+  /// Signed turn in degrees (pushed up > 0), at most a half turn.
   double get degrees => _degrees;
   bool get done => _done;
 
-  /// 0..1 of the way to [targetDegrees], whichever way it turns.
-  double get progress => math.min(1, _degrees.abs() / targetDegrees);
+  /// 0..1 of the way to [doneDegrees], whichever way it turns.
+  double get progress => math.min(1, _degrees.abs() / doneDegrees);
 
-  /// The finger moved to ([dx], [dy]) from the mold's centre.
-  void moveTo(double dx, double dy) {
-    if (_done || !dx.isFinite || !dy.isFinite) return;
-    if (dx * dx + dy * dy <= deadRadius * deadRadius) {
-      _last = null;
+  /// The finger is now at screen [y].
+  void moveTo(double y) {
+    if (_done || !y.isFinite) return;
+    final travel = startY - y;
+    if (travel.abs() < flipAxleStartPx) {
+      _degrees = 0;
       return;
     }
-    final angle = math.atan2(dy, dx);
-    final last = _last;
-    _last = angle;
-    if (last == null) return;
-    var delta = angle - last;
-    // The short way round: one move never sweeps more than half a turn.
-    while (delta > math.pi) {
-      delta -= 2 * math.pi;
-    }
-    while (delta <= -math.pi) {
-      delta += 2 * math.pi;
-    }
-    _degrees += delta * 180 / math.pi;
-    if (_degrees.abs() >= targetDegrees) _done = true;
+    _degrees = (travel / height * flipAxleDegreesPerHeight).clamp(-180.0, 180.0);
+    if (_degrees.abs() >= doneDegrees) _done = true;
   }
 
-  /// Back to 0 degrees (the finger lifted early, or the stroke was dropped).
+  /// Back flat (the finger lifted early, or the push was dropped).
   void reset() {
     _degrees = 0;
-    _last = null;
     _done = false;
   }
 }

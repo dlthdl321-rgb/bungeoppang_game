@@ -99,7 +99,7 @@ void main() {
     expect(c.state.session?.practice, isTrue);
     expect(tutorialText(), contains('문질러 반죽'));
     await bakeOnScreen();
-    expect(find.text('보관'), findsOneWidget);
+    expect(find.text('보관하기'), findsOneWidget);
     await tapKey('mold-store');
     expect(c.state.session, isNull);
     expect(c.state.tutorial, 'sell');
