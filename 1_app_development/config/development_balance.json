@@ -583,6 +583,22 @@
     "lilaclamp": {
       "buns": "1000",
       "gold": 2
+    },
+    "girl": {
+      "buns": "1000",
+      "gold": 10
+    },
+    "boy": {
+      "buns": "1000",
+      "gold": 10
+    },
+    "skin2": {
+      "buns": "1000",
+      "gold": 2
+    },
+    "skin3": {
+      "buns": "1000",
+      "gold": 2
     }
   },
   "boost_purchase": {
@@ -1461,14 +1477,14 @@
     "girl": {
       "label": "여자 사장님",
       "slot": "character",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },
     "boy": {
       "label": "남자 사장님",
       "slot": "character",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },
@@ -1482,14 +1498,14 @@
     "skin2": {
       "label": "피부톤 2",
       "slot": "skin",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },
     "skin3": {
       "label": "피부톤 3",
       "slot": "skin",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },

@@ -56,24 +56,27 @@ void main(){
     await tapKey('kind-auto');await tapKey('step-auto_1-10');await tapKey('step-auto_1-100');
     expect(find.byKey(const Key('skill-auto_1')),findsOneWidget);await close();
     await tapKey('menu-skins');expect(find.byKey(const Key('cosmetic-category-hair')),findsOneWidget);
-    await tapKey('preview-boy');expect(c.state.avatarEquipment['character'],isNot('boy'));
-    // 26번 4-5단계: '모두 적용' on the preview wears every changed slot.
-    await tapKey('wardrobe-apply-all');expect(c.state.avatarEquipment['character'],'boy');
-    await close();
+    // 3차 피드백 H11: the boy is bought now; an owned pick shows '모두 적용'.
+    await tapKey('cosmetic-category-outfit');await tapKey('cosmetic-slot-outfit');
+    await tapKey('preview-noapron');expect(c.state.avatarEquipment['outfit'],isNot('noapron'));
+    // '모두 적용' wears every changed slot and closes the window (H15).
+    await tapKey('wardrobe-apply-all');expect(c.state.avatarEquipment['outfit'],'noapron');
+    expect(find.byKey(const Key('workshop-window-title')),findsNothing);
     for(final route in [('menu-collection','도감'),('menu-achievements','업적'),('menu-records','생산 기록'),
-      ('menu-theme','꾸미기'),('menu-daily','일일 미션'),('event-entry','주간 도전'),
-      ('menu-missions','레벨 미션')]){
-      await tapKey('menu-menu');expect(c.gridVisible,isFalse);
+      ('menu-theme','꾸미기'),('menu-missions','레벨 미션')]){
+      await tapKey('menu-menubar');expect(c.gridVisible,isFalse);
       await tapKey(route.$1);
       expect(tester.widget<Text>(find.byKey(const Key('workshop-window-title'))).data,route.$2);
-      if(route.$1=='menu-collection')expect(find.textContaining('맛 도감은 Lv.'),findsNothing);
+      if(route.$1=='menu-collection')expect(find.byKey(const Key('collection-locked')),findsNothing);
       expect(c.gridVisible,isFalse,reason:'switching windows must keep the grid paused');
       if(route.$1=='menu-theme')expect(find.textContaining('준비 중'),findsNothing);
       expect(tester.takeException(),isNull);await close();expect(c.gridVisible,isTrue);
     }
     // Out of the soft launch (DEC-029): no online ranking, friends or sharing.
-    await tapKey('menu-menu');
+    await tapKey('menu-menubar');
     for(final key in ['menu-ranking','menu-friends','menu-share']){expect(find.byKey(Key(key)),findsNothing);}
+    // 3차 피드백 H36: 일일 미션·주간 도전 are in the '오늘' window, not the menu.
+    for(final key in ['menu-daily','event-entry']){expect(find.byKey(Key(key)),findsNothing);}
     await close();
     expect(account.state.buns,oldLegacy);expect(account.state.support.coins,coins);expect(c.state.buns,oldBuns);
     await tester.pumpWidget(const SizedBox.shrink());

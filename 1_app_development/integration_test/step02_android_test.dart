@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -85,15 +84,12 @@ void main() {
     await controller.command(() {
       controller.state.phaseMs = 1000;
     });
-    // Draw one circle around the mold to flip it (24번 6단계).
+    // Push the mold up over its axle to flip it (26번 3차 피드백 H21).
     final flipBox = tester.getRect(find.byType(FlipCircleControl));
-    final radius = flipBox.width * .55;
-    final circle = await tester
-        .startGesture(flipBox.center + Offset(0, -flipBox.height * .3));
-    for (var a = 0.0; a <= 345; a += 15) {
-      final rad = a * math.pi / 180;
-      await circle.moveTo(
-          flipBox.center + Offset(math.sin(rad), -math.cos(rad)) * radius);
+    final from = flipBox.center + Offset(0, flipBox.height * .3);
+    final circle = await tester.startGesture(from);
+    for (var d = 0.0; d <= flipBox.height; d += 10) {
+      await circle.moveTo(from - Offset(0, d));
       await tester.pump();
     }
     await circle.up();

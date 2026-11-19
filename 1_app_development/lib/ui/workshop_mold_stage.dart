@@ -13,9 +13,11 @@ import '../feedback_config.dart';
 import '../game_audio.dart';
 import '../workshop_controller.dart';
 import '../workshop_feature_unlocks.dart';
+import 'center_toast.dart';
 import 'boost_effects.dart';
 import 'cooking_result_effects.dart';
 import 'lock_overlay.dart';
+import 'flavor_picker.dart';
 import 'flip_circle_control.dart';
 import 'piping_bag_control.dart';
 import 'cozy_style.dart';
@@ -42,6 +44,13 @@ class WorkshopMoldStage extends StatefulWidget {
   /// The sale counter's top on screen (NightHome.centerBuilder), or null.
   /// The practice start button sits 4 above it (24번 4단계).
   final double? counterTop;
+
+  /// The highest of the sale counter's top and the cooking cut's top on
+  /// screen (NightHome), or null. The special bungeoppang mold (practice,
+  /// a bake) keeps its whole picture [WorkshopHomeLayout.moldGap] above it,
+  /// so it never covers the owner's cooking cut or the six-cell griddle
+  /// (26번 3차 피드백 H18).
+  final double? moldLimit;
   final bool cleanCounter, reduceMotion, vibration;
 
   /// The new home layout (26번 4-1단계): the clicker sits just above the
@@ -56,6 +65,7 @@ class WorkshopMoldStage extends StatefulWidget {
       required this.controller,
       required this.fishOnScreen,
       this.counterTop,
+      this.moldLimit,
       this.cleanCounter = false,
       this.lowStall = false,
       this.onSharePerfect,
@@ -71,6 +81,17 @@ const _cancelHeight = 48.0;
 
 class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   Offset _origin = Offset.zero;
+
+  /// '스페셜 붕어빵 제작 시작': with more than one flavor owned, asks which
+  /// one first (26번 3차 피드백 H26), then starts the practice.
+  Future<void> _startPractice(BuildContext context) async {
+    final c = widget.controller;
+    if (c.state.recipes.length > 1) {
+      final flavor = await showFlavorPicker(context, c);
+      if (flavor == null || !mounted) return;
+    }
+    await c.startPractice();
+  }
 
   /// Cells painted by this session's finished piping steps, shown until the
   /// mold closes (G2). Memory only: after a restart the whole pictures show.
@@ -122,8 +143,20 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
       final mapped = widget.fishOnScreen?.shift(-_origin);
       final counterLocal =
           widget.counterTop == null ? null : widget.counterTop! - _origin.dy;
-      final rect = mapped ?? fallback;
       final clean = widget.cleanCounter || mapped == null;
+      var rect = mapped ?? fallback;
+      // H18: the mold (not the floating clicker) rises until its whole
+      // picture is clear of the cooking cut and the counter, but not into
+      // the caption line under the HUD.
+      final limitLocal = widget.moldLimit == null ? null : widget.moldLimit! - _origin.dy;
+      if (limitLocal != null && !(clicker && clean)) {
+        final (top, bottom) = moldPictureSpan(rect, clean ? 1 : 1.12);
+        final over = bottom - (limitLocal - WorkshopHomeLayout.moldGap);
+        final room = top - WorkshopHomeLayout.moldTopRoom;
+        final lift = math.min(over, room);
+        if (lift > 0) rect = rect.shift(Offset(0, -lift));
+      }
+      final moldBottom = moldPictureSpan(rect, clean ? 1 : 1.12).$2;
       // The step caption at the mold's bottom stays clear of the
       // '제작 취소' button (48 tall at the stage's bottom) and 4 above it.
       final captionLift = math.max(0.0, rect.bottom - (box.maxHeight - _cancelHeight) + 4);
@@ -138,12 +171,20 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
       Widget mold(Widget interaction) => Positioned.fromRect(
           rect: rect,
           child: Stack(key: const Key('workshop-mold'), fit: StackFit.expand, clipBehavior:Clip.none, children: [
+            // The axle the mold hangs on (H21), behind it.
+            if (idleMold != null || session != null)
+              IgnorePointer(child: CustomPaint(key: const Key('mold-axle'),
+                  painter: MoldAxlePainter(grow: clean ? 1 : 1.12))),
             if (idleMold != null)
               IgnorePointer(child: CustomPaint(
                   key: const Key('idle-mold'),
-                  painter: WorkshopMoldArt(idleMold, withFish: true))),
+                  // H20: the mold waits empty; batter goes in first.
+                  painter: WorkshopMoldArt(idleMold))),
             // While flipping the control turns the mold itself.
             if (session != null && session.phase != CookingPhase.flipping) activeMold(session),
+            // The pin heads in front (the flip control draws its own).
+            if ((idleMold != null || session != null) && session?.phase != CookingPhase.flipping)
+              IgnorePointer(child: CustomPaint(painter: MoldAxlePainter(grow: clean ? 1 : 1.12, front: true))),
             interaction,
           ]));
       Widget action(String label, VoidCallback command) => Semantics(
@@ -153,24 +194,16 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
               key: const Key('workshop-mold-action'),
               onTap: blocked ? null : command,
               child: session == null
-                  ? counterLocal == null
-                      ? Align(alignment: const Alignment(0, 1.25),
-                          child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))
-                      // The counter's top is on the towel (DEC-038): the
-                      // button's bottom stays 4 above the counter's own
-                      // floating button (26번 4-1단계 F6).
-                      : Stack(clipBehavior: Clip.none, children: [
-                          Positioned(left: 0, right: 0,
-                              bottom: rect.bottom - (counterLocal - WorkshopHomeLayout.practiceLift),
-                              child: Center(child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))),
-                        ])
+                  // On the empty mold's middle (H18·H20: the mold stands
+                  // clear of the counter now).
+                  ? Center(child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))
                   : Center(child: _caption(label))));
       final Widget control;
       if (session == null) {
         // Practice only before opening; waiting to continue a new day the
         // mold just sits there until the counter's '이어서 영업'.
         control = preparing
-            ? action('스페셜 붕어빵 제작 시작', c.startPractice)
+            ? action('스페셜 붕어빵 제작 시작', () => _startPractice(context))
             : const SizedBox.shrink();
       } else {
         switch (session.phase) {
@@ -265,60 +298,68 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
             left: 8,
             right: 8,
             child: Column(mainAxisSize: MainAxisSize.min, children: [
-              if (preparing)
-                Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  DropdownButton<String>(
-                      value: s.selectedFlavor,
-                      dropdownColor: Cozy.cream,
-                      items: [
-                        for (final flavor in s.recipes)
-                          DropdownMenuItem(
-                              value: flavor,
-                              child: _caption(c.flavorLabel(flavor)))
-                      ],
-                      onChanged: blocked
-                          ? null
-                          : (value) {
-                              if (value != null) c.selectFlavor(value);
-                            }),
-                ])
-              else if (session != null) ...[
-                _caption(
-                    '${c.flavorLabel(session.flavor)} ${session.practice ? '연습' : '주문 제작'} · 반죽 목표 ${DevelopmentBalance.integer(manual, 'batter_min_coverage_permille') ~/ 10}% 이상 덮기 · ${DevelopmentBalance.integer(manual, 'paint_overflow_amount_permille') ~/ 10}% 넘으면 넘침'),
-                _caption('현재 단계 경과 ${(c.activePhaseElapsedMs / 1000).toStringAsFixed(1)}초${c.gameplayPaused ? ' · 일시정지' : ''}', key: const Key('workshop-phase-time')),
-              ],
+              // H19: only which bungeoppang is being made (the flavor is
+              // chosen with the HUD's flavor button, H26), and a pause.
+              if (session != null)
+                _sessionTitle(
+                    '${c.flavorLabel(session.flavor)} 붕어빵 ${session.practice ? '연습' : '주문'}${c.gameplayPaused ? ' · 일시정지' : ''}'),
             ])),
+        // Under the mold, left of the cooking cut when the mold keeps clear
+        // of it (H18·H25), else centred.
         if (session != null)
           Positioned(
-              bottom: 0,
+              // Right under the mold picture, never past the stage's bottom.
+              top: math.min(moldBottom + WorkshopHomeLayout.moldButtonGap,
+                  box.maxHeight - StageButton.height - 4),
               left: 0,
-              right: 0,
+              right: limitLocal == null ? 0 : box.maxWidth * WorkshopHomeLayout.cookCutShare + 8,
               child: Center(
-                  child: Wrap(spacing: 8, children: [
+                  child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
                 if (session.phase == CookingPhase.result) ...[
-                  FilledButton(
+                  // H25: two real buttons of one size: keep (honey) and,
+                  // for practice, throw away (light). An order bake goes to
+                  // its customer, so it only closes.
+                  StageButton(
                       key: const Key('mold-store'),
-                      onPressed: blocked ? null : () => c.storeResult(true),
-                      child: Text(session.practice ? '보관' : '결과 닫기')),
-                  if (session.practice)
-                    TextButton(
-                        onPressed: blocked ? null : () => c.storeResult(false),
-                        child: _caption('버리기')),
-                  if (look!.grade == CookingGrade.perfect && widget.onSharePerfect != null)
-                    TextButton(
+                      label: session.practice ? '보관하기' : '결과 닫기',
+                      primary: true,
+                      onPressed: blocked ? null : () => c.storeResult(true)),
+                  if (session.practice) ...[
+                    const SizedBox(width: 8),
+                    StageButton(
+                        key: const Key('mold-discard'),
+                        label: '버리기',
+                        onPressed: blocked ? null : () => c.storeResult(false)),
+                  ],
+                  if (look!.grade == CookingGrade.perfect && widget.onSharePerfect != null) ...[
+                    const SizedBox(width: 8),
+                    StageButton(
                         key: const Key('mold-share'),
-                        onPressed: () => widget.onSharePerfect!(look),
-                        child: _caption('자랑하기')),
+                        label: '자랑하기',
+                        onPressed: () => widget.onSharePerfect!(look)),
+                  ],
                 ] else
-                  TextButton(
+                  StageButton(
+                      key: const Key('mold-cancel'),
+                      label: '제작 취소',
+                      quiet: true,
                       onPressed: blocked
                           ? null
-                          : () => c.cookingCommand(session.cancel()),
-                      child: _caption('제작 취소')),
-              ]))),
+                          : () => c.cookingCommand(session.cancel())),
+              ])))),
       ]);
     });
   }
+}
+
+/// The top and bottom of the mold picture's opaque part (mold/*.png rows
+/// 89~847 of 880) drawn over [rect] with [grow] (WorkshopMoldArt.fit).
+(double, double) moldPictureSpan(Rect rect, double grow) {
+  final (k, origin) = WorkshopMoldArt.fit(rect.size, grow);
+  return (rect.top + origin.dy + WorkshopMoldArt.pictureTop * k,
+      rect.top + origin.dy + WorkshopMoldArt.pictureBottom * k);
 }
 
 /// The open mold of [session] with each finished piping step on it: the
@@ -454,6 +495,9 @@ class WorkshopMoldArt extends CustomPainter {
   /// The fish body inside the mold canvas, and where fish/redbean.png sits
   /// (tools/make_home_stage_art.py).
   static const fishRect = Rect.fromLTRB(215, 174, 984, 706);
+
+  /// The first and last rows of the mold pictures' opaque part.
+  static const pictureTop = 89.0, pictureBottom = 847.0;
   static const fishAt = Offset(100, 66);
   static final _smooth = Paint()..filterQuality = FilterQuality.medium;
 
@@ -514,6 +558,102 @@ class WorkshopMoldArt extends CustomPainter {
   @override
   bool shouldRepaint(covariant WorkshopMoldArt old) =>
       old.name != name || old.withFish != withFish || old.cover != cover || old.look != look;
+}
+
+/// The special mold's axle (26번 3차 피드백 H21: '양옆 고리에 실제 장치'):
+/// an iron rod through each side ring out to a small bracket standing on
+/// the counter. [front] = false draws the rods and brackets (behind the
+/// mold); true draws the pin heads on the rings (in front of a turning
+/// mold), and while flipping the push's [progress] as a honey ring round
+/// the right pin and, before a push, a small curved arrow ([hint]). Drawn
+/// in the mold picture's coordinates (WorkshopMoldArt.fit), so it follows
+/// the mold's place and size. A stand-in until the new mold art with its
+/// own axle (25번 36번 주문) is in.
+class MoldAxlePainter extends CustomPainter {
+  final double grow, progress;
+  final bool front, hint;
+  const MoldAxlePainter({this.grow = 1, this.front = false, this.progress = 0, this.hint = false});
+
+  static const iron = Color(0xff2f2a27), ironLight = Color(0xff6d635c), brass = Color(0xffc9a25a);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final (k, origin) = WorkshopMoldArt.fit(size, grow);
+    Offset at(double x, double y) => origin + Offset(x, y) * k;
+    final rings = [flipAxleLeftRing, flipAxleRightRing];
+    if (!front) {
+      for (final (i, (x, y)) in rings.indexed) {
+        final out = i == 0 ? x - 66 : x + 66;
+        // The rod from the ring out to the bracket.
+        canvas.drawLine(at(x, y), at(out, y), Paint()
+          ..color = iron
+          ..strokeWidth = 22 * k
+          ..strokeCap = StrokeCap.round);
+        canvas.drawLine(at(x, y - 5), at(out, y - 5), Paint()
+          ..color = ironLight
+          ..strokeWidth = 5 * k
+          ..strokeCap = StrokeCap.round);
+        // The bracket: a post down to a foot on the counter.
+        final post = RRect.fromRectAndRadius(
+            Rect.fromPoints(at(out - 14, y - 30), at(out + 14, 860)), Radius.circular(8 * k));
+        canvas.drawRRect(post, Paint()..color = iron);
+        canvas.drawRRect(
+            RRect.fromRectAndRadius(Rect.fromPoints(at(out - 14, y - 30), at(out - 6, 860)), Radius.circular(6 * k)),
+            Paint()..color = ironLight.withValues(alpha: .7));
+        canvas.drawRRect(
+            RRect.fromRectAndRadius(Rect.fromPoints(at(out - 34, 846), at(out + 34, 872)), Radius.circular(8 * k)),
+            Paint()..color = iron);
+        // The rod's bearing on the post.
+        canvas.drawCircle(at(out, y), 26 * k, Paint()..color = iron);
+        canvas.drawCircle(at(out, y), 12 * k, Paint()..color = brass);
+      }
+      return;
+    }
+    for (final (x, y) in rings) {
+      canvas.drawCircle(at(x, y), 21 * k, Paint()..color = iron);
+      canvas.drawCircle(at(x, y), 13 * k, Paint()..color = brass);
+      canvas.drawCircle(at(x - 4, y - 4), 5 * k, Paint()..color = const Color(0xfff3dca0));
+    }
+    final (rx, ry) = flipAxleRightRing;
+    final c = at(rx, ry);
+    final r = 46 * k + 6;
+    if (progress > 0) {
+      canvas.drawCircle(c, r, Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 5
+        ..color = const Color(0x55000000));
+      canvas.drawArc(Rect.fromCircle(center: c, radius: r), -math.pi / 2, 2 * math.pi * progress.clamp(0.0, 1.0),
+          false, Paint()
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 5
+            ..strokeCap = StrokeCap.round
+            ..color = Cozy.honey);
+    }
+    if (hint) {
+      // An arrow turning up and over the axle, at the mold's middle.
+      final m = at(600, 440);
+      final h = 150 * k;
+      final paint = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 4
+        ..strokeCap = StrokeCap.round
+        ..color = Cozy.cream.withValues(alpha: .9);
+      final arc = Rect.fromCenter(center: m, width: h * .9, height: h * 1.6);
+      canvas.drawArc(arc, math.pi * .62, -math.pi * 1.2, false, paint);
+      // Arrowhead at the arc's end (upper left, pointing down).
+      final end = arc.center + Offset(math.cos(-math.pi * .58) * arc.width / 2, math.sin(-math.pi * .58) * arc.height / 2);
+      final head = Path()
+        ..moveTo(end.dx - 9, end.dy - 3)
+        ..lineTo(end.dx + 3, end.dy - 9)
+        ..lineTo(end.dx + 1, end.dy + 6)
+        ..close();
+      canvas.drawPath(head, Paint()..color = Cozy.cream.withValues(alpha: .9));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant MoldAxlePainter old) =>
+      old.grow != grow || old.front != front || old.progress != progress || old.hint != hint;
 }
 
 /// The big bungeoppang clicker in business (DEC-036): each tap goes through
@@ -708,6 +848,73 @@ Widget _pill(String text) => Container(
       const PixelIcon('bun', size: 18),
     ]));
 
+/// The bake's title over the mold: a small translucent plate (H19).
+Widget _sessionTitle(String text) => Container(
+    key: const Key('workshop-session-title'),
+    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    decoration: BoxDecoration(
+        color: const Color(0x99221410), borderRadius: BorderRadius.circular(12)),
+    child: Text(text,
+        key: const Key('workshop-phase-time'),
+        style: const TextStyle(
+            fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, color: Cozy.cream, fontSize: 15)));
+
+/// A button under the special bungeoppang mold (26번 3차 피드백 H25): the
+/// same rounded size for keep, throw away, show off and cancel. [primary]
+/// is honey, the others cream; [quiet] is a light outline only.
+class StageButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final bool primary, quiet;
+  const StageButton({super.key, required this.label, required this.onPressed,
+      this.primary = false, this.quiet = false});
+  static const height = 40.0, minWidth = 92.0;
+  @override
+  Widget build(BuildContext context) {
+    final enabled = onPressed != null;
+    final fill = quiet
+        ? const Color(0x88221410)
+        : primary
+            ? Cozy.honey
+            : Cozy.cream;
+    final ink = quiet ? Cozy.cream : Cozy.ink;
+    return Semantics(
+      button: true,
+      enabled: enabled,
+      label: label,
+      excludeSemantics: true,
+      child: Opacity(
+        opacity: enabled ? 1 : .55,
+        child: Material(
+          color: fill,
+          shape: StadiumBorder(
+              side: BorderSide(
+                  color: quiet ? Cozy.cream.withValues(alpha: .5) : primary ? Cozy.honeyDeep : Cozy.tan,
+                  width: 1.5)),
+          elevation: quiet ? 0 : 2,
+          shadowColor: const Color(0x66000000),
+          child: InkWell(
+            customBorder: const StadiumBorder(),
+            onTap: onPressed,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: minWidth, minHeight: height),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 18),
+                child: Center(
+                  widthFactor: 1,
+                  child: Text(label,
+                      style: TextStyle(
+                          fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 16, color: ink)),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 Widget _caption(String text, {Key? key}) => Text(text, key: key,
     textAlign: TextAlign.center,
     style: const TextStyle(
@@ -779,11 +986,7 @@ class WorkshopGriddleLayer extends StatelessWidget {
                     key: const Key('griddle-locked'),
                     caption: lock,
                     maxLock: 48,
-                    onTap: () => ScaffoldMessenger.maybeOf(context)
-                      ?..hideCurrentSnackBar()
-                      ..showSnackBar(SnackBar(
-                          content: Text('숙련된 붕어빵 틀: $lock'),
-                          duration: const Duration(seconds: 2))),
+                    onTap: () => showCenterToast(context, '숙련된 붕어빵 틀: $lock'),
                     child: const SizedBox.expand())),
           for (var i = 0; i < s.grid.cells.length; i++)
             if (lock == null || s.grid.cells[i].cooking)

@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -31,14 +30,14 @@ Future<void> paintMold(WidgetTester tester) async {
   await tester.pump();
 }
 
-/// Draws one circle around the flipping mold and lifts (24번 6단계).
+/// Pushes the flipping mold up over its axle and lifts (26번 3차 피드백 H21;
+/// the name stays from the old circle of 24번 6단계).
 Future<void> drawFlipCircle(WidgetTester tester) async {
   final box = tester.getRect(find.byType(FlipCircleControl));
-  final r = box.width * .55;
-  Offset at(double a) => box.center + Offset(math.sin(a * math.pi / 180), -math.cos(a * math.pi / 180)) * r;
-  final gesture = await tester.startGesture(box.center + Offset(0, -box.height * .3));
-  for (var a = 0.0; a <= 345; a += 15) {
-    await gesture.moveTo(at(a));
+  final start = box.center + Offset(0, box.height * .3);
+  final gesture = await tester.startGesture(start);
+  for (var d = 0.0; d <= box.height; d += 10) {
+    await gesture.moveTo(start - Offset(0, d));
     await tester.pump();
   }
   await gesture.up();
@@ -54,9 +53,14 @@ void main() {
       await c.initialize();
       await tester.pumpWidget(GameApp(controller:account,workshop:c));
       await tester.pump();
+      // 26번 3차 H6: a new install opens with the welcome story; end it first.
+      await tester.tap(find.byKey(const Key('story-skip')));await tester.pump();await tester.pump();
       expect(find.byType(NightHome),findsOneWidget);
       expect(find.byType(BakeTarget),findsNothing);
-      expect(find.byKey(const Key('menu-menu')),findsOneWidget);
+      // 26번 3차 피드백 H28: the menu is only in the bottom bar; the flavor sits top-left.
+      expect(find.byKey(const Key('menu-menu')),findsNothing);
+      expect(find.byKey(const Key('menu-menubar')),findsOneWidget);
+      expect(find.byKey(const Key('flavor-button')),findsOneWidget);
       // 26번 2단계: the per-second and per-tap numbers open with the skills at Lv.2.
       expect(find.byKey(const Key('auto-rate')),findsNothing);
       expect(find.byKey(const Key('tap-rate')),findsNothing);
@@ -104,7 +108,8 @@ void main() {
       });
 
       await c.command(()=>c.state.phaseMs=12000);await tester.pump();
-      expect(tester.widget<Text>(find.byKey(const Key('workshop-phase-time'))).data,contains('12.'));
+      // 26번 3차 피드백 H19: only which bungeoppang, no step time.
+      expect(tester.widget<Text>(find.byKey(const Key('workshop-phase-time'))).data,'팥 붕어빵 연습');
       await c.setForeground(false);await tester.pump();
       final pausedMs=c.state.phaseMs;
       await tester.pump(const Duration(seconds:5));
@@ -149,7 +154,7 @@ void main() {
       await step(CookingPhase.flipping);
       // Flipping has no button: a tap does nothing, a circle flips (24번 6단계).
       expect(find.byKey(const Key('workshop-mold-action')),findsNothing);
-      expect(find.text('틀 둘레로 원을 한 바퀴 그려 뒤집어요'),findsOneWidget);
+      expect(find.text('틀을 위로 밀어 올려 뒤집어요'),findsOneWidget);
       await c.command(()=>c.state.phaseMs=15000);await tester.pump();
       await tester.tap(find.byType(FlipCircleControl));await tester.pump(const Duration(seconds:2));
       expect(c.state.session!.phase,CookingPhase.flipping);
@@ -167,7 +172,7 @@ void main() {
       expect(caption,cookingGradeLine(c.config,session,grade,variant:variant));
       final why=batterFailureLabel(c.config,session);
       if(why!=null&&grade==CookingGrade.near) expect(caption,contains('반죽'));
-      await tester.tap(find.text('보관'));await tester.pump();
+      await tester.tap(find.text('보관하기'));await tester.pump();
       expect(c.state.session,isNull);
       expect(account.state.buns,oldBuns);
       expect(tester.takeException(),isNull);

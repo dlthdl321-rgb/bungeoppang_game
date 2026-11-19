@@ -118,7 +118,10 @@ class PixelSprites {
     // 54x36; 25번 33번 by tools/apply_25_art.py --only levelup).
     'levelup', 'levelup_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
-    'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics'];
+    'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics',
+    // The first-run screens' winter stall illustration (25번 37번, 26번 3차
+    // H2); until drawn they use the lowered snow background.
+    'first_run'];
 
   /// Weekly challenge banners in assets/images/event (160x48), one per
   /// season of weekly_config.dart.

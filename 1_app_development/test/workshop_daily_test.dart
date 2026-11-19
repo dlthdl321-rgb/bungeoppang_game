@@ -385,6 +385,34 @@ void _widgets() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
+  testWidgets('오늘 창 (3차 H33~H39): 출석 보상 글·일일 미션·주간 도전 기간·보상 받기', (tester) async {
+    final (c, _) = await mount(tester);
+    await tester.tap(find.byKey(const Key('daily-ticket')));
+    await tester.pumpAndSettle();
+    // H39: the seventh stamp's reward in words, from the settings.
+    final rules = c.config.section('daily_return')['attendance'] as Map<String, dynamic>;
+    expect(tester.widget<Text>(find.byKey(const Key('attendance-goal-text'))).data, startsWith('${rules['cycle_days']}번 출석하면'));
+    expect(find.textContaining('하루를 걸러도'), findsNothing);
+    // H33: the week from Monday to Sunday in words.
+    expect(find.byKey(const Key('missions-daily')), findsOneWidget);
+    expect(find.byKey(const Key('missions-weekly')), findsOneWidget);
+    expect(tester.widget<Text>(find.byKey(const Key('missions-weekly-period'))).data, '11월 2일(월) ~ 11월 8일(일)');
+    expect(tester.widget<Text>(find.byKey(const Key('weekly-left'))).data, '7일 남음');
+    // H35: a finished mission shows '보상 받기'; others only their reward.
+    expect(find.byKey(const Key('mission-daily-taps-claim')), findsNothing);
+    final target = int.parse(((c.config.section('mission_targets')['daily'] as Map)['taps'] as Map)['target'] as String);
+    await c.command(() => c.state.missions = c.state.missions.observe(c.now(), taps: target));
+    await tester.pump();
+    expect(find.text('보상 신청'), findsNothing);
+    await tester.ensureVisible(find.byKey(const Key('mission-daily-taps-claim')));
+    await tester.tap(find.byKey(const Key('mission-daily-taps-claim')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('mission-daily-taps-claimed')), findsOneWidget);
+    expect(c.state.missions.claims.keys, contains(c.state.missions.claimKey('daily', 'taps')));
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
   testWidgets('오늘 쪽지 카드 골든 (크리스마스 행사 중)', (tester) async {
     final (c, _) = await mount(tester, at: DateTime.utc(2026, 12, 24, 3));
     expect(c.seasonalEvent!.kind, 'christmas');
