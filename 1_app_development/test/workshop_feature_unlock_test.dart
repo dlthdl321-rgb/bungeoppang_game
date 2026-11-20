@@ -176,7 +176,7 @@ void main() {
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue);
       expect(c.pendingIntro, isNull);
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue, reason: '두 번 눌러도 그대로');
-      expect(repository.saved!['schema'], 10);
+      expect(repository.saved!['schema'], workshopSchema);
       expect(repository.saved!['featureIntros'], ['collection', 'skills']);
       c.dispose();
       final again = await open(repository);
@@ -196,7 +196,7 @@ void main() {
       expect(migrated.featureIntros, containsAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders',
           'fishCosmetics', 'stallCosmetics']));
       expect(pendingFeatureIntro(migrated, config), isNull);
-      expect(migrated.toJson()['schema'], 10);
+      expect(migrated.toJson()['schema'], workshopSchema);
       // A low-level old save still gets the cards still to come.
       final low = await open();
       addTearDown(low.dispose);

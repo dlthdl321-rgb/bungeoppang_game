@@ -31,6 +31,14 @@ import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCo
 
 part 'workshop_storage.dart';
 
+/// The shop save format written now. Schema 11 (4차 피드백 g7, 2026-11-21)
+/// adds no field: it marks saves made with the rebalanced economy.
+const workshopSchema = 11;
+/// Saves below this schema were played with the old economy (skill prices
+/// and effects many times larger) and start again once, before launch.
+const economyResetSchema = 11;
+/// Shown once after such a reset (the notice line).
+const economyResetNotice = '게임 밸런스가 바뀌어 가게를 처음부터 다시 시작해요.';
 const workshopTutorialStates = {'cook', 'sell', 'done', 'skipped'};
 /// Avatar slots whose items a shop can have without buying ([WorkshopState.avatarGrants]).
 const avatarGrantSlots = {'character', 'skin'};
@@ -146,6 +154,22 @@ class WorkshopState {
   Map<String,dynamic>? customerScene;
   final Map<String, String> sales = {}, pendingGold = {};
   final Set<int> claimedLevels = {};
+  /// A fresh shop in place of a save from before the economy rebalance
+  /// ([economyResetSchema], 4차 피드백 g7, pre-launch): every number starts
+  /// again. Only the first-run choices stay — the character picked at the
+  /// first run (the owner record will not ask again) and a finished guide.
+  /// The save sequence goes on so the store's guard accepts the next save.
+  factory WorkshopState.economyReset(WorkshopState old, DateTime now, DevelopmentBalance config, String runId) {
+    final catalog = config.section('avatar_catalog');
+    final character = old.avatarGrants.firstWhere(
+        (id) => (catalog[id] as Map?)?['slot'] == CosmeticSlot.character.name, orElse: () => 'girl');
+    final fresh = WorkshopState.initial(now, config, runId)
+      ..sequence = old.sequence
+      ..tutorial = old.tutorialActive ? 'cook' : old.tutorial;
+    fresh.avatarGrants..clear()..add(character);
+    if (character != defaultCosmetics[CosmeticSlot.character]) fresh._wearCharacter(character);
+    return fresh;
+  }
   WorkshopState.initial(DateTime now, DevelopmentBalance config, String runId) {
     missions=WorkshopMissions.initial(now);
     business = BusinessProgress.initial(now); grid = GriddleProgress.empty(runId, config);
@@ -154,7 +178,7 @@ class WorkshopState {
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
   }
-  Map<String, dynamic> toJson() => {'schema': 10, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
+  Map<String, dynamic> toJson() => {'schema': workshopSchema, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
     'featureIntros': featureIntros.toList()..sort(), 'daily': daily.toJson(),
     'regularClock': regularClock.toJson(), 'namedClock': namedClock.toJson(), 'lastNamedVisitor': lastNamedVisitor,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
@@ -180,7 +204,7 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || (row['schema'] as int) < 1 || (row['schema'] as int) > workshopSchema) throw const FormatException('신규 게임 저장 버전 오류');
     if ((row['schema'] as int) < 4 && (row.containsKey('relationships') || row.containsKey('customerScene'))) throw const FormatException('구형 관계 저장 충돌');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
@@ -697,6 +721,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   Future<void> initialize() async {
     final saved = await _loadDurable();
     state = saved == null ? WorkshopState.initial(now(), config, _id()) : WorkshopState.fromJson(saved, config);
+    // 4차 피드백 g7: a save from before the economy rebalance starts again
+    // (pre-launch, once). The server progress is reset by hand at deploy.
+    final reset = saved != null && (saved['schema'] as int) < economyResetSchema;
+    if (reset) state = WorkshopState.economyReset(state, now(), config, _id());
     // 26번 3차 피드백 H20: the painted cells are not saved (G2), so a bake
     // reopened between the first batter and the lid would show the whole
     // step picture — batter that seems poured before the player came in.
@@ -711,8 +739,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     }
     // Only server-committed grants reconstructed from the durable purchase
     // ledger can produce skill effects; legacy local purchases are not used.
-    final report = saved == null ? null : _settleAwayInto();
+    final report = saved == null || reset ? null : _settleAwayInto();
     error = null;
+    if (reset) notice = economyResetNotice;
     if (!await command(() {}, keepNotice: true)) throw StateError('신규 진행 저장 실패');
     awayReport = report;
     _clock.start(); _timer = Timer.periodic(const Duration(milliseconds: 100), (_) => _tick());
@@ -1677,8 +1706,11 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final order = state.daily.order;
     return order != null && order.day == today && !state.tutorialActive ? order : null;
   }
-  /// The buns the order pays now: `reward_seconds` of auto production, at least `min_buns`.
-  BigInt get dailyOrderReward => dailyBuns(autoRate, DevelopmentBalance.integer(_orderRules, 'reward_seconds'),
+  /// The income rate daily rewards are based on (4차 피드백 g7): taps at
+  /// `rate_taps_per_second` plus auto production, per second.
+  BigInt get dailyRate => dailyIncomeRate(config, tapRate: tapRate, autoRate: autoRate);
+  /// The buns the order pays now: `reward_seconds` of [dailyRate], at least `min_buns`.
+  BigInt get dailyOrderReward => dailyBuns(dailyRate, DevelopmentBalance.integer(_orderRules, 'reward_seconds'),
       DevelopmentBalance.decimal(_orderRules, 'min_buns'));
   int get dailyOrderAffinity => DevelopmentBalance.integer(_orderRules, 'affinity');
   bool _fitsDailyOrder(DailyOrder order, ProductBatch b) {
@@ -1716,9 +1748,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   bool stampGivesGold(int box) => box == attendanceCycle && onlineGateway != null;
   int get attendanceGold => DevelopmentBalance.integer(_stampRules, 'gold');
   BigInt stampBuns(int box) => box == attendanceCycle
-      ? dailyBuns(autoRate, DevelopmentBalance.integer(_stampRules, 'substitute_seconds'),
+      ? dailyBuns(dailyRate, DevelopmentBalance.integer(_stampRules, 'substitute_seconds'),
           DevelopmentBalance.decimal(_stampRules, 'substitute_min_buns'))
-      : dailyBuns(autoRate, DevelopmentBalance.integer(_stampRules, 'buns_seconds'),
+      : dailyBuns(dailyRate, DevelopmentBalance.integer(_stampRules, 'buns_seconds'),
           DevelopmentBalance.decimal(_stampRules, 'min_buns'));
   /// Something on the '오늘' slip still waits for the player.
   bool get dailyWaiting => attendanceReady || (dailyOrder != null && !dailyOrder!.done);

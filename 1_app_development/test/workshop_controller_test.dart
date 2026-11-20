@@ -163,12 +163,12 @@ void main() {
     final gateway = Gateway()..loseCommit = true;
     expect(await controller.purchaseSkill(gateway, 'tap_1'), isFalse);
     final transaction = controller.state.purchases.journals.keys.single;
-    expect(controller.state.buns, BigInt.from(85));
+    expect(controller.state.buns, BigInt.from(80));
     expect(controller.state.purchases.owned, isEmpty);
     expect(await controller.recoverPurchase(gateway, transaction), isTrue);
     expect(controller.state.purchases.owned, {'tap_1':1});
     expect(await controller.recoverPurchase(gateway, transaction), isTrue);
-    expect(controller.state.buns, BigInt.from(85));
+    expect(controller.state.buns, BigInt.from(80));
     expect(gateway.commits, 1); expect(gateway.reservations, 1);
   });
   test('서버 성공 후 영수증 저장 실패는 재읽기 전 새 상품/구매를 허용하지 않는다', () async {
@@ -180,7 +180,7 @@ void main() {
     await controller.reloadAfterError();
     final transaction = controller.state.purchases.journals.keys.single;
     expect(await controller.recoverPurchase(gateway, transaction), isTrue);
-    expect(controller.state.buns, BigInt.from(85));
+    expect(controller.state.buns, BigInt.from(80));
     expect(controller.tapRate, BigInt.from(2));
   });
   test('로그인 전 레벨업은 미정산 거래 없이 로그인 안내만 남긴다 (26번 3단계)', () async {
@@ -235,9 +235,53 @@ void main() {
     final legacy = controller.state.toJson();
     legacy['schema'] = 1;
     for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime','relationships','customerScene','tutorial','regularClock','namedClock','lastNamedVisitor','featureIntros','daily']) { legacy.remove(key); }
-    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 10);
+    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], workshopSchema);
     final corrupted = controller.state.toJson()..remove('purchases');
     expect(() => WorkshopState.fromJson(corrupted, config), throwsFormatException);
+  });
+  // 4차 피드백 g7 (사용자 결정 2026-11-21): 예전 경제의 저장은 출시 전에 한 번 처음부터.
+  test('경제 재조정 전(schema 10) 저장은 처음 열 때 한 번 새 가게로, 고른 사장님·끝낸 안내만 남긴다', () async {
+    expect(await controller.command(() {
+      controller.state.buns = BigInt.parse('900000000'); controller.state.lifetime = BigInt.parse('900000000');
+      controller.state.tutorial = 'done';
+    }), isTrue, reason: controller.error);
+    expect(await controller.chooseStarterCharacter('boy'), isTrue);
+    final old = controller.state.toJson()..['schema'] = 10;
+    final oldRun = controller.state.grid.runId, oldSequence = old['sequence'] as int;
+    final stored = Repository()..stored = old;
+    final reopened = WorkshopController(config, stored, now: () => now, random: Random(8));
+    addTearDown(reopened.dispose);
+    await reopened.initialize();
+    final s = reopened.state;
+    expect(s.level, 1);
+    expect(s.buns, BigInt.zero);
+    expect(s.lifetime, BigInt.zero);
+    expect(s.purchases.owned, isEmpty);
+    expect(s.avatarGrants, {'boy'});
+    expect(s.avatarEquipment['character'], 'boy');
+    expect(s.tutorial, 'done');
+    expect(s.grid.runId, isNot(oldRun));
+    expect(s.sequence, oldSequence + 1);
+    expect(reopened.notice, economyResetNotice);
+    expect(reopened.awayReport, isNull);
+    expect(stored.stored!['schema'], workshopSchema);
+    // Once: the saved schema 11 shop is not reset again.
+    await reopened.command(() { reopened.state.buns = BigInt.from(5); reopened.state.lifetime = BigInt.from(5); });
+    final again = WorkshopController(config, stored, now: () => now, random: Random(9));
+    addTearDown(again.dispose);
+    await again.initialize();
+    expect(again.state.buns, BigInt.from(5));
+    expect(again.state.grid.runId, s.grid.runId);
+    expect(again.notice, isNull);
+  });
+  test('경제 재조정 초기화: 안내 중이던 저장은 안내부터, 사장님을 고르지 않았으면 여자 사장님', () {
+    final old = WorkshopState.fromJson(controller.state.toJson(), config);
+    expect(old.tutorialActive, isTrue);
+    final fresh = WorkshopState.economyReset(old, now, config, 'resetrun0000000000000001');
+    expect(fresh.tutorial, 'cook');
+    expect(fresh.avatarGrants, {'girl'});
+    expect(fresh.avatarEquipment.containsKey('character'), isFalse);
+    expect(WorkshopState.fromJson(fresh.toJson(), config).toJson(), fresh.toJson());
   });
   test('판매 원장과 심사 증거가 달라지면 손상 저장을 거부한다', () async {
     await controller.openBusiness();
@@ -328,7 +372,7 @@ void main() {
     final old=controller.state.toJson()..remove('relationships')..remove('customerScene')..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily');old['schema']=3;
     final restored=WorkshopState.fromJson(old,config);
     expect(restored.purchases.toJson(),controller.state.purchases.toJson());
-    expect(restored.toJson()['schema'],10);
+    expect(restored.toJson()['schema'], workshopSchema);
     final bad=controller.state.toJson()..remove('relationships');
     expect(()=>WorkshopState.fromJson(bad,config),throwsFormatException);
     old['relationships']={};expect(()=>WorkshopState.fromJson(old,config),throwsFormatException);

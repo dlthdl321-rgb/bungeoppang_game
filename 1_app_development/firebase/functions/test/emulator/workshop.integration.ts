@@ -27,7 +27,7 @@ const at=Date.UTC(2026,9,18,14,59,59),progress="progress_0001",context={progress
 const pair=generateKeyPairSync("ed25519"),pem=pair.publicKey.export({format:"pem",type:"spki"}).toString();
 const pipeline=new ProtectedPurchasePipeline(store,config,{validator:{pem,notBeforeMs:at-1,notAfterMs:at+900000}},()=>at);
 const service=new WorkshopService(store,config,()=>at,new Uint8Array(32).fill(3));
-function intent(account:string) {return {account,transaction:"transaction_0001",revision:config.metadata.revision,skill:"tap_1",owned:0,quantity:1,buns:"15",gold:"1"};}
+function intent(account:string) {return {account,transaction:"transaction_0001",revision:config.metadata.revision,skill:"tap_1",owned:0,quantity:1,buns:"20",gold:"1"};}
 function signed(account:string,action:ProtectedEvent["action"],sequence:number,previousDigest:string,buns="100",eventId=`event_000${sequence}`) {
   const event:ProtectedEvent={schema:1,audience:"workshop-purchase-v1",account,progress,epoch:1,eventId,sequence,previousDigest,issuedAtMs:at,expiresAtMs:at+60000,action,
     snapshot:{buns,lifetimeBuns:"100",level:1},...(action==="checkpoint" ? {}:{intent:intent(account)})};

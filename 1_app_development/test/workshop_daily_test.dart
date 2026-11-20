@@ -97,7 +97,9 @@ void main() {
     expect(c.dailyWaiting, isTrue);
     var buns = c.state.buns;
     expect(await c.stampAttendance(), isTrue);
-    expect(c.state.buns - buns, BigInt.parse('100'), reason: '자동 생산 0이면 최소 100');
+    // 4차 g7: R = 탭 힘 1 × 2 + 자동 0 = 2/초, 출석 300초 → 600(최소 100보다 큼).
+    expect(c.dailyRate, BigInt.two);
+    expect(c.state.buns - buns, BigInt.parse('600'), reason: 'R × 300초');
     expect(c.state.daily.stamps, 1);
     expect(await c.stampAttendance(), isFalse, reason: '하루 한 칸');
     expect(c.state.daily.stamps, 1);
@@ -111,7 +113,7 @@ void main() {
     final affinity = c.state.relationships.affinity(order1.npc!);
     buns = c.state.buns;
     expect(await c.deliverDailyOrder(), isTrue, reason: c.notice);
-    expect(c.state.buns - buns, BigInt.parse('200'));
+    expect(c.state.buns - buns, BigInt.parse('1200'), reason: 'R 2 × 600초(최소 200보다 큼)');
     expect(c.state.relationships.affinity(order1.npc!) - affinity, 3);
     expect(c.dailyOrder!.done, isTrue);
     expect(c.dailyWaiting, isFalse);
@@ -277,7 +279,7 @@ void main() {
       if (day > 1) await offline.nextDay();
       final before = offline.c.state.buns;
       expect(await offline.c.stampAttendance(), isTrue);
-      expect(offline.c.state.buns - before, BigInt.parse(day == 7 ? '600' : '100'));
+      expect(offline.c.state.buns - before, BigInt.parse(day == 7 ? '3600' : '600'), reason: 'R 2 × 1800초 / 300초');
     }
     expect(offline.c.state.pendingGold.keys.where((k) => k.startsWith('attendance:')), isEmpty);
 
@@ -314,13 +316,13 @@ void main() {
     await shop.start();
     expect(await c.stampAttendance(), isTrue);
     final saved = c.state.toJson();
-    expect(saved['schema'], 10);
+    expect(saved['schema'], workshopSchema);
     expect((saved['daily'] as Map)['stamps'], 1);
 
     final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['schema'] = 9..remove('daily');
     final migrated = WorkshopState.fromJson(old, c.config);
     expect(migrated.daily.toJson(), WorkshopDaily.empty.toJson());
-    expect(migrated.toJson()['schema'], 10);
+    expect(migrated.toJson()['schema'], workshopSchema);
     expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..['schema'] = 9, c.config), throwsFormatException,
         reason: '9에 새 필드');
     expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..remove('daily'), c.config), throwsFormatException,
@@ -423,6 +425,16 @@ void _widgets() {
     await expectLater(find.byKey(const Key('daily-card')), matchesGoldenFile('goldens/workshop_daily_card_390x844.png'));
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  test('매일 보상 기준 R = 탭 힘 × rate_taps_per_second + 자동/초, 최소값은 그대로 (4차 g7)', () {
+    final config = DevelopmentBalance.fromJson(_raw());
+    expect(DevelopmentBalance.integer(config.section('daily_return'), 'rate_taps_per_second'), 2);
+    // 제안 시뮬레이션 Lv.10 무렵: 탭 98 · 자동 53/초 → R 249(1분 수입 14,940 = R × 60).
+    final r = dailyIncomeRate(config, tapRate: BigInt.from(98), autoRate: BigInt.from(53));
+    expect(r, BigInt.from(249));
+    expect(dailyBuns(r, 600, BigInt.from(200)), BigInt.from(149400), reason: '주문서 = 수입 10분치');
+    expect(dailyBuns(BigInt.zero, 600, BigInt.from(200)), BigInt.from(200), reason: '최소값');
   });
 }
 

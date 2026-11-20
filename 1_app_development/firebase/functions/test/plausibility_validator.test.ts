@@ -18,7 +18,7 @@ function setup() {
 }
 const snapshot=(buns:string,lifetimeBuns:string,taps=0,sales=0,level=1)=>({buns,lifetimeBuns,level,taps,sales});
 function intent(transaction="transaction_0001",owned=0) {
-  return {account:"a",transaction,revision:config.metadata.revision,skill:"tap_1",owned,quantity:1,buns:owned ? "18":"15",gold:"1"};
+  return {account:"a",transaction,revision:config.metadata.revision,skill:"tap_1",owned,quantity:1,buns:owned ? "27":"20",gold:"1"};
 }
 function daily(goal:"taps"|"production",value:string,extra:Record<string,unknown>={}) {
   const row=config.mission_targets.daily[goal];
@@ -39,7 +39,7 @@ test("타당한 스냅샷이면 예약·차감·확정까지 서버 검증으로
   const reserved=await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
   assert.equal(reserved.status,"reserved");assert.equal(gold(store),config.welcome_reward.gold-1);
   clock.now+=2000;
-  const committed=await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  const committed=await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
   assert.equal(committed.status,"committed");
   assert.equal(store.docs.get("users/a/compositeSkills/tap_1")!.owned,1);
   // Retry replays the terminal receipt without new evidence.
@@ -53,7 +53,7 @@ test("차감하지 않은 스냅샷으로는 구매를 확정하지 않는다",a
 test("서버 시간으로 설명할 수 없는 붕어빵력 증가는 거절하고, 시간이 지나면 허용한다",async()=>{
   const {service,clock}=setup();await service.claim("a",{progress});
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
-  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
   const second={...context,intent:intent("transaction_0002",1)};
   await assert.rejects(service.purchase("a","reserve",{...second,snapshot:snapshot("900000","900000",40)}));
   // 2 taps/s for 10 minutes at tap rate 2 is plausible.
@@ -63,7 +63,7 @@ test("서버 시간으로 설명할 수 없는 붕어빵력 증가는 거절하�
 test("진행 기록이 줄어든 스냅샷은 거절한다",async()=>{
   const {service}=setup();await service.claim("a",{progress});
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
-  await assert.rejects(service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","30",40)}));
+  await assert.rejects(service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","30",40)}));
 });
 test("붕어빵력이 부족해 거절된 예약은 무과금 취소 기록으로 정리된다",async()=>{
   const {store,service}=setup();await service.claim("a",{progress});
@@ -148,16 +148,20 @@ test("출석 황금은 보상량·형식·기간이 틀리면 지급하지 않�
 test("오늘의 주문서·출석 붕어빵력은 하루치만 서버 한도에 더한다",async()=>{
   const {service,clock}=setup();await service.claim("a",{progress});
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
-  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
   const second={...context,intent:intent("transaction_0002",1)};
   const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns);
-  // Without auto skills: two touched days of order + stamp minimums fit on top of the slack.
-  const fits=(40n+BigInt(config.server_validation.slack_buns)+2n*minimum).toString();
+  // 4차 g7: rewards follow R = tap power × rate_taps_per_second + auto/s. After
+  // one tap_1 level the tap power is 2 and there is no auto skill.
+  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds));
+  const perDay=seconds*2n*BigInt(d.rate_taps_per_second)+minimum;
+  // Two touched days of order + stamp fit on top of the slack.
+  const fits=(40n+BigInt(config.server_validation.slack_buns)+2n*perDay).toString();
   clock.now+=1000;
   assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot(fits,fits,40)})).status,"reserved");
   const {service:other}=setup();await other.claim("a",{progress});
   await other.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
-  await other.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
-  const tooMuch=(40n+BigInt(config.server_validation.slack_buns)+2n*minimum+1000n).toString();
+  await other.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+  const tooMuch=(40n+BigInt(config.server_validation.slack_buns)+2n*perDay+1n).toString();
   await assert.rejects(other.purchase("a","reserve",{...second,snapshot:snapshot(tooMuch,tooMuch,40)}));
 });

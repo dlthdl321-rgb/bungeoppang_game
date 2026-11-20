@@ -35,7 +35,7 @@
 15. [알려진 문제](#15-알려진-문제)
 16. [기획 중인 변경](#16-기획-중인-변경)
 
-흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19), [33 꾸미기·상점 화면 정리](#33-꾸미기상점-화면-정리--2026-11-19), [34 매일 돌아올 이유](#34-매일-돌아올-이유--2026-11-19), [35 공유 카드](#35-공유-카드--2026-11-19), [36 법률 확인 반영](#36-법률-확인-반영--2026-11-19), [37 3차 피드백 홈·굽기](#37-실기기-3차-녹화-피드백--홈굽기-c-묶음-h17h30--2026-11-19), [38 3차 피드백 E: 공통 테마·충전 상품·배경](#38-3차-피드백-e-공통-테마충전-상품배경--2026-11-19).
+흥행 개선(26번) 장: 28 결정, 29 온라인 운영 설정, 30 손님 방문·알림, 31 첫 실행 로그인, [32 사용 통계](#32-사용-통계firebase-analytics--2026-11-19), [33 꾸미기·상점 화면 정리](#33-꾸미기상점-화면-정리--2026-11-19), [34 매일 돌아올 이유](#34-매일-돌아올-이유--2026-11-19), [35 공유 카드](#35-공유-카드--2026-11-19), [36 법률 확인 반영](#36-법률-확인-반영--2026-11-19), [37 3차 피드백 홈·굽기](#37-실기기-3차-녹화-피드백--홈굽기-c-묶음-h17h30--2026-11-19), [38 3차 피드백 E: 공통 테마·충전 상품·배경](#38-3차-피드백-e-공통-테마충전-상품배경--2026-11-19), [39 경제 재조정](#39-경제-재조정-스킬-성장꾸미기-가격매일-보상진행-초기화--2026-11-21).
 
 ---
 
@@ -134,7 +134,8 @@
 | 항목 | 값 |
 | --- | --- |
 | DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
-| JSON 저장 형식 | `schema` 10. 1~9를 읽고 10으로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 10만 받음, 보호 목록 `[2,…,10]`) |
+| JSON 저장 형식 | `schema` 11(`workshopSchema`). 1~10을 읽고 11로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 11만 받음, 보호 범위 2~11 `_guardedSchema`) |
+| schema 11 (2026-11-21, 4차 피드백 g7 경제 재조정) | 필드 추가 없음. **10 이하 저장은 앱을 처음 열 때 한 번 처음부터 다시 시작**(`economyResetSchema`, `WorkshopController.initialize` → `WorkshopState.economyReset`): 출시 전 예전 경제(스킬 값·효과가 수십~수천 배)로 쌓인 붕어빵력·스킬 레벨·꾸미기·레벨을 버림. 남기는 것은 첫 실행에서 고른 사장님(`avatarGrants`의 사장님 하나, 입은 사장님)과 끝낸 첫 실행 안내(`done`/`skipped`)뿐, 저장 순번은 이어서(구매 보호 기록이 다음 저장을 받도록). 진행 ID(`grid.runId`)는 새로 만듦. 알림 줄 '게임 밸런스가 바뀌어 가게를 처음부터 다시 시작해요.'(`economyResetNotice`). 복귀 안내 없음. 서버 쪽 진행·랭킹은 배포 때 손으로 초기화(39장) |
 | schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
 | 결과 등급 (26번 4단계) | 저장 변경 없음: 등급은 화면에서 계산하고, 주문 손님 반응 연결은 메모리에만 둠 |
 | 제작 세션 `session` (CookingSession schema 1, 24번 5단계 G1) | 짤주머니 세 단계의 칠한 양을 **추가 필드**로 저장: `firstBatterCoverage`·`firstBatterAmount`, `fillingCoverage`·`fillingAmount`, `secondBatterCoverage`·`secondBatterAmount`(permille, 단계를 마치면 둘 다 있음, 0 < 덮음 ≤ 1000, 덮음 ≤ 양 ≤ 9000). 예전 `firstBatterMs`·`secondBatterMs`·`fillingDurationMs`는 읽기만 하고 새로 쓰지 않음(같은 단계에 두 종류가 함께 있으면 거절). 단계 완료 = 둘 중 하나가 있음. 예전 저장·진행 중 세션은 그대로 이어서 하고, ms로 끝난 반죽 단계는 손기술 실패. Workshop schema 6·`user_version` 4·생산 저널 형식 변경 없음 |
@@ -225,32 +226,34 @@
 
 ### 스킬 표
 
-가격 증가율은 1~3단계만 따로 정해져 있고 4~16단계는 모두 115/100입니다. 4단계부터는 가격이 단계마다 10배, 효과는 약 5.65배씩 늘어납니다. 해금 조건은 누적 생산량입니다.
+4차 피드백 g7(2026-11-21, 사용자 결정 1, DEC-TBD-i4g7-1)로 다시 맞춘 값입니다. 가격 증가율은 **모든 스킬 135/100**. 단계마다 값은 약 4배(1~4단계 4배, 5단계부터 약 3~3.3배), 효과는 탭 약 1.5배·자동 약 1.4배라 다음 단계가 열려도 수입이 몇 배로 뛰지 않습니다(전에는 값 10배·효과 5.65~10배라 3시간에 수입 약 8,000배 → 지금 약 38배). 해금 조건은 누적 생산량이고 5단계(첫 황금 스킬)는 탭 누적 80만·자동 100만(약 Lv.15). 황금 가격(1~4단계 0, 5~16단계 2·3·4개 + 10번마다 1개)은 그대로입니다.
 
 | 단계 | 탭 스킬 | 가격 | 효과 | 해금 | 자동 스킬 | 가격 | 효과/초 | 해금 |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 반짝이는 틀 (115/100) | 15 | 1 | 0 | 작은 화로 (115/100) | 50 | 1 | 0 |
-| 2 | 진한 반죽 (118/100) | 250 | 8 | 500 | 부지런한 집게 (118/100) | 600 | 10 | 1000 |
-| 3 | 노릇한 손놀림 (120/100) | 4000 | 60 | 1만 | 붕어빵 공방 (120/100) | 8000 | 100 | 2만 |
-| 4 | 정밀 반죽기 | 1e4 | 600 | 1e4 | 회전 화로 | 2e4 | 1000 | 2e4 |
-| 5 | 황동 빵틀 | 1e5 | 3390 | 1e5 | 연속 굽기 | 2e5 | 5650 | 2e5 |
-| 6 | 겹겹이 반죽 | 1e6 | 19200 | 1e6 | 증기 공방 | 2e6 | 31900 | 2e6 |
-| 7 | 달빛 손길 | 1e7 | 10.8만 | 1e7 | 골목 제빵소 | 2e7 | 18만 | 2e7 |
-| 8 | 숙련 뒤집기 | 1e8 | 61.1만 | 1e8 | 도시 제빵소 | 2e8 | 102만 | 2e8 |
-| 9 | 별빛 빵틀 | 1e9 | 345만 | 1e9 | 별빛 화로 | 2e9 | 576만 | 2e9 |
-| 10 | 금빛 앙금 | 1e10 | 1950만 | 1e10 | 황금 제빵소 | 2e10 | 3250만 | 2e10 |
-| 11 | 별무리 손길 | 1e11 | 1.1억 | 1e11 | 성운 공방 | 2e11 | 1.84억 | 2e11 |
-| 12 | 유성 빵틀 | 1e12 | 6.23억 | 1e12 | 유성 화로 | 2e12 | 10.4억 | 2e12 |
-| 13 | 오로라 반죽 | 1e13 | 35.2억 | 1e13 | 찬란한 공방 | 2e13 | 58.7억 | 2e13 |
-| 14 | 태양의 반죽 | 1e14 | 199억 | 1e14 | 태양 제빵소 | 2e14 | 332억 | 2e14 |
-| 15 | 우주의 손길 | 1e15 | 1120억 | 1e15 | 우주 제빵소 | 2e15 | 1870억 | 2e15 |
-| 16 | 천년 빵틀 | 1e16 | 6350억 | 1e16 | 천년 화로 | 2e16 | 1.06조 | 2e16 |
+| 1 | 반짝이는 틀 | 20 | 1 | 0 | 작은 화로 | 80 | 1 | 0 |
+| 2 | 진한 반죽 | 80 | 2 | 150 | 부지런한 집게 | 300 | 2 | 600 |
+| 3 | 노릇한 손놀림 | 300 | 3 | 600 | 붕어빵 공방 | 1200 | 3 | 2500 |
+| 4 | 정밀 반죽기 | 1200 | 4 | 2500 | 회전 화로 | 5000 | 4 | 1만 |
+| 5 | 황동 빵틀 | 4만 | 6 | 80만 | 연속 굽기 | 5만 | 5 | 100만 |
+| 6 | 겹겹이 반죽 | 15만 | 8 | 300만 | 증기 공방 | 20만 | 6 | 400만 |
+| 7 | 달빛 손길 | 50만 | 12 | 1000만 | 골목 제빵소 | 60만 | 8 | 1200만 |
+| 8 | 숙련 뒤집기 | 150만 | 17 | 3000만 | 도시 제빵소 | 200만 | 11 | 4000만 |
+| 9 | 별빛 빵틀 | 500만 | 26 | 1억 | 별빛 화로 | 600만 | 15 | 1.2억 |
+| 10 | 금빛 앙금 | 1500만 | 38 | 3억 | 황금 제빵소 | 2000만 | 21 | 4억 |
+| 11 | 별무리 손길 | 5000만 | 58 | 10억 | 성운 공방 | 6000만 | 29 | 12억 |
+| 12 | 유성 빵틀 | 1.5억 | 86 | 30억 | 유성 화로 | 2억 | 40 | 40억 |
+| 13 | 오로라 반죽 | 5억 | 130 | 100억 | 찬란한 공방 | 6억 | 57 | 120억 |
+| 14 | 태양의 반죽 | 15억 | 195 | 300억 | 태양 제빵소 | 20억 | 80 | 400억 |
+| 15 | 우주의 손길 | 50억 | 290 | 1000억 | 우주 제빵소 | 60억 | 110 | 1200억 |
+| 16 | 천년 빵틀 | 150억 | 440 | 3000억 | 천년 화로 | 200억 | 155 | 4000억 |
+
+예상 1분 수입(탭 1초 2번, 3분마다 판매, 가장 싼 스킬부터 1분에 3개까지, 황금 스킬 안 삼): Lv.5(12분) 약 5,300, Lv.10(27분) 약 1.5만, Lv.20(1시간 24분) 약 3만, Lv.30(2시간 51분) 약 3.6만. 하루 1시간 + 밤 8시간 부재로 7일째 약 7.4만, 30일째 약 12.8만. 황금이 넉넉해도(황금 스킬을 마음껏 삼) 하루 8시간 90일째 약 36만으로 폭주하지 않음(39장).
 
 - 스킬 id는 `tap_1`~`tap_16`, `auto_1`~`auto_16`입니다.
 - 4단계부터의 id는 목록 순서로 자동으로 붙습니다. **중간에 끼워 넣거나 순서를 바꾸면 안 됩니다.**
-- 목표 밸런스는 Lv.10까지 약 21~22일입니다(`test/economy_simulation_test.dart`).
+- (구형 클리커 기록) 목표 밸런스는 Lv.10까지 약 21~22일입니다(`test/economy_simulation_test.dart`, 신규 Workshop과 무관).
 - 신규 Workshop 경로: 스킬은 붕어빵력+황금붕어빵력 두 재화 가격(`skill_purchase`). **1~4단계(`tap_1`~`tap_4`, `auto_1`~`auto_4`)는 황금 0**이라 붕어빵력만으로 사고 몇 번째든 황금 0, **5~16단계는 황금 2·3·4개(4단계씩) + 10번마다 1개 증가**(DEC-041, 26번 3단계). 황금 공식은 `기본 황금 > 0`일 때만 `기본 황금 + ⌊n / gold_step_purchase_count⌋ × gold_step_amount`, 기본 황금이 0이면 0(앱 `lib/development_rules.dart` `quoteCompositeSkill`, 서버 `development_contracts.ts` `validateDevelopmentCompositeQuote` 같은 식). 황금 0은 스킬에만 허용하고 꾸미기·부스트는 계속 황금 1 이상이어야 한다(설정 검사 `lib/development_balance.dart`·`tools/development_balance.py`, 저널 `PurchaseJournal.start`, 영수증 `compositeReceiptMatches`, 서버 `parseCompositeIntent`).
-- 성장 확인(`test/workshop_progression_simulation_test.dart`, 탭 2회/초·1분 1판매·가장 싼 스킬부터 분당 3개까지 구매): 황금 0인 서버로 Lv.5 4분·Lv.10 9분, 스킬 황금 소비 0. 첫 황금 스킬인 5단계는 탭 Lv.15·자동 Lv.19에서 열림(탭 1회/초면 Lv.17·21). 환영 황금(`welcome_reward.gold` = 10)은 스킬에 쓰이지 않고 꾸미기(가장 싼 유료 아바타 황금 2)에 쓴다. Lv.1~5 승급은 스킬 없이 30분 안에 가능([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)). 손님 간격이 바뀌면(5-1단계) 다시 확인한다.
+- 성장 확인(`test/workshop_progression_simulation_test.dart`, 탭 2회/초·1분 1판매·가장 싼 스킬부터 분당 3개까지 구매): 황금 0인 서버로 Lv.10 15분 안, 3분마다 판매면 Lv.5 15분·Lv.10 35분 안, 스킬 황금 소비 0. 첫 황금 스킬인 5단계는 Lv.15~25에서 열림. 3시간 수입 증가폭 50배 미만·한 레벨이 수입을 2배 넘게 올리지 않음도 확인(4차 g7). 환영 황금(`welcome_reward.gold` = 10)은 스킬에 쓰이지 않고 꾸미기(가장 싼 유료 아바타 황금 4)에 쓴다. Lv.1~5 승급은 스킬 없이 30분 안에 가능([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)). 손님 간격이 바뀌면(5-1단계) 다시 확인한다.
 - 스킬 창(`lib/ui/workshop_skill_shop.dart` `WorkshopSkillShop`, `workshop_windows.dart`가 다시 내보냄; 26번 4-3단계 F12~F19): '사는 목록'이 아니라 **레벨을 올리는 목록**. 위 줄 = 탭 버튼 '클릭 생산'·'자동 생산'(키 `kind-tap/kind-auto`, 체크 표시 없는 직접 만든 탭, 아이콘 28px, 고른 탭은 꿀색, 두 탭이 줄을 반씩). 단위 돌림판은 **스킬마다** 칸 안에 하나씩(26번 시안 확인 2차, DEC-128): `SkillStepWheel`(키 `skill-step-<id>`, 값 `step-<id>-1/10/100`, 폭 40·줄 14, 위아래로 밀거나 이웃 값을 눌러 한 칸씩). 고른 단위는 `WorkshopController.skillSteps`(스킬 id → 단위)에 **앱을 켜 둔 동안만** 기억하고 저장하지 않음(저장 형식 변경 없음, 없으면 ×1). 단위 `skillLevelUpSteps = [1, 10, 100]`은 Dart 상수(`lib/development_rules.dart`, 설정 파일 아님). 한 번에 올리는 양 `skillLevelUpQuantity` = min(단위, 1000 − 레벨) — 995에서 ×10은 5. 서버(`development_contracts.ts`)가 `cap − owned` 이하면 받으므로 서버 변경 없음. '최대(살 수 있는 만큼)'·1개/10개/최대 칩·'자세히 보기'·'스킬 구매는 온라인 연결…' 문장은 없앰. 칸(키 `skill-$id`, 높이 약 66px): 왼쪽 그림 40px, 가운데 이름 + 두 줄 'Lv.12/1000' / '+60/클릭'(키 `level-$id`, 글은 줄바꿈 하나로 이어진 한 Text, 이 스킬 한 레벨 효과, 자동은 '/초'), 오른쪽 비용(`CurrencyAmount`: 붕어빵력·황금 아이콘 + 줄인 숫자, 모자라면 빨강 `0xffc0392b`, 줄였으면 길게 눌러 정확한 숫자, 황금 0이면 황금 줄 없음, 키 `cost-$id`) + 그 스킬의 돌림판(해금된 칸만) + 'LEVEL UP' 글자 버튼(`LevelUpButton`, 키 `buy-$id`, `ui/levelup.png`·`levelup_off.png` 108×72를 54×36으로, 둘째 줄 'UP'; 25번 33번 생성 그림을 `tools/apply_25_art.py --only levelup`으로 적용(2026-11-19, 꺼짐 그림은 켜짐 그림을 밝기대로 회색으로 바꿔 만듦 — 생성된 꺼짐 그림은 면에 구멍 두 개라 안 씀), 그림이 없으면 같은 크기 글자 버튼. 예전 둥근 '+'·'×10' 꼬리표는 DEC-128로 없앰). 버튼은 해금·온라인 구매 연결·로그인·오류 없음·바쁘지 않음·두 재화 충분일 때만 켜짐. 꺼진 '+'를 누르면 스낵바로 이유: '누적 N개 만들면 열려요.' / '인터넷에 연결하면 레벨업할 수 있어요.' / '카카오 로그인 후 레벨업할 수 있어요.' / '붕어빵력이 3.2만 모자라요.'(황금도 같은 식) / '잠시 뒤에 다시 눌러 주세요.'. 1000이면 버튼·돌림판 대신 'MAX' 배지(키 `max-$id`). 잠긴 스킬은 **바로 다음 하나만** 보이고(S43-Q3) 그 뒤는 숨김: 그림 대신 공통 잠금 `LockedOverlay(style: LockStyle.hidden)`(키 `skill-lock-$id`, 실루엣 + 큰 자물쇠) + '누적 100만 개 만들면 해금'(키 `unlock-$id`, `compactNumber`라 '누적 2000조 개'). 조기 해금 없음(S43-Q5). 위쪽 안내: 황금 0 단계가 있으면 '1~N단계 스킬은 붕어빵력만으로 레벨업해요. 황금붕어빵력은 N+1단계부터 필요해요.'(키 `skill-gold-note`, N은 설정에서 계산), 온라인 빌드에서 로그인 전이면 '카카오 로그인 후 레벨업할 수 있어요.' + '카카오 로그인' 버튼(키 `skill-sign-in`, `GameController.signInOnline`), 정산 안 된 거래는 '레벨업 확인 대기: 스킬 이름'(꾸미기는 '구매 확인 대기') + 복구·취소 확인. 로그인 전 `purchaseSkill`은 거래를 만들지 않고 같은 안내만 남긴다. 확인 실패·복구 문구는 스킬이면 '레벨업 확인이 남아 있어요…'·'레벨업 복구 확인이 필요해요', 꾸미기(`cosmetic:`)는 '구매'. 저장(`purchases.owned` = 레벨)·서버 함수 이름은 그대로. 한 화면에 보이는 칸: 390×844 7칸, 360×640 4칸(전에는 390×844에서 약 2칸, `test/workshop_skill_window_test.dart`가 확인). 구형 `lib/ui/skill_shop.dart` `SkillShop`(구형 `GameHome`)은 고치지 않음.
 
 ---
@@ -380,7 +383,7 @@
 - 해금 조건: 레벨 ≥ `unlockLevel` 그리고 누적 생산 ≥ `unlockProduction`. 신규 Workshop의 아바타는 `avatar_catalog`의 `unlock_level`·`unlock_total`(누적 생산, 지금 모두 "0")이고, 화면에는 **'Lv.N 해금'만** 보임(26번 4-5단계 S45-Q2: '누적' 표시는 지움, 값 0과 서버 검사는 그대로).
 - 코인으로 삽니다. 황금 붕어빵으로 사면 가격은 코인 × 5이고 해금 조건을 건너뜁니다.
 - 기본 아이템과 character, skin, time 칸의 아이템은 수집 개수에서 빠집니다(구형 클리커에서는 무료).
-- **사장님·피부톤(Workshop, 3차 피드백 H11·H12, DEC-129):** 첫 실행에서 고른 사장님 하나만 가지고 바꿀 수 없음(안내 '한 번 고르면 바꿀 수 없어요', `OwnerTexts.characterHelp`). 다른 사장님은 꾸미기에서 삼(`avatar_catalog` girl·boy `free: false`, 가격 `cosmetic_purchase` girl·boy 붕어빵력 1000 + 황금 10, 임시값). 피부톤은 skin1만 무료, skin2·3은 판매(붕어빵력 1000 + 황금 2, 임시값). 사지 않고 가진 것은 가게 저장 `avatarGrants`(3장). 규칙 전 저장은 입던 사장님·피부톤을 그대로 가짐. 첫 실행 뒤(`OwnerProfile.characterChosen`)에는 `chooseCharacter`가 가진 것만 입힘. 서버 생성 설정이 바뀌어 **서버 배포 필요**. 구형 금화 가격표(`catalog.json`)에는 넣지 않음(`tools/development_balance.py`가 이 넷만 예외로 허용).
+- **사장님·피부톤(Workshop, 3차 피드백 H11·H12, DEC-129):** 첫 실행에서 고른 사장님 하나만 가지고 바꿀 수 없음(안내 '한 번 고르면 바꿀 수 없어요', `OwnerTexts.characterHelp`). 다른 사장님은 꾸미기에서 삼(`avatar_catalog` girl·boy `free: false`, 가격 `cosmetic_purchase` girl·boy 붕어빵력 60만 + 황금 10, 4차 g7). 피부톤은 skin1만 무료, skin2·3은 판매(붕어빵력 20만 + 황금 4, 4차 g7 — 무료로 할지 확인 필요). 사지 않고 가진 것은 가게 저장 `avatarGrants`(3장). 규칙 전 저장은 입던 사장님·피부톤을 그대로 가짐. 첫 실행 뒤(`OwnerProfile.characterChosen`)에는 `chooseCharacter`가 가진 것만 입힘. 서버 생성 설정이 바뀌어 **서버 배포 필요**. 구형 금화 가격표(`catalog.json`)에는 넣지 않음(`tools/development_balance.py`가 이 넷만 예외로 허용).
 - **사장님별 기본 머리(26번 3차 G, 2026-11-20 사용자 결정):** 여자 사장님은 긴 생머리, **남자 사장님은 짧은 머리**(`characterDefaultHair`·`defaultHairOf`, `cosmetic_config.dart`). 그 사장님을 가진 가게는 기본 머리를 사지 않고 가짐(`WorkshopState.hasAvatar`, 저장 형식 그대로). 머리를 고른 적 없으면(가게 저장 `avatarEquipment`에 hair가 없고 옛 계정 꾸미기 값이 기본 긴 생머리) 지금 사장님의 기본 머리를 입음(`WorkshopState.avatarWorn`) — 그래서 기존 저장의 남자 사장님도 짧은 머리로 보이고, 직접 고르거나 산 머리는 그대로. 사장님을 바꿔 입을 때 입던 머리가 이전 사장님의 기본 머리면 '고른 적 없음'으로 돌려 새 사장님의 기본 머리가 보임(꾸미기 미리보기도 같음). 첫 실행 캐릭터 카드·공유 카드·서버에서 받은 모습도 같은 규칙. 서버 변경 없음.
 
 ### 칸과 분류
@@ -403,19 +406,19 @@
 
 ### 아이템 표
 
-표기는 `id 이름 코인/레벨[/누적생산]`이고, 굵게 표시한 것이 기본값입니다.
+표기는 `id 이름 코인/레벨[/누적생산]`이고, 굵게 표시한 것이 기본값입니다. 코인은 구형 값이고, 신규 Workshop의 아이템별 붕어빵력·황금 가격은 39장 표(`cosmetic_purchase`)입니다.
 
 | 칸 | 아이템 |
 | --- | --- |
-| background | **clear 맑은 날 0/1**, night 야간 골목 3/1, dusk 보랏빛 해질녘 5/2/100, rain 비 오는 날 6/2, snow 눈 오는 밤 7/3, autumn 가을 골목 9/4, forest 숲길 노점 9/5/1만, cherry 벚꽃 골목 10/6, snowday 눈 오는 낮 11/6, seaside 바닷가 야시장 14/8 (구형 코인 값. **신규 Workshop은 26번 3차 H42부터 `avatar_catalog`에 slot `background`로 들어가 붕어빵력 1000 + 황금 2(`cosmetic_purchase`)로 팔고, 해금 레벨은 위 레벨 그대로·누적 조건 없음, clear는 무료** — 38장) |
+| background | **clear 맑은 날 0/1**, night 야간 골목 3/1, dusk 보랏빛 해질녘 5/2/100, rain 비 오는 날 6/2, snow 눈 오는 밤 7/3, autumn 가을 골목 9/4, forest 숲길 노점 9/5/1만, cherry 벚꽃 골목 10/6, snowday 눈 오는 낮 11/6, seaside 바닷가 야시장 14/8 (구형 코인 값. **신규 Workshop은 26번 3차 H42부터 `avatar_catalog`에 slot `background`로 들어가 `cosmetic_purchase` 값(39장: 야간·해질녘·비·눈 오는 밤 400만 + 황금 10, 가을·숲길·벚꽃·눈 오는 낮·바닷가 1000만 + 황금 16)으로 팔고, 해금 레벨은 위 레벨 그대로·누적 조건 없음, clear는 무료** — 38장) |
 | stove | **iron 기본 화로 0/1**, castiron 무쇠 화로 6/2, copper 구리 화로 7/3/1000, golden 황금 화로 15/9 |
 | decoration | **none 0/1**, lantern 종이 등불 4/2, starlights 별 전구 5/3, bunting 작은 축제 깃발 8/4/5000, windchime 풍경 9/5, paperlanterns 종이 초롱 줄 10/6, snowman 눈사람 12/7 |
 | lamp | **amberlamp 기본 등불 0/1**, roselamp 분홍 4/2, mintlamp 민트 6/3, lilaclamp 라일락 8/4 |
 | time | **scenetime 배경 그대로**, day 낮, night_time 밤, clock 기기 시간(19~06시 밤) |
 | pattern | **scales 기본 모양 0/1**(26번 4-5단계, 전 '기본 비늘'), heartscale 하트 비늘 5/2, starmark 별 도장 8/4, crispgrid 바삭 격자 11/6 |
 | topping | **plain 0/1**, sugar 슈가파우더 4/2, choco 초코 드리즐 7/3, almond 아몬드 슬라이스 9/5, sprinkle 무지개 스프링클 13/8 |
-| character | **girl 여자 사장님**, boy 남자 사장님 (첫 실행에 고른 하나만 무료, 다른 하나 1000/황금 10) |
-| skin | **skin1**, skin2, skin3 (skin2·3은 1000/황금 2, 3차 피드백 H12; 26번 4-7단계 G4: skin3 = 2026-11-18까지의 skin2 색, skin2 = skin1과 그 사이의 연한 새 색, id 그대로) |
+| character | **girl 여자 사장님**, boy 남자 사장님 (첫 실행에 고른 하나만 무료, 다른 하나 붕어빵력 60만/황금 10) |
+| skin | **skin1**, skin2, skin3 (skin2·3은 붕어빵력 20만/황금 4, 3차 피드백 H12·4차 g7; 26번 4-7단계 G4: skin3 = 2026-11-18까지의 skin2 색, skin2 = skin1과 그 사이의 연한 새 색, id 그대로) |
 | hair | **long 긴 생머리 0/1**(여자 사장님 기본), short 짧은 머리 3/1(**남자 사장님 기본** — 26번 3차 G, 남자 사장님을 가진 가게는 사지 않고 가짐), ponytail 묶은 머리 5/2, curly 곱슬머리 8/5 |
 | top | **tee 흰 티셔츠 0/1**, creamlong 크림 긴팔 3/2, pinksweater 분홍 니트 6/3, sagesweater 세이지 니트 6/4, creamsweater 꽈배기 니트 8/5, cardigan 카디건 10/6, padding 패딩 조끼 6/3, chefcoat 요리사 복 12/7 (padding·chefcoat는 26번 4-5단계 G12에서 outfit → top, 그림 `avatar/<성별>/top_<id>.png`, 앞치마를 위에 겹쳐 입을 수 있음) |
 | bottom | **shorts 베이지 반바지 0/1**, skirt 주름치마 4/2, widepants 와이드 바지 6/3, brownpants 갈색 바지 7/4, jeans 연청 청바지 5/2, denimshorts 데님 반바지 5/3, joggers 회색 조거 바지 6/3, checkskirt 빨강 체크 치마 7/4, cargopants 카키 카고 바지 8/5, longskirt 크림 롱스커트 9/6 (새 6종은 26번 4-7단계 G11, 가격·레벨 임시값, 서버 `avatar_catalog`·`cosmetic_purchase`에도 있음. **v2 아바타 그림에만 있어 v2가 꺼지면 꾸미기·상점에서 숨김**(26번 3차 AV로 켜져 보임). brownpants는 46번에서 '갈색 골덴 일자 바지'로 그려짐, 이름은 '갈색 바지' 그대로·칸 아이콘은 25번 46번 51번 재주문) |
@@ -548,7 +551,7 @@
 | --- | --- |
 | 꾸미기 | 코인 가격 × 5 (`goldPerCoin`), 영구 보유, 잠금 무시 |
 | 스킬 조기 해금 | n단계 × 10 (`goldPerSkillStep`), 2~16단계만 — **구형 클리커 경로만**. 신규 Workshop에는 조기 해금이 없음 |
-| (신규 Workshop) 꾸미기 | 유료 아바타 붕어빵력 1000 + 황금 2 (`cosmetic_purchase`) |
+| (신규 Workshop) 꾸미기 | 아이템마다 붕어빵력 20만~1000만 + 황금 4~16 (`cosmetic_purchase`, 39장 표) |
 | (신규 Workshop) 스킬 레벨업 | 1~4단계 황금 0, 5~16단계 황금 2·3·4 + 10번마다 1 (4장, DEC-041) |
 | 황금 부스트 | 20 (`boughtBoostGold`) |
 
@@ -660,7 +663,7 @@
 | 제출 주기 | 최대 5분마다(점수가 올랐을 때), 최소 간격 60초 |
 | 그 외 제출 시점 | 레벨업, 앱 나갈 때, 랭킹 열 때 |
 | 상위 표시 | 100명 |
-| 이상치 차단 | 점수 ≤ 하한값, 또는 ≤ max(이전, 하한) × 10 × 10^경과시간. 하한: 초당 1e6, 누적 1e9, 콤보 1000 |
+| 이상치 차단 | 점수 ≤ 하한값, 또는 ≤ max(이전, 하한) × 10 × 10^경과시간. 하한: 초당 1000, 누적 1000만, 콤보 1000 (4차 g7: 경제 재조정으로 초당 생산이 몇백이라 예전 하한 초당 1e6·누적 1e9에서는 검사가 사실상 꺼졌음) |
 
 ### 친구·초대
 
@@ -1670,14 +1673,14 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | 항목 | 규칙 | 위치 |
 | --- | --- | --- |
 | 하루 경계 | 정산 시각의 KST 날짜(`today`). 시계를 되돌리면 그대로, 앞당기면 그 날로(여러 날 지나도 한 번). 첫 실행 안내 중에는 아무것도 열리지 않음. 모든 명령 뒤와 복귀 때 `_observeDaily`가 날짜·행사·주문서만 기록(보상 없음) | `WorkshopController._observeDaily` |
-| 오늘의 주문서 | **특별 주문(Lv.5, `ordinary_sale.special_order_unlock_level`, 기능 소개 카드 '특별 주문이 와요')부터** 하루 1장. 날짜 + 설치(`grid.runId`)로 고정(`makeDailyOrder`, 같은 날은 언제 봐도 같음): 가진 맛 중 하나, 익힘 1~3(부드러움·미디엄·바삭함), 1~`quantity_max`(2)개, 의뢰인은 만난 단골 중 한 명(없으면 '동네 손님'), 행사 중이면 행사 ID. **영업 중에만** 재고에서 맞는 맛·익힘(5영업일 미만, 오래된 것부터)을 '납품하기'. '주문서 굽기'는 영업 중 큰 틀에서 그 맛을 주문 제작(손님 없이, 결과는 재고로). 보상: 붕어빵력 = max(초당 자동 생산 × `reward_seconds` 600, `min_buns` 200) + 의뢰 단골 친밀도 `affinity` 3(관계 기록 `special:<날짜>`, 자기 칸 `special` 하루 상한 `customer_relationships.special_daily_cap` 3, 판매·대화 상한과 따로). **황금 없음**. 하루 1번, 납품하지 않으면 다음 날 새 주문서로 바뀜 | `lib/workshop_daily.dart`, `deliverDailyOrder`, `startDailyOrderProduction`, `WorkshopRelationships.specialOrder` |
+| 오늘의 주문서 | **특별 주문(Lv.5, `ordinary_sale.special_order_unlock_level`, 기능 소개 카드 '특별 주문이 와요')부터** 하루 1장. 날짜 + 설치(`grid.runId`)로 고정(`makeDailyOrder`, 같은 날은 언제 봐도 같음): 가진 맛 중 하나, 익힘 1~3(부드러움·미디엄·바삭함), 1~`quantity_max`(2)개, 의뢰인은 만난 단골 중 한 명(없으면 '동네 손님'), 행사 중이면 행사 ID. **영업 중에만** 재고에서 맞는 맛·익힘(5영업일 미만, 오래된 것부터)을 '납품하기'. '주문서 굽기'는 영업 중 큰 틀에서 그 맛을 주문 제작(손님 없이, 결과는 재고로). 보상: 붕어빵력 = max(R × `reward_seconds` 600, `min_buns` 200), **R = 탭 힘 × `rate_taps_per_second` 2 + 초당 자동 생산**(4차 g7, `dailyIncomeRate`; 전에는 자동 생산만이라 재조정 뒤 수입의 약 25%만 따라감) + 의뢰 단골 친밀도 `affinity` 3(관계 기록 `special:<날짜>`, 자기 칸 `special` 하루 상한 `customer_relationships.special_daily_cap` 3, 판매·대화 상한과 따로). **황금 없음**. 하루 1번, 납품하지 않으면 다음 날 새 주문서로 바뀜 | `lib/workshop_daily.dart`, `deliverDailyOrder`, `startDailyOrderProduction`, `WorkshopRelationships.specialOrder` |
 | '오늘' 창 (3차 피드백 H36~H40, DEC-135·136) | 홈 오른쪽 위 설정 버튼 아래 '오늘' 버튼(글씨 없이 달력 아이콘, 52×52)이 여는 Workshop 전체 창 '오늘'(`today-scroll`). 위에서부터 행사 띠 → 출석 도장 → 오늘의 주문서 → 일일 미션 → 주간 도전, 각 칸은 밝은 카드(`TodaySection`). 출석 = 빨간 도장 원 + 흰 체크, 칸 최대 40, '7번 출석하면 황금붕어빵력 1개'(`cycle_days`·`gold`, 서버 없으면 대신 주는 붕어빵력). 아이콘: 출석 `AttendanceStampIcon` = `icons/stamp.png`(나무 손잡이 빨간 도장)·주문서 `DailyOrderIcon` = `icons/order.png`(집게 꽂힌 주문 쪽지, 붕어빵 그림), 둘 다 72×72 `PixelIcon`(화면 26, 25번 38번 생성 그림 `tools/apply_25_art.py --only today`)·버튼 `icons/daily.png`(달력). 미션은 기간('11월 16일(월) ~ 11월 22일(일)'·'N일 남음'), 칸마다 진행 막대·숫자·황금, 다 채운 것만 '보상 받기'(받으면 '받았어요'). 메뉴에는 일일 미션·주간 도전 줄 없음. 미션 보상이 있거나 도장·주문서가 남으면 버튼 빨간 점 | `ui/workshop_daily_card.dart` `WorkshopDailyTicket`·`WorkshopDailyCard`·`WorkshopMissionSection`, `ui/workshop_page.dart` `_daily`·`_claimMission` |
-| 출석 도장 | 7칸(`cycle_days`). KST 하루 처음 '도장 찍기'로 다음 칸(자동 아님, 쪽지 빨간 점으로 알림). 하루를 걸러도 이어지고, 7칸 뒤 다음 도장은 1칸부터. 1~6칸: 붕어빵력 max(초당 × `buns_seconds` 300, `min_buns` 100). 7칸: **황금 `gold` 1** — 서버가 있는 빌드는 `pendingGold['attendance:<날짜>']`로 신청해 미션 황금처럼 서버 검증 뒤 지갑에(쪽지에서 찍으면 로그인 상태일 때 바로 `syncRewards`), 서버가 없는 빌드는 붕어빵력 max(초당 × `substitute_seconds` 1800, `substitute_min_buns` 600)로 대신(첫 실행 로그인이 필수라 출시 빌드는 황금) | `stampAttendance`, `attendanceClaim` |
+| 출석 도장 | 7칸(`cycle_days`). KST 하루 처음 '도장 찍기'로 다음 칸(자동 아님, 쪽지 빨간 점으로 알림). 하루를 걸러도 이어지고, 7칸 뒤 다음 도장은 1칸부터. 1~6칸: 붕어빵력 max(R × `buns_seconds` 300, `min_buns` 100). 7칸: **황금 `gold` 1** — 서버가 있는 빌드는 `pendingGold['attendance:<날짜>']`로 신청해 미션 황금처럼 서버 검증 뒤 지갑에(쪽지에서 찍으면 로그인 상태일 때 바로 `syncRewards`), 서버가 없는 빌드는 붕어빵력 max(R × `substitute_seconds` 1800, `substitute_min_buns` 600)로 대신(첫 실행 로그인이 필수라 출시 빌드는 황금) | `stampAttendance`, `attendanceClaim` |
 | 이야기 하루 한 조각 | 이야기 장면·후일담·선택 사건을 합쳐 영업일당 `story_daily_limit` 1개(`storiesOpenedToday`: 그날 `storyDays`·`followupDays`·`lastChoiceDay` + 지금 보이는 장면). 넘치면 그 손님 판매 뒤 장면 대신 '내일 ○○가(이) 이야기를 이어 갈 것 같아요.'(짧은 이름, 카운터 안내 줄), 다음 영업일 그 손님 판매 때 열림. 저장 변경 없음 | `_afterNamedSale`, `_spawnCustomer` |
 | 겨울 행사 | `seasonal_events`: 첫눈 `first_snow_2026` 12/1~12/7(`event_first_snow` 눈 쌓인 처마 + 눈사람), 크리스마스 `christmas_2026` 12/20~12/26(`event_christmas` 빨강·초록 전구 줄 + 리스), 설날 `seollal_2027` 2027-02-05~02-09(`event_seollal` 색동 초롱 줄 + 복주머니). 기간 안(양 끝 포함, KST)이면 ① 홈의 가게 장식을 행사 장식으로 바꿔 그림(가진 장식과 상관없이, 입은 장식 기록·꾸미기 창은 그대로 `WorkshopPage._homeEquipped`. 행사 전용 장식 `deco/event_<kind>.png`(25번 32번 생성 그림, 2026-11-19 적용: 폭 540 = 장면 180 × 3, 높이 87·156·144, 알파 40 미만 0·215 초과 255). 판매 목록에 없는 장식이라 `CosmeticDefinition` 없이 `PixelSprites.eventDecorations`로 읽고, 자리는 `NightStallPainter.decorationAt`의 별 전구와 같은 (0, 104) — 첫눈만 좌우 뒤집어 눈사람이 왼쪽(오른쪽 '오늘' 버튼과 안 겹침). 설정 검사 `development_balance.py`가 판매 장식 + 이 3개 id만 받음) ② 손님 창 첫 줄에 행사 인사 ③ 그날 주문서에 행사 문구(`order_note`)와 쪽지 카드 위 행사 띠. 새 재화·판매 없음. 날짜를 바꾸려면 설정만 고치고 `python 1_app_development/tools/development_balance.py` | `activeSeasonalEvent`, `WorkshopPage._homeEquipped` |
 | 복귀 안내 | 2시간 이상 비웠다 돌아오면 카드에 '오늘의 주문서가 도착했어요.'·'오늘 출석 도장을 찍을 수 있어요.' | `WorkshopAwayReport.newOrder·stampReady` |
 | 사용 통계 | `special_order_done`(`event`), `event_join`(`event`) — 32장 | `usage_stats.dart` |
-| 서버 | 출석 황금은 보상 종류 `mission`의 새 목표(`scope:'attendance'`, `goal:'day7'`): `plausibility_validator.ts`가 보상량(설정 `gold`)·기간(미션과 같은 KST 날짜 유예 `mission_claim_grace_days`)을 확인, `workshop_missions.ts`가 계정당 날짜 하나(`attendance:<날짜>`)와 **직전 출석 황금에서 7일 이상**(`users/<계정>/workshopAttendance/latest`)일 때만 지급(아니면 `unverifiable`). 타당성 한도에 지난 KST 날짜 수(+2) × (초당 × (600 + 1800) + 200 + 600)을 더함. **서버 배포 필요**(함수·생성 설정) | `firebase/functions/src/plausibility_validator.ts`, `workshop_missions.ts`, `workshop_service.ts` |
+| 서버 | 출석 황금은 보상 종류 `mission`의 새 목표(`scope:'attendance'`, `goal:'day7'`): `plausibility_validator.ts`가 보상량(설정 `gold`)·기간(미션과 같은 KST 날짜 유예 `mission_claim_grace_days`)을 확인, `workshop_missions.ts`가 계정당 날짜 하나(`attendance:<날짜>`)와 **직전 출석 황금에서 7일 이상**(`users/<계정>/workshopAttendance/latest`)일 때만 지급(아니면 `unverifiable`). 타당성 한도에 지난 KST 날짜 수(+2) × (R × (600 + 1800) + 200 + 600)을 더함(R은 서버가 아는 스킬 레벨로 같은 식). **서버 배포 필요**(함수·생성 설정) | `firebase/functions/src/plausibility_validator.ts`, `workshop_missions.ts`, `workshop_service.ts` |
 | 테스트 | `test/workshop_daily_test.dart`(11개: 사흘 흐름, 시계 되돌리기·앞당기기, 자정 걸침, 오프라인 5일, 씨앗 고정·가진 맛, 행사 안/밖/없음, 안내 중, 출석 7칸 서버 유무, 저장 9→10·거절, 쪽지 화면, 카드 골든), 서버 `test/plausibility_validator.test.ts` 3개 | |
 | 미리보기 | `flutter test tools/preview_daily_test.dart --dart-define=PREVIEW_FONT=C:/Windows/Fonts/malgun.ttf` → `build/preview/daily_{home,card}_{christmas,plain}.png` | |
 
@@ -1745,7 +1748,42 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | --- | --- | --- |
 | H41 공통 테마 | 패널·창·버튼·탭·토글·말풍선을 가는 선 + 흰 면 + 부드러운 그림자로, 종류별 색 `CozyTone`(11장). 화면 파일은 최소만: 메뉴 줄(`public_menus.dart`), 손님 말풍선(`workshop_guests.dart`), 창 받침·닫기·오류 줄(`workshop_windows.dart`), 작은 창 닫기 위치(`workshop_page.dart` `_popup`), 스킬 창 고른 탭·돌림판 테두리(`workshop_skill_shop.dart`), '미션 달성!' 완료 색(`celebration.dart`) | `lib/ui/cozy_style.dart` |
 | H31 충전 상품 | 충전 탭을 잔액 카드 + 상품 카드(그림·큰 숫자·가격 알약)로(8장). 상품 그림 25번 40번 주문, 임시는 아이콘 쌓기 | `lib/ui/gold_widgets.dart`, `pixel_sprites.dart` `uiNames` |
-| H42 배경 되살리기 | 원인: 26번 2단계(커밋 b7ad3e9, 2026-11-18)가 메뉴 '배경 테마'와 꾸미기 가게 탭을 Lv.8(`stall_cosmetics`)까지 숨겼고, 26번 4-5단계 Workshop 상점은 `avatar_catalog`(아바타)만 팔아 배경은 어디서도 살 수 없었다(`cosmetic_purchase`에는 값이 있었음). 고침: 배경 10종을 `avatar_catalog`에 slot `background`로 넣음(clear 무료, 나머지 붕어빵력 1000 + 황금 2, 해금 레벨 1·1·2·2·3·4·5·6·6·8), 새 설정 `feature_unlock_levels.stall_background` = 1(가게 탭의 배경·밤낮 칸), 화로·장식·등불은 그대로 Lv.8. 설정 창 '배경 바꾸기' 줄 추가(10장) | `config/development_balance.json`, `lib/workshop_feature_unlocks.dart` `stallBackground`, `lib/ui/workshop_page.dart` `_cosmetics`·`_audioSettings`, `public_menus.dart` `slotOpen`, `workshop_wardrobe.dart` `_slots` |
+| H42 배경 되살리기 | 원인: 26번 2단계(커밋 b7ad3e9, 2026-11-18)가 메뉴 '배경 테마'와 꾸미기 가게 탭을 Lv.8(`stall_cosmetics`)까지 숨겼고, 26번 4-5단계 Workshop 상점은 `avatar_catalog`(아바타)만 팔아 배경은 어디서도 살 수 없었다(`cosmetic_purchase`에는 값이 있었음). 고침: 배경 10종을 `avatar_catalog`에 slot `background`로 넣음(clear 무료, 나머지 붕어빵력 1000 + 황금 2 — 4차 g7에서 39장 값으로 바뀜, 해금 레벨 1·1·2·2·3·4·5·6·6·8), 새 설정 `feature_unlock_levels.stall_background` = 1(가게 탭의 배경·밤낮 칸), 화로·장식·등불은 그대로 Lv.8. 설정 창 '배경 바꾸기' 줄 추가(10장) | `config/development_balance.json`, `lib/workshop_feature_unlocks.dart` `stallBackground`, `lib/ui/workshop_page.dart` `_cosmetics`·`_audioSettings`, `public_menus.dart` `slotOpen`, `workshop_wardrobe.dart` `_slots` |
 | 서버 | 서버 생성 설정(`firebase/functions/src/generated/development_balance.json`)이 바뀜 → **배포 묶음에 포함, 배포 전 `npm test`**(104개 통과, 배경 구매 테스트 추가). 서버 코드는 바뀌지 않음(구매 검사는 `avatar_catalog`·`cosmetic_purchase`를 그대로 읽음). 슬롯 검사(`lib/development_balance.dart`, `tools/development_balance.py`)에 `background` 추가 | `firebase/functions/test/workshop_service.test.ts` |
 | 저장 | 형식 변경 없음. 산 배경 = 가게 저장 `purchases.owned['cosmetic:<id>']`, 입은 배경 = `avatarEquipment['background']` | 3장 |
 | 확인 | `flutter test tools/preview_theme_test.dart --dart-define=PREVIEW_FONT=C:/Windows/Fonts/malgun.ttf --dart-define=PREVIEW_TAG=after` → `build/preview/theme/`(홈·메뉴·상점 두 탭·가게 배경·꾸미기·설정·오늘·스킬·기록·주간·업적·레벨 미션, 360×800·390×844) | |
+
+## 39. 경제 재조정: 스킬 성장·꾸미기 가격·매일 보상·진행 초기화 — 2026-11-21
+
+4차 녹화 피드백 g7. 근거는 `26번_시안_확인/4차/경제_재조정_제안.md`, 사용자 결정 2026-11-21(00_결정취합 DEC-TBD-i4g7-1~5). 모두 설정값(`config/development_balance.json`, `metadata.revision` = `development-provisional-4`)이고, 서버 생성 설정은 `python 1_app_development/tools/development_balance.py`로 다시 만듦.
+
+| 항목 | 내용 | 위치 |
+| --- | --- | --- |
+| 스킬 성장 | 4장 스킬 표. 단계 값 약 4배·효과 탭 1.5배/자동 1.4배·레벨값 135/100·5단계 해금 누적 80만(탭)/100만(자동). 황금 가격 그대로 | `skill_purchase.entries` |
+| 황금 스킬 확인 | 5~16단계 효과도 같은 비율이라 황금이 넉넉해도 폭주 없음: 하루 1시간·황금 하루 10개면 30일째 1분 약 12.8만, 황금 무제한이어도 같은 값(붕어빵력 값이 먼저 막음), 황금 무제한 + 하루 8시간이면 90일째 약 36만(16단계 중 12단계). 스킬 황금은 붕어빵력보다 먼저 모자라지 않음 | 제안 스크립트 `days.py` |
+| 꾸미기 가격 | 단계 표시 없이 **아이템마다** 붕어빵력 + 황금 가격(`cosmetic_purchase`). 예전 코인 값 순서로 다섯 가격대를 나눔(아래 표). 다른 성별 사장님 60만 + 황금 10, 피부톤 2·3은 20만 + 황금 4(무료로 할지 확인 필요). 화면·데이터 이름에 등급 글자 없음 | `cosmetic_purchase` |
+| 매일 보상 기준 | 오늘의 주문서·출석 붕어빵력 = max(R × 초, 최소), R = 탭 힘 × `daily_return.rate_taps_per_second`(2) + 초당 자동 생산. 초(600·300·1800)·최소값은 그대로 → 주문서 약 수입 10분치, 출석 약 5분치(전에는 자동만이라 재조정 뒤 약 2.8분치로 줄어들 뻔함). 서버 타당성 한도도 같은 R | `lib/workshop_daily.dart` `dailyIncomeRate`, `plausibility_validator.ts` `dailyLimits` |
+| 랭킹 급성장 검사 | 하한 초당 1,000·누적 1,000만(전 1e6·1e9) | `lib/ranking_config.dart`, `functions/src/ranking.ts` |
+| 스킬 창 비용 칸 | 레벨값이 1.35배씩 오르므로 ×100 비용이 '6072.95조'처럼 길어짐 → 비용 칸을 폭 88 안에서 줄여 보임(`ConstrainedBox` + `FittedBox`). 360×800·글자 1.5배에서 칸이 13px 넘치던 것 고침 | `lib/ui/workshop_skill_shop.dart` `_row` |
+| 기기 저장 초기화 | 가게 저장 schema 11. 10 이하면 처음 열 때 한 번 새 가게로(3장) | `WorkshopState.economyReset` |
+| **배포 때 손으로 할 일(서버 초기화)** | 앱과 서버 함수·생성 설정을 **같이** 배포하고, 배포 직전에 Firebase 콘솔(Firestore)에서 테스트 계정들의 진행 기록을 지움: `users/<계정>/developmentProgress`, `compositeSkills`, `compositeState`, `workshopPlausibility`, `workshopAttendance`, 그리고 `rankings/*/entries` 전체. 지갑 황금(`users/<계정>`의 `gold`)은 남겨도 됨. 지우지 않으면 새 기기 진행(새 진행 ID)이 '진행 이전 확인 필요'로 구매를 못 하고, 남은 스킬 레벨이 서버 한도·가격과 어긋남. 출시 전 테스트 계정만 있으므로 실제 사용자 영향 없음 | 26번 문서 4차 g7 |
+
+**아이템별 가격** (붕어빵력 + 황금, `cosmetic_purchase`)
+
+| 가격 | 아이템 |
+| --- | --- |
+| 20만 + 황금 4 | 종이 등불(lantern), 별 전구(starlights), 하트 비늘(heartscale), 슈가파우더(sugar), 짧은 머리(short), 묶은 머리(ponytail), 털 비니(beanie), 크림 긴팔(creamlong), 주름치마(skirt), 연청 청바지(jeans), 데님 반바지(denimshorts), 흰 운동화(sneakers), 초코 앞치마(darkapron), 크림 두건(bandana), 분홍 리본(ribbon), 붕어빵 머리핀(fishpin), 분홍 등불(roselamp), 피부톤 2(skin2), 피부톤 3(skin3) |
+| 60만 + 황금 6 | 구리 화로(copper), 작은 축제 깃발(bunting), 무쇠 화로(castiron), 풍경(windchime), 별 도장(starmark), 초코 드리즐(choco), 아몬드 슬라이스(almond), 곱슬머리(curly), 패딩 조끼(padding), 줄무늬 앞치마(stripe), 귀마개(earmuffs), 분홍 니트(pinksweater), 세이지 니트(sagesweater), 꽈배기 니트(creamsweater), 와이드 바지(widepants), 갈색 바지(brownpants), 회색 조거 바지(joggers), 빨강 체크 치마(checkskirt), 카키 카고 바지(cargopants), 크림 롱스커트(longskirt), 앵클부츠(boots), 크림 앞치마(creamapron), 허리 앞치마(waistapron), 빨간 두건(redbandana), 크림 야구모자(ballcap), 헌팅캡(newsboy), 검정 야구모자(blackcap), 동그란 안경(glasses), 분홍 목도리(scarf), 털장갑(mittens), 붕어빵 봉투(paperbag), 민트 등불(mintlamp), 라일락 등불(lilaclamp) |
+| 60만 + 황금 10 | 여자 사장님(girl), 남자 사장님(boy) — 첫 실행에 고른 쪽은 무료 |
+| 200만 + 황금 10 | 황금 화로(golden), 눈사람(snowman), 바삭 격자(crispgrid), 무지개 스프링클(sprinkle), 요리사 복(chefcoat), 요리사 모자(chefhat), 산타 모자(santa), 황금 뒤집개(goldtongs), 카디건(cardigan), 털 부츠(furboots), 크로스백(crossbag), 갓 구운 붕어빵(fishhold), 종이 초롱 줄(paperlanterns) |
+| 400만 + 황금 10 | 야간 골목(night), 보랏빛 해질녘(dusk), 비 오는 날(rain), 눈 오는 밤(snow) |
+| 1000만 + 황금 16 | 가을 골목(autumn), 숲길 노점(forest), 벚꽃 골목(cherry), 눈 오는 낮(snowday), 바닷가 야시장(seaside) |
+
+하나를 모으는 시간(스킬에 안 쓰고 모을 때, 제안 수입 기준): 20만은 Lv.10 약 13분·Lv.30 약 6분, 200만은 Lv.30 약 55분·30일째 약 16분, 1000만은 Lv.30 약 4시간 37분·30일째 약 1시간 18분. 전부 모으기(고른 사장님 제외) 붕어빵력 약 1억 1,620만 + 황금 534개.
+
+| 테스트 | 내용 |
+| --- | --- |
+| `test/workshop_progression_simulation_test.dart` | Lv.5 15분·Lv.10 35분 안(3분마다 판매), 5단계 Lv.15~25, 3시간 성장폭 < 50배·한 레벨 +100% 넘지 않음, 환영 황금 10 ≥ 가장 싼 꾸미기 황금 4 |
+| `test/workshop_daily_test.dart` | 보상 = R 기준 |
+| `test/workshop_storage_test.dart`·`workshop_controller_test.dart` | schema 10 저장은 한 번 초기화(사장님·안내 완료 유지), schema 11은 그대로 |
+| 서버 `npm test` | 실제 설정 가격(tap_1 20, 135/100), 출석·주문서 한도 R, 랭킹 하한 |

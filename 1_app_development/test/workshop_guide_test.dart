@@ -241,7 +241,7 @@ void main() {
       final old = c.state.toJson()..['schema'] = 5..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily');
       final migrated = WorkshopState.fromJson(old, c.config);
       expect(migrated.tutorial, 'done');
-      expect(migrated.toJson()['schema'], 10);
+      expect(migrated.toJson()['schema'], workshopSchema);
       expect(() => WorkshopState.fromJson(c.state.toJson()..['tutorial'] = 'later', c.config), throwsFormatException);
       expect(() => WorkshopState.fromJson(c.state.toJson()..['completedSales'] = 1, c.config), throwsFormatException);
       c.dispose();

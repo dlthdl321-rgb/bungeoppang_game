@@ -208,6 +208,9 @@ def validate(data, catalog):
     require(0 <= data['welcome_reward']['gold'] <= 1000, '환영 황금 범위')
     # 26번 7단계: 매일 돌아올 이유. 행사 날짜는 이 설정에만 둔다(코드에 날짜 없음).
     daily = data['daily_return']
+    # 4차 피드백 g7: 보상 기준 R = 탭 힘 × rate_taps_per_second + 자동/초(앱·서버 같은 식).
+    require(type(daily['rate_taps_per_second']) is int and 1 <= daily['rate_taps_per_second'] <= 15,
+            '매일 보상 기준 탭 수(1~15/초)')
     order = daily['special_order']
     require(order['reward_seconds'] > 0 and re.fullmatch(r'[1-9][0-9]*', order['min_buns']) and
             1 <= order['quantity_max'] <= 5 and 0 < order['affinity'] <= relationship['special_daily_cap'],

@@ -64,10 +64,13 @@ export class PlausibilityValidator {
     };
   }
   /** 26번 7단계: per KST day at most one 오늘의 주문서 and one attendance
-   * stamp pay buns, each `seconds` of auto production or at least `min`. */
+   * stamp pay buns, each `seconds` of the income rate R or at least `min`.
+   * R = tap power × `rate_taps_per_second` + auto per second (4차 피드백 g7,
+   * the app's `dailyIncomeRate`). */
   private static dailyLimits(daily: Row) {
     const order = object(daily.special_order), stamp = object(daily.attendance);
     return {
+      tapsPerSecond: BigInt(natural(daily.rate_taps_per_second)),
       seconds: BigInt(natural(order.reward_seconds) + Math.max(natural(stamp.buns_seconds), natural(stamp.substitute_seconds))),
       minimum: decimal(order.min_buns) + (decimal(stamp.min_buns) > decimal(stamp.substitute_min_buns) ? decimal(stamp.min_buns) : decimal(stamp.substitute_min_buns)),
       attendanceGold: natural(stamp.gold),
@@ -112,7 +115,7 @@ export class PlausibilityValidator {
     for (let level = prev.level + 1; level <= next.level; level++) rewards += decimal(l.levels[level - 1].buns_reward);
     // The KST days the interval touches, each with one order and one stamp.
     const days = BigInt(Math.floor(elapsedMs / 86400000) + 2);
-    const daily = days * (l.daily.seconds * rates.auto + l.daily.minimum);
+    const daily = days * (l.daily.seconds * (rates.tap * l.daily.tapsPerSecond + rates.auto) + l.daily.minimum);
     const bound = prev.lifetime + BigInt(taps) * rates.tap + seconds * rates.auto + BigInt(sales) * l.saleBuns + rewards + daily + l.slackBuns;
     if (next.lifetime > bound) fail("붕어빵력 증가가 서버 시간 한도를 넘었습니다.");
     return { ...next, atMs: Math.max(now, prev.atMs), saleEvidence: prev.saleEvidence + saleEvidence };

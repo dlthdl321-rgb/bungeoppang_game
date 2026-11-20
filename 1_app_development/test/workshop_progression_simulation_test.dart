@@ -157,10 +157,55 @@ void main() {
     expect(BigInt.from(welcome) >= cheapest, isTrue, reason: '환영 황금으로 꾸미기 하나 이상');
   });
   test('5단계 스킬(첫 황금 스킬)은 Lv.15 이후에 열린다', () async {
-    final result = await _play(config, welcome: 0, target: 20);
+    // 4차 g7: with guests every 3 minutes (the real-time average) the
+    // tier-5 unlock (lifetime 800,000 / 1,000,000) comes around Lv.15~20.
+    final result = await _play(config, welcome: 0, target: 25, minutes: 600, saleEvery: 3);
+    debugPrint('5단계 해금: 탭 Lv.${result.tap5Level}, 자동 Lv.${result.auto5Level} (${result.minutes}분에 Lv.${result.level})');
     expect(result.tap5Level, inInclusiveRange(15, 25));
     expect(result.auto5Level, inInclusiveRange(15, 25));
-  }, timeout: const Timeout(Duration(minutes: 3)));
+  }, timeout: const Timeout(Duration(minutes: 6)));
+  // 4차 피드백 g7 (경제 재조정, 사용자 결정 2026-11-21): 처음 3시간 수입이
+  // 약 38배로만 늘고(전에는 약 8,000배), 레벨 한 번이 수입을 두 배로 만들지
+  // 않는다. 같은 조건(탭 1초 2번, 3분마다 판매 20, 가장 싼 스킬부터 1분에
+  // 3개까지, 황금 스킬은 안 삼)을 설정값만으로 계산한다.
+  test('스킬 성장: 3시간 수입 증가폭 50배 미만, 레벨 한 번에 수입이 2배 넘게 뛰지 않는다', () {
+    final ids = [for (final kind in ['tap', 'auto']) for (var i = 1; i <= 16; i++) '${kind}_$i'];
+    final owned = {for (final id in ids) id: 0};
+    BigInt effect(String id) => DevelopmentBalance.decimal(config.skill(id), 'effect');
+    BigInt perMinute() {
+      var tap = BigInt.one, auto = BigInt.zero;
+      for (final id in ids) {
+        final add = effect(id) * BigInt.from(owned[id]!);
+        if (id.startsWith('tap_')) { tap += add; } else { auto += add; }
+      }
+      return tap * BigInt.from(120) + auto * BigInt.from(60);
+    }
+    var buns = BigInt.zero, lifetime = BigInt.zero;
+    final income = <int, BigInt>{};
+    var biggestJump = 1.0;
+    for (var minute = 1; minute <= 180; minute++) {
+      final gain = perMinute() + (minute % 3 == 0 ? BigInt.from(20) : BigInt.zero);
+      buns += gain; lifetime += gain;
+      for (var buy = 0; buy < 3; buy++) {
+        CompositeQuote? best;
+        for (final id in ids) {
+          final q = quoteCompositeSkill(config, id, owned: owned[id]!, quantity: 1);
+          if (q.gold == BigInt.zero && lifetime >= DevelopmentBalance.decimal(config.skill(id), 'unlock_total') &&
+              q.buns <= buns && (best == null || q.buns < best.buns)) { best = q; }
+        }
+        if (best == null) break;
+        final before = perMinute();
+        buns -= best.buns; owned[best.skillId] = owned[best.skillId]! + 1;
+        if (minute >= 10) biggestJump = max(biggestJump, perMinute() / before);
+      }
+      income[minute] = perMinute();
+    }
+    final growth = income[180]! / income[3]!;
+    debugPrint('스킬 성장: 3분 ${income[3]}/분 → 3시간 ${income[180]}/분 ($growth배), 가장 큰 한 레벨 ×$biggestJump');
+    expect(growth, lessThan(50));
+    expect(growth, greaterThan(10), reason: '성장은 계속 느껴져야 함');
+    expect(biggestJump, lessThan(2));
+  });
   test('Lv.1~5 승급 조건은 스킬 구매를 요구하지 않는다', () {
     for (final row in config.rows('level_progression').take(5)) {
       expect(row.keys.where((k) => k.contains('skill') || k.contains('purchase')), isEmpty);

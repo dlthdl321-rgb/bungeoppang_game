@@ -141,9 +141,17 @@ DailyOrder makeDailyOrder(DevelopmentBalance config, {required String day, requi
       npc: neighbors.isEmpty ? null : neighbors[(h >> 15) % neighbors.length], event: event?.id);
 }
 
-/// Buns for a job: [seconds] of the current auto production, at least [minimum].
-BigInt dailyBuns(BigInt autoRate, int seconds, BigInt minimum) {
-  final buns = autoRate * BigInt.from(seconds);
+/// The income per second daily rewards use (4차 피드백 g7, 경제 재조정):
+/// R = tap power × `daily_return.rate_taps_per_second` + auto production.
+/// Auto production alone fell to about a quarter of income after the skill
+/// rebalance, so rewards follow both. The server bound uses the same R
+/// (`plausibility_validator.ts`).
+BigInt dailyIncomeRate(DevelopmentBalance config, {required BigInt tapRate, required BigInt autoRate}) =>
+    tapRate * BigInt.from(DevelopmentBalance.integer(config.section('daily_return'), 'rate_taps_per_second')) + autoRate;
+
+/// Buns for a job: [seconds] of the income [rate], at least [minimum].
+BigInt dailyBuns(BigInt rate, int seconds, BigInt minimum) {
+  final buns = rate * BigInt.from(seconds);
   return buns > minimum ? buns : minimum;
 }
 

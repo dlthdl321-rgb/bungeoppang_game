@@ -9,7 +9,7 @@ import { ProtectedPurchasePipeline, ProtectedEvent } from "../src/protected_purc
 import { MemoryStore } from "../src/store";
 import { WorkshopService } from "../src/workshop_service";
 const at=Date.UTC(2026,9,18),account="protected_a",progress="progress_0001";
-const intent={account,transaction:"transaction_0001",revision:config.metadata.revision,skill:"tap_1",owned:0,quantity:1,buns:"15",gold:"1"};
+const intent={account,transaction:"transaction_0001",revision:config.metadata.revision,skill:"tap_1",owned:0,quantity:1,buns:"20",gold:"1"};
 const pair=generateKeyPairSync("ed25519"),pem=pair.publicKey.export({format:"pem",type:"spki"}).toString();
 function envelope(event:ProtectedEvent) {const payload=JSON.stringify(event);return {keyId:"validator",payload,signature:sign(null,Buffer.from(payload),pair.privateKey).toString("base64url")};}
 function event(action:ProtectedEvent["action"],sequence:number,previousDigest:string,buns="100"):ProtectedEvent {
@@ -27,19 +27,19 @@ test("signed protected snapshots generate purchase evidence with CAS and recover
   const {store,service,pipeline,head}=await fixture();
   const reservation=await pipeline.ingest(account,envelope(event("reservation",1,String(head.digest))));
   await service.purchase(account,"reserve",{progress,epoch:1,intent});
-  const signed=envelope(event("debit",2,String(reservation.digest),"85"));
+  const signed=envelope(event("debit",2,String(reservation.digest),"80"));
   const proof=await pipeline.ingest(account,signed);
   assert.deepEqual(await pipeline.ingest(account,signed),proof);
   const committed=await service.purchase(account,"commit",{progress,epoch:1,intent});assert.equal(committed.status,"committed");
   assert.equal(store.docs.get(`users/${account}`)!.gold,4);
-  assert.equal((store.docs.get(`users/${account}/workshopProtection/${progress}`)!.snapshot as {buns:string}).buns,"85");
+  assert.equal((store.docs.get(`users/${account}/workshopProtection/${progress}`)!.snapshot as {buns:string}).buns,"80");
   await assert.rejects(pipeline.ingest(account,envelope(event("cancellation",3,String(proof.digest)))));
 });
 test("a protected restored snapshot fences late debit/commit and refunds once",async()=>{
   const {store,service,pipeline,head}=await fixture();
   const reservation=await pipeline.ingest(account,envelope(event("reservation",1,String(head.digest))));
   await service.purchase(account,"reserve",{progress,epoch:1,intent});
-  const debit=await pipeline.ingest(account,envelope(event("debit",2,String(reservation.digest),"85")));
+  const debit=await pipeline.ingest(account,envelope(event("debit",2,String(reservation.digest),"80")));
   await pipeline.ingest(account,envelope(event("cancellation",3,String(debit.digest))));
   await assert.rejects(service.purchase(account,"commit",{progress,epoch:1,intent}));
   const canceled=await service.purchase(account,"cancel",{progress,epoch:1,transaction:intent.transaction});assert.equal(canceled.status,"canceled");
