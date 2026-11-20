@@ -36,6 +36,10 @@ class PixelSprites {
     'bun',
     // 황금붕어빵력 (25번 18번, 26번 4-3단계; lib/ui/currency_amount.dart).
     'gold_bun',
+    // The '오늘' window's attendance stamp and order slip (25번 38번, 26번 3차
+    // H40; tools/apply_25_art.py --only today).
+    'stamp',
+    'order',
     'coin',
     'title',
     'prestige',
