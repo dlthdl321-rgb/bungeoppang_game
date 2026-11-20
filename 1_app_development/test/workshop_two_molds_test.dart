@@ -125,7 +125,8 @@ void main() {
       await order(c);
       final produce = workshopTutorialStep(c.state, ready: 0)!;
       expect(produce.text, contains('주문 제작'));
-      expect(produce.target, 'order-produce');
+      // 4차 사용자 결정: 주문 제작은 손님을 눌러서.
+      expect(produce.target, 'customer-0');
       expect(await c.startOrderProduction('first', 'redbean'), isTrue);
       await bake(c);
       expect(await c.storeResult(true), isTrue);
@@ -211,9 +212,13 @@ void main() {
       await c.openBusiness();
       await order(c);
       await tester.pump();
-      // The counter's bake button starts the order in the mold.
-      await tester.tap(key('order-produce'));
-      await tester.pump();
+      // Tapping the ordering guest (4차 사용자 결정) opens their window,
+      // whose '주문 제작' starts the order in the mold.
+      expect(key('customer-produce-cue'), findsOneWidget);
+      await tester.tap(key('customer-0'));
+      await tester.pumpAndSettle();
+      await tester.tap(key('customer-produce-redbean'));
+      await tester.pumpAndSettle();
       expect(c.state.session?.practice, isFalse);
       expect(key('active-empty-mold'), findsOneWidget);
       expect(key('workshop-clicker'), findsNothing);

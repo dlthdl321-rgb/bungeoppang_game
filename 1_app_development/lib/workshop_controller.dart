@@ -593,6 +593,26 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// moment ([departureAgeMs]).
   ({String customerId, bool happy, int atMs})? guestDeparture;
   int get departureAgeMs => guestDeparture == null ? 1 << 30 : _mono - guestDeparture!.atMs;
+  /// What each guest said last, by customer id, oldest first (memory only):
+  /// parting words after a sale or when time runs out, and the order
+  /// customer's words about a finished bake. The guest layer shows each as
+  /// a speech bubble by that guest (4차 피드백 IA5 '누가 말하는지'), not as
+  /// a line in the counter, for as long as the guest is there — until they
+  /// leave or say the next line (사용자 답 2026-11-21). [order] ties words
+  /// to one visit: a guest coming back later does not repeat them; a
+  /// leaving guest's words have the order that just ended.
+  final Map<String, ({String order, String text})> guestWords = {};
+  void _say(CustomerOrder order, String text) {
+    // Words of guests who are gone (not in line, not leaving) are dropped.
+    guestWords.removeWhere((id, _) => id != guestDeparture?.customerId &&
+        !state.customers.any((o) => o.customerId == id));
+    guestWords.remove(order.customerId);
+    guestWords[order.customerId] = (order: order.id, text: text);
+  }
+  /// The guest whose photo reaction waits for '반응 확인' ([photoReactionSale])
+  /// and what he says then: shown as his bubble at the front (IA5).
+  static const photoGuest = 'npc_taeo';
+  static const photoReactionWords = '와, 냄새 좋다.\n……아! 또 사진 전에 먹었네.';
   /// The level-up step (×1·×10·×100, [skillLevelUpSteps]) each skill's own
   /// wheel shows in the skill window, by skill id (26번 시안 확인 2차).
   /// Memory only: kept while the app runs, not saved; ×1 when missing.
@@ -779,9 +799,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   }
   /// Runs [mutate] and saves. A command that comes in while the periodic
   /// checkpoint save runs waits for it instead of being dropped (26번 4-1 F1).
-  /// The notice is cleared before the active time is settled, so a guest's
-  /// timeout line set by that settlement survives; [keepNotice] (checkpoint,
-  /// lifecycle and recovery saves) leaves it alone.
+  /// The notice is cleared before the active time is settled, so a notice
+  /// set by that settlement survives; [keepNotice] (checkpoint, lifecycle
+  /// and recovery saves) leaves it alone. (A guest's timeout words are
+  /// [guestWords], which no command clears.)
   Future<bool> command(void Function() mutate, {bool production = false, bool keepNotice = false}) async {
     while (busy && _savingCheckpoint && !disposed && _commandIdle != null) {
       await _commandIdle!.future;
@@ -856,8 +877,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final advanced=state.customers.map((c)=>c.advanceActive(ms)).toList();
       for(final order in advanced.where((c)=>c.remainingMs==0)) {
         final speech=selectCustomerSpeech(customerCatalog,'timeout',_dialogueFacts(order));
-        if(speech!=null) notice='${customerShortName(order.customerId)}: ${speech['text']}';
+        // The words show by the leaving guest (IA5), not in the counter.
         guestDeparture=(customerId:order.customerId,happy:false,atMs:_mono);
+        if(speech!=null) _say(order,speech['text']!);
       }
       state.customers=advanced.where((c)=>c.remainingMs>0).toList();
       if (state.session == null && gridVisible) state.grid = state.grid.advanceActive(ms);
@@ -941,7 +963,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if(storyPaused) throw const FormatException('대화를 먼저 마쳐 주세요.');
     final settled = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
     state.business = settled.close(settled.settledUtc);
-    state.customers.clear(); state.arrivalMs = 0;
+    state.customers.clear(); state.arrivalMs = 0; guestWords.clear();
     _syncArrivals(); // Closed: both clocks stop.
     if (state.session?.finished != true) { state.session = null; state.phaseMs = 0; }
   });
@@ -1092,6 +1114,16 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (session == null || session.phase != CookingPhase.result) throw const FormatException('확정할 제작 결과 없음');
     if (session.practice) { _recordCookingProduct(session, keep: keep); }
     else if (!state.inventory.dispositions.containsKey(session.id)) { throw const FormatException('주문 제작 저장을 확인해 주세요.'); }
+    // The order customer's words about the bake stay by them after the
+    // result closes, until they leave or say the next line (IA5).
+    final link = session.practice ? null : _orderProductionFor;
+    if (link case (final id, final orderId) when id == session.id) {
+      for (final order in state.customers.where((o) => o.id == orderId)) {
+        final speech = selectCustomerSpeech(customerCatalog,
+            cookingGradeEvent(cookingGrade(config, session, difficulty: difficulty(session.flavor))), _dialogueFacts(order));
+        if (speech != null) _say(order, speech['text']!);
+      }
+    }
     state.session = null;
     if (state.tutorial == 'cook' && (keep || !session.practice)) state.tutorial = 'sell';
   }, production: true);
@@ -1293,7 +1325,12 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     // It gets the big praise (26번 2단계, S2-Q4): the guest's words, the
     // stars and a short sparkle, not saved.
     if (state.tutorialActive) { state.tutorial = 'done'; salePraise = _lastSale(); }
-    else if(customerCatalog.contains(order.customerId)) { _afterNamedSale(order); }
+    else {
+      // The thanks show by the leaving guest (IA5); the guide's first sale
+      // has them in its big praise instead.
+      if (_lastSale()?.speech case final words?) _say(order, words);
+      if(customerCatalog.contains(order.customerId)) _afterNamedSale(order);
+    }
     _syncArrivals(); // A freed place (or the guide's end) starts a stopped clock.
   });
   Map<String,dynamic>? _matchingFollowup(CustomerOrder order) {
@@ -1362,8 +1399,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   }
   String? get lastSaleFeedback {
     final sale=_lastSale();
-    // 4차 피드백 IC9: stars are out of five everywhere.
-    return sale==null ? null : '${sale.name} · 별 ${sale.stars}/$ratingStarsMax · ${sale.speech}';
+    // The guest's words are a bubble by them (IA5), not part of this line;
+    // stars are out of five everywhere (IC9).
+    return sale==null ? null : '판매 완료 · ${sale.name} · 별 ${sale.stars}/$ratingStarsMax';
   }
   /// The first-run guide's first sale, shown big for a moment over the
   /// stall (26번 2단계). Never saved: a restart simply skips it.

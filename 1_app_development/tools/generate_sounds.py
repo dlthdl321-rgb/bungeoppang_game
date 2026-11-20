@@ -7,7 +7,7 @@ the griddle loop (sizzle_loop.wav) from tools/generate_cooking_sound.py.
 
 One family (26번 4-6단계, S46-Q4·Q5): real objects with a little cuteness,
 made from noise hits and resonances, never plain sine beeps.
-  tap      warm bread pat under a fingertip + a tiny crust crackle
+  tap      a light, fresh bubble-like 'tok' (4차 피드백 IB4; was a pat + crackle)
   purchase two or three coins on a wooden counter + a paper bag rustle
   reward   a small shop bell
   levelUp  a shop door bell jingling + a short pour of coins
@@ -98,13 +98,15 @@ def thud(r, seconds, level=1.0):
     return level * (body + 1.5 * knock)
 
 
-def pat(r, level=1.0):
-    """A fingertip on a warm, soft bun: a muffled low 'tok' with a puff."""
-    x = ts(.09)
-    f = 150 + 230 * np.exp(-x * 70)
-    body = np.sin(2 * math.pi * np.cumsum(f) / RATE) * decay(len(x), .018, attack=.0015)
-    puff = smooth(r.normal(0, 1, len(x)), 18) * decay(len(x), .008, attack=.0008)
-    return level * (body + .9 * puff)
+def plip(start, end, seconds=.09, level=1.0, sweep=.03):
+    """A light, fresh 'tok' (4차 피드백 IB4: the old pat + crust crackle
+    sounded like '짤짤'): a clean bubble-like blip whose pitch glides from
+    [start] to [end] Hz, with a soft octave and no noise at all."""
+    x = ts(seconds)
+    f = end + (start - end) * np.exp(-x / sweep * 3)
+    phase = 2 * math.pi * np.cumsum(f) / RATE
+    body = np.sin(phase) + .22 * np.sin(2 * phase)
+    return level * body * decay(len(x), seconds / 4.5, attack=.0012)
 
 
 def coin(r, freq, seconds=.35, level=1.0):
@@ -175,8 +177,9 @@ def sounds():
         'result_near': place(.6, (0, pop(720, 330, .55, 1.0)), (.05, bell(1175, .5, .25))),
         'result_fail': place(.8, (0, thud(r, .35, 1.0)), (.08, hiss(r, .7, .35))),
     }
-    r = rng(20261119)
-    out['tap'] = place(.12, (0, pat(r)), (.004, crackle(r, .05, 6, .35)))
+    # 4차 피드백 IB4 '짤짤 말고 가볍고 상큼하게': a rising bubble blip, no
+    # crackle (also the special mold's tap).
+    out['tap'] = place(.1, (0, plip(620, 1240, .09)))
     r = rng(20261120)
     out['purchase'] = place(.62, (0, wood_knock(r, .9)), (0, coin(r, 3150, .35, .9)),
                             (.075, wood_knock(r, .5)), (.075, coin(r, 3620, .3, .7)),

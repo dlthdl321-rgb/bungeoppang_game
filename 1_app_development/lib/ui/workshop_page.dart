@@ -181,7 +181,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
       onGold:()=>unawaited(_goldPacks()));}
     finally {_leaveWindow();}
   }
+  /// '영업 종료' (always by the '영업 중' sign, 4차 사용자 결정): asks first
+  /// only when guests wait or a special bungeoppang is being made.
   Future<void> _closeBusiness() async {
+    final s=c.state;
+    if(s.customers.isEmpty && (s.session==null || s.session!.finished)) { await c.closeBusiness(); return; }
     _enterWindow();
     try {
       final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
@@ -696,12 +700,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
         // The old layout: below the flavor row, clear of the counter strip.
         if(!low)Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
       ]),
-      counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock,onCloseBusiness:_closeBusiness),
+      counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock),
       // The '오늘' slip (오늘의 주문서·출석, 26번 7단계) under the settings
       // button (시안 확인 2차).
       counterSlip:WorkshopDailyTicket(controller:c,onOpen:_daily,
         claimable:_rewardCounts()['daily']!+_rewardCounts()['event']!),
-      counterAction:WorkshopCounterAction(controller:c,onCloseBusiness:_closeBusiness),
       // '영업 시작'·'영업 종료' small beside the '영업 중' sign (시안 확인 2차).
       statusAction:WorkshopBusinessButton(controller:c,onCloseBusiness:_closeBusiness),
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),

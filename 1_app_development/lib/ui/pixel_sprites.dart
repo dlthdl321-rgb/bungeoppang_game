@@ -334,6 +334,8 @@ class PixelSprites {
     for (final id in guestArt) {
       for (final mood in guestMoods) {
         yield 'assets/images/customer/${id}_$mood.png';
+        // Loaded only once shipped (the asset list filters misses).
+        yield 'assets/images/customer_full/${id}_$mood.png';
       }
     }
     yield* moldNames.map((n) => 'assets/images/mold/$n.png');
@@ -569,6 +571,20 @@ class PixelSprites {
   static ui.Image? guest(String id, String mood) =>
       _images['assets/images/customer/${id}_$mood.png'] ??
       _images['assets/images/customer/${id}_normal.png'];
+
+  /// A full-body guest (4차 피드백 IA4, 25번 주문 대기):
+  /// `assets/images/customer_full/<id>_<mood>.png`. Null until drawn; the
+  /// guest layer then uses the bust above. When the art arrives, add
+  /// `assets/images/customer_full/` to pubspec.yaml and set
+  /// [guestWaistShare] to the drawn waist.
+  static ui.Image? guestFull(String id, String mood) =>
+      _images['assets/images/customer_full/${id}_$mood.png'] ??
+      _images['assets/images/customer_full/${id}_normal.png'];
+
+  /// Where a full-body guest's waist is, from the picture's top (share of
+  /// its height): it goes on the counter's top (IA4). A placeholder until
+  /// the art is drawn.
+  static const guestWaistShare = .55;
 
   /// Whether the picture [sceneBackground] shows has a copy without the
   /// baked mold and bungeoppang, so the stage can draw its own.

@@ -3,7 +3,7 @@ import 'pixel_sprites.dart';
 
 /// The Workshop home's "guests at the stall" layout (26번 4-1단계, MASTER
 /// 10장): every size and offset of the guest layer, the lowered clicker and
-/// the centred counter button lives here.
+/// the counter's button and the guests' bubbles lives here.
 class WorkshopHomeLayout {
   WorkshopHomeLayout._();
 
@@ -36,13 +36,49 @@ class WorkshopHomeLayout {
 
   /// Guests behind the first, by place in the line: (side offset in front
   /// widths, scale, how much higher they stand). The second and third stand
-  /// left and right at 0.8 on the counter's top; the fourth and fifth (a
-  /// guest leaving moves everyone back one place) further back between them.
-  static const backPlaces = [(-.62, .8, 10.0), (.62, .8, 10.0), (-.3, .66, 40.0), (.3, .66, 40.0)];
+  /// left and right on the counter's top; the fourth and fifth (a guest
+  /// leaving moves everyone back one place) further back between them.
+  /// 4차 피드백 IA4 ('뒤 손님은 멀리'): smaller than before (0.8 → 0.72,
+  /// 0.66 → 0.58) so the first guest reads as the one at the counter.
+  static const backPlaces = [(-.62, .72, 10.0), (.62, .72, 10.0), (-.3, .58, 40.0), (.3, .58, 40.0)];
+
+  /// How grey and dark each place behind the first is (`guestDepthFilter`:
+  /// share of the way to grey, darker by 40% of it), 4차 피드백 IA4.
+  static const backShade = [.25, .25, .4, .4];
+
+  /// With full-body pictures (25번 주문 대기, `PixelSprites.guestFull`) the
+  /// guests behind stand this far up the street from the counter's top
+  /// (feet showing), by place; the bust pictures use [backPlaces]' rise.
+  static const fullBackRaise = [36.0, 36.0, 72.0, 72.0];
 
   /// The order customer's words after an order bake hang this far down
   /// over their head (clear of the stage's caption line).
   static const bubbleDrop = 34.0;
+
+  /// A guest's words (4차 피드백 IA5) show as a bubble over that guest for
+  /// as long as they are there (사용자 답 2026-11-21). A guest leaving with
+  /// words stays at the front this long, fading in the last [departureMs],
+  /// and the words go with them.
+  static const speechMs = 3500;
+
+  /// Guest bubbles stay [bubbleMargin] inside the screen, at most
+  /// [bubbleMaxWidth] wide; near an edge their centre moves in so they are
+  /// at least twice [bubbleMinHalf] wide.
+  static const bubbleMargin = 8.0;
+  static const bubbleMaxWidth = 280.0;
+
+  /// Earlier words still showing (another guest spoke since) are the small
+  /// bubble, at most this wide.
+  static const smallBubbleMaxWidth = 140.0;
+  static const bubbleMinHalf = 80.0;
+
+  /// Guest bubbles never rise above this (the HUD with the business row,
+  /// 360×640 included); on short screens they hang over the head instead.
+  static const bubbleTopRoom = 156.0;
+
+  /// Room guest bubbles leave on the right for the HUD's column of round
+  /// buttons (settings, the '오늘' slip) on short screens.
+  static const bubbleRightRoom = 64.0;
 
   /// The time bar over a guest's head: width share of the guest, height,
   /// and the share of time left under which it turns red.
@@ -58,17 +94,31 @@ class WorkshopHomeLayout {
   static const sessionOpacity = .4;
 
   /// The clicker in the new layout: this scale of the mold's place
-  /// (S4-1-Q5), its bottom [clickerLift] above the counter's top so the
-  /// centred counter button (44 tall, 6 above the counter) stays clear.
+  /// (S4-1-Q5), its bottom [clickerLift] above the counter's top (room the
+  /// floating counter button had until 4차 사용자 결정; kept so the clicker
+  /// and the guests do not move).
   static const clickerScale = .8;
   static const clickerLift = 54.0;
 
-  /// The counter's action button floats centred on the screen (S4-1-Q6),
-  /// its bottom [actionGap] above the counter's top, at least [actionMinWidth]
-  /// wide and [actionHeight] tall.
-  static const actionGap = 6.0;
-  static const actionMinWidth = 160.0;
-  static const actionHeight = 44.0;
+  /// 4차 사용자 결정(2026-11-20): the big button that floated over the
+  /// guests (S4-1-Q6) is gone. '판매 완료'·'N개 먼저 판매'·'반응 확인' are a
+  /// small button ([guestButtonHeight] tall, [guestButtonFont] text) at the
+  /// centre of that guest's figure (so is the ordering guest's '눌러서 팥
+  /// 만들기' cue while nothing can be handed over); '다시 확인' (no guest) sits in the
+  /// counter card on its right, [counterButtonHeight] tall, at most
+  /// [counterButtonMaxWidth] wide.
+  static const guestButtonHeight = 30.0;
+
+  /// The small button's middle sits this share down the guest's picture:
+  /// on the chest, under the face (사용자 답 2026-11-21; the bust art's
+  /// chin is at about half).
+  static const guestButtonShare = .64;
+
+  /// The width guest bubbles keep clear around that button.
+  static const guestButtonRoom = 150.0;
+  static const guestButtonFont = 14.0;
+  static const counterButtonHeight = 36.0;
+  static const counterButtonMaxWidth = 128.0;
 
   /// '영업 시작'·'이어서 영업'·'영업 종료' are not the floating button: a
   /// small button beside the business-state sign in the HUD (26번 시안 확인
@@ -81,10 +131,10 @@ class WorkshopHomeLayout {
   /// edges lined up (26번 시안 확인 2차).
   static const slipGap = 6.0;
 
-  /// Room the practice start pill leaves under itself before opening: the
-  /// floating counter button's place (empty before opening since '영업 시작'
-  /// moved to the HUD, kept so the pill does not jump).
-  static const practiceLift = actionHeight + actionGap + 10;
+  /// Room the practice start pill leaves under itself before opening (the
+  /// old floating counter button's place, 44 + 6 + 10; kept so the pill
+  /// does not jump).
+  static const practiceLift = 60.0;
 
   /// The special bungeoppang mold (26번 3차 피드백 H18 '조리 컷과 6구를
   /// 가리지 않게'): its whole picture stays [moldGap] above the higher of
