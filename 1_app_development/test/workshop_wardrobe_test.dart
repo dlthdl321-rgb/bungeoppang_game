@@ -98,10 +98,9 @@ void main() {
         // without an icon) until it is on.
         if (!['girl', 'boy'].any((c) => PixelSprites.avatarArtReady(c, d.slot, d.id))) continue;
         expect(File('assets/images/cosmetic_icons/${d.id}.png').existsSync(), isTrue, reason: d.id);
-        // 26번 3차 AV3d: the worn slots have the boy's own icon too
-        // (tools/avatar_v2.py wornicons, his own head and body).
-        if (const {CosmeticSlot.skin, CosmeticSlot.hair, CosmeticSlot.hat, CosmeticSlot.top,
-              CosmeticSlot.bottom, CosmeticSlot.shoes, CosmeticSlot.outfit}.contains(d.slot) &&
+        // 26번 3차 AV3d: hair and hats have the boy's own icon too
+        // (tools/avatar_v2.py wornicons, his own hair and hat layers).
+        if (const {CosmeticSlot.hair, CosmeticSlot.hat}.contains(d.slot) &&
             PixelSprites.avatarArtReady('boy', d.slot, d.id)) {
           expect(File('assets/images/cosmetic_icons/boy/${d.id}.png').existsSync(), isTrue, reason: 'boy ${d.id}');
         }

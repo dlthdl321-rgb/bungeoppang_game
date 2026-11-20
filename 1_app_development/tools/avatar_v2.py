@@ -33,10 +33,9 @@ Jobs (safe to run again, in this order; no job = all):
             face_<eyes_half|eyes_closed|mouth_small|mouth_wide>@<skin>.png.
   icons     31번 icons (512x512) -> assets/images/cosmetic_icons/<id>.png
             64x64, only for a slot whose icons are ALL there (no slot mixes
-            drawn and temporary icons). Accessories, tools and none only.
-  wornicons Runs with icons. The skin, hair, hat, top, bottom, shoes and
-            apron icons drawn from the shipped layers on a mannequin made
-            from the base, one crop per slot and character:
+            drawn and temporary icons). Not hair and hats (wornicons).
+  wornicons Runs with icons. The hair and hat icons are the worn layers
+            themselves (no body), one scale per slot and character:
             cosmetic_icons/<id>.png (girl) and cosmetic_icons/boy/<id>.png.
   trim      Cuts the empty margins, remembers each offset.
   atlas     lib/avatar_v2_atlas.dart: the shipped files, offsets, pivots,
@@ -1416,7 +1415,7 @@ def icons(data, src):
             done[slot] = f'대기 (없음: {", ".join(missing)})'
             continue
         for i in ids:
-            if slot in WORN_ICON_SLOTS + ('skin',):
+            if slot in WORN_ICON_SLOTS:
                 continue  # drawn from the worn layers (wornicons)
             arr = X.load_cut(folder / f'{i}.png')
             l, t, r, b = X.bbox(arr[..., 3])
@@ -1451,27 +1450,20 @@ def icons(data, src):
 
 # ---------------------------------------------------------------- wornicons
 
-# 26번 3차 AV3d (사용자 '헤어는 왜 스타일마다 크기가 달라? 마네킹은 아바타를
-# 기준으로'): the wardrobe icons of the worn slots are drawn from the game's
-# own layers on a faceless mannequin made from the avatar's base, one crop
-# per slot and character, so every icon of a slot shows the same head/body
-# at the same size and place and only the item differs. Accessories and
-# tools stay object icons (31번/41번 drawings): they sit in very different
-# places (glasses vs. bag) and one body crop would leave the small ones
-# unreadable.
-WORN_ICON_SLOTS = ('hair', 'hat', 'top', 'bottom', 'shoes', 'outfit')
-# Under the hats: the character's default hair, pressed by the hat's
-# hairmask, as worn.
-WORN_ICON_HAIR = {'girl': 'long', 'boy': 'short'}
-# Rows kept under the hats' union (the face and the chin) so a hat sits on
-# a whole head.
-WORN_ICON_HAT_CHIN = {'girl': 214, 'boy': 214}
-# Darker than the tile's cream (Cozy.creamDeep f4ece2) so white clothes and
-# the head's outline stand out against it.
-MANNEQUIN = {'fill': (208, 198, 188), 'line': (128, 114, 104), 'width': 3}
-SKIN_ICON_TOP = 8  # rows above the crown in the skin tone icons
-ICON_PAD = 2  # empty pixels round the crop in the 64x64 icon
-ICON_LINE = 0.55  # outline: the edge pixel's colour times this
+# 26번 3차 AV3d (사용자 '헤어는 왜 스타일마다 크기가 달라?'): the hair and
+# hat icons are the worn layers themselves (hair: back + front pieces;
+# hat: the hat and its back knot), no body or head, on a clear ground, so
+# they show the v1-derived hair and the refitted hats as worn and follow
+# the art when it changes. One scale per slot and character (the slot's
+# largest item fills the tile), each centred, so every hair style is drawn
+# at the same size. The boy's hair and hats differ from the girl's:
+# cosmetic_icons/boy/<id>.png. Every other slot keeps the 31번 object
+# drawings (icons).
+WORN_ICON_SLOTS = ('hair', 'hat')
+ICON_PAD = 2  # empty pixels round the picture in the 64x64 icon
+ICON_ALPHA = 110  # shrunk alpha from which a pixel is kept (opaque)
+ICON_SPECK = 4  # opaque pieces smaller than this (px) are dropped
+ICON_PINHOLE = 6  # holes this small (px) inside an icon are filled
 
 
 def _over(dst, src):
@@ -1484,95 +1476,63 @@ def _over(dst, src):
     return out.astype(np.uint8)
 
 
-def _mannequin(base):
-    """The base's silhouette in one flat neutral tone with a darker rim:
-    the avatar's own head, ears, neck, shoulders and legs, no face."""
-    from scipy import ndimage
-    on = base[..., 3] > 0
-    inner = ndimage.binary_erosion(on, iterations=MANNEQUIN['width'])
-    out = np.zeros(base.shape, np.uint8)
-    out[on] = MANNEQUIN['line'] + (255,)
-    out[inner] = MANNEQUIN['fill'] + (255,)
-    return out
-
-
-def _worn(c, slot, item, data, demo):
-    """The mannequin wearing [item] as the game draws it (rigV2Order:
-    back halves, base with the item's basemask erased, the item; a hat
-    over the default hair pressed by the hat's hairmask)."""
+def _item_alone(c, slot, item, data, demo):
+    """[item]'s own pieces as worn (back, item, front), no body."""
     folder = out_dir(demo) / 'avatar_v2' / c
 
     def get(name):
         path = folder / name
         return full(path, data, demo) if path.exists() else None
 
-    base = get('base@skin1.png')
-    if base is None or get(f'{slot}_{item}.png') is None:
+    layer = get(f'{slot}_{item}.png')
+    if layer is None:
         return None
-    base = _mannequin(base)
-    layers = [(slot, item)]
-    if slot == 'hat':
-        layers.insert(0, ('hair', WORN_ICON_HAIR[c]))
-    for s, i in layers:
-        mask = get(f'{s}_{i}_basemask.png')
-        if mask is not None:
-            base[mask[..., 3] > 0] = 0
-    out = np.zeros(base.shape, np.uint8)
-    for s, i in layers:
-        out = _over(out, get(f'{s}_{i}_back.png'))
-    out = _over(out, base)
-    for s, i in layers:
-        layer = get(f'{s}_{i}.png')
-        if s == 'hair' and slot == 'hat':
-            mask = get(f'hat_{item}_hairmask.png')
-            if mask is not None:
-                layer = layer.copy()
-                layer[mask[..., 3] > 0] = 0
-        out = _over(out, layer)
-        out = _over(out, get(f'{s}_{i}_front.png'))
-    return out
+    back = get(f'{slot}_{item}_back.png')
+    if back is not None:
+        # A back piece that does not touch the item (the cream bandana's
+        # knot behind the neck) would float apart in the icon.
+        from scipy import ndimage
+        near = ndimage.binary_dilation(layer[..., 3] > 0, iterations=2)
+        if not (near & (back[..., 3] > 0)).any():
+            back = None
+    out = _over(np.zeros(layer.shape, np.uint8), back)
+    return _over(_over(out, layer), get(f'{slot}_{item}_front.png'))
 
 
-def _icon_crop(c, slot, ids, data, demo):
-    """One square crop for every icon of [slot]: the union of the items
-    (the hairs with their back pieces, the hats down to the chin),
-    centred, plus nothing else."""
-    folder = out_dir(demo) / 'avatar_v2' / c
-    boxes = []
-    for i in ids:
-        for name in (f'{slot}_{i}.png', f'{slot}_{i}_back.png'):
-            path = folder / name
-            if path.exists():
-                a = full(path, data, demo)[..., 3] > 0
-                if a.any():
-                    boxes.append(X.bbox(a))
-    l = min(b[0] for b in boxes)
-    t = min(b[1] for b in boxes)
-    r = max(b[2] for b in boxes)
-    b = max(b[3] for b in boxes)
-    if slot == 'hat':
-        b = max(b, WORN_ICON_HAT_CHIN[c])
-    side = max(r - l, b - t)
-    cx, cy = (l + r) / 2, (t + b) / 2
-    return round(cx - side / 2), round(cy - side / 2), int(side)
-
-
-def _icon_of(arr, crop):
-    """[arr] cut to the square [crop], shrunk into the 64x64 icon with a
-    dark pixel rim like the 31번 drawings."""
+def _shrink(arr, box, side):
+    """The square of [side] canvas pixels centred on [box], shrunk into the
+    64x64 icon: Lanczos on premultiplied colour (no dark or white fringe),
+    then hard alpha and no specks."""
     from scipy import ndimage
-    x, y, side = crop
+    l, t, r, b = box
+    x, y = round((l + r - side) / 2), round((t + b - side) / 2)
     pad = np.zeros((side, side, 4), np.uint8)
     sx0, sy0 = max(0, x), max(0, y)
     sx1, sy1 = min(CANVAS[0], x + side), min(CANVAS[1], y + side)
     pad[sy0 - y:sy1 - y, sx0 - x:sx1 - x] = arr[sy0:sy1, sx0:sx1]
     n = ICON - 2 * ICON_PAD
-    small = X.area_sample(pad, n, n)
-    small[..., 3] = np.where(small[..., 3] >= 128, 255, 0)
-    on = small[..., 3] > 0
-    # No rim where the crop cuts the body (a leg running out of the tile).
-    rim = on & ~ndimage.binary_erosion(on, border_value=1)
-    small[rim, :3] = (small[rim, :3] * ICON_LINE).astype(np.uint8)
+    img = Image.fromarray(pad, 'RGBA').convert('RGBa')
+    small = np.array(img.resize((n, n), Image.LANCZOS).convert('RGBA'))
+    on = small[..., 3] >= ICON_ALPHA
+    # A smooth edge: 3x3 majority (no one-pixel notches or spikes), the
+    # pinholes between strands filled; new pixels take the nearest colour.
+    on = ndimage.median_filter(on.astype(np.uint8), size=3).astype(bool)
+    holes = ndimage.binary_fill_holes(on) & ~on
+    lab, k = ndimage.label(holes)
+    sizes = ndimage.sum(holes, lab, range(1, k + 1))
+    for i, size in enumerate(sizes, 1):
+        if size <= ICON_PINHOLE:
+            on[lab == i] = True
+    solid = small[..., 3] >= ICON_ALPHA
+    _, (iy, ix) = ndimage.distance_transform_edt(~solid, return_indices=True)
+    small[..., :3] = small[iy, ix, :3]
+    lab, k = ndimage.label(on)
+    sizes = ndimage.sum(on, lab, range(1, k + 1))
+    for i, size in enumerate(sizes, 1):
+        if size < ICON_SPECK:
+            on[lab == i] = False
+    small[..., 3] = np.where(on, 255, 0)
+    small[~on, :3] = 0
     out = np.zeros((ICON, ICON, 4), np.uint8)
     out[ICON_PAD:ICON_PAD + n, ICON_PAD:ICON_PAD + n] = small
     return out
@@ -1588,41 +1548,26 @@ def wornicons(data, demo):
         if slot in WORN_ICON_SLOTS and item not in BLANK:
             by_slot.setdefault(slot, []).append(item)
     report = data.setdefault('wornicons', {})
+    report.clear()
     for c in CHARACTERS:
         dest = IMAGES / 'cosmetic_icons'
         if c != 'girl':
             dest = dest / c
         for slot, ids in by_slot.items():
-            crop = _icon_crop(c, slot, ids, data, demo)
-            made = []
+            pics, boxes = {}, {}
             for i in ids:
-                arr = _worn(c, slot, i, data, demo)
-                if arr is None:
-                    continue
-                save(_icon_of(arr, crop), dest / f'{i}.png')
-                made.append(i)
-            report[f'{c}/{slot}'] = {'crop': list(map(int, crop)),
-                                     'icons': len(made)}
-            print(f'wornicons {c} {slot}: {len(made)} icons, crop {crop}')
-        # The skin tones: the same avatar mannequin (head, neck, shoulders)
-        # in that skin's own colour, the hats' crop size from the crown.
-        x, _, side = _icon_crop(c, 'hat', by_slot['hat'], data, demo)
-        for skin in SKINS:
-            base = base_full(c, skin, demo)
-            if base is None:
+                arr = _item_alone(c, slot, i, data, demo)
+                if arr is not None and (arr[..., 3] > 0).any():
+                    pics[i] = arr
+                    boxes[i] = tuple(int(v) for v in X.bbox(arr[..., 3] > 0))
+            if not pics:
                 continue
-            on = base[..., 3] > 0
-            top = int(np.nonzero(on.any(1))[0].min())
-            lum = base[..., :3].astype(int).sum(-1)
-            colour = np.median(base[on & (lum > 450)][:, :3], 0)
-            m = _mannequin(base)
-            m[m[..., 3] > 0, :3] = np.where(
-                (m[m[..., 3] > 0, :3] == MANNEQUIN['fill']).all(-1)[:, None],
-                colour, colour * 0.72).astype(np.uint8)
-            crop = (x, top - SKIN_ICON_TOP, side)
-            save(_icon_of(m, crop), dest / f'{skin}.png')
-            report[f'{c}/skin'] = {'crop': list(map(int, crop)), 'icons': 3}
-        print(f'wornicons {c} skin: crop {(x, top - SKIN_ICON_TOP, side)}')
+            # One scale per slot: its largest item fills the tile.
+            side = max(max(b[2] - b[0], b[3] - b[1]) for b in boxes.values())
+            for i in pics:
+                save(_shrink(pics[i], boxes[i], side), dest / f'{i}.png')
+            report[f'{c}/{slot}'] = {'side': side, 'icons': len(pics)}
+            print(f'wornicons {c} {slot}: {len(pics)} icons, side {side}')
 
 
 # ---------------------------------------------------------------- trim
