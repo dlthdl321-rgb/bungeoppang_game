@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'feedback_config.dart';
 import 'cooking_paint.dart';
 import 'cooking_session.dart';
@@ -6,47 +8,72 @@ import 'development_rules.dart';
 
 const provisionalDonenessLabels = ['덜 익음', '부드러움', '미디엄', '바삭함', '타버림'];
 
-enum BatterVerdict { ok, short, overflow }
+enum BatterVerdict { ok, short, overflow, spill }
 
-/// One batter stroke against the manual_cooking area rule (DEC-031):
-/// coverage ≥ `batter_min_coverage_permille` and amount ≤
-/// `paint_overflow_amount_permille`. Overflow wins over short.
-BatterVerdict batterVerdict(DevelopmentBalance config, PaintAmount paint) {
+/// The two batter strokes judged together (4차 피드백 IC6: the first and
+/// second batter are one mass, so a thin first pour can be made up by the
+/// second): the poured total (inside the fish plus spilled, [PaintAmount.poured])
+/// over `batter_total_overflow_amount_permille` is too much — '흘림' when
+/// the inside alone would have fit (IC4), '넘침' otherwise; less than
+/// `batter_total_min_amount_permille` inside the fish, or neither stroke
+/// covering `batter_min_coverage_permille` (the two layers together cover
+/// at least the larger one), is too little. Too much wins over too little.
+BatterVerdict batterTotalVerdict(DevelopmentBalance config, PaintAmount first, PaintAmount second) {
   final manual = config.section('manual_cooking');
-  if (paint.amount > DevelopmentBalance.integer(manual, 'paint_overflow_amount_permille')) {
-    return BatterVerdict.overflow;
+  final cap = DevelopmentBalance.integer(manual, 'batter_total_overflow_amount_permille');
+  if (first.poured + second.poured > cap) {
+    return first.amount + second.amount > cap ? BatterVerdict.overflow : BatterVerdict.spill;
   }
-  return paint.coverage >= DevelopmentBalance.integer(manual, 'batter_min_coverage_permille')
-      ? BatterVerdict.ok : BatterVerdict.short;
+  final short = first.amount + second.amount <
+          DevelopmentBalance.integer(manual, 'batter_total_min_amount_permille') ||
+      math.max(first.coverage, second.coverage) <
+          DevelopmentBalance.integer(manual, 'batter_min_coverage_permille');
+  return short ? BatterVerdict.short : BatterVerdict.ok;
 }
 
-/// Whether [paint] is past the overflow line (also shown for the filling,
-/// which is not judged).
+/// Whether the batter poured so far ([before], the first stroke while the
+/// second is being painted) and [paint] together are past the total line,
+/// for the live caption and the drips.
+bool batterOverflowed(DevelopmentBalance config, PaintAmount paint, {PaintAmount? before}) =>
+    paint.poured + (before?.poured ?? 0) >
+    DevelopmentBalance.integer(config.section('manual_cooking'), 'batter_total_overflow_amount_permille');
+
+/// Whether one filling stroke is past the overflow line (shown only; the
+/// filling is not judged).
 bool paintOverflowed(DevelopmentBalance config, PaintAmount paint) =>
-    paint.amount > DevelopmentBalance.integer(config.section('manual_cooking'), 'paint_overflow_amount_permille');
+    paint.poured > DevelopmentBalance.integer(config.section('manual_cooking'), 'paint_overflow_amount_permille');
+
+/// The judged batter of a finished [session], or null when a step came
+/// from an older hold-time save (no area, G1).
+BatterVerdict? sessionBatterVerdict(DevelopmentBalance config, CookingSession session) {
+  final first = session.firstBatter, second = session.secondBatter;
+  if (first == null || second == null) return null;
+  return batterTotalVerdict(config, first, second);
+}
 
 /// Why a finished session's batter failed, for the result caption (G6):
-/// '반죽 넘침', '반죽 부족', or null when both strokes were fine (or a step
-/// came from an older hold-time save, which has no area to show).
-String? batterFailureLabel(DevelopmentBalance config, CookingSession session) {
-  final verdicts = [session.firstBatter, session.secondBatter]
-      .whereType<PaintAmount>().map((p) => batterVerdict(config, p));
-  if (verdicts.contains(BatterVerdict.overflow)) return '반죽 넘침';
-  if (verdicts.contains(BatterVerdict.short)) return '반죽 부족';
-  return null;
-}
+/// '반죽 넘침', '반죽 흘림', '반죽 부족', or null when the two strokes
+/// together were fine (or a step came from an older hold-time save, which
+/// has no area to show).
+String? batterFailureLabel(DevelopmentBalance config, CookingSession session) =>
+    switch (sessionBatterVerdict(config, session)) {
+      BatterVerdict.overflow => '반죽 넘침',
+      BatterVerdict.spill => '반죽 흘림',
+      BatterVerdict.short => '반죽 부족',
+      _ => null,
+    };
 
 /// User-approved technique structure; all thresholds remain provisional.
-/// Both batter strokes must pass the area rule and the doneness must be in
+/// The two batter strokes together must pass the area rule
+/// ([batterTotalVerdict]) and the doneness must be in
 /// `success_doneness_min_index`~`max_index`. The filling is not judged. A
 /// batter step recorded by the old hold time (older saves, G1) fails.
 MasteryResult evaluateCookingResult(DevelopmentBalance config, CookingSession session,
     {required int difficulty}) {
   if (session.phase != CookingPhase.result) throw const FormatException('미완료 제작 판정 금지');
   final row = config.mastery(difficulty);
-  bool within(PaintAmount? paint) => paint != null && batterVerdict(config, paint) == BatterVerdict.ok;
   final variant = provisionalDoneness(config, elapsedMs: session.donenessElapsedMs!, difficulty: difficulty);
-  final pass = within(session.firstBatter) && within(session.secondBatter) &&
+  final pass = sessionBatterVerdict(config, session) == BatterVerdict.ok &&
       (session.fillingSqueezed || session.wrongInputs <= DevelopmentBalance.integer(row, 'wrong_filling_inputs_allowed')) &&
       variant >= DevelopmentBalance.integer(row, 'success_doneness_min_index') &&
       variant <= DevelopmentBalance.integer(row, 'success_doneness_max_index');
@@ -59,9 +86,10 @@ MasteryResult evaluateCookingResult(DevelopmentBalance config, CookingSession se
 /// [evaluateCookingResult] (DEC-031~034·040).
 enum CookingGrade { perfect, good, near, fail }
 
-/// From the top: **perfect** = technique passed, both batter strokes cover
-/// ≥ `cooking_grade.perfect_min_coverage_permille` with an amount ≤
-/// `perfect_max_amount_permille`, and the doneness is
+/// From the top: **perfect** = technique passed, the larger batter stroke
+/// covers ≥ `cooking_grade.perfect_min_coverage_permille`, the two strokes'
+/// amount together is ≤ `perfect_max_total_amount_permille` with at most
+/// `perfect_max_spill_permille` spilled (4차 피드백 IC4·IC6), and the doneness is
 /// `perfect_doneness_index` (미디엄); **good** = technique passed; **near**
 /// = technique failed but the doneness is still in the success range (short
 /// or spilled batter, an older hold-time save); **fail** = the doneness is
@@ -77,11 +105,12 @@ CookingGrade cookingGrade(DevelopmentBalance config, CookingSession session,
   }
   if (!result.techniquePassed) return CookingGrade.near;
   final grade = config.section('cooking_grade');
-  bool neat(PaintAmount? paint) => paint != null &&
-      paint.coverage >= DevelopmentBalance.integer(grade, 'perfect_min_coverage_permille') &&
-      paint.amount <= DevelopmentBalance.integer(grade, 'perfect_max_amount_permille');
-  return neat(session.firstBatter) && neat(session.secondBatter) &&
-          variant == DevelopmentBalance.integer(grade, 'perfect_doneness_index')
+  final first = session.firstBatter, second = session.secondBatter;
+  final neat = first != null && second != null &&
+      math.max(first.coverage, second.coverage) >= DevelopmentBalance.integer(grade, 'perfect_min_coverage_permille') &&
+      first.amount + second.amount <= DevelopmentBalance.integer(grade, 'perfect_max_total_amount_permille') &&
+      first.spill + second.spill <= DevelopmentBalance.integer(grade, 'perfect_max_spill_permille');
+  return neat && variant == DevelopmentBalance.integer(grade, 'perfect_doneness_index')
       ? CookingGrade.perfect : CookingGrade.good;
 }
 
@@ -108,6 +137,7 @@ String cookingGradeLine(DevelopmentBalance config, CookingSession session, Cooki
     case CookingGrade.near:
       return switch (batterFailureLabel(config, session)) {
         '반죽 넘침' => '반죽이 넘쳤어요',
+        '반죽 흘림' => '반죽을 틀 밖으로 흘렸어요',
         '반죽 부족' => '반죽이 조금 모자랐어요',
         _ => '조금만 더 하면 돼요',
       };

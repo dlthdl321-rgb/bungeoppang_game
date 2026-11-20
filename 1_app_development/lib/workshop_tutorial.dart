@@ -28,7 +28,7 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
       CookingPhase.filling => const WorkshopTutorialStep(3, '틀 위를 문질러 속을 짜 넣어요.', 'workshop-mold', below: _stage),
       CookingPhase.secondBatter => const WorkshopTutorialStep(4, '반죽을 한 번 더 문질러 속을 덮어요.', 'workshop-mold', below: _stage),
       CookingPhase.closing => const WorkshopTutorialStep(4, '뚜껑을 닫아요.', 'workshop-mold', below: _stage),
-      CookingPhase.flipping => const WorkshopTutorialStep(5, '틀을 위로 밀어 올려 고리 축을 따라 뒤집어요.', 'workshop-mold', below: _stage),
+      CookingPhase.flipping => const WorkshopTutorialStep(5, '틀 둘레에 손가락으로 원을 그리면 틀이 돌아가며 뒤집혀요.', 'workshop-mold', below: _stage),
       CookingPhase.cooking => const WorkshopTutorialStep(6, '노릇하게 익었다 싶을 때 꺼내요.', 'workshop-mold', below: _stage),
       CookingPhase.result => session.practice
           ? const WorkshopTutorialStep(6, "완성! '보관'을 눌러 판매할 재고로 넣어요.", 'mold-store', below: _stage)

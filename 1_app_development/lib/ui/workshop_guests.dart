@@ -19,8 +19,8 @@ import 'workshop_mold_stage.dart' show ResultLook;
 /// The pictures sit under the stage (the clicker covers their waist), so
 /// they take no touches; with [taps] the same layout gives only the tap
 /// targets instead, over each guest's head, laid above the stage (a large
-/// text scroll view would otherwise swallow the taps). Tapping a guest
-/// opens the customer window.
+/// text scroll view would otherwise swallow the taps), but none while a
+/// bake is in the mold (IC3). Tapping a guest opens the customer window.
 class WorkshopGuestLayer extends StatelessWidget {
   final WorkshopController controller;
   final ValueChanged<String> onOpenCustomer;
@@ -65,6 +65,14 @@ class WorkshopGuestLayer extends StatelessWidget {
           reaction = c.resultReaction(look.grade);
         }
         if (taps) {
+          // 4차 피드백 IC3: while the big mold is in use the guests step
+          // back and take no taps — their head targets lay over the mold
+          // (the front guest's over its top, the next one's over its left
+          // side) and swallowed about a third of the batter and flip
+          // touches.
+          if (session != null && !session.finished) {
+            return const SizedBox.shrink(key: Key('customer-guest-taps'));
+          }
           Rect head(int i) {
             final rect = place(i + shift);
             final over = clicker != null && rect.center.dx > clicker!.left && rect.center.dx < clicker!.right;

@@ -11,7 +11,8 @@ enum CookingPhase { firstBatter, filling, secondBatter, closing, flipping, cooki
 ///
 /// The three piping steps record painted area (24번 5단계, DEC-031·032) as
 /// permille pairs: `firstBatterCoverage/Amount`, `fillingCoverage/Amount`,
-/// `secondBatterCoverage/Amount`. They are additive fields of schema 1 (G1):
+/// `secondBatterCoverage/Amount`, and the spilled paste `<step>Spill` when
+/// there was any (4차 피드백 IC4, absent = 0). They are additive fields of schema 1 (G1):
 /// the old hold-time fields `firstBatterMs`, `secondBatterMs` and
 /// `fillingDurationMs` are still read from older saves, never written for a
 /// new step. A step is done when either kind of record is present.
@@ -103,9 +104,12 @@ class CookingSession {
     'practice': practice, 'fillingSequence': fillingSequence.map((d) => d.name).toList(),
     'phase': phase.name, 'token': token, 'fillingIndex': fillingIndex, 'wrongInputs': wrongInputs,
     if(fillingDurationMs != null) 'fillingDurationMs': fillingDurationMs,
-    if(firstBatter != null) ...{'firstBatterCoverage': firstBatter!.coverage, 'firstBatterAmount': firstBatter!.amount},
-    if(filling != null) ...{'fillingCoverage': filling!.coverage, 'fillingAmount': filling!.amount},
-    if(secondBatter != null) ...{'secondBatterCoverage': secondBatter!.coverage, 'secondBatterAmount': secondBatter!.amount},
+    if(firstBatter != null) ...{'firstBatterCoverage': firstBatter!.coverage, 'firstBatterAmount': firstBatter!.amount,
+      if (firstBatter!.spill > 0) 'firstBatterSpill': firstBatter!.spill},
+    if(filling != null) ...{'fillingCoverage': filling!.coverage, 'fillingAmount': filling!.amount,
+      if (filling!.spill > 0) 'fillingSpill': filling!.spill},
+    if(secondBatter != null) ...{'secondBatterCoverage': secondBatter!.coverage, 'secondBatterAmount': secondBatter!.amount,
+      if (secondBatter!.spill > 0) 'secondBatterSpill': secondBatter!.spill},
       'firstBatterMs': firstBatterMs, 'secondBatterMs': secondBatterMs, 'donenessElapsedMs': donenessElapsedMs};
   factory CookingSession.fromJson(Map<String, dynamic> row) {
     final directions = row['fillingSequence'];
@@ -121,8 +125,9 @@ class CookingSession {
     int? amount(String key) => row[key] == null ? null : DevelopmentBalance.integer(row, key);
     PaintAmount? paint(String stage) {
       final coverage = amount('${stage}Coverage'), total = amount('${stage}Amount');
-      if (coverage == null && total == null) return null;
-      final value = PaintAmount(coverage ?? 0, total ?? 0);
+      final spill = amount('${stage}Spill');
+      if (coverage == null && total == null && spill == null) return null;
+      final value = PaintAmount(coverage ?? 0, total ?? 0, spill ?? 0);
       if (coverage == null || total == null || !value.valid) throw const FormatException('칠 양 기록 오류');
       return value;
     }
