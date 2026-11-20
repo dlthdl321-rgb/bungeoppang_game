@@ -40,6 +40,7 @@ import 'notice_permission_hint.dart';
 import '../share_card.dart';
 import 'share_card_view.dart';
 import 'workshop_collection.dart';
+import '../workshop_collection_rules.dart' show collectionRequired, collectionTitle;
 import 'workshop_records.dart';
 
 class WorkshopPage extends StatefulWidget {
@@ -62,6 +63,15 @@ class _WorkshopPageState extends State<WorkshopPage> {
   /// Story chapters already told in this run (26번 3차 H6, not saved).
   final _storySeen=<WorkshopStoryChapter>{};
   bool _awayShowing=false;
+  /// 4차 피드백 g6: a 도감 cell or flavor just completed ('팥 · 부드러움 칸
+  /// 완성!'), as one short centre notice.
+  void _showCollectionNews() {
+    if(c.collectionNews.isEmpty) return;
+    final news=c.takeCollectionNews();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if(mounted) showCenterToast(context,news.join('\n'));
+    });
+  }
   /// The welcome-back card, once per report, after the frame that noticed it.
   void _showAwayReport() {
     final report=c.awayReport;
@@ -176,7 +186,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     try {
       final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
         title: const Text('오늘 영업을 끝낼까요?'),
-        content: const Text('대기 손님은 돌아가고 진행 중인 스페셜 붕어빵 제작은 취소돼요. 보관한 재고와 숙련 기록은 남고, 숙련된 붕어빵 제작은 멈춘 상태로 보관돼요.'),
+        content: const Text('대기 손님은 돌아가고 진행 중인 스페셜 붕어빵 제작은 취소돼요. 보관한 재고와 도감 기록은 남고, 숙련된 붕어빵 제작은 멈춘 상태로 보관돼요.'),
         actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('계속 영업')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('영업 종료'))]));
       if (confirmed == true) await c.closeBusiness();
@@ -456,7 +466,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
       guestArt:c.guestArtId(npc),equipped:_shareLook)));
   }
   void _shareCollection(String flavor)=>unawaited(_shareCard(ShareCardData(moment:ShareMoment.collection,
-    title:'${c.flavorLabel(flavor)} 붕어빵 도감',line:'다섯 가지 익힘을 모두 찾았어요.',
+    title:'${c.flavorLabel(flavor)} 붕어빵 도감',line:'다섯 가지 익힘을 모두 완성했어요.',
     variant:3,equipped:_shareLook)));
   void _sharePhoto()=>unawaited(_shareCard(ShareCardData(moment:ShareMoment.shop,title:'우리 가게',
     line:c.seasonalEvent?.greeting ?? '따끈한 붕어빵 구워 놓고 기다릴게요!',equipped:_shareLook)));
@@ -470,6 +480,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
     // 26번 2-1단계: where the owner name shows.
     if(widget.owner?.profile.name case final name?)Padding(padding:const EdgeInsets.only(top:6),
       child:Text(OwnerTexts.shopOf(name),key:const Key('menu-owner-name'),style:const TextStyle(fontSize:18,color:Cozy.wood))),
+    // 4차 피드백 g6: the titles of collected flavors, under the shop's name.
+    if(c.collectionTitles.isNotEmpty)Text('칭호 · ${c.collectionTitles.join(' · ')}',key:const Key('menu-owner-title'),
+      textAlign:TextAlign.center,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w700,color:Color(0xffa86a00))),
     Expanded(child:MenuPanel(controller:widget.accountController,legacyDescriptions:false,rewardCounts:_rewardCounts(),
       // 일일 미션·주간 도전 live in the '오늘' window (H36). 도감 shows even
       // before it opens, with its level (H32).
@@ -521,21 +534,23 @@ class _WorkshopPageState extends State<WorkshopPage> {
   /// 생산 기록 (3차 피드백 H44·H45): icon + number tiles.
   Widget _records()=>WorkshopRecordsView(tiles:WorkshopRecordsView.of(level:c.state.level,buns:c.state.buns,
     lifetime:c.state.lifetime,taps:c.state.taps,sales:c.state.completedSales,tapRate:c.tapRate,autoRate:c.autoRate,
-    mastered:c.state.masteryAwards.length,businessDays:c.state.business.businessIndex));
+    mastered:c.collectionTitles.length,businessDays:c.state.business.businessIndex));
   CollectionFlavor _collectionFlavor(String flavor){
     if(!c.state.recipes.contains(flavor)){
       final tier=DevelopmentBalance.integer(c.config.section('active_recipes')[flavor] as Map<String,dynamic>,'acquisition_tier');
       final need=c.config.rows('additional_recipe_acquisition_tiers').where((r)=>r['tier']==tier).firstOrNull;
       return CollectionFlavor(id:flavor,label:c.flavorLabel(flavor),owned:false,found:const {},
+        required:collectionRequired(c.config,flavor),
         howToGet:need==null ? null : 'Lv.${need['unlock_level']}에 판매 ${need['mission_sales']}번을 채우면 레벨 미션에서 얻어요.');
     }
-    final m=c.state.flavorMasteries[flavor],rule=c.config.mastery(c.difficulty(flavor));
+    // 4차 피드백 g6: each cell counts its bakes to the number that completes it.
+    final progress=c.state.collection(c.config,flavor);
     return CollectionFlavor(id:flavor,label:c.flavorLabel(flavor),owned:true,
       found:{for(var i=0;i<provisionalDonenessLabels.length;i++)
-        if(m?.discovered.contains(i)==true || (flavor=='redbean' && i==2))i},
-      practices:m?.practices ?? 0,practicesRequired:DevelopmentBalance.integer(rule,'practice_required'),
-      techniques:m?.techniquePasses ?? 0,techniquesRequired:DevelopmentBalance.integer(rule,'technique_passes_required'),
-      mastered:c.state.masteryAwards.containsKey(flavor));
+        if(progress.found(i) || (flavor=='redbean' && i==2))i},
+      counts:progress.counts,required:progress.required,
+      title:progress.collected ? collectionTitle(c.config,flavor) : null,
+      legacyMastered:c.state.masteryAwards.containsKey(flavor));
   }
   /// 붕어빵 도감 (3차 피드백 H32): every flavor's five donenesses as
   /// pictures, shown dimmed under its level note before it opens.
@@ -544,7 +559,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
     final open=c.state.level>=DevelopmentBalance.integer(unlocks,'full_recipe_collection_ui');
     return WorkshopCollectionView(
       flavors:[for(final flavor in c.config.section('active_recipes').keys)_collectionFlavor(flavor)],
-      lockText:open ? null : '도감은 Lv.${unlocks['full_recipe_collection_ui']}에 열려요. 여러 익힘으로 구워 칸을 채워 보세요.',
+      lockText:open ? null : '도감은 Lv.${unlocks['full_recipe_collection_ui']}에 열려요. 익힘마다 정해진 횟수를 구워 칸을 채워 보세요.',
+      titles:c.collectionTitles,
       onShare:_shareCollection,
       extra:[
         if(c.state.level>=DevelopmentBalance.integer(unlocks,'customer_collection_ui'))...[
@@ -565,9 +581,10 @@ class _WorkshopPageState extends State<WorkshopPage> {
       ]);
   }
   Widget _achievements()=>ListView(padding:const EdgeInsets.all(16),children:[
-    for(final flavor in c.state.recipes)CozyPanel(child:ListTile(leading:const PixelIcon('achievements'),title:Text('${c.flavorLabel(flavor)} 숙련'),
-      subtitle:Text('연습 ${c.state.flavorMasteries[flavor]?.practices ?? 0}회 · 손기술 ${c.state.flavorMasteries[flavor]?.techniquePasses ?? 0}회'),
-      trailing:Text(c.state.masteryAwards.containsKey(flavor) ? '달성':'진행 중'))),
+    // 4차 피드백 g6: a flavor's achievement is its full 도감 (and its title).
+    for(final flavor in c.state.recipes)CozyPanel(child:ListTile(leading:const PixelIcon('achievements'),title:Text('${c.flavorLabel(flavor)} 도감 완성'),
+      subtitle:Text('완성 ${c.state.collection(c.config,flavor).completedCells}/5 · 칭호 「${collectionTitle(c.config,flavor)}」'),
+      trailing:Text(c.state.collection(c.config,flavor).collected ? '달성':'진행 중'))),
   ]);
   /// 레벨 미션, in the same cards as the '오늘' window (3차 피드백: like
   /// H34·H45, readable rows with bars instead of one long line).
@@ -620,6 +637,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
   Widget _content(BuildContext context) {
     _showAwayReport();
     _showPromotion();
+    _showCollectionNews();
     _showFeatureIntro();
     _askNotifications();
     final s = c.state;

@@ -8,6 +8,7 @@ import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/cooking_result_rules.dart';
 import 'package:todays_bungeoppang/ui/cooking_result_effects.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
+import 'package:todays_bungeoppang/development_griddle.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
@@ -203,6 +204,8 @@ void main() {
     });
     expect(await c.startCell(1), isTrue);
     expect(await c.startCell(4), isTrue);
+    // 4차 g6: past the automatic batter and filling, so the cells cook.
+    await c.command(() => c.state.grid = c.state.grid.advanceActive(GriddleProgress.prepMs(c.config)));
     await tester.pump();
     await shoot(tester, 'griddle_390x844');
     await tester.pumpWidget(const SizedBox.shrink());

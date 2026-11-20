@@ -240,6 +240,20 @@ def validate(data, catalog):
             require(re.fullmatch(r'\d{4}-\d{2}-\d{2}', event[key]), '행사 날짜 형식(yyyy-mm-dd)')
         require(event['start'] <= event['end'], '행사 기간 순서')
         require(all(isinstance(event[k], str) for k in ('label', 'greeting', 'order_note')), '행사 문구')
+    # 4차 피드백 g6: 도감 칸마다 구운 횟수, 칸·맛 완성 보상, 6구 자동 준비 시간.
+    counts = data['collection_counts']
+    require(len(counts['required_by_difficulty']) == len(data['mastery_difficulties']) and
+            all(len(row) == 5 and all(n >= 1 for n in row) for row in counts['required_by_difficulty']),
+            '도감 칸 횟수(난이도별 다섯 익힘, 1 이상)')
+    require(all(flavor in data['active_recipes'] and len(row) == 5 and all(n >= 1 for n in row)
+                for flavor, row in counts['required_by_flavor'].items()), '도감 칸 횟수(맛별, 다섯 익힘, 1 이상)')
+    collection = data['collection_rewards']
+    require(collection['cell_buns_seconds'] > 0 and re.fullmatch(r'[1-9][0-9]*', collection['cell_min_buns']) and
+            0 < collection['flavor_gold'] <= 100 and collection['server_min_ms_per_cell'] > 0,
+            '도감 완성 보상(칸 붕어빵력·맛 황금)')
+    require(all(isinstance(collection['titles'].get(f), str) for f in data['active_recipes']) and
+            isinstance(collection['title_default_suffix'], str), '도감 완성 칭호(맛마다)')
+    require(0 < data['griddle']['prep_ms'] <= 10000, '숙련된 붕어빵 틀 자동 준비 시간')
     # 26번 8단계: 공유 카드(보상 없음). 정식 출시 뒤 store_line_mode만 live로 바꾼다.
     share = data['share']
     require(share['card_width'] == 1080 and share['card_height'] == 1350, '공유 카드 크기(1080×1350, 4:5)')

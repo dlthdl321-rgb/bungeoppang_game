@@ -954,9 +954,47 @@ Set<int> workshopGriddleFilled(WorkshopController c) {
   final s = c.state;
   if (!s.business.permitsProducts(c.now())) return const {};
   return {
+    // 4차 피드백 g6: the bungeoppang shows once the automatic batter and
+    // filling steps are done.
     for (var i = 0; i < s.grid.cells.length; i++)
-      if (s.grid.cells[i].cooking) i
+      if (s.grid.cells[i].cooking && s.grid.prepStep(i, c.config) == null) i
   };
+}
+
+/// The six-cell griddle's automatic steps (4차 피드백 g6), shown in a
+/// cell while they run.
+const griddlePrepLabels = ['반죽 붓기', '속 넣기', '반죽 덮기'];
+
+/// A cooking cell's timing cue (4차 피드백 g6): the five doneness zones
+/// along a thin bar (`doneness.boundary_permille` of the target) with a
+/// light marker where the cell is now, so a tap can be timed.
+class GriddleCuePainter extends CustomPainter {
+  final int permille;
+  final List<int> boundaries;
+  const GriddleCuePainter({required this.permille, required this.boundaries});
+  static const zoneColors = [
+    Color(0xfff3e3a6), Color(0xffe8bb62), Color(0xffd28a2a), Color(0xff8a5222), Color(0xff2a1a10)];
+  /// Where the bar ends: a quarter past the last boundary.
+  int get span => boundaries.last * 5 ~/ 4;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(size.height / 2));
+    canvas.save();
+    canvas.clipRRect(r);
+    var from = 0;
+    for (var z = 0; z < 5; z++) {
+      final to = z < boundaries.length ? boundaries[z] : span;
+      canvas.drawRect(Rect.fromLTRB(size.width * from / span, 0, size.width * to / span, size.height),
+          Paint()..color = zoneColors[z]);
+      from = to;
+    }
+    canvas.restore();
+    final x = size.width * permille.clamp(0, span) / span;
+    canvas.drawRect(Rect.fromCenter(center: Offset(x, size.height / 2), width: 2.5, height: size.height + 4),
+        Paint()..color = Colors.white);
+  }
+  @override
+  bool shouldRepaint(GriddleCuePainter old) => old.permille != permille || old.boundaries != boundaries;
 }
 
 /// Whether the griddle shows open with its flames on (26번 4-2단계 F8,
@@ -1018,8 +1056,12 @@ class WorkshopGriddleLayer extends StatelessWidget {
               final center = sprite.topLeft +
                   Offset(griddleCavities[i].dx * sprite.width,
                       griddleCavities[i].dy * sprite.height);
-              final grade = cell.cooking ? s.grid.doneness(i, c.config) : null;
-              final label = cell.cooking
+              final prep = s.grid.prepStep(i, c.config);
+              final grade = cell.cooking && prep == null ? s.grid.doneness(i, c.config) : null;
+              final enabledCell = enabled && prep == null;
+              final label = prep != null
+                  ? '${i + 1}번 ${c.flavorLabel(cell.flavor!)} ${griddlePrepLabels[prep]} 중'
+                  : cell.cooking
                   ? '${i + 1}번 ${c.flavorLabel(cell.flavor!)} ${provisionalDonenessLabels[grade!]} · ${grade == 4 ? '폐기' : '수확'}'
                   : '숙련된 붕어빵 틀 ${i + 1}번 칸 굽기 시작';
               return Positioned.fromRect(
@@ -1030,18 +1072,24 @@ class WorkshopGriddleLayer extends StatelessWidget {
                   child: Semantics(
                       button: true,
                       label: label,
-                      enabled: enabled,
+                      enabled: enabledCell,
                       child: InkWell(
                           key: Key('workshop-cell-$i'),
-                          onTap: !enabled
+                          onTap: !enabledCell
                               ? null
                               : () => cell.cooking
                                   ? c.harvestCell(i, expectedCycle: cycle)
                                   : c.startCell(i),
                           child: Container(
-                              alignment: Alignment.center,
+                              // 4차 g6: the rows overlap (the lower row covers the
+                              // upper row's bottom), so a cooking cell's bar and
+                              // words start at its top.
+                              alignment: grade != null ? Alignment.topCenter : Alignment.center,
+                              padding: grade != null ? const EdgeInsets.only(top: 4) : null,
                               decoration: BoxDecoration(
-                                  color: cell.cooking
+                                  color: prep != null
+                                      ? const Color(0xccf3e3b8)
+                                      : cell.cooking
                                       ? (grade == 4
                                           ? Colors.black87
                                           : Colors.brown.withValues(alpha: .75))
@@ -1053,12 +1101,31 @@ class WorkshopGriddleLayer extends StatelessWidget {
                                       ? Border.all(color: Cozy.cream.withValues(alpha: .7), width: 1.5)
                                       : null,
                                   borderRadius: BorderRadius.circular(12)),
-                              child: cell.cooking
-                                  ? Text(
-                                      '${i + 1} ${provisionalDonenessLabels[grade!]}\n${grade == 4 ? '폐기' : '수확'}',
+                              child: prep != null
+                                  ? Text('${i + 1} ${griddlePrepLabels[prep]}',
+                                      key: Key('griddle-prep-$i'),
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(
-                                          fontSize: 10, color: Cozy.cream))
+                                          fontSize: 10, fontWeight: FontWeight.w700, color: Cozy.woodDark))
+                                  : cell.cooking
+                                  ? Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                        SizedBox(
+                                            height: 5,
+                                            width: double.infinity,
+                                            child: CustomPaint(
+                                                key: Key('griddle-cue-$i'),
+                                                painter: GriddleCuePainter(
+                                                    permille: s.grid.cookPermille(i, c.config),
+                                                    boundaries: c.config.integers('doneness', 'boundary_permille')))),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                            '${i + 1} ${provisionalDonenessLabels[grade!]}\n${grade == 4 ? '폐기' : '수확'}',
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                                fontSize: 10, height: 1.1, color: Cozy.cream)),
+                                      ]))
                                   : null))));
             })
         ]);

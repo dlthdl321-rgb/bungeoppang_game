@@ -28,7 +28,7 @@ class WorkshopRecordsView extends StatelessWidget {
         RecordTile('sales', 'coin', '판매 횟수', '$sales번', iconSize: 44),
         RecordTile('tap-rate', 'skill', '클릭당 생산', compactNumber(tapRate), iconSize: 48),
         RecordTile('auto-rate', 'time_clock', '초당 생산', compactNumber(autoRate)),
-        RecordTile('mastered', 'title', '숙련한 맛', '$mastered가지'),
+        RecordTile('mastered', 'title', '도감 완성한 맛', '$mastered가지'),
         RecordTile('days', 'prestige', '영업한 날', '$businessDays일'),
       ];
 

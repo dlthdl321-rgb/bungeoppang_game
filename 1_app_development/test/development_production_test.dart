@@ -65,6 +65,9 @@ void main() {
     expect(() => grid.start(0, config, ownedAndMastered: {}, choose: (ids) => 'redbean'), throwsFormatException);
     grid = grid.start(0, config, ownedAndMastered: {'redbean': 0}, choose: (ids) => ids.single);
     expect(grid.cookingSourceIds.length, 1);
+    // 4차 g6: batter and filling go in by themselves first; no take-out then.
+    expect(() => grid.harvest(0, config, businessIndex: 1), throwsFormatException);
+    grid = grid.advanceActive(GriddleProgress.prepMs(config));
     final harvest = grid.harvest(0, config, businessIndex: 1);
     expect(harvest.product!.variant, 0);
     expect(harvest.state.cookingSourceIds, isEmpty);

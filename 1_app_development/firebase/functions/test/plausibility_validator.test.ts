@@ -174,3 +174,47 @@ test("오늘의 주문서·출석 붕어빵력은 하루치만 서버 한도에 
   const tooMuch=(40n+BigInt(config.server_validation.slack_buns)+2n*minimum+1000n).toString();
   await assert.rejects(other.purchase("a","reserve",{...second,snapshot:snapshot(tooMuch,tooMuch,40)}));
 });
+// 4차 피드백 g6: 도감을 다 채운 맛의 황금과 칸 완성 붕어빵력 한도.
+const collected=(goal:string,extra:Record<string,unknown>={})=>({scope:"collection",goal,
+  gold:config.collection_rewards.flavor_gold,revision:config.metadata.revision,...extra});
+test("도감 완성 황금은 서버 검증 후 계정·맛마다 한 번만 지급한다",async()=>{
+  const {store,service}=setup();await service.claim("a",{progress});
+  const data={...context,claim:`${progress}:collection:redbean`,kind:"mission",payload:collected("redbean"),snapshot:snapshot("50","50",50)};
+  const first=await service.reward("a",data,true);
+  assert.equal(first.outcome,"eligible");assert.equal(first.gold,config.collection_rewards.flavor_gold);
+  assert.deepEqual(await service.reward("a",data,true),first);
+  // Another claim ID (a reinstalled game) asking for the same flavor gets nothing more.
+  const again=await service.reward("a",{...data,claim:`${progress}:collection:redbean_again`},true);
+  assert.notEqual(again.outcome,"eligible");
+  const custard=await service.reward("a",{...context,claim:`${progress}:collection:custard`,kind:"mission",payload:collected("custard"),snapshot:snapshot("50","50",50)},true);
+  assert.equal(custard.outcome,"eligible");
+  assert.equal(gold(store),config.welcome_reward.gold+2*config.collection_rewards.flavor_gold);
+});
+test("도감 완성 황금은 모르는 맛·보상량·형식이 틀리면 지급하지 않는다",async()=>{
+  const {store,service}=setup();await service.claim("a",{progress});
+  const ask=(claim:string,payload:Record<string,unknown>)=>service.reward("a",{...context,claim:`${progress}:${claim}`,kind:"mission",payload,snapshot:snapshot("50","50",50)},true);
+  assert.equal((await ask("collection:w1",collected("redbean",{gold:99}))).outcome,"unverifiable");
+  assert.equal((await ask("collection:w2",collected("matcha"))).outcome,"unverifiable");
+  assert.equal((await ask("collection:w3",collected("redbean",{extra:true}))).outcome,"unverifiable");
+  assert.equal((await ask("collection:w4",collected("redbean",{revision:"old"}))).outcome,"unverifiable");
+  assert.equal(gold(store),config.welcome_reward.gold);
+});
+test("도감 칸 완성 붕어빵력은 지난 시간만큼의 칸 수까지만 서버 한도에 더한다",async()=>{
+  const {service,clock}=setup();await service.claim("a",{progress});
+  await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  const second={...context,intent:intent("transaction_0002",1)};
+  const d=config.daily_return,daily=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns);
+  const cell=BigInt(config.collection_rewards.cell_min_buns),per=config.collection_rewards.server_min_ms_per_cell;
+  // Two cells' time: three cells (two + one) of minimum buns fit, a fourth does not.
+  clock.now+=2*per;
+  const base=40n+BigInt(config.server_validation.slack_buns)+2n*daily;
+  const fits=(base+3n*cell).toString();
+  assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot(fits,fits,40)})).status,"reserved");
+  const {service:other,clock:otherClock}=setup();await other.claim("a",{progress});
+  await other.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await other.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  otherClock.now+=2*per;
+  const tooMuch=(base+4n*cell).toString();
+  await assert.rejects(other.purchase("a","reserve",{...second,snapshot:snapshot(tooMuch,tooMuch,40)}));
+});
