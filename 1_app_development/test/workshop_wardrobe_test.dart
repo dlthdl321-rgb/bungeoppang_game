@@ -109,7 +109,7 @@ void main() {
   });
 
   group('사장님·피부톤 규칙 (3차 피드백 H11·H12)', () {
-    test('새 가게는 여자 사장님과 피부톤 1만 갖고, 남자 사장님·피부톤 2·3은 설정값 가격으로 판다', () async {
+    test('새 가게는 여자 사장님과 피부톤 1만 갖고, 남자 사장님은 설정값 가격으로 판다 (피부톤 2·3은 없음, 26번 3차 AV3)', () async {
       final c = WorkshopController(config, MemoryRepository(), purchaseGateway: Gateway());
       await c.initialize();
       expect([for (final id in ['girl', 'boy', 'skin1', 'skin2', 'skin3']) c.ownsAvatar(id)],
@@ -117,14 +117,16 @@ void main() {
       expect(await c.equipAvatar('boy'), isFalse);
       expect(await c.equipAvatar('skin2'), isFalse);
       final prices = config.section('cosmetic_purchase');
-      for (final id in ['girl', 'boy', 'skin2', 'skin3']) {
+      expect(prices.containsKey('skin2') || prices.containsKey('skin3'), isFalse);
+      expect(config.section('avatar_catalog').keys.where((k) => k.startsWith('skin')), ['skin1']);
+      for (final id in ['girl', 'boy']) {
         final quote = quoteWorkshopProduct(config, 'cosmetic:$id', owned: 0, quantity: 1);
         expect(quote.gold, BigInt.from((prices[id] as Map)['gold'] as int), reason: id);
         expect(quote.gold, greaterThan(BigInt.zero), reason: '황금으로 산다: $id');
       }
       // The server reads the same generated config.
       final server = jsonDecode(File('firebase/functions/src/generated/development_balance.json').readAsStringSync());
-      for (final id in ['girl', 'boy', 'skin2', 'skin3']) {
+      for (final id in ['girl', 'boy']) {
         expect(server['avatar_catalog'][id]['free'], isFalse, reason: id);
         expect(server['cosmetic_purchase'][id], prices[id], reason: id);
       }
@@ -151,15 +153,22 @@ void main() {
       expect(await c.equipAvatar('girl'), isTrue);
     });
 
-    test('규칙 전 저장은 입던 사장님·피부톤을 그대로 갖는다(기존 저장 존중)', () async {
+    test('규칙 전 저장은 입던 사장님을 그대로 갖고, 없어진 피부톤 2·3은 피부톤 1로 읽는다', () async {
       final c = WorkshopController(config, MemoryRepository(), purchaseGateway: Gateway());
       await c.initialize();
       final old = jsonDecode(jsonEncode(c.state.toJson())) as Map<String, dynamic>
         ..remove('avatarGrants')
         ..['avatarEquipment'] = {'character': 'boy', 'skin': 'skin3'};
       final migrated = WorkshopState.fromJson(old, config);
-      expect(migrated.avatarGrants, {'boy', 'skin3'});
-      expect(migrated.avatarEquipment, {'character': 'boy', 'skin': 'skin3'});
+      expect(migrated.avatarGrants, {'boy', 'skin1'});
+      expect(migrated.avatarEquipment, {'character': 'boy', 'skin': 'skin1'});
+      // A save that granted skin2 (26번 3차 AV3: removed before launch).
+      final granted = jsonDecode(jsonEncode(c.state.toJson())) as Map<String, dynamic>
+        ..['avatarGrants'] = ['girl', 'skin2']
+        ..['avatarEquipment'] = {'skin': 'skin2'};
+      final read = WorkshopState.fromJson(granted, config);
+      expect(read.avatarGrants, {'girl'});
+      expect(read.avatarEquipment['skin'], 'skin1');
       // Nothing worn yet: the girl, as before.
       final fresh = jsonDecode(jsonEncode(c.state.toJson())) as Map<String, dynamic>
         ..remove('avatarGrants')
@@ -232,15 +241,15 @@ void main() {
       for (final grants in [
         ['short'],
         ['girl', 'boy'],
-        ['skin2'],
+        ['skin1'],
         ['girl', 'girl'],
         'girl',
       ]) {
         final bad = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['avatarGrants'] = grants;
         expect(() => WorkshopState.fromJson(bad, config), throwsFormatException, reason: '$grants');
       }
-      // Wearing a skin tone that is neither granted nor bought is refused.
-      final worn = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['avatarEquipment'] = {'skin': 'skin2'};
+      // Wearing an item that is neither granted nor bought is refused.
+      final worn = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['avatarEquipment'] = {'character': 'boy'};
       expect(() => WorkshopState.fromJson(worn, config), throwsFormatException);
     });
   });
@@ -276,8 +285,8 @@ void main() {
       await _tap(tester, 'preview-girl');
       expect(find.byKey(const Key('cosmetic-preview-status')), findsNothing);
       await _tap(tester, 'preview-boy');
-      await _tap(tester, 'cosmetic-slot-skin');
-      await _tap(tester, 'preview-skin2');
+      // 26번 3차 AV3: no skin tone tab (skin1 only).
+      expect(find.byKey(const Key('cosmetic-slot-skin')), findsNothing);
       await _tap(tester, 'cosmetic-category-outfit');
       await _tap(tester, 'cosmetic-slot-outfit');
       await _tap(tester, 'preview-noapron');
@@ -289,7 +298,7 @@ void main() {
       }
       // All picks are drawn together.
       final look = tester.widget<CustomPaint>(find.byKey(const Key('preview-avatar-face'))).painter! as AvatarPainter;
-      expect((look.look.character, look.look.skin, look.look.outfit), ('boy', 'skin2', 'noapron'));
+      expect((look.look.character, look.look.skin, look.look.outfit), ('boy', 'skin1', 'noapron'));
       expect(c.state.avatarEquipment['character'], isNot('boy'));
       // '모두 적용' wears what is owned; the rest waits for '모두 사기'.
       await _tap(tester, 'wardrobe-apply-all');
@@ -299,15 +308,12 @@ void main() {
       expect(find.byKey(const Key('wardrobe-apply-all')), findsNothing);
       await _tap(tester, 'wardrobe-buy-all');
       expect(find.byKey(const Key('wardrobe-buy-all-dialog')), findsOneWidget);
-      expect(find.text('2개 모두 사기'), findsOneWidget);
+      expect(find.text('1개 모두 사기'), findsOneWidget);
       expect(find.byKey(const Key('wardrobe-buy-row-boy')), findsOneWidget);
-      expect(find.byKey(const Key('wardrobe-buy-row-skin2')), findsOneWidget);
       expect(find.byKey(const Key('wardrobe-buy-all-total')), findsOneWidget);
       await _tap(tester, 'wardrobe-buy-all-confirm');
       expect(c.ownsAvatar('boy'), isTrue, reason: c.notice);
-      expect(c.ownsAvatar('skin2'), isTrue, reason: c.notice);
       expect(c.state.avatarEquipment['character'], 'boy');
-      expect(c.state.avatarEquipment['skin'], 'skin2');
       // Everything worn: the window closed by itself (no back button needed).
       expect(find.byKey(const Key('workshop-window-title')), findsNothing);
     });
@@ -406,19 +412,19 @@ void main() {
           price: (_) => '',
           action: (_) => '',
           apply: (d) async {
-            if (d.id == 'skin3') return false;
+            if (d.id == 'beanie') return false;
             worn[d.slot] = d.id;
             return true;
           },
           listed: (d) => d.slot.category == CosmeticCategory.avatar);
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: WardrobePanel(controller: game, access: access))));
       await _tap(tester, 'preview-boy');
-      await _tap(tester, 'cosmetic-slot-skin');
-      await _tap(tester, 'preview-skin3');
+      await _tap(tester, 'cosmetic-slot-hat');
+      await _tap(tester, 'preview-beanie');
       await _tap(tester, 'wardrobe-apply-all');
       expect(worn[CosmeticSlot.character], 'boy');
       expect(find.byKey(const Key('wardrobe-message')), findsOneWidget);
-      expect(find.textContaining('피부톤 3'), findsWidgets);
+      expect(find.textContaining('털 비니'), findsWidgets);
       expect(find.text('모두 적용'), findsOneWidget);
     });
   });

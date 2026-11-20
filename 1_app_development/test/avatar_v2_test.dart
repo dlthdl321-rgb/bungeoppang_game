@@ -114,10 +114,10 @@ void main() {
       final required = avatarV2Required().toList();
       expect(required.toSet().length, required.length);
       // 25번 문서 23~30번: 110장 (아이콘 31번은 칸 단위로 따로; 집게는 26번 3차
-      // H8로 '도구 없음'이 되어 그림이 없다).
-      expect(required.length, 110);
+      // H8로 '도구 없음'이 되어 그림이 없다). 26번 3차 AV3: 피부톤 1만 → 106장.
+      expect(required.length, 106);
       for (final c in ['girl', 'boy']) {
-        for (final s in ['skin1', 'skin2', 'skin3']) {
+        for (final s in ['skin1']) {
           expect(required, contains('avatar_v2/$c/base@$s.png'));
         }
         for (final id in ['long', 'tee', 'shorts', 'flats', 'apron',
@@ -143,7 +143,7 @@ void main() {
       final all = avatarV2Required().toSet();
       expect(avatarV2ReadyFor(all), isTrue);
       for (final missing in [
-        'avatar_v2/girl/base@skin3.png',
+        'avatar_v2/girl/base@skin1.png',
         'avatar_v2/boy/bottom_longskirt.png',
         'avatar_v2/girl/hair_curly_back.png',
       ]) {
@@ -224,8 +224,8 @@ void main() {
       }
     });
 
-    test('피부톤마다 자기 바탕 그림(색 치환 복사본 없음)', () async {
-      for (final skin in ['skin1', 'skin2', 'skin3']) {
+    test('피부톤 1 바탕 그림(색 치환 복사본 없음, 26번 3차 AV3: 피부톤 1만)', () async {
+      for (final skin in ['skin1']) {
         final rig =
             AvatarRig('boy', frontPose, look: _look({CosmeticSlot.skin: skin}, character: 'boy'));
         expect(rig.sprites.first.asset, 'avatar_v2/boy/base@$skin.png');

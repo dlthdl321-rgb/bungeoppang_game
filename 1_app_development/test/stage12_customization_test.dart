@@ -194,9 +194,12 @@ void main() {
       original.wardrobe.owned.add('beanie');
       original.wardrobe.equipped[CosmeticSlot.hat] = 'beanie';
       original.wardrobe.equipped[CosmeticSlot.skin] = 'skin2';
+      original.wardrobe.owned.add('skin2');
       final restored = GameState.fromJson(asV10(original));
       expect(restored.equippedCosmetic(CosmeticSlot.hat), 'beanie');
-      expect(restored.equippedCosmetic(CosmeticSlot.skin), 'skin2');
+      // 26번 3차 AV3: skin tones 2·3 are gone; skin1 instead.
+      expect(restored.equippedCosmetic(CosmeticSlot.skin), 'skin1');
+      expect(restored.wardrobe.owned, isNot(contains('skin2')));
       expect(restored.equippedCosmetic(CosmeticSlot.character), 'girl');
       for (final d in inSlot(CosmeticSlot.character)) {
         expect(restored.ownsCosmetic(d), isTrue, reason: d.id);
@@ -234,7 +237,6 @@ void main() {
       s.wardrobe.owned.addAll(['beanie', 'heartscale']);
       s.wardrobe.equipped[CosmeticSlot.hat] = 'beanie';
       s.wardrobe.equipped[CosmeticSlot.pattern] = 'heartscale';
-      s.wardrobe.equipped[CosmeticSlot.skin] = 'skin3';
       s.wardrobe.equipped[CosmeticSlot.character] = 'boy';
       final restored = GameState.fromJson(plainJson(s));
       expect(restored.wardrobe.toJson(), s.wardrobe.toJson());
@@ -301,10 +303,10 @@ void main() {
       expect(c.state.support.coins, BigInt.zero);
     });
 
-    test('피부톤은 무료로 바로 바뀌고 수집 수에 들어가지 않는다', () async {
+    test('피부톤은 1만 있고(26번 3차 AV3) 수집 수에 들어가지 않는다', () async {
       final before = c.state.support.ledger.length;
-      expect(await c.buyOrEquipCosmetic('skin3'), isTrue);
-      expect(c.state.equippedCosmetic(CosmeticSlot.skin), 'skin3');
+      expect(await c.buyOrEquipCosmetic('skin1'), isTrue);
+      expect(c.state.equippedCosmetic(CosmeticSlot.skin), 'skin1');
       expect(c.state.support.ledger.length, before);
       expect(cosmeticsOwnedCount(c.state), 0);
     });

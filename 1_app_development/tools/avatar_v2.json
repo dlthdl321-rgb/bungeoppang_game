@@ -1017,6 +1017,50 @@
    44,
    11
   ],
+  "avatar_v2/boy/hat_ballcap.png": [
+   46,
+   0
+  ],
+  "avatar_v2/boy/hat_bandana.png": [
+   44,
+   16
+  ],
+  "avatar_v2/boy/hat_bandana_back.png": [
+   207,
+   136
+  ],
+  "avatar_v2/boy/hat_beanie.png": [
+   57,
+   0
+  ],
+  "avatar_v2/boy/hat_blackcap.png": [
+   44,
+   18
+  ],
+  "avatar_v2/boy/hat_chefhat.png": [
+   45,
+   0
+  ],
+  "avatar_v2/boy/hat_earmuffs.png": [
+   28,
+   23
+  ],
+  "avatar_v2/boy/hat_newsboy.png": [
+   55,
+   0
+  ],
+  "avatar_v2/boy/hat_redbandana.png": [
+   58,
+   14
+  ],
+  "avatar_v2/boy/hat_redbandana_back.png": [
+   227,
+   127
+  ],
+  "avatar_v2/boy/hat_santa.png": [
+   58,
+   24
+  ],
   "avatar_v2/boy/outfit_apron.png": [
    88,
    211
@@ -1036,6 +1080,54 @@
   "avatar_v2/boy/outfit_waistapron.png": [
    94,
    327
+  ],
+  "avatar_v2/boy/pose_proud_arms@skin1.png": [
+   30,
+   172
+  ],
+  "avatar_v2/boy/pose_proud_arms@skin2.png": [
+   30,
+   172
+  ],
+  "avatar_v2/boy/pose_proud_arms@skin3.png": [
+   30,
+   172
+  ],
+  "avatar_v2/boy/pose_proud_hide.png": [
+   0,
+   115
+  ],
+  "avatar_v2/boy/pose_proud_sleeve_cardigan.png": [
+   63,
+   214
+  ],
+  "avatar_v2/boy/pose_proud_sleeve_chefcoat.png": [
+   80,
+   214
+  ],
+  "avatar_v2/boy/pose_proud_sleeve_creamlong.png": [
+   60,
+   214
+  ],
+  "avatar_v2/boy/pose_proud_sleeve_creamsweater.png": [
+   59,
+   214
+  ],
+  "avatar_v2/boy/pose_proud_sleeve_padding.png": [
+   59,
+   214
+  ],
+  "avatar_v2/boy/pose_proud_sleeve_pinksweater.png": [
+   59,
+   214
+  ],
+  "avatar_v2/boy/pose_proud_sleeve_sagesweater.png": [
+   59,
+   214
+  ],
+  "avatar_v2/boy/pose_proud_sleeve_tee.png": [
+   83,
+   214
   ],
   "avatar_v2/boy/shoes_boots.png": [
    84,
@@ -1265,6 +1357,50 @@
    66,
    203
   ],
+  "avatar_v2/girl/hat_ballcap.png": [
+   51,
+   6
+  ],
+  "avatar_v2/girl/hat_bandana.png": [
+   63,
+   24
+  ],
+  "avatar_v2/girl/hat_bandana_back.png": [
+   222,
+   150
+  ],
+  "avatar_v2/girl/hat_beanie.png": [
+   74,
+   13
+  ],
+  "avatar_v2/girl/hat_blackcap.png": [
+   52,
+   25
+  ],
+  "avatar_v2/girl/hat_chefhat.png": [
+   65,
+   0
+  ],
+  "avatar_v2/girl/hat_earmuffs.png": [
+   41,
+   28
+  ],
+  "avatar_v2/girl/hat_newsboy.png": [
+   64,
+   6
+  ],
+  "avatar_v2/girl/hat_redbandana.png": [
+   51,
+   15
+  ],
+  "avatar_v2/girl/hat_redbandana_back.png": [
+   239,
+   126
+  ],
+  "avatar_v2/girl/hat_santa.png": [
+   70,
+   2
+  ],
   "avatar_v2/girl/outfit_apron.png": [
    103,
    216
@@ -1284,6 +1420,54 @@
   "avatar_v2/girl/outfit_waistapron.png": [
    99,
    284
+  ],
+  "avatar_v2/girl/pose_proud_arms@skin1.png": [
+   41,
+   181
+  ],
+  "avatar_v2/girl/pose_proud_arms@skin2.png": [
+   41,
+   181
+  ],
+  "avatar_v2/girl/pose_proud_arms@skin3.png": [
+   41,
+   181
+  ],
+  "avatar_v2/girl/pose_proud_hide.png": [
+   0,
+   106
+  ],
+  "avatar_v2/girl/pose_proud_sleeve_cardigan.png": [
+   86,
+   220
+  ],
+  "avatar_v2/girl/pose_proud_sleeve_chefcoat.png": [
+   86,
+   220
+  ],
+  "avatar_v2/girl/pose_proud_sleeve_creamlong.png": [
+   78,
+   220
+  ],
+  "avatar_v2/girl/pose_proud_sleeve_creamsweater.png": [
+   86,
+   220
+  ],
+  "avatar_v2/girl/pose_proud_sleeve_padding.png": [
+   84,
+   220
+  ],
+  "avatar_v2/girl/pose_proud_sleeve_pinksweater.png": [
+   78,
+   220
+  ],
+  "avatar_v2/girl/pose_proud_sleeve_sagesweater.png": [
+   84,
+   220
+  ],
+  "avatar_v2/girl/pose_proud_sleeve_tee.png": [
+   95,
+   220
   ],
   "avatar_v2/girl/shoes_boots.png": [
    108,
@@ -1384,190 +1568,6 @@
   "avatar_v2/girl/top_tee.png": [
    94,
    214
-  ],
-  "avatar_v2/boy/pose_proud_arms@skin1.png": [
-   30,
-   172
-  ],
-  "avatar_v2/boy/pose_proud_arms@skin2.png": [
-   30,
-   172
-  ],
-  "avatar_v2/boy/pose_proud_arms@skin3.png": [
-   30,
-   172
-  ],
-  "avatar_v2/boy/pose_proud_hide.png": [
-   0,
-   115
-  ],
-  "avatar_v2/boy/pose_proud_sleeve_cardigan.png": [
-   63,
-   214
-  ],
-  "avatar_v2/boy/pose_proud_sleeve_chefcoat.png": [
-   80,
-   214
-  ],
-  "avatar_v2/boy/pose_proud_sleeve_creamlong.png": [
-   60,
-   214
-  ],
-  "avatar_v2/boy/pose_proud_sleeve_creamsweater.png": [
-   59,
-   214
-  ],
-  "avatar_v2/boy/pose_proud_sleeve_padding.png": [
-   59,
-   214
-  ],
-  "avatar_v2/boy/pose_proud_sleeve_pinksweater.png": [
-   59,
-   214
-  ],
-  "avatar_v2/boy/pose_proud_sleeve_sagesweater.png": [
-   59,
-   214
-  ],
-  "avatar_v2/boy/pose_proud_sleeve_tee.png": [
-   83,
-   214
-  ],
-  "avatar_v2/girl/pose_proud_arms@skin1.png": [
-   41,
-   181
-  ],
-  "avatar_v2/girl/pose_proud_arms@skin2.png": [
-   41,
-   181
-  ],
-  "avatar_v2/girl/pose_proud_arms@skin3.png": [
-   41,
-   181
-  ],
-  "avatar_v2/girl/pose_proud_hide.png": [
-   0,
-   106
-  ],
-  "avatar_v2/girl/pose_proud_sleeve_cardigan.png": [
-   86,
-   220
-  ],
-  "avatar_v2/girl/pose_proud_sleeve_chefcoat.png": [
-   86,
-   220
-  ],
-  "avatar_v2/girl/pose_proud_sleeve_creamlong.png": [
-   78,
-   220
-  ],
-  "avatar_v2/girl/pose_proud_sleeve_creamsweater.png": [
-   86,
-   220
-  ],
-  "avatar_v2/girl/pose_proud_sleeve_padding.png": [
-   84,
-   220
-  ],
-  "avatar_v2/girl/pose_proud_sleeve_pinksweater.png": [
-   78,
-   220
-  ],
-  "avatar_v2/girl/pose_proud_sleeve_sagesweater.png": [
-   84,
-   220
-  ],
-  "avatar_v2/girl/pose_proud_sleeve_tee.png": [
-   95,
-   220
-  ],
-  "avatar_v2/boy/hat_ballcap.png": [
-   46,
-   0
-  ],
-  "avatar_v2/boy/hat_bandana.png": [
-   44,
-   16
-  ],
-  "avatar_v2/boy/hat_bandana_back.png": [
-   207,
-   136
-  ],
-  "avatar_v2/boy/hat_beanie.png": [
-   57,
-   0
-  ],
-  "avatar_v2/boy/hat_blackcap.png": [
-   44,
-   18
-  ],
-  "avatar_v2/boy/hat_chefhat.png": [
-   45,
-   0
-  ],
-  "avatar_v2/boy/hat_earmuffs.png": [
-   28,
-   23
-  ],
-  "avatar_v2/boy/hat_newsboy.png": [
-   55,
-   0
-  ],
-  "avatar_v2/boy/hat_redbandana.png": [
-   58,
-   14
-  ],
-  "avatar_v2/boy/hat_redbandana_back.png": [
-   227,
-   127
-  ],
-  "avatar_v2/boy/hat_santa.png": [
-   58,
-   24
-  ],
-  "avatar_v2/girl/hat_ballcap.png": [
-   51,
-   6
-  ],
-  "avatar_v2/girl/hat_bandana.png": [
-   63,
-   24
-  ],
-  "avatar_v2/girl/hat_bandana_back.png": [
-   222,
-   150
-  ],
-  "avatar_v2/girl/hat_beanie.png": [
-   74,
-   13
-  ],
-  "avatar_v2/girl/hat_blackcap.png": [
-   52,
-   25
-  ],
-  "avatar_v2/girl/hat_chefhat.png": [
-   65,
-   0
-  ],
-  "avatar_v2/girl/hat_earmuffs.png": [
-   41,
-   28
-  ],
-  "avatar_v2/girl/hat_newsboy.png": [
-   64,
-   6
-  ],
-  "avatar_v2/girl/hat_redbandana.png": [
-   51,
-   15
-  ],
-  "avatar_v2/girl/hat_redbandana_back.png": [
-   239,
-   126
-  ],
-  "avatar_v2/girl/hat_santa.png": [
-   70,
-   2
   ]
  },
  "pivots": {
@@ -2144,580 +2144,6 @@
      ]
     }
    ]
-  },
-  "girl/pinksweater": {
-   "sha": "013719256529ca8b",
-   "fits": [
-    {
-     "box": [
-      190,
-      904,
-      504,
-      1184
-     ],
-     "to": [
-      228,
-      957,
-      493,
-      1219
-     ],
-     "scale": [
-      0.845,
-      0.935
-     ]
-    },
-    {
-     "box": [
-      662,
-      905,
-      927,
-      1222
-     ],
-     "to": [
-      699,
-      965,
-      909,
-      1274
-     ],
-     "scale": [
-      0.793,
-      0.976
-     ]
-    }
-   ]
-  },
-  "girl/sagesweater": {
-   "sha": "1ac4583bc6f37d88",
-   "fits": [
-    {
-     "box": [
-      172,
-      916,
-      489,
-      1168
-     ],
-     "to": [
-      231,
-      957,
-      494,
-      1214
-     ],
-     "scale": [
-      0.829,
-      1.02
-     ]
-    },
-    {
-     "box": [
-      663,
-      916,
-      926,
-      1202
-     ],
-     "to": [
-      693,
-      969,
-      911,
-      1261
-     ],
-     "scale": [
-      0.829,
-      1.02
-     ]
-    }
-   ]
-  },
-  "girl/creamsweater": {
-   "sha": "b1b954ba54261d1c",
-   "fits": [
-    {
-     "box": [
-      170,
-      943,
-      472,
-      1196
-     ],
-     "to": [
-      227,
-      954,
-      499,
-      1218
-     ],
-     "scale": [
-      0.901,
-      1.043
-     ]
-    },
-    {
-     "box": [
-      662,
-      942,
-      914,
-      1241
-     ],
-     "to": [
-      693,
-      950,
-      911,
-      1268
-     ],
-     "scale": [
-      0.866,
-      1.064
-     ]
-    }
-   ]
-  },
-  "girl/cardigan": {
-   "sha": "9259168da14f2e8e",
-   "fits": [
-    {
-     "box": [
-      191,
-      907,
-      505,
-      1156
-     ],
-     "to": [
-      231,
-      957,
-      497,
-      1211
-     ],
-     "scale": [
-      0.846,
-      1.02
-     ]
-    },
-    {
-     "box": [
-      657,
-      908,
-      915,
-      1185
-     ],
-     "to": [
-      694,
-      971,
-      917,
-      1266
-     ],
-     "scale": [
-      0.866,
-      1.064
-     ]
-    }
-   ]
-  },
-  "girl/padding": {
-   "sha": "d7c0a0dc695b48b3",
-   "fits": [
-    {
-     "box": [
-      196,
-      904,
-      506,
-      1144
-     ],
-     "to": [
-      229,
-      958,
-      497,
-      1213
-     ],
-     "scale": [
-      0.866,
-      1.064
-     ]
-    },
-    {
-     "box": [
-      661,
-      904,
-      907,
-      1189
-     ],
-     "to": [
-      695,
-      955,
-      917,
-      1271
-     ],
-     "scale": [
-      0.902,
-      1.109
-     ]
-    }
-   ]
-  },
-  "girl/chefcoat": {
-   "sha": "584eaac657b18e8b",
-   "fits": [
-    {
-     "box": [
-      198,
-      919,
-      499,
-      1149
-     ],
-     "to": [
-      220,
-      958,
-      497,
-      1213
-     ],
-     "scale": [
-      0.92,
-      1.109
-     ]
-    },
-    {
-     "box": [
-      674,
-      921,
-      919,
-      1193
-     ],
-     "to": [
-      689,
-      953,
-      928,
-      1272
-     ],
-     "scale": [
-      0.974,
-      1.174
-     ]
-    }
-   ]
-  },
-  "girl/tee": {
-   "sha": "8c0dde1aed6e3255",
-   "fits": [
-    {
-     "box": [
-      317,
-      910,
-      488,
-      1106
-     ],
-     "to": [
-      356,
-      944,
-      501,
-      1144
-     ],
-     "scale": [
-      0.846,
-      1.02
-     ]
-    },
-    {
-     "box": [
-      657,
-      910,
-      803,
-      1114
-     ],
-     "to": [
-      691,
-      949,
-      817,
-      1166
-     ],
-     "scale": [
-      0.866,
-      1.064
-     ]
-    }
-   ]
-  },
-  "boy/pinksweater": {
-   "sha": "d5c3abefa768fda6",
-   "fits": [
-    {
-     "box": [
-      159,
-      909,
-      473,
-      1179
-     ],
-     "to": [
-      207,
-      920,
-      472,
-      1172
-     ],
-     "scale": [
-      0.845,
-      0.935
-     ]
-    },
-    {
-     "box": [
-      650,
-      916,
-      924,
-      1260
-     ],
-     "to": [
-      686,
-      918,
-      928,
-      1241
-     ],
-     "scale": [
-      0.883,
-      0.939
-     ]
-    }
-   ]
-  },
-  "boy/sagesweater": {
-   "sha": "c3b554660a8be61e",
-   "fits": [
-    {
-     "box": [
-      154,
-      951,
-      474,
-      1221
-     ],
-     "to": [
-      200,
-      921,
-      476,
-      1164
-     ],
-     "scale": [
-      0.862,
-      0.898
-     ]
-    },
-    {
-     "box": [
-      646,
-      951,
-      917,
-      1297
-     ],
-     "to": [
-      681,
-      924,
-      925,
-      1236
-     ],
-     "scale": [
-      0.902,
-      0.902
-     ]
-    }
-   ]
-  },
-  "boy/creamsweater": {
-   "sha": "8c08a617c6276f0a",
-   "fits": [
-    {
-     "box": [
-      150,
-      919,
-      473,
-      1202
-     ],
-     "to": [
-      210,
-      911,
-      477,
-      1170
-     ],
-     "scale": [
-      0.828,
-      0.917
-     ]
-    },
-    {
-     "box": [
-      643,
-      931,
-      931,
-      1274
-     ],
-     "to": [
-      686,
-      922,
-      909,
-      1235
-     ],
-     "scale": [
-      0.773,
-      0.913
-     ]
-    }
-   ]
-  },
-  "boy/cardigan": {
-   "sha": "6e1f7b2b7cff8a2f",
-   "fits": [
-    {
-     "box": [
-      180,
-      915,
-      477,
-      1179
-     ],
-     "to": [
-      202,
-      924,
-      475,
-      1162
-     ],
-     "scale": [
-      0.92,
-      0.902
-     ]
-    },
-    {
-     "box": [
-      643,
-      915,
-      892,
-      1237
-     ],
-     "to": [
-      685,
-      924,
-      929,
-      1240
-     ],
-     "scale": [
-      0.98,
-      0.98
-     ]
-    }
-   ]
-  },
-  "boy/padding": {
-   "sha": "756778ddd6ebee90",
-   "fits": [
-    {
-     "box": [
-      197,
-      935,
-      473,
-      1189
-     ],
-     "to": [
-      206,
-      919,
-      476,
-      1173
-     ],
-     "scale": [
-      0.98,
-      1.0
-     ]
-    },
-    {
-     "box": [
-      651,
-      935,
-      888,
-      1255
-     ],
-     "to": [
-      683,
-      919,
-      925,
-      1239
-     ],
-     "scale": [
-      1.02,
-      1.0
-     ]
-    }
-   ]
-  },
-  "boy/chefcoat": {
-   "sha": "8adfed9ed92bdfcf",
-   "fits": [
-    {
-     "box": [
-      170,
-      901,
-      466,
-      1155
-     ],
-     "to": [
-      193,
-      922,
-      471,
-      1166
-     ],
-     "scale": [
-      0.941,
-      0.96
-     ]
-    },
-    {
-     "box": [
-      649,
-      900,
-      902,
-      1221
-     ],
-     "to": [
-      687,
-      922,
-      925,
-      1243
-     ],
-     "scale": [
-      0.94,
-      1.0
-     ]
-    }
-   ]
-  },
-  "boy/tee": {
-   "sha": "2d9be49f9fd64061",
-   "fits": [
-    {
-     "box": [
-      283,
-      907,
-      476,
-      1147
-     ],
-     "to": [
-      295,
-      915,
-      473,
-      1135
-     ],
-     "scale": [
-      0.92,
-      0.917
-     ]
-    },
-    {
-     "box": [
-      644,
-      907,
-      813,
-      1161
-     ],
-     "to": [
-      683,
-      921,
-      842,
-      1160
-     ],
-     "scale": [
-      0.94,
-      0.939
-     ]
-    }
-   ]
   }
  },
  "v1art": {
@@ -3230,7 +2656,7 @@
    "icons": 4
   },
   "girl/hat": {
-   "side": 214,
+   "side": 223,
    "icons": 9
   },
   "boy/hair": {
@@ -3238,7 +2664,7 @@
    "icons": 4
   },
   "boy/hat": {
-   "side": 236,
+   "side": 243,
    "icons": 9
   }
  }

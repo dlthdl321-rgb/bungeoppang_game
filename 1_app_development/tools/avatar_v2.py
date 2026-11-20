@@ -137,7 +137,7 @@ def required():
     defs = definitions()
     out = []
     for c in CHARACTERS:
-        out += [f'avatar_v2/{c}/base@{s}.png' for s in SKINS]
+        out += [f'avatar_v2/{c}/base@{s}.png' for s in SHIPPED_SKINS]
         for item, slot in defs:
             if slot in ITEM_SLOTS and item not in BLANK:
                 out.append(f'avatar_v2/{c}/{slot}_{item}.png')

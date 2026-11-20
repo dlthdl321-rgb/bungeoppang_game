@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 void main() {
   testWidgets('사장님 피부톤 × 머리 모양 골든', (tester) async {
     await tester.runAsync(PixelSprites.load);
-    const skins = ['skin1', 'skin2', 'skin3'];
+    const skins = ['skin1']; // 26번 3차 AV3: skin1 only
     const hairs = ['long', 'short', 'ponytail', 'curly'];
     const extras = <Map<CosmeticSlot, String>>[
       {CosmeticSlot.hair: 'short', CosmeticSlot.hat: 'chefhat'},
@@ -117,7 +117,7 @@ void main() {
                       ? character
                       : worn[s] ?? defaultCosmetics[s]!))));
       tester.view.devicePixelRatio = 1;
-      tester.view.physicalSize = Size((items.length + 1) * 56.0, 3 * 104);
+      tester.view.physicalSize = Size((items.length + 1) * 56.0, 1 * 104);
       addTearDown(tester.view.reset);
       await tester.pumpWidget(Directionality(
           textDirection: TextDirection.ltr,
@@ -126,7 +126,7 @@ void main() {
               child: ColoredBox(
                   color: const Color(0xFF6E8F64),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    for (final skin in ['skin1', 'skin2', 'skin3'])
+                    for (final skin in ['skin1'])
                       Row(mainAxisSize: MainAxisSize.min, children: [
                         vendor({CosmeticSlot.skin: skin}),
                         for (final d in items)
