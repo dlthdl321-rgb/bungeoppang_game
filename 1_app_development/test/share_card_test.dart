@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/avatar_v2.dart';
 import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/cooking_result_rules.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
@@ -213,7 +214,9 @@ void main() {
       await tester.tap(find.byKey(const Key('mold-share')));
       await tester.pumpAndSettle();
       expect(tester.widget<Text>(find.byKey(const Key('share-card-title'))).data, '팥 붕어빵');
-      expect(find.byKey(const Key('share-card-fish')), findsOneWidget);
+      // The proud pose (26번 3차 AV) holds its own bungeoppang.
+      expect(find.byKey(const Key('share-card-fish')),
+          avatarV2ProudReady('girl', 'skin1') ? findsNothing : findsOneWidget);
       expect(find.byKey(const Key('share-card-badge')), findsOneWidget);
       expect(tester.widget<Text>(find.byKey(const Key('share-card-line'))).data, contains(': "'));
       expect(find.byKey(const Key('share-card-guest')), findsOneWidget);
