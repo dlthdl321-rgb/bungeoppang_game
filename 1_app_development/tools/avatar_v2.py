@@ -547,6 +547,194 @@ def items(data, src, demo):
                 print(f'items {key}: {state}, centred {dxy}')
 
 
+# ---------------------------------------------------------------- v1art
+
+def v1art(data, src, demo):
+    """26번 3차 AV3: hair and clothes from the v1 designs (tools/
+    avatar_v1art.py), then the hats refitted over the fuller hair."""
+    import avatar_v1art as A
+    ex = A.Extract(sys.modules[__name__], data, demo)
+    report = data.setdefault('v1art', {})
+    for c in CHARACTERS:
+        folder = out_dir(demo) / 'avatar_v2' / c
+        if not (folder / 'base@skin1.png').exists():
+            continue
+        made = {}
+        for slot, ids in A.V1_ART.items():
+            for item in ids:
+                if f'{slot}_{item}' in A.V1_SKIP.get(c, ()):
+                    continue
+                if slot == 'hair':
+                    front, back = ex.hair(c, item)
+                    made[f'hair_{item}.png'] = front
+                    # Kept even when empty (the boy's short styles hang
+                    # nowhere below the chin): avatarV2Required lists it.
+                    made[f'hair_{item}_back.png'] = back
+                else:
+                    made[f'{slot}_{item}.png'] = ex.item(c, slot, item)
+                    # The 43~49번 halves belong to the 43~49번 picture.
+                    made[f'{slot}_{item}_back.png'] = None
+                    made[f'{slot}_{item}_front.png'] = None
+        # Every bottom's waist up to the hem of the shortest top (see
+        # RAISE): no strip of belly between them.
+        def hem(arr):
+            a = arr[..., 3] > 0
+            cols = np.nonzero(a.any(0))[0]
+            mid = (cols.min() + cols.max()) // 2
+            return min(int(np.nonzero(a[:, x])[0].max())
+                       for x in range(mid - 8, mid + 9) if a[:, x].any())
+        tops = [arr for n, arr in made.items()
+                if n.startswith('top_') and arr is not None]
+        waist = min(hem(t) for t in tops) - A.RAISE_OVERLAP
+        for item in A.RAISE:
+            name = f'bottom_{item}.png'
+            if name not in made:
+                if not (folder / name).exists():
+                    continue
+                made[name] = full(folder / name, data, demo)
+            made[name] = A.raise_waist(made[name], waist)
+        for item, hem in A.LENGTHEN.get(c, {}).items():
+            name = f'bottom_{item}.png'
+            if name not in made and (folder / name).exists():
+                made[name] = full(folder / name, data, demo)
+            if name in made:
+                made[name] = A.lengthen(made[name], hem, ex.base(c)[0],
+                                         A.CUFF_ROWS[item])
+        for name, arr in made.items():
+            path = folder / name
+            key = path.relative_to(out_dir(demo)).as_posix()
+            data.setdefault('trim', {}).pop(key, None)
+            if arr is None:
+                path.unlink(missing_ok=True)
+                report.pop(key, None)
+                continue
+            save(arr, path)
+            report[key] = {'pixels': int((arr[..., 3] > 0).sum())}
+        print(f'v1art {c}: {sum(a is not None for a in made.values())} '
+              f'layers from the v1 vendor')
+    hatfit(data, src, demo)
+
+
+def hat_geometry(alpha, band):
+    """(centre x, pivot row) of a hat: the brim (lowest row of its middle)
+    or, for a band hat, the row where it is widest (the muffs)."""
+    cols = np.nonzero(alpha.any(0))[0]
+    cx = (cols.min() + cols.max()) / 2
+    if band:
+        widths = [(np.ptp(np.nonzero(r)[0]) if r.any() else 0) for r in alpha]
+        return cx, int(np.argmax(widths))
+    mid = alpha[:, int(cx) - 15:int(cx) + 15]
+    return cx, int(np.nonzero(mid.any(1))[0].max())
+
+
+def v1icons(data, demo):
+    """26번 3차 AV3: the wardrobe icon of an item now drawn from the v1
+    design is that worn layer itself (the girl's), cropped and fitted like
+    the 31번 icons - the 31번 icons show the 43~49번 designs."""
+    import avatar_v1art as A
+    for item in A.V1_ICONS:
+        slot = next(sl for sl, ids in A.V1_ART.items() if item in ids)
+        path = out_dir(demo) / 'avatar_v2' / 'girl' / f'{slot}_{item}.png'
+        if not path.exists():
+            continue
+        arr = full(path, data, demo)
+        l, t, r, b = X.bbox(arr[..., 3])
+        part = Image.fromarray(arr[t:b, l:r], 'RGBA').convert('RGBa')
+        k = (ICON - 4) / max(part.size)
+        w, h = max(1, round(part.size[0] * k)), max(1, round(part.size[1] * k))
+        small = np.array(part.resize((w, h), Image.LANCZOS).convert('RGBA'))
+        small[..., 3] = np.where(small[..., 3] >= 128, 255, 0)
+        out = np.zeros((ICON, ICON, 4), np.uint8)
+        out[(ICON - h) // 2:(ICON - h) // 2 + h,
+            (ICON - w) // 2:(ICON - w) // 2 + w] = small
+        save(out, IMAGES / 'cosmetic_icons' / f'{item}.png')
+    print(f'v1icons: {len(A.V1_ICONS)} icons from the worn v1 layers')
+
+
+KNOT_FOLLOW = 0.7
+
+
+def hatfit(data, src, demo):
+    """26번 3차 AV3: the 43~49번 hats were drawn on the bare head and sat
+    inside the v1 hair. Each is scaled at 4x about its brim's middle (a
+    band hat about its muffs) so it is as wide as the default hair a few
+    rows above the brim (avatar_v1art.HAT_FIT); the hairmask job then
+    presses the hair under it."""
+    import avatar_v1art as A
+    fit = A.HAT_FIT
+    report = data.setdefault('hat_fit', {})
+    for c in CHARACTERS:
+        folder = out_dir(demo) / 'avatar_v2' / c
+        hair = folder / f'hair_{A.DEFAULT_HAIR[c]}.png'
+        if not hair.exists():
+            continue
+        hal = full(hair, data, demo)[..., 3] > 0
+        shift_by = tuple(data.get('align', {}).get(
+            f'avatar_v2/{c}/base@skin1.png', {}).get('shift', (0, 0)))
+        for path in sorted((src / FOLDERS['hat'] / c).glob('hat_*.png')):
+            stem = path.stem
+            main = re.sub(r'_(back|front)$', '', stem)
+            hat_id = main[len('hat_'):]
+            if hat_id in BLANK:
+                continue
+            cur = folder / f'{main}.png'
+            if not cur.exists():
+                continue  # (items makes it)
+            band = hat_id in fit['band']
+            dxy = tuple(data.get('centred', {}).get(f'{c}/{main}', (0, 0)))
+            if main == stem:
+                # Measured on the 43~49번 picture as placed (not on the
+                # file, which may be scaled already).
+                plain, _ = shrink(path, c)
+                al = shift(shift(plain, *shift_by), *dxy)[..., 3] > 0
+                cx, row = hat_geometry(al, band)
+                y = row if band else row - fit['rows_above_brim']
+                hx, wx = np.nonzero(al[y])[0], np.nonzero(hal[y])[0]
+                ratio = (np.ptp(wx) / max(np.ptp(hx), 1)) + fit['extra'] \
+                    if len(hx) and len(wx) else 1
+                s = float(min(max(ratio, fit['min']), fit['max']))
+                report[f'{c}/{main}'] = {'scale': round(s, 3),
+                                         'pivot': [round(float(cx), 1), row]}
+            entry = report.get(f'{c}/{main}')
+            if not entry:
+                continue
+            s = entry['scale']
+            px, py = entry['pivot']
+            ox, oy = shift_by[0] + dxy[0], shift_by[1] + dxy[1]
+            big = to_4x(path, c)
+            if big is None:
+                continue
+            if big[..., 3].min() == 255:
+                big = X.load_cut(path)
+            # Pivot on the 4x canvas before the shifts; scaled premultiplied
+            # so the edge has no dark halo.
+            p4x, p4y = (px - ox) * SCALE, (py + 1 - oy) * SCALE
+            img = Image.fromarray(big.astype(np.uint8), 'RGBA').convert('RGBa')
+            w, h = img.size
+            if main == stem:
+                img = img.resize((round(w * s), round(h * s)), Image.LANCZOS)
+                at = (round(p4x - p4x * s), round(p4y - p4y * s))
+            else:
+                # A knot behind the head keeps its size.
+                ys_, xs_ = np.nonzero(big[..., 3] > 127)
+                kx, ky = (xs_.min() + xs_.max()) / 2, ys_.min()
+                # Sideways with the hat's edge, at the same height (beside
+                # the ear, half behind the fuller hair).
+                at = (round(KNOT_FOLLOW * (s - 1) * (kx - p4x)), 0)
+            canvas = Image.new('RGBa', (w, h), (0, 0, 0, 0))
+            canvas.paste(img, at)
+            arr = np.array(canvas.convert('RGBA'))
+            small = X.area_sample(arr, *CANVAS)
+            small[..., 3] = np.where(small[..., 3] >= 128, 255, 0)
+            small = shift(shift(small.astype(np.uint8), *shift_by), *dxy)
+            small = defringe(small)
+            key = cur.with_name(f'{stem}.png')
+            save(small, key)
+            data.setdefault('trim', {}).pop(
+                key.relative_to(out_dir(demo)).as_posix(), None)
+            print(f'hatfit {c}/{stem}: x{s:.2f} about ({px}, {py})')
+
+
 # ---------------------------------------------------------------- bare
 
 # 26번 3차 H10 (2026-11-19): the 23번 bases wear a grey head cover, a grey
@@ -1247,7 +1435,10 @@ def icons(data, src):
         if missing:
             done[slot] = f'대기 (없음: {", ".join(missing)})'
             continue
+        import avatar_v1art as A
         for i in ids:
+            if i in A.V1_ICONS:
+                continue  # drawn from the worn v1 layer (v1icons)
             arr = X.load_cut(folder / f'{i}.png')
             l, t, r, b = X.bbox(arr[..., 3])
             part = arr[t:b, l:r]
@@ -1516,17 +1707,24 @@ def main():
         data = {k: v for k, v in data.items() if k in ('anchors', 'hat_hair')}
         jobs = ['align', 'items', 'hairmask', 'face', 'trim']
     else:
-        jobs = args or ['align', 'items', 'bare', 'basemask', 'hairmask',
+        jobs = args or ['align', 'items', 'v1art', 'bare', 'basemask',
+                        'hairmask',
                         'slim', 'skinned', 'pose', 'face', 'icons', 'trim',
                         'atlas']
     if 'align' in jobs:
         align(data, src, demo)
     if 'items' in jobs:
         items(data, src, demo)
+    if 'v1art' in jobs and not demo:
+        if 'items' not in jobs:  # it reads the 43~49번 shapes items makes
+            items(data, src, demo)
+        v1art(data, src, demo)
     if 'bare' in jobs:
         bare(data, demo)
     if 'basemask' in jobs:
         basemask(data, demo)
+    if 'hatfit' in jobs and 'v1art' not in jobs:
+        hatfit(data, src, demo)
     if 'hairmask' in jobs:
         hairmask(data, demo)
     if 'slim' in jobs:
@@ -1539,6 +1737,8 @@ def main():
         face(data, demo)
     if 'icons' in jobs and not demo:
         icons(data, src)
+    if 'icons' in jobs and not demo:
+        v1icons(data, demo)
     if 'trim' in jobs:
         trim(data, demo)
     if 'faceaudit' in jobs:
