@@ -89,7 +89,9 @@ Future<_Result> _play(DevelopmentBalance config, {required int welcome, int targ
           server.gold += DevelopmentBalance.integer(config.section('mission_gold_rewards'), 'daily_$goal');
         }
       }
-      while (c.canLevelUp) { expect(await c.levelUp(), isTrue); }
+      // 승급 is automatic (4차 IA1): the next save — here the checkpoint — raises it.
+      if (c.canLevelUp) expect(await c.command(() {}, keepNotice: true), isTrue);
+      expect(c.canLevelUp, isFalse);
       tap5 ??= c.state.lifetime >= DevelopmentBalance.decimal(config.skill('tap_5'), 'unlock_total') ? c.state.level : null;
       auto5 ??= c.state.lifetime >= DevelopmentBalance.decimal(config.skill('auto_5'), 'unlock_total') ? c.state.level : null;
       for (var buy = 0; buy < 3; buy++) {

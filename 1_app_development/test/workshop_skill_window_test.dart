@@ -219,6 +219,13 @@ void main() {
       // ignore: avoid_print
       print('skill rows fully visible in $name: $whole (row height ${tester.getSize(rows.first).height})');
       expect(account.state.premium.gold, name.startsWith('states') ? 3 : 0);
+      // 4차 피드백 ID1: MAX, lit, dark, Lv.0 and locked rows, wheel or not,
+      // are all one height, and every wheel shows its three steps.
+      final heights = {for (final e in rows.evaluate()) tester.getSize(find.byWidget(e.widget)).height};
+      expect(heights, hasLength(1), reason: '$heights');
+      for (final s in skillLevelUpSteps) {
+        expect(find.byKey(Key('step-${kind == 'auto' ? 'auto_1' : 'tap_2'}-$s')).hitTestable(), findsOneWidget);
+      }
     });
   }
 }

@@ -506,6 +506,8 @@ class WorkshopState {
   }
 }
 
+/// One requirement of the next level ([WorkshopController.levelRequirements]).
+typedef LevelRequirement = ({String label, BigInt current, BigInt target});
 class WorkshopController extends ChangeNotifier implements WorkshopProgressSource {
   final DevelopmentBalance config;
   final WorkshopRepository repository;
@@ -732,9 +734,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     busy = true; _commandIdle = Completer<void>();
     final before = state.toJson();
     final progressBefore = _usageProgress;
+    final levelBefore = state.level;
     var saved = false;
     try {
-      try { mutate(); _observeDaily(); } on FormatException catch (e) {
+      try { mutate(); _observeDaily(); _promote(); } on FormatException catch (e) {
         state = WorkshopState.fromJson(before, config); notice = e.message; return false;
       }
       state.sequence++;
@@ -744,6 +747,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         await (repository as WorkshopProductionJournal).stageProduction(next, before['sequence'] as int);
       }
       await repository.save(next, before['sequence'] as int);
+      if (state.level > levelBefore) promotedTo = state.level;
       return saved = true;
     } catch (e) {
       state = WorkshopState.fromJson(before, config);
@@ -908,13 +912,28 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (state.session != null || !state.recipes.contains(flavor)) throw const FormatException('레시피 선택 불가');
     state.selectedFlavor = flavor;
   });
-  Future<bool> claimRecipeFromMission(String flavor) => command(() {
-    final catalog = config.section('active_recipes');
-    final row = catalog[flavor];
-    if (row is! Map<String, dynamic> || flavor == 'redbean' || state.recipes.contains(flavor)) throw const FormatException('이미 보유했거나 없는 레시피예요.');
+  /// The recipe mission rule (unlock level, sales) of [flavor], or null for
+  /// 팥 and unknown flavors.
+  Map<String, dynamic>? recipeMissionRule(String flavor) {
+    final row = config.section('active_recipes')[flavor];
+    if (row is! Map<String, dynamic> || flavor == 'redbean') return null;
     final tier = DevelopmentBalance.integer(row, 'acquisition_tier');
-    final rule = config.rows('additional_recipe_acquisition_tiers').firstWhere((r) => r['tier'] == tier);
-    if (state.level < DevelopmentBalance.integer(rule, 'unlock_level') || state.completedSales < DevelopmentBalance.integer(rule, 'mission_sales')) throw const FormatException('레시피 미션 조건을 확인해 주세요.');
+    return config.rows('additional_recipe_acquisition_tiers').where((r) => r['tier'] == tier).firstOrNull;
+  }
+  /// Whether '레시피 받기' of [flavor] can be pressed now.
+  bool canClaimRecipe(String flavor) {
+    final rule = recipeMissionRule(flavor);
+    return rule != null && !state.recipes.contains(flavor) &&
+        state.level >= DevelopmentBalance.integer(rule, 'unlock_level') &&
+        state.completedSales >= DevelopmentBalance.integer(rule, 'mission_sales');
+  }
+  /// How many '레시피 받기' wait in the 레벨 미션 window (4차 피드백 IA1:
+  /// the only thing there to press now that 승급 is automatic).
+  int get claimableRecipeCount =>
+      config.section('active_recipes').keys.where(canClaimRecipe).length;
+  Future<bool> claimRecipeFromMission(String flavor) => command(() {
+    if (recipeMissionRule(flavor) == null || state.recipes.contains(flavor)) throw const FormatException('이미 보유했거나 없는 레시피예요.');
+    if (!canClaimRecipe(flavor)) throw const FormatException('레시피 미션 조건을 확인해 주세요.');
     state.recipes.add(flavor); state.recipeMissions.add(flavor);
     state.flavorMasteries[flavor] = FlavorMasteryProgress(flavor: flavor, difficulty: difficulty(flavor));
   });
@@ -1448,22 +1467,55 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     }
     state.customerScene=null;
   });
-  bool get canLevelUp {
-    if (state.level >= 50) return false;
+  /// What the next level asks for, as (label, how far, how much): the one
+  /// place the level-up rule lives. [canLevelUp] (automatic 승급), the
+  /// home's ring gauge ([levelProgressPermille]) and the 레벨 미션 bars all
+  /// read it, so the rule can change here alone. Empty at the top level.
+  List<LevelRequirement> get levelRequirements {
+    if (state.level >= 50) return const [];
     final rule = config.rows('level_progression')[state.level];
-    return state.lifetime >= DevelopmentBalance.decimal(rule, 'season_total_buns') &&
-      state.taps - state.levelStartTaps >= DevelopmentBalance.integer(rule, 'additional_taps') &&
-      state.completedSales - state.levelStartSales >= DevelopmentBalance.integer(rule, 'additional_sales');
+    return [
+      (label: '누적 붕어빵력', current: state.lifetime, target: DevelopmentBalance.decimal(rule, 'season_total_buns')),
+      (label: '이번 레벨 탭', current: BigInt.from(state.taps - state.levelStartTaps),
+        target: BigInt.from(DevelopmentBalance.integer(rule, 'additional_taps'))),
+      (label: '이번 레벨 판매', current: BigInt.from(state.completedSales - state.levelStartSales),
+        target: BigInt.from(DevelopmentBalance.integer(rule, 'additional_sales'))),
+    ];
   }
-  Future<bool> levelUp() => command(() {
-    if (!canLevelUp) throw const FormatException('승급 조건을 확인해 주세요.');
-    final next = state.level + 1, rule = config.rows('level_progression')[state.level];
-    if (!state.claimedLevels.add(next)) throw const FormatException('중복 승급');
-    state.level = next; state.levelStartTaps = state.taps; state.levelStartSales = state.completedSales;
-    final buns = DevelopmentBalance.decimal(rule, 'buns_reward'); state.buns += buns; state.lifetime += buns;
-    final gold = DevelopmentBalance.integer(rule, 'gold_reward');
-    if (gold > 0) state.pendingGold['level:$next'] = jsonEncode({'level': next, 'gold': gold, 'revision': config.revision});
-  });
+  bool get canLevelUp => state.level < 50 && levelRequirements.every((r) => r.current >= r.target);
+  /// The way to the next level in permille: the average of the
+  /// requirements, each counted up to its target, so it is 1000 exactly
+  /// when [canLevelUp] (and at the top level).
+  int get levelProgressPermille {
+    final rows = levelRequirements;
+    if (rows.isEmpty) return 1000;
+    var sum = 0;
+    for (final r in rows) {
+      sum += r.target <= BigInt.zero ? 1000
+          : ((r.current < BigInt.zero ? BigInt.zero : r.current > r.target ? r.target : r.current) * BigInt.from(1000) ~/ r.target).toInt();
+    }
+    final average = sum ~/ rows.length;
+    return average >= 1000 && !canLevelUp ? 999 : average;
+  }
+  /// The level the last saved command reached by itself, for the home's
+  /// short celebration (4차 피드백 IA1); null once shown.
+  int? promotedTo;
+  void dismissPromotion() { promotedTo = null; }
+  /// 승급 is automatic (4차 피드백 IA1): every command — the checkpoint save
+  /// each `manual_cooking.checkpoint_ms` included — raises the level while
+  /// its 붕어빵력·탭·판매 are met, several levels at once if need be. Each
+  /// level's 붕어빵력 reward is added and its 황금 waits for the server's
+  /// review as before (`pendingGold['level:N']`).
+  void _promote() {
+    while (canLevelUp) {
+      final next = state.level + 1, rule = config.rows('level_progression')[state.level];
+      if (!state.claimedLevels.add(next)) throw const FormatException('중복 승급');
+      state.level = next; state.levelStartTaps = state.taps; state.levelStartSales = state.completedSales;
+      final buns = DevelopmentBalance.decimal(rule, 'buns_reward'); state.buns += buns; state.lifetime += buns;
+      final gold = DevelopmentBalance.integer(rule, 'gold_reward');
+      if (gold > 0) state.pendingGold['level:$next'] = jsonEncode({'level': next, 'gold': gold, 'revision': config.revision});
+    }
+  }
   Future<bool> setBackgroundTime(String time)=>command(() {
     if(!['scenetime','day','night_time','clock'].contains(time)) throw const FormatException('배경 시간 선택 오류');
     state.sceneTime=time;

@@ -217,7 +217,7 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
                     Row(children: [
                       const Text('합계', style: TextStyle(fontWeight: FontWeight.w900, color: Cozy.ink)),
                       const Spacer(),
-                      WardrobePriceLine(sum, key: const Key('wardrobe-buy-all-total'), size: 20, fontSize: 16),
+                      WardrobePriceLine(sum, key: const Key('wardrobe-buy-all-total'), size: 28, fontSize: 16),
                     ]),
                   ],
                   const SizedBox(height: 10),
@@ -251,7 +251,7 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
               key: const Key('wardrobe-buy-dialog'),
               title: Text('${d.name} 사기'),
               content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-                if (price != null) WardrobePriceLine(price, size: 22, fontSize: 18),
+                if (price != null) WardrobePriceLine(price, size: 30, fontSize: 18),
                 const SizedBox(height: 8),
                 const Text('사면 계속 갖고, 바로 입어요.'),
               ]),
@@ -695,8 +695,9 @@ class WardrobeTabRow extends StatelessWidget {
 /// A bookmark tab (시안 확인 2차 (나) 책갈피 탭, replacing the G8 pill):
 /// rounded top corners and a flat bottom on the row's line; the chosen tab
 /// is peach and [WardrobePill.raise] taller, the others cream. [changed]
-/// puts a small honey dot on a slot that is being tried on. The icon shows
-/// only when the tab is wide enough for it ([iconWidth]). (The name is
+/// puts a small honey dot on a slot that is being tried on. The icon sits
+/// beside the name when the tab is wide enough ([iconWidth]), above it
+/// otherwise. (The name is
 /// kept from the pill it replaced.)
 class WardrobePill extends StatelessWidget {
   final String label;
@@ -710,6 +711,12 @@ class WardrobePill extends StatelessWidget {
   static const radius = 7.0, raise = 4.0;
   /// A tab narrower than this drops its icon and keeps the label.
   static const iconWidth = 74.0;
+  /// The tab's icon (4차 피드백 ID4: 18 was too small to make out; the
+  /// tab art fills about 60% of its square).
+  static const iconSize = 28.0;
+  /// The icon of a tab too narrow for icon and name side by side, drawn
+  /// above the name.
+  static const stackedIconSize = 26.0;
 
   @override
   Widget build(BuildContext context) {
@@ -731,10 +738,30 @@ class WardrobePill extends StatelessWidget {
             constraints: BoxConstraints(minHeight: (small ? 30 : 34) + (selected ? raise : 0)),
             child: LayoutBuilder(builder: (context, box) {
               final withIcon = icon != null && box.maxWidth >= iconWidth;
+              // 4차 피드백 ID4: a narrow tab (the 꾸미기 window's five tabs)
+              // keeps its icon too, above the name, instead of dropping it.
+              if (icon != null && !withIcon) {
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(4, 3, 4, 3),
+                  child: Column(mainAxisSize: MainAxisSize.min, children: [
+                    PixelIcon(icon!, size: stackedIconSize),
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(label,
+                          maxLines: 1,
+                          style: TextStyle(
+                              fontSize: 13,
+                              height: 1.1,
+                              fontWeight: FontWeight.w900,
+                              color: selected ? Cozy.ink : Cozy.taupe)),
+                    ),
+                  ]),
+                );
+              }
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
-                  if (withIcon) ...[PixelIcon(icon!, size: 18), const SizedBox(width: 3)],
+                  if (withIcon) ...[PixelIcon(icon!, size: iconSize), const SizedBox(width: 2)],
                   Flexible(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -851,7 +878,7 @@ class WardrobeActionButton extends StatelessWidget {
 class WardrobePriceLine extends StatelessWidget {
   final WardrobePrice price;
   final double size, fontSize;
-  const WardrobePriceLine(this.price, {super.key, this.size = 16, this.fontSize = 13});
+  const WardrobePriceLine(this.price, {super.key, this.size = 24, this.fontSize = 13});
   @override
   Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
         CurrencyAmount(Currency.buns, price.buns, missing: price.missingBuns, size: size, fontSize: fontSize),
@@ -977,7 +1004,7 @@ class WardrobeTile extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(color: Cozy.ink, fontSize: 13, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 2),
-                SizedBox(height: 20, child: _status()),
+                SizedBox(height: 24, child: _status()),
               ]),
             ),
             if (worn)
@@ -1003,10 +1030,10 @@ class WardrobeTile extends StatelessWidget {
           key: const Key('tile-price'),
           fit: BoxFit.scaleDown,
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            CurrencyAmount(Currency.buns, p.buns, missing: p.missingBuns, size: 16, fontSize: 13),
+            CurrencyAmount(Currency.buns, p.buns, missing: p.missingBuns, size: 24, fontSize: 13),
             if (p.gold > BigInt.zero) ...[
               const SizedBox(width: 6),
-              CurrencyAmount(Currency.gold, p.gold, missing: p.missingGold, size: 16, fontSize: 13),
+              CurrencyAmount(Currency.gold, p.gold, missing: p.missingGold, size: 24, fontSize: 13),
             ],
           ]));
     }

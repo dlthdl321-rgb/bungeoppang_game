@@ -441,7 +441,8 @@ void main() {
           find.descendant(of: find.byKey(Key('preview-$id')), matching: find.byKey(Key(key)));
       expect(inTile('beanie', 'tile-price'), findsOneWidget);
       expect(inTile('earmuffs', 'tile-price'), findsOneWidget);
-      expect(tester.getSize(inTile('beanie', 'tile-price')).height, lessThanOrEqualTo(20));
+      // 4차 ID2: the price line is 24 high so its 붕어빵 icon can be seen.
+      expect(tester.getSize(inTile('beanie', 'tile-price')).height, lessThanOrEqualTo(24));
       await tester.ensureVisible(find.byKey(const Key('preview-santa')));
       expect(inTile('santa', 'lock-hatch'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp('산타 모자 Lv.9 해금')), findsOneWidget);

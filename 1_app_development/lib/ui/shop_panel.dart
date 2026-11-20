@@ -75,8 +75,19 @@ class _ShopPanelState extends State<ShopPanel> {
                 ShopTab.cosmetics => 'tab_outfit',
                 ShopTab.theme => 'theme',
                 ShopTab.gold => 'gold_bun',
-              }, size: 20),
-              label: Text(_label(t), style: const TextStyle(fontWeight: FontWeight.w900)),
+              }, size: 28),
+              // 4차 피드백 ID4: a chip keeps its avatar at 18 unless told.
+              avatarBoxConstraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              // Less padding above and below, so the bigger icon does not
+              // make the chip taller than before.
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              // The label is as tall as the icon: a chip's content must not be
+              // shorter than its avatar.
+              label: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 28),
+                  child: Center(
+                      widthFactor: 1,
+                      child: Text(_label(t), style: const TextStyle(fontWeight: FontWeight.w900)))),
               showCheckmark: false,
               // H41: a hairline pill; the picked one honey (no wooden outline).
               shape: StadiumBorder(side: BorderSide(color: t == tab ? Cozy.honeyDeep : Cozy.line)),

@@ -31,9 +31,9 @@ Future<void> showWorkshopWindow(BuildContext context,{required WorkshopControlle
             padding:const EdgeInsets.symmetric(horizontal:12,vertical:4),
             child:Wrap(key:const Key('workshop-balance'),alignment:WrapAlignment.center,crossAxisAlignment:WrapCrossAlignment.center,
               spacing:18,runSpacing:2,children:[
-              CurrencyAmount(Currency.buns,controller.state.buns,key:const Key('balance-buns'),size:24,fontSize:19),
+              CurrencyAmount(Currency.buns,controller.state.buns,key:const Key('balance-buns'),size:30,fontSize:19),
               Row(mainAxisSize:MainAxisSize.min,children:[
-                CurrencyAmount(Currency.gold,BigInt.from(account.state.premium.gold),key:const Key('balance-gold'),size:24,fontSize:19),
+                CurrencyAmount(Currency.gold,BigInt.from(account.state.premium.gold),key:const Key('balance-gold'),size:30,fontSize:19),
                 if(onGold!=null)Padding(padding:const EdgeInsets.only(left:4),child:Material(color:Cozy.honey,
                   shape:const CircleBorder(side:BorderSide(color:Cozy.wood,width:1.5)),
                   child:InkWell(key:const Key('balance-gold-plus'),customBorder:const CircleBorder(),onTap:onGold,

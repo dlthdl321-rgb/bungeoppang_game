@@ -60,6 +60,19 @@ test("서버 시간으로 설명할 수 없는 붕어빵력 증가는 거절하�
   clock.now+=600000;
   assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot("2425","2440",1240)})).status,"reserved");
 });
+test("자동 승급(4차 IA1)으로 두 레벨이 한꺼번에 오른 스냅샷도 조건을 채웠으면 받고, 못 채웠으면 거절한다",async()=>{
+  const {service,clock}=setup();await service.claim("a",{progress});
+  await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  clock.now+=600000;
+  const second={...context,intent:intent("transaction_0002",1)};
+  const lv3=config.level_progression[2];
+  // Lv.3 needs both levels' taps and sales since the start.
+  const taps=config.level_progression[1].additional_taps+lv3.additional_taps;
+  const sales=config.level_progression[1].additional_sales+lv3.additional_sales;
+  await assert.rejects(service.purchase("a","reserve",{...second,snapshot:snapshot("385",lv3.season_total_buns,taps,sales-1,3)}));
+  assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot("385",lv3.season_total_buns,taps,sales,3)})).status,"reserved");
+});
 test("진행 기록이 줄어든 스냅샷은 거절한다",async()=>{
   const {service}=setup();await service.claim("a",{progress});
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
