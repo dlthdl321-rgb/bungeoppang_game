@@ -61,6 +61,19 @@ export class PlausibilityValidator {
       arrivalMs: natural(sale.customer_arrival_interval_ms), saleBuns: base * BigInt(Math.max(quantity, preferred)),
       levels, revision: String(object(root.metadata).revision),
       daily: PlausibilityValidator.dailyLimits(object(root.daily_return)),
+      collection: PlausibilityValidator.collectionLimits(root),
+    };
+  }
+  /** 4차 피드백 g6: a completed 도감 cell pays `cell_buns_seconds` of auto
+   * production (at least `cell_min_buns`); a cell needs bakes of at least
+   * `server_min_ms_per_cell`, and there are five cells per flavor. A
+   * collected flavor's gold is `flavor_gold`. */
+  private static collectionLimits(root: Row) {
+    const rewards = object(root.collection_rewards), recipes = object(root.active_recipes);
+    return {
+      seconds: BigInt(natural(rewards.cell_buns_seconds)), minimum: decimal(rewards.cell_min_buns),
+      gold: natural(rewards.flavor_gold), msPerCell: Math.max(1, natural(rewards.server_min_ms_per_cell)),
+      cells: Object.keys(recipes).length * 5, flavors: new Set(Object.keys(recipes)),
     };
   }
   /** 26번 7단계: per KST day at most one 오늘의 주문서 and one attendance
@@ -113,7 +126,11 @@ export class PlausibilityValidator {
     // The KST days the interval touches, each with one order and one stamp.
     const days = BigInt(Math.floor(elapsedMs / 86400000) + 2);
     const daily = days * (l.daily.seconds * rates.auto + l.daily.minimum);
-    const bound = prev.lifetime + BigInt(taps) * rates.tap + seconds * rates.auto + BigInt(sales) * l.saleBuns + rewards + daily + l.slackBuns;
+    // 4차 피드백 g6: 도감 cells completed in the interval (one per
+    // `server_min_ms_per_cell`, plus one, at most every cell there is).
+    const cells = BigInt(Math.min(l.collection.cells, Math.floor(elapsedMs / l.collection.msPerCell) + 1));
+    const collection = cells * (l.collection.seconds * rates.auto + l.collection.minimum);
+    const bound = prev.lifetime + BigInt(taps) * rates.tap + seconds * rates.auto + BigInt(sales) * l.saleBuns + rewards + daily + collection + l.slackBuns;
     if (next.lifetime > bound) fail("붕어빵력 증가가 서버 시간 한도를 넘었습니다.");
     return { ...next, atMs: Math.max(now, prev.atMs), saleEvidence: prev.saleEvidence + saleEvidence };
   }
@@ -227,6 +244,13 @@ export class PlausibilityValidator {
       if (payload.goal !== "day7" || payload.gold !== this.limits.daily.attendanceGold || Object.keys(payload).length !== 5) fail("출석 보상 근거 오류", true);
       return this.limits.daily.attendanceGold;
     }
+    if (payload.scope === "collection") {
+      // 4차 피드백 g6: a collected flavor's gold. The server cannot replay the
+      // bakes; it pays a known flavor once per account (the mission lock).
+      if (typeof payload.goal !== "string" || !this.limits.collection.flavors.has(payload.goal) ||
+          payload.gold !== this.limits.collection.gold || Object.keys(payload).length !== 4) fail("도감 완성 보상 근거 오류", true);
+      return this.limits.collection.gold;
+    }
     const scope = payload.scope, goal = payload.goal, targets = object(object(root.mission_targets)[String(scope)] ?? null);
     const all = scope === "daily" && goal === "all";
     if (typeof goal !== "string" || (!all && !targets[goal])) fail("미션 목표 오류", true);
@@ -244,7 +268,7 @@ export class PlausibilityValidator {
     return gold;
   }
   private missionPlausible(payload: Row, snapshot: ProgressSnapshot, rates: Rates, now: number): void {
-    if (payload.level !== undefined) return;
+    if (payload.level !== undefined || payload.scope === "collection") return;
     const period = payload.period, grace = this.limits.graceDays * 86400000;
     if (typeof period !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(period)) fail("미션 기간 형식 오류", true);
     const [latest, earliest] = payload.scope === "weekly" ? [kstWeek(now), kstWeek(now - grace)] : [kstDay(now), kstDay(now - grace)];

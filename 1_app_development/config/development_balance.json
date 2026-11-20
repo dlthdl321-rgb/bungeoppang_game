@@ -757,7 +757,8 @@
       1100
     ],
     "reinsertion_delay_ms": 1000,
-    "products_per_harvest": 1
+    "products_per_harvest": 1,
+    "prep_ms": 3000
   },
   "ordinary_sale": {
     "base_buns_by_difficulty": [
@@ -2226,5 +2227,51 @@
     "store_line_soon": "오늘의 붕어빵 · 곧 Google Play에서",
     "store_line_live": "오늘의 붕어빵 · Google Play에서 만나요",
     "store_url": "https://play.google.com/store/apps/details?id=com.todaybungeoppang.app"
+  },
+  "collection_counts": {
+    "required_by_difficulty": [
+      [
+        10,
+        15,
+        20,
+        15,
+        10
+      ],
+      [
+        10,
+        20,
+        30,
+        20,
+        10
+      ],
+      [
+        10,
+        25,
+        40,
+        25,
+        10
+      ]
+    ],
+    "required_by_flavor": {
+      "redbean": [
+        2,
+        3,
+        5,
+        3,
+        2
+      ]
+    }
+  },
+  "collection_rewards": {
+    "cell_buns_seconds": 300,
+    "cell_min_buns": "100",
+    "flavor_gold": 3,
+    "titles": {
+      "redbean": "팥 장인",
+      "custard": "슈크림 장인",
+      "cocoa": "초코 장인"
+    },
+    "title_default_suffix": "장인",
+    "server_min_ms_per_cell": 30000
   }
 }

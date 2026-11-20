@@ -34,11 +34,11 @@ void main() {
         c.state.claimedLevels..clear()..addAll([for (var n = 2; n <= level; n++) n]);
         if (seen) c.state.featureIntros.addAll(workshopIntroIds);
       });
-  /// Masters 팥 through real practice bakes (closed stall), like
-  /// workshop_full_flow_test: five doneness grades, enough practices.
+  /// Completes 팥's 도감 through real practice bakes (closed stall), like
+  /// workshop_full_flow_test: every doneness baked its count (4차 g6).
   Future<void> award(WorkshopController c) async {
     const takeOutMs = [5000, 12000, 15000, 19000, 25000];
-    for (var i = 0; i < 20 && !c.state.masteryAwards.containsKey('redbean'); i++) {
+    for (var i = 0; i < 40 && !c.state.collection(config, 'redbean').collected; i++) {
       expect(await c.startPractice(), isTrue, reason: '${c.notice}');
       var s = c.state.session!;
       expect(await c.cookingCommand(s.pour(s.token, PaintAmount.even)), isTrue);
@@ -58,7 +58,8 @@ void main() {
       expect(await c.cookingCommand(s.takeOut(s.token, out)), isTrue);
       expect(await c.storeResult(false), isTrue);
     }
-    expect(c.state.masteryAwards.containsKey('redbean'), isTrue);
+    expect(c.state.collection(config, 'redbean').collected, isTrue);
+    expect(c.state.masteryAwards, isEmpty, reason: '숙련 확정은 더 만들지 않음(도감으로 대신)');
   }
 
   group('해금 표', () {
@@ -69,7 +70,7 @@ void main() {
       expect(featureUnlockLevel(config, WorkshopFeature.specialOrders), 5);
       expect(featureUnlockLevel(config, WorkshopFeature.fishCosmetics), 5);
       expect(featureUnlockLevel(config, WorkshopFeature.stallCosmetics), 8);
-      expect(featureUnlockLevel(config, WorkshopFeature.griddle), 1, reason: '6구는 레벨이 아니라 숙련으로 연다');
+      expect(featureUnlockLevel(config, WorkshopFeature.griddle), 1, reason: '6구는 레벨이 아니라 도감 완성으로 연다');
     });
 
     test('새 설치: 안내 중에는 꾸미기·상점도 잠기고, 안내가 끝나면 레벨별로 하나씩 열린다', () async {
@@ -81,7 +82,7 @@ void main() {
       }
       expect(c.featureLock(WorkshopFeature.wardrobe), '첫 영업 안내가 끝나면 열려요');
       expect(c.featureLock(WorkshopFeature.skills), 'Lv.2에 열려요');
-      expect(c.featureLock(WorkshopFeature.griddle), '팥을 숙련하면 열려요 (연습 0/8 · 손기술 0/3)');
+      expect(c.featureLock(WorkshopFeature.griddle), '팥 도감을 완성하면 열려요 (0/5)');
       expect(c.pendingIntro, isNull, reason: '안내 중에는 소개 카드 없음');
       expect(await c.skipTutorial(), isTrue);
       expect(c.featureIsOpen(WorkshopFeature.wardrobe), isTrue);
@@ -104,7 +105,7 @@ void main() {
       expect(c.featureLock(WorkshopFeature.griddle), isNull);
     });
 
-    test('잠금 글은 연습·손기술 진행을 보여 주고, 핵심 진행은 레벨로 잠그지 않는다', () async {
+    test('잠금 글은 팥 도감 완성 칸 수를 보여 주고, 핵심 진행은 레벨로 잠그지 않는다', () async {
       final c = await open();
       addTearDown(c.dispose);
       // One real practice moves the count shown on the lock.
@@ -126,8 +127,10 @@ void main() {
       expect(await c.cookingCommand(s.takeOut(s.token, 15000)), isTrue);
       expect(await c.storeResult(false), isTrue);
       final m = c.state.flavorMasteries['redbean']!;
-      expect(c.featureLock(WorkshopFeature.griddle), '팥을 숙련하면 열려요 (연습 ${m.practices}/8 · 손기술 ${m.techniquePasses}/3)');
       expect(m.practices, 1);
+      // One medium of five: not complete yet.
+      expect(c.state.collection(config, 'redbean').counts, [0, 0, 1, 0, 0]);
+      expect(c.featureLock(WorkshopFeature.griddle), '팥 도감을 완성하면 열려요 (0/5)');
       for (final key in ['manual_practice', 'core_business', 'core_sales', 'mastery_progress', 'six_slot_access']) {
         expect(config.section('feature_unlock_levels')[key], 1, reason: key);
       }
@@ -289,7 +292,7 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
 
-    testWidgets('6구는 숙련 전 빗금 자물쇠와 남은 숙련, 굽는 중인 칸은 꺼낼 수 있다', (tester) async {
+    testWidgets('6구는 도감 완성 전 빗금 자물쇠와 남은 칸 수, 굽는 중인 칸은 꺼낼 수 있다', (tester) async {
       final c = await mount(tester);
       await c.skipTutorial();
       expect(await c.openBusiness(), isTrue);
@@ -299,13 +302,13 @@ void main() {
       // A tap on the lock tells the mastery still to go.
       await tester.tap(find.byKey(const Key('griddle-locked')));
       await tester.pump();
-      expect(find.textContaining('숙련된 붕어빵 틀: 팥을 숙련하면'), findsOneWidget);
+      expect(find.textContaining('숙련된 붕어빵 틀: 팥 도감을 완성하면'), findsOneWidget);
       CenterToast.hide();
       await tester.pumpAndSettle();
       expect(tester.widget(find.byKey(const Key('griddle-locked'))), isA<LockedOverlay>());
       expect(find.descendant(of: find.byKey(const Key('griddle-locked')), matching: find.byKey(const Key('lock-hatch'))),
           findsOneWidget);
-      expect(find.text('팥을 숙련하면 열려요 (연습 0/8 · 손기술 0/3)'), findsOneWidget);
+      expect(find.text('팥 도감을 완성하면 열려요 (0/5)'), findsOneWidget);
       expect(find.byKey(const Key('workshop-cell-0')), findsNothing);
       // Practice happens with the stall closed (DEC-035).
       expect(await c.closeBusiness(), isTrue);

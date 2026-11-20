@@ -109,7 +109,7 @@ void main() {
     // 숙련(익힘 5단계 발견, 연습·손기술 횟수)까지 남은 연습은 명령으로 채운다
     // (손 조작은 위에서 확인함). 꺼내는 시간을 바꿔 익힘 5단계를 모두 본다.
     const takeOutMs = [5000, 12000, 15000, 19000, 25000];
-    for (var i = 0; i < 20 && !c.state.masteryAwards.containsKey('redbean'); i++) {
+    for (var i = 0; i < 40 && !c.state.collection(c.config, 'redbean').collected; i++) {
       expect(await c.startPractice(), isTrue);
       var s = c.state.session!;
       expect(await c.cookingCommand(s.pour(s.token, PaintAmount.even)), isTrue);
@@ -129,7 +129,8 @@ void main() {
       expect(await c.cookingCommand(s.takeOut(s.token, out)), isTrue);
       expect(await c.storeResult(false), isTrue);
     }
-    expect(c.state.masteryAwards.containsKey('redbean'), isTrue);
+    // 4차 g6: 팥 도감 완성(다섯 칸을 정해진 횟수만큼)이 6구를 연다.
+    expect(c.state.collection(c.config, 'redbean').collected, isTrue);
     await tester.pump();
 
     // 3. 영업 시작: 스페셜 붕어빵 틀 대신 클리커, 숙련된 붕어빵 칸이 열림.
@@ -143,7 +144,11 @@ void main() {
     // 4. 숙련된 붕어빵: 1번 칸 굽기 → 익으면 수확 → 재고.
     await tapKey('workshop-cell-0');
     expect(c.state.grid.cells[0].cooking, isTrue);
-    await elapse(17000);
+    // 4차 g6: batter, filling and batter go in by themselves first.
+    await elapse(1000);
+    expect(key('griddle-prep-0'), findsOneWidget);
+    await elapse(16000);
+    expect(key('griddle-cue-0'), findsOneWidget);
     final grade = c.state.grid.doneness(0, c.config);
     expect(grade, inInclusiveRange(1, 3), reason: '17초면 덜익음~알맞음 사이');
     final stockBefore = c.state.inventory.toJson().toString();

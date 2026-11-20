@@ -12,6 +12,8 @@ function semantic(payload:Record<string,unknown>):string {
       Number.isFinite(Date.parse(`${period}T00:00:00Z`)) && new Date(`${period}T00:00:00Z`).toISOString().slice(0,10)===period) {
     return `attendance:${period}`;
   }
+  // 4차 피드백 g6: a flavor's full 도감, once per account and flavor.
+  if(scope==="collection" && typeof goal==="string" && /^[a-z][a-z0-9_]{0,31}$/.test(goal)) return `collection:${goal}`;
   const allowed=scope==="daily" ? ["taps","production","purchases","auto","all"]:
     scope==="weekly" ? ["taps","days","purchases","dailyAll"]:[];
   if(typeof period!=="string" || !/^\d{4}-\d{2}-\d{2}$/.test(period) ||

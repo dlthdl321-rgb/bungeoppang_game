@@ -12,7 +12,8 @@ enum WorkshopFeature {
   /// The skill window (tap and auto) and the per-second / per-tap numbers:
   /// `feature_unlock_levels.skill_shop` (Lv.2).
   skills,
-  /// The six-cell griddle: once one flavor is mastered (S2-Q2), at or after
+  /// The six-cell griddle: once one flavor's 도감 is complete (4차 피드백 g6,
+  /// DEC-TBD-i4g6-2; before: one flavor mastered, S2-Q2), at or after
   /// `six_slot_access` (Lv.1).
   griddle,
   /// 도감: `full_recipe_collection_ui` (Lv.3).
@@ -81,7 +82,7 @@ bool featureOpen(WorkshopState s, DevelopmentBalance config, WorkshopFeature fea
     WorkshopFeature.skills => byLevel ||
         s.purchases.owned.entries.any((e) => !e.key.startsWith('cosmetic:') && e.value > 0) ||
         s.purchases.journals.values.any((j) => !j.settled),
-    WorkshopFeature.griddle => byLevel && s.masteryAwards.isNotEmpty,
+    WorkshopFeature.griddle => byLevel && s.griddleFlavors(config).isNotEmpty,
     WorkshopFeature.recipes => byLevel || s.recipes.length > 1,
     WorkshopFeature.freshness => s.inventory.batches.values.any((b) =>
         (s.inventory.bindings[b.id] ?? b.madeOnBusinessIndex) < s.business.businessIndex),
@@ -89,20 +90,18 @@ bool featureOpen(WorkshopState s, DevelopmentBalance config, WorkshopFeature fea
   };
 }
 
-/// What a locked [feature] says: 'Lv.2에 열려요', the guide, or the mastery
-/// still to go for the six-cell griddle (S2-Q2). Null when it is open.
+/// What a locked [feature] says: 'Lv.2에 열려요', the guide, or the 도감
+/// cells still to complete for the six-cell griddle (4차 피드백 g6). Null
+/// when it is open.
 String? featureLockReason(WorkshopState s, DevelopmentBalance config, WorkshopFeature feature) {
   if (featureOpen(s, config, feature)) return null;
   final level = featureUnlockLevel(config, feature);
   if (feature == WorkshopFeature.wardrobe) return '첫 영업 안내가 끝나면 열려요';
   if (feature == WorkshopFeature.griddle && (level == null || s.level >= level)) {
-    // The first flavor everyone practices: 팥 (redbean).
-    final flavor = s.flavorMasteries.containsKey(s.selectedFlavor) ? s.selectedFlavor : 'redbean';
-    final m = s.flavorMasteries[flavor]!;
-    final rule = config.mastery(m.difficulty);
+    // The flavor being baked, else the first one everyone has: 팥 (redbean).
+    final flavor = s.recipes.contains(s.selectedFlavor) ? s.selectedFlavor : 'redbean';
     final label = (config.section('active_recipes')[flavor] as Map)['label'] as String;
-    return '$label${_objectParticle(label)} 숙련하면 열려요 (연습 ${m.practices}/${rule['practice_required']} · '
-        '손기술 ${m.techniquePasses}/${rule['technique_passes_required']})';
+    return '$label 도감을 완성하면 열려요 (${s.collection(config, flavor).completedCells}/5)';
   }
   if (feature == WorkshopFeature.freshness) return null;
   return 'Lv.$level에 열려요';
@@ -122,14 +121,6 @@ WorkshopFeature? pendingFeatureIntro(WorkshopState s, DevelopmentBalance config)
 Set<String> openedIntroIds(WorkshopState s, DevelopmentBalance config) =>
     {for (final f in workshopIntroFeatures) if (featureOpen(s, config, f)) f.name};
 
-/// 을/를 after [word]: by whether its last syllable has a final consonant.
-String _objectParticle(String word) {
-  if (word.isEmpty) return '을';
-  final code = word.codeUnitAt(word.length - 1);
-  if (code < 0xAC00 || code > 0xD7A3) return '을';
-  return (code - 0xAC00) % 28 == 0 ? '를' : '을';
-}
-
 /// One introduction card: a picture, two sentences and '알겠어요'.
 class WorkshopFeatureIntro {
   final String title, body, art, fallbackIcon;
@@ -144,13 +135,13 @@ WorkshopFeatureIntro featureIntro(WorkshopFeature feature) => switch (feature) {
           '붕어빵력으로 클릭 스킬과 자동 생산 스킬을 레벨업해요. 카카오 로그인 후 레벨업할 수 있고, 위쪽에 초당·클릭당 숫자가 보여요.',
           'intro_skills', 'skill'),
       WorkshopFeature.griddle => const WorkshopFeatureIntro('숙련된 붕어빵 틀이 열렸어요',
-          '숙련한 맛은 아래 6구 틀에서 한 번에 여러 개 구울 수 있어요. 빈 칸을 누르면 굽기 시작하고, 익으면 눌러 꺼내요.',
+          '도감을 완성한 맛은 아래 6구 틀에서 구울 수 있어요. 빈 칸을 누르면 반죽과 속이 저절로 들어가고, 원하는 익힘이 됐을 때 눌러 꺼내요.',
           'intro_griddle', 'bun'),
       WorkshopFeature.collection => const WorkshopFeatureIntro('도감이 열렸어요',
-          '메뉴의 도감에서 맛마다 찾은 익힘과 손님 이야기를 볼 수 있어요. 여러 익힘으로 구워 칸을 채워 보세요.',
+          '메뉴의 도감에서 맛마다 익힘 다섯 칸을 채워요. 익힘마다 정해진 횟수를 구우면 칸이 완성되고, 다 채우면 칭호와 보상을 받아요.',
           'intro_collection', 'achievements'),
       WorkshopFeature.recipes => const WorkshopFeatureIntro('새 맛 레시피',
-          '레벨 미션 창에서 레시피 미션을 마치면 새 맛을 받을 수 있어요. 새 맛도 연습하면 숙련할 수 있어요.',
+          '레벨 미션 창에서 레시피 미션을 마치면 새 맛을 받을 수 있어요. 새 맛도 도감을 다 채우면 숙련된 붕어빵 틀에서 구울 수 있어요.',
           'intro_recipes', 'mission'),
       WorkshopFeature.specialOrders => const WorkshopFeatureIntro('특별 주문이 와요',
           '이제 손님이 익힘을 콕 집어 주문해요. 판매대 옆 ‘오늘’ 쪽지에는 하루 한 장 오늘의 주문서가 와요.',

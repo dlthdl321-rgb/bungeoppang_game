@@ -26,6 +26,8 @@ import 'workshop_customer_orders.dart';
 import 'workshop_arrivals.dart';
 import 'workshop_feature_unlocks.dart';
 import 'workshop_daily.dart';
+import 'workshop_collection_rules.dart';
+import 'economy.dart' show compactNumber;
 import 'usage_stats.dart';
 import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, movedToTop;
 
@@ -87,6 +89,18 @@ class WorkshopState {
     else { masteryAwards[selectedFlavor] = value; }
   }
   bool get mastered => masteryAward != null;
+  /// 도감 칸 완성 보상을 이미 받은 칸 (4차 피드백 g6): flavor → doneness
+  /// indexes (saved as `collectionClaims` in schema 10). A save from before
+  /// the rule counts the cells complete then as already paid.
+  final Map<String, Set<int>> collectionClaims = {};
+  /// One flavor's 도감 page in numbers (4차 피드백 g6).
+  CollectionProgress collection(DevelopmentBalance config, String flavor) =>
+      collectionProgress(config, flavor, flavorMasteries[flavor]);
+  /// Flavors the six-cell griddle may bake (4차 피드백 g6, DEC-TBD-i4g6-2):
+  /// owned flavors whose 도감 is complete, and flavors mastered under the
+  /// old rule (`masteryAwards` of older saves, kept open).
+  Set<String> griddleFlavors(DevelopmentBalance config) => {
+    for (final f in recipes) if (collection(config, f).collected || masteryAwards.containsKey(f)) f};
   bool get tutorialActive => tutorial == 'cook' || tutorial == 'sell';
   BigInt buns = BigInt.zero, lifetime = BigInt.zero;
   WorkshopPurchases purchases = WorkshopPurchases.empty();
@@ -162,6 +176,7 @@ class WorkshopState {
     'selectedFlavor': selectedFlavor,'sceneTime':sceneTime, 'recipes': recipes.toList()..sort(),
     'recipeMissions': recipeMissions.toList()..sort(),
     'masteryAwards': {for (final e in masteryAwards.entries) e.key: Map<String, dynamic>.from(e.value)},
+    'collectionClaims': {for (final e in collectionClaims.entries) e.key: e.value.toList()..sort()},
     'relationships':relationships.toJson(), 'customerScene':customerScene==null ? null : jsonDecode(jsonEncode(customerScene)),
     'tasteObservations': {for (final e in tasteObservations.entries) e.key:
       {for (final f in e.value.entries) f.key: f.value.toList()..sort()}},
@@ -240,8 +255,35 @@ class WorkshopState {
           DevelopmentBalance.integer(award, 'techniqueRequired') == 0) throw const FormatException('숙련 확정 근거 오류');
       state.masteryAwards[e.key] = Map<String, dynamic>.from(award);
     }
+    // 4차 피드백 g6: what was paid for 도감 cells. Only cells already found
+    // (counts do not depend on the config, so a changed count never breaks
+    // a save). Without the key (a save from before the rule) the cells
+    // complete now count as paid: no lump of buns on loading.
+    final claims = row['collectionClaims'];
+    if (claims == null) {
+      for (final flavor in state.recipes) {
+        final progress = state.collection(config, flavor);
+        final done = {for (var i = 0; i < 5; i++) if (progress.complete(i)) i};
+        if (done.isNotEmpty) state.collectionClaims[flavor] = done;
+      }
+    } else {
+      if (claims is! Map<String, dynamic>) throw const FormatException('도감 보상 기록 형식 오류');
+      for (final e in claims.entries) {
+        final cells = e.value;
+        if (!state.recipes.contains(e.key) || cells is! List || cells.isEmpty ||
+            cells.any((v) => v is! int || v < 0 || v >= 5) || cells.toSet().length != cells.length) {
+          throw const FormatException('도감 보상 기록 오류');
+        }
+        final counts = collectionCounts(state.flavorMasteries[e.key]);
+        if (cells.any((v) => counts[v as int] == 0)) throw const FormatException('찾지 않은 도감 칸의 보상');
+        state.collectionClaims[e.key] = cells.cast<int>().toSet();
+      }
+    }
+    // The flavor a cooking cell bakes must be owned; whether it may start
+    // is the griddle's rule ([griddleFlavors]), checked when it starts, so a
+    // changed collection count never breaks a save.
     for (final cell in state.grid.cells) {
-      if (cell.cooking && (!state.masteryAwards.containsKey(cell.flavor) || !state.recipes.contains(cell.flavor) ||
+      if (cell.cooking && (!state.recipes.contains(cell.flavor) ||
           cell.difficulty != (catalog[cell.flavor] as Map)['difficulty'])) throw const FormatException('잠긴 맛의 숙련된 붕어빵 저장');
     }
     for (final flavor in row['recipeMissions'] as List) {
@@ -368,6 +410,15 @@ class WorkshopState {
             payload['revision'] is! String || (payload['revision'] as String).isEmpty ||
             stamped == null || day.compareTo(stamped) > 0) {
           throw const FormatException('출석 황금 신청 근거 오류');
+        }
+      } else if (e.key.startsWith('collection:')) {
+        // 4차 피드백 g6: a collected flavor's gold, verified like a mission claim.
+        final flavor = e.key.substring(11);
+        if (payload.length != 4 || payload['scope'] != 'collection' || payload['goal'] != flavor ||
+            !state.recipes.contains(flavor) || DevelopmentBalance.integer(payload, 'gold') == 0 ||
+            payload['revision'] is! String || (payload['revision'] as String).isEmpty ||
+            collectionCounts(state.flavorMasteries[flavor]).any((n) => n == 0)) {
+          throw const FormatException('도감 황금 신청 근거 오류');
         }
       } else { throw const FormatException('알 수 없는 황금 심사 종류'); }
       state.pendingGold[e.key] = e.value as String;
@@ -732,10 +783,12 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     busy = true; _commandIdle = Completer<void>();
     final before = state.toJson();
     final progressBefore = _usageProgress;
+    final newsBefore = collectionNews.length;
     var saved = false;
     try {
-      try { mutate(); _observeDaily(); } on FormatException catch (e) {
-        state = WorkshopState.fromJson(before, config); notice = e.message; return false;
+      try { mutate(); _observeDaily(); _settleCollection(); } on FormatException catch (e) {
+        state = WorkshopState.fromJson(before, config); notice = e.message;
+        collectionNews.length = newsBefore; return false;
       }
       state.sequence++;
       final next = state.toJson();
@@ -747,6 +800,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       return saved = true;
     } catch (e) {
       state = WorkshopState.fromJson(before, config);
+      collectionNews.length = newsBefore;
       error = '저장 또는 명령 확인이 필요해요: $e';
       return false;
     } finally {
@@ -993,12 +1047,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (next.phase == CookingPhase.result) {
       state.mastery = state.mastery.record(evaluateCookingResult(config, next, difficulty: difficulty(next.flavor)));
       if (!next.practice) _recordCookingProduct(next, keep: true);
-      if (!state.mastered && state.mastery.complete(config)) {
-        final rule = config.mastery(difficulty(next.flavor));
-        state.masteryAward = {'revision': config.revision, 'resultId': next.id,
-          'practiceRequired': DevelopmentBalance.integer(rule, 'practice_required'),
-          'techniqueRequired': DevelopmentBalance.integer(rule, 'technique_passes_required')};
-      }
+      // 4차 피드백 g6 (DEC-TBD-i4g6-2): the six-cell griddle opens by the
+      // 도감 ([WorkshopState.griddleFlavors]), no longer by a mastery award.
+      // Awards of older saves stay as they were.
     }
     if (next.phase == CookingPhase.canceled) state.session = null;
   }, production: next.phase == CookingPhase.result).then((saved) {
@@ -1037,7 +1088,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   });
   Future<bool> startCell(int index) => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업 중, 스페셜 붕어빵을 만들지 않을 때만 쓸 수 있어요.');
-    state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in state.recipes) if (state.masteryAwards.containsKey(f)) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
+    state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in state.griddleFlavors(config)) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
   });
   Future<bool> harvestCell(int index, {int? expectedCycle}) async {
     String? frozenId;
@@ -1662,6 +1713,42 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         state.missions=state.missions.observe(now(),purchases:current.quote.quantity,autoPeak:autoRate);
       }
     });
+  }
+  // ---- 4차 피드백 g6: 도감 칸 채우기 (lib/workshop_collection_rules.dart) ----
+  /// What the last command completed in the 도감, for a short centre notice
+  /// ('팥 · 부드러움 칸 완성!'). Memory only; the page takes it.
+  final List<String> collectionNews = [];
+  /// Takes [collectionNews] (the page shows them once).
+  List<String> takeCollectionNews() { final news = collectionNews.toList(); collectionNews.clear(); return news; }
+  /// The buns one completed 도감 cell pays now: `cell_buns_seconds` of auto
+  /// production, at least `cell_min_buns` (like the attendance stamp).
+  BigInt get collectionCellReward => dailyBuns(autoRate, collectionCellSeconds(config), collectionCellMinimum(config));
+  /// Titles of the collected flavors, in recipe order ('팥 장인').
+  List<String> get collectionTitles => [for (final f in config.section('active_recipes').keys)
+    if (state.recipes.contains(f) && state.collection(config, f).collected) collectionTitle(config, f)];
+  /// Runs after every command: pays each newly completed cell once
+  /// ([WorkshopState.collectionClaims]) and asks the server for a collected
+  /// flavor's gold once (`pendingGold['collection:<flavor>']`, pending until
+  /// verified like level gold). The title needs nothing saved.
+  void _settleCollection() {
+    for (final flavor in state.recipes.toList()..sort()) {
+      final progress = state.collection(config, flavor);
+      final paid = state.collectionClaims[flavor] ?? <int>{};
+      final label = flavorLabel(flavor);
+      for (var i = 0; i < 5; i++) {
+        if (!progress.complete(i) || paid.contains(i)) continue;
+        final buns = collectionCellReward;
+        state.buns += buns; state.lifetime += buns;
+        state.collectionClaims[flavor] = {...paid, i};
+        paid.add(i);
+        collectionNews.add('$label · ${provisionalDonenessLabels[i]} 칸 완성! 붕어빵력 +${compactNumber(buns)}');
+      }
+      if (progress.collected && !state.pendingGold.containsKey('collection:$flavor')) {
+        state.pendingGold['collection:$flavor'] = collectionGoldClaim(config, flavor);
+        collectionNews..add('$label 도감 완성! 칭호 「${collectionTitle(config, flavor)}」')
+          ..add('황금붕어빵력 ${collectionFlavorGold(config)}개는 보상 확인 뒤 받아요');
+      }
+    }
   }
   // ---- 26번 7단계: 매일 돌아올 이유 (lib/workshop_daily.dart) ----
   Map<String, dynamic> get _dailyRules => config.section('daily_return');
