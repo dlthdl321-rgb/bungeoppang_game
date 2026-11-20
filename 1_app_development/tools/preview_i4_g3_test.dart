@@ -106,6 +106,25 @@ void main() {
       await shot(tester, 'timeout');
       await tester.pumpWidget(const SizedBox.shrink());
     });
+    // Words stay while the guest is there (사용자 답 2026-11-21): a walk-in
+    // in line still has their words about an order bake when 도윤 leaves.
+    testWidgets('여러 말풍선 ${size.width}x${size.height}', (tester) async {
+      final c = await open(tester, size);
+      await c.command(() {
+        c.state.relationships = c.state.relationships.visit('d', 'npc_doyun', c.state.business.businessIndex, c.customerCatalog);
+      });
+      await c.command(() => c.state.customers
+        ..add(guest('d', 'npc_doyun', 1, ms: 200))
+        ..add(guest('w', 'anonymous_first', 1))
+        ..add(guest('w2', 'anonymous_second', 2)));
+      c.guestWords['anonymous_first'] = (order: 'w', text: '와, 이건 사진 찍고 싶을 만큼 예뻐요!');
+      c.guestWords['anonymous_second'] = (order: 'w2', text: '제 것 나오면 알려주세요.');
+      mono += 300;
+      await c.command(() {});
+      await tester.pump();
+      await shot(tester, 'many');
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
     testWidgets('주문 제작 필요 ${size.width}x${size.height}', (tester) async {
       final c = await open(tester, size);
       await c.command(() => c.state.customers
@@ -151,9 +170,10 @@ void main() {
           id: 'taeo', flavor: order.lines.single.flavor, variant: 2, quantity: order.lines.single.quantity,
           madeOnBusinessIndex: c.state.business.businessIndex), keep: true));
       await c.command(() => c.state.customers.add(guest('w', 'anonymous_first', 1)));
-      expect(await c.sellToCustomer(order.id), isTrue);
+      // A random first-visit scene can hold the sale: then no picture.
+      final sold = await c.sellToCustomer(order.id);
       await tester.pump();
-      if (c.photoReactionSale != null) await shot(tester, 'photo');
+      if (sold && c.photoReactionSale != null) await shot(tester, 'photo');
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }

@@ -39,15 +39,14 @@ class WorkshopGuestLayer extends StatelessWidget {
         final frontW = math.max(WorkshopHomeLayout.frontMinWidth, math.min(math.min(w * WorkshopHomeLayout.frontWidthShare, WorkshopHomeLayout.frontMaxWidth),
             (bottom - WorkshopHomeLayout.frontLift - WorkshopHomeLayout.hudClearance) / 1.25));
         final inLine = {for (final o in s.customers) o.customerId};
-        // What a guest just said, while it shows (IA5).
-        final spoken = c.guestSpeech != null && c.guestSpeechAgeMs < WorkshopHomeLayout.speechMs ? c.guestSpeech : null;
         // 태오's photo reaction waits for '반응 확인': he stays at the front,
         // happy, with his words over him (IA5), instead of the counter saying them.
         final photo = c.photoReactionSale != null && !inLine.contains(WorkshopController.photoGuest);
         final departure = c.guestDeparture;
-        // A guest who leaves with words stays until they are read, fading
-        // only at the end.
-        final stay = departure != null && spoken?.customerId == departure.customerId
+        // A guest who leaves with words stays a while so they can be read,
+        // fading only at the end; the words go with them (IA5).
+        final stay = departure != null && !inLine.contains(departure.customerId) &&
+                c.guestWords.containsKey(departure.customerId)
             ? math.max(WorkshopHomeLayout.departureMs, WorkshopHomeLayout.speechMs) : WorkshopHomeLayout.departureMs;
         final leaving = photo ? null : departure != null && c.departureAgeMs < stay &&
             !inLine.contains(departure.customerId) ? departure : null;
@@ -106,20 +105,23 @@ class WorkshopGuestLayer extends StatelessWidget {
         final front = s.customers.isEmpty ? null : s.customers.first;
         final missing = front == null || session != null || c.photoReactionSale != null || c.saleReadyCount(front) > 0
             ? null : missingFlavor(c, front);
-        // Who speaks now and where: the leaving (or lingering) guest at the
-        // front, or a guest still in line.
-        Rect? speaker;
-        String? words;
-        if (photo) {
-          speaker = place(0); words = WorkshopController.photoReactionWords;
-        } else if (spoken != null) {
-          final i = s.customers.indexWhere((o) => o.customerId == spoken.customerId);
-          if (leaving?.customerId == spoken.customerId) {
-            speaker = place(0);
-          } else if (i >= 0) {
-            speaker = place(i + shift);
+        // Every guest still here with words, oldest first: in line (words
+        // of this visit only), leaving, or 태오 waiting for '반응 확인'. Not
+        // while the big mold is in use (the result has its own bubble).
+        final said = <(Rect, String, String)>[];
+        if (session == null) {
+          for (final MapEntry(key: id, value: words) in c.guestWords.entries) {
+            final i = s.customers.indexWhere((o) => o.customerId == id && o.id == words.order);
+            if (i >= 0) {
+              said.add((place(i + shift), words.text, id));
+            } else if (leaving?.customerId == id) {
+              said.add((place(0), words.text, id));
+            }
           }
-          words = spoken.text;
+          if (photo) {
+            said.removeWhere((e) => e.$3 == WorkshopController.photoGuest);
+            said.add((place(0), WorkshopController.photoReactionWords, WorkshopController.photoGuest));
+          }
         }
         if (taps) {
           Rect head(int i) {
@@ -137,6 +139,8 @@ class WorkshopGuestLayer extends StatelessWidget {
                   child: Semantics(button: true, child: GuestSpeechBubble(key: const Key('customer-produce-cue'),
                       text: '눌러서 ${c.flavorLabel(missing)} 만들기', tone: CozyTone.reward, small: true, tail: false))));
           final at = photo ? place(0) : place(shift);
+          // On the chest, under the face (사용자 답 2026-11-21).
+          final buttonY = at.top + at.height * WorkshopHomeLayout.guestButtonShare;
           return Stack(key: const Key('customer-guest-taps'), clipBehavior: Clip.none, children: [
             for (var i = 0; i < s.customers.length; i++)
               if (head(i).height > 0)
@@ -148,14 +152,26 @@ class WorkshopGuestLayer extends StatelessWidget {
               Positioned(
                   left: at.left - 40,
                   width: at.width + 80,
-                  top: at.center.dy - WorkshopHomeLayout.guestButtonHeight,
+                  top: buttonY - WorkshopHomeLayout.guestButtonHeight,
                   height: WorkshopHomeLayout.guestButtonHeight * 2,
                   child: Center(child: MediaQuery.withClampedTextScaling(maxScaleFactor: 1.2,
                       child: KeyedSubtree(key: const Key('guest-action'), child: IntrinsicHeight(child: IntrinsicWidth(child: action)))))),
             // Over the stage too, so the clicker never hides the words.
-            if (speaker != null && words != null)
-              _over(w, bottom, speaker, -WorkshopHomeLayout.bubbleDrop,
-                  IgnorePointer(child: GuestSpeechBubble(key: const Key('guest-speech'), text: words))),
+            if (said.isNotEmpty)
+              Positioned.fill(child: IgnorePointer(child: CustomMultiChildLayout(
+                  delegate: _WordsLayout([for (final e in said) e.$1], front: place(0), width: w,
+                      // Keep the small button (sell, the produce cue) clear.
+                      button: action == null ? null : Rect.fromCenter(center: Offset(at.center.dx, buttonY),
+                          width: WorkshopHomeLayout.guestButtonRoom, height: WorkshopHomeLayout.guestButtonHeight + 6)),
+                  children: [
+                    for (var i = 0; i < said.length; i++)
+                      LayoutId(
+                          id: i,
+                          // The newest line full size, earlier ones smaller.
+                          child: GuestSpeechBubble(
+                              key: Key(i == said.length - 1 ? 'guest-speech' : 'guest-speech-${said[i].$3}'),
+                              text: said[i].$2, small: i < said.length - 1)),
+                  ]))),
           ]);
         }
         final guests = <Widget>[];
@@ -214,6 +230,71 @@ Widget _over(double w, double bottom, Rect guest, double rise, Widget bubble) {
       top: 0,
       height: bottom,
       child: CustomSingleChildLayout(delegate: _BubbleLayout(guest.top - rise), child: bubble));
+}
+
+/// The guests' bubbles (IA5, 사용자 답 2026-11-21: they stay while the
+/// guest is there, so several can show at once). Laid out newest first:
+/// the newest at most [WorkshopHomeLayout.bubbleMaxWidth] wide over its
+/// guest, older ones at most [WorkshopHomeLayout.smallBubbleMaxWidth].
+/// A bubble for a guest behind the first moves sideways off the first
+/// guest's face, and any bubble that would cover one already placed moves
+/// up above it; none rises into the HUD
+/// ([WorkshopHomeLayout.bubbleTopRoom]) or under the HUD's right column.
+class _WordsLayout extends MultiChildLayoutDelegate {
+  /// Each speaking guest's place, oldest first (child ids are the indexes).
+  final List<Rect> guests;
+  final Rect front;
+  final double width;
+  /// The front guest's small button, which no bubble may cover.
+  final Rect? button;
+  _WordsLayout(this.guests, {required this.front, required this.width, this.button});
+
+  @override
+  void performLayout(Size size) {
+    final margin = WorkshopHomeLayout.bubbleMargin, right = width - WorkshopHomeLayout.bubbleRightRoom;
+    final placed = <Rect>[];
+    // The first guest's face (the top half, middle 70%).
+    final face = Rect.fromLTRB(front.left + front.width * .15, front.top + WorkshopHomeLayout.bubbleDrop,
+        front.right - front.width * .15, front.top + front.height * .5);
+    for (var i = guests.length - 1; i >= 0; i--) {
+      final guest = guests[i], newest = i == guests.length - 1;
+      final most = math.min(newest ? WorkshopHomeLayout.bubbleMaxWidth : WorkshopHomeLayout.smallBubbleMaxWidth,
+          right - margin);
+      final child = layoutChild(i, BoxConstraints(maxWidth: most));
+      final top = WorkshopHomeLayout.bubbleTopRoom, layer = size, bubble = child;
+      Rect box(double x, double y) => Rect.fromLTWH(x, math.max(top, y), bubble.width, bubble.height);
+      // Where it may go, best first: over its own guest, or for a guest
+      // behind the first beside the first guest's face (out from the
+      // middle); then over its own guest even if it touches that face (near
+      // its speaker beats far away); then above the face or above / below
+      // the bubbles already placed.
+      final own = box((guest.center.dx - bubble.width / 2).clamp(margin, right - bubble.width),
+          guest.top + WorkshopHomeLayout.bubbleDrop - bubble.height);
+      final left = guest.center.dx < front.center.dx;
+      final side = box(left ? face.left - 4 - bubble.width : face.right + 4, own.top);
+      // Or over its own guest pushed out to the screen edge.
+      final edge = box(left ? margin : right - bubble.width, own.top);
+      final near = [own, if (guest != front) edge, if (guest != front && side.left >= margin && side.right <= right) side];
+      final far = [
+        if (guest != front) box(own.left, face.top - 4 - bubble.height),
+        for (final r in [...placed, if (button != null) button!]) ...[box(own.left, r.top - 4 - bubble.height), box(own.left, r.bottom + 4)],
+      ];
+      // Also out of the counter's way at the layer's bottom.
+      bool hitsBubble(Rect r) => placed.any((p) => p.overlaps(r.deflate(1))) || (button?.overlaps(r) ?? false) ||
+          r.bottom > layer.height;
+      bool hitsFace(Rect r) => guest != front && r.overlaps(face);
+      Rect? pick(List<Rect> list, {bool face = true}) =>
+          list.where((r) => !hitsBubble(r) && (!face || !hitsFace(r))).firstOrNull;
+      final at = pick(near) ?? pick(near, face: false) ?? pick(far) ?? pick(far, face: false) ?? own;
+      positionChild(i, at.topLeft);
+      placed.add(at);
+    }
+  }
+
+  @override
+  bool shouldRelayout(_WordsLayout old) =>
+      old.front != front || old.width != width || old.button != button || old.guests.length != guests.length ||
+      [for (var i = 0; i < guests.length; i++) old.guests[i] != guests[i]].any((d) => d);
 }
 
 class _BubbleLayout extends SingleChildLayoutDelegate {
@@ -364,7 +445,7 @@ class GuestSpeechBubble extends StatelessWidget {
       padding: small ? const EdgeInsets.fromLTRB(10, 3, 10, 4) : const EdgeInsets.fromLTRB(12, 6, 12, 7),
       // A hint (the produce cue) is one short line and may sit in an
       // intrinsic-size box, which a LayoutBuilder cannot.
-      child: small
+      child: small && !tail
           ? Text(text, textAlign: TextAlign.center, style: style)
           : LayoutBuilder(builder: (context, box) => Text(
               balancedLines(text, style, box.maxWidth, MediaQuery.textScalerOf(context)),

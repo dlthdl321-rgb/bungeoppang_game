@@ -243,16 +243,17 @@ void main() {
         remainingMs: 200, lines: [CustomerOrderLine(flavor: 'redbean', quantity: 2)]));
     mono += 300;
     expect(await c.selectFlavor('redbean'), isTrue);
-    expect(c.guestSpeech?.customerId, 'anonymous_first');
+    expect(c.guestWords['anonymous_first']?.order, 'first');
     expect(c.notice, isNull);
     mono += checkpointMs + 10;
     await tester.pump(const Duration(milliseconds: 120));
     await tester.pump();
-    expect(c.guestSpeech?.customerId, 'anonymous_first');
+    expect(c.guestWords['anonymous_first']?.order, 'first');
     expect(find.byKey(const Key('guest-speech')), findsOneWidget);
-    expect(label(tester, 'guest-speech').replaceAll('\n', ' '), c.guestSpeech!.text);
+    expect(label(tester, 'guest-speech').replaceAll('\n', ' '), c.guestWords['anonymous_first']!.text);
     expect(find.byKey(const Key('counter-notice')), findsNothing);
-    // After [WorkshopHomeLayout.speechMs] the words and the guest are gone.
+    // The words stay while the guest is there: after
+    // [WorkshopHomeLayout.speechMs] the leaving guest and the words are gone.
     mono += WorkshopHomeLayout.speechMs;
     await tester.pump(const Duration(milliseconds: 120));
     expect(find.byKey(const Key('guest-speech')), findsNothing);
@@ -273,7 +274,9 @@ void main() {
       final art = tester.getRect(find.byKey(const Key('customer-art-0')));
       final button = tester.getRect(find.byKey(const Key('sale-button')));
       expect(button.center.dx, closeTo(art.center.dx, 1));
-      expect(button.center.dy, closeTo(art.center.dy, 1));
+      // On the chest, under the face (사용자 답 2026-11-21).
+      expect(button.center.dy, closeTo(art.top + art.height * WorkshopHomeLayout.guestButtonShare, 1));
+      expect(button.top, greaterThan(art.top + art.height * .5));
       expect(button.height, lessThanOrEqualTo(WorkshopHomeLayout.guestButtonHeight + 4));
       // Narrower than the old floating bar (at least 160 wide); the test
       // font is wider than Jua.

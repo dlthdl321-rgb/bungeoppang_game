@@ -54,9 +54,10 @@ class WorkshopHomeLayout {
   /// over their head (clear of the stage's caption line).
   static const bubbleDrop = 34.0;
 
-  /// A guest's words (parting words, 태오's photo reaction; 4차 피드백 IA5)
-  /// show as a bubble over that guest this long; a guest leaving with words
-  /// stays at the front until then and fades in the last [departureMs].
+  /// A guest's words (4차 피드백 IA5) show as a bubble over that guest for
+  /// as long as they are there (사용자 답 2026-11-21). A guest leaving with
+  /// words stays at the front this long, fading in the last [departureMs],
+  /// and the words go with them.
   static const speechMs = 3500;
 
   /// Guest bubbles stay [bubbleMargin] inside the screen, at most
@@ -64,6 +65,10 @@ class WorkshopHomeLayout {
   /// at least twice [bubbleMinHalf] wide.
   static const bubbleMargin = 8.0;
   static const bubbleMaxWidth = 280.0;
+
+  /// Earlier words still showing (another guest spoke since) are the small
+  /// bubble, at most this wide.
+  static const smallBubbleMaxWidth = 140.0;
   static const bubbleMinHalf = 80.0;
 
   /// Guest bubbles never rise above this (the HUD with the business row,
@@ -102,6 +107,14 @@ class WorkshopHomeLayout {
   /// counter card on its right, [counterButtonHeight] tall, at most
   /// [counterButtonMaxWidth] wide.
   static const guestButtonHeight = 30.0;
+
+  /// The small button's middle sits this share down the guest's picture:
+  /// on the chest, under the face (사용자 답 2026-11-21; the bust art's
+  /// chin is at about half).
+  static const guestButtonShare = .64;
+
+  /// The width guest bubbles keep clear around that button.
+  static const guestButtonRoom = 150.0;
   static const guestButtonFont = 14.0;
   static const counterButtonHeight = 36.0;
   static const counterButtonMaxWidth = 128.0;
