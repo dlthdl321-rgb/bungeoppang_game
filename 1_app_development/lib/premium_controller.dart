@@ -163,6 +163,16 @@ extension PremiumCommands on GameController {
         PremiumKind.boost => boostOf(BoostKind.bought).name,
       };
 
+  /// A build without the online settings only (4차 피드백 IC10 후속): its
+  /// test gold lives on this device, for LocalTestPurchaseGateway and the
+  /// charge tab's free test gold. An online build's gold is the server's, so
+  /// this refuses there. True once [gold] is stored.
+  Future<bool> setLocalTestGold(int gold) async {
+    if (online.configured || gold < 0) return false;
+    await _setGold(gold);
+    return state.premium.gold == gold;
+  }
+
   Future<void> _setGold(int gold) async {
     if (busy || _away || _disposed || state.premium.gold == gold) return;
     final before = state.copy();

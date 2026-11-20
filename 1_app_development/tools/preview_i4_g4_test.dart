@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
+import 'package:todays_bungeoppang/local_test_purchases.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/owner_account.dart';
 import 'package:todays_bungeoppang/owner_profile.dart';
@@ -50,16 +51,19 @@ Future<void> _tap(WidgetTester tester, String key) async {
 }
 
 /// Level 1 shop; [gateway] false = a build without the online settings.
-Future<WorkshopController> _open(WidgetTester tester, {bool gateway = true, bool band = false, OwnerAccount Function(GameController, WorkshopController)? owner}) async {
-  final online = FakeOnlineBackend(products: const {}, prices: const {})
+Future<WorkshopController> _open(WidgetTester tester, {bool gateway = true, bool band = false, bool local = false,
+    OwnerAccount Function(GameController, WorkshopController)? owner}) async {
+  final OnlineBackend online = local ? const NoOnlineBackend() : (FakeOnlineBackend(products: const {}, prices: const {})
     ..signedIn = true
-    ..gold = 5;
+    ..gold = 5);
   final game = await mountGame(tester, const Size(390, 844), reduced: true, online: online);
   await _fonts(tester);
   final config = DevelopmentBalance.fromJson(
       jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
   final c = WorkshopController(config, MemoryRepository(),
-      purchaseGateway: gateway ? Gateway() : null, now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);
+      purchaseGateway: local
+          ? LocalTestPurchaseGateway(gold: () => game.state.premium.gold, setGold: game.setLocalTestGold)
+          : gateway ? Gateway() : null, now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);
   await c.initialize();
   await c.command(() {
     c.state.tutorial = 'done';
@@ -69,7 +73,7 @@ Future<WorkshopController> _open(WidgetTester tester, {bool gateway = true, bool
     c.state.lifetime = BigInt.from(20000);
     c.state.buns = BigInt.from(5000);
   });
-  game.state.premium.gold = 5;
+  game.state.premium.gold = local ? 0 : 5;
   final o = owner?.call(game, c);
   if (o != null) await o.load();
   await tester.pumpWidget(GameApp(controller: game, workshop: c, owner: o, devBuildBand: band));
@@ -101,6 +105,30 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 300));
     await _shot(tester, 'ic10_skill_nokey');
+  });
+
+  testWidgets('IC10 시험용 빌드: 서버 없이 레벨업', (tester) async {
+    final c = await _open(tester, local: true, band: true);
+    await _tap(tester, 'menu-skills');
+    await _tap(tester, 'buy-tap_1');
+    await _tap(tester, 'buy-tap_1');
+    expect(c.state.purchases.owned['tap_1'], 2);
+    await _shot(tester, 'ic10_test_build_skill');
+  });
+
+  testWidgets('IC10 시험용 빌드: 충전 탭 시험용 황금과 꾸미기 구매', (tester) async {
+    final c = await _open(tester, local: true, band: true);
+    await _tap(tester, 'menu-shop');
+    await _tap(tester, 'shop-tab-gold');
+    await _tap(tester, 'gold-test-add');
+    await _shot(tester, 'ic10_test_build_gold');
+    await _tap(tester, 'shop-tab-cosmetics');
+    await _tap(tester, 'cosmetic-slot-hat');
+    await _tap(tester, 'preview-earmuffs');
+    await _tap(tester, 'buy-cosmetic-earmuffs');
+    await _tap(tester, 'wardrobe-buy-confirm');
+    expect(c.ownsAvatar('earmuffs'), isTrue);
+    await _shot(tester, 'ic10_test_build_bought');
   });
 
   testWidgets('IC10 키 없는 빌드 상점 구매', (tester) async {

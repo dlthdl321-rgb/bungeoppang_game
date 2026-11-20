@@ -562,7 +562,7 @@
 
 ## 9. 온라인: 로그인·랭킹·친구·초대
 
-- 온라인 기능은 **Android 빌드에 키 5개가 모두 들어 있을 때만** 켜집니다. 이런 빌드는 첫 실행에 로그인을 반드시 거칩니다(아래 "첫 실행 로그인"). 구글 로그인은 선택 키 `GOOGLE_SERVER_CLIENT_ID`가 있을 때만 버튼이 보입니다. 게임은 **온라인 전용**(4차 피드백 IC10): 키 없이 만든 **릴리스** 빌드는 게임 대신 '온라인 설정이 없는 빌드예요' 화면(`OnlineSetupMissingApp`)만 보이고, 키 없이 만든 **디버그** 빌드는 개발용으로 게임이 열리되 위쪽에 빨간 띠 '시험용 빌드: 온라인 설정 없이 만들어 로그인·레벨업·꾸미기 구매가 안 돼요'(`DevBuildBand`)가 보이며, 레벨업·꾸미기 구매·친구·랭킹은 '온라인 설정 없이 만든 빌드라 …'(`lib/online_texts.dart`)로 진짜 이유를 말합니다(예전 '인터넷에 연결하면 레벨업할 수 있어요.'는 인터넷과 상관없는 원인이라 지움). 키는 `--dart-define-from-file=dart_defines/online.json`으로 넣습니다(13장 "온라인 빌드").
+- 온라인 기능은 **Android 빌드에 키 5개가 모두 들어 있을 때만** 켜집니다. 이런 빌드는 첫 실행에 로그인을 반드시 거칩니다(아래 "첫 실행 로그인"). 구글 로그인은 선택 키 `GOOGLE_SERVER_CLIENT_ID`가 있을 때만 버튼이 보입니다. 게임은 **온라인 전용**(4차 피드백 IC10): 키 없이 만든 **릴리스** 빌드는 게임 대신 '온라인 설정이 없는 빌드예요' 화면(`OnlineSetupMissingApp`)만 보이고, 키 없이 만든 **디버그·프로필(시험용)** 빌드는 서버 없이 이 기기에서 게임이 되고(13장 "시험용 빌드"), 맨 위에 빨간 한 줄 '시험용 빌드: 서버 없이 이 기기에만 저장돼요'(`DevBuildBand`)가 보입니다. 로그인·친구·랭킹은 '온라인 설정 없이 만든 빌드라 …'(`lib/online_texts.dart`)로 진짜 이유를 말합니다(예전 '인터넷에 연결하면 레벨업할 수 있어요.'는 인터넷과 상관없는 원인이라 지움). 키는 `--dart-define-from-file=dart_defines/online.json`으로 넣습니다(13장 "온라인 빌드").
 - 서버 지역은 `asia-northeast3`(서울), 런타임은 Node 22입니다.
 - 운영 설정(Firebase·카카오·Play 결제·App Check)을 처음부터 하는 순서는 [online_setup.md](online_setup.md)(23번 7단계, 초보자용)입니다.
 - **사용 통계(26번 5단계):** Firebase가 켜진 빌드는 로그인 여부와 상관없이 Firebase Analytics로 이벤트 7종을 보냅니다(기본 켬, 설정에서 끔). 서버 함수·Firestore는 쓰지 않고 Google Analytics 콘솔에서 봅니다. 자세한 내용은 32장, 콘솔 설정은 [online_setup.md](online_setup.md) '사용 통계'.
@@ -612,7 +612,7 @@
 | 순서 | 화면 | 조건·저장 |
 | --- | --- | --- |
 | ① 동의 + 로그인 | 앱 이름·붕어빵 그림(카드 위) / 전체 동의 / (필수) 이용약관 [보기] / (필수) 개인정보 수집·이용 [보기] / (필수) 만 14세 이상입니다(키 `consent-age`) → '카카오로 시작하기'·'Google로 시작하기'(필수 셋 다 체크해야 로그인, 전체 동의는 셋을 함께. 체크 전에는 흐리게 보이고, 누르면 로그인 대신 아래 작은 빨간 글 '필수 항목에 모두 동의해 주세요' — 26번 3차 H4). 만 14세 이상을 체크하지 않은 동안 그 아래 작은 글 '만 14세 미만은 지금은 이용할 수 없어요.'(키 `first-run-child-notice`, 처음엔 회색, 체크 없이 로그인을 누르면 빨강). '처음 고른 방법으로 계속 로그인해 주세요…', 약관·방침 전문 링크 | 누르면 먼저 인터넷 확인(`lookupInternet`, DNS 4초). 없으면 ② 대신 오프라인 화면. 이미 로그인한 사용자(업데이트 전 카카오 로그인)는 로그인 버튼 대신 '동의하고 계속하기'. 다른 계정이 이 기기 가게의 주인이면 로그아웃시키고 '이 기기의 가게는 다른 ○○ 계정에…' |
-| 오프라인 | '인터넷에 연결해 주세요' + '오늘의 붕어빵은 인터넷에 연결된 동안에만 할 수 있어요…' + '다시 시도' | 로그인할 때 연결이 없으면 이 단계. 로그인 뒤에도 게임은 온라인 전용이라, 시작·플레이 중 연결이 없으면 같은 제목의 덮개 알림(`connection-lost`)이 모든 화면 위에 뜨고 가게가 멈춤(4차 피드백 IC10) |
+| 오프라인 | '인터넷에 연결해 주세요' + '오늘의 붕어빵은 인터넷에 연결된 동안에만 할 수 있어요…' + '다시 시도' | 로그인할 때 연결이 없으면 이 단계. 로그인 뒤에도 게임은 온라인 전용이라, 시작·플레이 중 연결이 없으면 같은 제목의 덮개 알림(`connection-lost`)이 모든 화면 위에 뜨고 가게가 멈춤(4차 피드백 IC10). 제목 위 그림은 기절한 X눈 붕어빵 `icons/conn_fainted.png`(25번 59번, 192×192를 104로, `connectionLostIconSize`), 그림이 오기 전에는 붕어빵 아이콘을 같은 크기로 |
 | ② 사장님 이름 | 한 줄 입력칸(높이 약 46, 글자 수 표시 없음, 로그인 닉네임에서 허용 글자만 남긴 값이 기본값, '사장님' 꼬리말), 그 아래 '설정에서 언제든 바꿀 수 있어요'만, 작은 '다음' 알약 버튼. 규칙(2~8자·글자 종류·금지어)은 '다음'을 눌러 틀렸을 때만 칸 아래 작은 빨간 글(키 `owner-name-problem`), 다시 입력하면 사라짐(26번 3차 H4·H5) | `OwnerNameRules`(아래) |
 | ③ 사장님 고르기 | 여자/남자 사장님 그림 두 장(`AvatarPainter`), 지금 입은 캐릭터가 기본 선택 | `equipAvatar('girl'/'boy')` |
 | ④ 선택 정보 | 성별(여성·남성·선택 안 함)·연령대(14~19세~50대 이상·선택 안 함, 만 14세 미만 항목 없음), 수집 항목·목적·보관 기간 상자('Google(미국) 서버로 보내져 14개월 보관' 포함), (선택) 동의 체크. '건너뛰기'와 '저장하고 시작'이 같은 크기 | 동의 체크·두 값을 골라야 저장 켜짐 |
@@ -1152,7 +1152,13 @@
 flutter run --dart-define-from-file=dart_defines/online.json
 flutter build appbundle --release --dart-define-from-file=dart_defines/online.json
 ```
-- 키가 하나라도 없으면(`APP_CHECK_DEBUG_TOKEN`·`GOOGLE_SERVER_CLIENT_ID` 제외) 온라인 설정이 없는 빌드입니다: 릴리스는 '온라인 설정이 없는 빌드예요' 화면만, 디버그는 빨간 '시험용 빌드' 띠와 함께 열리고 레벨업·꾸미기 구매가 안 됩니다(4차 피드백 IC10). **폰에 까는 빌드는 반드시 위 명령처럼 `--dart-define-from-file=dart_defines/online.json`으로 만듭니다.**
+- 키가 하나라도 없으면(`APP_CHECK_DEBUG_TOKEN`·`GOOGLE_SERVER_CLIENT_ID` 제외) 온라인 설정이 없는 빌드입니다: 릴리스는 '온라인 설정이 없는 빌드예요' 화면만(키 없는 릴리스는 절대 게임이 열리지 않음), 디버그·프로필은 아래 "시험용 빌드"로 열립니다(4차 피드백 IC10). **폰에 까는 빌드는 반드시 위 명령처럼 `--dart-define-from-file=dart_defines/online.json`으로 만듭니다.**
+
+**시험용 빌드(키 없는 디버그·프로필, 4차 피드백 IC10 후속, 사용자 결정 2026-11-21):** 서버 없이 폰에서 시험할 수 있게 스킬 레벨업·꾸미기 구매가 이 기기에서 됩니다.
+- `lib/local_test_purchases.dart` `LocalTestPurchaseGateway`가 서버 대신 답함(main.dart, `purchaseGateway`가 없을 때). 가격·조건은 온라인과 같은 설정·같은 검사(`WorkshopPurchases.prepare`: 견적·누적·레벨·붕어빵력)이고, 거래 기록(`purchases.journals`)도 같은 모양으로 저장됨. 황금은 이 기기의 `GameState.premium.gold`에서 빠짐(`GameController.setLocalTestGold`, 온라인 빌드에서는 거절).
+- **시험용 저장 표시:** 거래 계정이 `local-test`(`localTestAccount`)라 저장의 `purchases.account`가 `local-test`가 됨(`isLocalTestSave`). 저장 형식은 그대로. 온라인 빌드는 이 저장을 믿지 않음: 로그인 때 묶지 않고 '시험용 빌드에서 만든 저장이라 온라인에서 이어 할 수 없어요. 앱을 지우고 다시 설치해 주세요.'(`OwnerAccount._bind`), 서버 구매도 계정이 달라 막힘.
+- **시험용 황금:** 충전 탭에 빨간 안내 '시험용 빌드 전용이에요. 실제 결제가 아니고 이 기기에만 저장돼요.' + '시험용 황금 +10 받기'(`gold-test-add`), 잔액 줄의 '+'도 시험용 황금 10개(알림 '…(실제 결제 아님)'). Play 결제는 없음.
+- 연결 덮개 알림(위 1장)은 온라인 빌드에만. 시험용 빌드는 서버가 없어 연결을 확인하지 않음.
 - 파일로 넘긴 값도 Gradle의 `dart-defines`로 전달되어 카카오 로그인 scheme(`kakao<네이티브 앱 키>`)이 매니페스트에 들어갑니다(2026-11-17 가짜 키 파일로 release 빌드해 병합 매니페스트에서 확인).
 - 서버 배포는 `firebase/firebase_local.cmd`(저장소 안 `local_tools`의 Node 22·Firebase CLI 실행)로 `firebase_local.cmd deploy --only "functions,firestore"`. 순서와 콘솔 작업은 [online_setup.md](online_setup.md).
 - Gradle flavor는 없습니다. Play Games용 playGames/noPlayGames 구분은 16단계에서 없어졌습니다.

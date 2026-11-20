@@ -3,7 +3,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'cosmetic_config.dart';
 import 'game_controller.dart';
+import 'local_test_purchases.dart';
 import 'online_backend.dart';
+import 'online_texts.dart';
 import 'owner_profile.dart';
 import 'owner_repository.dart';
 import 'owner_texts.dart';
@@ -250,6 +252,12 @@ class OwnerAccount extends ChangeNotifier {
     final bound = _boundAccount;
     if (id == null) {
       message = OwnerTexts.loginFailed;
+      return;
+    }
+    if (bound == localTestAccount) {
+      // A test build's save was never checked by the server: never bind it.
+      await online.signOut();
+      message = OnlineTexts.localTestSave;
       return;
     }
     if (bound != null && bound != id) {

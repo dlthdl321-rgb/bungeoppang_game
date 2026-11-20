@@ -27,6 +27,11 @@ class ConnectionLostNotice extends StatelessWidget {
                   child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 400),
                       child: _NoticeCard(
+                          // 4차 피드백: a fainted bungeoppang with X eyes,
+                          // large (25번 59번, icons/conn_fainted.png
+                          // 192x192); until it is drawn, the bun icon.
+                          emblem: PixelImage(PixelSprites.icon('conn_fainted') ?? PixelSprites.icon('bun'),
+                              key: const Key('connection-lost-icon'), size: connectionLostIconSize),
                           title: OnlineTexts.lostTitle,
                           body: OnlineTexts.lostBody,
                           bodyKey: const Key('connection-lost-body'),
@@ -86,15 +91,21 @@ class OnlineSetupMissingApp extends StatelessWidget {
                               bodyKey: Key('online-setup-missing'))))))));
 }
 
+/// The connection notice's picture size (logical px, 4차 피드백: about 104).
+const connectionLostIconSize = 104.0;
+
 class _NoticeCard extends StatelessWidget {
   final String title, body;
   final Key bodyKey;
   final Widget? action;
-  const _NoticeCard({required this.title, required this.body, required this.bodyKey, this.action});
+  final Widget emblem;
+  const _NoticeCard(
+      {required this.title, required this.body, required this.bodyKey, this.action,
+      this.emblem = const PixelIcon('bun', size: 48)});
   @override
   Widget build(BuildContext context) => FirstRunCard(
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        const Center(child: PixelIcon('bun', size: 48)),
+        Center(child: emblem),
         const SizedBox(height: 6),
         Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 20, color: Cozy.ink)),
         const SizedBox(height: 10),

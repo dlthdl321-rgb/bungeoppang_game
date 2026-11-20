@@ -32,6 +32,7 @@ import '../usage_stats.dart';
 import '../owner_account.dart';
 import '../owner_texts.dart';
 import '../online_texts.dart';
+import '../local_test_purchases.dart';
 import 'owner_settings.dart';
 import 'notice_permission_hint.dart';
 import '../share_card.dart';
@@ -269,12 +270,19 @@ class _WorkshopPageState extends State<WorkshopPage> {
     onClose:()=>Navigator.pop(ctx)));
   Future<void> _store({CosmeticSlot? slot}){
     c.usage.record(UsageEvent.shopOpen); // 사용 통계(26번 5단계), 하루 1번
-    return _window('상점',(_)=>ShopPanel(controller:widget.accountController,access:_cosmetics,onOpen:_open,initialSlot:slot));
+    return _window('상점',(_)=>ShopPanel(controller:widget.accountController,access:_cosmetics,onOpen:_open,initialSlot:slot,
+      localTestGold:c.purchaseGateway is LocalTestPurchaseGateway));
   }
   Future<void> _goldPacks() async {
     _enterWindow();
     try {
       final account = widget.accountController;
+      // A test build (4차 피드백 IC10 후속): free test gold, no Play.
+      if (c.purchaseGateway is LocalTestPurchaseGateway) {
+        final ok = await account.setLocalTestGold(account.state.premium.gold + 10);
+        if (mounted && ok) showCenterToast(context, '${OnlineTexts.testGoldDone} (실제 결제 아님)');
+        return;
+      }
       final message = await account.signInOnline();
       if (!mounted) return;
       if (message != null || !account.online.signedIn) {

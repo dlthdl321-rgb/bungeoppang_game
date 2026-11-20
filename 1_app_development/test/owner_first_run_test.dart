@@ -8,6 +8,7 @@ import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/owner_account.dart';
 import 'package:todays_bungeoppang/owner_profile.dart';
 import 'package:todays_bungeoppang/owner_repository.dart';
+import 'package:todays_bungeoppang/local_test_purchases.dart';
 import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/owner_texts.dart';
 import 'package:todays_bungeoppang/ui/first_run.dart';
@@ -305,6 +306,22 @@ void main() {
       r.fake.offline = true;
       await agreeAndLogin(tester, LoginProvider.kakao);
       expect(find.byKey(const Key('first-run-offline')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('시험용 빌드에서 만든 저장은 온라인 로그인에 묶지 않는다', (tester) async {
+      final r = await mountFirstRun(tester, before: (shop) async {
+        await shop.command(() {
+          shop.state.lifetime = BigInt.from(100);
+          shop.state.buns = BigInt.from(100);
+        });
+        final local = LocalTestPurchaseGateway(gold: () => 0, setGold: (_) async => true);
+        expect(await shop.purchaseSkill(local, 'tap_1'), isTrue, reason: shop.notice);
+      });
+      await agreeAndLogin(tester, LoginProvider.kakao);
+      expect(find.text(OnlineTexts.localTestSave), findsOneWidget);
+      expect(r.fake.signedIn, isFalse);
+      expect(gameShown(), isFalse);
       await tester.pumpWidget(const SizedBox.shrink());
     });
 

@@ -24,6 +24,7 @@ import 'development_balance_asset.dart';
 import 'workshop_controller.dart';
 import 'workshop_online.dart';
 import 'customer_notifier.dart';
+import 'local_test_purchases.dart';
 import 'ui/connection_notice.dart';
 import 'ui/game_app.dart';
 import 'ui/pixel_sprites.dart';
@@ -88,7 +89,13 @@ Future<void> _start(OnlineBackend online, UsageStats usage, {int attempts = 0}) 
         jsonDecode(await rootBundle.loadString('config/owner_name_rules.json')) as Map<String, dynamic>);
     stage = SaveStage.workshop;
     workshop = WorkshopController(config, workshops,
-      purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online as WorkshopTransport) : null,
+      // A build without the online settings (debug/profile only; a release
+      // one stopped above) levels up and buys on this device, marked as a
+      // test save (local_test_purchases.dart, 4차 피드백 IC10 후속).
+      purchaseGateway: online is WorkshopTransport
+          ? WorkshopOnline(online as WorkshopTransport)
+          : LocalTestPurchaseGateway(
+              gold: () => controller.state.premium.gold, setGold: controller.setLocalTestGold),
       usage: usage);
     await workshop.initialize();
     // 26번 2-1단계: login, owner name and character before the game.

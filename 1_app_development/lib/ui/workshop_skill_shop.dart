@@ -88,7 +88,8 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
             CozyPanel(
                 key: const Key('skill-setup-note'),
                 child: const Text(OnlineTexts.skillNotSetUp, textAlign: TextAlign.center)),
-          if (c.purchaseGateway != null && !account.online.signedIn)
+          // Before the login (a test build's local purchases need none).
+          if (c.purchaseGateway != null && c.purchaseGateway!.authenticatedAccount.isEmpty)
             CozyPanel(
                 key: const Key('skill-sign-in'),
                 child: Column(children: [
