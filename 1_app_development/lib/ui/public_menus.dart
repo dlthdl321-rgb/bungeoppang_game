@@ -105,8 +105,19 @@ class _WardrobePanelState extends State<WardrobePanel> {
   GameController get c => widget.controller;
 
   /// What [s] shows: the picked item in its own slot, else what is worn.
-  String _shown(CosmeticSlot s) =>
-      s == slot && preview != null ? preview! : (widget.access?.equipped(s) ?? c.state.equippedCosmetic(s));
+  String _shown(CosmeticSlot s) {
+    if (s == slot && preview != null) return preview!;
+    final worn = widget.access?.equipped(s) ?? c.state.equippedCosmetic(s);
+    // Another character tried on: hair that is only the worn character's
+    // own default shows as the new one's (26번 3차 G).
+    if (s == CosmeticSlot.hair && slot == CosmeticSlot.character && preview != null &&
+        worn == defaultHairOf(_shownWorn(CosmeticSlot.character))) {
+      return defaultHairOf(preview!);
+    }
+    return worn;
+  }
+
+  String _shownWorn(CosmeticSlot s) => widget.access?.equipped(s) ?? c.state.equippedCosmetic(s);
 
   @override
   Widget build(BuildContext context) {

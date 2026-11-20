@@ -571,7 +571,9 @@ def icons(data, src):
     folder = src / '31_icons'
     by_slot = {}
     for item, slot in definitions():
-        if slot in ('character', 'skin') + ITEM_SLOTS and item not in BLANK:
+        # 26번 3차 G: the 사장님 icons keep the v1 faces (the v1 vendor is
+        # drawn), so 'character' is not made from 31_icons.
+        if slot in ('skin',) + ITEM_SLOTS and item not in BLANK:
             by_slot.setdefault(slot, []).append(item)
     done = data.setdefault('icons', {})
     for slot, ids in by_slot.items():

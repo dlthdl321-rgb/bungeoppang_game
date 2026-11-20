@@ -252,6 +252,28 @@ const defaultCosmetics = {
   CosmeticSlot.time: 'scenetime'
 };
 
+/// Each character's own default hair (26번 3차 G, 2026-11-20 사용자 결정:
+/// "남자 사장님 기본 머리는 짧은 머리"). A shop that has the character has
+/// its default hair without buying it, and a vendor whose hair was never
+/// picked wears it. The girl keeps [defaultCosmetics]' long hair.
+const characterDefaultHair = {'girl': 'long', 'boy': 'short'};
+
+/// v1 vendor only (26번 3차 G): the hair style drawn as the base's own hair
+/// while a hat is on. v1 hats were cut from pictures of the base hair under
+/// them, so the boy's short hair (his default, close to his base hair) and
+/// a hat left loose strands; under a hat he shows the base hair instead.
+/// Goes away with the 25번 43~44번 art.
+const v1HatHairAsBase = {'boy': 'short'};
+
+/// The hair [character] wears until another is picked.
+String defaultHairOf(String character) =>
+    characterDefaultHair[character] ?? defaultCosmetics[CosmeticSlot.hair]!;
+
+/// The item [character] wears in [slot] until another is picked: its own
+/// default hair, else the slot default.
+String defaultAvatarItem(CosmeticSlot slot, String character) =>
+    slot == CosmeticSlot.hair ? defaultHairOf(character) : defaultCosmetics[slot]!;
+
 /// Free choices besides the slot defaults, owned from the start and not
 /// collected: taking off the default apron (stage 26 4-4).
 const freeChoiceCosmetics = {'noapron'};

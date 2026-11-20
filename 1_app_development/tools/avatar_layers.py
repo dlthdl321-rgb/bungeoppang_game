@@ -60,7 +60,8 @@ All write tools/avatar_layers.json (every number below) and the
 generated lib/avatar_atlas.dart that the game reads.
 
 Run from the project root:   python tools/avatar_layers.py [fringe] [face] [worn] [derive] [skin] [trim]
-(no argument runs all seven in that order: fringe face worn chin derive skin trim). Add --preview to save checking sheets to
+(no argument runs them all in that order: rebase fringe tidy face worn chin gap strands derive skin trim;
+rebase is empty since 26번 3차 G, tidy evens the boy's neck). Add --preview to save checking sheets to
 build/avatar_layers/.
 """
 import json
@@ -89,13 +90,13 @@ FACES = {
               ((168, 130, 212, 173), (189, 153))],
         mouth=((137, 177, 168, 191), (152, 184)),
         skin=(138, 150, 165, 172)),
-    # 26번 3차 H9: measured again on the base rebuilt by [rebase].
+    # 26번 3차 G (2026-11-20): the original base again (see REBASE).
     'boy_front': dict(
         image='avatar/boy/base.png',
-        eyes=[((86, 133, 131, 174), (108, 153)),
-              ((163, 131, 205, 174), (185, 152))],
-        mouth=((130, 176, 162, 191), (146, 184)),
-        skin=(133, 150, 158, 168)),
+        eyes=[((91, 135, 136, 174), (115, 157)),
+              ((168, 133, 210, 174), (188, 155))],
+        mouth=((135, 177, 166, 191), (150, 184)),
+        skin=(138, 150, 165, 172)),
     # The side (cooking) frames: measured on frame 2, found in the others.
     # 26번 4-2단계 F9 moved frame 2 by (+5, -2) (tools/align_cook_cuts.py,
     # cook_cut_alignment.json); these boxes moved with it.
@@ -172,10 +173,14 @@ def trim(data):
 # (scale, dx, dy) place it on the 280x520 canvas: body over the old base,
 # soles on row 519. Light grey-white specks the white background left
 # around the hair go too (`specks`, source rows above which they count).
-REBASE = {
-    'boy': dict(head='outfit_chefcoat', body='hair_curly', seam=715,
-                place=(0.30252, 9, -8), specks=715),
-}
+#
+# 26번 3차 G (2026-11-20 사용자 결정 "아바타 전(v1)이 더 낫다 — 얼굴·몸은
+# 그대로"): the rebuilt face was not the original one, so the boy keeps his
+# original base (git ab54928) again and [rebase] is off (empty). The neck
+# and feet are evened by [tidy] instead, the face untouched. The entry that
+# rebuilt him: 'boy': dict(head='outfit_chefcoat', body='hair_curly',
+# seam=715, place=(0.30252, 9, -8), specks=715).
+REBASE = {}
 
 
 def rebase(data):
@@ -207,6 +212,58 @@ def rebase(data):
               f'{int(specks.sum())} speck px cleared')
 
 
+# ---------------------------------------------------------------- tidy
+
+# 26번 3차 G (2026-11-20). `neck` (H9 "목이 비뚤어져 보여"): on the boy's
+# original base the dark back hair shows wider on the right of the neck
+# (x 162-180) than on the left (128-138), so the neck looks pushed to one
+# side; the right half of the neck band (canvas rows, columns right of the
+# centre up to `right`) becomes the left half mirrored at the centre (the
+# middle of the neck skin, 138..162). The face above and the body below
+# stay as drawn. `floor`: loose specks (under FLOOR_SPECK pixels) left on
+# the canvas' last rows by the art's background (the little dashes beside
+# the feet on the first-run cards) are made transparent.
+TIDY = {
+    'girl': dict(floor=510),
+    'boy': dict(neck=dict(rows=(206, 219), centre=150, right=186), floor=510),
+}
+FLOOR_SPECK = 200
+
+
+def tidy(data):
+    """Runs on base.png and its skin copies (base@skin2/3) alike, so it can
+    run on its own after [skin] too."""
+    from scipy import ndimage
+    trimmed = data.get('trim', {})
+    for character, t in TIDY.items():
+        key = f'avatar/{character}/base.png'
+        a = rgba(key, trimmed)
+        labels, _ = ndimage.label(a[..., 3] > 0)
+        specks = np.zeros(a.shape[:2], bool)
+        for i, sl in enumerate(ndimage.find_objects(labels), start=1):
+            if sl[0].stop - 1 >= t['floor']:
+                part = labels == i
+                if part.sum() < FLOOR_SPECK:
+                    specks |= part
+        ox, oy = trimmed.get(key, (0, 0))
+        for path in [IMAGES / key, *sorted((IMAGES / 'avatar' / character)
+                                           .glob('base@*.png'))]:
+            w, h = Image.open(path).size
+            full = np.zeros((CANVAS[1], CANVAS[0], 4), np.int32)
+            full[oy:oy + h, ox:ox + w] = np.array(
+                Image.open(path).convert('RGBA')).astype(np.int32)
+            if 'neck' in t:
+                top, bottom = t['neck']['rows']
+                c = t['neck']['centre']
+                for x in range(c + 1, t['neck']['right']):
+                    full[top:bottom, x] = full[top:bottom, 2 * c - x]
+            full[specks, 3] = 0
+            save(full[oy:oy + h, ox:ox + w], path)
+        print(f'tidy {key} (+ skin copies): '
+              f'{"neck mirrored, " if "neck" in t else ""}'
+              f'{int(specks.sum())} px of specks on the last rows cleared')
+
+
 # ---------------------------------------------------------------- fringe
 
 # Canvas boxes (l, t, r, b) where light, grey-white pixels are background
@@ -221,7 +278,7 @@ FRINGE = {
                  edge_above=323),
     'boy': dict(boxes=[(150, 8, 215, 40), (40, 55, 80, 95)], edge_above=0,
                 grey=[(150, 8, 215, 40), (40, 55, 80, 95)],
-                clear=[(78, 300, 100, 365)]),
+                clear=[(90, 300, 106, 352)]),
 }
 
 
@@ -787,7 +844,7 @@ def derive(data):
 
 # Neck line per character (canvas row): worn body layers keep nothing above
 # it. Only the boy's apron-like pictures reach the chin (girl's start at 215).
-CHIN = {'boy': 200}  # 26번 3차 H9: the rebuilt base's chin ends at 195
+CHIN = {'boy': 208}  # the original base (26번 3차 G)
 CHIN_SLOTS = ('outfit_', 'top_chefcoat')
 
 
@@ -805,6 +862,98 @@ def chin(data):
             a[:row, :, 3] = 0
             save(a, path)  # full canvas again; trim cuts it back
             print(f'chin {key}: {above} px above row {row} cleared')
+
+
+# ---------------------------------------------------------------- gap
+
+# 26번 3차 G (2026-11-20): the boy's worn pictures (aprons, tops, bottoms)
+# keep the white background between the arm and the body, a ragged white
+# sliver beside the apron on both sides. In these canvas boxes (l, t, r, b)
+# light, grey-white pixels are made transparent where the base shows
+# nothing (the base's own leftover there too), in every layer of the
+# character and its skin copies. The tee and sleeves end above row 312.
+GAPS = {'boy': [(85, 312, 108, 362), (188, 312, 215, 362)]}
+
+
+def gap(data):
+    trimmed = data.get('trim', {})
+    for character, boxes in GAPS.items():
+        key = f'avatar/{character}/base.png'
+        base = rgba(key, trimmed)
+        zone = np.zeros(base.shape[:2], bool)
+        for l, t, r, b in boxes:
+            zone[t:b, l:r] = True
+
+        def light(a):
+            return (a[..., 3] > 0) & (a[..., :3].min(-1) > 150) &                 ((a[..., :3].max(-1) - a[..., :3].min(-1)) < 40)
+        bare = zone & ((base[..., 3] == 0) | light(base))
+        total = 0
+        for path in sorted((IMAGES / 'avatar' / character).glob('*.png')):
+            if path.stem.endswith('_cut'):
+                continue
+            k = path.relative_to(IMAGES).as_posix()
+            stem = k.split('@')[0] + ('.png' if '@' in k else '')
+            ox, oy = (0, 0) if Image.open(path).size == CANVAS else                 trimmed.get(k, trimmed.get(stem, (0, 0)))
+            arr = np.array(Image.open(path).convert('RGBA')).astype(np.int32)
+            h, w = arr.shape[:2]
+            hit = bare[oy:oy + h, ox:ox + w] & light(arr)
+            if hit.any():
+                arr[hit, 3] = 0
+                save(arr, path)
+                total += int(hit.sum())
+        print(f'gap {character}: {total} px between arm and body cleared')
+
+
+# ---------------------------------------------------------------- strands
+
+# 26번 3차 G (2026-11-20): the girl's worn pictures of clothes show her long
+# hair, so a top or apron layer kept the long hair's tips beside the arms;
+# with short or tied hair those tips floated beside the hand. Where every
+# hair style erases the base's long hair (all hair_*_cut masks) and a
+# clothes layer's pixel has the base's colour there (within STRAND_NEAR),
+# it is the hair, not the clothes: made transparent (skin copies too). So
+# is anything a clothes layer has outside the arms (columns left of / right
+# of STRAND_SIDES, rows 200-420): only the pictures' hair, a few pixels off.
+STRANDS = {'girl': ('outfit_', 'top_', 'bottom_', 'accessory_')}
+STRAND_SIDES = {'girl': (64, 238)}
+STRAND_NEAR = 40
+STRAND_STYLES = ('short', 'ponytail')
+
+
+def strands(data):
+    trimmed = data.get('trim', {})
+    for character, prefixes in STRANDS.items():
+        base = rgba(f'avatar/{character}/base.png', trimmed)
+        cuts = [IMAGES / 'avatar' / character / f'hair_{h}_cut.png'
+                for h in STRAND_STYLES]
+        cuts = [c for c in cuts if c.exists()]
+        if not cuts:
+            continue
+        hair = np.ones(base.shape[:2], bool)
+        for path in cuts:
+            hair &= rgba(path.relative_to(IMAGES).as_posix(),
+                         trimmed)[..., 3] > 0
+        total = 0
+        for path in sorted((IMAGES / 'avatar' / character).glob('*.png')):
+            if path.stem.endswith('_cut') or not path.name.startswith(prefixes):
+                continue
+            k = path.relative_to(IMAGES).as_posix()
+            stem = k.split('@')[0] + ('.png' if '@' in k else '')
+            ox, oy = (0, 0) if Image.open(path).size == CANVAS else                 trimmed.get(k, trimmed.get(stem, (0, 0)))
+            arr = np.array(Image.open(path).convert('RGBA')).astype(np.int32)
+            h, w = arr.shape[:2]
+            under = base[oy:oy + h, ox:ox + w]
+            close = np.sqrt(((arr[..., :3] - under[..., :3]) ** 2).sum(-1))                 < STRAND_NEAR
+            side = np.zeros(base.shape[:2], bool)
+            left, right = STRAND_SIDES.get(character, (0, CANVAS[0]))
+            side[200:420, :left] = side[200:420, right:] = True
+            hit = (arr[..., 3] > 0) & ((hair[oy:oy + h, ox:ox + w] & close) |
+                                       side[oy:oy + h, ox:ox + w])
+            if hit.any():
+                arr[hit, 3] = 0
+                save(arr, path)
+                total += int(hit.sum())
+        print(f'strands {character}: {total} px of long hair cleared from clothes')
 
 
 # ---------------------------------------------------------------- skin
@@ -1064,13 +1213,17 @@ def write_dart(data):
 
 def main():
     args = [a for a in sys.argv[1:] if not a.startswith('--')]
-    jobs = args or ['rebase', 'fringe', 'face', 'worn', 'chin', 'derive',
-                    'skin', 'trim']
+    # [tidy] mirrors one half of the neck onto the other: running it again
+    # changes nothing.
+    jobs = args or ['rebase', 'fringe', 'tidy', 'face', 'worn', 'chin',
+                    'gap', 'strands', 'derive', 'skin', 'trim']
     data = load_data()
     if 'rebase' in jobs:
         rebase(data)
     if 'fringe' in jobs:
         fringe(data)
+    if 'tidy' in jobs:
+        tidy(data)
     if 'face' in jobs:
         face(data, '--preview' in sys.argv)
     # Worn items are made on the full canvas, then trimmed below.
@@ -1078,6 +1231,10 @@ def main():
         worn(data, '--preview' in sys.argv)
     if 'chin' in jobs:
         chin(data)
+    if 'gap' in jobs:
+        gap(data)
+    if 'strands' in jobs:
+        strands(data)
     if 'derive' in jobs:
         derive(data)
     # Skin copies are made from the finished layers, then trimmed below.

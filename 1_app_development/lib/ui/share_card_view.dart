@@ -34,7 +34,10 @@ class ShareCardView extends StatelessWidget {
   /// The vendor's face in the card: talking, a little open mouth.
   static const vendorFace = {'mouth': 'small'};
 
-  String _equipped(CosmeticSlot slot) => data.equipped[slot.name] ?? _defaults[slot] ?? 'none';
+  // Hair not sent is the character's own default (26번 3차 G).
+  String _equipped(CosmeticSlot slot) => data.equipped[slot.name] ??
+      (slot == CosmeticSlot.hair ? defaultHairOf(_equipped(CosmeticSlot.character)) : null) ??
+      _defaults[slot] ?? 'none';
   static const _vendor = AvatarLook();
   static final _defaults = {
     CosmeticSlot.background: 'clear',

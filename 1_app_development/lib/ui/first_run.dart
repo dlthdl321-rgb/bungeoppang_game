@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../cosmetic_config.dart';
 import '../feedback_config.dart';
 import '../online_backend.dart';
 import '../owner_account.dart';
@@ -540,7 +541,7 @@ class _CharacterStepState extends State<_CharacterStep> {
                   child: Column(children: [
                     SizedBox(
                         height: 170,
-                        child: CustomPaint(size: Size.infinite, painter: AvatarPainter(AvatarLook(character: id)))),
+                        child: CustomPaint(size: Size.infinite, painter: AvatarPainter(AvatarLook(character: id, hair: defaultHairOf(id))))),
                     const SizedBox(height: 6),
                     Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                       Icon(picked ? Icons.check_circle_rounded : Icons.circle_outlined,

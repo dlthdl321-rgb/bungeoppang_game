@@ -135,7 +135,8 @@ Future<void> _sheet(String path, String title, List<_Tile> tiles,
     canvas.translate(at.dx + 4, at.dy + 4);
     AvatarPainter(AvatarLook.of((s) => s == CosmeticSlot.character
             ? t.character
-            : t.worn[s] ?? defaultCosmetics[s]!))
+            // The character's own default hair (26번 3차 G: boy = short).
+            : t.worn[s] ?? defaultAvatarItem(s, t.character)))
         .paint(canvas, Size(tileW - 8, tileH - 40));
     canvas.restore();
     _label(canvas, t.label, Offset(at.dx + 2, at.dy + tileH - 34), tileW - 4,
