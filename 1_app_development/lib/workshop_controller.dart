@@ -27,7 +27,7 @@ import 'workshop_arrivals.dart';
 import 'workshop_feature_unlocks.dart';
 import 'workshop_daily.dart';
 import 'usage_stats.dart';
-import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, movedToTop;
+import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, hairHatClash, hairUnderHatText, hatOverHairText, movedToTop, removedCosmetics;
 
 part 'workshop_storage.dart';
 
@@ -405,7 +405,9 @@ class WorkshopState {
         if (e.value is! Map<String,dynamic> || state.rewardAccount==null) throw const FormatException('광고 기록 형식 오류');
         state.adAttempts[e.key]=validateWorkshopAd(e.value as Map<String,dynamic>,state.rewardAccount!,e.key);
       }
-      final worn=Map<String,dynamic>.of(object('avatarEquipment'));
+      // 26번 3차 AV3: a removed item (skin tones 2·3) worn is its
+      // replacement; removed grants are dropped.
+      final worn=Map<String,dynamic>.of(object('avatarEquipment'))..updateAll((_,id)=>removedCosmetics[id] ?? id);
       // Schema 9 (26번 4-5단계, G12): the chef coat and padded vest are
       // tops now. An older save wearing one as its apron wears it as the
       // top with no apron, so the vendor looks the same.
@@ -415,7 +417,8 @@ class WorkshopState {
       }
       final catalog=config.section('avatar_catalog');
       bool granted(Object? id)=>catalog[id] is Map<String,dynamic> && avatarGrantSlots.contains((catalog[id] as Map)['slot']);
-      final grants=row['avatarGrants'];
+      final rawGrants=row['avatarGrants'];
+      final grants=rawGrants is List ? [for(final id in rawGrants) if(!removedCosmetics.containsKey(id)) id] : rawGrants;
       if (grants!=null) {
         // 3차 피드백 H11·H12: what this shop has without buying.
         if (grants is! List || grants.any((id) => !granted(id)) || grants.toSet().length!=grants.length ||
@@ -438,6 +441,10 @@ class WorkshopState {
             !state.hasAvatar(catalog,e.value as String)) throw const FormatException('아바타 착용 보유 근거 오류');
         state.avatarEquipment[e.key]=e.value as String;
       }
+      // 26번 3차 AV3 (DEC-TBD-hAV3-3): a hat that cannot go over the hair
+      // saved with it comes off.
+      final hair=state.avatarEquipment[CosmeticSlot.hair.name],hat=state.avatarEquipment[CosmeticSlot.hat.name];
+      if (hair!=null && hat!=null && hairHatClash(hair,hat)) state.avatarEquipment[CosmeticSlot.hat.name]=defaultCosmetics[CosmeticSlot.hat]!;
     }
     if ((row['schema'] as int)>=4) {
       if(!row.containsKey('customerScene')) throw const FormatException('대화 복원 상태 누락');
@@ -1492,6 +1499,11 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (entry['slot']==CosmeticSlot.character.name) {
       state._wearCharacter(id);
     } else {
+      // 26번 3차 AV3 (DEC-TBD-hAV3-3): the high ponytail and a hat over the
+      // crown do not go together; what is worn stays.
+      final hair=state.avatarEquipment[CosmeticSlot.hair.name],hat=state.avatarEquipment[CosmeticSlot.hat.name];
+      if (entry['slot']==CosmeticSlot.hat.name && hair!=null && hairHatClash(hair,id)) throw const FormatException(hatOverHairText);
+      if (entry['slot']==CosmeticSlot.hair.name && hat!=null && hairHatClash(id,hat)) throw const FormatException(hairUnderHatText);
       state.avatarEquipment[entry['slot'] as String]=id;
     }
   });

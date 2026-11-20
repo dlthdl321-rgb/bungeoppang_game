@@ -294,7 +294,9 @@ class GameController extends ChangeNotifier {
       // Cosmetics this level unlocks, one line per category.
       final unlocked = <CosmeticCategory, List<String>>{};
       for (final d in cosmetics) {
-        if (d.collectible && d.unlockLevel == target.level) {
+        // Withdrawn items (waiting for art, 26번 3차 AV3) are not news.
+        if (d.collectible && d.unlockLevel == target.level &&
+            !avatarItemWithdrawn(state.equippedCosmetic(CosmeticSlot.character), d.id)) {
           (unlocked[d.slot.category] ??= []).add(d.name);
         }
       }
