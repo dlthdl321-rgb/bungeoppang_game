@@ -102,9 +102,12 @@ void main() {
     // 3차 피드백 H11: the other character is bought; the first-run choice is kept.
     expect(await c.equipAvatar('boy'),isFalse);expect(c.error,isNull);
     expect(await c.chooseStarterCharacter('boy'),isTrue);expect(c.state.avatarEquipment['character'],'boy');
-    expect(await c.equipAvatar('short'),isFalse);expect(c.error,isNull);
+    // 26번 3차 G: the boy's own default hair (short) comes with him; other
+    // paid hair is still bought.
+    expect(await c.equipAvatar('short'),isTrue);
+    expect(await c.equipAvatar('ponytail'),isFalse);expect(c.error,isNull);
     final restored=WorkshopState.fromJson(c.state.toJson(),config);expect(restored.avatarEquipment['character'],'boy');
-    final damaged=c.state.toJson();damaged['avatarEquipment']={'hair':'short'};
+    final damaged=c.state.toJson();damaged['avatarEquipment']={'hair':'ponytail'};
     expect(()=>WorkshopState.fromJson(damaged,config),throwsFormatException);
   });
   test('시청 완료 callback은 로컬 지급이 아니고 광고 중 게임만 멈춘다',() async {

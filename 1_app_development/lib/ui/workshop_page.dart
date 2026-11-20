@@ -341,8 +341,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
     final id=_equipped(CosmeticSlot.background);
     return cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.background && d.id==id).firstOrNull?.name ?? id;
   }
+  // Hair never picked is the character's own (26번 3차 G, avatarWorn).
   String _equipped(CosmeticSlot slot) => slot == CosmeticSlot.time ? c.state.sceneTime :
-    c.state.avatarEquipment[slot.name] ?? widget.accountController.state.equippedCosmetic(slot);
+    c.state.avatarWorn(slot,widget.accountController.state.equippedCosmetic(slot));
   /// What the home draws: during a seasonal event its decoration hangs on
   /// the stall (26번 7단계, S7-Q3) without changing what is equipped.
   String _homeEquipped(CosmeticSlot slot) =>

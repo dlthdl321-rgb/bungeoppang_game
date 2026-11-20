@@ -161,6 +161,64 @@ void main() {
       expect(WorkshopState.fromJson(fresh, config).avatarGrants, {'girl'});
     });
 
+    test('남자 사장님은 짧은 머리를 무료로 갖고 기본으로 입는다, 여자는 긴 생머리 (26번 3차 G)', () async {
+      expect(defaultHairOf('girl'), 'long');
+      expect(defaultHairOf('boy'), 'short');
+      // 새 가게: 여자 사장님 — 긴 생머리, 짧은 머리는 산다.
+      final girl = WorkshopController(config, MemoryRepository(), purchaseGateway: Gateway());
+      await girl.initialize();
+      expect(girl.state.avatarWorn(CosmeticSlot.hair, 'long'), 'long');
+      expect(girl.ownsAvatar('short'), isFalse);
+      // 첫 실행에서 남자 사장님: 짧은 머리를 갖고 입는다(저장은 그대로).
+      final boy = WorkshopController(config, MemoryRepository(), purchaseGateway: Gateway());
+      await boy.initialize();
+      expect(await boy.chooseStarterCharacter('boy'), isTrue);
+      expect(boy.ownsAvatar('short'), isTrue);
+      expect(boy.state.avatarWorn(CosmeticSlot.hair, 'long'), 'short');
+      expect(boy.state.avatarEquipment.containsKey('hair'), isFalse);
+      final saved = jsonDecode(jsonEncode(boy.state.toJson())) as Map<String, dynamic>;
+      expect(saved['avatarGrants'], ['boy'], reason: '저장 형식 그대로');
+      // 직접 고른 긴 생머리는 그대로 입는다.
+      expect(await boy.equipAvatar('long'), isTrue);
+      expect(boy.state.avatarWorn(CosmeticSlot.hair, 'long'), 'long');
+      // 짧은 머리를 입은 채(산 적 없음) 저장해도 다시 읽힌다.
+      expect(await boy.equipAvatar('short'), isTrue);
+      final again = WorkshopState.fromJson(jsonDecode(jsonEncode(boy.state.toJson())) as Map<String, dynamic>, config);
+      expect(again.avatarWorn(CosmeticSlot.hair, 'long'), 'short');
+      // 여자 사장님을 사서 입으면 그 사장님의 기본 머리(긴 생머리)로.
+      await boy.command(() => boy.state
+        ..buns = BigInt.from(5000)
+        ..lifetime = BigInt.from(5000));
+      expect(await boy.purchaseSkill(boy.purchaseGateway!, 'cosmetic:girl'), isTrue, reason: boy.notice);
+      expect(await boy.equipAvatar('girl'), isTrue);
+      expect(boy.state.avatarWorn(CosmeticSlot.hair, 'long'), 'long');
+      expect(boy.ownsAvatar('short'), isTrue, reason: '남자 사장님을 가졌으니 계속 가짐');
+      // 여자로 시작해 남자 사장님을 사면 짧은 머리도 생기고 입는다.
+      await girl.command(() => girl.state
+        ..buns = BigInt.from(5000)
+        ..lifetime = BigInt.from(5000));
+      expect(await girl.purchaseSkill(girl.purchaseGateway!, 'cosmetic:boy'), isTrue, reason: girl.notice);
+      expect(girl.ownsAvatar('short'), isTrue);
+      expect(await girl.equipAvatar('boy'), isTrue);
+      expect(girl.state.avatarWorn(CosmeticSlot.hair, 'long'), 'short');
+    });
+
+    test('기존 저장의 남자 사장님: 머리를 고른 적 없으면 짧은 머리, 고른 머리는 그대로 (26번 3차 G)', () async {
+      final c = WorkshopController(config, MemoryRepository(), purchaseGateway: Gateway());
+      await c.initialize();
+      Map<String, dynamic> save(Map<String, String> worn) =>
+          jsonDecode(jsonEncode(c.state.toJson())) as Map<String, dynamic>
+            ..remove('avatarGrants')
+            ..['avatarEquipment'] = worn;
+      expect(WorkshopState.fromJson(save({'character': 'boy'}), config).avatarWorn(CosmeticSlot.hair, 'long'), 'short');
+      expect(WorkshopState.fromJson(save({'character': 'boy', 'hair': 'long'}), config).avatarWorn(CosmeticSlot.hair, 'long'), 'long');
+      expect(WorkshopState.fromJson(save({'character': 'boy', 'hair': 'short'}), config).avatarWorn(CosmeticSlot.hair, 'long'), 'short');
+      // 옛 계정 꾸미기에서 고른 머리(기본이 아님)는 그대로.
+      expect(WorkshopState.fromJson(save({'character': 'boy'}), config).avatarWorn(CosmeticSlot.hair, 'curly'), 'curly');
+      // 여자 사장님만 가진 가게는 짧은 머리를 입을 근거가 없다.
+      expect(() => WorkshopState.fromJson(save({'character': 'girl', 'hair': 'short'}), config), throwsFormatException);
+    });
+
     test('기본 보유 기록이 어긋나면 거절한다', () async {
       final c = WorkshopController(config, MemoryRepository(), purchaseGateway: Gateway());
       await c.initialize();

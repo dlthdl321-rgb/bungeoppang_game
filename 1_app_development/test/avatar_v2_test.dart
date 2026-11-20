@@ -292,9 +292,9 @@ void main() {
     // tools/avatar_layers.py skin (2026-11-18까지): skin2 비율.
     const oldSkin2 = {
       'girl': [0.9412, 0.7972, 0.6354],
-      // 26번 3차 H9: the boy's v1 base was rebuilt from his worn pictures
-      // (avatar_layers.py rebase), so his measured skin ratio moved a bit.
-      'boy': [0.9173, 0.7123, 0.5333],
+      // 26번 3차 G: the boy's original v1 base is back (the rebuilt one of
+      // 3차 H9 is gone), with its original skin copies and ratio.
+      'boy': [0.9163, 0.6981, 0.5027],
     };
     for (final c in ['girl', 'boy']) {
       final two = (ratios['$c@skin2'] as List).cast<num>();

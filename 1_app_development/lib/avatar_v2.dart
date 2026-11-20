@@ -99,5 +99,11 @@ Set<String>? debugAvatarV2Files;
 /// The v2 pictures the app ships.
 Set<String> get avatarV2Shipped => debugAvatarV2Files ?? avatarV2Files;
 
+/// The v2 vendor's switch (26번 3차 G, 2026-11-20 사용자 결정 "아바타 전(v1)이
+/// 더 낫다 — 얼굴·몸은 그대로 두고 머리·옷만 바꿔야"): off, so the v1
+/// vendor is drawn even with every v2 picture there. The v2 art stays in
+/// the app for the items to be moved onto a v1 face and body (25번 42번).
+const avatarV2Enabled = false;
+
 /// Whether the front vendor is drawn from the v2 art.
-bool get avatarV2On => debugAvatarV2Override ?? avatarV2Ready;
+bool get avatarV2On => debugAvatarV2Override ?? (avatarV2Enabled && avatarV2Ready);

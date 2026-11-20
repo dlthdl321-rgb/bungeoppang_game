@@ -27,7 +27,7 @@ import 'workshop_arrivals.dart';
 import 'workshop_feature_unlocks.dart';
 import 'workshop_daily.dart';
 import 'usage_stats.dart';
-import 'cosmetic_config.dart' show CosmeticSlot, movedToTop;
+import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, movedToTop;
 
 part 'workshop_storage.dart';
 
@@ -99,6 +99,39 @@ class WorkshopState {
   /// first run, and for a save from before the rule the character and skin
   /// tone it wore then. Other characters and skin tones are bought.
   final Set<String> avatarGrants = {'girl'};
+  /// Whether this shop has avatar item [id] of [catalog] (avatar_catalog):
+  /// free, granted, bought, or (26번 3차 G) the own default hair of a
+  /// character it has ([characterDefaultHair]: the boy's short hair).
+  bool hasAvatar(Map<String,dynamic> catalog,String id) {
+    final entry=catalog[id];
+    if (entry is! Map<String,dynamic>) return false;
+    if (entry['free']==true || avatarGrants.contains(id) || purchases.owned['cosmetic:$id']==1) return true;
+    return entry['slot']==CosmeticSlot.hair.name &&
+      characterDefaultHair.entries.any((e)=>e.value==id && e.key!=id && hasAvatar(catalog,e.key));
+  }
+  /// The avatar item worn in [slot]: what was picked here, else [legacy]
+  /// (the account wardrobe's choice). Hair never picked is the character's
+  /// own default ([defaultHairOf], 26번 3차 G: a boy whose save still wears
+  /// the old shared default long hair wears his short hair; hair picked or
+  /// bought stays).
+  String avatarWorn(CosmeticSlot slot,String legacy) {
+    final picked=avatarEquipment[slot.name];
+    if (picked!=null) return picked;
+    if (slot==CosmeticSlot.hair && legacy==defaultCosmetics[CosmeticSlot.hair]) {
+      return defaultHairOf(avatarEquipment[CosmeticSlot.character.name] ?? defaultCosmetics[CosmeticSlot.character]!);
+    }
+    return legacy;
+  }
+  /// A new character worn: hair that was only the old character's own
+  /// default goes back to "never picked", so the new one's default shows
+  /// (26번 3차 G).
+  void _wearCharacter(String id) {
+    final before=avatarEquipment[CosmeticSlot.character.name] ?? defaultCosmetics[CosmeticSlot.character]!;
+    if (before!=id && avatarEquipment[CosmeticSlot.hair.name]==defaultHairOf(before)) {
+      avatarEquipment.remove(CosmeticSlot.hair.name);
+    }
+    avatarEquipment[CosmeticSlot.character.name]=id;
+  }
   late BusinessProgress business;
   late WorkshopMissions missions;
   InventoryProgress inventory = InventoryProgress.empty();
@@ -402,8 +435,7 @@ class WorkshopState {
         if (e.value is! String) throw const FormatException('아바타 착용 형식 오류');
         final item=catalog[e.value];
         if (item is! Map<String,dynamic> || item['slot']!=e.key ||
-            (item['free']!=true && !state.avatarGrants.contains(e.value) &&
-              state.purchases.owned['cosmetic:${e.value}']!=1)) throw const FormatException('아바타 착용 보유 근거 오류');
+            !state.hasAvatar(catalog,e.value as String)) throw const FormatException('아바타 착용 보유 근거 오류');
         state.avatarEquipment[e.key]=e.value as String;
       }
     }
@@ -1443,11 +1475,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final key=state.missions.claimKey(scope,goal);
     state.pendingGold['mission:$key']=state.missions.claims[key]!;
   });
-  bool ownsAvatar(String id) {
-    final entry=config.section('avatar_catalog')[id];
-    return entry is Map<String,dynamic> && (entry['free']==true || state.avatarGrants.contains(id) ||
-      state.purchases.owned['cosmetic:$id']==1);
-  }
+  bool ownsAvatar(String id) => state.hasAvatar(config.section('avatar_catalog'),id);
   /// The first run's 여자/남자 사장님 choice (3차 피드백 H11): that one is
   /// this shop's for good and worn now; the other is bought in 꾸미기.
   /// Only the first-run screen calls this ([OwnerAccount.chooseCharacter]).
@@ -1456,12 +1484,16 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (entry is! Map<String,dynamic> || entry['slot']!=CosmeticSlot.character.name) throw const FormatException('사장님을 골라 주세요.');
     state.avatarGrants.removeWhere((g)=>(config.section('avatar_catalog')[g] as Map)['slot']==CosmeticSlot.character.name);
     state.avatarGrants.add(id);
-    state.avatarEquipment[CosmeticSlot.character.name]=id;
+    state._wearCharacter(id);
   });
   Future<bool> equipAvatar(String id) => command(() {
     final entry=config.section('avatar_catalog')[id];
     if (entry is! Map<String,dynamic> || !ownsAvatar(id)) throw const FormatException('보유한 아바타 아이템을 골라 주세요.');
-    state.avatarEquipment[entry['slot'] as String]=id;
+    if (entry['slot']==CosmeticSlot.character.name) {
+      state._wearCharacter(id);
+    } else {
+      state.avatarEquipment[entry['slot'] as String]=id;
+    }
   });
   Future<bool> _bindRewardAccount(WorkshopOnline gateway,String account) async => command(() {
     if (gateway.authenticatedAccount!=account || account.isEmpty ||

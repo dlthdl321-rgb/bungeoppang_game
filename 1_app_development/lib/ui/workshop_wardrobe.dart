@@ -105,7 +105,18 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
     slot = slots.contains(widget.initialSlot) ? widget.initialSlot! : (slots.isEmpty ? CosmeticSlot.hair : slots.first);
   }
 
-  String _shown(CosmeticSlot s) => picks[s] ?? a.equipped(s);
+  String _shown(CosmeticSlot s) {
+    final picked = picks[s];
+    if (picked != null) return picked;
+    // Another character tried on: hair that is only the worn character's
+    // own default shows as the new one's, as wearing it does (26번 3차 G).
+    final character = picks[CosmeticSlot.character];
+    if (s == CosmeticSlot.hair && character != null &&
+        a.equipped(s) == defaultHairOf(a.equipped(CosmeticSlot.character))) {
+      return defaultHairOf(character);
+    }
+    return a.equipped(s);
+  }
 
   CosmeticDefinition _def(CosmeticSlot s, String id) => cosmeticDefinitions.firstWhere((d) => d.slot == s && d.id == id);
 

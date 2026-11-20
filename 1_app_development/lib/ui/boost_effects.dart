@@ -281,7 +281,10 @@ AvatarLook lookFromServer(Map<String, String> look) {
     return id != null &&
             cosmeticDefinitions.any((d) => d.slot == slot && d.id == id)
         ? id
-        : defaultCosmetics[slot]!;
+        // Hair not sent: the character's own default (26번 3차 G).
+        : slot == CosmeticSlot.hair
+            ? defaultHairOf(pick(CosmeticSlot.character))
+            : defaultCosmetics[slot]!;
   }
 
   return AvatarLook.of(pick);
