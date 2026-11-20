@@ -17,6 +17,7 @@ snaps the alpha so there is no halo:
     python tools/apply_25_art.py <26_feedback_generated> --only room --only title --only stall16 --preview
     python tools/apply_25_art.py <26_feedback_generated> --only intro --preview
     python tools/apply_25_art.py <26_feedback_generated> --only firstrun --only today --only packs --preview
+    python tools/apply_25_art.py <26_feedback_generated> --only mold --preview
 
 Run it in 1_app_development. Outputs:
 
@@ -83,6 +84,12 @@ Run it in 1_app_development. Outputs:
 * assets/images/ui/gold_pack_1..5.png (128x128): 25번 40번 shop gold packs
   from 40_gold_packs/, each a little bigger than the one before
   ([PACK_FILL], see packs()).
+* assets/images/mold/<state>.png (1200x880, 7 states) and mold/axle_back.png,
+  axle_front.png (1200x880): 25번 36번 special mold with its hanging axle
+  (26번 3차 H21) from 36_mold_axle/ (1464x1074 = the mold canvas x1.22, so a
+  plain resize keeps fishRect within 2 px). Every state takes its side lugs
+  from the closed mold (the lugs moved up to 10 px between states) and each
+  side of the axle layers is moved onto those lugs' holes (see molds()).
 """
 import argparse
 import sys
@@ -742,6 +749,62 @@ def packs(src):
     return made
 
 
+# ---------------------------------------------------------------- 26번 3차 F3
+
+MOLD_SIZE = (1200, 880)
+MOLD_STATES = ["empty", "batter", "batter_top", "filling_redbean", "filling_custard",
+               "filling_cocoa", "closed"]
+# Columns outside these come from the closed mold: the side lugs (the body
+# starts at x 155 on the left and ends near x 1038 on the right).
+MOLD_LUG_LEFT, MOLD_LUG_RIGHT = 153, 1040
+# Shift (mold px) of each half of the axle layers onto the closed mold's lug
+# holes: generated pins at (118.0, 437.3)/(1081.0, 437.3), holes at
+# (118.3, 441.5)/(1076.1, 441.3) — feedback_config flipAxleLeftRing/RightRing.
+AXLE_SHIFT = {"left": (0, 4), "right": (-5, 4)}
+
+
+def mold_clean(img):
+    """[img] at the mold size with only its biggest drawn piece (the cocoa
+    state has a few stray specks) and hard alpha (40/215)."""
+    small = premultiplied_resize(img, MOLD_SIZE)
+    return snap_alpha(biggest_piece(small), 40, 215)
+
+
+def mold_save(img, name):
+    """256 flat colours without dither (about 80 KB instead of 550 KB, mean
+    change under 1.1 of 255)."""
+    img.quantize(256, method=Image.Quantize.FASTOCTREE, dither=Image.Dither.NONE).save(
+        IMAGES / "mold" / f"{name}.png", optimize=True)
+
+
+def molds(src):
+    """25번 36번: the special mold's 7 states with round axle bushings, and
+    the hanging axle in two layers (axle_back: posts and rods behind the
+    mold; axle_front: brass pin heads in front of a turning mold)."""
+    folder = next((src / f for f in ("36_mold_axle", "H-C-1_mold_axle")
+                   if (src / f).is_dir()), src)
+    states = {n: np.asarray(mold_clean(load(folder / f"{n}.png"))).copy() for n in MOLD_STATES}
+    lugs = states["closed"]
+    made = {}
+    for name, a in states.items():
+        a[:, :MOLD_LUG_LEFT] = lugs[:, :MOLD_LUG_LEFT]
+        a[:, MOLD_LUG_RIGHT:] = lugs[:, MOLD_LUG_RIGHT:]
+        out = Image.fromarray(a, "RGBA")
+        mold_save(out, name)
+        made[f"mold/{name}"] = out
+    half = MOLD_SIZE[0] // 2
+    for name in ("axle_back", "axle_front"):
+        img = load(folder / f"{name}.png").crop((0, 0, 1464, 1074))
+        small = snap_alpha(premultiplied_resize(img, MOLD_SIZE), 40, 215)
+        out = Image.new("RGBA", MOLD_SIZE)
+        for side, box in (("left", (0, 0, half, MOLD_SIZE[1])), ("right", (half, 0) + MOLD_SIZE)):
+            dx, dy = AXLE_SHIFT[side]
+            out.alpha_composite(small.crop(box), (box[0] + dx, box[1] + dy))
+        mold_save(out, name)
+        made[f"mold/{name}"] = out
+    return made
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("source", type=Path, help="the 25_generated folder")
@@ -750,7 +813,7 @@ def main():
                    help="re-measure STOVE_FIT (slow, a few minutes)")
     steps = ["stoves", "bags", "drips", "rings", "textures", "locks", "sparkles",
              "gold", "levelup", "tabs", "room", "title", "stall16", "intro",
-             "firstrun", "today", "packs"]
+             "firstrun", "today", "packs", "mold"]
     p.add_argument("--only", choices=steps, action="append",
                    help="run only these steps (repeatable)")
     args = p.parse_args()
@@ -781,7 +844,7 @@ def main():
     for step, run_step in (("gold", gold), ("levelup", levelup), ("tabs", tabs),
                            ("room", room), ("title", title), ("stall16", stall16),
                            ("intro", intro), ("firstrun", first_run), ("today", today),
-                           ("packs", packs)):
+                           ("packs", packs), ("mold", molds)):
         if step in run and args.only:
             print(step)
             made.update(run_step(src))

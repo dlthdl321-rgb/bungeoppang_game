@@ -163,6 +163,10 @@ class PixelSprites {
     'closed',
   ];
 
+  /// The special mold's hanging axle (25번 36번, same 1200x880 canvas as the
+  /// mold): rods and posts behind it, brass pins in front (MoldAxlePainter).
+  static const moldAxleNames = ['axle_back', 'axle_front'];
+
   static final _images = <String, ui.Image>{};
   static Future<void>? _loading;
   static final _paint = Paint()
@@ -327,6 +331,7 @@ class PixelSprites {
       }
     }
     yield* moldNames.map((n) => 'assets/images/mold/$n.png');
+    yield* moldAxleNames.map((n) => 'assets/images/mold/$n.png');
     for (final stove in _slot(CosmeticSlot.stove)) {
       yield _emptyStovePath(stove.id);
       yield _stoveFishPath(stove.id);
