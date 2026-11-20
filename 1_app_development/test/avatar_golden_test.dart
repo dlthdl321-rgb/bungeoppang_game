@@ -28,7 +28,7 @@ void main() {
                         ? character
                         : worn[s] ?? defaultCosmetics[s]!))));
     tester.view.devicePixelRatio = 1;
-    tester.view.physicalSize = const Size(2 * 6 * 56, 3 * 104);
+    tester.view.physicalSize = Size(2 * 6 * 56.0, skins.length * 104.0);
     addTearDown(tester.view.reset);
     await tester.pumpWidget(Directionality(
         textDirection: TextDirection.ltr,
@@ -106,7 +106,9 @@ void main() {
               d.slot.category == CosmeticCategory.avatar &&
               d.slot != CosmeticSlot.character &&
               d.slot != CosmeticSlot.skin &&
-              !blankCosmetics.contains(d.id))
+              !blankCosmetics.contains(d.id) &&
+              // Withdrawn items wait for their art (26번 3차 AV3).
+              !avatarItemWithdrawn(character, d.id))
           .toList();
       Widget vendor(Map<CosmeticSlot, String> worn) => SizedBox(
           width: 56,

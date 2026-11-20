@@ -388,6 +388,10 @@
       "buns": "1000",
       "gold": 2
     },
+    "lowponytail": {
+      "buns": "1000",
+      "gold": 2
+    },
     "curly": {
       "buns": "1000",
       "gold": 2
@@ -1504,6 +1508,13 @@
     },
     "ponytail": {
       "label": "묶은 머리",
+      "slot": "hair",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "lowponytail": {
+      "label": "낮게 묶은 머리",
       "slot": "hair",
       "free": false,
       "unlock_level": 2,

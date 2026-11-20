@@ -130,16 +130,27 @@ def definitions():
         text)
 
 
+def withdrawn():
+    """character -> withdrawn item ids (lib/cosmetic_config.dart
+    withdrawnAvatarItems): not shown, so not required."""
+    text = (ROOT / 'lib/cosmetic_config.dart').read_text('utf-8')
+    block = re.search(r'withdrawnAvatarItems = <String, Set<String>>\{(.*?)\n\};',
+                      text, re.S).group(1)
+    return {c: set(re.findall(r"'(\w+)'", ids)) for c, ids in
+            re.findall(r"^\s*'(\w+)':\s*\{([^}]*)\}", block, re.M)}
+
+
 def required():
     """Every picture v2 needs: the six bases, then every item layer the
     wardrobe can show (the defaults too), girl and boy. Same list as
     lib/avatar_v2.dart avatarV2Required."""
     defs = definitions()
+    held = withdrawn()
     out = []
     for c in CHARACTERS:
         out += [f'avatar_v2/{c}/base@{s}.png' for s in SHIPPED_SKINS]
         for item, slot in defs:
-            if slot in ITEM_SLOTS and item not in BLANK:
+            if slot in ITEM_SLOTS and item not in BLANK and                     item not in held.get(c, ()):
                 out.append(f'avatar_v2/{c}/{slot}_{item}.png')
                 if slot == 'hair' and item in HAIR_BACKS:
                     out.append(f'avatar_v2/{c}/{slot}_{item}_back.png')

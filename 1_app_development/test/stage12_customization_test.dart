@@ -145,15 +145,16 @@ void main() {
       }
     });
 
-    test('수집 대상은 72종(붕어빵 7, 사장님 44, 가게 21), 캐릭터·피부톤은 제외', () {
+    test('수집 대상은 73종(붕어빵 7, 사장님 45, 가게 21), 캐릭터·피부톤은 제외', () {
       // 26번 4-7단계: 하의 6종 추가(v2 그림 전에는 꾸미기 창에서 숨김).
-      expect(collectibleCosmeticCount, 72);
+      // 26번 3차 AV3: 낮게 묶은 머리 추가(그림 전에는 숨김).
+      expect(collectibleCosmeticCount, 73);
       expect(collectibleCount(CosmeticCategory.bungeoppang), 7); // No flavours.
-      expect(collectibleCount(CosmeticCategory.avatar), 44);
+      expect(collectibleCount(CosmeticCategory.avatar), 45);
       expect(collectibleCount(CosmeticCategory.stall), 21); // + 등불 3
       expect(
           cosmeticDefinitions.fold(BigInt.zero, (a, d) => a + d.cost),
-          BigInt.from(545)); // + 하의 6종 5+5+6+7+8+9
+          BigInt.from(550)); // + 하의 6종 5+5+6+7+8+9, 낮게 묶은 머리 5 (AV3)
       expect(inSlot(CosmeticSlot.skin).every((d) => d.free), isTrue);
       expect(inSlot(CosmeticSlot.character).map((d) => d.id), ['girl', 'boy']);
       expect(inSlot(CosmeticSlot.character).every((d) => d.free), isTrue);
@@ -162,7 +163,8 @@ void main() {
           .fold(BigInt.zero, (a, d) => a + d.cost);
       // 145 at stage 12, plus stage 14's items in those slots and short,
       // less the chef coat and padded vest (18), tops since 26번 4-5단계.
-      expect(stage12Coins, BigInt.from(205));
+      // 26번 3차 AV3: + 낮게 묶은 머리 5.
+      expect(stage12Coins, BigInt.from(210));
     });
   });
 
@@ -327,7 +329,7 @@ void main() {
       expect(await c.buyOrEquipCosmetic('goldtongs'), isTrue);
       expect(achievementMet(c.state, def('avatar-5')), isTrue);
       expect(await c.claimAchievement('avatar-5'), isTrue);
-      expect(achievementTarget(def('cosmetics-all')), BigInt.from(72));
+      expect(achievementTarget(def('cosmetics-all')), BigInt.from(73));
     });
 
     test('레벨업 알림은 새로 열린 꾸미기를 분류별 한 줄로 알린다', () async {

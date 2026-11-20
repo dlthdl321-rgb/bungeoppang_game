@@ -156,6 +156,10 @@ const cosmeticDefinitions = [
   CosmeticDefinition('long', '긴 생머리', CosmeticSlot.hair, '0', 1),
   CosmeticDefinition('short', '짧은 머리', CosmeticSlot.hair, '3', 1),
   CosmeticDefinition('ponytail', '묶은 머리', CosmeticSlot.hair, '5', 2),
+  // 26번 3차 AV3 (DEC-TBD-hAV3-4): tied low at the nape, so every hat fits
+  // over it. Price and unlock copy the ponytail (placeholder). Withdrawn
+  // ([withdrawnAvatarItems]) until its art (25번) is in.
+  CosmeticDefinition('lowponytail', '낮게 묶은 머리', CosmeticSlot.hair, '5', 2),
   CosmeticDefinition('curly', '곱슬머리', CosmeticSlot.hair, '8', 5),
   CosmeticDefinition('apron', '기본 앞치마', CosmeticSlot.outfit, '0', 1),
   // Stage 26 4-4: the default apron is drawn now; this takes it off.
@@ -346,12 +350,36 @@ const blankCosmetics = {
 /// drawn without it. A redraw goes to 25번 and the entry comes out.
 const withdrawnAvatarItems = <String, Set<String>>{
   // 26번 3차 AV: the golden tongs came back as the golden turner (25번 41번).
-  'girl': {},
-  'boy': {},
+  // 26번 3차 AV3 (DEC-TBD-hAV3-4): the low ponytail waits for its art; take
+  // it out of both sets once its pictures are in avatar_v2/.
+  'girl': {'lowponytail'},
+  'boy': {'lowponytail'},
 };
 
 bool avatarItemWithdrawn(String character, String id) =>
     withdrawnAvatarItems[character]?.contains(id) ?? false;
+
+/// Hats that cannot be worn over a hair style (26번 3차 AV3, DEC-TBD-hAV3-3,
+/// 2026-11-20 사용자 결정): the high ponytail's knot sits on the crown, so a
+/// hat covering the whole crown cannot go over it. Caps and earmuffs can.
+const hairBlockedHats = <String, Set<String>>{
+  'ponytail': {'beanie', 'bandana', 'redbandana', 'chefhat', 'santa', 'newsboy'},
+};
+
+/// Whether [hair] and [hat] cannot be worn together.
+bool hairHatClash(String hair, String hat) =>
+    hairBlockedHats[hair]?.contains(hat) ?? false;
+
+/// The hat drawn over [hair]: none when the two cannot go together (a save
+/// or a received look holding such a pair).
+String wearableHat(String hair, String hat) =>
+    hairHatClash(hair, hat) ? defaultCosmetics[CosmeticSlot.hat]! : hat;
+
+/// Why a hat cannot be picked over the hair worn (center toast).
+const hatOverHairText = '묶은 머리에는 이 모자를 쓸 수 없어요';
+
+/// Why a hair style cannot be picked under the hat worn (center toast).
+const hairUnderHatText = '이 모자를 쓰면 묶은 머리를 할 수 없어요';
 
 /// Whether the [time] choice shows the night, or null to keep each
 /// background's own time ('scenetime'). 'clock' follows the device: night

@@ -308,9 +308,9 @@ void main() {
       expect(find.byKey(const Key('wardrobe-apply-all')), findsNothing);
       await _tap(tester, 'wardrobe-buy-all');
       expect(find.byKey(const Key('wardrobe-buy-all-dialog')), findsOneWidget);
-      expect(find.text('1개 모두 사기'), findsOneWidget);
+      expect(find.text('남자 사장님 사기'), findsOneWidget); // one item (no skin tone since AV3)
       expect(find.byKey(const Key('wardrobe-buy-row-boy')), findsOneWidget);
-      expect(find.byKey(const Key('wardrobe-buy-all-total')), findsOneWidget);
+      expect(find.byKey(const Key('wardrobe-buy-all-total')), findsNothing); // a total only for 2+
       await _tap(tester, 'wardrobe-buy-all-confirm');
       expect(c.ownsAvatar('boy'), isTrue, reason: c.notice);
       expect(c.state.avatarEquipment['character'], 'boy');

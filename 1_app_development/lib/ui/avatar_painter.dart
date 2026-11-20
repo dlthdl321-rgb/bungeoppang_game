@@ -43,14 +43,15 @@ class AvatarLook {
 
   static final _paint = Paint()..filterQuality = FilterQuality.medium;
 
-  /// The item worn in [slot] (only the slots with a layer).
+  /// The item worn in [slot] (only the slots with a layer). A hat that
+  /// cannot go over the hair (26번 3차 AV3, [hairHatClash]) is not drawn.
   String worn(CosmeticSlot slot) => switch (slot) {
         CosmeticSlot.hair => hair,
         CosmeticSlot.top => top,
         CosmeticSlot.bottom => bottom,
         CosmeticSlot.shoes => shoes,
         CosmeticSlot.outfit => outfit,
-        CosmeticSlot.hat => hat,
+        CosmeticSlot.hat => wearableHat(hair, hat),
         CosmeticSlot.accessory => accessory,
         CosmeticSlot.tool => tool,
         _ => defaultCosmetics[slot]!,

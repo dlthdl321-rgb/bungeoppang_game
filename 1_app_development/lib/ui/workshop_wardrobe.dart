@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
 import 'avatar_face.dart';
 import 'avatar_painter.dart';
+import 'center_toast.dart';
 import 'cozy_style.dart';
 import 'currency_amount.dart';
 import 'fish_painter.dart';
@@ -122,7 +123,27 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
 
   List<CosmeticDefinition> get _picked => [for (final e in picks.entries) _def(e.key, e.value)];
 
-  void _pick(CosmeticDefinition d) => setState(() {
+  /// Why [d] cannot go with the [other] hair or hat (26번 3차 AV3,
+  /// DEC-TBD-hAV3-3: the high ponytail under a hat over the crown).
+  String? _clash(CosmeticDefinition d, String Function(CosmeticSlot) other) =>
+      d.slot == CosmeticSlot.hat && hairHatClash(other(CosmeticSlot.hair), d.id)
+          ? hatOverHairText
+          : d.slot == CosmeticSlot.hair && hairHatClash(d.id, other(CosmeticSlot.hat))
+              ? hairUnderHatText
+              : null;
+
+  /// Tries [d] on; a hair and hat that cannot go together are not tried
+  /// on (a short notice says why, what is tried on stays).
+  void _pick(CosmeticDefinition d) {
+    final clash = _clash(d, _shown);
+    if (clash != null) {
+      showCenterToast(context, clash);
+      return;
+    }
+    _toggle(d);
+  }
+
+  void _toggle(CosmeticDefinition d) => setState(() {
         message = null;
         if (a.equipped(d.slot) == d.id) {
           picks.remove(d.slot);
@@ -143,7 +164,7 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
   /// the names that failed.
   Future<List<String>> _wear(Iterable<CosmeticDefinition> items) async {
     final failed = <String>[];
-    for (final d in items.toList()) {
+    for (final d in _ordered(items)) {
       if (await a.apply(d)) {
         picks.remove(d.slot);
       } else {
@@ -152,6 +173,18 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
       if (!mounted) break;
     }
     return failed;
+  }
+
+  /// [items] in an order that never wears the high ponytail under a hat
+  /// over the crown on the way (26번 3차 AV3): the hair first, unless the
+  /// new hair cannot go under the hat worn now - then the hat first.
+  List<CosmeticDefinition> _ordered(Iterable<CosmeticDefinition> items) {
+    final list = items.toList();
+    final hair = list.where((d) => d.slot == CosmeticSlot.hair).firstOrNull;
+    final hat = list.where((d) => d.slot == CosmeticSlot.hat).firstOrNull;
+    final first = hair != null && hat != null && hairHatClash(hair.id, a.equipped(CosmeticSlot.hat)) ? hat : hair;
+    if (first != null) list..remove(first)..insert(0, first);
+    return list;
   }
 
   void _finish(List<String> failed, String why) {
@@ -237,13 +270,29 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
             ));
     if (ok != true || !mounted) return;
     setState(() => working = true);
-    final failed = await _wear(buy);
+    // A hair or hat already owned and tried on goes with the bought ones,
+    // so a bought hat can go on once the high ponytail is off (26번 3차 AV3).
+    final failed = await _wear([
+      ...buy,
+      ..._picked.where((d) => a.owned(d) && (d.slot == CosmeticSlot.hair || d.slot == CosmeticSlot.hat)),
+    ]);
     if (!mounted) return;
     if (failed.isNotEmpty) return _finish(failed, ' — 사지 못했어요');
     _finish(await _wear(_picked.where(a.owned)), ' — 지금 입을 수 없어요');
   }
 
   Future<void> _buy(CosmeticDefinition d) async {
+    // 26번 3차 AV3: a hat that cannot go over the hair worn (or hair under
+    // the hat worn) is bought only when the other one tried on is owned and
+    // worn first; otherwise nothing is bought.
+    final other = d.slot == CosmeticSlot.hat ? CosmeticSlot.hair : CosmeticSlot.hat;
+    final clash = _clash(d, a.equipped);
+    final otherPick = picks[other];
+    final before = clash == null || otherPick == null ? null : _def(other, otherPick);
+    if (clash != null && (before == null || !a.owned(before) || _clash(d, (s) => s == other ? before.id : a.equipped(s)) != null)) {
+      showCenterToast(context, clash);
+      return;
+    }
     final price = a.cost?.call(d);
     final ok = await showDialog<bool>(
         context: context,
@@ -265,6 +314,15 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
             ));
     if (ok != true || !mounted) return;
     setState(() => working = true);
+    if (before != null && !await a.apply(before)) {
+      if (!mounted) return;
+      setState(() {
+        working = false;
+        message = '${before.name}을(를) 입지 못했어요.';
+      });
+      return;
+    }
+    if (!mounted) return;
     final bought = await a.apply(d);
     if (!mounted) return;
     setState(() {
