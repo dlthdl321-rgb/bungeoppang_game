@@ -56,7 +56,7 @@ void main() {
     final c = WorkshopController(config, MemoryRepository(), now: () => now, random: Random(5),
         monotonicMs: mono ?? () => 0);
     await c.initialize();
-    expect(await c.command(() => c.state.tutorial = 'done'), isTrue);
+    expect(await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy')), isTrue);
     expect(await c.openBusiness(), isTrue);
     return (c, (DateTime t) => now = t);
   }
@@ -375,7 +375,7 @@ void main() {
       await lifecycle(AppLifecycleState.resumed);
       expect(notifier.cancels, 1);
 
-      expect(await c.command(() => c.state.tutorial = 'done'), isTrue);
+      expect(await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy')), isTrue);
       expect(await c.openBusiness(), isTrue);
       notifier.scheduled.clear();
       await lifecycle(AppLifecycleState.inactive);
@@ -405,7 +405,7 @@ void main() {
       await tester.pumpWidget(GameApp(controller: account, workshop: c, notifier: notifier));
       await tester.pump();
       expect(find.byKey(const Key('notice-prompt')), findsNothing, reason: '판매 전에는 묻지 않음');
-      expect(await c.command(() => c.state.tutorial = 'skipped'), isTrue);
+      expect(await c.command(() => c.state..tutorial = 'skipped'..featureIntros.add('fairy')), isTrue);
       expect(await c.openBusiness(), isTrue);
       expect(await c.welcomeCustomer(), isTrue);
       final order = c.state.customers.single;

@@ -1,16 +1,13 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import '../cooking_paint.dart';
 import '../cooking_result_rules.dart';
 import '../cooking_session.dart';
 import '../cosmetic_config.dart';
 import '../development_balance.dart';
-import '../economy.dart' show compactNumber;
 import '../feedback_config.dart';
-import '../game_audio.dart';
 import '../workshop_controller.dart';
 import '../workshop_feature_unlocks.dart';
 import 'center_toast.dart';
@@ -23,7 +20,7 @@ import 'piping_bag_control.dart';
 import 'cozy_style.dart';
 import 'pixel_sprites.dart';
 import 'sparkle_art.dart';
-import 'tap_effects.dart';
+import 'workshop_fairy.dart';
 import 'workshop_home_layout.dart';
 
 /// Presentation only. All commands still pass through WorkshopController.
@@ -287,25 +284,29 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
             control = const SizedBox.shrink();
         }
       }
+      final hideAbove = limitLocal ?? counterLocal;
       return Stack(key: const Key('workshop-center-stage'), children: [
         mold(control),
         // In the stage itself, not the mold: the floating fish sits above the
         // mold's place and must still be hit-testable there.
         if (clicker)
-          Positioned.fromRect(
-              rect: !floating
-                  ? rect
-                  : widget.lowStall && counterLocal != null
-                      // Just above the counter's button row, 0.8 of the
-                      // mold's place, the guests behind it (S4-1-Q5).
-                      ? Rect.fromCenter(
-                          center: Offset(box.maxWidth / 2,
-                              counterLocal - WorkshopHomeLayout.clickerLift - rect.height * WorkshopHomeLayout.clickerScale / 2),
-                          width: rect.width * WorkshopHomeLayout.clickerScale,
-                          height: rect.height * WorkshopHomeLayout.clickerScale)
-                      : rect.shift(Offset(0, -rect.height * .75)),
+          Positioned.fill(
               child: WorkshopClicker(
                   controller: c,
+                  home: !floating
+                      ? rect
+                      : widget.lowStall && counterLocal != null
+                          // Just above the counter's button row, 0.8 of the
+                          // mold's place, the guests behind it (S4-1-Q5).
+                          ? Rect.fromCenter(
+                              center: Offset(box.maxWidth / 2,
+                                  counterLocal - WorkshopHomeLayout.clickerLift - rect.height * WorkshopHomeLayout.clickerScale / 2),
+                              width: rect.width * WorkshopHomeLayout.clickerScale,
+                              height: rect.height * WorkshopHomeLayout.clickerScale)
+                          : rect.shift(Offset(0, -rect.height * .75)),
+                  // 붕어빵 요정 (4차 IA3): hides from guests at the right
+                  // edge, clear of the cooking cut and the counter.
+                  hideBottom: hideAbove == null ? null : hideAbove - FairyMotion.hideGap,
                   floating: floating,
                   reduceMotion: widget.reduceMotion,
                   vibration: widget.vibration)),
@@ -676,157 +677,6 @@ class MoldAxlePainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant MoldAxlePainter old) =>
       old.grow != grow || old.front != front || old.hint != hint;
-}
-
-/// The big bungeoppang clicker in business (DEC-036): each tap goes through
-/// [WorkshopController.clickerTap] (buns +tapRate) and shows the tap effects
-/// of tap_effects.dart: a pop, small bungeoppang crumbs and a floating gain.
-/// Taps past the per-second limit still pop and crumble but earn nothing,
-/// so they show no gain. Reduced motion shows only a still gain.
-class WorkshopClicker extends StatefulWidget {
-  static const maxBursts = maxFloatingGains;
-  final WorkshopController controller;
-  /// Draws the floating fish (a clean counter); otherwise the background's
-  /// baked fish is the target and only the effects are drawn.
-  final bool floating, reduceMotion, vibration;
-  const WorkshopClicker(
-      {super.key,
-      required this.controller,
-      required this.floating,
-      this.reduceMotion = false,
-      this.vibration = false});
-  @override
-  State<WorkshopClicker> createState() => _WorkshopClickerState();
-}
-
-class _WorkshopClickerState extends State<WorkshopClicker>
-    with SingleTickerProviderStateMixin {
-  late final Ticker _ticker;
-  final _crumbs = CrumbPool(maxCrumbParticles, crumbLifeMs);
-  final _bursts = <(int, BigInt, Offset)>[];
-  final _haptics = Stopwatch()..start();
-  int _elapsed = 0, _lastTap = -100000, _serial = 0;
-  int? _lastHaptic;
-  Offset? _down;
-  Size _box = Size.zero;
-  BigInt? _staticGain;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = createTicker((duration) {
-      setState(() {
-        _elapsed = duration.inMilliseconds;
-        _bursts.removeWhere((b) => _elapsed - b.$1 >= floatingGainMs);
-        _crumbs.update(_elapsed);
-      });
-      if (_bursts.isEmpty && _crumbs.activeCount == 0 && _elapsed - _lastTap > tapPopMs) {
-        _ticker.stop();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
-  }
-
-  void _tap() {
-    final c = widget.controller;
-    if (c.gameplayPaused || c.error != null) return;
-    final amount = c.clickerTap();
-    GameAudioScope.of(context).play(Sfx.tap);
-    final at = _down ?? _box.center(Offset.zero);
-    _down = null;
-    final now = _haptics.elapsedMilliseconds;
-    if (widget.vibration && (_lastHaptic == null || now - _lastHaptic! >= 80)) {
-      _lastHaptic = now;
-      HapticFeedback.selectionClick();
-    }
-    setState(() {
-      if (amount != null) _staticGain = amount;
-      if (widget.reduceMotion) return;
-      if (!_ticker.isActive) {
-        _elapsed = 0;
-        _bursts.clear();
-        _crumbs.clear();
-        _ticker.start();
-      }
-      _lastTap = _elapsed;
-      if (amount != null) {
-        if (_bursts.length == WorkshopClicker.maxBursts) _bursts.removeAt(0);
-        _bursts.add((_elapsed, amount, at.translate(((_serial++ % 5) - 2) * 6.0, 0)));
-      }
-      _crumbs.spawn(at, _elapsed, crumbsPerTap);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final reduce = widget.reduceMotion;
-    final pop = reduce ? 1.0 : tapPopScale((_elapsed - _lastTap) / tapPopMs);
-    return Semantics(
-        button: true,
-        label: '큰 붕어빵 누르기, 붕어빵력 +${compactNumber(widget.controller.tapRate)}',
-        onTap: _tap,
-        child: GestureDetector(
-            key: const Key('workshop-clicker'),
-            behavior: HitTestBehavior.opaque,
-            excludeFromSemantics: true,
-            onTapDown: (d) => _down = d.localPosition,
-            onTapCancel: () => _down = null,
-            onTap: _tap,
-            child: LayoutBuilder(builder: (context, box) {
-              _box = box.biggest;
-              return Stack(clipBehavior: Clip.none, children: [
-                if (widget.floating)
-                  Positioned.fill(
-                      child: Transform.scale(
-                          key: const Key('clicker-scale'),
-                          scale: pop,
-                          child: const CustomPaint(
-                              key: Key('floating-fish'),
-                              painter: FloatingFishPainter()))),
-                // Twinkling one after another (26번 4단계 F11), still with
-                // reduced motion.
-                if (widget.floating)
-                  Positioned.fill(
-                      child: TwinklingSparkles(
-                          points: FloatingFishPainter.sparkles, reduceMotion: reduce)),
-                if (!reduce)
-                  Positioned.fill(
-                      child: IgnorePointer(
-                          child: CustomPaint(
-                              painter: CrumbPainter(_crumbs, _elapsed,
-                                  fish: PixelSprites.fx('minifish') ??
-                                      PixelSprites.fish('redbean', 'scales'))))),
-                for (final burst in _bursts)
-                  Positioned(
-                      key: ValueKey(burst),
-                      left: (burst.$3.dx - 40).clamp(0.0, math.max(0, box.maxWidth - 120)),
-                      top: (burst.$3.dy - 34).clamp(0.0, math.max(0.0, box.maxHeight - 40)) -
-                          (_elapsed - burst.$1) / floatingGainMs * 65,
-                      child: IgnorePointer(
-                          child: ExcludeSemantics(
-                              child: Opacity(
-                                  opacity: (1 - (_elapsed - burst.$1) / floatingGainMs).clamp(0.0, 1.0),
-                                  child: _gain(burst.$2, const Key('clicker-burst')))))),
-                if (reduce && _staticGain != null)
-                  Align(
-                      alignment: Alignment.topCenter,
-                      child: IgnorePointer(child: _gain(_staticGain!, const Key('clicker-static-gain')))),
-              ]);
-            })));
-  }
-
-  static Widget _gain(BigInt amount, Key key) => Text('+${compactNumber(amount)}',
-      key: key,
-      style: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w900,
-          color: Color(0xffffedab),
-          shadows: [Shadow(color: Colors.black, blurRadius: 4)]));
 }
 
 /// The mockup's floating bungeoppang: no mold, a little larger. Its

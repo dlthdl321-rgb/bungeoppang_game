@@ -26,7 +26,7 @@ void main() {
     final c = WorkshopController(config, MemoryRepository(),
         now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => mono);
     await c.initialize();
-    await c.command(() => c.state.tutorial = tutorial);
+    await c.command(() => c.state..tutorial = tutorial..featureIntros.add('fairy'));
     return (c, (int ms) => mono += ms);
   }
 
@@ -120,7 +120,7 @@ void main() {
       expect(workshopTutorialStep(c.state, ready: 0)!.target, 'workshop-mold');
       await c.openBusiness();
       final waiting = workshopTutorialStep(c.state, ready: 0)!;
-      expect(waiting.text, contains('큰 붕어빵을 톡톡'));
+      expect(waiting.text, contains('붕어빵 요정을 톡톡'));
       expect(waiting.target, 'workshop-clicker');
       await order(c);
       final produce = workshopTutorialStep(c.state, ready: 0)!;
@@ -176,8 +176,10 @@ void main() {
       await tester.pump();
       expect(key('workshop-clicker'), findsOneWidget);
       expect(key('floating-fish'), findsOneWidget);
-      // 26번 4단계 F11: its sparkles are a separate twinkling layer.
-      expect(key('twinkling-sparkles'), findsOneWidget);
+      // 4차 IA3: the 붕어빵 요정 twinkles only when tapped.
+      expect(key('twinkling-sparkles'), findsNothing);
+      expect(key('fairy-twinkle'), findsNothing);
+      expect(key('fairy-swimming'), findsOneWidget);
       expect(key('idle-mold'), findsNothing);
       expect(key('workshop-mold-action'), findsNothing);
       expect(find.text('스페셜 붕어빵 제작 시작'), findsNothing);
@@ -197,10 +199,27 @@ void main() {
       expect(key('clicker-static-gain'), findsOneWidget);
 
       // A new order no longer brings the mold back for a while.
+      final home = tester.getRect(key('workshop-clicker'));
       await order(c);
       await tester.pump();
       expect(key('workshop-clicker'), findsOneWidget);
       expect(key('idle-mold'), findsNothing);
+      // 4차 IA3: shy, the fairy hides at the right edge, half on screen,
+      // still a fair target, and its taps count the same.
+      expect(key('fairy-hiding'), findsOneWidget);
+      final hiding = tester.getRect(key('workshop-clicker'));
+      expect(hiding.right, greaterThan(390));
+      expect(hiding.width, lessThan(home.width));
+      expect(390 - hiding.left, greaterThanOrEqualTo(56));
+      expect(hiding.height, greaterThanOrEqualTo(56));
+      final hiddenTaps = c.state.taps;
+      await tester.tapAt(Offset(390 - 20, hiding.center.dy));
+      await tester.pump();
+      expect(c.state.taps, hiddenTaps + 1);
+      final semantics = tester.ensureSemantics();
+      await tester.pump();
+      expect(find.bySemanticsLabel(RegExp('^숨어 있는 붕어빵 요정 누르기')), findsOneWidget);
+      semantics.dispose();
       await tester.pump(const Duration(seconds: 3));
       expect(key('workshop-clicker'), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -239,7 +258,10 @@ void main() {
       expect(key('floating-fish'), findsOneWidget);
       expect(key('active-empty-mold'), findsNothing);
       final taps = c.state.taps;
-      await tester.tap(key('workshop-clicker'));
+      // The order's guest may still wait (the fairy peeks from the right
+      // edge): tap the part on screen.
+      final fairy = tester.getRect(key('workshop-clicker'));
+      await tester.tapAt(Offset(fairy.center.dx.clamp(0, 390 - 20), fairy.center.dy));
       await tester.pump();
       expect(c.state.taps, taps + 1);
       expect(tester.takeException(), isNull);

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:todays_bungeoppang/ui/night_home.dart';
 import 'package:todays_bungeoppang/ui/sparkle_art.dart';
 import 'package:todays_bungeoppang/ui/weather_layer.dart';
+import 'package:todays_bungeoppang/ui/workshop_fairy.dart';
 
 /// Runs before every test file in this folder.
 Future<void> testExecutable(FutureOr<void> Function() testMain) async {
@@ -9,6 +10,7 @@ Future<void> testExecutable(FutureOr<void> Function() testMain) async {
   // tests see one still frame instead.
   WeatherLayer.animate = false;
   TwinklingSparkles.animate = false;
+  FairyMotion.animate = false;
   WorkshopStatusBadge.animate = false;
   await testMain();
 }

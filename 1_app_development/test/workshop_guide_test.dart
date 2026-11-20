@@ -310,7 +310,7 @@ void main() {
       final account = await mountGame(tester, const Size(360, 800), reduced: true);
       final c = WorkshopController(load(), MemoryRepository(), now: () => now);
       await c.initialize();
-      await c.command(() => c.state.tutorial = 'done');
+      await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
       await c.openBusiness();
       await tester.pumpWidget(GameApp(controller: account, workshop: c));
       await tester.pump();

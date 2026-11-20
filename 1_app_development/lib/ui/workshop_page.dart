@@ -163,12 +163,12 @@ class _WorkshopPageState extends State<WorkshopPage> {
   /// The list behind 설정 > 튜토리얼 다시 보기: every feature with a card,
   /// open ones replayable, closed ones under the common lock with when.
   Future<void> _tourList()=>_window('튜토리얼',(ctx)=>SingleChildScrollView(key:const Key('tour-list'),
-    // Built eagerly: nine rows, every one exists for screen readers too.
+    // Built eagerly: ten rows (the fairy's story last), every one exists for screen readers too.
     padding:const EdgeInsets.all(12),child:Column(children:[
       for(final f in workshopIntroFeatures)Padding(padding:const EdgeInsets.only(bottom:8),child:CozyMenuRow(
         key:Key('tour-replay-${f.name}'),icon:PixelIcon(featureIntro(f).fallbackIcon,size:28),iconSize:28,minHeight:52,
         title:featureName(f),subtitle:'소개와 짧은 안내 다시 보기',
-        lock:c.featureIsOpen(f) ? null : featureWaitText(c.state,c.config,f),
+        lock:featureReplayable(c.state,c.config,f) ? null : featureWaitText(c.state,c.config,f),
         onPressed:(){Navigator.pop(ctx);unawaited(_replayFeature(f));})),
     ])));
   bool _noticeAsking=false;

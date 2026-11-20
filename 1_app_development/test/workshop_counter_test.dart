@@ -29,7 +29,7 @@ void main() {
         monotonicMs: () => 0);
     await c.initialize();
     // A player past the first-run guide (workshop_guide_test covers the guide).
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
     await tester.pump();
     return c;
@@ -191,7 +191,7 @@ void main() {
     final repo = MemoryRepository();
     final c = WorkshopController(config, repo, now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => mono);
     await c.initialize();
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await c.openBusiness();
     await queue(c);
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
@@ -294,7 +294,7 @@ void main() {
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
     final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);
     await c.initialize();
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await c.openBusiness();
     expect(await c.welcomeCustomer(visitor: 'npc_taeo'), isTrue);
     await tester.pumpWidget(GameApp(controller: account, workshop: c));

@@ -156,6 +156,8 @@ void main() {
       await c.initialize();
       addTearDown(c.dispose);
       await c.skipTutorial();
+      // 4차 IA3: the 붕어빵 요정 story card is not what this test is about.
+      await c.command(() => c.state.featureIntros.add('fairy'));
       expect(await c.openBusiness(), isTrue);
       expect(await c.command(() => c.state.inventory = c.state.inventory.recordResult(ProductBatch(id: 'old',
           flavor: 'redbean', variant: 2, quantity: 1, madeOnBusinessIndex: c.state.business.businessIndex), keep: true)),
@@ -213,6 +215,34 @@ void main() {
       final lowOld = low.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily');
       final lowMigrated = WorkshopState.fromJson(lowOld, config)..level = 2;
       expect(pendingFeatureIntro(lowMigrated, config), WorkshopFeature.skills);
+    });
+
+    test('4차 IA3: 붕어빵 요정 이야기 카드는 안내 뒤 요정이 나와 있을 때 한 번', () async {
+      final c = await open();
+      addTearDown(c.dispose);
+      // During the guide: never.
+      await c.openBusiness();
+      expect(c.pendingIntro, isNull);
+      await c.skipTutorial();
+      // 4차 g5: the 꾸미기·상점·오늘 card comes first right after the guide.
+      expect(c.pendingIntro, WorkshopFeature.wardrobe);
+      expect(await c.markIntroSeen(WorkshopFeature.wardrobe), isTrue);
+      expect(c.pendingIntro, WorkshopFeature.fairy);
+      expect(featureLockReason(c.state, config, WorkshopFeature.fairy), isNull);
+      // A guest waiting: the fairy is hiding, so the card waits too.
+      await c.command(() => c.state.customers.add(CustomerOrder(id: 'g', customerId: 'anonymous_g',
+          remainingMs: 100000, lines: [CustomerOrderLine(flavor: 'redbean', quantity: 1)])));
+      expect(c.pendingIntro, isNull);
+      await c.command(() => c.state.customers.clear());
+      expect(c.pendingIntro, WorkshopFeature.fairy);
+      expect(await c.markIntroSeen(WorkshopFeature.fairy), isTrue);
+      expect(c.pendingIntro, isNull);
+      expect(c.state.toJson()['featureIntros'], ['fairy', 'wardrobe']);
+      expect(WorkshopState.fromJson(c.state.toJson(), config).featureIntros, {'fairy', 'wardrobe'});
+      // An old save (schema 7) still meets the fairy once.
+      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily');
+      expect(WorkshopState.fromJson(old, config).featureIntros, isNot(contains('fairy')));
+      expect(featureIntro(WorkshopFeature.fairy).title, '붕어빵 요정을 만났어요');
     });
 
     test('잘못된 기록은 거절한다', () async {
@@ -329,6 +359,8 @@ void main() {
       final c = await mount(tester);
       await c.skipTutorial();
       expect(await c.markIntroSeen(WorkshopFeature.wardrobe), isTrue);
+      // 4차 IA3: the 붕어빵 요정 story card is not what this test is about.
+      await c.command(() => c.state.featureIntros.add('fairy'));
       expect(await c.openBusiness(), isTrue);
       await tester.pump();
       await tester.pump();
