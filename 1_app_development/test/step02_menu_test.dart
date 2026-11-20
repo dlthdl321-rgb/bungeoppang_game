@@ -27,7 +27,7 @@ void main(){
     expect(await c.skipTutorial(),isTrue);
     // Lv.8 opens every menu row; the cards were seen (they have their own test).
     expect(await c.command((){c.state.level=8;c.state.claimedLevels.addAll([for(var n=2;n<=8;n++)n]);
-      c.state.featureIntros.addAll(['skills','collection','recipes','specialOrders','fishCosmetics','stallCosmetics']);}),isTrue);
+      c.state.featureIntros.addAll(['wardrobe','skills','collection','recipes','specialOrders','fishCosmetics','stallCosmetics']);}),isTrue);
     await tester.pump();
     await tapKey('menu-shop');
     expect(tester.getBottomRight(find.byType(CozyBackButton)).dy,lessThanOrEqualTo(776));

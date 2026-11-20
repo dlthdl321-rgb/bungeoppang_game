@@ -86,23 +86,35 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
           if (d.slot == s && a.listed(d) && !a.owned(d) && _forSale(d)) d,
       ];
 
+  /// Every slot of [t], open or not: a closed one stays listed under the
+  /// lock (4차 g5 '잠긴 것도 보이게').
   List<CosmeticSlot> _slots(WardrobeTab t) => [
         for (final s in CosmeticSlot.values)
-          if (s.shown && s.tab == t && (a.slotOpen?.call(s) ?? true) && (!shop || _items(s).isNotEmpty)) s
+          if (s.shown && s.tab == t && (!shop || _items(s).isNotEmpty)) s
       ];
 
   List<WardrobeTab> get _tabs => [
         for (final t in WardrobeTab.values)
-          if ((a.tabOpen?.call(t) ?? true) && _slots(t).isNotEmpty) t
+          if (_slots(t).isNotEmpty) t
       ];
+
+  /// Why [t] is still closed, or null.
+  String? _tabLock(WardrobeTab t) => a.tabLock?.call(t);
+
+  /// Why [s] is still closed (its tab's reason first), or null.
+  String? _slotLock(CosmeticSlot s) => _tabLock(s.tab) ?? a.slotLock?.call(s);
+
+  List<WardrobeTab> get _openTabs => [for (final t in _tabs) if (_tabLock(t) == null) t];
+
+  List<CosmeticSlot> _openSlots(WardrobeTab t) => [for (final s in _slots(t)) if (_slotLock(s) == null) s];
 
   @override
   void initState() {
     super.initState();
-    final tabs = _tabs;
+    final tabs = _openTabs;
     final start = widget.initialSlot?.tab ?? widget.initialTab;
     tab = tabs.contains(start) ? start : (tabs.isEmpty ? widget.initialTab : tabs.first);
-    final slots = _slots(tab);
+    final slots = _openSlots(tab);
     slot = slots.contains(widget.initialSlot) ? widget.initialSlot! : (slots.isEmpty ? CosmeticSlot.hair : slots.first);
   }
 
@@ -342,11 +354,11 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
 
   @override
   Widget build(BuildContext context) {
-    final tabs = _tabs;
-    if (!tabs.contains(tab) && tabs.isNotEmpty) tab = tabs.first;
-    final slots = _slots(tab);
-    if (!slots.contains(slot) && slots.isNotEmpty) slot = slots.first;
-    if (tabs.isEmpty) {
+    final tabs = _tabs, openTabs = _openTabs;
+    if (!openTabs.contains(tab) && openTabs.isNotEmpty) tab = openTabs.first;
+    final slots = _slots(tab), openSlots = _openSlots(tab);
+    if (!openSlots.contains(slot) && openSlots.isNotEmpty) slot = openSlots.first;
+    if (openTabs.isEmpty) {
       return const Center(
           key: Key('wardrobe-empty'),
           child: Padding(padding: EdgeInsets.all(24), child: Text('지금 살 수 있는 꾸미기를 모두 모았어요.', textAlign: TextAlign.center)));
@@ -371,9 +383,10 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
                       WardrobeTab.stall => 'tab_stall',
                     },
                     selected: t == tab,
+                    lock: _tabLock(t),
                     onTap: () => setState(() {
                           tab = t;
-                          slot = _slots(t).first;
+                          slot = _openSlots(t).first;
                         })),
             ],
           ),
@@ -393,6 +406,7 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
                     small: true,
                     selected: s == slot,
                     changed: picks.containsKey(s),
+                    lock: _slotLock(s),
                     onTap: () => setState(() => slot = s)),
             ],
           ),
@@ -773,8 +787,18 @@ class WardrobePill extends StatelessWidget {
   final String? icon;
   final bool selected, small, changed;
   final VoidCallback onTap;
+  /// Why this tab is still closed ('Lv.5 달성하면 열려요'), or null. A closed
+  /// tab is listed with its name greyed and the padlock art in its top-right
+  /// corner (like the bottom menu, H27; no stripe, which would cross the
+  /// short name on a 30px tab) and a tap says why in a center toast instead
+  /// of opening it (4차 g5).
+  final String? lock;
   const WardrobePill(
-      {super.key, required this.label, required this.selected, required this.onTap, this.icon, this.small = false, this.changed = false});
+      {super.key, required this.label, required this.selected, required this.onTap, this.icon, this.small = false,
+      this.changed = false, this.lock});
+
+  /// The corner padlock's side on a locked tab.
+  static const lockSize = 16.0;
 
   /// Corner radius of the tab's top, and how much taller the chosen tab is.
   static const radius = 7.0, raise = 4.0;
@@ -789,6 +813,26 @@ class WardrobePill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reason = lock;
+    if (reason == null) return _pill();
+    return Semantics(
+      key: key is ValueKey<String> ? Key('${(key as ValueKey<String>).value}-locked') : null,
+      button: true,
+      label: '잠김, $label: $reason',
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: () => showCenterToast(context, '$label: $reason'),
+        child: Stack(clipBehavior: Clip.none, fit: StackFit.passthrough, children: [
+          IgnorePointer(child: _pill()),
+          const Positioned(
+              top: 2, right: 2, child: SizedBox.square(dimension: lockSize, child: LockBadge())),
+        ]),
+      ),
+    );
+  }
+
+  Widget _pill() {
     const top = BorderRadius.vertical(top: Radius.circular(radius));
     return Semantics(
       button: true,
@@ -796,7 +840,7 @@ class WardrobePill extends StatelessWidget {
       label: label,
       excludeSemantics: true,
       child: Material(
-        color: selected ? Cozy.peach : Cozy.cream,
+        color: selected ? Cozy.peach : lock != null ? Cozy.line : Cozy.cream,
         shape: RoundedRectangleBorder(
             borderRadius: top,
             side: BorderSide(color: selected ? Cozy.woodLight : Cozy.tan, width: selected ? 1.5 : 1)),
@@ -813,7 +857,7 @@ class WardrobePill extends StatelessWidget {
                 return Padding(
                   padding: const EdgeInsets.fromLTRB(4, 3, 4, 3),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    PixelIcon(icon!, size: stackedIconSize),
+                    Opacity(opacity: lock != null ? .45 : 1, child: PixelIcon(icon!, size: stackedIconSize)),
                     FittedBox(
                       fit: BoxFit.scaleDown,
                       child: Text(label,
@@ -822,7 +866,7 @@ class WardrobePill extends StatelessWidget {
                               fontSize: 13,
                               height: 1.1,
                               fontWeight: FontWeight.w900,
-                              color: selected ? Cozy.ink : Cozy.taupe)),
+                              color: selected ? Cozy.ink : lock != null ? Cozy.inkSoft : Cozy.taupe)),
                     ),
                   ]),
                 );
@@ -830,7 +874,10 @@ class WardrobePill extends StatelessWidget {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
                 child: Row(mainAxisSize: MainAxisSize.min, mainAxisAlignment: MainAxisAlignment.center, children: [
-                  if (withIcon) ...[PixelIcon(icon!, size: iconSize), const SizedBox(width: 2)],
+                  if (withIcon) ...[
+                    Opacity(opacity: lock != null ? .45 : 1, child: PixelIcon(icon!, size: iconSize)),
+                    const SizedBox(width: 2)
+                  ],
                   Flexible(
                     child: FittedBox(
                       fit: BoxFit.scaleDown,
@@ -839,7 +886,7 @@ class WardrobePill extends StatelessWidget {
                           style: TextStyle(
                               fontSize: small ? 13.5 : 14.5,
                               fontWeight: FontWeight.w900,
-                              color: selected ? Cozy.ink : Cozy.taupe)),
+                              color: selected ? Cozy.ink : lock != null ? Cozy.inkSoft : Cozy.taupe)),
                     ),
                   ),
                   if (changed) ...[

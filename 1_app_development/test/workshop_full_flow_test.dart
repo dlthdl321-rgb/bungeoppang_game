@@ -174,10 +174,21 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(key('sale-praise'), findsNothing);
+    // 4차 g5: first the 꾸미기·상점·오늘 card and its short tour, then the
+    // griddle's card and its one-step tour.
+    expect(key('feature-intro-wardrobe'), findsOneWidget);
+    await tester.tap(key('feature-intro-ok'));
+    await tester.pumpAndSettle();
+    await tester.tap(key('tour-skip'));
+    await tester.pumpAndSettle();
     expect(key('feature-intro-griddle'), findsOneWidget);
     await tester.tap(key('feature-intro-ok'));
     await tester.pumpAndSettle();
     expect(c.state.featureIntros, contains('griddle'));
+    expect(key('tour-next'), findsOneWidget);
+    await tester.tap(key('tour-next'));
+    await tester.pumpAndSettle();
+    expect(key('tutorial-card'), findsNothing);
 
     // 둘째 손님에게는 남은 재고(보관한 연습 붕어빵과 수확분 중 남은 1개)를 판다.
     await nextGuest();

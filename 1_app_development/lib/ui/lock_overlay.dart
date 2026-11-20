@@ -75,7 +75,7 @@ class LockedOverlay extends StatelessWidget {
                           borderRadius: BorderRadius.circular(maxLock), border: Border.all(color: Cozy.woodLight),
                           boxShadow: Cozy.cardShadow),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        SizedBox.square(dimension: maxLock, child: const _LockBadge()),
+                        SizedBox.square(dimension: maxLock, child: const LockBadge()),
                         if (showCaption) ...[
                           const SizedBox(width: 3),
                           Flexible(child: Text(caption, key: const Key('lock-caption'), maxLines: 2, textAlign: TextAlign.center,
@@ -86,7 +86,7 @@ class LockedOverlay extends StatelessWidget {
                     )))))
               else
               Positioned.fill(child: IgnorePointer(child: Align(alignment: lockAlignment, child: Column(mainAxisSize: MainAxisSize.min, children: [
-                SizedBox.square(dimension: lock, child: const _LockBadge()),
+                SizedBox.square(dimension: lock, child: const LockBadge()),
                 if (roomForCaption)
                   Padding(
                     padding: const EdgeInsets.only(top: 2),
@@ -106,9 +106,10 @@ class LockedOverlay extends StatelessWidget {
       );
 }
 
-/// The padlock picture, or a drawn padlock until the art is loaded.
-class _LockBadge extends StatelessWidget {
-  const _LockBadge();
+/// The padlock picture (`ui/lock_badge`), or a drawn padlock until the art
+/// is loaded. Small tabs put it alone in their corner (4차 g5).
+class LockBadge extends StatelessWidget {
+  const LockBadge({super.key});
   @override
   Widget build(BuildContext context) {
     final art = PixelSprites.screenArt('lock_badge');

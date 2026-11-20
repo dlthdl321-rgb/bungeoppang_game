@@ -81,12 +81,15 @@ void main() {
         expect(c.featureIsOpen(f), isFalse, reason: f.name);
       }
       expect(c.featureLock(WorkshopFeature.wardrobe), '첫 영업 안내가 끝나면 열려요');
-      expect(c.featureLock(WorkshopFeature.skills), 'Lv.2에 열려요');
+      expect(c.featureLock(WorkshopFeature.skills), 'Lv.2 달성하면 열려요');
       expect(c.featureLock(WorkshopFeature.griddle), '팥 도감을 완성하면 열려요 (0/5)');
       expect(c.pendingIntro, isNull, reason: '안내 중에는 소개 카드 없음');
       expect(await c.skipTutorial(), isTrue);
       expect(c.featureIsOpen(WorkshopFeature.wardrobe), isTrue);
-      expect(c.pendingIntro, isNull, reason: '꾸미기는 소개 카드 없이 열림');
+      // 4차 g5: the guide's end brings the 꾸미기·상점·오늘 card.
+      expect(c.pendingIntro, WorkshopFeature.wardrobe);
+      expect(await c.markIntroSeen(WorkshopFeature.wardrobe), isTrue);
+      expect(c.pendingIntro, isNull);
       final opened = <int, Set<WorkshopFeature>>{};
       for (var level = 1; level <= 8; level++) {
         expect(await setLevel(c, level), isTrue);
@@ -163,6 +166,7 @@ void main() {
       clock = clock.add(const Duration(days: 1));
       expect(await c.openBusiness(), isTrue, reason: '${c.notice}');
       expect(c.featureIsOpen(WorkshopFeature.freshness), isTrue);
+      expect(await c.markIntroSeen(WorkshopFeature.wardrobe), isTrue);
       expect(c.pendingIntro, WorkshopFeature.freshness);
     });
   });
@@ -173,18 +177,20 @@ void main() {
       final c = await open(repository);
       await c.skipTutorial();
       expect(await setLevel(c, 3), isTrue);
-      expect(c.pendingIntro, WorkshopFeature.skills, reason: '여러 개면 정한 순서대로');
+      expect(c.pendingIntro, WorkshopFeature.wardrobe, reason: '여러 개면 정한 순서대로');
+      expect(await c.markIntroSeen(WorkshopFeature.wardrobe), isTrue);
+      expect(c.pendingIntro, WorkshopFeature.skills);
       expect(await c.markIntroSeen(WorkshopFeature.skills), isTrue);
       expect(c.pendingIntro, WorkshopFeature.collection);
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue);
       expect(c.pendingIntro, isNull);
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue, reason: '두 번 눌러도 그대로');
       expect(repository.saved!['schema'], 10);
-      expect(repository.saved!['featureIntros'], ['collection', 'skills']);
+      expect(repository.saved!['featureIntros'], ['collection', 'skills', 'wardrobe']);
       c.dispose();
       final again = await open(repository);
       addTearDown(again.dispose);
-      expect(again.state.featureIntros, {'skills', 'collection'});
+      expect(again.state.featureIntros, {'skills', 'collection', 'wardrobe'});
       expect(again.pendingIntro, isNull);
     });
 
@@ -252,11 +258,14 @@ void main() {
       expect(find.byKey(const Key('menu-menubar')), findsOneWidget, reason: '메뉴는 늘 열림');
       expect(find.byKey(const Key('auto-rate')), findsNothing);
       expect(find.byKey(const Key('tap-rate')), findsNothing);
-      expect(find.byKey(const Key('lock-hatch')), findsNWidgets(3));
+      // 4차 g5: the '오늘' slip is listed locked during the guide too.
+      expect(find.byKey(const Key('daily-ticket-locked')), findsOneWidget);
+      expect(find.byKey(const Key('daily-ticket')), findsNothing);
+      expect(find.byKey(const Key('lock-hatch')), findsNWidgets(4));
       // A tap on a locked button tells why and opens nothing.
       await tester.tap(find.byKey(const Key('menu-skills-locked')));
       await tester.pump();
-      expect(find.text('스킬: Lv.2에 열려요'), findsOneWidget);
+      expect(find.text('스킬: Lv.2 달성하면 열려요'), findsOneWidget);
       expect(find.byType(WorkshopSkillShop), findsNothing);
       // The centre notice (H23) is cleared by hand.
       CenterToast.hide();
@@ -268,6 +277,21 @@ void main() {
       expect(find.byKey(const Key('menu-skins-locked')), findsNothing);
       expect(find.byKey(const Key('menu-shop-locked')), findsNothing);
       expect(find.byKey(const Key('menu-skills-locked')), findsOneWidget);
+      // 4차 g5: the guide's end brings the 꾸미기·상점·오늘 card, then a short
+      // tour pointing at the real buttons; '건너뛰기' ends it.
+      await tester.pump();
+      expect(find.byKey(const Key('feature-intro-wardrobe')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('feature-intro-ok')));
+      await tester.pumpAndSettle();
+      expect(c.state.featureIntros, {'wardrobe'});
+      expect(find.text('꾸미기·상점·오늘 안내 1/3'), findsOneWidget);
+      expect(find.byKey(const Key('tutorial-ring')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('tour-next')));
+      await tester.pumpAndSettle();
+      expect(find.text('꾸미기·상점·오늘 안내 2/3'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('tour-skip')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tutorial-card')), findsNothing);
 
       // Lv.2: the skill card once, then the window and the numbers.
       expect(await setLevel(c, 2), isTrue);
@@ -281,7 +305,16 @@ void main() {
       await tester.tap(find.byKey(const Key('feature-intro-ok')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('feature-intro-skills')), findsNothing);
-      expect(c.state.featureIntros, {'skills'});
+      expect(c.state.featureIntros, {'wardrobe', 'skills'});
+      // The skills tour: two steps, the last one says '알겠어요'.
+      expect(find.text('스킬 안내 1/2'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('tour-next')));
+      await tester.pumpAndSettle();
+      expect(find.text('스킬 안내 2/2'), findsOneWidget);
+      expect(find.text('알겠어요'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('tour-next')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tutorial-card')), findsNothing);
       expect(find.byKey(const Key('menu-skills-locked')), findsNothing);
       expect(find.byKey(const Key('auto-rate')), findsOneWidget);
       expect(find.byKey(const Key('tap-rate')), findsOneWidget);
@@ -295,6 +328,7 @@ void main() {
     testWidgets('6구는 도감 완성 전 빗금 자물쇠와 남은 칸 수, 굽는 중인 칸은 꺼낼 수 있다', (tester) async {
       final c = await mount(tester);
       await c.skipTutorial();
+      expect(await c.markIntroSeen(WorkshopFeature.wardrobe), isTrue);
       expect(await c.openBusiness(), isTrue);
       await tester.pump();
       await tester.pump();
@@ -328,24 +362,51 @@ void main() {
     });
 
     // 26번 3차 H42: 배경 테마 is back as soon as the guide ends (it was hidden until Lv.8).
-    testWidgets('메뉴: 도감은 Lv.3 전에도 자물쇠와 함께 보이고, 배경 테마는 안내가 끝나면 바로 (3차 H32·H36·H42)', (tester) async {
+    testWidgets('메뉴: 도감은 Lv.3 전에도 자물쇠와 함께 보이고 누르면 조건 알림, 배경 테마는 안내가 끝나면 바로 (3차 H32·H36·H42, 4차 g5)', (tester) async {
       final c = await mount(tester);
+      await tester.tap(find.byKey(const Key('story-skip')));
+      await tester.pump();
+      await tester.pump();
+      // During the guide 배경 테마 is listed locked too (4차 g5), not hidden.
+      await tester.tap(find.byKey(const Key('menu-menubar')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('menu-theme')), findsOneWidget);
+      expect(tester.widget<Text>(find.byKey(const Key('menu-lock-skins:stall'))).data, '첫 영업 안내가 끝나면 열려요');
+      await tester.tap(find.byKey(const Key('menu-theme')));
+      await tester.pump();
+      expect(find.text('배경 테마: 첫 영업 안내가 끝나면 열려요'), findsOneWidget);
+      CenterToast.hide();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('menu-theme')), findsOneWidget, reason: '잠긴 줄을 눌러도 메뉴는 그대로');
+      Navigator.of(tester.element(find.byKey(const Key('menu-theme')))).pop();
+      await tester.pumpAndSettle();
       await c.skipTutorial();
       await tester.pump();
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('feature-intro-ok')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('tour-skip')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('menu-collection')), findsOneWidget);
-      expect(tester.widget<Text>(find.byKey(const Key('menu-lock-achievements:collection'))).data, 'Lv.3에 열려요');
+      expect(tester.widget<Text>(find.byKey(const Key('menu-lock-achievements:collection'))).data, 'Lv.3 달성하면 열려요');
+      expect(find.byKey(const Key('menu-locked-achievements:collection')), findsOneWidget);
+      expect(find.descendant(of: find.byKey(const Key('menu-locked-achievements:collection')),
+          matching: find.byKey(const Key('lock-badge'))), findsOneWidget);
       expect(find.byKey(const Key('menu-theme')), findsOneWidget);
+      expect(find.byKey(const Key('menu-lock-skins:stall')), findsNothing);
       // 일일 미션·주간 도전 moved to the '오늘' window.
       expect(find.byKey(const Key('menu-daily')), findsNothing);
       expect(find.byKey(const Key('event-entry')), findsNothing);
-      // Locked 도감 still opens: the pages dimmed under its level.
+      // A locked 도감 says when it opens and opens nothing (4차 g5).
       await tester.tap(find.byKey(const Key('menu-collection')));
+      await tester.pump();
+      expect(find.text('도감: Lv.3 달성하면 열려요'), findsOneWidget);
+      expect(find.byKey(const Key('collection-locked')), findsNothing);
+      CenterToast.hide();
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('collection-locked')), findsOneWidget);
-      expect(find.byKey(const Key('collection-redbean')), findsOneWidget);
-      Navigator.of(tester.element(find.byKey(const Key('collection-locked')))).pop();
+      Navigator.of(tester.element(find.byKey(const Key('menu-collection')))).pop();
       await tester.pumpAndSettle();
       expect(await setLevel(c, 8, seen: true), isTrue);
       await tester.pump();
@@ -355,6 +416,57 @@ void main() {
       expect(find.byKey(const Key('menu-lock-achievements:collection')), findsNothing);
       expect(find.byKey(const Key('menu-theme')), findsOneWidget);
       await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('설정 > 튜토리얼 다시 보기: 열린 기능은 소개와 안내를 다시, 잠긴 기능은 자물쇠와 조건 (4차 g5)', (tester) async {
+      final c = await mount(tester);
+      await tester.tap(find.byKey(const Key('story-skip')));
+      await tester.pump();
+      await tester.pump();
+      expect(await setLevel(c, 2, seen: true), isTrue);
+      await c.command(() => c.state.tutorial = 'done');
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('home-settings')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('settings-tours')));
+      await tester.tap(find.byKey(const Key('settings-tours')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tour-list')), findsOneWidget);
+      for (final f in workshopIntroFeatures) {
+        expect(find.byKey(Key('tour-replay-${f.name}')), findsOneWidget, reason: f.name);
+      }
+      // 도감 waits for Lv.3: the row says so and a tap only tells why.
+      await tester.ensureVisible(find.byKey(const Key('tour-replay-collection')));
+      expect(find.descendant(of: find.byKey(const Key('tour-replay-collection')), matching: find.text('Lv.3 달성하면 열려요')),
+          findsOneWidget);
+      await tester.tap(find.byKey(const Key('tour-replay-collection')));
+      await tester.pump();
+      expect(find.text('도감: Lv.3 달성하면 열려요'), findsOneWidget);
+      CenterToast.hide();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tour-list')), findsOneWidget);
+      // 스킬 is open: its card again, then its two-step tour.
+      await tester.ensureVisible(find.byKey(const Key('tour-replay-skills')));
+      await tester.tap(find.byKey(const Key('tour-replay-skills')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('feature-intro-skills')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('feature-intro-ok')));
+      await tester.pumpAndSettle();
+      expect(find.text('스킬 안내 1/2'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('tour-skip')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('tutorial-card')), findsNothing);
+      expect(tester.takeException(), isNull);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('기능마다 소개 카드와 1~3단계 안내가 있다 (4차 g5)', (tester) async {
+      for (final f in workshopIntroFeatures) {
+        final intro = featureIntro(f);
+        expect(intro.title, isNotEmpty, reason: f.name);
+        expect(intro.body, isNotEmpty, reason: f.name);
+        expect(featureTour(f).length, inInclusiveRange(1, 3), reason: f.name);
+      }
     });
 
     testWidgets('첫 판매 칭찬: 말풍선·큰 별·반짝 2초 뒤 사라지고 저장하지 않는다', (tester) async {

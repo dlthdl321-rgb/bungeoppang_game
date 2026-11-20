@@ -11,6 +11,7 @@ import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/ui/avatar_face.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
+import 'package:todays_bungeoppang/ui/center_toast.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/public_menus.dart';
@@ -505,9 +506,28 @@ void main() {
       await _tap(tester, 'cosmetic-category-stall');
       expect(find.byKey(const Key('cosmetic-slot-background')), findsOneWidget);
       expect(find.byKey(const Key('cosmetic-slot-time')), findsOneWidget);
+      // 4차 g5: listed locked (stripe + corner padlock), not hidden; a tap
+      // says when it opens and keeps the slot chosen.
       for (final slot in ['stove', 'decoration', 'lamp']) {
-        expect(find.byKey(Key('cosmetic-slot-$slot')), findsNothing, reason: slot);
+        expect(find.byKey(Key('cosmetic-slot-$slot-locked')), findsOneWidget, reason: slot);
       }
+      await tester.tap(find.byKey(const Key('cosmetic-slot-lamp')));
+      await tester.pump();
+      expect(find.text('등불: Lv.8 달성하면 열려요'), findsOneWidget);
+      CenterToast.hide();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('preview-stall')), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+      // Before Lv.5 the 붕어빵 tab is listed locked too.
+      await _open(tester, const Size(390, 844), level: 4);
+      await _tap(tester, 'menu-skins');
+      expect(find.byKey(const Key('cosmetic-category-bungeoppang-locked')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('cosmetic-category-bungeoppang')));
+      await tester.pump();
+      expect(find.text('붕어빵: Lv.5 달성하면 열려요'), findsOneWidget);
+      CenterToast.hide();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('cosmetic-slot-pattern')), findsNothing, reason: '탭은 그대로');
       await tester.pumpWidget(const SizedBox());
       await _open(tester, const Size(390, 844), level: 8);
       await _tap(tester, 'menu-skins');
