@@ -48,7 +48,7 @@ export function parseCompositeIntent(value: unknown, authenticatedUid: string): 
   // DEC-041: a skill may cost 0 gold (tiers 1~4); a cosmetic always costs gold.
   if (result.account !== authenticatedUid || !authenticatedUid ||
       result.quantity === 0 || BigInt(result.buns) === 0n ||
-      (BigInt(result.gold) === 0n && result.skill.startsWith("cosmetic:"))) {
+      (BigInt(result.gold) === 0n && (result.skill.startsWith("cosmetic:") || result.skill.startsWith("level:")))) {
     return fail("계정 또는 유상 견적 불일치");
   }
   return result;
@@ -213,6 +213,16 @@ export function validateDevelopmentCompositeQuote(config: unknown, input: unknow
   const requested = parseCompositeIntent(input, authenticatedUid);
   const root = object(config), metadata = object(root.metadata);
   const purchase = object(root.skill_purchase), entries = object(purchase.entries);
+  if (requested.skill.startsWith("level:")) {
+    // 4차 피드백 g9: the gold level-ups (Lv.10·20·30·40·50) pay both
+    // currencies once each; the price is the level's row.
+    const level = Number(requested.skill.slice(6)), rows = root.level_progression;
+    if (!Number.isSafeInteger(level) || `level:${level}` !== requested.skill || level < 2 || level > 50 || !Array.isArray(rows)) return fail("레벨업 비용 식별자 오류");
+    const row = object(rows[level - 1]), gold = natural(row.level_cost_gold);
+    if (!gold || natural(row.level) !== level || natural(authoritativeOwned) !== 0 || requested.owned !== 0 || requested.quantity !== 1) return fail("레벨업 비용 보유/수량 오류");
+    const expected = { ...requested, revision: text(metadata.revision), buns: decimal(row.level_cost_buns), gold: String(gold) };
+    assertSameCompositeIntent(expected, requested); return expected;
+  }
   if (requested.skill.startsWith("cosmetic:")) {
     const item=requested.skill.slice(9),catalog=object(root.avatar_catalog),entry=object(catalog[item]);
     const price=object(object(root.cosmetic_purchase)[item]);

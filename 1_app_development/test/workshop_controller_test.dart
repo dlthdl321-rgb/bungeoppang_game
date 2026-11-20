@@ -66,8 +66,8 @@ void main() {
   setUp(() async {
     final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
     raw['ordinary_sale']['base_buns_by_difficulty'] = ['20','40','60'];
-    (raw['level_progression'][1] as Map).addAll(<String, dynamic>{'season_total_buns':'10', 'additional_taps':2,
-      'additional_sales':0, 'buns_reward':'3', 'gold_reward':1});
+    (raw['level_progression'][1] as Map).addAll(<String, dynamic>{'level_cost_buns':'10', 'additional_taps':2,
+      'additional_sold_pieces':1, 'buns_reward':'3', 'gold_reward':1});
     config = DevelopmentBalance.fromJson(raw);
     repository = Repository();
     controller = WorkshopController(config, repository, now: () => now, random: Random(7));
@@ -134,17 +134,73 @@ void main() {
     expect(controller.error, isNull);
     expect(controller.notice, isNotNull);
   });
-  test('승급은 수동1회이며 황금은 로컬 지급 대신 심사 대기로 저장한다', () async {
-    for (var i = 0; i < 10; i++) { controller.tap(); }
-    expect(controller.state.level, 1);
+  test('승급은 이번 레벨 판매 개수·탭을 채우고 붕어빵력을 내며, 황금 보상은 심사 대기로 저장한다 (4차 g9)', () async {
+    for (var i = 0; i < 9; i++) { controller.tap(); }
+    expect(controller.levelGoalsMet, isFalse, reason: '이번 레벨 판매 0개');
+    expect(await controller.command(() => controller.state.soldPieces = 1), isTrue);
+    expect(controller.levelGoalsMet, isTrue);
+    expect(controller.canLevelUp, isFalse, reason: '붕어빵력 9 < 비용 10');
+    expect(controller.levelWaitReason, '붕어빵력이 1 모자라요.');
+    expect(controller.levelProgressPermille, (1000 + 1000 + 900) ~/ 3);
+    expect(controller.levelCostNote, '레벨업할 때 붕어빵력 10이 쓰여요');
+    expect([for (final r in controller.levelRequirements) r.label],
+        ['이번 레벨에 판 붕어빵', '이번 레벨 탭', '레벨업 비용 붕어빵력']);
+    controller.tap();
     expect(controller.canLevelUp, isTrue);
+    expect(controller.levelProgressPermille, 1000);
     expect(await controller.levelUp(), isTrue);
     expect(controller.state.level, 2);
-    expect(controller.state.buns, BigInt.from(13));
+    expect(controller.state.buns, BigInt.from(3), reason: '10 내고 보상 3');
+    expect(controller.state.lifetime, BigInt.from(13), reason: '낸 값은 누적에서 빼지 않음');
     expect(controller.state.pendingGold.containsKey('level:2'), isTrue);
     expect(controller.state.levelStartTaps, 10);
+    expect(controller.state.levelStartPieces, 1);
+    expect(controller.levelPiecesSold, 0);
     expect(await controller.levelUp(), isFalse);
     expect(controller.state.claimedLevels, {2});
+  });
+  test('판매 개수는 다 판 주문의 개수로 세고, 개수 없는 옛 저장은 판매 기록에서 다시 센다 (4차 g9)', () async {
+    await controller.openBusiness();
+    await controller.command(() {
+      controller.state.inventory = controller.state.inventory.recordResult(ProductBatch(id: 'b1', flavor: 'redbean', variant: 2,
+        quantity: 3, madeOnBusinessIndex: controller.state.business.businessIndex), keep: true);
+      controller.state.customers.insert(0, CustomerOrder(id: 'o1', remainingMs: 60000, lines: [CustomerOrderLine(flavor: 'redbean', quantity: 3)]));
+    });
+    expect(await controller.sellToCustomer('o1'), isTrue, reason: controller.notice);
+    expect(controller.state.soldPieces, 3);
+    final old = controller.state.toJson()..remove('soldPieces')..remove('levelStartPieces');
+    final loaded = WorkshopState.fromJson(old, config);
+    expect(loaded.soldPieces, 3);
+    expect(loaded.levelStartPieces, 0);
+    expect(() => WorkshopState.fromJson({...controller.state.toJson(), 'levelStartPieces': 4}, config), throwsFormatException);
+  });
+  test('황금이 드는 레벨(level:N)은 서버 구매로 두 재화를 낸 뒤에만 오른다 (4차 g9)', () async {
+    final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
+    (raw['level_progression'][1] as Map).addAll(<String, dynamic>{'level_cost_buns':'5', 'additional_taps':0,
+      'additional_sold_pieces':1, 'level_cost_gold':20});
+    final goldConfig = DevelopmentBalance.fromJson(raw), gateway = Gateway();
+    final c = WorkshopController(goldConfig, Repository(), now: () => now, random: Random(7), purchaseGateway: gateway);
+    addTearDown(c.dispose); await c.initialize();
+    for (var i = 0; i < 8; i++) { c.tap(); }
+    await c.command(() => c.state.soldPieces = 1);
+    expect(c.levelCostNote, '레벨업할 때 붕어빵력 5, 황금붕어빵력 20개가 쓰여요');
+    expect(c.levelRequirements.length, 4);
+    c.goldBalance = 19;
+    expect(c.canLevelUp, isFalse);
+    expect(c.levelGoldDue, isFalse);
+    expect(c.levelWaitReason, '황금붕어빵력이 1 모자라요.');
+    c.goldBalance = 20;
+    expect(c.levelGoldDue, isTrue);
+    expect(await c.levelUp(), isFalse, reason: '황금을 내기 전');
+    expect(await c.payLevelGold(), isTrue, reason: c.notice);
+    expect(c.state.purchases.owned['level:2'], 1);
+    expect(c.state.buns, BigInt.from(3), reason: '구매가 붕어빵력 5를 이미 냄');
+    expect(c.canLevelUp, isTrue);
+    expect(await c.levelUp(), isTrue);
+    expect(c.state.level, 2);
+    expect(c.state.buns, BigInt.from(3), reason: '두 번 빼지 않음');
+    final reloaded = WorkshopState.fromJson(c.state.toJson(), goldConfig);
+    expect(reloaded.purchases.owned['level:2'], 1);
   });
   test('손님이 취소·퇴장해도 명시 주문 관찰은 남고 도감 보상은 없다', () async {
     await controller.openBusiness();

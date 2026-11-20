@@ -146,7 +146,7 @@ void main() {
     });
     expect(await c.syncRewards(),isTrue,reason:c.notice);
     expect(transport.sent['workshopRewardSubmit']!['snapshot'],
-      {'buns':'40','lifetimeBuns':'40','level':2,'taps':40,'sales':0});
+      {'buns':'40','lifetimeBuns':'40','level':2,'taps':40,'sales':0,'pieces':0});
   });
   test('서버가 거절한 예약은 원래 구매 의도를 보낸 취소 확인으로 무과금 정리된다',() async {
     final transport=_Recording(),gateway=WorkshopOnline(transport);

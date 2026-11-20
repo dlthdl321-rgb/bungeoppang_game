@@ -9,7 +9,9 @@ import { evidencePath } from "./workshop_evidence";
 export class PlausibilityError extends Error {
   constructor(message: string, readonly final = false) { super(message); }
 }
-export interface ProgressSnapshot { buns: bigint; lifetime: bigint; level: number; taps: number; sales: number }
+/** `pieces`: bungeoppang pieces handed over in finished sales (4차 피드백 g9).
+ * Apps from before it leave it out; then sales stand in for it. */
+export interface ProgressSnapshot { buns: bigint; lifetime: bigint; level: number; taps: number; sales: number; pieces?: number }
 interface Checkpoint extends ProgressSnapshot { atMs: number; saleEvidence: number }
 interface Rates { tap: bigint; auto: bigint; skills: number }
 type Row = Record<string, unknown>;
@@ -30,8 +32,9 @@ function decimal(value: unknown): bigint {
 export function parseSnapshot(value: unknown): ProgressSnapshot {
   const row = object(value);
   const snapshot = { buns: decimal(row.buns), lifetime: decimal(row.lifetimeBuns), level: natural(row.level),
-    taps: natural(row.taps), sales: natural(row.sales) };
-  if (snapshot.buns > snapshot.lifetime || snapshot.level < 1 || snapshot.level > 50) fail("진행 스냅샷 범위 오류", true);
+    taps: natural(row.taps), sales: natural(row.sales), pieces: row.pieces === undefined ? undefined : natural(row.pieces) };
+  if (snapshot.buns > snapshot.lifetime || snapshot.level < 1 || snapshot.level > 50 ||
+      (snapshot.pieces !== undefined && snapshot.pieces < snapshot.sales)) fail("진행 스냅샷 범위 오류", true);
   return snapshot;
 }
 function kstDay(ms: number): string { return new Date(ms + 540 * 60000).toISOString().slice(0, 10); }
@@ -59,6 +62,8 @@ export class PlausibilityValidator {
       firstLifetime: decimal(v.first_checkpoint_max_lifetime), firstTaps: natural(v.first_checkpoint_max_taps),
       firstSales: natural(v.first_checkpoint_max_sales), graceDays: natural(v.mission_claim_grace_days),
       arrivalMs: natural(sale.customer_arrival_interval_ms), saleBuns: base * BigInt(Math.max(quantity, preferred)),
+      // The most pieces one finished sale can hand over.
+      salePieces: Math.max(quantity, preferred),
       levels, revision: String(object(root.metadata).revision),
       daily: PlausibilityValidator.dailyLimits(object(root.daily_return)),
     };
@@ -95,15 +100,22 @@ export class PlausibilityValidator {
   /** Throws (retryable) when the snapshot is not reachable from the previous
    * checkpoint. Returns the next checkpoint to store in the same transaction. */
   private advance(prev: Checkpoint | undefined, next: ProgressSnapshot, rates: Rates, now: number, saleEvidence = 0): Checkpoint {
-    const l = this.limits, row = this.levels(next.level);
-    if (next.lifetime < row.lifetime || next.taps < row.taps || next.sales < row.sales) fail("레벨 조건과 진행 기록 불일치", true);
+    const l = this.limits;
     if (!prev) {
+      this.levelsReached(1, next.level, next.taps, next.sales, next.pieces);
+      if (next.pieces !== undefined && next.pieces > next.sales * l.salePieces) fail("판매 개수가 판매 기록보다 많습니다.", true);
       if (next.lifetime > l.firstLifetime || next.taps > l.firstTaps || next.sales > l.firstSales) fail("첫 서버 확인의 진행량이 한도를 넘었습니다.");
       return { ...next, atMs: now, saleEvidence };
     }
-    if (next.lifetime < prev.lifetime || next.taps < prev.taps || next.sales < prev.sales || next.level < prev.level) {
+    if (next.lifetime < prev.lifetime || next.taps < prev.taps || next.sales < prev.sales || next.level < prev.level ||
+        (next.pieces !== undefined && prev.pieces !== undefined && next.pieces < prev.pieces)) {
       fail("진행 기록이 이전 서버 확인보다 줄었습니다.", true);
     }
+    const pieces = next.pieces !== undefined && prev.pieces !== undefined ? next.pieces - prev.pieces : undefined;
+    if (pieces !== undefined && pieces > (next.sales - prev.sales) * l.salePieces) fail("판매 개수가 판매 기록보다 많습니다.", true);
+    // The level before the last check may have been partly done then, so
+    // only the levels begun after it must be done in full since.
+    this.levelsReached(prev.level + 1, next.level, next.taps - prev.taps, next.sales - prev.sales, pieces);
     const elapsedMs = Math.max(0, now - prev.atMs), seconds = BigInt(Math.ceil(elapsedMs / 1000));
     const taps = next.taps - prev.taps, sales = next.sales - prev.sales;
     if (BigInt(taps) > seconds * l.tapsPerSecond + BigInt(l.slackTaps)) fail("탭 증가가 서버 시간 한도를 넘었습니다.");
@@ -117,14 +129,23 @@ export class PlausibilityValidator {
     if (next.lifetime > bound) fail("붕어빵력 증가가 서버 시간 한도를 넘었습니다.");
     return { ...next, atMs: Math.max(now, prev.atMs), saleEvidence: prev.saleEvidence + saleEvidence };
   }
-  private levels(level: number) {
-    let taps = 0, sales = 0;
-    for (let i = 1; i < level; i++) { taps += natural(this.limits.levels[i].additional_taps); sales += natural(this.limits.levels[i].additional_sales); }
-    return { lifetime: decimal(this.limits.levels[level - 1].season_total_buns), taps, sales };
+  /** 4차 피드백 g9: each level asks for taps and pieces sold in that level
+   * (0 again on level-up) and a payment, with no lifetime 붕어빵력 goal.
+   * Levels from+1..to must have been reached with [taps] and [pieces]
+   * (without pieces, sales of at most `salePieces` each stand in). The
+   * 붕어빵력 payment is the app's own currency and is not checked here. */
+  private levelsReached(from: number, to: number, taps: number, sales: number, pieces: number | undefined): void {
+    let needTaps = 0, needPieces = 0;
+    for (let level = from + 1; level <= to; level++) {
+      const row = this.limits.levels[level - 1];
+      needTaps += natural(row.additional_taps); needPieces += natural(row.additional_sold_pieces);
+    }
+    const sold = pieces ?? sales * this.limits.salePieces;
+    if (taps < needTaps || sold < needPieces) fail("레벨 조건과 진행 기록 불일치", true);
   }
   private stored(c: Checkpoint): Doc {
     return { buns: c.buns.toString(), lifetimeBuns: c.lifetime.toString(), level: c.level, taps: c.taps, sales: c.sales,
-      atMs: c.atMs, saleEvidence: c.saleEvidence };
+      ...(c.pieces === undefined ? {} : { pieces: c.pieces }), atMs: c.atMs, saleEvidence: c.saleEvidence };
   }
   /** Shared transaction shape: all reads, validate, then all writes. */
   private async record(ctx: PurchaseContext, snapshotInput: unknown, evidence: { path: string; doc: Doc; same: (old: Doc) => boolean },

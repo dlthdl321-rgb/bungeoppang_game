@@ -39,10 +39,13 @@ class NightHomeHeaderData {
   /// 황금붕어빵력 beside 붕어빵력 in the HUD (26번 3차 피드백 H30), null
   /// hides it (the old clicker home).
   final BigInt? gold;
+  /// What the next level-up takes ('레벨업할 때 붕어빵력 3만이 쓰여요', 4차
+  /// 피드백 g9): the Lv emblem's long-press tooltip, null for none.
+  final String? levelHint;
   const NightHomeHeaderData({required this.level, required this.progressPermille,
     required this.buns, required this.lifetime, required this.autoRate,
     required this.tapRate, required this.status, this.claimable = 0, this.showRates = true,
-    this.statusKind = WorkshopStatusKind.open, this.gold});
+    this.statusKind = WorkshopStatusKind.open, this.gold, this.levelHint});
 }
 
 class NightHome extends StatelessWidget {
@@ -445,8 +448,8 @@ class NightHome extends StatelessWidget {
     final s = controller.state;
     final next = activeLevelMission(s);
     final progress = headerData?.progressPermille ?? levelProgressPermille(s);
-    final level = headerData?.level ?? s.level;
-    return Semantics(
+    final level = headerData?.level ?? s.level, hint = headerData?.levelHint;
+    final badge = Semantics(
       button: true,
       label:
           'Lv.$level 레벨 미션 ${(headerData == null ? next == null : level >= 50) ? '최고 레벨 달성' : '진행 ${progress ~/ 10}%'}',
@@ -485,6 +488,7 @@ class NightHome extends StatelessWidget {
         ),
       ),
     );
+    return hint == null ? badge : Tooltip(key: const Key('level-hint'), message: hint, child: badge);
   }
 
   /// 붕어빵력 with a big icon and, in the Workshop, 황금붕어빵력 beside it

@@ -141,6 +141,7 @@
 | schema 6 (2026-11-11) | 첫 실행 안내 `tutorial`: `cook` → `sell` → `done`, 또는 `skipped`. 새 설치는 `cook`. schema 5 이하는 `done`으로 올리고, 그 버전에 `tutorial`이 있으면 거절. 판매 기록이 있는데 `cook`/`sell`이면 거절 |
 | schema 7 (2026-11-18, 26번 5-1단계) | 손님 시계 `regularClock`·`namedClock`(`{nextAt: UTC ms 또는 null, seed, draws}`)과 직전 네임드 `lastNamedVisitor`. 7에 셋 중 하나라도 없거나 6 이하에 있으면 거절. 닫힌 가게·안내 중인데 `nextAt`이 있거나, `nextAt`이 정산 시각 + 최대 간격보다 멀면 거절. `lastNamedVisitor`는 만난 손님만. 6 이하 이전: 시드는 진행 ID(`grid.runId`)에서 만들고 시계는 멈춘 채(null) 두어 불러온 뒤 첫 정산 시각부터 셈, `lastNamedVisitor`는 관계 기록의 가장 늦은 방문. `arrivalMs`는 안내 중 손님 간격용으로 그대로 |
 | schema 9 (2026-11-19, 26번 4-5단계, G12) | 필드 추가 없음. 요리사 복(`chefcoat`)·패딩 조끼(`padding`)가 앞치마(`outfit`) 칸에서 상의(`top`) 칸으로 옮겨 감(`movedToTop`). 8 이하에서 `avatarEquipment.outfit`이 둘 중 하나면 `top`=그 id, `outfit`=`noapron`으로 읽음(보이는 모습 유지, 보유 `purchases.owned['cosmetic:<id>']`는 id 그대로라 변화 없음). 9에서 `outfit`이 둘 중 하나면 칸 불일치로 거절 |
+| `soldPieces`·`levelStartPieces` (2026-11-21, 4차 피드백 g9) | schema 10 그대로 키만 더함: 다 판 주문의 붕어빵 개수 합과 지금 레벨 시작 때 값(레벨 조건 '이번 레벨에 판 붕어빵'). 없는 저장은 판매 원장으로 다시 세고 시작값 0. 시작값 > 합, 합 < 판매 수면 거절. 레벨업 황금은 `purchases.owned['level:N']`(1만) |
 | `avatarGrants` (2026-11-19, 3차 피드백 H11·H12, DEC-129) | schema 10 그대로 키만 더함: 사지 않고 가진 아바타 아이템(정렬 목록, 칸이 character·skin인 것만, 사장님은 정확히 하나). 새 가게 `['girl']`, 첫 실행 사장님 고르기(`chooseStarterCharacter`)가 그 사장님 하나로 바꿈. 이 키가 없는 저장(규칙 전)은 그때 입은 사장님(없으면 girl)과 입은 피부톤을 넣어 읽음(기존 저장 존중). 착용 검사는 무료 ∪ `avatarGrants` ∪ 산 것 ∪ 가진 사장님의 기본 머리(26번 3차 G, `WorkshopState.hasAvatar`·`characterDefaultHair`: 남자 사장님을 가지면 짧은 머리도 가짐 — 저장 키는 늘지 않음). 구매 보호 대상 아님 |
 | schema 10 (2026-11-19, 26번 7단계) | 매일 기록 `daily`: `day`(마지막으로 본 KST 날짜), `order`(오늘의 주문서 `{day, npc, flavor, variant 1~3, quantity, event, reward, businessIndex}`, 납품하면 `reward`(붕어빵력 10진 문자열)·`businessIndex`가 함께 생김), `stamps`(출석 칸 0~7)·`stampDay`(마지막 도장 날짜, 둘은 0/null을 함께), `events`(들어온 행사 ID, 정렬). 9 이하는 빈 기록으로 읽음(첫 명령에서 오늘 날짜·주문서가 채워짐), 9 이하에 `daily`가 있거나 10에 없으면 거절. 날짜가 정산 시각의 KST 날짜보다 뒤, 가지지 않은 맛, 만나지 않은 손님, 모르는 행사 ID, 단골 주문서를 납품했는데 관계 기록 `special:<날짜>`가 없음(또는 납품 전인데 있음)이면 거절. 황금 심사 `pendingGold['attendance:<날짜>']`(출석 7칸째)는 `{scope:'attendance', period, goal:'day7', gold, revision}` 다섯 키만, 날짜 ≤ `stampDay`. 구매 보호 대상 아님 |
 | schema 8 (2026-11-18, 26번 2단계) | 이미 본 기능 소개 카드 `featureIntros`(`WorkshopFeature` 이름 목록, 정렬해 저장: `skills`·`griddle`·`collection`·`recipes`·`specialOrders`·`fishCosmetics`·`freshness`·`stallCosmetics`). 8에 없거나, 모르는 이름·중복이 있거나, 7 이하에 있으면 거절. 7 이하 이전: 불러온 상태에서 **이미 열린 기능은 본 것으로 채움**(고레벨 기존 저장은 카드 0장, 낮은 레벨은 앞으로 열릴 카드만). 첫 판매 칭찬(`salePraise`)은 저장하지 않음 |
@@ -250,7 +251,7 @@
 - 4단계부터의 id는 목록 순서로 자동으로 붙습니다. **중간에 끼워 넣거나 순서를 바꾸면 안 됩니다.**
 - 목표 밸런스는 Lv.10까지 약 21~22일입니다(`test/economy_simulation_test.dart`).
 - 신규 Workshop 경로: 스킬은 붕어빵력+황금붕어빵력 두 재화 가격(`skill_purchase`). **1~4단계(`tap_1`~`tap_4`, `auto_1`~`auto_4`)는 황금 0**이라 붕어빵력만으로 사고 몇 번째든 황금 0, **5~16단계는 황금 2·3·4개(4단계씩) + 10번마다 1개 증가**(DEC-041, 26번 3단계). 황금 공식은 `기본 황금 > 0`일 때만 `기본 황금 + ⌊n / gold_step_purchase_count⌋ × gold_step_amount`, 기본 황금이 0이면 0(앱 `lib/development_rules.dart` `quoteCompositeSkill`, 서버 `development_contracts.ts` `validateDevelopmentCompositeQuote` 같은 식). 황금 0은 스킬에만 허용하고 꾸미기·부스트는 계속 황금 1 이상이어야 한다(설정 검사 `lib/development_balance.dart`·`tools/development_balance.py`, 저널 `PurchaseJournal.start`, 영수증 `compositeReceiptMatches`, 서버 `parseCompositeIntent`).
-- 성장 확인(`test/workshop_progression_simulation_test.dart`, 탭 2회/초·1분 1판매·가장 싼 스킬부터 분당 3개까지 구매): 황금 0인 서버로 Lv.5 4분·Lv.10 9분, 스킬 황금 소비 0. 첫 황금 스킬인 5단계는 탭 Lv.15·자동 Lv.19에서 열림(탭 1회/초면 Lv.17·21). 환영 황금(`welcome_reward.gold` = 10)은 스킬에 쓰이지 않고 꾸미기(가장 싼 유료 아바타 황금 2)에 쓴다. Lv.1~5 승급은 스킬 없이 30분 안에 가능([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)). 손님 간격이 바뀌면(5-1단계) 다시 확인한다.
+- 성장 확인(`test/workshop_progression_simulation_test.dart`, 탭 2회/초·가장 싼 스킬부터 분당 3개까지 구매, 4차 g9부터: 주문 크기는 그 레벨 상한 안에서 1·2·…개를 차례로, 판매·탭을 채우면 레벨업 붕어빵력을 먼저 모으고 앞으로 낼 레벨 황금은 스킬에 쓰지 않음): 3분마다 1판매로 **Lv.5 12분·Lv.10 30분**(지금 경제)·**32분**(g7 재조정 경제), Lv.10은 레벨업 황금 20을 가진 경우(첫날 무료 황금만이면 Lv.9에서 황금만 기다림). Lv.50까지 기록: 지금 경제 Lv.20 165분·Lv.30 303분·Lv.40 444분·Lv.50 597분, g7 경제 170·326·526·834분. 1분 1판매·황금 0이면 레벨업 붕어빵력이 속도를 정하고 1시간 안에 Lv.9. 예전 기록(4차 g9 전): 황금 0인 서버로 Lv.5 4분·Lv.10 9분, 스킬 황금 소비 0. 첫 황금 스킬인 5단계는 탭 Lv.15·자동 Lv.19에서 열림(탭 1회/초면 Lv.17·21). 4차 g9 뒤 지금 경제(revision 3)에서는 레벨이 느려져 Lv.10에 열리므로 이 시험은 g7 재조정 경제(revision 4)에서만 돌고 지금은 건너뜀. 환영 황금(`welcome_reward.gold` = 10)은 스킬에 쓰이지 않고 꾸미기(가장 싼 유료 아바타 황금 2)에 쓴다. Lv.1~5 승급은 스킬 없이 30분 안에 가능([23장](#23-서버-타당성-검증과-환영-황금--2026-11-03)). 손님 간격이 바뀌면(5-1단계) 다시 확인한다.
 - 스킬 창(`lib/ui/workshop_skill_shop.dart` `WorkshopSkillShop`, `workshop_windows.dart`가 다시 내보냄; 26번 4-3단계 F12~F19): '사는 목록'이 아니라 **레벨을 올리는 목록**. 위 줄 = 탭 버튼 '클릭 생산'·'자동 생산'(키 `kind-tap/kind-auto`, 체크 표시 없는 직접 만든 탭, 아이콘 28px, 고른 탭은 꿀색, 두 탭이 줄을 반씩). 단위 돌림판은 **스킬마다** 칸 안에 하나씩(26번 시안 확인 2차, DEC-128): `SkillStepWheel`(키 `skill-step-<id>`, 값 `step-<id>-1/10/100`, 폭 40·줄 14, 위아래로 밀거나 이웃 값을 눌러 한 칸씩). 고른 단위는 `WorkshopController.skillSteps`(스킬 id → 단위)에 **앱을 켜 둔 동안만** 기억하고 저장하지 않음(저장 형식 변경 없음, 없으면 ×1). 단위 `skillLevelUpSteps = [1, 10, 100]`은 Dart 상수(`lib/development_rules.dart`, 설정 파일 아님). 한 번에 올리는 양 `skillLevelUpQuantity` = min(단위, 1000 − 레벨) — 995에서 ×10은 5. 서버(`development_contracts.ts`)가 `cap − owned` 이하면 받으므로 서버 변경 없음. '최대(살 수 있는 만큼)'·1개/10개/최대 칩·'자세히 보기'·'스킬 구매는 온라인 연결…' 문장은 없앰. 칸(키 `skill-$id`, 높이 약 66px): 왼쪽 그림 40px, 가운데 이름 + 두 줄 'Lv.12/1000' / '+60/클릭'(키 `level-$id`, 글은 줄바꿈 하나로 이어진 한 Text, 이 스킬 한 레벨 효과, 자동은 '/초'), 오른쪽 비용(`CurrencyAmount`: 붕어빵력·황금 아이콘 + 줄인 숫자, 모자라면 빨강 `0xffc0392b`, 줄였으면 길게 눌러 정확한 숫자, 황금 0이면 황금 줄 없음, 키 `cost-$id`) + 그 스킬의 돌림판(해금된 칸만) + 'LEVEL UP' 글자 버튼(`LevelUpButton`, 키 `buy-$id`, `ui/levelup.png`·`levelup_off.png` 108×72를 54×36으로, 둘째 줄 'UP'; 25번 33번 생성 그림을 `tools/apply_25_art.py --only levelup`으로 적용(2026-11-19, 꺼짐 그림은 켜짐 그림을 밝기대로 회색으로 바꿔 만듦 — 생성된 꺼짐 그림은 면에 구멍 두 개라 안 씀), 그림이 없으면 같은 크기 글자 버튼. 예전 둥근 '+'·'×10' 꼬리표는 DEC-128로 없앰). 버튼은 해금·온라인 구매 연결·로그인·오류 없음·바쁘지 않음·두 재화 충분일 때만 켜짐. 꺼진 '+'를 누르면 스낵바로 이유: '누적 N개 만들면 열려요.' / '인터넷에 연결하면 레벨업할 수 있어요.' / '카카오 로그인 후 레벨업할 수 있어요.' / '붕어빵력이 3.2만 모자라요.'(황금도 같은 식) / '잠시 뒤에 다시 눌러 주세요.'. 1000이면 버튼·돌림판 대신 'MAX' 배지(키 `max-$id`). 잠긴 스킬은 **바로 다음 하나만** 보이고(S43-Q3) 그 뒤는 숨김: 그림 대신 공통 잠금 `LockedOverlay(style: LockStyle.hidden)`(키 `skill-lock-$id`, 실루엣 + 큰 자물쇠) + '누적 100만 개 만들면 해금'(키 `unlock-$id`, `compactNumber`라 '누적 2000조 개'). 조기 해금 없음(S43-Q5). 위쪽 안내: 황금 0 단계가 있으면 '1~N단계 스킬은 붕어빵력만으로 레벨업해요. 황금붕어빵력은 N+1단계부터 필요해요.'(키 `skill-gold-note`, N은 설정에서 계산), 온라인 빌드에서 로그인 전이면 '카카오 로그인 후 레벨업할 수 있어요.' + '카카오 로그인' 버튼(키 `skill-sign-in`, `GameController.signInOnline`), 정산 안 된 거래는 '레벨업 확인 대기: 스킬 이름'(꾸미기는 '구매 확인 대기') + 복구·취소 확인. 로그인 전 `purchaseSkill`은 거래를 만들지 않고 같은 안내만 남긴다. 확인 실패·복구 문구는 스킬이면 '레벨업 확인이 남아 있어요…'·'레벨업 복구 확인이 필요해요', 꾸미기(`cosmetic:`)는 '구매'. 저장(`purchases.owned` = 레벨)·서버 함수 이름은 그대로. 한 화면에 보이는 칸: 390×844 7칸, 360×640 4칸(전에는 390×844에서 약 2칸, `test/workshop_skill_window_test.dart`가 확인). 구형 `lib/ui/skill_shop.dart` `SkillShop`(구형 `GameHome`)은 고치지 않음.
 
 ---
@@ -260,6 +261,79 @@
 ### 매일 돌아올 이유 (Workshop, 26번 7단계)
 
 오늘의 주문서·출석 도장·이야기 하루 한 조각·겨울 행사. 규칙·설정값·화면은 [34장](#34-매일-돌아올-이유--2026-11-19). 아래 레벨 미션~환생은 구형 홈 기록입니다.
+
+### 레벨업 조건 (Workshop, 4차 피드백 g9 — 2026-11-21, DEC-TBD-i4g9-1)
+
+설정 `level_progression`(행 = 그 레벨이 **되기 위한** 조건). 코드 한 곳: `lib/workshop_controller.dart`의 `levelRequirements`·`canLevelUp`·`levelProgressPermille`·`_promote`(자동 승급 g1이 매 명령 뒤 `_promote()`를 부름. g1 병합 전에는 레벨 창 '승급' 버튼이 `levelUp()`으로 같은 `_promote()`를 부름).
+
+| 조건 | 세는 방식 | 설정 키 |
+| --- | --- | --- |
+| 이번 레벨에 판 붕어빵 | **다 판 주문의 붕어빵 개수**(손님 수 아님). 레벨이 오르면 0부터. 부분 판매는 주문을 다 채울 때 함께 셈. 오늘의 주문서 납품은 세지 않음 | `additional_sold_pieces` |
+| 이번 레벨 탭 | 레벨이 오르면 0부터(그대로 유지) | `additional_taps` |
+| 레벨업 비용 붕어빵력 | 판매·탭을 다 채우고 **쓸 수 있는 붕어빵력**(구매 예약분 뺀 값)이 비용 이상이면 레벨업하며 **자동으로 빠짐**. 누적(`lifetime`)은 줄지 않음 | `level_cost_buns` |
+| 레벨업 비용 황금붕어빵력 | Lv.10·20·30·40·50만. 서버 지갑이라 **서버 구매 경로**로 냄: 상품 id `level:N`(붕어빵력 `level_cost_buns` + 황금 `level_cost_gold`, 한 번만). 판매·탭·붕어빵력이 준비되고 지갑 황금이 충분하면 Workshop 화면이 `payLevelGold()`를 **스스로** 시작(`levelGoldDue`, 같은 레벨·같은 황금으로 실패하면 다시 시도하지 않음). 확정되면 `purchases.owned['level:N']=1`, 레벨업 때 붕어빵력을 다시 빼지 않음. 황금이 모자라면 레벨이 기다리고 창에 빨간 글로 이유 | `level_cost_gold` |
+
+- **누적 붕어빵력 조건(`season_total_buns`)은 없앰**(사용자 결정 2026-11-21). 옛 키 `season_total_buns`·`additional_sales`가 남아 있으면 설정 검사(`lib/development_balance.dart`, `tools/development_balance.py --check`)가 거절. 비용은 Lv.2부터 0보다 크고 줄지 않아야 함.
+- 레시피 미션(슈크림·초코)의 '판매 N번'은 그대로 **평생 판매 수(손님 수)**.
+- 레벨 창(`WorkshopPage._levelMissions`): 위 조건을 막대로(키 `level-req-0`~`3`, 판매 줄은 'a/N개'), 아래 회색 글 '레벨업할 때 붕어빵력 3만이 쓰여요'(황금 레벨은 '…붕어빵력 3만, 황금붕어빵력 20개가 쓰여요', 키 `level-cost-note`, `levelCostNote`, 이/가는 숫자 읽는 소리로 `subjectParticle`), 판매·탭을 채웠는데 못 오르면 빨간 글 '붕어빵력이 1.2만 모자라요.'·'황금붕어빵력이 8 모자라요.'·'카카오 로그인 후 레벨업할 수 있어요.' 등(키 `level-wait`, `levelWaitReason`).
+- 홈 레벨 엠블럼 고리 = `levelProgressPermille`: 조건 줄들(비용 줄 포함)을 각각 목표까지 잘라 **평균**, 오를 수 있을 때만 1000. 엠블럼을 길게 누르면 같은 비용 문장 툴팁(`NightHomeHeaderData.levelHint`, 키 `level-hint`).
+- 저장: `soldPieces`(다 판 주문의 붕어빵 개수 합)·`levelStartPieces`(지금 레벨 시작 때 값), schema 10 그대로 키만 더함. 키가 없는 저장은 판매 원장(`sales`의 주문 줄 개수)으로 `soldPieces`를 다시 세고 `levelStartPieces`=0(지금까지 판 개수를 이번 레벨에 인정). `levelStartPieces` > `soldPieces` 또는 `soldPieces` < 판매 수면 거절. 출시 전 진행 초기화(g7)가 함께 감.
+- 서버: [23장](#23-서버-타당성-검증과-환영-황금--2026-11-03) 표 참고(스냅샷 `pieces`, 레벨 조건 구간 확인, `level:N` 구매).
+- 앞으로 바꿀 때: `config/development_balance.json`만 고치고 `python 1_app_development/tools/development_balance.py`(서버 사본·14번 문서), `test/workshop_progression_simulation_test.dart`(Lv.5 15분·Lv.10 35분·Lv.50 기록), 이 표를 함께 고침.
+
+| Lv | 이번 레벨 판매(개) | 이번 레벨 탭 | 내는 붕어빵력 | 내는 황금붕어빵력 |
+| --- | ---: | ---: | ---: | ---: |
+| 2 | 1 | 30 | 200 |  |
+| 3 | 1 | 30 | 500 |  |
+| 4 | 1 | 30 | 1,000 |  |
+| 5 | 1 | 30 | 2,000 |  |
+| 6 | 1 | 30 | 5,000 |  |
+| 7 | 1 | 40 | 8,000 |  |
+| 8 | 1 | 40 | 12,000 |  |
+| 9 | 2 | 40 | 20,000 |  |
+| 10 | 2 | 40 | 30,000 | 20 |
+| 11 | 9 | 40 | 50,000 |  |
+| 12 | 9 | 50 | 55,000 |  |
+| 13 | 9 | 50 | 60,000 |  |
+| 14 | 9 | 50 | 65,000 |  |
+| 15 | 9 | 50 | 70,000 |  |
+| 16 | 9 | 50 | 75,000 |  |
+| 17 | 9 | 60 | 80,000 |  |
+| 18 | 9 | 60 | 85,000 |  |
+| 19 | 9 | 60 | 90,000 |  |
+| 20 | 9 | 60 | 100,000 | 40 |
+| 21 | 12 | 60 | 110,000 |  |
+| 22 | 12 | 70 | 120,000 |  |
+| 23 | 12 | 70 | 130,000 |  |
+| 24 | 12 | 70 | 140,000 |  |
+| 25 | 12 | 70 | 150,000 |  |
+| 26 | 12 | 70 | 160,000 |  |
+| 27 | 12 | 80 | 170,000 |  |
+| 28 | 12 | 80 | 180,000 |  |
+| 29 | 12 | 80 | 190,000 |  |
+| 30 | 12 | 80 | 200,000 | 60 |
+| 31 | 18 | 80 | 220,000 |  |
+| 32 | 18 | 90 | 240,000 |  |
+| 33 | 18 | 90 | 260,000 |  |
+| 34 | 18 | 90 | 280,000 |  |
+| 35 | 18 | 90 | 300,000 |  |
+| 36 | 18 | 90 | 320,000 |  |
+| 37 | 18 | 100 | 340,000 |  |
+| 38 | 18 | 100 | 360,000 |  |
+| 39 | 18 | 100 | 380,000 |  |
+| 40 | 18 | 100 | 400,000 | 80 |
+| 41 | 24 | 100 | 450,000 |  |
+| 42 | 24 | 110 | 500,000 |  |
+| 43 | 24 | 110 | 550,000 |  |
+| 44 | 24 | 110 | 600,000 |  |
+| 45 | 24 | 110 | 650,000 |  |
+| 46 | 24 | 110 | 700,000 |  |
+| 47 | 24 | 120 | 750,000 |  |
+| 48 | 24 | 120 | 800,000 |  |
+| 49 | 24 | 120 | 850,000 |  |
+| 50 | 24 | 120 | 900,000 | 100 |
+
+- 비용 붕어빵력은 경제 재조정(g7) 기준 '그 레벨 동안 버는 양의 약 1/3'으로 잡은 제안 값. 판매 개수는 제안(손님 수)×3이되, 그 개수를 파는 레벨의 주문이 Lv.1~5는 1개, Lv.6~9는 1~2개뿐이라 ×3이면 Lv.5 15분·Lv.10 35분 목표를 못 지켜서 Lv.2~8 1개, Lv.9~10 2개로 둠 — 제안의 손님 수와 같음(확인 필요).
 
 ### 레벨 미션 (`lib/mission_config.dart`)
 
@@ -905,7 +979,7 @@
 
 **상단 HUD**
 - 1줄
-  - 레벨 엠블럼(지름 62 원, 둘레 꿀색 고리 = 레벨 미션 진행, 26번 3차 피드백 H29). 누르면 레벨 미션이 열립니다. 키 `level-mission-entry`·`level-progress`.
+  - 레벨 엠블럼(지름 62 원, 둘레 꿀색 고리 = 레벨 미션 진행, 26번 3차 피드백 H29; 4차 g9부터 `WorkshopController.levelProgressPermille` = 판매 개수·탭·레벨업 비용 줄의 평균, 길게 누르면 '레벨업할 때 붕어빵력 X가 쓰여요' 툴팁 `level-hint`). 누르면 레벨 미션이 열립니다. 키 `level-mission-entry`·`level-progress`.
   - 보유 붕어빵(비율 44, 아이콘 40). 둘째 줄: Workshop은 황금붕어빵력(`hud-gold`, H30), 구형 홈은 누적. 키 `balance-value`, `lifetime-value`(구형).
   - 초당/클릭당(비율 30). 키 `auto-rate`, `tap-rate`.
 - 2줄
@@ -1444,10 +1518,11 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 
 | 항목 | 내용 | 위치 |
 | --- | --- | --- |
-| 진행 스냅샷 | 앱이 구매·보상 호출마다 `snapshot = {buns, lifetimeBuns, level, taps, sales}`를 함께 보냄 | `lib/workshop_online.dart` `WorkshopProgressSource`, `WorkshopController.progressSnapshot` |
+| 진행 스냅샷 | 앱이 구매·보상 호출마다 `snapshot = {buns, lifetimeBuns, level, taps, sales, pieces}`를 함께 보냄(`pieces` = 다 판 주문의 붕어빵 개수, 4차 g9. 없으면 옛 앱으로 보고 판매 수가 대신함) | `lib/workshop_online.dart` `WorkshopProgressSource`, `WorkshopController.progressSnapshot` |
 | 서버 체크포인트 | `users/{uid}/workshopPlausibility/{progress}`에 직전 확인 값과 서버 시각 저장. 증거 기록과 같은 트랜잭션 | `functions/src/plausibility_validator.ts` |
-| 상한 공식 | 누적 붕어빵력 증가 ≤ 탭 증가×서버 기준 탭 생산 + 경과초×서버 기준 자동 생산 + 판매 증가×최대 판매가 + 승급 보상 + 여유분. 탭 증가 ≤ 경과초×15+여유. 판매 증가 ≤ 경과시간/손님 간격+여유. 감소·레벨 조건 미달은 확정 거절 | 같은 파일 `advance` |
+| 상한 공식 | 누적 붕어빵력 증가 ≤ 탭 증가×서버 기준 탭 생산 + 경과초×서버 기준 자동 생산 + 판매 증가×최대 판매가 + 승급 보상 + 여유분. 탭 증가 ≤ 경과초×15+여유. 판매 증가 ≤ 경과시간/손님 간격+여유. 판매 개수 증가 ≤ 판매 증가×한 주문 최대 개수. 감소·레벨 조건 미달은 확정 거절. **레벨 조건(4차 g9)**: 누적 붕어빵력 목표는 보지 않음. 앞 확인 이후 **시작한** 레벨(앞 확인 레벨+2 ~ 지금 레벨)의 탭·판매 개수 합 ≤ 앞 확인 이후 늘어난 탭·판매 개수(앞 확인 때 이미 일부 했을 수 있는 그 다음 레벨은 빼서 옛 규칙으로 오른 레벨로 막히지 않음). 첫 확인은 Lv.2~지금 레벨 전부. 붕어빵력 지불은 앱 재화라 서버가 따로 확인하지 않음 | 같은 파일 `advance`·`levelsReached` |
 | 첫 확인 | 체크포인트가 없으면 누적 100만·탭 10만·판매 2000 이하만 허용 | `server_validation.first_checkpoint_*` |
+| 레벨업 황금 (4차 g9) | 상품 id `level:N`(N=2~50, 설정 `level_cost_gold` > 0인 레벨만, 지금은 10·20·30·40·50). 가격 = 그 행의 `level_cost_buns`·`level_cost_gold`, 보유 0·수량 1만. 예약 증거의 레벨이 N−1일 때만 받음. 기존 스킬 구매와 같은 예약·차감·확정·취소 흐름이라 새 서버 함수 없음(배포는 따로) | `development_contracts.ts` `validateDevelopmentCompositeQuote`, `composite_purchases.ts` |
 | 구매 | 예약: 붕어빵력 ≥ 가격. 확정: 예약 이후 붕어빵력 증가가 누적 증가를 넘지 않아야 함(차감 반영 확인). 거절된 예약은 `취소 확인`으로 무과금 취소 기록(tombstone)을 남겨 정리. 예약된 구매 취소는 황금 반환·스킬 미지급 | `PlausibilityValidator.purchase/cancellation` |
 | 미션 | 설정 revision·목표·보상량 일치, 기간은 서버 KST 기준 최근 3일(`mission_claim_grace_days`) 안, 진행량 ≤ 스냅샷 누적/서버 보유 스킬 수/자동 생산. 실패는 `unverifiable`(지급 0) 확정 | `missionGold/missionPlausible` |
 | 판매 | 증거 형식(주문 id·별점 1~5·제품) 확인, 검증한 판매 수 ≤ 스냅샷 판매 수. 이후 기존 서버 추첨·일일 상한 | `PlausibilityValidator.sale`, `sale_rewards.ts` |

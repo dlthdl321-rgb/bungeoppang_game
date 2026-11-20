@@ -540,26 +540,32 @@ class _WorkshopPageState extends State<WorkshopPage> {
   /// H34·H45, readable rows with bars instead of one long line).
   Widget _levelMissions(){
     final s=c.state,top=s.level>=50;
-    final row=top ? null : c.config.rows('level_progression')[s.level];
-    Widget bar(String label,BigInt current,BigInt target,{Key? key})=>Padding(key:key,padding:const EdgeInsets.only(top:8),
+    Widget bar(String label,BigInt current,BigInt target,{Key? key,String unit=''})=>Padding(key:key,padding:const EdgeInsets.only(top:8),
       child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Row(children:[Expanded(child:Text(label,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w700,color:Cozy.ink))),
-          Text('${compactNumber(current>target ? target:current)}/${compactNumber(target)}',
+          Text('${compactNumber(current>target ? target:current)}/${compactNumber(target)}$unit',
             style:const TextStyle(fontSize:12,fontWeight:FontWeight.w700,color:Cozy.inkSoft))]),
         const SizedBox(height:3),
         ClipRRect(borderRadius:BorderRadius.circular(4),child:LinearProgressIndicator(minHeight:7,
           value:target==BigInt.zero ? 1 : ((current>target ? target:current)*BigInt.from(1000)~/target).toInt()/1000,
           backgroundColor:const Color(0xfff3e4cf),color:current>=target ? const Color(0xff3f9b5a):Cozy.tangerine)),
       ]));
+    // 4차 피드백 g9: this level's pieces sold and taps (0 again after each
+    // level-up) and the payment taken when the level is reached.
+    final rows=c.levelRequirements,wait=c.levelWaitReason;
     return ListView(padding:const EdgeInsets.fromLTRB(12,4,12,14),children:[
       TodaySection(icon:const PixelIcon('star',size:26),title:'Lv.${s.level}',
         trailing:Text(top ? '최고 레벨' : '다음 Lv.${s.level+1}',style:const TextStyle(fontFamily:'Jua',fontFamilyFallback:Cozy.fontFallback,fontSize:14,color:Cozy.inkSoft)),
         child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
           if(top)const Text('최고 레벨에 도달했어요.')
           else ...[
-            bar('누적 붕어빵력',s.lifetime,BigInt.parse('${row!['season_total_buns']}')),
-            bar('이번 레벨 탭',BigInt.from(s.taps-s.levelStartTaps),BigInt.from(DevelopmentBalance.integer(row,'additional_taps'))),
-            bar('이번 레벨 판매',BigInt.from(s.completedSales-s.levelStartSales),BigInt.from(DevelopmentBalance.integer(row,'additional_sales'))),
+            for(var i=0;i<rows.length;i++)
+              bar(rows[i].label,rows[i].current,rows[i].target,key:Key('level-req-$i'),unit:i==0 ? '개':''),
+            const SizedBox(height:8),
+            Text(c.levelCostNote!,key:const Key('level-cost-note'),
+              style:const TextStyle(fontSize:13,fontWeight:FontWeight.w700,color:Cozy.inkSoft)),
+            if(wait!=null)Padding(padding:const EdgeInsets.only(top:2),child:Text(wait,key:const Key('level-wait'),
+              style:const TextStyle(fontSize:13,fontWeight:FontWeight.w700,color:Color(0xffc0392b)))),
           ],
           const SizedBox(height:10),
           CozyPrimaryButton(minHeight:40,fontSize:16,label:'승급',onPressed:c.inputBusy || !c.canLevelUp ? null:c.levelUp),
@@ -582,21 +588,29 @@ class _WorkshopPageState extends State<WorkshopPage> {
         }),
     ]);
   }
-  int _levelProgress() {
-    final s=c.state;
-    if(s.level>=50)return 1000;
-    final row=c.config.rows('level_progression')[s.level];
-    final total=BigInt.parse('${row['season_total_buns']}');
-    int fraction(int current,int required)=>required<=0 ? 1000 : (current*1000~/required).clamp(0,1000);
-    final values=[total==BigInt.zero ? 1000 : (s.lifetime*BigInt.from(1000)~/total).toInt().clamp(0,1000),
-      fraction(s.taps-s.levelStartTaps,DevelopmentBalance.integer(row,'additional_taps')),
-      fraction(s.completedSales-s.levelStartSales,DevelopmentBalance.integer(row,'additional_sales'))];
-    return values.reduce((a,b)=>a<b ? a:b);
-  }
   @override
   Widget build(BuildContext context) => AnimatedBuilder(animation:Listenable.merge([c,widget.accountController]),
     builder:(context,_)=>_content(context));
+  /// The gold level-up payment last started, as 'level:gold', so a failed
+  /// try waits for a change instead of repeating (4차 피드백 g9).
+  String? _levelGoldTried;
+  /// 4차 피드백 g9: at Lv.10·20·30·40·50 the level-up also takes 황금붕어빵력
+  /// from the server wallet. Once sales, taps and 붕어빵력 are ready and the
+  /// wallet has it, the payment starts by itself (승급 stays automatic).
+  void _payLevelGold() {
+    c.goldBalance=widget.accountController.state.premium.gold;
+    if(!c.levelGoldDue || c.inputBusy)return;
+    final key='${c.state.level}:${c.goldBalance}';
+    if(_levelGoldTried==key)return;
+    _levelGoldTried=key;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if(!mounted || !c.levelGoldDue)return;
+      await c.payLevelGold();
+      if(mounted) await widget.accountController.refreshWorkshopWallet();
+    });
+  }
   Widget _content(BuildContext context) {
+    _payLevelGold();
     _showAwayReport();
     _showFeatureIntro();
     _askNotifications();
@@ -634,7 +648,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     // (26번 4-1단계, S4-1-Q4); the old left line until then.
     final low=WorkshopHomeLayout.active;
     final home=NightHome(key:_homeKey,controller:widget.accountController,onOpen:_open,
-      equipped:_homeEquipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
+      equipped:_homeEquipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:c.levelProgressPermille,levelHint:c.levelCostNote,
         buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts()['missions']!,
         // The guests show themselves now: no '· 주문 N' (F7).
         status:c.error!=null ? '저장 확인 필요' : s.business.open ? '영업 중' : '영업 준비',

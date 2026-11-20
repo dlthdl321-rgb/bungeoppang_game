@@ -161,3 +161,24 @@ test("오늘의 주문서·출석 붕어빵력은 하루치만 서버 한도에 
   const tooMuch=(40n+BigInt(config.server_validation.slack_buns)+2n*minimum+1000n).toString();
   await assert.rejects(other.purchase("a","reserve",{...second,snapshot:snapshot(tooMuch,tooMuch,40)}));
 });
+test("레벨 조건은 앞 확인 이후 시작한 레벨만 그 구간의 판매 개수·탭으로 확인하고 누적 붕어빵력은 보지 않는다 (4차 g9)",async()=>{
+  const {store,service,clock}=setup();await service.claim("a",{progress});
+  const v=new PlausibilityValidator(store,config,()=>clock.now);
+  let n=0;
+  const check=(s:object)=>v.purchase({account:"a",...context},intent(`transaction_g9${String(++n).padStart(3,"0")}`),"reservation",s);
+  const at=(level:number,taps:number,sales:number,pieces?:number)=>({buns:"40",lifetimeBuns:"40",level,taps,sales,...(pieces===undefined ? {} : {pieces})});
+  const row=(level:number)=>config.level_progression[level-1];
+  // First check: every level so far in full (Lv.2), but no lifetime goal.
+  await assert.rejects(check(at(2,row(2).additional_taps-1,1,1)),/레벨 조건/);
+  await check(at(2,row(2).additional_taps,1,row(2).additional_sold_pieces));
+  clock.now+=600000;
+  // Lv.3 may have been begun before the last check; Lv.4 must be done since.
+  await assert.rejects(check(at(4,row(2).additional_taps+row(4).additional_taps,1,1)),/레벨 조건/);
+  await check(at(4,row(2).additional_taps+row(4).additional_taps,1+row(4).additional_sold_pieces,1+row(4).additional_sold_pieces));
+  clock.now+=600000;
+  // More pieces than the new sales can hand over is refused.
+  await assert.rejects(check(at(4,100,3,1+row(4).additional_sold_pieces+1000)),/판매 개수/);
+  // An app from before pieces: sales stand in for them (Lv.6 is done since).
+  await assert.rejects(check(at(6,200,2)),/레벨 조건/);
+  await check(at(6,200,4));
+});

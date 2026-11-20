@@ -150,13 +150,19 @@ class DevelopmentBalance {
     }
     final levels = result.rows('level_progression');
     if (levels.length != 50) throw const FormatException('레벨 표 누락');
-    var last = BigInt.from(-1);
+    // 4차 피드백 g9: each level asks for pieces sold and taps in that level
+    // and a payment at level-up (no lifetime total); Lv.1 asks nothing and
+    // the 붕어빵력 cost never goes down.
+    var last = BigInt.zero;
     for (var i = 0; i < levels.length; i++) {
-      final total = decimal(levels[i], 'season_total_buns');
-      if (integer(levels[i], 'level') != i + 1 || total <= last) {
-        throw const FormatException('레벨 목표 순서 오류');
+      final row = levels[i], cost = decimal(row, 'level_cost_buns');
+      final pieces = integer(row, 'additional_sold_pieces'), gold = integer(row, 'level_cost_gold');
+      integer(row, 'additional_taps');
+      if (integer(row, 'level') != i + 1 || row.containsKey('season_total_buns') || row.containsKey('additional_sales') ||
+          (i == 0 ? cost != BigInt.zero || pieces != 0 || gold != 0 : cost <= BigInt.zero || cost < last || pieces < 1)) {
+        throw const FormatException('레벨 조건 표 오류');
       }
-      last = total;
+      last = cost;
     }
     final relationship = result.section('customer_relationships');
     final thresholds = result.integers('customer_relationships', 'stage_thresholds');
