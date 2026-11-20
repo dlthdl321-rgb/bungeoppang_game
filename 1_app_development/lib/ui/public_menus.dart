@@ -13,7 +13,6 @@ import 'avatar_painter.dart';
 import 'count_badge.dart';
 import 'cozy_style.dart';
 import 'fish_painter.dart';
-import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'support_panels.dart';
 import 'weather_layer.dart';
@@ -165,7 +164,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
           Semantics(
               label: '${wardrobeTabLabel(tab)} 꾸미기 미리보기',
               child: SizedBox(
-                  height: 180,
+                  height: tab == WardrobeTab.stall ? 260 : 180,
                   child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: _preview()))),
@@ -310,7 +309,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
   }
 
   /// Each tab previews its own subject: the pastry up close, the vendor
-  /// alone, or the whole stall with vendor and pastry.
+  /// alone, or the whole stall without the vendor (4차 피드백 g10 ID5).
   Widget _preview() {
     final fish = CustomPaint(
         painter: FishPainter(
@@ -343,17 +342,18 @@ class _WardrobePanelState extends State<WardrobePanel> {
                         painter:
                             AvatarPainter(AvatarLook.of(_shown), face: face)))),
           ])),
+      // 4차 피드백 g10(ID5): the whole stall as the home shows it, without
+      // the vendor, as in the Workshop wardrobe.
       WardrobeTab.stall => CustomPaint(
           key: const Key('preview-stall'),
-          painter: NightStallPainter(
+          size: Size.infinite,
+          painter: StallPreviewPainter(
               background: _shown(CosmeticSlot.background),
-              night: isNightTime(_shown(CosmeticSlot.time), DateTime.now()),
+              night: isNightTime(_shown(CosmeticSlot.time), sceneClock()),
               stove: _shown(CosmeticSlot.stove),
               decoration: _shown(CosmeticSlot.decoration),
-              avatar: AvatarLook.of(_shown)),
-          // Post lamps live in the stall frame.
-          foregroundPainter: StallFramePainter(lamp: _shown(CosmeticSlot.lamp)),
-          child: Center(child: SizedBox(width: 120, height: 90, child: fish))),
+              lamp: _shown(CosmeticSlot.lamp),
+              lowStall: false)),
     };
   }
 }
@@ -393,7 +393,6 @@ class CosmeticThumb extends StatelessWidget {
           switch (item.id) {
             'night_time' => Icons.nightlight_round,
             'clock' => Icons.schedule,
-            'scenetime' => Icons.landscape_rounded,
             _ => Icons.wb_sunny_rounded,
           },
           color: Cozy.woodLight,

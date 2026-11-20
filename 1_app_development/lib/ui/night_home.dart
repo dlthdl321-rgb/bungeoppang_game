@@ -173,7 +173,7 @@ class NightHome extends StatelessWidget {
           final fishArea = box.maxHeight - padding.top - reserved;
           final scroll = largeText || fishArea < 360;
           // Large text scrolls the stage, so the fish keeps its own place.
-          final night = isNightTime(e(CosmeticSlot.time), DateTime.now());
+          final night = isNightTime(e(CosmeticSlot.time), sceneClock());
           final low = lowStall && centerBuilder != null;
           final cleanCounter = centerBuilder != null &&
               (low || PixelSprites.hasCleanBackground(e(CosmeticSlot.background), night));

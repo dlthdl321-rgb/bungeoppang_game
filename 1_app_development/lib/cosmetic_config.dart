@@ -27,7 +27,8 @@ enum CosmeticSlot {
 enum CosmeticCategory { bungeoppang, avatar, stall }
 
 /// Tabs of the wardrobe screen (approved stage 14, D3): the vendor's
-/// 헤어 / 의상 / 소품, then the pastry and the stall.
+/// 헤어 / 의상 / 소품, then the pastry and the stall (shown as '배경' since
+/// 4차 피드백 g10).
 enum WardrobeTab { hair, outfit, props, bungeoppang, stall }
 
 extension CosmeticSlotCategory on CosmeticSlot {
@@ -227,11 +228,13 @@ const cosmeticDefinitions = [
   CosmeticDefinition('roselamp', '분홍 등불', CosmeticSlot.lamp, '4', 2),
   CosmeticDefinition('mintlamp', '민트 등불', CosmeticSlot.lamp, '6', 3),
   CosmeticDefinition('lilaclamp', '라일락 등불', CosmeticSlot.lamp, '8', 4),
-  // Day or night for every season, free like the character and skin tone.
-  CosmeticDefinition('scenetime', '배경 그대로', CosmeticSlot.time, '0', 1),
-  CosmeticDefinition('day', '낮', CosmeticSlot.time, '0', 1),
-  CosmeticDefinition('night_time', '밤', CosmeticSlot.time, '0', 1),
+  // Day or night for every season (4차 피드백 g10, ID9, 2026-11-21): the
+  // device's clock by default and free; a fixed day or night is sold in the
+  // Workshop like the special backgrounds (avatar_catalog slot `time`). The
+  // old '배경 그대로' (scenetime) is gone ([retiredCosmetics]).
   CosmeticDefinition('clock', '기기 시간 따라', CosmeticSlot.time, '0', 1),
+  CosmeticDefinition('day', '낮 고정', CosmeticSlot.time, '0', 1),
+  CosmeticDefinition('night_time', '밤 고정', CosmeticSlot.time, '0', 1),
 ];
 const defaultCosmetics = {
   CosmeticSlot.fish: 'redbean',
@@ -251,8 +254,13 @@ const defaultCosmetics = {
   CosmeticSlot.stove: 'iron',
   CosmeticSlot.decoration: 'none',
   CosmeticSlot.lamp: 'amberlamp',
-  CosmeticSlot.time: 'scenetime'
+  CosmeticSlot.time: 'clock'
 };
+
+/// Items taken out, worn in older saves, and what a save wearing one wears
+/// now (4차 피드백 g10, ID9: '배경 그대로' became the device's clock). An
+/// older save that owns one just drops it.
+const retiredCosmetics = {'scenetime': 'clock'};
 
 /// Each character's own default hair (26번 3차 G, 2026-11-20 사용자 결정:
 /// "남자 사장님 기본 머리는 짧은 머리"). A shop that has the character has
@@ -329,7 +337,6 @@ const blankCosmetics = {
   'noacc',
   'noapron',
   'amberlamp',
-  'scenetime',
   'day',
   'night_time',
   'clock',
@@ -349,9 +356,14 @@ const withdrawnAvatarItems = <String, Set<String>>{
 bool avatarItemWithdrawn(String character, String id) =>
     withdrawnAvatarItems[character]?.contains(id) ?? false;
 
-/// Whether the [time] choice shows the night, or null to keep each
-/// background's own time ('scenetime'). 'clock' follows the device: night
-/// from 19:00 to 6:00.
+/// The clock the day/night choice 'clock' follows on screen: the device's
+/// (4차 피드백 g10, ID9: the default for every shop). Tests fix it
+/// (test/flutter_test_config.dart) so pictures do not change with the hour.
+DateTime Function() sceneClock = DateTime.now;
+
+/// Whether the [time] choice shows the night: 'clock' (the default) follows
+/// the device, night from 19:00 to 6:00; 'day' and 'night_time' are fixed.
+/// Null (each background's own time) only for an unknown choice.
 bool? isNightTime(String time, DateTime local) => switch (time) {
       'night_time' => true,
       'day' => false,
@@ -386,7 +398,8 @@ String cosmeticSlotLabel(CosmeticSlot slot) => switch (slot) {
       CosmeticSlot.hat => '모자',
       CosmeticSlot.accessory => '액세서리',
       CosmeticSlot.tool => '도구',
-      CosmeticSlot.background => '배경',
+      // 4차 피드백 g10(ID8): the tab is 배경 now, its pictures 풍경.
+      CosmeticSlot.background => '풍경',
       CosmeticSlot.stove => '화로',
       CosmeticSlot.decoration => '장식',
       CosmeticSlot.lamp => '등불',
@@ -404,5 +417,6 @@ String wardrobeTabLabel(WardrobeTab t) => switch (t) {
       WardrobeTab.outfit => '의상',
       WardrobeTab.props => '소품',
       WardrobeTab.bungeoppang => '붕어빵',
-      WardrobeTab.stall => '가게',
+      // 4차 피드백 g10(ID8): '가게' → '배경' (풍경·등불·밤낮 칸).
+      WardrobeTab.stall => '배경',
     };

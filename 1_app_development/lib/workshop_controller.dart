@@ -27,7 +27,7 @@ import 'workshop_arrivals.dart';
 import 'workshop_feature_unlocks.dart';
 import 'workshop_daily.dart';
 import 'usage_stats.dart';
-import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, movedToTop;
+import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, movedToTop, retiredCosmetics;
 
 part 'workshop_storage.dart';
 
@@ -63,7 +63,7 @@ class WorkshopSalePraise {
 class WorkshopState {
   int sequence = 0, level = 1, taps = 0, completedSales = 0, phaseMs = 0,
       levelStartTaps = 0, levelStartSales = 0, arrivalMs = 0;
-  String selectedFlavor = 'redbean',sceneTime='scenetime';
+  String selectedFlavor = 'redbean',sceneTime='clock';
   /// First-run guide: `cook` → `sell` → `done`, or `skipped` (schema 6).
   String tutorial = 'cook';
   /// Real-time customer clocks (schema 7, 26번 5-1단계): regular guests and
@@ -386,7 +386,11 @@ class WorkshopState {
     }
     if ((row['schema'] as int)>=3) {
       if(!['scenetime','day','night_time','clock'].contains(row['sceneTime'])) throw const FormatException('배경 시간 저장 오류');
-      state.sceneTime=row['sceneTime'] as String;
+      // 4차 피드백 g10(ID9): '배경 그대로' is gone and the device's clock is
+      // the default; a fixed day or night not bought (they were free before)
+      // follows the clock too. The schema stays 10.
+      final time=retiredCosmetics[row['sceneTime']] ?? row['sceneTime'] as String;
+      state.sceneTime=time=='clock' || state.hasAvatar(config.section('avatar_catalog'),time) ? time : 'clock';
       if (row['rewardAccount'] != null && (row['rewardAccount'] is! String || (row['rewardAccount'] as String).isEmpty)) throw const FormatException('보상 계정 형식 오류');
       state.rewardAccount=row['rewardAccount'] as String?;
       if (state.purchases.account != null && state.rewardAccount != null && state.purchases.account != state.rewardAccount) throw const FormatException('구매와 보상 계정 불일치');
@@ -1464,8 +1468,11 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final gold = DevelopmentBalance.integer(rule, 'gold_reward');
     if (gold > 0) state.pendingGold['level:$next'] = jsonEncode({'level': next, 'gold': gold, 'revision': config.revision});
   });
+  /// The day/night choice (4차 피드백 g10, ID9): the device's clock is
+  /// free; a fixed day or night once bought ([ownsAvatar]).
   Future<bool> setBackgroundTime(String time)=>command(() {
-    if(!['scenetime','day','night_time','clock'].contains(time)) throw const FormatException('배경 시간 선택 오류');
+    if(!['day','night_time','clock'].contains(time)) throw const FormatException('배경 시간 선택 오류');
+    if(time!='clock' && !ownsAvatar(time)) throw const FormatException('낮·밤 고정은 사야 쓸 수 있어요.');
     state.sceneTime=time;
   });
   Future<bool> claimMission(String scope,String goal,{String? expectedPeriod})=>command(() {

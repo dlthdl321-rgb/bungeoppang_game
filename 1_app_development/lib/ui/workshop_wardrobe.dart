@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
 import 'avatar_face.dart';
@@ -9,6 +10,7 @@ import 'lock_overlay.dart';
 import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'public_menus.dart';
+import 'workshop_home_layout.dart';
 
 /// What a Workshop wardrobe panel is for (26번 4-5단계, S45-Q1 B).
 enum WardrobeMode {
@@ -53,6 +55,9 @@ class WorkshopWardrobe extends StatefulWidget {
 
   /// The preview's corner radius and the action row's height.
   static const previewRadius = 12.0, actionHeight = 34.0;
+  /// The 배경 tab's preview box: this share of the panel's height, at most
+  /// [stallPreviewMax] (4차 피드백 g10 ID5; other tabs .34, 140~210).
+  static const stallPreviewShare = .44, stallPreviewMax = 300.0;
 
   @override
   State<WorkshopWardrobe> createState() => _WorkshopWardrobeState();
@@ -291,7 +296,11 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
           child: Padding(padding: EdgeInsets.all(24), child: Text('지금 살 수 있는 꾸미기를 모두 모았어요.', textAlign: TextAlign.center)));
     }
     return LayoutBuilder(builder: (context, box) {
-      final previewHeight = (box.maxHeight.isFinite ? box.maxHeight * .34 : 200.0).clamp(140.0, 210.0);
+      // The 배경 tab's whole-stall card is tall (4차 피드백 g10 ID5): its box
+      // takes more of the height there.
+      final stall = tab == WardrobeTab.stall;
+      final previewHeight = (box.maxHeight.isFinite ? box.maxHeight * (stall ? WorkshopWardrobe.stallPreviewShare : .34) : 200.0)
+          .clamp(140.0, stall ? WorkshopWardrobe.stallPreviewMax : 210.0);
       return Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -482,9 +491,9 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
   }
 
   /// Each tab previews its own subject: the pastry up close, the vendor in
-  /// the shop's back room (25번 11번, no counter), or the stall itself
-  /// (시안 확인 2차: no vendor, a wide stall scene where the stall items
-  /// show — [StallPreviewPainter]).
+  /// the shop's back room (25번 11번, no counter), or the whole stall as the
+  /// home shows it, without the vendor and guests ([StallPreviewPainter],
+  /// 4차 피드백 g10 ID5).
   Widget _preview() {
     final fish = CustomPaint(
         painter: FishPainter(
@@ -519,126 +528,94 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
               size: Size.infinite,
               painter: StallPreviewPainter(
                   background: _shown(CosmeticSlot.background),
-                  night: isNightTime(_shown(CosmeticSlot.time), DateTime.now()),
+                  night: isNightTime(_shown(CosmeticSlot.time), sceneClock()),
                   stove: _shown(CosmeticSlot.stove),
                   decoration: _shown(CosmeticSlot.decoration),
-                  lamp: _shown(CosmeticSlot.lamp)))),
+                  lamp: _shown(CosmeticSlot.lamp),
+                  lowStall: WorkshopHomeLayout.active))),
     };
   }
 }
 
-/// The 가게 tab's preview (시안 확인 2차, 2026-11-19: the tall home scene
-/// squeezed into the wide box looked odd, with the vendor in front): a
-/// wide stall scene made of the stall items themselves. The background's
-/// street down to the counter fills the box (its towel row at
-/// [counterShare] of the height), the decoration hangs from the top (string
-/// kinds across the width, a pair of lanterns or chimes inward of the
-/// lamps, the snowman standing at the right on the counter), the lamp
-/// glass shows as the whole post lamp at both edges, and the griddle sits
-/// on the counter a little left of the middle. No vendor.
+/// The 배경 (예전 '가게') tab's preview (4차 피드백 g10, ID5, 2026-11-21:
+/// "가게 전체 모양을 확인할 수 있게"; reverses 시안 확인 2차's cropped
+/// counter scene): the whole stall as the home screen draws it — the
+/// background picture, its counter, the decoration, the awning with both
+/// post lamps and the griddle — shrunk into a [homeSize] card in the
+/// middle of the box. No vendor and no guests. Beside the card the same
+/// background fills the box, blurred under a dark veil ([blur], [veil]), so the card stands
+/// out without empty bars.
 class StallPreviewPainter extends CustomPainter {
   final String background, stove, decoration, lamp;
   final bool? night;
+  /// The lowered stall pictures of the home (WorkshopHomeLayout.active).
+  final bool lowStall;
   const StallPreviewPainter(
-      {required this.background, required this.night, required this.stove, required this.decoration, required this.lamp});
+      {required this.background,
+      required this.night,
+      required this.stove,
+      required this.decoration,
+      required this.lamp,
+      this.lowStall = true});
 
-  /// Where the counter's top (the background's towel row) shows, as a
-  /// share of the box height.
-  static const counterShare = .68;
-  /// The griddle's width as a share of the box width, its centre at
-  /// [stoveCentre] of the width; it may take at most [stoveMaxHeight] of
-  /// the height and its bottom sits [stoveBottom] above the box's bottom.
-  static const stoveWidth = .5, stoveCentre = .45, stoveMaxHeight = .52, stoveBottom = 2.0;
-  /// The post lamps at both edges: this share of the height, [edge] in.
-  static const lampHeight = .42, edge = 2.0;
-  /// Hanging decorations hang [hangTop] below the box's top; a pair hangs
-  /// with its outer edges at [pairInset] of the width from each side.
-  static const hangTop = 4.0, pairInset = .17;
-  /// Decorations that stand on the counter at the right (their right edge
-  /// at [standRight] of the width) instead of hanging.
-  static const standing = {'snowman'};
-  static const standRight = .86;
-  /// A decoration this many scene units wide or more is a string across.
-  static const stringWidth = 150.0;
-  /// Where a background without a measured towel has its counter's top,
-  /// as a share of its height (the concept backgrounds: 524 of 762).
-  static const towelShare = .69;
+  /// The home screen the card copies (a 390×844 phone).
+  static const homeSize = Size(390, 844);
+  /// The card's margin inside the box and its corner radius.
+  static const margin = 6.0, radius = 6.0;
+  /// The griddle on the home: the screen width less [griddleSide] at each
+  /// side, its bottom [griddleBottom] above the screen's bottom (the bottom
+  /// bar's height less 10, as NightHome lays it out).
+  static const griddleSide = 8.0, griddleBottom = 56.0;
+  /// How blurred and how dark the background beside the card is.
+  static const blur = 6.0, veil = .5;
+
+  /// Where the card sits in a [size] box.
+  static Rect cardIn(Size size) {
+    final h = size.height - margin * 2;
+    final w = h * homeSize.width / homeSize.height;
+    return Rect.fromLTWH((size.width - w) / 2, margin, w, h);
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
     canvas.drawRect(Offset.zero & size, Paint()..color = Cozy.woodDark);
-    // Scene units (the 180-wide stall scene) to box pixels.
-    final k = size.width / NightStallPainter.sceneSize.width;
-    final low = PixelSprites.lowStallBackground(background, night);
-    final (image, darken) = low.$1 != null ? low : PixelSprites.sceneBackground(background, night, clean: true);
-    if (image != null) {
-      final iw = image.width.toDouble(), ih = image.height.toDouble();
-      var sw = iw, sh = iw * size.height / size.width;
-      if (sh > ih) {
-        sh = ih;
-        sw = ih * size.width / size.height;
-      }
-      final path = PixelSprites.pathOf(image)?.replaceFirst('assets/images/', '').replaceFirst(RegExp(r'\.png$'), '');
-      final towel = NightStallPainter.towelTops[path]?.toDouble() ?? ih * towelShare;
-      final top = (towel - counterShare * sh).clamp(0.0, ih - sh);
-      canvas.drawImageRect(image, Rect.fromLTWH((iw - sw) / 2, top, sw, sh), Offset.zero & size,
-          Paint()..filterQuality = FilterQuality.medium);
-      if (darken) {
-        canvas.drawRect(
-            Offset.zero & size,
-            Paint()
-              ..color = const Color(0xff4a4f8f)
-              ..blendMode = BlendMode.multiply);
-      }
-    }
-    final counterY = size.height * counterShare;
-    final deco = PixelSprites.cosmetic(CosmeticSlot.decoration, decoration);
-    final ds = deco == null
-        ? Size.zero
-        : Size(deco.width / NightStallPainter.decorationScale * k, deco.height / NightStallPainter.decorationScale * k);
-    void drawDeco(Rect dst, {bool mirror = false}) {
-      if (!mirror) return PixelSprites.draw(canvas, deco, dst);
-      canvas.save();
-      canvas.translate(dst.left + dst.right, 0);
-      canvas.scale(-1, 1);
-      PixelSprites.draw(canvas, deco, dst);
-      canvas.restore();
-    }
-
-    final string = deco != null && ds.width / k >= stringWidth;
-    final stands = deco != null && standing.contains(decoration);
-    if (string) drawDeco(Offset(0, hangTop) & Size(size.width, ds.height * size.width / ds.width));
-    if (stands) drawDeco(Offset(size.width * standRight - ds.width, counterY - ds.height) & ds);
-    final lamps = cosmeticDefinitions.where((d) => d.slot == CosmeticSlot.lamp);
-    final lampArt = lamps.isEmpty
-        ? null
-        : PixelSprites.stallTile(lamps.firstWhere((d) => d.id == lamp, orElse: () => lamps.first));
-    if (lampArt != null) {
-      final h = size.height * lampHeight, w = h * lampArt.width / lampArt.height;
-      PixelSprites.draw(canvas, lampArt, Rect.fromLTWH(edge, hangTop, w, h));
-      canvas.save();
-      canvas.translate(size.width, 0);
-      canvas.scale(-1, 1);
-      PixelSprites.draw(canvas, lampArt, Rect.fromLTWH(edge, hangTop, w, h));
-      canvas.restore();
-    }
-    if (deco != null && !string && !stands) {
-      final pair = NightStallPainter.decorationAt[decoration] ?? const <(Offset, bool)>[];
-      for (final (i, (_, mirror)) in pair.indexed) {
-        final left = i == 0 ? size.width * pairInset : size.width * (1 - pairInset) - ds.width;
-        drawDeco(Offset(left, hangTop) & ds, mirror: mirror);
-      }
-    }
+    final scene = NightStallPainter(
+        background: background, night: night, stove: null, decoration: decoration, lowStall: lowStall);
+    // The backdrop: the same scene covering the box, blurred and veiled.
+    canvas.save();
+    canvas.clipRect(Offset.zero & size);
+    canvas.saveLayer(Offset.zero & size, Paint()..imageFilter = ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur));
+    final cover = Size(size.width, size.width * homeSize.height / homeSize.width);
+    canvas.translate(0, (size.height - cover.height) * .5);
+    scene.paint(canvas, cover);
+    canvas.restore();
+    canvas.restore();
+    canvas.drawRect(Offset.zero & size, Paint()..color = Colors.black.withValues(alpha: veil));
+    // The card: the home's stall layers at the phone's size, scaled down.
+    final card = cardIn(size);
+    final k = card.width / homeSize.width;
+    final clip = RRect.fromRectAndRadius(card, const Radius.circular(radius));
+    canvas.save();
+    canvas.clipRRect(clip);
+    canvas.translate(card.left, card.top);
+    canvas.scale(k);
+    scene.paint(canvas, homeSize);
+    StallFramePainter(lamp: lamp).paint(canvas, homeSize);
     final griddle = PixelSprites.cosmetic(CosmeticSlot.stove, stove);
     if (griddle != null) {
-      var w = size.width * stoveWidth, h = w * griddle.height / griddle.width;
-      if (h > size.height * stoveMaxHeight) {
-        h = size.height * stoveMaxHeight;
-        w = h * griddle.width / griddle.height;
-      }
-      PixelSprites.draw(
-          canvas, griddle, Rect.fromLTWH(size.width * stoveCentre - w / 2, size.height - stoveBottom - h, w, h));
+      final w = homeSize.width - griddleSide * 2, h = w * griddle.height / griddle.width;
+      canvas.save();
+      canvas.translate(griddleSide, homeSize.height - griddleBottom - h);
+      GriddlePainter(stove).paint(canvas, Size(w, h));
+      canvas.restore();
     }
+    canvas.restore();
+    canvas.drawRRect(
+        clip,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5
+          ..color = Cozy.cream.withValues(alpha: .85));
   }
 
   @override
@@ -647,7 +624,8 @@ class StallPreviewPainter extends CustomPainter {
       old.night != night ||
       old.stove != stove ||
       old.decoration != decoration ||
-      old.lamp != lamp;
+      old.lamp != lamp ||
+      old.lowStall != lowStall;
 }
 
 /// A wardrobe price with what the player lacks marked.

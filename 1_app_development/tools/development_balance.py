@@ -92,8 +92,9 @@ def validate(data, catalog):
             '기존 32개 스킬 누락/가상 ID 추가')
     # 3차 피드백 H11·H12: the other character and skin tones 2·3 are sold
     # for the Workshop only (the old gold catalog never sold them).
+    # 4차 피드백 g10(ID9): 낮 고정·밤 고정도 Workshop에서만 판다(예전 금화 목록에 없음).
     sold_avatar_basics = {key for key, row in data['avatar_catalog'].items()
-                          if row['slot'] in ('character', 'skin') and not row['free']}
+                          if row['slot'] in ('character', 'skin', 'time') and not row['free']}
     require(set(data['cosmetic_purchase']) == set(catalog['spend']['cosmetic']) | sold_avatar_basics,
             '꾸미기 가격 누락')
     require(set(data['boost_purchase']) == set(catalog['spend']['boost']), '부스트 가격 누락')
@@ -115,13 +116,27 @@ def validate(data, catalog):
                     data['mission_gold_rewards'][row['reward_key']] > 0, f'{scope}/{key}: 미션 목표/보상')
     avatar = data['avatar_catalog']
     # 26번 3차 H42: backgrounds are sold through the same catalog.
-    avatar_slots = {'character', 'skin', 'hair', 'top', 'bottom', 'shoes', 'outfit', 'hat', 'accessory', 'tool', 'background'}
+    # 4차 피드백 g10(ID8·ID9): 등불 색과 낮·밤 고정도 같은 목록으로 판다.
+    avatar_slots = {'character', 'skin', 'hair', 'top', 'bottom', 'shoes', 'outfit', 'hat', 'accessory', 'tool', 'background',
+                    'lamp', 'time'}
     require(bool(avatar), '아바타 카탈로그 누락')
     for key, row in avatar.items():
         require(row['slot'] in avatar_slots and type(row['free']) is bool and
                 type(row['unlock_level']) is int and 1 <= row['unlock_level'] <= 50 and
                 isinstance(row['unlock_total'], str) and re.fullmatch(r'0|[1-9][0-9]*', row['unlock_total']) and
                 (row['free'] or key in data['cosmetic_purchase']), f'{key}: 아바타 보유/해금 카탈로그')
+    # 4차 피드백 g10(ID9, 사용자 결정 2026-11-21): 낮 고정·밤 고정은 특별 배경과 같은 값.
+    # 가장 비싼 배경보다 싸지 않게 지킨다(배경 가격을 올리면 이 두 값도 함께 올린다).
+    fixed_times = [key for key, row in avatar.items() if row['slot'] == 'time']
+    require(set(fixed_times) == {'day', 'night_time'} and all(not avatar[k]['free'] for k in fixed_times),
+            '낮 고정·밤 고정 판매 항목')
+    top_background = max((data['cosmetic_purchase'][k] for k, row in avatar.items()
+                          if row['slot'] == 'background' and not row['free']),
+                         key=lambda v: (int(v['buns']), v['gold']))
+    for key in fixed_times:
+        price = data['cosmetic_purchase'][key]
+        require(int(price['buns']) >= int(top_background['buns']) and price['gold'] >= top_background['gold'],
+                f'{key}: 낮·밤 고정은 특별 배경 가격 이상')
     for key, price in entries.items():
         require(isinstance(price['effect'], str) and re.fullmatch(r'[1-9][0-9]*', price['effect']) and
                 isinstance(price['unlock_total'], str) and re.fullmatch(r'0|[1-9][0-9]*', price['unlock_total']),

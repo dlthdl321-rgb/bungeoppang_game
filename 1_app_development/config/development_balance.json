@@ -599,6 +599,14 @@
     "skin3": {
       "buns": "1000",
       "gold": 2
+    },
+    "day": {
+      "buns": "10000000",
+      "gold": 16
+    },
+    "night_time": {
+      "buns": "10000000",
+      "gold": 16
     }
   },
   "boost_purchase": {
@@ -1949,6 +1957,48 @@
       "slot": "background",
       "free": false,
       "unlock_level": 8,
+      "unlock_total": "0"
+    },
+    "amberlamp": {
+      "label": "기본 등불",
+      "slot": "lamp",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "roselamp": {
+      "label": "분홍 등불",
+      "slot": "lamp",
+      "free": false,
+      "unlock_level": 2,
+      "unlock_total": "0"
+    },
+    "mintlamp": {
+      "label": "민트 등불",
+      "slot": "lamp",
+      "free": false,
+      "unlock_level": 3,
+      "unlock_total": "0"
+    },
+    "lilaclamp": {
+      "label": "라일락 등불",
+      "slot": "lamp",
+      "free": false,
+      "unlock_level": 4,
+      "unlock_total": "0"
+    },
+    "day": {
+      "label": "낮 고정",
+      "slot": "time",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "night_time": {
+      "label": "밤 고정",
+      "slot": "time",
+      "free": false,
+      "unlock_level": 1,
       "unlock_total": "0"
     }
   },
