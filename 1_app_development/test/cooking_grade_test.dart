@@ -28,20 +28,23 @@ void main() {
 
   CookingGrade grade(CookingSession s) => cookingGrade(config, s, difficulty: 0);
 
-  test('설정값: 덮음 950‰ 이상, 양 1150‰ 이하, 익힘 미디엄(2)', () {
+  test('설정값(4차 IC4·IC6): 넓은 쪽 덮음 950‰ 이상, 1·2차 합 양 2300‰ 이하, 흘림 50‰ 이하, 익힘 미디엄(2)', () {
     final g = config.section('cooking_grade');
     expect(DevelopmentBalance.integer(g, 'perfect_min_coverage_permille'), 950);
-    expect(DevelopmentBalance.integer(g, 'perfect_max_amount_permille'), 1150);
+    expect(DevelopmentBalance.integer(g, 'perfect_max_total_amount_permille'), 2300);
+    expect(DevelopmentBalance.integer(g, 'perfect_max_spill_permille'), 50);
     expect(DevelopmentBalance.integer(g, 'perfect_doneness_index'), 2);
   });
 
-  test('완벽 경계: 덮음 949/950, 양 1150/1151 (두 번 모두)', () {
+  test('완벽 경계: 넓은 쪽 덮음 949/950, 합 양 2300/2301, 흘림 50/51', () {
     const ok = PaintAmount(950, 1150);
     expect(grade(finished(ok, ok)), CookingGrade.perfect);
-    expect(grade(finished(const PaintAmount(949, 1000), ok)), CookingGrade.good);
-    expect(grade(finished(ok, const PaintAmount(949, 1000))), CookingGrade.good);
+    expect(grade(finished(const PaintAmount(949, 1000), const PaintAmount(949, 1300))), CookingGrade.good);
+    expect(grade(finished(const PaintAmount(949, 1000), const PaintAmount(950, 1300))), CookingGrade.perfect);
     expect(grade(finished(ok, const PaintAmount(1000, 1151))), CookingGrade.good);
     expect(grade(finished(const PaintAmount(1000, 1151), ok)), CookingGrade.good);
+    expect(grade(finished(const PaintAmount(950, 1150, 25), const PaintAmount(950, 1150, 25))), CookingGrade.perfect);
+    expect(grade(finished(const PaintAmount(950, 1150, 25), const PaintAmount(950, 1150, 26))), CookingGrade.good);
   });
 
   test('익힘 0~4: 미디엄만 완벽, 1·3은 성공, 0·4는 실패', () {
@@ -58,13 +61,13 @@ void main() {
   });
 
   test('반죽 부족·넘침은 익힘이 맞으면 아쉬움, 타면 실패', () {
-    final short = finished(const PaintAmount(880, 900), PaintAmount.even);
+    final short = finished(const PaintAmount(880, 900), const PaintAmount(880, 880));
     expect(grade(short), CookingGrade.near);
     expect(cookingGradeLine(config, short, CookingGrade.near, variant: 2), '반죽이 조금 모자랐어요');
-    final over = finished(PaintAmount.even, const PaintAmount(1000, 1400));
+    final over = finished(const PaintAmount(1000, 1300), const PaintAmount(1000, 1400));
     expect(grade(over), CookingGrade.near);
     expect(cookingGradeLine(config, over, CookingGrade.near, variant: 2), '반죽이 넘쳤어요');
-    expect(grade(finished(const PaintAmount(880, 900), PaintAmount.even, bakeMs: 25000)), CookingGrade.fail);
+    expect(grade(finished(const PaintAmount(880, 900), const PaintAmount(880, 880), bakeMs: 25000)), CookingGrade.fail);
   });
 
   test('예전 길게 누르기 저장은 아쉬움', () {
@@ -87,7 +90,7 @@ void main() {
     for (final s in [
       practice,
       finished(const PaintAmount(949, 1000), ok),
-      finished(const PaintAmount(880, 900), PaintAmount.even),
+      finished(const PaintAmount(880, 900), const PaintAmount(880, 880)),
       finished(ok, ok, bakeMs: 25000),
     ]) {
       final r = evaluateCookingResult(config, s, difficulty: 0);
@@ -107,8 +110,10 @@ void main() {
     for (final (key, value) in [
       ('perfect_min_coverage_permille', 899),
       ('perfect_min_coverage_permille', 1001),
-      ('perfect_max_amount_permille', 999),
-      ('perfect_max_amount_permille', 1301),
+      ('perfect_max_total_amount_permille', 1799),
+      ('perfect_max_total_amount_permille', 2601),
+      ('perfect_max_spill_permille', -1),
+      ('perfect_max_spill_permille', 301),
       ('perfect_doneness_index', 0),
       ('perfect_doneness_index', 4),
     ]) {

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/cooking_result_rules.dart';
+import 'package:todays_bungeoppang/feedback_config.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
@@ -45,11 +46,12 @@ void main() {
     again.dispose();
   });
 
-  test('H24: 등급별 별 수', () {
-    expect(cookingStars(CookingGrade.perfect), 3);
-    expect(cookingStars(CookingGrade.good), 2);
-    expect(cookingStars(CookingGrade.near), 1);
-    expect(cookingStars(CookingGrade.fail), 0);
+  test('H24 → 4차 IC9: 등급별 별 수(5개 만점, 주문 품질 별처럼 최소 1개)', () {
+    expect(cookingStarsMax, 5);
+    expect(cookingStars(CookingGrade.perfect), 5);
+    expect(cookingStars(CookingGrade.good), 4);
+    expect(cookingStars(CookingGrade.near), 2);
+    expect(cookingStars(CookingGrade.fail), 1);
   });
 
   Future<WorkshopController> mount(WidgetTester tester) async {

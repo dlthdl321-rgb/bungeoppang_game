@@ -56,24 +56,27 @@ class ComboBonus {
 // OFF by default: combos are a visual effect only unless this is enabled.
 const comboBonus = ComboBonus(enabled: false, threshold: 20, permille: 1100);
 
-/// 붕어빵 품질 별(26번 3차 피드백 H24): how many of [cookingStarsMax] stars
-/// each bake grade (cooking_result_rules.dart `cookingGrade`) shows on the
-/// result. Presentation only: grades, mastery and prices are unchanged.
-const cookingStarsMax = 3;
-const cookingStarsPerfect = 3;
-const cookingStarsGood = 2;
-const cookingStarsNear = 1;
-const cookingStarsFail = 0;
+/// 붕어빵 품질 별(26번 3차 피드백 H24 → 4차 피드백 IC9 '별은 다섯 개까지'):
+/// how many of [cookingStarsMax] stars each bake grade
+/// (cooking_result_rules.dart `cookingGrade`) shows on the result — out of
+/// five like the order quality stars (ordinary_sale `stars_min`~`stars_max`,
+/// 1~5), and at least one like them. Presentation only: grades, mastery and
+/// prices are unchanged.
+const cookingStarsMax = ratingStarsMax;
 
-/// 걸이 축 뒤집기(26번 3차 피드백 H21): the closed mold hangs on an axle
-/// through its two side rings and the finger pushes it up (or down) around
-/// it. One mold height of travel turns it [flipAxleDegreesPerHeight]; once
-/// it has turned [flipAxleDoneDegrees] (past standing on edge) it falls
-/// the rest of the way over on its own. Less than [flipAxleStartPx] of
-/// travel is a touch, not a push.
-const flipAxleDegreesPerHeight = 180.0;
-const flipAxleDoneDegrees = 120.0;
-const flipAxleStartPx = 6.0;
+/// The one star scale of the game (IC9): every star rating — the bake
+/// result and the customers' quality stars (config ordinary_sale
+/// `stars_max`, checked to be this) — is out of five (ui/star_rating.dart).
+const ratingStarsMax = 5;
+const cookingStarsPerfect = 5;
+const cookingStarsGood = 4;
+const cookingStarsNear = 2;
+const cookingStarsFail = 1;
+
+// 원 그려 뒤집기(4차 피드백 IC5, 2026-11-20 사용자 결정): the closed mold
+// turns over its axle as the finger draws circles round it — the turn
+// follows the circle (manual_cooking `flip_turn_degrees` of circling = a
+// half turn of the mold), and the circle done finishes the flip.
 
 /// The axle's place in the mold picture (mold/*.png, 1200x880): the centres
 /// of the two side rings' holes, where the brass pins of mold/axle_front.png

@@ -9,6 +9,7 @@ import 'celebration.dart' show CountUpText;
 import 'cozy_style.dart';
 import 'first_run.dart' show FirstRunButton, FirstRunCard;
 import 'pixel_sprites.dart';
+import 'star_rating.dart';
 
 /// First-run guide over the real home: a ring around the widget keyed
 /// [WorkshopTutorialStep.target] inside [home], and a small card beside it.
@@ -396,7 +397,7 @@ class _WorkshopSalePraiseBannerState extends State<WorkshopSalePraiseBanner> wit
       ),
       const SizedBox(height: 8),
       SizedBox(
-        width: 150,
+        width: 190,
         height: 110,
         child: Stack(alignment: Alignment.center, children: [
           if (!widget.reduceMotion)
@@ -408,7 +409,9 @@ class _WorkshopSalePraiseBannerState extends State<WorkshopSalePraiseBanner> wit
                 ]).animate(_t),
                 child: const CustomPaint(key: Key('sale-praise-sparkle'), painter: SparklePainter()))),
           Column(mainAxisSize: MainAxisSize.min, children: [
-            const PixelIcon('star', key: Key('sale-praise-star'), size: 64),
+            // 4차 피드백 IC9: the same five-star row as the bake result.
+            StarRating(key: const Key('sale-praise-star'), stars: p.stars, size: 28),
+            const SizedBox(height: 4),
             Text('별 ${p.stars}개!', key: const Key('sale-praise-stars'),
                 style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 24, color: Cozy.cream,
                     shadows: [Shadow(color: Cozy.woodDark, offset: Offset(2, 2)), Shadow(color: Cozy.woodDark, blurRadius: 4)])),
@@ -427,7 +430,7 @@ class _WorkshopSalePraiseBannerState extends State<WorkshopSalePraiseBanner> wit
             child: content);
     return Semantics(
       liveRegion: true,
-      label: '${p.name}: ${p.speech} 별 ${p.stars}개',
+      label: '${p.name}: ${p.speech} ${StarRating.label(p.stars)}',
       excludeSemantics: true,
       child: IgnorePointer(child: Center(key: const Key('sale-praise'), child: shown)),
     );

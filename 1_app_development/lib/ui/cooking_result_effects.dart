@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../cooking_result_rules.dart';
 import '../game_audio.dart';
-import '../feedback_config.dart';
 import 'cozy_style.dart';
-import 'pixel_sprites.dart';
 import 'sparkle_art.dart';
+import 'star_rating.dart';
 
 /// The bake result's grade on the mold (26번 4단계, MASTER 10장 결과 등급·연출):
 /// a big word, a short praise or reason (`mold-result-caption`), the order
@@ -151,23 +150,9 @@ class _CookingResultViewState extends State<CookingResultView>
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: Cozy.cream.withValues(alpha: .22))),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
-        Semantics(
-          label: '별 $cookingStarsMax개 중 $stars개',
-          excludeSemantics: true,
-          child: Row(key: const Key('mold-result-stars'), mainAxisSize: MainAxisSize.min, children: [
-            for (var i = 0; i < cookingStarsMax; i++)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 1.5),
-                child: i < stars
-                    ? const PixelIcon('star', key: Key('mold-result-star-on'), size: 22)
-                    : const Opacity(
-                        opacity: .4,
-                        child: ColorFiltered(
-                            colorFilter: ColorFilter.mode(Color(0xffd9cfc4), BlendMode.srcIn),
-                            child: PixelIcon('star', size: 22))),
-              ),
-          ]),
-        ),
+        // 4차 피드백 IC9: out of five, the same row as the customers' stars.
+        StarRating(key: const Key('mold-result-stars'), stars: stars, size: 20,
+            onKey: 'mold-result-star-on'),
         const SizedBox(height: 2),
         AnimatedBuilder(
             animation: _effect,

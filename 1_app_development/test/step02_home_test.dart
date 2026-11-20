@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
@@ -30,14 +31,15 @@ Future<void> paintMold(WidgetTester tester) async {
   await tester.pump();
 }
 
-/// Pushes the flipping mold up over its axle and lifts (26번 3차 피드백 H21;
-/// the name stays from the old circle of 24번 6단계).
+/// Draws a whole circle round the flipping mold and lifts (24번 6단계,
+/// 4차 피드백 IC5).
 Future<void> drawFlipCircle(WidgetTester tester) async {
   final box = tester.getRect(find.byType(FlipCircleControl));
-  final start = box.center + Offset(0, box.height * .3);
-  final gesture = await tester.startGesture(start);
-  for (var d = 0.0; d <= box.height; d += 10) {
-    await gesture.moveTo(start - Offset(0, d));
+  final r = math.min(box.width, box.height) * .4;
+  Offset at(double a) => box.center + Offset(math.sin(a * math.pi / 180), -math.cos(a * math.pi / 180)) * r;
+  final gesture = await tester.startGesture(at(0));
+  for (var a = 15.0; a <= 360; a += 15) {
+    await gesture.moveTo(at(a));
     await tester.pump();
   }
   await gesture.up();
@@ -154,7 +156,7 @@ void main() {
       await step(CookingPhase.flipping);
       // Flipping has no button: a tap does nothing, a circle flips (24번 6단계).
       expect(find.byKey(const Key('workshop-mold-action')),findsNothing);
-      expect(find.text('틀을 위로 밀어 올려 뒤집어요'),findsOneWidget);
+      expect(find.text('틀 둘레에 원을 그려 뒤집어요'),findsOneWidget);
       await c.command(()=>c.state.phaseMs=15000);await tester.pump();
       await tester.tap(find.byType(FlipCircleControl));await tester.pump(const Duration(seconds:2));
       expect(c.state.session!.phase,CookingPhase.flipping);

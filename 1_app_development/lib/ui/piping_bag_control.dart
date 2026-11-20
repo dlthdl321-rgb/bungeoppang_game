@@ -4,7 +4,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../cooking_paint.dart';
-import '../cooking_result_rules.dart' show paintOverflowed;
+import '../cooking_result_rules.dart' show batterOverflowed, paintOverflowed;
 import '../development_balance.dart';
 import 'cozy_style.dart';
 import 'pixel_sprites.dart';
@@ -25,15 +25,17 @@ Color fillingPasteColor(String flavor) => fillingPasteColors[flavor] ?? fillingP
 /// or a flat paste [color]. [cells] are [MoldPaint.layers]; null draws the
 /// whole [image] (a step finished in an earlier run of the app). [drip] is
 /// the paste of the spilled drips (`fx/overflow_<drip>.png`): 'batter' or a
-/// flavor.
+/// flavor. [spill] are the points where paste went past the fish
+/// ([MoldPaint.spillPoints], 4차 피드백 IC4), drawn as paste blobs.
 class MoldPaintLayer {
   final String? image;
   final Color? color;
   final Uint8List? cells;
   final bool overflow;
   final String drip;
+  final List<(double, double)> spill;
   const MoldPaintLayer({this.image, this.color, this.cells, this.overflow = false,
-      this.drip = 'batter'});
+      this.drip = 'batter', this.spill = const []});
 }
 
 /// Smooth sampling for drawn art shown smaller than its pixels (the piping
@@ -72,6 +74,23 @@ void paintMoldLayer(Canvas canvas, Size size, double grow, MoldPaintLayer layer,
     if (cells[i] > 1) thick.addRect(cellRect(i));
   }
   final paste = layer.color ?? batterPasteColor;
+  // Paste spilled on the mold's rim or past it: soft blobs where the nozzle
+  // went (no picture of its own yet; the paste color, a little darker at
+  // the edge).
+  if (layer.spill.isNotEmpty) {
+    final blob = m.width * 0.05 * k;
+    final fill = Paint()..color = paste.withValues(alpha: .92);
+    final edge = Paint()
+      ..color = const Color(0x553b1a08)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = math.max(1.0, blob * .12);
+    final spilled = Path();
+    for (final (x, y) in layer.spill) {
+      spilled.addOval(Rect.fromCircle(center: top + Offset(x, y) * k, radius: blob));
+    }
+    canvas.drawPath(spilled, edge);
+    canvas.drawPath(spilled, fill);
+  }
   if (image != null) {
     canvas.save();
     canvas.clipPath(path);
@@ -125,10 +144,13 @@ void paintMoldLayer(Canvas canvas, Size size, double grow, MoldPaintLayer layer,
 
 /// One piping step on the special bungeoppang mold (24번 5단계): the player
 /// rubs over the mold like painting. Only the first pointer paints; lifting
-/// it confirms the step with the painted [PaintAmount]. An empty stroke (no
-/// fish cell painted) confirms nothing (G3). Pointer cancel, [blocked], a
-/// new [stageToken] or leaving the app discards the stroke. The screen
-/// reader's activation confirms one even layer (G4).
+/// it confirms the step with the painted [PaintAmount]. The paste comes out
+/// wherever the finger is (4차 피드백 IC4): the touch area reaches
+/// [touchOutset] past the mold's box, and paste past the fish is spilled
+/// ([PaintAmount.spill]). An empty stroke (no fish cell painted) confirms
+/// nothing (G3). Pointer cancel, [blocked], a new [stageToken] or leaving
+/// the app discards the stroke. The screen reader's activation confirms one
+/// even layer (G4).
 class MoldPaintControl extends StatefulWidget {
   final int stageToken;
   final bool blocked, filling, reduceMotion, vibration;
@@ -142,11 +164,21 @@ class MoldPaintControl extends StatefulWidget {
   /// '제작 취소' button (WorkshopMoldStage).
   final double captionLift;
 
-  /// Gets the stroke and the cells it painted (kept on screen, G2).
-  final void Function(PaintAmount paint, Uint8List cells) onFinished;
+  /// How far this control's box reaches past the mold's box on each side
+  /// (a bigger touch area; the drawing and caption keep the inner box).
+  final EdgeInsets touchOutset;
+
+  /// The batter already poured (the first stroke, while painting the
+  /// second): the overflow line is for the two together (IC6).
+  final PaintAmount? before;
+
+  /// Gets the stroke, the cells it painted and where it spilled (kept on
+  /// screen, G2).
+  final void Function(PaintAmount paint, Uint8List cells, List<(double, double)> spill) onFinished;
   const MoldPaintControl({super.key, required this.stageToken, required this.blocked,
       required this.filling, required this.flavor, required this.config,
-      required this.onFinished, this.grow = 1, this.captionLift = 0, this.reduceMotion = false,
+      required this.onFinished, this.grow = 1, this.captionLift = 0,
+      this.touchOutset = EdgeInsets.zero, this.before, this.reduceMotion = false,
       this.vibration = false});
   @override
   State<MoldPaintControl> createState() => MoldPaintControlState();
@@ -198,12 +230,23 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
     if (mounted) setState(() {});
   }
 
-  /// Local position → mask coordinates (mold-picture pixels from fishRect).
+  /// Global position → position in the mold's box (inside [touchOutset]).
+  Offset _toInner(Offset global) {
+    final box = context.findRenderObject() as RenderBox;
+    final o = widget.touchOutset;
+    return box.globalToLocal(global) - Offset(o.left, o.top);
+  }
+
+  /// Mold-box position → mask coordinates (mold-picture pixels from fishRect).
   Offset _toMask(Offset local) {
     final box = context.findRenderObject() as RenderBox;
-    final (k, origin) = WorkshopMoldArt.fit(box.size, widget.grow);
+    final (k, origin) = WorkshopMoldArt.fit(widget.touchOutset.deflateSize(box.size), widget.grow);
     return (local - origin) / k - WorkshopMoldArt.fishRect.topLeft;
   }
+
+  bool _overflowed(PaintAmount amount) => widget.filling
+      ? paintOverflowed(widget.config, amount)
+      : batterOverflowed(widget.config, amount, before: widget.before);
 
   Drag? _start(Offset global) {
     if (widget.blocked || _stroke != null || !mounted) return null;
@@ -218,20 +261,17 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
   void _move(Offset global) {
     final paint = _paint;
     if (paint == null) return;
-    final box = context.findRenderObject() as RenderBox;
-    final local = box.globalToLocal(global);
+    final local = _toInner(global);
     final at = _toMask(local);
     paint.moveTo(at.dx, at.dy);
-    // Squeezing while over the fish (the paste goes in), plain outside.
-    final m = FishCavityMask.standard;
-    final col = (at.dx / m.cell).floor(), row = (at.dy / m.cell).floor();
-    _squeeze = col >= 0 && row >= 0 && col < m.cols && row < m.rows &&
-        m.inFish(row * m.cols + col);
+    // The bag squeezes wherever the finger is: in the fish the paste goes
+    // in, past it it is spilled (IC4).
+    _squeeze = true;
     if (!widget.reduceMotion && _finger != null) {
       _lean = ((local.dx - _finger!.dx) * .02).clamp(-.25, .25);
     }
     _finger = local;
-    if (!_overflowBuzzed && paintOverflowed(widget.config, paint.amount)) {
+    if (!_overflowBuzzed && _overflowed(paint.amount)) {
       _overflowBuzzed = true;
       if (widget.vibration) HapticFeedback.mediumImpact();
     }
@@ -246,14 +286,14 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
     if (mounted) setState(() {});
     if (paint == null || widget.blocked || !paint.painted) return;
     if (widget.vibration) HapticFeedback.selectionClick();
-    widget.onFinished(paint.amount, Uint8List.fromList(paint.layers));
+    widget.onFinished(paint.amount, Uint8List.fromList(paint.layers), List.of(paint.spillPoints));
   }
 
   void _finishEven() {
     if (widget.blocked || _stroke != null) return;
     final cells = Uint8List(FishCavityMask.standard.cells.length)
       ..setAll(0, FishCavityMask.standard.cells);
-    widget.onFinished(PaintAmount.even, cells);
+    widget.onFinished(PaintAmount.even, cells, const []);
   }
 
   String get caption {
@@ -263,10 +303,14 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
       return widget.filling ? '틀 위를 문질러 속을 짜 주세요' : '틀 위를 문질러 반죽을 부어 주세요';
     }
     final a = paint.amount;
-    final over = paintOverflowed(widget.config, a) ? ' · 넘쳤어요' : '';
+    final over = _overflowed(a) ? ' · 넘쳤어요' : '';
+    final spill = a.spill > 0 ? ' · 흘림 ${(a.spill + 9) ~/ 10}%' : '';
+    // With the spill or the overflow it is long: '손을 떼면 마무리' goes on
+    // its own line instead of breaking mid-word (4차 IC4).
+    final end = spill.isEmpty && over.isEmpty ? ' · ' : '\n';
     return widget.filling
-        ? '$what 양 ${a.amount ~/ 10}% · 손을 떼면 마무리$over'
-        : '$what 덮음 ${a.coverage ~/ 10}% · 양 ${a.amount ~/ 10}% · 손을 떼면 마무리$over';
+        ? '$what 양 ${a.amount ~/ 10}%$spill$end손을 떼면 마무리$over'
+        : '$what 덮음 ${a.coverage ~/ 10}% · 양 ${a.amount ~/ 10}%$spill$end손을 떼면 마무리$over';
   }
 
   @override
@@ -290,7 +334,9 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
                     ImmediateMultiDragGestureRecognizer.new,
                     (r) => r.onStart = _start),
           },
-          child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
+          child: Padding(
+            padding: widget.touchOutset,
+            child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
             IgnorePointer(
                 child: CustomPaint(
                     key: const Key('mold-paint-live'),
@@ -302,7 +348,8 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
                                 color: widget.filling ? paste : null,
                                 cells: paint.layers,
                                 drip: widget.filling ? widget.flavor : 'batter',
-                                overflow: paintOverflowed(widget.config, paint.amount)),
+                                overflow: _overflowed(paint.amount),
+                                spill: paint.spillPoints),
                         paint?.version ?? -1,
                         widget.grow,
                         _finger,
@@ -326,6 +373,7 @@ class MoldPaintControlState extends State<MoldPaintControl> with WidgetsBindingO
                             style: const TextStyle(
                                 color: Cozy.cream, fontWeight: FontWeight.bold, fontSize: 13)))))),
           ]),
+          ),
         ),
       ),
     );

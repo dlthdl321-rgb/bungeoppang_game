@@ -20,7 +20,7 @@ void main() {
           child: MoldPaintControl(key: const ValueKey('paint'), stageToken: token,
               blocked: blocked, filling: filling, flavor: 'redbean', config: config,
               vibration: vibration,
-              onFinished: (paint, _) => results.add(paint))))));
+              onFinished: (paint, _, __) => results.add(paint))))));
   Offset centre(WidgetTester tester) => tester.getCenter(find.byType(MoldPaintControl));
   String caption(WidgetTester tester) =>
       tester.widget<Text>(find.byKey(const Key('piping-amount'))).data!;
@@ -53,7 +53,7 @@ void main() {
       await gesture.moveTo(centre(tester) + Offset(i.isEven ? -110 : 110, (i % 7 - 3) * 18));
     }
     await tester.pump();
-    expect(caption(tester), endsWith(' · 넘쳤어요'));
+    expect(caption(tester), endsWith('\n손을 떼면 마무리 · 넘쳤어요'));
     await gesture.up();
     expect(results.single.amount, greaterThan(1300));
   });
@@ -75,6 +75,32 @@ void main() {
     await tester.pump();
     expect(results.length, 1);
     expect(results.single.coverage, lessThan(300));
+    // 4차 IC4: 밖으로 나간 만큼은 흘린 양.
+    expect(results.single.spill, greaterThan(0));
+  });
+  testWidgets('틀 가장자리 밖(touchOutset)에서 시작해도 반죽이 나오고 밖은 흘림으로 센다 (4차 IC3·IC4)', (tester) async {
+    final spills = <List<(double, double)>>[];
+    await tester.pumpWidget(MaterialApp(home: Scaffold(body: Center(child: SizedBox(width: 300, height: 200,
+        child: MoldPaintControl(stageToken: 0, blocked: false, filling: false, flavor: 'redbean',
+            config: config, touchOutset: const EdgeInsets.symmetric(horizontal: 48, vertical: 32),
+            onFinished: (paint, _, spill) {
+              results.add(paint);
+              spills.add(spill);
+            }))))));
+    final box = tester.getRect(find.byType(MoldPaintControl));
+    // 바깥 여백(틀 상자 밖)에서 시작해 붕어빵 가운데로.
+    final gesture = await tester.startGesture(Offset(box.left + 10, box.center.dy));
+    await tester.pump();
+    for (var x = box.left + 10; x <= box.center.dx; x += 10) {
+      await gesture.moveTo(Offset(x, box.center.dy));
+      await tester.pump();
+    }
+    expect(caption(tester), matches(RegExp(r'^반죽 덮음 \d+% · 양 \d+% · 흘림 \d+%\n손을 떼면 마무리$')));
+    await gesture.up();
+    await tester.pump();
+    expect(results.single.coverage, greaterThan(0));
+    expect(results.single.spill, greaterThan(0));
+    expect(spills.single, isNotEmpty);
   });
   testWidgets('칠하는 중 단계가 바뀌면 이전 손 떼기로 확정하지 않는다', (tester) async {
     await tester.pumpWidget(view(token: 0));
@@ -136,7 +162,7 @@ void main() {
     Uint8List? cells;
     await tester.pumpWidget(MaterialApp(home: Scaffold(body: SizedBox(width: 300, height: 200,
         child: MoldPaintControl(stageToken: 0, blocked: false, filling: false,
-            flavor: 'redbean', config: config, onFinished: (paint, c) {
+            flavor: 'redbean', config: config, onFinished: (paint, c, _) {
               results.add(paint);
               cells = c;
             })))));

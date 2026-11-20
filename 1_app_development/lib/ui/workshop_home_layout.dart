@@ -1,3 +1,4 @@
+import 'package:flutter/painting.dart' show EdgeInsets;
 import 'pixel_sprites.dart';
 
 /// The Workshop home's "guests at the stall" layout (26번 4-1단계, MASTER
@@ -94,6 +95,12 @@ class WorkshopHomeLayout {
   static const moldGap = 8.0;
   static const moldTopRoom = 34.0;
   static const moldButtonGap = 6.0;
+
+  /// 4차 피드백 IC3·IC4: how far the hand steps' touch area (batter,
+  /// filling, flip) reaches past the mold's fish box — over the mold's rim
+  /// and handles and a little past them, so a stroke started on the edge
+  /// or outside still counts (paste there is spilled).
+  static const moldTouchOutset = EdgeInsets.symmetric(horizontal: 48, vertical: 32);
   static const cookCutShare = .32;
 
   /// The first-run guide card's left edge: clear of the old left queue

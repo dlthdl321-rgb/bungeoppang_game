@@ -149,6 +149,13 @@ abstract class SoundPolicy implements GameAudio {
   }
 }
 
+/// The one audio context of every player of the game: mixed with each
+/// other and with other apps (Android: no audio focus request, iOS:
+/// mixWithOthers), so no sound of the game stops another (4차 피드백:
+/// '굽기 소리가 배경음악을 끊음').
+AudioContext mixedAudioContext() =>
+    AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers).build();
+
 /// Seamless 16.4 s griddle loop, a recorded crepe sizzle (Freesound 117602,
 /// CC0) made with tools/make_seamless_loop.py.
 const cookingLoopAsset = 'audio/sizzle_loop.wav';
@@ -189,12 +196,20 @@ class AudioplayersAudio extends SoundPolicy {
     if (_disposed) return;
     try {
       // Mix with the player's own music instead of stealing audio focus.
-      await AudioPlayer.global.setAudioContext(
-          AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers)
-              .build());
+      final context = mixedAudioContext();
+      await AudioPlayer.global.setAudioContext(context);
+      // 4차 피드백: the background music stopped as soon as the sizzle
+      // started. The music and sizzle players are made with this object,
+      // before the global context above, so on Android they kept the
+      // default AUDIOFOCUS_GAIN: the sizzle's focus request took the focus
+      // from the music player, which pauses on a focus loss. Every player
+      // gets the mixed context itself (no audio focus request), so the
+      // music, the sizzle and every effect play over each other.
+      await _music.setAudioContext(context);
+      await _cooking.setAudioContext(context);
       for (final e in sfxFiles.entries) {
-        _pools[e.key] = await AudioPool.createFromAsset(
-            path: e.value, maxPlayers: e.key == Sfx.tap ? 4 : 2);
+        _pools[e.key] = await AudioPool.create(
+            source: AssetSource(e.value), maxPlayers: e.key == Sfx.tap ? 4 : 2, audioContext: context);
       }
       await _music.setReleaseMode(ReleaseMode.loop);
       final initialAsset = musicAsset(mood);

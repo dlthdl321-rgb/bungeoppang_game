@@ -55,16 +55,45 @@ void main() {
       expect(paint.amount.coverage, 1000);
       expect(paint.amount.amount, inInclusiveRange(1000, 1020));
     });
-    test('틀 밖(붕어빵 모양 밖)은 세지 않는다', () {
+    test('틀 밖(붕어빵 모양 밖)은 칠한 양으로 세지 않고 흘린 양이 된다 (4차 IC4)', () {
       final paint = brush();
       paint.moveTo(-200, -200);
       paint.moveTo(-200, 800);
       paint.moveTo(1000, 800);
       expect(paint.painted, isFalse);
-      expect(paint.amount, const PaintAmount(0, 0));
+      expect(paint.amount.coverage, 0);
+      expect(paint.amount.amount, 0);
+      // 붓이 지나간 넓이(길이 2200 x 지름) / 붕어빵 넓이.
+      final swept = 2200 * paint.radius * 2 * 1000 / (mask.count * mask.cell * mask.cell);
+      expect(paint.amount.spill, closeTo(swept, 2));
+      expect(paint.spillPoints, isNotEmpty);
       // The fish's top-left corner is outside the fish shape too.
       final corner = brush()..moveTo(0, 0);
       expect(corner.painted, isFalse);
+      // 제자리 터치는 흘린 양도 없다.
+      expect(corner.amount.spill, 0);
+    });
+    test('붕어빵 안쪽만 칠하면 흘린 양이 없다', () {
+      final paint = brush()
+        ..moveTo(mask.width * .35, mask.height * .5)
+        ..moveTo(mask.width * .65, mask.height * .5);
+      expect(paint.painted, isTrue);
+      expect(paint.amount.spill, 0);
+      expect(paint.spillPoints, isEmpty);
+    });
+    test('흘린 양은 저장되고 그대로 읽힌다(없으면 필드도 없음)', () {
+      var s = CookingSession.start(id: 'spill', flavor: 'redbean', practice: true,
+          fillingSequence: [CookingDirection.left]);
+      s = s.pour(0, const PaintAmount(930, 1120, 240));
+      expect(s.toJson()['firstBatterSpill'], 240);
+      final back = CookingSession.fromJson(jsonDecode(jsonEncode(s.toJson())) as Map<String, dynamic>);
+      expect(back.firstBatter, const PaintAmount(930, 1120, 240));
+      final clean = CookingSession.start(id: 'clean', flavor: 'redbean', practice: true,
+          fillingSequence: [CookingDirection.left]).pour(0, const PaintAmount(930, 1120));
+      expect(clean.toJson().containsKey('firstBatterSpill'), isFalse);
+      expect(() => CookingSession.fromJson({...s.toJson(), 'firstBatterSpill': -1}), throwsFormatException);
+      expect(() => CookingSession.fromJson({...s.toJson(), 'firstBatterSpill': MoldPaint.maxSpill + 1}),
+          throwsFormatException);
     });
     test('머물러 문질러도 한 겹, 떠났다 돌아오면 두 겹', () {
       final paint = brush();
@@ -101,16 +130,21 @@ void main() {
       }
       expect(fast.amount, slow.amount);
     });
-    test('덧칠이 많으면 130%를 넘어 넘침', () {
+    test('덧칠이 많으면 두 번 합이 260%를 넘어 넘침', () {
       final over = zigzag(.5);
       expect(over.amount.coverage, 1000);
       expect(over.amount.amount, greaterThan(1300));
-      expect(batterVerdict(config, over.amount), BatterVerdict.overflow);
+      expect(batterTotalVerdict(config, over.amount, over.amount), BatterVerdict.overflow);
       expect(paintOverflowed(config, over.amount), isTrue);
     });
-    test('깔끔한 지그재그는 90% 이상·130% 이하로 성공할 수 있다', () {
-      expect(batterVerdict(config, zigzag(1).amount), BatterVerdict.ok);
-      expect(batterVerdict(config, zigzag(.9).amount), BatterVerdict.ok);
+    test('붕어빵 네모 상자 전체를 지그재그로 쓸면 모서리(붕어빵 밖)로 흘린다 (4차 IC4)', () {
+      final sweep = zigzag(1).amount;
+      expect(sweep.coverage, 1000);
+      expect(sweep.spill, inInclusiveRange(350, 480));
+      // 한 번은 그렇게, 한 번은 고르게: 흘림 포함 합 2600 이하라 성공.
+      expect(batterTotalVerdict(config, sweep, PaintAmount.even), BatterVerdict.ok);
+      // 두 번 다 상자 전체를 쓸면 흘린 것까지 더해 넘친다: '흘림'.
+      expect(batterTotalVerdict(config, zigzag(.9).amount, sweep), BatterVerdict.spill);
     });
     test('겹은 칸마다 9겹까지만 센다', () {
       final paint = brush();
@@ -124,11 +158,21 @@ void main() {
   });
 
   group('판정', () {
-    test('반죽 경계: 덮은 면적 90% 이상, 양 130% 이하', () {
-      expect(batterVerdict(config, const PaintAmount(900, 1300)), BatterVerdict.ok);
-      expect(batterVerdict(config, const PaintAmount(899, 899)), BatterVerdict.short);
-      expect(batterVerdict(config, const PaintAmount(1000, 1301)), BatterVerdict.overflow);
-      expect(batterVerdict(config, const PaintAmount(500, 1400)), BatterVerdict.overflow);
+    test('반죽 경계(4차 IC6): 1·2차 합 양 180%~260%, 넓은 쪽 덮은 면적 90% 이상', () {
+      BatterVerdict v(PaintAmount a, PaintAmount b) => batterTotalVerdict(config, a, b);
+      expect(v(const PaintAmount(900, 900), const PaintAmount(900, 900)), BatterVerdict.ok);
+      expect(v(const PaintAmount(900, 1300), const PaintAmount(1000, 1300)), BatterVerdict.ok);
+      expect(v(const PaintAmount(899, 899), const PaintAmount(899, 1000)), BatterVerdict.short);
+      expect(v(const PaintAmount(900, 900), const PaintAmount(800, 899)), BatterVerdict.short);
+      expect(v(const PaintAmount(1000, 1301), const PaintAmount(1000, 1300)), BatterVerdict.overflow);
+      // 처음에 적게 붓고 두 번째에 많이 부으면 합으로 본다: 넘침이 아니다.
+      expect(v(const PaintAmount(500, 600), const PaintAmount(1000, 1700)), BatterVerdict.ok);
+      expect(v(const PaintAmount(500, 600), const PaintAmount(1000, 2100)), BatterVerdict.overflow);
+      // 안쪽 합은 괜찮은데 흘린 것까지 더하면 넘으면 '흘림'.
+      expect(v(const PaintAmount(1000, 1200, 150), const PaintAmount(1000, 1200, 100)), BatterVerdict.spill);
+      expect(v(const PaintAmount(1000, 1200, 100), const PaintAmount(1000, 1200, 100)), BatterVerdict.ok);
+      expect(batterOverflowed(config, const PaintAmount(1000, 1300, 1), before: const PaintAmount(1000, 1300)), isTrue);
+      expect(batterOverflowed(config, const PaintAmount(1000, 1300)), isFalse);
     });
     CookingSession finished(PaintAmount first, PaintAmount second, {int bakeMs = 15000}) {
       var s = CookingSession.start(id: 'judge', flavor: 'redbean', practice: true,
@@ -140,16 +184,24 @@ void main() {
       s = s.flip(s.token);
       return s.takeOut(s.token, bakeMs);
     }
-    test('반죽 두 번과 익힘이 모두 맞아야 성공, 속은 판정하지 않는다', () {
+    test('반죽 두 번(합)과 익힘이 모두 맞아야 성공, 속은 판정하지 않는다', () {
       final ok = finished(const PaintAmount(950, 1100), const PaintAmount(900, 1300));
       expect(evaluateCookingResult(config, ok, difficulty: 0).techniquePassed, isTrue);
       expect(batterFailureLabel(config, ok), isNull);
-      final short = finished(const PaintAmount(880, 900), PaintAmount.even);
+      final short = finished(const PaintAmount(500, 500), const PaintAmount(880, 900));
       expect(evaluateCookingResult(config, short, difficulty: 0).techniquePassed, isFalse);
       expect(batterFailureLabel(config, short), '반죽 부족');
-      final over = finished(PaintAmount.even, const PaintAmount(1000, 1400));
+      // 4차 IC6: 1차를 적게 붓고 2차를 많이 부으면 합으로 성공(예전에는 2차만 보고 '넘침').
+      final madeUp = finished(const PaintAmount(600, 700), const PaintAmount(1000, 1500));
+      expect(evaluateCookingResult(config, madeUp, difficulty: 0).techniquePassed, isTrue);
+      expect(batterFailureLabel(config, madeUp), isNull);
+      final over = finished(const PaintAmount(1000, 1300), const PaintAmount(1000, 1400));
       expect(evaluateCookingResult(config, over, difficulty: 0).techniquePassed, isFalse);
       expect(batterFailureLabel(config, over), '반죽 넘침');
+      final spilled = finished(const PaintAmount(1000, 1200, 300), const PaintAmount(1000, 1200, 200));
+      expect(evaluateCookingResult(config, spilled, difficulty: 0).techniquePassed, isFalse);
+      expect(batterFailureLabel(config, spilled), '반죽 흘림');
+      expect(cookingGradeLine(config, spilled, CookingGrade.near, variant: 2), '반죽을 틀 밖으로 흘렸어요');
       final raw = finished(PaintAmount.even, PaintAmount.even, bakeMs: 0);
       expect(evaluateCookingResult(config, raw, difficulty: 0).techniquePassed, isFalse);
     });

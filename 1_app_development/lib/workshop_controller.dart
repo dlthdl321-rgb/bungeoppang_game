@@ -1283,7 +1283,8 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   }
   String? get lastSaleFeedback {
     final sale=_lastSale();
-    return sale==null ? null : '${sale.name} · 별 ${sale.stars} · ${sale.speech}';
+    // 4차 피드백 IC9: stars are out of five everywhere.
+    return sale==null ? null : '${sale.name} · 별 ${sale.stars}/$ratingStarsMax · ${sale.speech}';
   }
   /// The first-run guide's first sale, shown big for a moment over the
   /// stall (26번 2단계). Never saved: a restart simply skips it.
