@@ -8,6 +8,7 @@ import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/owner_account.dart';
 import 'package:todays_bungeoppang/owner_profile.dart';
 import 'package:todays_bungeoppang/owner_repository.dart';
+import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/owner_texts.dart';
 import 'package:todays_bungeoppang/ui/first_run.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
@@ -52,8 +53,9 @@ Future<FirstRun> mountFirstRun(WidgetTester tester,
     {OnlineBackend? online,
     OwnerProfile? profile,
     Future<void> Function(WorkshopController shop)? before,
-    Size size = const Size(390, 844)}) async {
-  internet = true;
+    Size size = const Size(390, 844),
+    bool startOnline = true}) async {
+  internet = startOnline;
   final net = online ?? backend();
   final game = await mountGame(tester, size, reduced: true, online: net);
   final config = DevelopmentBalance.fromJson(
@@ -73,6 +75,7 @@ Future<FirstRun> mountFirstRun(WidgetTester tester,
       analytics: analytics,
       now: () => DateTime.utc(2026, 11, 18, 9));
   await owner.load();
+  internet = true;
   await tester.pumpWidget(GameApp(controller: game, workshop: shop, owner: owner));
   await tester.pump();
   return FirstRun(game, shop, owner, net, profiles, analytics);
@@ -461,10 +464,11 @@ void main() {
   });
 
   group('설정의 계정', () {
-    Future<FirstRun> started(WidgetTester tester, {OwnerProfile? profile}) async {
+    Future<FirstRun> started(WidgetTester tester, {OwnerProfile? profile, bool startOnline = true}) async {
       final net = backend()..signedIn = true..loginProvider = LoginProvider.kakao;
       final r = await mountFirstRun(tester,
           online: net,
+          startOnline: startOnline,
           profile: profile ??
               (OwnerProfile()
                 ..account = 'kakao:1001'
@@ -479,6 +483,46 @@ void main() {
       expect(gameShown(), isTrue);
       return r;
     }
+
+    // 4차 피드백 IC10: the game is online-only. No network in tests: the
+    // connection is the injected [internet].
+    testWidgets('플레이 중 연결이 끊기면 모든 창 위에 알림이 덮이고 가게가 멈춘다, 다시 시도로 이어 한다', (tester) async {
+      final r = await started(tester);
+      expect(find.byKey(const Key('connection-lost')), findsNothing);
+      // A window is open when the connection goes.
+      await tester.tap(find.byKey(const Key('menu-menubar')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 400));
+      internet = false;
+      await tester.pump(connectionCheckInterval);
+      await tester.pump();
+      expect(find.byKey(const Key('connection-lost')), findsOneWidget);
+      expect(find.text(OnlineTexts.lostTitle), findsOneWidget);
+      expect(r.owner.connectionLost, isTrue);
+      expect(r.shop.foreground, isFalse, reason: '알림 동안 가게는 멈춤');
+      // The notice takes the touches: the menu under it cannot be used.
+      expect(find.byKey(const Key('menu-menubar')).hitTestable(), findsNothing);
+      await tap(tester, const Key('connection-retry'));
+      expect(find.byKey(const Key('connection-lost')), findsOneWidget, reason: '아직 연결 없음');
+      internet = true;
+      await tap(tester, const Key('connection-retry'));
+      await tester.pump();
+      expect(find.byKey(const Key('connection-lost')), findsNothing);
+      expect(r.shop.foreground, isTrue);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
+
+    testWidgets('연결 없이 시작하면 처음부터 알림', (tester) async {
+      final r = await started(tester, startOnline: false);
+      expect(find.byKey(const Key('connection-lost')), findsOneWidget);
+      expect(r.shop.foreground, isFalse);
+      internet = true;
+      await tap(tester, const Key('connection-retry'));
+      await tester.pump();
+      expect(find.byKey(const Key('connection-lost')), findsNothing);
+      expect(r.shop.foreground, isTrue);
+      await tester.pumpWidget(const SizedBox.shrink());
+    });
 
     Future<void> openSettings(WidgetTester tester) async {
       await tester.tap(find.byTooltip('설정'));

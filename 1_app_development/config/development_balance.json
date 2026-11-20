@@ -1528,14 +1528,14 @@
       "label": "묶은 머리",
       "slot": "hair",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "curly": {
       "label": "곱슬머리",
       "slot": "hair",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "apron": {
@@ -1556,21 +1556,21 @@
       "label": "패딩 조끼",
       "slot": "top",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "stripe": {
       "label": "줄무늬 앞치마",
       "slot": "outfit",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "chefcoat": {
       "label": "요리사 복",
       "slot": "top",
       "free": false,
-      "unlock_level": 7,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "nohat": {
@@ -1584,28 +1584,28 @@
       "label": "털 비니",
       "slot": "hat",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "earmuffs": {
       "label": "귀마개",
       "slot": "hat",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "chefhat": {
       "label": "요리사 모자",
       "slot": "hat",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "santa": {
       "label": "산타 모자",
       "slot": "hat",
       "free": false,
-      "unlock_level": 9,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "tongs": {
@@ -1619,7 +1619,7 @@
       "label": "황금 뒤집개",
       "slot": "tool",
       "free": false,
-      "unlock_level": 9,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "tee": {
@@ -1633,35 +1633,35 @@
       "label": "크림 긴팔",
       "slot": "top",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "pinksweater": {
       "label": "분홍 니트",
       "slot": "top",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "sagesweater": {
       "label": "세이지 니트",
       "slot": "top",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "creamsweater": {
       "label": "꽈배기 니트",
       "slot": "top",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "cardigan": {
       "label": "카디건",
       "slot": "top",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "shorts": {
@@ -1675,63 +1675,63 @@
       "label": "주름치마",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "widepants": {
       "label": "와이드 바지",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "brownpants": {
       "label": "갈색 바지",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "jeans": {
       "label": "연청 청바지",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "denimshorts": {
       "label": "데님 반바지",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "joggers": {
       "label": "회색 조거 바지",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "checkskirt": {
       "label": "빨강 체크 치마",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "cargopants": {
       "label": "카키 카고 바지",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "longskirt": {
       "label": "크림 롱스커트",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "flats": {
@@ -1745,77 +1745,77 @@
       "label": "흰 운동화",
       "slot": "shoes",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "boots": {
       "label": "앵클부츠",
       "slot": "shoes",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "furboots": {
       "label": "털 부츠",
       "slot": "shoes",
       "free": false,
-      "unlock_level": 7,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "darkapron": {
       "label": "초코 앞치마",
       "slot": "outfit",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "creamapron": {
       "label": "크림 앞치마",
       "slot": "outfit",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "waistapron": {
       "label": "허리 앞치마",
       "slot": "outfit",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "bandana": {
       "label": "크림 두건",
       "slot": "hat",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "redbandana": {
       "label": "빨간 두건",
       "slot": "hat",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "ballcap": {
       "label": "크림 야구모자",
       "slot": "hat",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "newsboy": {
       "label": "헌팅캡",
       "slot": "hat",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "blackcap": {
       "label": "검정 야구모자",
       "slot": "hat",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "noacc": {
@@ -1829,56 +1829,56 @@
       "label": "분홍 리본",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "fishpin": {
       "label": "붕어빵 머리핀",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "glasses": {
       "label": "동그란 안경",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "scarf": {
       "label": "분홍 목도리",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "mittens": {
       "label": "털장갑",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "crossbag": {
       "label": "크로스백",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 7,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "paperbag": {
       "label": "붕어빵 봉투",
       "slot": "tool",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "fishhold": {
       "label": "갓 구운 붕어빵",
       "slot": "tool",
       "free": false,
-      "unlock_level": 8,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "clear": {
@@ -1899,56 +1899,56 @@
       "label": "보랏빛 해질녘",
       "slot": "background",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "rain": {
       "label": "비 오는 날",
       "slot": "background",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "snow": {
       "label": "눈 오는 밤",
       "slot": "background",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "autumn": {
       "label": "가을 골목",
       "slot": "background",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "forest": {
       "label": "숲길 노점",
       "slot": "background",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "cherry": {
       "label": "벚꽃 골목",
       "slot": "background",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "snowday": {
       "label": "눈 오는 낮",
       "slot": "background",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "seaside": {
       "label": "바닷가 야시장",
       "slot": "background",
       "free": false,
-      "unlock_level": 8,
+      "unlock_level": 1,
       "unlock_total": "0"
     }
   },

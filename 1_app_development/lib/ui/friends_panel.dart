@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../game_controller.dart';
+import '../online_texts.dart';
 import '../online_backend.dart';
 import '../support_config.dart';
 import 'avatar_painter.dart';
@@ -79,7 +80,7 @@ class _FriendsPanelState extends State<FriendsPanel> {
         if (!online)
           const Padding(
               padding: EdgeInsets.only(bottom: 8),
-              child: Text('지금은 온라인에 연결할 수 없어요', key: Key('friends-offline')))
+              child: Text(OnlineTexts.notSetUp, key: Key('friends-offline')))
         else ...[
           OnlineAccountBar(
               controller: c, guide: '카카오 계정으로 로그인하면 친구를 추가하고 서로 방문할 수 있어요.'),

@@ -26,6 +26,7 @@ import 'progress_rules.dart';
 import 'weekly_config.dart';
 import 'billing_service.dart';
 import 'online_backend.dart';
+import 'online_texts.dart';
 import 'premium_config.dart';
 import 'online_ranking.dart';
 import 'feedback_config.dart';

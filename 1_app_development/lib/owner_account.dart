@@ -50,6 +50,10 @@ Future<bool> lookupInternet() async {
   }
 }
 
+/// How often GameApp checks the connection while the app is in front
+/// (4차 피드백 IC10, online-only play).
+const connectionCheckInterval = Duration(seconds: 15);
+
 /// The owner (사장님) behind the shop: the required login, the name, the
 /// character question and the optional info, plus logout and account
 /// deletion from the settings. The first-run screens and the settings call
@@ -82,6 +86,16 @@ class OwnerAccount extends ChangeNotifier {
 
   OwnerProfile profile = OwnerProfile();
   bool busy = false, offline = false;
+
+  /// 4차 피드백 IC10 (online-only): an online build plays only while
+  /// connected. [checkConnection] sets this at the start, every
+  /// [connectionCheckInterval] while the app is in front, when it comes back
+  /// and on '다시 시도'; GameApp then covers every screen with the notice
+  /// and pauses the shop until the connection returns.
+  bool connectionLost = false;
+
+  /// True while [checkConnection] waits for its answer.
+  bool checkingConnection = false;
   /// The last problem to show on the current screen, or null.
   String? message;
 
@@ -106,7 +120,40 @@ class OwnerAccount extends ChangeNotifier {
       profile = OwnerProfile();
     }
     _apply();
+    if (loginRequired) connectionLost = !await hasInternet();
     if (online.signedIn && !profile.serverSynced) unawaited(pushProfile());
+  }
+
+  /// Checks the connection again (online builds only; a build without the
+  /// online settings has nothing to check). Returns whether it is there.
+  Future<bool> checkConnection() async {
+    if (!loginRequired) return true;
+    if (checkingConnection) return !connectionLost;
+    checkingConnection = true;
+    // Only the notice shows the check ('연결 확인 중…'); a quiet check
+    // while playing rebuilds nothing unless the answer changes.
+    var changed = connectionLost;
+    if (changed) notifyListeners();
+    try {
+      final ok = await hasInternet();
+      if (connectionLost == ok) {
+        connectionLost = !ok;
+        // Back online: the first-run offline screen goes too.
+        if (ok) offline = false;
+        changed = true;
+      }
+      return ok;
+    } finally {
+      checkingConnection = false;
+      if (changed && !_disposed) notifyListeners();
+    }
+  }
+
+  bool _disposed = false;
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 
   void _apply() {

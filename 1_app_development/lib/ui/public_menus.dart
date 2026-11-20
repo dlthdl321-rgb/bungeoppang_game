@@ -55,9 +55,13 @@ class CosmeticMenuAccess {
   /// What several items cost together, with what the player lacks for all
   /// of them ('모두 사기', 3차 피드백 H15); null: not sold together.
   final WardrobePrice? Function(List<CosmeticDefinition>)? total;
+
+  /// Why nothing can be bought right now (a build without the online
+  /// settings, or before the login; 4차 피드백 IC10), or null.
+  final String? Function()? purchaseBlock;
   const CosmeticMenuAccess({required this.equipped,required this.owned,required this.unlocked,
     required this.canApply,required this.price,required this.action,required this.apply,this.requirement,
-    this.listed=_always,this.forSale,this.cost,this.tabOpen,this.slotOpen,this.total});
+    this.listed=_always,this.forSale,this.cost,this.tabOpen,this.slotOpen,this.total,this.purchaseBlock});
   static bool _always(CosmeticDefinition _)=>true;
 }
 
