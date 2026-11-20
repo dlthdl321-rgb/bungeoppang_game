@@ -694,8 +694,8 @@
    0
   ],
   "avatar_v2/boy/hat_earmuffs_hairmask.png": [
-   50,
-   36
+   28,
+   23
   ],
   "avatar_v2/boy/hat_newsboy_hairmask.png": [
    0,
@@ -782,8 +782,8 @@
    0
   ],
   "avatar_v2/girl/hat_earmuffs_hairmask.png": [
-   49,
-   43
+   41,
+   28
   ],
   "avatar_v2/girl/hat_newsboy_hairmask.png": [
    0,
@@ -850,8 +850,8 @@
    48
   ],
   "avatar_v2/boy/hat_santa_basemask.png": [
-   206,
-   125
+   218,
+   117
   ],
   "avatar_v2/girl/hat_ballcap_basemask.png": [
    83,
@@ -874,7 +874,7 @@
    106
   ],
   "avatar_v2/girl/hat_newsboy_basemask.png": [
-   130,
+   153,
    47
   ],
   "avatar_v2/girl/hat_redbandana_basemask.png": [
@@ -1016,50 +1016,6 @@
   "avatar_v2/boy/hair_short.png": [
    44,
    11
-  ],
-  "avatar_v2/boy/hat_ballcap.png": [
-   38,
-   16
-  ],
-  "avatar_v2/boy/hat_bandana.png": [
-   43,
-   23
-  ],
-  "avatar_v2/boy/hat_bandana_back.png": [
-   232,
-   154
-  ],
-  "avatar_v2/boy/hat_beanie.png": [
-   46,
-   22
-  ],
-  "avatar_v2/boy/hat_blackcap.png": [
-   29,
-   18
-  ],
-  "avatar_v2/boy/hat_chefhat.png": [
-   41,
-   8
-  ],
-  "avatar_v2/boy/hat_earmuffs.png": [
-   50,
-   36
-  ],
-  "avatar_v2/boy/hat_newsboy.png": [
-   47,
-   18
-  ],
-  "avatar_v2/boy/hat_redbandana.png": [
-   41,
-   25
-  ],
-  "avatar_v2/boy/hat_redbandana_back.png": [
-   239,
-   149
-  ],
-  "avatar_v2/boy/hat_santa.png": [
-   36,
-   26
   ],
   "avatar_v2/boy/outfit_apron.png": [
    88,
@@ -1298,8 +1254,8 @@
    0
   ],
   "avatar_v2/girl/hair_ponytail_back.png": [
-   192,
-   203
+   152,
+   0
   ],
   "avatar_v2/girl/hair_short.png": [
    36,
@@ -1308,50 +1264,6 @@
   "avatar_v2/girl/hair_short_back.png": [
    66,
    203
-  ],
-  "avatar_v2/girl/hat_ballcap.png": [
-   43,
-   26
-  ],
-  "avatar_v2/girl/hat_bandana.png": [
-   59,
-   27
-  ],
-  "avatar_v2/girl/hat_bandana_back.png": [
-   238,
-   161
-  ],
-  "avatar_v2/girl/hat_beanie.png": [
-   58,
-   27
-  ],
-  "avatar_v2/girl/hat_blackcap.png": [
-   38,
-   24
-  ],
-  "avatar_v2/girl/hat_chefhat.png": [
-   50,
-   0
-  ],
-  "avatar_v2/girl/hat_earmuffs.png": [
-   49,
-   43
-  ],
-  "avatar_v2/girl/hat_newsboy.png": [
-   62,
-   26
-  ],
-  "avatar_v2/girl/hat_redbandana.png": [
-   54,
-   32
-  ],
-  "avatar_v2/girl/hat_redbandana_back.png": [
-   237,
-   141
-  ],
-  "avatar_v2/girl/hat_santa.png": [
-   60,
-   32
   ],
   "avatar_v2/girl/outfit_apron.png": [
    103,
@@ -1568,6 +1480,94 @@
   "avatar_v2/girl/pose_proud_sleeve_tee.png": [
    95,
    220
+  ],
+  "avatar_v2/boy/hat_ballcap.png": [
+   46,
+   0
+  ],
+  "avatar_v2/boy/hat_bandana.png": [
+   44,
+   16
+  ],
+  "avatar_v2/boy/hat_bandana_back.png": [
+   207,
+   136
+  ],
+  "avatar_v2/boy/hat_beanie.png": [
+   57,
+   0
+  ],
+  "avatar_v2/boy/hat_blackcap.png": [
+   44,
+   18
+  ],
+  "avatar_v2/boy/hat_chefhat.png": [
+   45,
+   0
+  ],
+  "avatar_v2/boy/hat_earmuffs.png": [
+   28,
+   23
+  ],
+  "avatar_v2/boy/hat_newsboy.png": [
+   55,
+   0
+  ],
+  "avatar_v2/boy/hat_redbandana.png": [
+   58,
+   14
+  ],
+  "avatar_v2/boy/hat_redbandana_back.png": [
+   227,
+   127
+  ],
+  "avatar_v2/boy/hat_santa.png": [
+   58,
+   24
+  ],
+  "avatar_v2/girl/hat_ballcap.png": [
+   51,
+   6
+  ],
+  "avatar_v2/girl/hat_bandana.png": [
+   63,
+   24
+  ],
+  "avatar_v2/girl/hat_bandana_back.png": [
+   222,
+   150
+  ],
+  "avatar_v2/girl/hat_beanie.png": [
+   74,
+   13
+  ],
+  "avatar_v2/girl/hat_blackcap.png": [
+   52,
+   25
+  ],
+  "avatar_v2/girl/hat_chefhat.png": [
+   65,
+   0
+  ],
+  "avatar_v2/girl/hat_earmuffs.png": [
+   41,
+   28
+  ],
+  "avatar_v2/girl/hat_newsboy.png": [
+   64,
+   6
+  ],
+  "avatar_v2/girl/hat_redbandana.png": [
+   51,
+   15
+  ],
+  "avatar_v2/girl/hat_redbandana_back.png": [
+   239,
+   126
+  ],
+  "avatar_v2/girl/hat_santa.png": [
+   70,
+   2
   ]
  },
  "pivots": {
@@ -2148,25 +2148,25 @@
  },
  "v1art": {
   "avatar_v2/girl/hair_long.png": {
-   "pixels": 17685
+   "pixels": 17785
   },
   "avatar_v2/girl/hair_long_back.png": {
    "pixels": 11872
   },
   "avatar_v2/girl/hair_short.png": {
-   "pixels": 26056
+   "pixels": 25590
   },
   "avatar_v2/girl/hair_short_back.png": {
    "pixels": 650
   },
   "avatar_v2/girl/hair_ponytail.png": {
-   "pixels": 24195
+   "pixels": 24259
   },
   "avatar_v2/girl/hair_ponytail_back.png": {
-   "pixels": 1751
+   "pixels": 12324
   },
   "avatar_v2/girl/hair_curly.png": {
-   "pixels": 21766
+   "pixels": 21825
   },
   "avatar_v2/girl/hair_curly_back.png": {
    "pixels": 14038
@@ -2238,7 +2238,7 @@
    "pixels": 195
   },
   "avatar_v2/girl/accessory_fishpin.png": {
-   "pixels": 471
+   "pixels": 492
   },
   "avatar_v2/girl/accessory_scarf.png": {
    "pixels": 5755
@@ -2247,16 +2247,16 @@
    "pixels": 527
   },
   "avatar_v2/boy/hair_long.png": {
-   "pixels": 18832
+   "pixels": 19040
   },
   "avatar_v2/boy/hair_short.png": {
-   "pixels": 17527
+   "pixels": 17968
   },
   "avatar_v2/boy/hair_ponytail.png": {
-   "pixels": 16551
+   "pixels": 16777
   },
   "avatar_v2/boy/hair_curly.png": {
-   "pixels": 18868
+   "pixels": 19271
   },
   "avatar_v2/boy/top_tee.png": {
    "pixels": 10586
@@ -2325,7 +2325,7 @@
    "pixels": 543
   },
   "avatar_v2/boy/accessory_fishpin.png": {
-   "pixels": 520
+   "pixels": 525
   },
   "avatar_v2/boy/accessory_scarf.png": {
    "pixels": 6512
@@ -2384,130 +2384,220 @@
  },
  "hat_fit": {
   "girl/hat_ballcap": {
-   "scale": 1.341,
+   "scale": 1.2,
    "pivot": [
     145.5,
     113
-   ]
+   ],
+   "move": [
+    -3,
+    -30
+   ],
+   "iou": 0.8
   },
   "girl/hat_bandana": {
-   "scale": 1.321,
+   "scale": 1.16,
    "pivot": [
     154.5,
     93
-   ]
+   ],
+   "move": [
+    -7,
+    -11
+   ],
+   "iou": 0.751
   },
   "girl/hat_beanie": {
-   "scale": 1.322,
+   "scale": 1.06,
    "pivot": [
     155.0,
     110
-   ]
+   ],
+   "move": [
+    -3,
+    -31
+   ],
+   "iou": 0.893
   },
   "girl/hat_blackcap": {
-   "scale": 1.371,
+   "scale": 1.18,
    "pivot": [
     145.5,
     110
-   ]
+   ],
+   "move": [
+    -1,
+    -11
+   ],
+   "iou": 0.397
   },
   "girl/hat_chefhat": {
-   "scale": 1.412,
+   "scale": 1.17,
    "pivot": [
     155.0,
     109
-   ]
+   ],
+   "move": [
+    -2,
+    -14
+   ],
+   "iou": 0.92
   },
   "girl/hat_earmuffs": {
-   "scale": 1.15,
+   "scale": 1.22,
    "pivot": [
     154.0,
     142
-   ]
+   ],
+   "move": [
+    -1,
+    -9
+   ],
+   "iou": 0.597
   },
   "girl/hat_newsboy": {
-   "scale": 1.304,
+   "scale": 1.24,
    "pivot": [
     154.5,
     109
-   ]
+   ],
+   "move": [
+    -2,
+    -24
+   ],
+   "iou": 0.0
   },
   "girl/hat_redbandana": {
-   "scale": 1.351,
+   "scale": 1.39,
    "pivot": [
     154.5,
     90
-   ]
+   ],
+   "move": [
+    0,
+    -15
+   ],
+   "iou": 0.465
   },
   "girl/hat_santa": {
-   "scale": 1.321,
+   "scale": 1.39,
    "pivot": [
     160.0,
     103
-   ]
+   ],
+   "move": [
+    15,
+    -26
+   ],
+   "iou": 0.808
   },
   "boy/hat_ballcap": {
-   "scale": 1.401,
+   "scale": 1.22,
    "pivot": [
     145.0,
     113
-   ]
+   ],
+   "move": [
+    -5,
+    -36
+   ],
+   "iou": 0.858
   },
   "boy/hat_bandana": {
-   "scale": 1.42,
+   "scale": 1.22,
    "pivot": [
     151.0,
     101
-   ]
+   ],
+   "move": [
+    -14,
+    -18
+   ],
+   "iou": 0.875
   },
   "boy/hat_beanie": {
-   "scale": 1.42,
+   "scale": 1.2,
    "pivot": [
     151.5,
     104
-   ]
+   ],
+   "move": [
+    -5,
+    -42
+   ],
+   "iou": 0.863
   },
   "boy/hat_blackcap": {
-   "scale": 1.42,
+   "scale": 1.24,
    "pivot": [
     142.0,
     113
-   ]
+   ],
+   "move": [
+    1,
+    -12
+   ],
+   "iou": 0.626
   },
   "boy/hat_chefhat": {
-   "scale": 1.375,
+   "scale": 1.31,
    "pivot": [
     151.5,
     107
-   ]
+   ],
+   "move": [
+    -2,
+    -27
+   ],
+   "iou": 0.865
   },
   "boy/hat_earmuffs": {
-   "scale": 1.187,
+   "scale": 1.44,
    "pivot": [
     151.0,
     124
-   ]
+   ],
+   "move": [
+    -1,
+    6
+   ],
+   "iou": 0.432
   },
   "boy/hat_newsboy": {
-   "scale": 1.416,
+   "scale": 1.26,
    "pivot": [
     151.0,
     111
-   ]
+   ],
+   "move": [
+    -3,
+    -30
+   ],
+   "iou": 0.0
   },
   "boy/hat_redbandana": {
-   "scale": 1.42,
+   "scale": 1.2,
    "pivot": [
     151.0,
     97
-   ]
+   ],
+   "move": [
+    0,
+    -22
+   ],
+   "iou": 0.0
   },
   "boy/hat_santa": {
-   "scale": 1.373,
+   "scale": 1.16,
    "pivot": [
     154.5,
     101
-   ]
+   ],
+   "move": [
+    3,
+    -13
+   ],
+   "iou": 0.77
   }
  },
  "sleeve_v1": {

@@ -65,6 +65,21 @@ V1_DEFAULT = {'hair': 'long', 'top': 'tee', 'bottom': 'shorts',
               'shoes': 'flats', 'outfit': 'noapron', 'hat': 'nohat',
               'accessory': 'noacc', 'tool': 'tongs'}
 V1_ORDER = ('bottom', 'shoes', 'top', 'outfit', 'hat', 'accessory', 'tool')
+# Rows above and below the eyes' top where the fringe is redone (fringe).
+FRINGE = (45, 6)
+# Neighbourhood (px) whose hair colour fills a gap at the ear (fill_rim).
+RIM_SMOOTH = 9
+# Hair styles whose tail (on this side of the head) is copied behind the
+# head so a hat never leaves a piece of it floating (hair).
+PONY_TAIL = {'girl': {'ponytail': 'right'}}
+# Red over blue below this beside the face at the ears: a grey v1 ear stroke.
+EAR_GREY = 50
+# A dark fringe pixel further than this from brown hair is a v1 brow stroke.
+FRINGE_DARK = 2
+# Dark hair pixels this close to a v2 brow go (no second brow).
+FRINGE_BROW = 5
+FRINGE_BROW_LUM = 100
+FRINGE_COVER = 0.3
 HAIR_CUT = {'girl': 204, 'boy': 206}  # the chin: front hair above, back below
 V1_GROW = {'top': 10, 'bottom': 8, 'shoes': 6, 'outfit': 6, 'accessory': 14}
 # Wardrobe icons made from the worn v1 layer (avatar_v2.py v1icons): the
@@ -285,7 +300,89 @@ class Extract:
         if n:
             sizes = ndimage.sum(keep, lab, range(1, n + 1))
             keep = np.isin(lab, 1 + np.nonzero(sizes >= 40)[0])
-        return keep
+        return self.fringe(c, a1, keep, region)
+
+    def fringe(self, c, a1, keep, region):
+        """26번 3차 AV3c (user: "눈썹 부분이 이상해"): the rules above
+        cut the fringe where it crosses the v2 brows (dark v1 strand
+        outlines beside them, pieces round the eyes) - broken strands, the
+        v2 brow poking through, pale specks. Over the forehead and brows
+        (FRINGE rows round the eyes' top) a strand is the v1 hair as drawn,
+        whole: hair-coloured or dark v1 pixels joined to the hair above the
+        band, holes closed; never over an eye; lone pieces (v1 brow and
+        lash strokes) and pale edge pixels go."""
+        b, bs = self.base(c)
+        f = L.FACES[f'{c}_front']
+        et = min(box[1] for box, _ in f['eyes'])
+        l, _, r, _ = L.face_box(c, 1)
+        h, w = keep.shape
+        ys, xs = np.mgrid[0:h, 0:w]
+        top, bot = et - FRINGE[0], et + FRINGE[1]
+        zone = (ys >= top) & (ys < bot) & (xs >= l - 12) & (xs < r + 12)
+        eye = np.zeros_like(keep)
+        for (el, e_t, er, eb), _ in f['eyes']:
+            eye[e_t:eb, el:er] = True
+        eye &= (b[..., 3] > 0) & ~bs  # the eyes and lashes, not the skin
+        eye = ndimage.binary_dilation(eye, iterations=1)
+        rgb = a1[..., :3]
+        op = (a1[..., 3] > 0) & region & ~eye
+        px = op & zone & (hairlike(a1) | (lum(a1) < 70)) & (rgb[..., 0] < 200)
+        both = keep | px
+        lab, _ = ndimage.label(both, K3)
+        ids = np.unique(lab[keep & (ys < top)])
+        joined = np.isin(lab, ids[ids > 0])
+        out = (keep & ~zone) | (joined & zone)
+        # Holes inside the strands (where a v2 brow showed through).
+        inner = ndimage.binary_fill_holes(
+            ndimage.binary_closing(out, K3, iterations=1)) & ~out
+        out |= inner & zone & op & (rgb[..., 0] < 200)
+        # Pale edge pixels (the v1 strands' blend into the v1 skin).
+        for _ in range(2):
+            edge = out & zone & ndimage.binary_dilation(~out, K3)
+            out &= ~(edge & ((lum(a1) > 135) | L.skinish(a1)) & ~hairlike(a1))
+        # Dark strokes far from any mid-brown hair: the v1 brows and lashes
+        # (a strand's outline lies along its brown).
+        brown = out & hairlike(a1) & (lum(a1) >= 70)
+        near = ndimage.binary_dilation(brown, K3, iterations=FRINGE_DARK)
+        out &= ~(zone & (lum(a1) < 70) & ~near)
+        # Nothing dark round the v2 brows: one brow, the base's (a strand
+        # crossing it keeps its brown body).
+        brow = np.zeros_like(keep)
+        for (el, e_t, er, _), _ in f['eyes']:
+            brow[e_t - 30:e_t, el - 12:er + 12] = True
+        brow &= (b[..., 3] > 0) & ~bs & (lum(b) < 160)
+        # only the brows themselves: pieces with skin all round (not the
+        # head's outline or the ear in the box)
+        lab, n = ndimage.label(brow, K3)
+        for k in range(1, n + 1):
+            m = lab == k
+            ring = ndimage.binary_dilation(m, K3, iterations=2) & ~m
+            if (ring & bs).sum() < 0.8 * ring.sum():
+                brow[m] = False
+        # Per brow: one the v1 strands lie across (FRINGE_COVER of it
+        # under hair) stays under them - the hair pixels running on outside
+        # its surround are a strand and are kept, pieces lying inside it go
+        # (v1 brow strokes); a brow left bare keeps nothing dark (below
+        # FRINGE_BROW_LUM) round it, so no second brow line beside it.
+        blab, bn = ndimage.label(brow, K3)
+        for k in range(1, bn + 1):
+            bk = blab == k
+            near = ndimage.binary_dilation(bk, K3, iterations=FRINGE_BROW)
+            if (brown & out & bk).sum() >= FRINGE_COVER * bk.sum():
+                inside = out & near
+                lab, n = ndimage.label(inside, K3)
+                edge = ndimage.binary_dilation(out & ~near, K3) & inside
+                run_on = np.unique(lab[edge])
+                out &= ~(inside & ~np.isin(lab, run_on[run_on > 0]))
+            else:
+                out &= ~(near & (lum(a1) < FRINGE_BROW_LUM))
+        lab, n = ndimage.label(out & zone, K3)
+        if n:
+            sizes = ndimage.sum(out, lab, range(1, n + 1))
+            touch = np.unique(lab[(ys == top) & out & zone])
+            small = 1 + np.nonzero(sizes < 30)[0]
+            out &= ~np.isin(lab, np.setdiff1d(small, touch))
+        return out
 
     def hair_region(self, c):
         """The long hair painted into the v1 base."""
@@ -319,6 +416,21 @@ class Extract:
         front, back = out.copy(), out.copy()
         front[(rows >= HAIR_CUT[c]).repeat(out.shape[1], 1), 3] = 0
         back[(rows < HAIR_CUT[c]).repeat(out.shape[1], 1), 3] = 0
+        if item in PONY_TAIL.get(c, ()):
+            # 26번 3차 AV3c: under a hat the tail's top went with the hair
+            # the hat presses and its lower part hung beside the head on
+            # its own. A copy of the tail (the hair outside the head on
+            # the tie's side) goes behind the head too, in the back half
+            # the hat does not press (lib/ui/avatar_painter.dart), so it
+            # comes out from under the hat whole; bare-headed the front
+            # covers it exactly.
+            b, _ = self.base(c)
+            head = ndimage.binary_dilation(b[..., 3] > 0, K3, iterations=2)
+            cols = np.arange(out.shape[1])[None, :]
+            mid = (np.nonzero((b[..., 3] > 0).any(0))[0][[0, -1]].mean())
+            side = cols > mid if PONY_TAIL[c][item] == 'right' else cols < mid
+            tail = (front[..., 3] > 0) & ~head & side
+            back[tail] = front[tail]
         return front, back
 
     def fill_rim(self, c, out, a1):
@@ -341,11 +453,33 @@ class Extract:
         # and its pale tan rim (light, little red over blue: not hair).
         light = rgb.mean(-1) > 110
         red |= k & light & ((rgb[..., 0] - rgb[..., 2]) < 70) &             (b[..., 3] == 0) & (ys > ey - 35) & (ys < ey + 35)
+        # 26번 3차 AV3c: and the greyish strokes of the v1 ear and its
+        # shadow (little red over blue) beside the v2 face.
+        l, _, r, _ = L.face_box(c, 1)
+        cols = np.arange(out.shape[1])[None, :]
+        red |= k & ((rgb[..., 0] - rgb[..., 2]) < EAR_GREY) &             (rgb.mean(-1) > 60) & (ys > ey - 35) & (ys < ey + 35) &             ((cols < l + 4) | (cols > r - 4))
         src = k & ~red
         hole |= red
         if hole.any() and src.any():
             _, (iy, ix) = ndimage.distance_transform_edt(~src, return_indices=True)
-            out[hole] = out[iy[hole], ix[hole]]
+            near = out[iy, ix]
+            # 26번 3차 AV3c: the nearest pixel alone drew streaks (a line of
+            # one colour per row, grey where an outline was); the hole takes
+            # the hair round it averaged (RIM_SMOOTH px), the darkest
+            # outlines left out.
+            w = (src & (lum(out) >= 50)).astype(np.float64)
+            den = ndimage.uniform_filter(w, RIM_SMOOTH)
+            avg = near.astype(np.float64)
+            for ch in range(3):
+                num = ndimage.uniform_filter(out[..., ch] * w, RIM_SMOOTH)
+                avg[..., ch] = np.where(den > 0.02, num / np.maximum(den, 0.02),
+                                        near[..., ch])
+            out[hole, :3] = avg[hole][:, :3].astype(np.uint8)
+            out[hole, 3] = 255
+            # its outer edge keeps the nearest pixel (the hair's outline),
+            # so defringe does not take the lighter fill for a pale rim
+            rim = hole & ndimage.binary_dilation(~(k | hole | (b[..., 3] > 0)), K3)
+            out[rim] = near[rim]
         return out
 
     # ----------------------------------------------------------- clothes
@@ -559,3 +693,91 @@ def raise_waist(arr, target):
         for k in range(n_new):
             out[b0 - d + k, x] = seg[int(k * len(seg) / n_new)]
     return out
+
+
+# 26번 3차 AV3c: the hats sat 30~40 rows too low over the v1 hair (their
+# brim on the brows, the fringe gone) - HAT_FIT's width rule scaled them
+# about the bare head's brim. Each 43~49번 hat now takes the place and size
+# of the v1 hat of the same id (drawn over this same v1 hair): the scale and
+# move that best cover the v1 hat's own pixels (largest overlap), searched
+# over FIT_SCALES and FIT_MOVE px round the centres' match.
+FIT_SCALES = (0.95, 1.6, 0.01)
+FIT_MOVE = 8
+# Per hat corrections after the search, '<c>/<id>': {'scale': x, 'move':
+# [dx, dy]} added, or 'set': (scale, dx, dy) instead of the search where
+# the v1 hat is the hair's colour (brown newsboy, black cap) or its knot
+# hangs apart (red bandana) and the overlap missed - set by eye in the
+# hat x hair close-ups (tools/preview_avatar_hathair_test.dart).
+FIT_ADJUST = {
+    'girl/newsboy': {'set': (1.24, -2, -24)},
+    'boy/newsboy': {'set': (1.26, -3, -30)},
+    'boy/redbandana': {'set': (1.2, 0, -22)},
+    'boy/bandana': {'scale': 0.08},
+}
+
+
+def v1_hat_mask(c, hat, hat_rgba=None):
+    """The v1 hat's own pixels as the v1 vendor wore it (not the hair the
+    v1 hat picture carries): where the v1 look with the hat differs from
+    the look without it, the largest piece with its holes filled. A hat
+    not drawn in hair colours ([hat_rgba], the 43~49번 picture) leaves out
+    the pixels nearer the hair's colours than its own (the hair the v1
+    hat redrew round it)."""
+    v = V1()
+    a1 = v.look(c, 'skin1', {'hat': hat})
+    a0 = v.look(c, 'skin1', {'hat': 'nohat'})
+    m = (a1[..., 3] > 0) & ((a0[..., 3] == 0) | (dist(a1, a0) >= CHANGED))
+    if hat_rgba is not None:
+        # Each pixel goes to the nearer palette: the hat's (43~49번) or the
+        # v1 hair's (the long hair painted into the v1 base).
+        from scipy.spatial import cKDTree
+        rng = np.random.default_rng(0)
+        hb = v.get(f'avatar/{c}/base.png')
+        hair = hb[(hb[..., 3] > 0) & hairlike(hb)][:, :3]
+        hat_px = hat_rgba[hat_rgba[..., 3] > 0][:, :3].astype(np.int64)
+        pick = lambda a: a[rng.choice(len(a), min(len(a), 3000), False)]
+        dh, _ = cKDTree(pick(hair)).query(a1[m][:, :3])
+        dt, _ = cKDTree(pick(hat_px)).query(a1[m][:, :3])
+        mm = m.copy()
+        mm[m] = dt <= dh
+        m = mm
+    m = ndimage.binary_opening(m, K3)
+    lab, n = ndimage.label(m, K3)
+    if not n:
+        return m
+    sizes = ndimage.sum(m, lab, range(1, n + 1))
+    # the hat and any part of it as big as a fifth of it (a muff, a knot)
+    keep = 1 + np.nonzero(sizes >= sizes.max() / 5)[0]
+    return ndimage.binary_fill_holes(closefill(np.isin(lab, keep), 2))
+
+
+def scaled_mask(m, s, pivot, move=(0, 0)):
+    """[m] scaled by [s] about [pivot] (x, y) and moved, nearest pixel."""
+    px, py = pivot
+    h, w = m.shape
+    ys, xs = np.mgrid[0:h, 0:w]
+    sy = np.round(py + (ys - move[1] - py) / s).astype(int)
+    sx = np.round(px + (xs - move[0] - px) / s).astype(int)
+    ok = (sy >= 0) & (sy < h) & (sx >= 0) & (sx < w)
+    out = np.zeros_like(m)
+    out[ok] = m[sy[ok], sx[ok]]
+    return out
+
+
+def fit_to_v1(al, target, pivot):
+    """(scale, dx, dy) laying the hat mask [al] over [target] best (IoU)."""
+    best = (-1, 1.0, 0, 0)
+    al, target = al[:300], target[:300]  # the head (faster)
+    ty, tx = ndimage.center_of_mass(target)
+    for s in np.arange(*FIT_SCALES):
+        sm = scaled_mask(al, s, pivot)
+        cy, cx = ndimage.center_of_mass(sm)
+        bx, by = int(round(tx - cx)), int(round(ty - cy))
+        for dy in range(by - FIT_MOVE, by + FIT_MOVE + 1):
+            for dx in range(bx - FIT_MOVE, bx + FIT_MOVE + 1):
+                moved = np.roll(np.roll(sm, dy, 0), dx, 1)
+                inter = (moved & target).sum()
+                iou = inter / max((moved | target).sum(), 1)
+                if iou > best[0]:
+                    best = (iou, float(s), dx, dy)
+    return best
