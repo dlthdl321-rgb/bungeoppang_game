@@ -49,11 +49,39 @@ class GriddleProgress {
     return GriddleProgress._(runId, [for (final c in cells) GriddleCell._(c.cycle,
       c.elapsedMs + (c.cooking ? elapsedMs : 0), c.idleMs + (c.cooking ? 0 : elapsedMs), c.flavor, c.difficulty)]);
   }
+  /// 4차 피드백 g6: after a cell starts, the batter, the filling and the
+  /// batter again go in by themselves over `griddle.prep_ms` (a third
+  /// each); only then it starts to cook.
+  static int prepMs(DevelopmentBalance config) => DevelopmentBalance.integer(config.section('griddle'), 'prep_ms');
+  /// The automatic step a cooking cell is in: 0 첫 반죽, 1 속, 2 둘째 반죽,
+  /// or null once it cooks (or when it is empty).
+  int? prepStep(int index, DevelopmentBalance config) {
+    if (index < 0 || index >= cells.length || !cells[index].cooking) return null;
+    final prep = prepMs(config), elapsed = cells[index].elapsedMs;
+    if (elapsed >= prep) return null;
+    return (elapsed * 3 ~/ prep).clamp(0, 2);
+  }
+  /// Cooking time after the automatic steps.
+  int _cookedMs(int index, DevelopmentBalance config) =>
+      (cells[index].elapsedMs - prepMs(config)).clamp(0, 1 << 52);
+  /// The doneness the player's tap gives now: the special mold's thresholds
+  /// on the cooking time (after the steps) × the slot's speed.
   int doneness(int index, DevelopmentBalance config) {
     if (index < 0 || index >= cells.length || !cells[index].cooking) throw const FormatException('굽는 칸 없음');
     final speed = config.integers('griddle', 'slot_speed_permille')[index];
-    return provisionalDoneness(config, elapsedMs: cells[index].elapsedMs, speedPermille: speed,
+    return provisionalDoneness(config, elapsedMs: _cookedMs(index, config), speedPermille: speed,
         difficulty: cells[index].difficulty!);
+  }
+  /// How far a cell has cooked, in permille of its flavor's target
+  /// (`doneness_target_ms`), on the same scale as `doneness.boundary_permille`:
+  /// the readable cue for timing a tap.
+  int cookPermille(int index, DevelopmentBalance config) {
+    if (index < 0 || index >= cells.length || !cells[index].cooking) throw const FormatException('굽는 칸 없음');
+    final speed = config.integers('griddle', 'slot_speed_permille')[index];
+    final target = DevelopmentBalance.integer(config.mastery(cells[index].difficulty!), 'doneness_target_ms');
+    final scale = DevelopmentBalance.integer(config.section('doneness'), 'reference_scale');
+    return (BigInt.from(_cookedMs(index, config)) * BigInt.from(scale) * BigInt.from(speed) ~/
+        (BigInt.from(target) * BigInt.from(1000))).toInt();
   }
   GriddleHarvest harvest(int index, DevelopmentBalance config, {required int businessIndex, int? expectedCycle}) {
     if (index < 0 || index >= cells.length ||
@@ -61,6 +89,7 @@ class GriddleProgress {
       throw const FormatException('지난 숙련된 붕어빵 수확 입력');
     }
     if (businessIndex < 0) throw const FormatException('제작 영업일 오류');
+    if (prepStep(index, config) != null) throw const FormatException('반죽과 속을 넣는 중이에요.');
     final variant = doneness(index, config), cell = cells[index];
     final id = 'griddle:$runId:$index:${cell.cycle}';
     final product = variant == 4 ? null : ProductBatch(id: id, flavor: cell.flavor!,

@@ -24,6 +24,8 @@ import '../customer_notifier.dart';
 import '../development_balance.dart';
 import '../owner_account.dart';
 import 'first_run.dart';
+import 'connection_notice.dart';
+import 'dart:async';
 
 class GameApp extends StatefulWidget {
   final GameController controller;
@@ -34,8 +36,12 @@ class GameApp extends StatefulWidget {
   /// The first-run login, owner name and character (26번 2-1단계). Null
   /// (tests of the game screens) goes straight to the game.
   final OwnerAccount? owner;
+  /// A debug build made without the online settings shows [DevBuildBand]
+  /// (main.dart; 4차 피드백 IC10). Tests leave it off.
+  final bool devBuildBand;
   const GameApp(
-      {super.key, required this.controller, this.audio = const SilentAudio(), this.workshop, this.notifier, this.owner});
+      {super.key, required this.controller, this.audio = const SilentAudio(), this.workshop, this.notifier, this.owner,
+      this.devBuildBand = false});
   @override
   State<GameApp> createState() => _GameAppState();
 }
@@ -44,6 +50,12 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
   final _navigatorKey = GlobalKey<NavigatorState>();
   bool _foreground = true;
   bool? _audioActive;
+  Timer? _connectionTimer;
+  /// 4차 피드백 IC10: an online build without a connection stops here.
+  bool get _connectionLost => widget.owner?.connectionLost ?? false;
+  /// The shop runs only in front and while connected.
+  bool get _playing => _foreground && !_connectionLost;
+  bool? _wasLost;
   @override
   void initState() {
     super.initState();
@@ -53,8 +65,8 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     final lifecycle = WidgetsBinding.instance.lifecycleState;
     if (lifecycle != null && lifecycle != AppLifecycleState.resumed) {
       _foreground = false;
-      widget.workshop?.setForeground(false);
     }
+    _watchConnection();
     _syncAudio();
     widget.audio.init().then((_) {
       if (mounted) _syncAudio();
@@ -98,11 +110,11 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     // Night plays the night mood whatever the season.
     ..setScene(isNightTime(
                 widget.workshop?.state.sceneTime ?? widget.controller.state.equippedCosmetic(CosmeticSlot.time),
-          DateTime.now()) ==
+          sceneClock()) ==
             true
         ? 'night'
         : widget.workshop!=null ? 'clear' : widget.controller.state.equippedCosmetic(CosmeticSlot.background));
-    final active = _foreground && !(widget.workshop?.adPaused ?? false);
+    final active = _playing && !(widget.workshop?.adPaused ?? false);
     if (_audioActive != active) {
       _audioActive = active;
       if (active) {
@@ -113,8 +125,43 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
     }
   }
 
+  /// Online-only play (4차 피드백 IC10): follow the owner's connection and
+  /// look again every few seconds while in front.
+  void _watchConnection() {
+    widget.owner?.addListener(_ownerChanged);
+    _wasLost = _connectionLost;
+    if (!_playing) widget.workshop?.setForeground(false);
+    _connectionTimer?.cancel();
+    _connectionTimer = (widget.owner?.loginRequired ?? false)
+        ? Timer.periodic(connectionCheckInterval, (_) {
+            if (_foreground) widget.owner?.checkConnection();
+          })
+        : null;
+  }
+
+  @override
+  void didUpdateWidget(GameApp old) {
+    super.didUpdateWidget(old);
+    if (old.owner != widget.owner || old.workshop != widget.workshop) {
+      old.owner?.removeListener(_ownerChanged);
+      _watchConnection();
+    }
+  }
+
+  /// The connection went or came back: pause or resume the shop like
+  /// leaving or returning to the app (the time away is settled the same way).
+  void _ownerChanged() {
+    final lost = _connectionLost;
+    if (lost == _wasLost) return;
+    _wasLost = lost;
+    if (_foreground) widget.workshop?.setForeground(!lost);
+    _syncAudio();
+  }
+
   @override
   void dispose() {
+    _connectionTimer?.cancel();
+    widget.owner?.removeListener(_ownerChanged);
     WidgetsBinding.instance.removeObserver(this);
     widget.controller.removeListener(_syncAudio);
     widget.workshop?.removeListener(_syncAudio);
@@ -155,9 +202,10 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
       _noticeGeneration++;
       final notifier = widget.notifier;
       if (notifier != null) _queueNotices(notifier.cancelAll);
-      widget.workshop?.setForeground(true);
+      if (!_connectionLost) widget.workshop?.setForeground(true);
       _syncAudio();
       widget.controller.resume().then(_welcomeBack);
+      widget.owner?.checkConnection();
     } else if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused ||
@@ -184,9 +232,26 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
               builder: (context, child) => CozyMotion(
                   reduce: widget.controller.state.settings.reduceMotion,
                   child: child!),
-              child: CelebrationHost(
-                  controller: widget.controller, child: child!))),
+              child: _covered(CelebrationHost(
+                  controller: widget.controller, child: child!)))),
       home: widget.workshop == null ? GameHome(controller: widget.controller) : _workshopHome());
+
+  /// Above the navigator: the connection notice covers every route.
+  Widget _covered(Widget child) {
+    final owner = widget.owner;
+    if (owner == null && !widget.devBuildBand) return child;
+    return Stack(fit: StackFit.expand, children: [
+      child,
+      if (widget.devBuildBand) const DevBuildBand(),
+      if (owner != null)
+        ListenableBuilder(
+            listenable: owner,
+            builder: (context, _) => owner.connectionLost
+                ? Positioned.fill(
+                    child: ConnectionLostNotice(checking: owner.checkingConnection, onRetry: owner.checkConnection))
+                : const SizedBox.shrink()),
+    ]);
+  }
 
   Widget _workshopHome() {
     Widget page() => WorkshopPage(controller: widget.workshop!, accountController: widget.controller,

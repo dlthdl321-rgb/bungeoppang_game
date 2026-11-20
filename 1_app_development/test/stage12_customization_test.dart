@@ -145,15 +145,16 @@ void main() {
       }
     });
 
-    test('수집 대상은 72종(붕어빵 7, 사장님 44, 가게 21), 캐릭터·피부톤은 제외', () {
+    test('수집 대상은 73종(붕어빵 7, 사장님 45, 가게 21), 캐릭터·피부톤은 제외', () {
       // 26번 4-7단계: 하의 6종 추가(v2 그림 전에는 꾸미기 창에서 숨김).
-      expect(collectibleCosmeticCount, 72);
+      // 26번 3차 AV3: 낮게 묶은 머리 추가(그림 전에는 숨김).
+      expect(collectibleCosmeticCount, 73);
       expect(collectibleCount(CosmeticCategory.bungeoppang), 7); // No flavours.
-      expect(collectibleCount(CosmeticCategory.avatar), 44);
+      expect(collectibleCount(CosmeticCategory.avatar), 45);
       expect(collectibleCount(CosmeticCategory.stall), 21); // + 등불 3
       expect(
           cosmeticDefinitions.fold(BigInt.zero, (a, d) => a + d.cost),
-          BigInt.from(545)); // + 하의 6종 5+5+6+7+8+9
+          BigInt.from(550)); // + 하의 6종 5+5+6+7+8+9, 낮게 묶은 머리 5 (AV3)
       expect(inSlot(CosmeticSlot.skin).every((d) => d.free), isTrue);
       expect(inSlot(CosmeticSlot.character).map((d) => d.id), ['girl', 'boy']);
       expect(inSlot(CosmeticSlot.character).every((d) => d.free), isTrue);
@@ -162,7 +163,8 @@ void main() {
           .fold(BigInt.zero, (a, d) => a + d.cost);
       // 145 at stage 12, plus stage 14's items in those slots and short,
       // less the chef coat and padded vest (18), tops since 26번 4-5단계.
-      expect(stage12Coins, BigInt.from(205));
+      // 26번 3차 AV3: + 낮게 묶은 머리 5.
+      expect(stage12Coins, BigInt.from(210));
     });
   });
 
@@ -194,9 +196,12 @@ void main() {
       original.wardrobe.owned.add('beanie');
       original.wardrobe.equipped[CosmeticSlot.hat] = 'beanie';
       original.wardrobe.equipped[CosmeticSlot.skin] = 'skin2';
+      original.wardrobe.owned.add('skin2');
       final restored = GameState.fromJson(asV10(original));
       expect(restored.equippedCosmetic(CosmeticSlot.hat), 'beanie');
-      expect(restored.equippedCosmetic(CosmeticSlot.skin), 'skin2');
+      // 26번 3차 AV3: skin tones 2·3 are gone; skin1 instead.
+      expect(restored.equippedCosmetic(CosmeticSlot.skin), 'skin1');
+      expect(restored.wardrobe.owned, isNot(contains('skin2')));
       expect(restored.equippedCosmetic(CosmeticSlot.character), 'girl');
       for (final d in inSlot(CosmeticSlot.character)) {
         expect(restored.ownsCosmetic(d), isTrue, reason: d.id);
@@ -234,7 +239,6 @@ void main() {
       s.wardrobe.owned.addAll(['beanie', 'heartscale']);
       s.wardrobe.equipped[CosmeticSlot.hat] = 'beanie';
       s.wardrobe.equipped[CosmeticSlot.pattern] = 'heartscale';
-      s.wardrobe.equipped[CosmeticSlot.skin] = 'skin3';
       s.wardrobe.equipped[CosmeticSlot.character] = 'boy';
       final restored = GameState.fromJson(plainJson(s));
       expect(restored.wardrobe.toJson(), s.wardrobe.toJson());
@@ -301,10 +305,10 @@ void main() {
       expect(c.state.support.coins, BigInt.zero);
     });
 
-    test('피부톤은 무료로 바로 바뀌고 수집 수에 들어가지 않는다', () async {
+    test('피부톤은 1만 있고(26번 3차 AV3) 수집 수에 들어가지 않는다', () async {
       final before = c.state.support.ledger.length;
-      expect(await c.buyOrEquipCosmetic('skin3'), isTrue);
-      expect(c.state.equippedCosmetic(CosmeticSlot.skin), 'skin3');
+      expect(await c.buyOrEquipCosmetic('skin1'), isTrue);
+      expect(c.state.equippedCosmetic(CosmeticSlot.skin), 'skin1');
       expect(c.state.support.ledger.length, before);
       expect(cosmeticsOwnedCount(c.state), 0);
     });
@@ -325,7 +329,7 @@ void main() {
       expect(await c.buyOrEquipCosmetic('goldtongs'), isTrue);
       expect(achievementMet(c.state, def('avatar-5')), isTrue);
       expect(await c.claimAchievement('avatar-5'), isTrue);
-      expect(achievementTarget(def('cosmetics-all')), BigInt.from(72));
+      expect(achievementTarget(def('cosmetics-all')), BigInt.from(73));
     });
 
     test('레벨업 알림은 새로 열린 꾸미기를 분류별 한 줄로 알린다', () async {

@@ -9,7 +9,16 @@ import 'package:todays_bungeoppang/workshop_feature_unlocks.dart';
 /// 25번 22번: the eight feature introduction cards with their drawn
 /// pictures (160x120, tools/apply_25_art.py --only intro), 1:1 in the card.
 void main() {
-  final features = [for (final f in WorkshopFeature.values) if (f != WorkshopFeature.wardrobe) f];
+  // The 붕어빵 요정 card (4차 IA3) waits for its picture (ui/intro_fairy, to
+  // be ordered); until then it shows the 'bun' icon (checked below).
+  final features = [for (final f in WorkshopFeature.values)
+    if (f != WorkshopFeature.wardrobe && f != WorkshopFeature.fairy) f];
+
+  test('붕어빵 요정 카드: 그림 자리는 등록돼 있고, 그림이 없으면 아이콘', () {
+    final intro = featureIntro(WorkshopFeature.fairy);
+    expect(PixelSprites.uiNames, contains(intro.art));
+    expect(intro.fallbackIcon, 'bun');
+  });
 
   test('소개 카드 8장 모두 그림 파일이 160×120으로 있다', () async {
     for (final f in features) {

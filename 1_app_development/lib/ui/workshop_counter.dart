@@ -9,8 +9,8 @@ import 'workshop_home_layout.dart';
 /// The sale loop on the home screen (MASTER 10장, 26번 4-1단계): the guests
 /// at the stall (workshop_guests.dart; the old left line until the new
 /// backgrounds are in), and the counter strip on the towel with its button
-/// floating centred above it. Presentation only; commands go through the
-/// controller.
+/// inside (4차 사용자 결정: nothing floats over the guests). Presentation
+/// only; commands go through the controller.
 
 /// "팥 바삭함 1/2": what one order line asks for and how much was handed over.
 String orderLineLabel(WorkshopController c, CustomerOrder order, int i) {
@@ -142,135 +142,137 @@ class _WaitRing extends CustomPainter {
   bool shouldRepaint(_WaitRing old) => old.left != left || old.front != front;
 }
 
-/// What the sale counter says and its one next action (sell, or bake what
-/// is missing, open, close…), for [WorkshopSaleCounter] and the floating
-/// [WorkshopCounterAction]. Null while the big mold is in use.
+/// The front guest's own action as a small button: '판매 완료'·'N개 먼저
+/// 판매' when stock covers some of the order, '반응 확인' while 태오's photo
+/// reaction waits. 4차 사용자 결정(2026-11-20): it sits small on that guest
+/// (centre of the figure, workshop_guests.dart) instead of the big bar that
+/// floated over the guests; in the old layout (no lowered backgrounds) it
+/// stays in the counter card. Null when there is none or the mold is busy.
+Widget? workshopGuestAction(WorkshopController c) {
+  final s = c.state;
+  if (s.session != null || c.error != null || !s.business.open || s.business.needsContinuation(c.now())) return null;
+  final idle = !c.inputBusy && !c.gameplayPaused;
+  Widget small(Key key, String label, VoidCallback? onPressed, {bool primary = true}) => primary
+      ? CozyPrimaryButton(key: key, onPressed: onPressed, label: label, minHeight: WorkshopHomeLayout.guestButtonHeight,
+          fontSize: WorkshopHomeLayout.guestButtonFont, padding: const EdgeInsets.symmetric(horizontal: 10))
+      : CozyButton(key: key, onPressed: onPressed, label: label, minHeight: WorkshopHomeLayout.guestButtonHeight,
+          fontSize: WorkshopHomeLayout.guestButtonFont, padding: const EdgeInsets.symmetric(horizontal: 10));
+  if (c.photoReactionSale case final sale?) {
+    return small(const Key('photo-reaction'), '반응 확인', idle ? () => c.acknowledgePhotoReaction(sale) : null, primary: false);
+  }
+  if (s.customers.isEmpty) return null;
+  final order = s.customers.first, ready = c.saleReadyCount(order);
+  if (ready == 0) return null;
+  return small(const Key('sale-button'), ready >= order.remainingQuantity ? '판매 완료' : '$ready개 먼저 판매',
+      idle ? () => c.sellToCustomer(order.id) : null);
+}
+
+/// What the sale counter says, and its own button only for '다시 확인'
+/// (a save problem, nobody's action). Null while the big mold is in use.
+/// 4차 사용자 결정(2026-11-20): nothing floats over the guests any more:
+/// selling and 태오's reaction are small buttons on the guest
+/// ([workshopGuestAction]), the missing flavor is baked by tapping the
+/// ordering guest (a '눌러서 팥 만들기' cue over them), and opening/closing
+/// the business is the small button by the sign at the top
+/// ([WorkshopBusinessButton]).
 class _CounterContent {
   final String title, detail;
-  final Widget action;
-  /// The action opens or closes the business: it sits small beside the
-  /// business-state sign ([WorkshopBusinessButton]), not floating.
-  final bool business;
-  const _CounterContent(this.title, this.detail, this.action, {this.business = false});
+  final Widget? action;
+  const _CounterContent(this.title, this.detail, [this.action]);
 
-  /// [small] builds the action at the HUD button's size
-  /// ([WorkshopHomeLayout.businessHeight]).
-  static _CounterContent? of(WorkshopController c, VoidCallback onCloseBusiness, {bool small = false}) {
+  static _CounterContent? of(WorkshopController c) {
     final s = c.state;
     if (s.session != null) return null;
-    final now = c.now(), idle = !c.inputBusy && c.error == null && !c.gameplayPaused;
+    final now = c.now();
     final stock = s.inventory.batches.values.fold<int>(0, (n, b) => n + b.quantity);
-    // The small one is businessHeight tall in all: the button's 2px wooden
-    // outline adds 4 to its face.
-    final height = small ? WorkshopHomeLayout.businessHeight - 4 : WorkshopHomeLayout.actionHeight;
-    final font = small ? WorkshopHomeLayout.businessFontSize : 17.0;
-    final pad = EdgeInsets.symmetric(horizontal: small ? 10 : 18);
-    Widget primary(Key key, String label, VoidCallback? onPressed) => CozyPrimaryButton(key: key,
-        onPressed: onPressed, label: label, minHeight: height, fontSize: font, padding: pad);
-    Widget secondary(Key key, String label, VoidCallback? onPressed) => CozyButton(key: key,
-        onPressed: onPressed, label: label, minHeight: height, fontSize: font, padding: pad);
     if (c.error != null) {
       return _CounterContent('저장 확인이 필요해요', '진행은 그대로 있어요',
-          primary(const Key('counter-reload'), '다시 확인', c.busy ? null : c.reloadAfterError));
+          CozyPrimaryButton(key: const Key('counter-reload'), onPressed: c.busy ? null : c.reloadAfterError, label: '다시 확인',
+              minHeight: WorkshopHomeLayout.counterButtonHeight, fontSize: 15, padding: const EdgeInsets.symmetric(horizontal: 12)));
     }
     if (!s.business.open || s.business.needsContinuation(now)) {
       final continuing = s.business.open;
       return _CounterContent(continuing ? '새 영업일이 밝았어요' : '오늘 영업 준비',
-          '재고 $stock개 · 준비품 ${s.inventory.prepared.length}묶음',
-          primary(const Key('business-open'), continuing ? '이어서 영업' : '영업 시작', idle ? c.openBusiness : null),
-          business: true);
+          '재고 $stock개 · 준비품 ${s.inventory.prepared.length}묶음');
     }
-    if (c.photoReactionSale case final sale?) {
-      return _CounterContent('태오: 와, 냄새 좋다.', '……아! 또 사진 전에 먹었네.',
-          secondary(const Key('photo-reaction'), '반응 확인', idle ? () => c.acknowledgePhotoReaction(sale) : null));
+    if (c.photoReactionSale != null) {
+      // His words are the bubble over him (IA5), '반응 확인' is on him.
+      return _CounterContent('${c.customerShortName(WorkshopController.photoGuest)}의 사진 반응', '재고 $stock개',
+          _oldLayout(c));
     }
     if (s.customers.isEmpty) {
-      return _CounterContent(c.lastSaleFeedback ?? '손님을 기다리는 중이에요', '재고 $stock개',
-          secondary(const Key('business-close'), '영업 종료', idle ? onCloseBusiness : null),
-          business: true);
+      return _CounterContent(c.lastSaleFeedback ?? '손님을 기다리는 중이에요', '재고 $stock개');
     }
     final order = s.customers.first, ready = c.saleReadyCount(order), missing = missingFlavor(c, order);
     // The name and what they want; the time left is the bar over the guest
     // (S4-1-Q3), not seconds in the text.
-    return _CounterContent('${c.customerShortName(order.customerId)} · ${orderSummary(c, order)}', '재고 $stock개',
-        // Short stock with nothing to hand over: bake the missing flavor first.
-        ready == 0 && missing != null
-            ? secondary(const Key('order-produce'), '${c.flavorLabel(missing)} 제작',
-                idle ? () => c.startOrderProduction(order.id, missing) : null)
-            : primary(const Key('sale-button'), ready >= order.remainingQuantity ? '판매 완료' : '$ready개 먼저 판매',
-                idle && ready > 0 ? () => c.sellToCustomer(order.id) : null));
+    return _CounterContent('${c.customerShortName(order.customerId)} · ${orderSummary(c, order)}',
+        // Short stock: tapping the guest bakes the missing flavor.
+        ready == 0 && missing != null ? '재고 $stock개 · 손님을 눌러 ${c.flavorLabel(missing)} 만들기' : '재고 $stock개',
+        _oldLayout(c));
   }
+
+  /// The old layout has no guest figures to carry the button: it stays here.
+  static Widget? _oldLayout(WorkshopController c) => WorkshopHomeLayout.active ? null : workshopGuestAction(c);
 }
 
 /// The counter strip on the towel (DEC-038): one line of who and what
-/// (26번 4-1단계 F6: the short name and the order, no seconds) and a small
-/// line under it for the stock or a notice. Text wraps rather than being
-/// cut (no fade). Tapping it opens the stock. Hidden while the big
-/// mold is in use. Its button floats apart ([WorkshopCounterAction]).
+/// (26번 4-1단계 F6: the short name and the order, no seconds), a small
+/// line under it for the stock or a notice, and on its right only '다시
+/// 확인' (or, in the old layout, the guest's button; 4차 사용자 결정).
+/// Text wraps rather than being cut (no fade). Tapping the text opens the
+/// stock. Hidden while the big mold is in use.
 class WorkshopSaleCounter extends StatelessWidget {
   final WorkshopController controller;
-  final VoidCallback onOpenStock, onCloseBusiness;
-  const WorkshopSaleCounter({super.key, required this.controller, required this.onOpenStock,
-      required this.onCloseBusiness});
+  final VoidCallback onOpenStock;
+  const WorkshopSaleCounter({super.key, required this.controller, required this.onOpenStock});
 
   @override
   Widget build(BuildContext context) {
-    final c = controller, content = _CounterContent.of(c, onCloseBusiness);
+    final c = controller, content = _CounterContent.of(c);
     if (content == null) return const SizedBox.shrink();
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.3,
       child: CozyPanel(
         key: const Key('sale-counter'),
-        padding: const EdgeInsets.fromLTRB(10, 5, 10, 5),
-        child: Semantics(
-          button: true,
-          label: '재고 보기',
-          child: InkWell(
-            key: const Key('stock-open'),
-            onTap: onOpenStock,
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-              Text(content.title, key: const Key('counter-title'), maxLines: 2,
-                  style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 16, color: Cozy.ink)),
-              // A notice (a guest's parting words, a refused command) takes
-              // the small line's place.
-              Text(c.notice ?? content.detail, key: Key(c.notice == null ? 'counter-order' : 'counter-notice'), maxLines: 2,
-                  style: TextStyle(fontSize: 12, color: c.notice == null ? Cozy.inkSoft : Cozy.brick)),
-            ]),
+        padding: const EdgeInsets.fromLTRB(10, 5, 6, 5),
+        child: Row(children: [
+          Expanded(
+            child: Semantics(
+              button: true,
+              label: '재고 보기',
+              child: InkWell(
+                key: const Key('stock-open'),
+                onTap: onOpenStock,
+                child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  Text(content.title, key: const Key('counter-title'), maxLines: 2,
+                      style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 16, color: Cozy.ink)),
+                  // A notice (a refused command, a story for tomorrow) takes
+                  // the small line's place. Guests' words are bubbles by
+                  // them (IA5), never this line.
+                  Text(c.notice ?? content.detail, key: Key(c.notice == null ? 'counter-order' : 'counter-notice'), maxLines: 2,
+                      style: TextStyle(fontSize: 12, color: c.notice == null ? Cozy.inkSoft : Cozy.brick)),
+                ]),
+              ),
+            ),
           ),
-        ),
+          if (content.action case final action?) ...[
+            const SizedBox(width: 6),
+            ConstrainedBox(key: const Key('counter-action'),
+                constraints: const BoxConstraints(maxWidth: WorkshopHomeLayout.counterButtonMaxWidth),
+                child: IntrinsicWidth(child: action)),
+          ],
+        ]),
       ),
     );
   }
 }
 
-/// The counter's one action, floating centred on the screen above the
-/// counter (S4-1-Q6): at least 160 wide and 44 tall. Hidden with the
-/// counter while the big mold is in use, and while the next step is opening
-/// or closing the business ([WorkshopBusinessButton] at the top).
-class WorkshopCounterAction extends StatelessWidget {
-  final WorkshopController controller;
-  final VoidCallback onCloseBusiness;
-  const WorkshopCounterAction({super.key, required this.controller, required this.onCloseBusiness});
-
-  @override
-  Widget build(BuildContext context) {
-    final content = _CounterContent.of(controller, onCloseBusiness);
-    if (content == null || content.business) return const SizedBox.shrink();
-    return MediaQuery.withClampedTextScaling(
-      maxScaleFactor: 1.3,
-      child: ConstrainedBox(
-        key: const Key('counter-action'),
-        constraints: const BoxConstraints(minWidth: WorkshopHomeLayout.actionMinWidth, maxWidth: 260),
-        child: content.action,
-      ),
-    );
-  }
-}
-
-/// '영업 시작'·'이어서 영업'·'영업 종료' as a small button beside the
-/// business-state sign at the top (26번 시안 확인 2차, 2026-11-19: the
-/// floating one was too big and sat in the middle of the stall). Nothing
-/// otherwise; hidden with the counter while the big mold is in use.
+/// '영업 시작'·'이어서 영업' before opening, and '영업 종료' all through the
+/// business (4차 사용자 결정 2026-11-20: always by the '영업 중' sign, also
+/// while guests wait; [onCloseBusiness] asks first when someone waits) — a
+/// small button beside the business-state sign at the top (26번 시안 확인
+/// 2차). Hidden while the big mold is in use.
 class WorkshopBusinessButton extends StatelessWidget {
   final WorkshopController controller;
   final VoidCallback onCloseBusiness;
@@ -278,14 +280,26 @@ class WorkshopBusinessButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final content = _CounterContent.of(controller, onCloseBusiness, small: true);
-    if (content == null || !content.business) return const SizedBox.shrink();
+    final c = controller, s = c.state;
+    if (s.session != null || c.error != null) return const SizedBox.shrink();
+    final idle = !c.inputBusy && !c.gameplayPaused;
+    // The button's 2px wooden outline adds 4 to its face.
+    const height = WorkshopHomeLayout.businessHeight - 4, font = WorkshopHomeLayout.businessFontSize;
+    const pad = EdgeInsets.symmetric(horizontal: 10);
+    final Widget action;
+    if (!s.business.open || s.business.needsContinuation(c.now())) {
+      action = CozyPrimaryButton(key: const Key('business-open'), label: s.business.open ? '이어서 영업' : '영업 시작',
+          onPressed: idle ? c.openBusiness : null, minHeight: height, fontSize: font, padding: pad);
+    } else {
+      action = CozyButton(key: const Key('business-close'), label: '영업 종료',
+          onPressed: idle ? onCloseBusiness : null, minHeight: height, fontSize: font, padding: pad);
+    }
     return MediaQuery.withClampedTextScaling(
       maxScaleFactor: 1.2,
       child: Padding(
         key: const Key('business-toggle'),
         padding: const EdgeInsets.only(right: 4),
-        child: content.action,
+        child: action,
       ),
     );
   }

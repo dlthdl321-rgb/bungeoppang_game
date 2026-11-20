@@ -123,6 +123,8 @@ class PixelSprites {
     'levelup', 'levelup_off',
     'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
     'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics',
+    // The 붕어빵 요정's story card (4차 IA3); until drawn the 'bun' icon.
+    'intro_fairy',
     // The shop's gold packs, smallest to largest (25번 40번, 26번 3차 H31;
     // until drawn ui/gold_widgets.dart heaps the gold icon instead).
     'gold_pack_1', 'gold_pack_2', 'gold_pack_3', 'gold_pack_4', 'gold_pack_5',
@@ -304,6 +306,9 @@ class PixelSprites {
     for (final name in iconNames) {
       yield 'assets/images/icons/$name.png';
     }
+    // Optional (not in iconNames: 192x192, not 72x72): the connection
+    // notice's fainted bungeoppang (25번 59번); missing until drawn.
+    yield 'assets/images/icons/conn_fainted.png';
     for (final colour in postlampColors) {
       yield _stallPartPath('postlamp_$colour');
     }
@@ -314,6 +319,9 @@ class PixelSprites {
     for (final d in cosmeticDefinitions) {
       if (d.slot.category == CosmeticCategory.avatar) {
         yield _cosmeticIconPath(d.id);
+        for (final c in _slot(CosmeticSlot.character)) {
+          yield _cosmeticIconPath(d.id, c.id);
+        }
       }
     }
     yield* fxNames.map((n) => 'assets/images/fx/$n.png');
@@ -328,6 +336,8 @@ class PixelSprites {
     for (final id in guestArt) {
       for (final mood in guestMoods) {
         yield 'assets/images/customer/${id}_$mood.png';
+        // Loaded only once shipped (the asset list filters misses).
+        yield 'assets/images/customer_full/${id}_$mood.png';
       }
     }
     yield* moldNames.map((n) => 'assets/images/mold/$n.png');
@@ -564,6 +574,20 @@ class PixelSprites {
       _images['assets/images/customer/${id}_$mood.png'] ??
       _images['assets/images/customer/${id}_normal.png'];
 
+  /// A full-body guest (4차 피드백 IA4, 25번 주문 대기):
+  /// `assets/images/customer_full/<id>_<mood>.png`. Null until drawn; the
+  /// guest layer then uses the bust above. When the art arrives, add
+  /// `assets/images/customer_full/` to pubspec.yaml and set
+  /// [guestWaistShare] to the drawn waist.
+  static ui.Image? guestFull(String id, String mood) =>
+      _images['assets/images/customer_full/${id}_$mood.png'] ??
+      _images['assets/images/customer_full/${id}_normal.png'];
+
+  /// Where a full-body guest's waist is, from the picture's top (share of
+  /// its height): it goes on the counter's top (IA4). A placeholder until
+  /// the art is drawn.
+  static const guestWaistShare = .55;
+
   /// Whether the picture [sceneBackground] shows has a copy without the
   /// baked mold and bungeoppang, so the stage can draw its own.
   static bool hasCleanBackground(String background, bool? night) {
@@ -643,15 +667,20 @@ class PixelSprites {
   /// One of [fxNames].
   static ui.Image? fx(String name) => _images['assets/images/fx/$name.png'];
 
-  static String _cosmeticIconPath(String id) =>
-      'assets/images/cosmetic_icons/$id.png';
+  static String _cosmeticIconPath(String id, [String? character]) =>
+      'assets/images/cosmetic_icons/${character == null ? '' : '$character/'}$id.png';
 
-  /// The wardrobe tile icon of avatar item [id] (64x64, both characters;
-  /// 26번 4-5단계, G5): the 'none' hanger for the take-off items (and the
-  /// tool default, drawn as no tool since 26번 3차 H8), null
-  /// when not drawn.
-  static ui.Image? cosmeticIcon(String id) => _images[_cosmeticIconPath(
-      const {'nohat', 'noapron', 'noacc', 'tongs'}.contains(id) ? 'none' : id)];
+  /// The wardrobe tile icon of avatar item [id] (64x64; 26번 4-5단계, G5):
+  /// [character]'s own when it has one (`cosmetic_icons/<character>/<id>.png`,
+  /// 26번 3차 AV3d: the boy's worn-layer icons), else the shared one (the
+  /// girl's); the 'none' hanger for the take-off items (and the tool
+  /// default, drawn as no tool since 26번 3차 H8), null when not drawn.
+  static ui.Image? cosmeticIcon(String id, {String? character}) {
+    final name =
+        const {'nohat', 'noapron', 'noacc', 'tongs'}.contains(id) ? 'none' : id;
+    return (character == null ? null : _images[_cosmeticIconPath(name, character)]) ??
+        _images[_cosmeticIconPath(name)];
+  }
 
   /// The wardrobe tile picture of a stall item when it has its own (lamps:
   /// the whole post lamp; day/night: an icon), else null.

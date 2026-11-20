@@ -24,6 +24,8 @@ import 'development_balance_asset.dart';
 import 'workshop_controller.dart';
 import 'workshop_online.dart';
 import 'customer_notifier.dart';
+import 'local_test_purchases.dart';
+import 'ui/connection_notice.dart';
 import 'ui/game_app.dart';
 import 'ui/pixel_sprites.dart';
 import 'ui/save_recovery.dart';
@@ -37,6 +39,15 @@ Future<void> main() async {
   // settings and the Kakao native app key (firebase_online_backend.dart).
   // Such a build asks every new player to log in first (26번 2-1단계).
   final withOnline = android && firebaseConfigured;
+  // 4차 피드백 IC10: the game is online-only. A release build made without
+  // the online settings could never reach the server (no login, level-up or
+  // purchase), so it shows only why and how to fix it. A debug build
+  // without them still runs for development, with a band that says so.
+  if (kReleaseMode && !withOnline) {
+    await PixelSprites.load();
+    runApp(const OnlineSetupMissingApp());
+    return;
+  }
   if (withOnline) await KakaoSdk.init(nativeAppKey: kakaoNativeAppKey);
   final online = withOnline
       ? await FirebaseOnlineBackend.create()
@@ -78,7 +89,13 @@ Future<void> _start(OnlineBackend online, UsageStats usage, {int attempts = 0}) 
         jsonDecode(await rootBundle.loadString('config/owner_name_rules.json')) as Map<String, dynamic>);
     stage = SaveStage.workshop;
     workshop = WorkshopController(config, workshops,
-      purchaseGateway: online is WorkshopTransport ? WorkshopOnline(online as WorkshopTransport) : null,
+      // A build without the online settings (debug/profile only; a release
+      // one stopped above) levels up and buys on this device, marked as a
+      // test save (local_test_purchases.dart, 4차 피드백 IC10 후속).
+      purchaseGateway: online is WorkshopTransport
+          ? WorkshopOnline(online as WorkshopTransport)
+          : LocalTestPurchaseGateway(
+              gold: () => controller.state.premium.gold, setGold: controller.setLocalTestGold),
       usage: usage);
     await workshop.initialize();
     // 26번 2-1단계: login, owner name and character before the game.
@@ -92,6 +109,7 @@ Future<void> _start(OnlineBackend online, UsageStats usage, {int attempts = 0}) 
     owner.onDeleted = () => _wipeAndRestart(online, usage, accounts, workshops, owners);
     await owner.load();
     runApp(GameApp(controller: controller, audio: audio, workshop: workshop, owner: owner,
+        devBuildBand: !online.configured,
         notifier: defaultTargetPlatform == TargetPlatform.android
             ? (!kReleaseMode && _noticeSelfTest ? _SelfTestNotifier(LocalCustomerNotifier()) : LocalCustomerNotifier())
             : null));

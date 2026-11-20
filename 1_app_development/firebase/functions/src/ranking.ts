@@ -18,8 +18,8 @@ export const rankingTopCount = 100;
 export const rankingGrowthSlack = 10;
 export const rankingGrowthPerHour = 10;
 export const rankingGrowthFloor: Record<Board, bigint> = {
-  bestAutoRate: 1000000n,
-  lifetime: 1000000000n,
+  bestAutoRate: 1000n,
+  lifetime: 10000000n,
   bestCombo: 1000n,
 };
 

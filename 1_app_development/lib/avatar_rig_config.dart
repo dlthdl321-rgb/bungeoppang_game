@@ -96,6 +96,12 @@ const rigPlacements = <String, RigPlacement>{};
 /// A face feature that can change on its own: the eyes blink and the mouth
 /// talks. [frames] lists its pictures; the [rest] frame is the art itself
 /// (no file), so a missing picture always falls back to the face as drawn.
+///
+/// The resting face is neutral (무표정, 26번 3차 AV3, DEC-TBD-hAV3-5,
+/// 2026-11-20 사용자 결정): nothing here picks a smile - the eyes rest open
+/// and the mouth closed, which is the base picture's own face (redrawn
+/// neutral by 25번 53번). Only short motions change it: a blink, talking
+/// while greeting, and the share card's open mouth.
 class RigChannel {
   final String id;
   final RigLayer layer;

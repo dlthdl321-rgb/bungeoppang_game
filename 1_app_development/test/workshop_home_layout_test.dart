@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
+import 'package:todays_bungeoppang/development_griddle.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/night_home.dart';
@@ -29,7 +30,7 @@ void main() {
     final c = WorkshopController(config, MemoryRepository(),
         now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);
     await c.initialize();
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
     await tester.pump();
     await tester.pump();
@@ -138,7 +139,8 @@ void main() {
       // 2차), so the floating button's room above the counter is empty.
       expect(find.byKey(const Key('counter-action')), findsNothing);
       final close = tester.getRect(find.byKey(const Key('business-close')));
-      final actionTop = counter.top - WorkshopHomeLayout.actionGap - WorkshopHomeLayout.actionHeight;
+      // The clicker keeps the room the old floating button had (4차 사용자 결정).
+      final actionTop = counter.top - WorkshopHomeLayout.clickerLift;
       final clicker = tester.getRect(find.byKey(const Key('workshop-clicker')));
       final hud = tester.getRect(find.byKey(const Key('level-mission-entry')));
       expect(close.height, closeTo(WorkshopHomeLayout.businessHeight, .5));
@@ -162,9 +164,16 @@ void main() {
           expect(g.bottom, lessThanOrEqualTo(counter.top + 1), reason: 'guest $i');
           if (i > 0) expect(g.width, lessThan(front.width), reason: 'guest $i');
         }
-        // Tapping the clicker still counts (the guests are behind it).
+        // 4차 IA3: the 붕어빵 요정 hides from guests at the right edge, half
+        // on screen and clear of the front guest; tapping it still counts.
+        final hiding = tester.getRect(find.byKey(const Key('workshop-clicker')));
+        expect(find.byKey(const Key('fairy-hiding')), findsOneWidget);
+        expect(hiding.left, greaterThan(front.right - 1));
+        expect(hiding.right, greaterThan(size.width));
+        expect(size.width - hiding.left, greaterThanOrEqualTo(56));
+        expect(hiding.bottom, lessThanOrEqualTo(counter.top));
         final before = c.state.taps;
-        await tester.tapAt(clicker.center);
+        await tester.tapAt(Offset(size.width - 20, hiding.center.dy));
         await tester.pump();
         expect(c.state.taps, before + 1);
       }
@@ -235,6 +244,8 @@ void main() {
     await master(c);
     expect(await c.startCell(1), isTrue);
     expect(await c.startCell(4), isTrue);
+    // 4차 g6: past the automatic batter and filling, so the cells cook.
+    await c.command(() => c.state.grid = c.state.grid.advanceActive(GriddleProgress.prepMs(c.config)));
     await tester.pump();
     expect(painter(tester).filled, {1, 4});
     await tester.pumpWidget(const SizedBox.shrink());

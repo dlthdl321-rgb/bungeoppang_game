@@ -56,7 +56,7 @@ void main() {
     final c = WorkshopController(config, MemoryRepository(), now: () => now, random: Random(5),
         monotonicMs: mono ?? () => 0);
     await c.initialize();
-    expect(await c.command(() => c.state.tutorial = 'done'), isTrue);
+    expect(await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy')), isTrue);
     expect(await c.openBusiness(), isTrue);
     return (c, (DateTime t) => now = t);
   }
@@ -278,7 +278,7 @@ void main() {
             .visit('v2', 'npc_yunha', 1, c.customerCatalog);
       }), isTrue);
       final saved = c.state.toJson();
-      expect(saved['schema'], 10);
+      expect(saved['schema'], workshopSchema);
       final old = Map<String, dynamic>.from(saved)
         ..['schema'] = 6
         ..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily');
@@ -286,7 +286,7 @@ void main() {
       expect(migrated.regularClock.nextAt, isNull);
       expect(migrated.namedClock.nextAt, isNull);
       expect(migrated.lastNamedVisitor, 'npc_yunha');
-      expect(migrated.toJson()['schema'], 10);
+      expect(migrated.toJson()['schema'], workshopSchema);
       expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..remove('namedClock'), config), throwsFormatException);
       expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(old)..['regularClock'] = saved['regularClock'], config),
           throwsFormatException, reason: '6에 새 필드');
@@ -298,8 +298,9 @@ void main() {
       final far = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>;
       (far['regularClock'] as Map)['nextAt'] = ms(start) + 86400000;
       expect(() => WorkshopState.fromJson(far, config), throwsFormatException, reason: '최대 간격보다 먼 시계');
-      // Reloading an old save starts the clocks from the load.
-      final repository = MemoryRepository()..saved = old;
+      // Reloading a migrated save starts the clocks from the load. (A raw
+      // schema 6 save would start again: 4차 g7 economy reset, schema 11.)
+      final repository = MemoryRepository()..saved = migrated.toJson();
       final again = WorkshopController(config, repository, now: () => start.add(const Duration(minutes: 1)), monotonicMs: () => 0);
       addTearDown(again.dispose);
       await again.initialize();
@@ -374,7 +375,7 @@ void main() {
       await lifecycle(AppLifecycleState.resumed);
       expect(notifier.cancels, 1);
 
-      expect(await c.command(() => c.state.tutorial = 'done'), isTrue);
+      expect(await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy')), isTrue);
       expect(await c.openBusiness(), isTrue);
       notifier.scheduled.clear();
       await lifecycle(AppLifecycleState.inactive);
@@ -404,7 +405,7 @@ void main() {
       await tester.pumpWidget(GameApp(controller: account, workshop: c, notifier: notifier));
       await tester.pump();
       expect(find.byKey(const Key('notice-prompt')), findsNothing, reason: '판매 전에는 묻지 않음');
-      expect(await c.command(() => c.state.tutorial = 'skipped'), isTrue);
+      expect(await c.command(() => c.state..tutorial = 'skipped'..featureIntros.add('fairy')), isTrue);
       expect(await c.openBusiness(), isTrue);
       expect(await c.welcomeCustomer(), isTrue);
       final order = c.state.customers.single;

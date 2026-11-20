@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'feedback_config.dart' show ratingStarsMax;
+
 /// Development-only numeric contract. Existing purchases must not silently use
 /// this catalog: the server quote/recovery protocol is a separate integration.
 class DevelopmentBalance {
@@ -72,7 +74,8 @@ class DevelopmentBalance {
     }
     final avatar=result.section('avatar_catalog');
     // 26번 3차 H42: backgrounds are sold through the same catalog.
-    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool','background'};
+    // 4차 피드백 g10: the lamp glass and the fixed day/night too.
+    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool','background','lamp','time'};
     for(final e in avatar.entries) {
       final row=_map(e.value),level=integer(row,'unlock_level');
       if(row['label'] is! String || (row['label'] as String).isEmpty || !avatarSlots.contains(row['slot']) || row['free'] is! bool ||
@@ -111,11 +114,19 @@ class DevelopmentBalance {
           integer(row, 'difficulty') > 2 || row['initial'] is! bool ||
           row['initial'] != (e.key == 'redbean')) throw const FormatException('맛 설정 오류');
     }
+    // 4차 피드백 IC9: customers' quality stars are 1~5 like every star row.
+    final starRow = result.section('ordinary_sale');
+    if (integer(starRow, 'stars_min') != 1 || integer(starRow, 'stars_max') != ratingStarsMax) {
+      throw const FormatException('별 범위 오류(1~5)');
+    }
     final manual = result.section('manual_cooking');
     final brush = integer(manual, 'paint_brush_width_permille');
     final coverage = integer(manual, 'batter_min_coverage_permille');
+    final totalMin = integer(manual, 'batter_total_min_amount_permille');
+    final totalCap = integer(manual, 'batter_total_overflow_amount_permille');
     if (brush == 0 || brush > 1000 || coverage == 0 || coverage > 1000 ||
-        integer(manual, 'paint_overflow_amount_permille') < 1000) {
+        integer(manual, 'paint_overflow_amount_permille') < 1000 ||
+        totalMin < 1000 || totalMin > 2000 || totalCap < 2000 || totalCap > 18000) {
       throw const FormatException('짤주머니 색칠 수치 오류');
     }
     final turn = integer(manual, 'flip_turn_degrees');
@@ -130,10 +141,11 @@ class DevelopmentBalance {
     // 26번 4단계: '완벽' 등급은 성공 기준 안쪽(보여 주기 전용).
     final grade = result.section('cooking_grade');
     final perfectCoverage = integer(grade, 'perfect_min_coverage_permille');
-    final perfectAmount = integer(grade, 'perfect_max_amount_permille');
+    final perfectAmount = integer(grade, 'perfect_max_total_amount_permille');
+    final perfectSpill = integer(grade, 'perfect_max_spill_permille');
     final perfectDoneness = integer(grade, 'perfect_doneness_index');
-    if (perfectCoverage < coverage || perfectCoverage > 1000 || perfectAmount < 1000 ||
-        perfectAmount > integer(manual, 'paint_overflow_amount_permille') ||
+    if (perfectCoverage < coverage || perfectCoverage > 1000 || perfectAmount < totalMin ||
+        perfectAmount > totalCap || perfectSpill > totalCap - perfectAmount ||
         result.rows('mastery_difficulties').any((row) =>
             perfectDoneness < integer(row, 'success_doneness_min_index') ||
             perfectDoneness > integer(row, 'success_doneness_max_index'))) {

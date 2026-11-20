@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -7,6 +8,7 @@ import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/cooking_result_rules.dart';
 import 'package:todays_bungeoppang/ui/cooking_result_effects.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
+import 'package:todays_bungeoppang/development_griddle.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
@@ -48,7 +50,7 @@ void main() {
     final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18),
         monotonicMs: () => 0);
     await c.initialize();
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
     await tester.pump();
     return c;
@@ -97,8 +99,8 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  // 24번 6단계 → 26번 3차 피드백 H21: 걸이 축 밀어 뒤집기 도중, 가장 작은 화면.
-  testWidgets('축 밀어 뒤집기 도중 골든 360x640', (tester) async {
+  // 24번 6단계 → 4차 피드백 IC5: 원 그려 뒤집기 도중(틀이 그린 만큼 돈다), 가장 작은 화면.
+  testWidgets('원 그려 뒤집기 도중 골든 360x640', (tester) async {
     final c = await mount(tester, const Size(360, 640));
     expect(await c.startPractice(), isTrue);
     var s = c.state.session!;
@@ -109,12 +111,13 @@ void main() {
     final flipping = s;
     await c.command(() => c.state.session = flipping);
     await tester.pump();
-    // 26번 3차 피드백 H21: pushed a third of the way over its axle.
+    // A third of the circle drawn: the mold has turned a third of a half turn.
     final box = tester.getRect(find.byType(FlipCircleControl));
-    final start = box.center + Offset(0, box.height * .2);
-    final gesture = await tester.startGesture(start);
-    for (var d = 0.0; d <= box.height * .3; d += 8) {
-      await gesture.moveTo(start - Offset(0, d));
+    final r = math.min(box.width, box.height) * .4;
+    Offset at(double a) => box.center + Offset(math.sin(a * math.pi / 180), -math.cos(a * math.pi / 180)) * r;
+    final gesture = await tester.startGesture(at(0));
+    for (var a = 15.0; a <= 105; a += 15) {
+      await gesture.moveTo(at(a));
       await tester.pump();
     }
     await shoot(tester, 'flipping_360x640');
@@ -154,7 +157,8 @@ void main() {
   for (final (name, first, second, bakeMs) in const [
     ('perfect', PaintAmount(980, 1100), PaintAmount(970, 1120), 15000),
     ('good', PaintAmount(920, 1250), PaintAmount(940, 1200), 18000),
-    ('near', PaintAmount(1000, 1400), PaintAmount(960, 1100), 15000),
+    // 4차 IC6: 1·2차 합 2700 > 2600 이라 넘침.
+    ('near', PaintAmount(1000, 1400), PaintAmount(1000, 1300), 15000),
     ('fail', PaintAmount.even, PaintAmount.even, 26000),
   ]) {
     testWidgets('결과 등급 $name 골든 390x844', (tester) async {
@@ -200,6 +204,8 @@ void main() {
     });
     expect(await c.startCell(1), isTrue);
     expect(await c.startCell(4), isTrue);
+    // 4차 g6: past the automatic batter and filling, so the cells cook.
+    await c.command(() => c.state.grid = c.state.grid.advanceActive(GriddleProgress.prepMs(c.config)));
     await tester.pump();
     await shoot(tester, 'griddle_390x844');
     await tester.pumpWidget(const SizedBox.shrink());

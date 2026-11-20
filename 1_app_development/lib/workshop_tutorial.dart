@@ -28,7 +28,7 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
       CookingPhase.filling => const WorkshopTutorialStep(3, '틀 위를 문질러 속을 짜 넣어요.', 'workshop-mold', below: _stage),
       CookingPhase.secondBatter => const WorkshopTutorialStep(4, '반죽을 한 번 더 문질러 속을 덮어요.', 'workshop-mold', below: _stage),
       CookingPhase.closing => const WorkshopTutorialStep(4, '뚜껑을 닫아요.', 'workshop-mold', below: _stage),
-      CookingPhase.flipping => const WorkshopTutorialStep(5, '틀을 위로 밀어 올려 고리 축을 따라 뒤집어요.', 'workshop-mold', below: _stage),
+      CookingPhase.flipping => const WorkshopTutorialStep(5, '틀 둘레에 손가락으로 원을 그리면 틀이 돌아가며 뒤집혀요.', 'workshop-mold', below: _stage),
       CookingPhase.cooking => const WorkshopTutorialStep(6, '노릇하게 익었다 싶을 때 꺼내요.', 'workshop-mold', below: _stage),
       CookingPhase.result => session.practice
           ? const WorkshopTutorialStep(6, "완성! '보관'을 눌러 판매할 재고로 넣어요.", 'mold-store', below: _stage)
@@ -43,21 +43,21 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
     // Opened before the first bake: practice is closed in business
     // (DEC-035), so the first bungeoppang is an order (DEC-037).
     if (s.customers.isEmpty) {
-      return const WorkshopTutorialStep(1, '영업 중에는 손님 주문을 받아 구워요. 손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요.', 'workshop-clicker');
+      return const WorkshopTutorialStep(1, '영업 중에는 손님 주문을 받아 구워요. 손님을 기다리는 동안 붕어빵 요정을 톡톡 눌러 붕어빵력을 모아요.', 'workshop-clicker');
     }
     return ready > 0
         ? const WorkshopTutorialStep(1, '구운 붕어빵을 손님에게 판매해요.', 'sale-button')
-        : const WorkshopTutorialStep(1, '손님 주문은 주문 제작으로 바로 구워요.', 'order-produce');
+        : const WorkshopTutorialStep(1, '손님을 눌러 주문 제작으로 바로 구워요.', 'customer-0');
   }
   if (!s.business.open) {
     return const WorkshopTutorialStep(7, "'영업 시작'을 눌러 가게 문을 열어요.", 'business-open');
   }
   if (s.customers.isEmpty) {
-    return const WorkshopTutorialStep(7, '첫 손님을 기다려요. 손님을 기다리는 동안 큰 붕어빵을 톡톡 눌러 붕어빵력을 모아요.', 'workshop-clicker');
+    return const WorkshopTutorialStep(7, '첫 손님을 기다려요. 손님을 기다리는 동안 붕어빵 요정을 톡톡 눌러 붕어빵력을 모아요.', 'workshop-clicker');
   }
   return ready > 0
       ? const WorkshopTutorialStep(7, '구운 붕어빵을 손님에게 판매해요.', 'sale-button')
-      : const WorkshopTutorialStep(7, '모자란 맛은 주문 제작으로 바로 구워요.', 'order-produce');
+      : const WorkshopTutorialStep(7, '모자란 맛은 손님을 눌러 주문 제작으로 바로 구워요.', 'customer-0');
 }
 
 /// 26번 3차 H6: a short story told before a guide stage, line by line in

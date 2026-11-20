@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../billing_service.dart';
 import '../game_controller.dart';
 import '../online_backend.dart';
+import '../online_texts.dart';
 import '../premium_config.dart';
 import '../support_config.dart';
 import '../usage_stats.dart';
@@ -67,7 +68,11 @@ class GoldChargeTab extends StatefulWidget {
   /// The old clicker's bought boost. The workshop has no such boost, so its
   /// shop leaves the row (and the note about spent boosts) out.
   final bool legacyBoost;
-  const GoldChargeTab({super.key, required this.controller, this.legacyBoost = true});
+
+  /// A build without the online settings (4차 피드백 IC10 후속): a free
+  /// '시험용 황금 +10' button, clearly test-only, instead of the login note.
+  final bool localTestGold;
+  const GoldChargeTab({super.key, required this.controller, this.legacyBoost = true, this.localTestGold = false});
   @override
   State<GoldChargeTab> createState() => _GoldChargeTabState();
 }
@@ -110,7 +115,27 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
         Padding(
             padding: const EdgeInsets.only(top: 8),
             child: CozyNotice(notice, key: const Key('gold-notice'), tone: CozyTone.success)),
-      if (!c.online.signedIn)
+      if (widget.localTestGold)
+        Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: CozyPanel(
+                key: const Key('gold-test'),
+                padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                  const Text(OnlineTexts.testGoldNote,
+                      style: TextStyle(fontSize: 12, color: Cozy.brick, height: 1.35)),
+                  const SizedBox(height: 6),
+                  CozyPrimaryButton(
+                      key: const Key('gold-test-add'),
+                      minHeight: 38,
+                      fontSize: 15,
+                      label: OnlineTexts.testGoldButton,
+                      onPressed: () async {
+                        final ok = await c.setLocalTestGold(c.state.premium.gold + 10);
+                        if (ok && context.mounted) showCenterToast(context, OnlineTexts.testGoldDone);
+                      }),
+                ])))
+      else if (!c.online.signedIn)
         const Padding(
             padding: EdgeInsets.only(top: 8),
             child: CozyNotice('로그인하면 충전할 수 있어요', key: Key('gold-offline'))),

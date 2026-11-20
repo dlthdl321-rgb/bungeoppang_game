@@ -161,7 +161,7 @@ void main() {
       await controller.command(() => controller.state.customers.add(order()));
       await stock('first');
       final schema4 = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily');
-      expect(WorkshopState.fromJson(schema4, config).toJson()['schema'], 10);
+      expect(WorkshopState.fromJson(schema4, config).toJson()['schema'], workshopSchema);
       expect(await controller.sellToCustomer('order'), isTrue);
       final forged = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily');
       expect(() => WorkshopState.fromJson(forged, config), throwsFormatException);

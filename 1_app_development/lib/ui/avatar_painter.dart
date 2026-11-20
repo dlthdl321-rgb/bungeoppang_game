@@ -43,14 +43,15 @@ class AvatarLook {
 
   static final _paint = Paint()..filterQuality = FilterQuality.medium;
 
-  /// The item worn in [slot] (only the slots with a layer).
+  /// The item worn in [slot] (only the slots with a layer). A hat that
+  /// cannot go over the hair (26번 3차 AV3, [hairHatClash]) is not drawn.
   String worn(CosmeticSlot slot) => switch (slot) {
         CosmeticSlot.hair => hair,
         CosmeticSlot.top => top,
         CosmeticSlot.bottom => bottom,
         CosmeticSlot.shoes => shoes,
         CosmeticSlot.outfit => outfit,
-        CosmeticSlot.hat => hat,
+        CosmeticSlot.hat => wearableHat(hair, hat),
         CosmeticSlot.accessory => accessory,
         CosmeticSlot.tool => tool,
         _ => defaultCosmetics[slot]!,
@@ -244,7 +245,9 @@ class AvatarRig {
         final plain = main.replaceFirst('.png', '_$half.png');
         final skinned = plain.replaceFirst('.png', '@$skin.png');
         // 26번 3차 AV: the hat presses the hair behind the head too (no
-        // back hair standing above a cap).
+        // back hair standing above a cap). AV3c dropped this for the v1
+        // hair art (tools/avatar_v1art.py PONY_TAIL); 4차 병합 keeps the
+        // 43~49 art, whose back hair needs it (s26/i4_merge).
         add(PixelSprites.byPath(skinned) != null ? skinned : plain, halfLayer,
             erase: slot == CosmeticSlot.hair && hairMask != null
                 ? [hairMask]

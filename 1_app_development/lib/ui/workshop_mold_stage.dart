@@ -1,16 +1,13 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import '../cooking_paint.dart';
 import '../cooking_result_rules.dart';
 import '../cooking_session.dart';
 import '../cosmetic_config.dart';
 import '../development_balance.dart';
-import '../economy.dart' show compactNumber;
 import '../feedback_config.dart';
-import '../game_audio.dart';
 import '../workshop_controller.dart';
 import '../workshop_feature_unlocks.dart';
 import 'center_toast.dart';
@@ -23,7 +20,7 @@ import 'piping_bag_control.dart';
 import 'cozy_style.dart';
 import 'pixel_sprites.dart';
 import 'sparkle_art.dart';
-import 'tap_effects.dart';
+import 'workshop_fairy.dart';
 import 'workshop_home_layout.dart';
 
 /// Presentation only. All commands still pass through WorkshopController.
@@ -97,6 +94,9 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   /// mold closes (G2). Memory only: after a restart the whole pictures show.
   String? _keptId;
   final Map<CookingPhase, Uint8List> _kept = {};
+
+  /// The paste each finished step spilled past the fish (mask points, IC4).
+  final Map<CookingPhase, List<(double, double)>> _spills = {};
   ScrollPosition? _scroll;
   void _scrolled() { if (mounted) setState(() {}); }
   @override
@@ -124,6 +124,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
     if (session?.id != _keptId) {
       _keptId = session?.id;
       _kept.clear();
+      _spills.clear();
     }
     final manual = c.config.section('manual_cooking');
     // In business (and not waiting to continue a new day) the idle mold is
@@ -167,10 +168,17 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
           : clean ? 'empty' : null;
       Widget activeMold(CookingSession session) => IgnorePointer(child: CustomPaint(
           key: const Key('active-empty-mold'),
-          painter: paintedMoldFor(session, _kept, c.config, clean: clean, look: look)));
+          painter: paintedMoldFor(session, _kept, c.config, clean: clean, look: look, spills: _spills)));
+      // 4차 피드백 IC3·IC4: the hand steps take touches on the whole mold
+      // picture (its rim and handles reach past the fish's box) and a
+      // little past it, so a stroke may start on the edge or outside.
+      final touch = session != null && session.phase.index <= CookingPhase.flipping.index &&
+              session.phase != CookingPhase.closing
+          ? WorkshopHomeLayout.moldTouchOutset : EdgeInsets.zero;
       Widget mold(Widget interaction) => Positioned.fromRect(
-          rect: rect,
+          rect: touch.inflateRect(rect),
           child: Stack(key: const Key('workshop-mold'), fit: StackFit.expand, clipBehavior:Clip.none, children: [
+           Padding(padding: touch, child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
             // The axle the mold hangs on (H21), behind it.
             if (idleMold != null || session != null)
               IgnorePointer(child: CustomPaint(key: const Key('mold-axle'),
@@ -185,6 +193,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
             // The pin heads in front (the flip control draws its own).
             if ((idleMold != null || session != null) && session?.phase != CookingPhase.flipping)
               IgnorePointer(child: CustomPaint(painter: MoldAxlePainter(grow: clean ? 1 : 1.12, front: true))),
+           ])),
             interaction,
           ]));
       Widget action(String label, VoidCallback command) => Semantics(
@@ -220,9 +229,12 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 config: c.config,
                 grow: clean ? 1 : 1.12,
                 captionLift: captionLift,
+                touchOutset: touch,
+                before: phase == CookingPhase.secondBatter ? session.firstBatter : null,
                 reduceMotion: widget.reduceMotion,
                 vibration: widget.vibration,
-                onFinished: (paint, cells) {
+                onFinished: (paint, cells, spill) {
+                  _spills[phase] = spill;
                   _kept[phase] = cells;
                   c.cookingCommand(phase == CookingPhase.filling
                       ? session.squeezeFilling(session.token, paint)
@@ -242,6 +254,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 config: c.config,
                 grow: clean ? 1 : 1.12,
                 captionLift: captionLift,
+                touchOutset: touch,
                 reduceMotion: widget.reduceMotion,
                 vibration: widget.vibration,
                 mold: activeMold(session),
@@ -271,25 +284,29 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
             control = const SizedBox.shrink();
         }
       }
+      final hideAbove = limitLocal ?? counterLocal;
       return Stack(key: const Key('workshop-center-stage'), children: [
         mold(control),
         // In the stage itself, not the mold: the floating fish sits above the
         // mold's place and must still be hit-testable there.
         if (clicker)
-          Positioned.fromRect(
-              rect: !floating
-                  ? rect
-                  : widget.lowStall && counterLocal != null
-                      // Just above the counter's button row, 0.8 of the
-                      // mold's place, the guests behind it (S4-1-Q5).
-                      ? Rect.fromCenter(
-                          center: Offset(box.maxWidth / 2,
-                              counterLocal - WorkshopHomeLayout.clickerLift - rect.height * WorkshopHomeLayout.clickerScale / 2),
-                          width: rect.width * WorkshopHomeLayout.clickerScale,
-                          height: rect.height * WorkshopHomeLayout.clickerScale)
-                      : rect.shift(Offset(0, -rect.height * .75)),
+          Positioned.fill(
               child: WorkshopClicker(
                   controller: c,
+                  home: !floating
+                      ? rect
+                      : widget.lowStall && counterLocal != null
+                          // Just above the counter's button row, 0.8 of the
+                          // mold's place, the guests behind it (S4-1-Q5).
+                          ? Rect.fromCenter(
+                              center: Offset(box.maxWidth / 2,
+                                  counterLocal - WorkshopHomeLayout.clickerLift - rect.height * WorkshopHomeLayout.clickerScale / 2),
+                              width: rect.width * WorkshopHomeLayout.clickerScale,
+                              height: rect.height * WorkshopHomeLayout.clickerScale)
+                          : rect.shift(Offset(0, -rect.height * .75)),
+                  // 붕어빵 요정 (4차 IA3): hides from guests at the right
+                  // edge, clear of the cooking cut and the counter.
+                  hideBottom: hideAbove == null ? null : hideAbove - FairyMotion.hideGap,
                   floating: floating,
                   reduceMotion: widget.reduceMotion,
                   vibration: widget.vibration)),
@@ -368,7 +385,8 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
 /// picture when the cells are gone (a restart, or an older hold-time save).
 /// Once the lid closes the step pictures take over (moldFor).
 CustomPainter paintedMoldFor(CookingSession session, Map<CookingPhase, Uint8List> kept,
-    DevelopmentBalance config, {required bool clean, ResultLook? look}) {
+    DevelopmentBalance config, {required bool clean, ResultLook? look,
+    Map<CookingPhase, List<(double, double)>> spills = const {}}) {
   if (session.phase.index > CookingPhase.closing.index) {
     final result = session.phase == CookingPhase.result;
     return WorkshopMoldArt(moldFor(session),
@@ -377,11 +395,17 @@ CustomPainter paintedMoldFor(CookingSession session, Map<CookingPhase, Uint8List
   MoldPaintLayer layer(CookingPhase step, String picture, PaintAmount? paint,
       {String? image, Color? color}) {
     final cells = kept[step];
+    // The batter is judged on both strokes together (IC6): the drips show
+    // once the poured total is past the line.
+    final overflow = paint != null && (step == CookingPhase.filling
+        ? paintOverflowed(config, paint)
+        : batterOverflowed(config, paint,
+            before: step == CookingPhase.secondBatter ? session.firstBatter : null));
     return cells == null
         ? MoldPaintLayer(image: picture)
         : MoldPaintLayer(image: image, color: color, cells: cells,
             drip: step == CookingPhase.filling ? session.flavor : 'batter',
-            overflow: paint != null && paintOverflowed(config, paint));
+            overflow: overflow, spill: spills[step] ?? const []);
   }
   return _PaintedMoldArt([
     if (session.firstBatterDone)
@@ -391,7 +415,7 @@ CustomPainter paintedMoldFor(CookingSession session, Map<CookingPhase, Uint8List
           color: fillingPasteColor(session.flavor)),
     if (session.secondBatterDone)
       layer(CookingPhase.secondBatter, 'batter_top', session.secondBatter, image: 'batter_top'),
-  ], '${session.id}:${session.token}:${kept.length}', clean: clean);
+  ], '${session.id}:${session.token}:${kept.length}:${spills.length}', clean: clean);
 }
 
 class _PaintedMoldArt extends CustomPainter {
@@ -441,7 +465,7 @@ class ResultLook {
   factory ResultLook.of(DevelopmentBalance config, CookingSession session, {required int difficulty}) {
     final variant = evaluateCookingResult(config, session, difficulty: difficulty).variant;
     return ResultLook(cookingGrade(config, session, difficulty: difficulty), variant,
-        overflow: batterFailureLabel(config, session) == '반죽 넘침');
+        overflow: const ['반죽 넘침', '반죽 흘림'].contains(batterFailureLabel(config, session)));
   }
 
   /// The fish's color by doneness: 덜 익음 pale (60% color, 15% lighter),
@@ -500,6 +524,9 @@ class WorkshopMoldArt extends CustomPainter {
   /// The first row of the mold pictures' opaque part and the last row of
   /// the axle's feet under it (mold/axle_back.png), which stand lower.
   static const pictureTop = 102.0, pictureBottom = 833.0;
+
+  /// The mold pictures' own size (mold/*.png).
+  static const pictureSize = Size(1200, 880);
   static const fishAt = Offset(100, 66);
   static final _smooth = Paint()..filterQuality = FilterQuality.medium;
 
@@ -566,16 +593,17 @@ class WorkshopMoldArt extends CustomPainter {
 /// an iron rod through each side ring out to a small bracket standing on
 /// the counter. [front] = false draws the rods and brackets (behind the
 /// mold); true draws the pin heads on the rings (in front of a turning
-/// mold), and while flipping the push's [progress] as a honey ring round
-/// the right pin and, before a push, a small curved arrow ([hint]). Drawn
+/// mold) and, before the flip's circle is drawn, a round arrow round the
+/// mold's middle showing it ([hint], 4차 피드백 IC5; the progress ring
+/// round the right pin is gone, IC8). Drawn
 /// in the mold picture's coordinates (WorkshopMoldArt.fit), so it follows
 /// the mold's place and size. The rods, posts and pins are 25번 36번 art
 /// (mold/axle_back.png, axle_front.png, 1200x880 like the mold); without
 /// them they are drawn in code.
 class MoldAxlePainter extends CustomPainter {
-  final double grow, progress;
+  final double grow;
   final bool front, hint;
-  const MoldAxlePainter({this.grow = 1, this.front = false, this.progress = 0, this.hint = false});
+  const MoldAxlePainter({this.grow = 1, this.front = false, this.hint = false});
 
   static const iron = Color(0xff2f2a27), ironLight = Color(0xff6d635c), brass = Color(0xffc9a25a);
 
@@ -621,197 +649,34 @@ class MoldAxlePainter extends CustomPainter {
       canvas.drawCircle(at(x, y), 13 * k, Paint()..color = brass);
       canvas.drawCircle(at(x - 4, y - 4), 5 * k, Paint()..color = const Color(0xfff3dca0));
     }
-    final (rx, ry) = flipAxleRightRing;
-    final c = at(rx, ry);
-    final r = 46 * k + 6;
-    if (progress > 0) {
-      canvas.drawCircle(c, r, Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5
-        ..color = const Color(0x55000000));
-      canvas.drawArc(Rect.fromCircle(center: c, radius: r), -math.pi / 2, 2 * math.pi * progress.clamp(0.0, 1.0),
-          false, Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 5
-            ..strokeCap = StrokeCap.round
-            ..color = Cozy.honey);
-    }
-    if (hint) {
-      // An arrow turning up and over the axle, at the mold's middle.
-      final m = at(600, 440);
-      final h = 150 * k;
-      final paint = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 4
-        ..strokeCap = StrokeCap.round
-        ..color = Cozy.cream.withValues(alpha: .9);
-      final arc = Rect.fromCenter(center: m, width: h * .9, height: h * 1.6);
-      canvas.drawArc(arc, math.pi * .62, -math.pi * 1.2, false, paint);
-      // Arrowhead at the arc's end (upper left, pointing down).
-      final end = arc.center + Offset(math.cos(-math.pi * .58) * arc.width / 2, math.sin(-math.pi * .58) * arc.height / 2);
-      final head = Path()
-        ..moveTo(end.dx - 9, end.dy - 3)
-        ..lineTo(end.dx + 3, end.dy - 9)
-        ..lineTo(end.dx + 1, end.dy + 6)
-        ..close();
-      canvas.drawPath(head, Paint()..color = Cozy.cream.withValues(alpha: .9));
-    }
+    if (!hint) return;
+    // A round arrow (clockwise, most of a turn) round the mold's middle:
+    // draw a circle like this to flip it.
+    final m = at(600, 440);
+    final r = 150 * k;
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round
+      ..color = Cozy.cream.withValues(alpha: .9);
+    const from = -math.pi * .5, sweep = math.pi * 1.6;
+    canvas.drawArc(Rect.fromCircle(center: m, radius: r), from, sweep, false, paint);
+    // Arrowhead at the arc's end, pointing along it (clockwise).
+    const end = from + sweep;
+    final tip = m + Offset(math.cos(end), math.sin(end)) * r;
+    final along = Offset(-math.sin(end), math.cos(end));
+    final across = Offset(math.cos(end), math.sin(end));
+    final head = Path()
+      ..moveTo(tip.dx + along.dx * 9, tip.dy + along.dy * 9)
+      ..lineTo(tip.dx - along.dx * 4 + across.dx * 8, tip.dy - along.dy * 4 + across.dy * 8)
+      ..lineTo(tip.dx - along.dx * 4 - across.dx * 8, tip.dy - along.dy * 4 - across.dy * 8)
+      ..close();
+    canvas.drawPath(head, Paint()..color = Cozy.cream.withValues(alpha: .9));
   }
 
   @override
   bool shouldRepaint(covariant MoldAxlePainter old) =>
-      old.grow != grow || old.front != front || old.progress != progress || old.hint != hint;
-}
-
-/// The big bungeoppang clicker in business (DEC-036): each tap goes through
-/// [WorkshopController.clickerTap] (buns +tapRate) and shows the tap effects
-/// of tap_effects.dart: a pop, small bungeoppang crumbs and a floating gain.
-/// Taps past the per-second limit still pop and crumble but earn nothing,
-/// so they show no gain. Reduced motion shows only a still gain.
-class WorkshopClicker extends StatefulWidget {
-  static const maxBursts = maxFloatingGains;
-  final WorkshopController controller;
-  /// Draws the floating fish (a clean counter); otherwise the background's
-  /// baked fish is the target and only the effects are drawn.
-  final bool floating, reduceMotion, vibration;
-  const WorkshopClicker(
-      {super.key,
-      required this.controller,
-      required this.floating,
-      this.reduceMotion = false,
-      this.vibration = false});
-  @override
-  State<WorkshopClicker> createState() => _WorkshopClickerState();
-}
-
-class _WorkshopClickerState extends State<WorkshopClicker>
-    with SingleTickerProviderStateMixin {
-  late final Ticker _ticker;
-  final _crumbs = CrumbPool(maxCrumbParticles, crumbLifeMs);
-  final _bursts = <(int, BigInt, Offset)>[];
-  final _haptics = Stopwatch()..start();
-  int _elapsed = 0, _lastTap = -100000, _serial = 0;
-  int? _lastHaptic;
-  Offset? _down;
-  Size _box = Size.zero;
-  BigInt? _staticGain;
-
-  @override
-  void initState() {
-    super.initState();
-    _ticker = createTicker((duration) {
-      setState(() {
-        _elapsed = duration.inMilliseconds;
-        _bursts.removeWhere((b) => _elapsed - b.$1 >= floatingGainMs);
-        _crumbs.update(_elapsed);
-      });
-      if (_bursts.isEmpty && _crumbs.activeCount == 0 && _elapsed - _lastTap > tapPopMs) {
-        _ticker.stop();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _ticker.dispose();
-    super.dispose();
-  }
-
-  void _tap() {
-    final c = widget.controller;
-    if (c.gameplayPaused || c.error != null) return;
-    final amount = c.clickerTap();
-    GameAudioScope.of(context).play(Sfx.tap);
-    final at = _down ?? _box.center(Offset.zero);
-    _down = null;
-    final now = _haptics.elapsedMilliseconds;
-    if (widget.vibration && (_lastHaptic == null || now - _lastHaptic! >= 80)) {
-      _lastHaptic = now;
-      HapticFeedback.selectionClick();
-    }
-    setState(() {
-      if (amount != null) _staticGain = amount;
-      if (widget.reduceMotion) return;
-      if (!_ticker.isActive) {
-        _elapsed = 0;
-        _bursts.clear();
-        _crumbs.clear();
-        _ticker.start();
-      }
-      _lastTap = _elapsed;
-      if (amount != null) {
-        if (_bursts.length == WorkshopClicker.maxBursts) _bursts.removeAt(0);
-        _bursts.add((_elapsed, amount, at.translate(((_serial++ % 5) - 2) * 6.0, 0)));
-      }
-      _crumbs.spawn(at, _elapsed, crumbsPerTap);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final reduce = widget.reduceMotion;
-    final pop = reduce ? 1.0 : tapPopScale((_elapsed - _lastTap) / tapPopMs);
-    return Semantics(
-        button: true,
-        label: '큰 붕어빵 누르기, 붕어빵력 +${compactNumber(widget.controller.tapRate)}',
-        onTap: _tap,
-        child: GestureDetector(
-            key: const Key('workshop-clicker'),
-            behavior: HitTestBehavior.opaque,
-            excludeFromSemantics: true,
-            onTapDown: (d) => _down = d.localPosition,
-            onTapCancel: () => _down = null,
-            onTap: _tap,
-            child: LayoutBuilder(builder: (context, box) {
-              _box = box.biggest;
-              return Stack(clipBehavior: Clip.none, children: [
-                if (widget.floating)
-                  Positioned.fill(
-                      child: Transform.scale(
-                          key: const Key('clicker-scale'),
-                          scale: pop,
-                          child: const CustomPaint(
-                              key: Key('floating-fish'),
-                              painter: FloatingFishPainter()))),
-                // Twinkling one after another (26번 4단계 F11), still with
-                // reduced motion.
-                if (widget.floating)
-                  Positioned.fill(
-                      child: TwinklingSparkles(
-                          points: FloatingFishPainter.sparkles, reduceMotion: reduce)),
-                if (!reduce)
-                  Positioned.fill(
-                      child: IgnorePointer(
-                          child: CustomPaint(
-                              painter: CrumbPainter(_crumbs, _elapsed,
-                                  fish: PixelSprites.fx('minifish') ??
-                                      PixelSprites.fish('redbean', 'scales'))))),
-                for (final burst in _bursts)
-                  Positioned(
-                      key: ValueKey(burst),
-                      left: (burst.$3.dx - 40).clamp(0.0, math.max(0, box.maxWidth - 120)),
-                      top: (burst.$3.dy - 34).clamp(0.0, math.max(0.0, box.maxHeight - 40)) -
-                          (_elapsed - burst.$1) / floatingGainMs * 65,
-                      child: IgnorePointer(
-                          child: ExcludeSemantics(
-                              child: Opacity(
-                                  opacity: (1 - (_elapsed - burst.$1) / floatingGainMs).clamp(0.0, 1.0),
-                                  child: _gain(burst.$2, const Key('clicker-burst')))))),
-                if (reduce && _staticGain != null)
-                  Align(
-                      alignment: Alignment.topCenter,
-                      child: IgnorePointer(child: _gain(_staticGain!, const Key('clicker-static-gain')))),
-              ]);
-            })));
-  }
-
-  static Widget _gain(BigInt amount, Key key) => Text('+${compactNumber(amount)}',
-      key: key,
-      style: const TextStyle(
-          fontSize: 24,
-          fontWeight: FontWeight.w900,
-          color: Color(0xffffedab),
-          shadows: [Shadow(color: Colors.black, blurRadius: 4)]));
+      old.grow != grow || old.front != front || old.hint != hint;
 }
 
 /// The mockup's floating bungeoppang: no mold, a little larger. Its
@@ -848,11 +713,11 @@ Widget _pill(String text) => Container(
         border: Border.all(color: Cozy.woodLight, width: 2),
         boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 4, offset: Offset(0, 2))]),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
-      const PixelIcon('bun', size: 18),
+      const PixelIcon('bun', size: 26),
       const SizedBox(width: 6),
       Text(text, style: const TextStyle(color: Cozy.ink, fontWeight: FontWeight.bold, fontSize: 15)),
       const SizedBox(width: 6),
-      const PixelIcon('bun', size: 18),
+      const PixelIcon('bun', size: 26),
     ]));
 
 /// The bake's title over the mold: a small translucent plate (H19).
@@ -939,9 +804,47 @@ Set<int> workshopGriddleFilled(WorkshopController c) {
   final s = c.state;
   if (!s.business.permitsProducts(c.now())) return const {};
   return {
+    // 4차 피드백 g6: the bungeoppang shows once the automatic batter and
+    // filling steps are done.
     for (var i = 0; i < s.grid.cells.length; i++)
-      if (s.grid.cells[i].cooking) i
+      if (s.grid.cells[i].cooking && s.grid.prepStep(i, c.config) == null) i
   };
+}
+
+/// The six-cell griddle's automatic steps (4차 피드백 g6), shown in a
+/// cell while they run.
+const griddlePrepLabels = ['반죽 붓기', '속 넣기', '반죽 덮기'];
+
+/// A cooking cell's timing cue (4차 피드백 g6): the five doneness zones
+/// along a thin bar (`doneness.boundary_permille` of the target) with a
+/// light marker where the cell is now, so a tap can be timed.
+class GriddleCuePainter extends CustomPainter {
+  final int permille;
+  final List<int> boundaries;
+  const GriddleCuePainter({required this.permille, required this.boundaries});
+  static const zoneColors = [
+    Color(0xfff3e3a6), Color(0xffe8bb62), Color(0xffd28a2a), Color(0xff8a5222), Color(0xff2a1a10)];
+  /// Where the bar ends: a quarter past the last boundary.
+  int get span => boundaries.last * 5 ~/ 4;
+  @override
+  void paint(Canvas canvas, Size size) {
+    final r = RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(size.height / 2));
+    canvas.save();
+    canvas.clipRRect(r);
+    var from = 0;
+    for (var z = 0; z < 5; z++) {
+      final to = z < boundaries.length ? boundaries[z] : span;
+      canvas.drawRect(Rect.fromLTRB(size.width * from / span, 0, size.width * to / span, size.height),
+          Paint()..color = zoneColors[z]);
+      from = to;
+    }
+    canvas.restore();
+    final x = size.width * permille.clamp(0, span) / span;
+    canvas.drawRect(Rect.fromCenter(center: Offset(x, size.height / 2), width: 2.5, height: size.height + 4),
+        Paint()..color = Colors.white);
+  }
+  @override
+  bool shouldRepaint(GriddleCuePainter old) => old.permille != permille || old.boundaries != boundaries;
 }
 
 /// Whether the griddle shows open with its flames on (26번 4-2단계 F8,
@@ -992,7 +895,9 @@ class WorkshopGriddleLayer extends StatelessWidget {
                 child: LockedOverlay(
                     key: const Key('griddle-locked'),
                     caption: lock,
-                    maxLock: 48,
+                    // On the griddle's top rim, not over its cells (4차 IB2).
+                    maxLock: 20,
+                    edgeBadgeAt: griddleRimTop,
                     onTap: () => showCenterToast(context, '숙련된 붕어빵 틀: $lock'),
                     child: const SizedBox.expand())),
           for (var i = 0; i < s.grid.cells.length; i++)
@@ -1003,8 +908,12 @@ class WorkshopGriddleLayer extends StatelessWidget {
               final center = sprite.topLeft +
                   Offset(griddleCavities[i].dx * sprite.width,
                       griddleCavities[i].dy * sprite.height);
-              final grade = cell.cooking ? s.grid.doneness(i, c.config) : null;
-              final label = cell.cooking
+              final prep = s.grid.prepStep(i, c.config);
+              final grade = cell.cooking && prep == null ? s.grid.doneness(i, c.config) : null;
+              final enabledCell = enabled && prep == null;
+              final label = prep != null
+                  ? '${i + 1}번 ${c.flavorLabel(cell.flavor!)} ${griddlePrepLabels[prep]} 중'
+                  : cell.cooking
                   ? '${i + 1}번 ${c.flavorLabel(cell.flavor!)} ${provisionalDonenessLabels[grade!]} · ${grade == 4 ? '폐기' : '수확'}'
                   : '숙련된 붕어빵 틀 ${i + 1}번 칸 굽기 시작';
               return Positioned.fromRect(
@@ -1015,18 +924,24 @@ class WorkshopGriddleLayer extends StatelessWidget {
                   child: Semantics(
                       button: true,
                       label: label,
-                      enabled: enabled,
+                      enabled: enabledCell,
                       child: InkWell(
                           key: Key('workshop-cell-$i'),
-                          onTap: !enabled
+                          onTap: !enabledCell
                               ? null
                               : () => cell.cooking
                                   ? c.harvestCell(i, expectedCycle: cycle)
                                   : c.startCell(i),
                           child: Container(
-                              alignment: Alignment.center,
+                              // 4차 g6: the rows overlap (the lower row covers the
+                              // upper row's bottom), so a cooking cell's bar and
+                              // words start at its top.
+                              alignment: grade != null ? Alignment.topCenter : Alignment.center,
+                              padding: grade != null ? const EdgeInsets.only(top: 4) : null,
                               decoration: BoxDecoration(
-                                  color: cell.cooking
+                                  color: prep != null
+                                      ? const Color(0xccf3e3b8)
+                                      : cell.cooking
                                       ? (grade == 4
                                           ? Colors.black87
                                           : Colors.brown.withValues(alpha: .75))
@@ -1038,12 +953,31 @@ class WorkshopGriddleLayer extends StatelessWidget {
                                       ? Border.all(color: Cozy.cream.withValues(alpha: .7), width: 1.5)
                                       : null,
                                   borderRadius: BorderRadius.circular(12)),
-                              child: cell.cooking
-                                  ? Text(
-                                      '${i + 1} ${provisionalDonenessLabels[grade!]}\n${grade == 4 ? '폐기' : '수확'}',
+                              child: prep != null
+                                  ? Text('${i + 1} ${griddlePrepLabels[prep]}',
+                                      key: Key('griddle-prep-$i'),
                                       textAlign: TextAlign.center,
                                       style: const TextStyle(
-                                          fontSize: 10, color: Cozy.cream))
+                                          fontSize: 10, fontWeight: FontWeight.w700, color: Cozy.woodDark))
+                                  : cell.cooking
+                                  ? Padding(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                        SizedBox(
+                                            height: 5,
+                                            width: double.infinity,
+                                            child: CustomPaint(
+                                                key: Key('griddle-cue-$i'),
+                                                painter: GriddleCuePainter(
+                                                    permille: s.grid.cookPermille(i, c.config),
+                                                    boundaries: c.config.integers('doneness', 'boundary_permille')))),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                            '${i + 1} ${provisionalDonenessLabels[grade!]}\n${grade == 4 ? '폐기' : '수확'}',
+                                            textAlign: TextAlign.center,
+                                            style: const TextStyle(
+                                                fontSize: 10, height: 1.1, color: Cozy.cream)),
+                                      ]))
                                   : null))));
             })
         ]);

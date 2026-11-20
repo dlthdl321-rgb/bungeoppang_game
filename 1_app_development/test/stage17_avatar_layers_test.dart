@@ -202,7 +202,7 @@ void main() {
                 reason: '$character ${d.id}');
           }
         }
-        for (final id in ['skin1', 'skin2', 'skin3', 'long', 'noapron']) {
+        for (final id in ['skin1', 'long', 'noapron']) { // skin1 only (26번 3차 AV3)
           final d = cosmeticDefinitions.firstWhere((d) => d.id == id);
           expect(PixelSprites.avatarArtReady(character, d.slot, id), isTrue,
               reason: '$character $id');
@@ -212,6 +212,9 @@ void main() {
 
     test('생성 목록은 실제 에셋과 같다', () {
       for (final path in avatarArtFiles) {
+        // 26번 3차 AV3 (DEC-TBD-hAV3-2): the v1 skin2·3 copies stay on disk
+        // but no skin tone loads them any more.
+        if (path.contains('@skin2') || path.contains('@skin3')) continue;
         expect(PixelSprites.byPath(path), isNotNull, reason: path);
       }
       for (final path in avatarWornLayers) {
@@ -219,28 +222,16 @@ void main() {
       }
     });
 
-    test('피부톤을 고르면 몸·얼굴 그림이 그 피부색 복사본으로 바뀌고 점점 어두워진다',
-        () async {
+    test('피부톤은 skin1 하나: 몸·얼굴은 원래 그림 (26번 3차 AV3)', () {
+      expect([for (final d in cosmeticDefinitions) if (d.slot == CosmeticSlot.skin) d.id], ['skin1']);
       for (final character in ['girl', 'boy']) {
-        final (mx, my) = frontPose.anchor(character, 'mouth')!;
-        final lum = <int>[];
-        for (final skin in ['skin1', 'skin2', 'skin3']) {
-          final rig = AvatarRig(character, frontPose,
-              look: dressed({CosmeticSlot.skin: skin}, character: character));
-          expect(rig.sprites.first.asset,
-              rigSkinPicture('avatar/$character/base.png', skin));
-          final px = await pixels(rig);
-          // Cheek skin left of the mouth.
-          final i = ((my.round() - 14) * 280 + mx.round() - 22) * 4;
-          lum.add(px[i] + px[i + 1] + px[i + 2]);
-        }
-        expect(lum[0], greaterThan(lum[1]), reason: character);
-        expect(lum[1], greaterThan(lum[2]), reason: character);
+        final rig = AvatarRig(character, frontPose,
+            look: dressed({CosmeticSlot.skin: 'skin1'}, character: character));
+        expect(rig.sprites.first.asset, 'avatar/$character/base.png');
         final talking = AvatarRig(character, frontPose,
-            look: dressed({CosmeticSlot.skin: 'skin3'}, character: character),
-            face: {'mouth': 'wide'});
+            look: dressed({}, character: character), face: {'mouth': 'wide'});
         expect(talking.sprites.map((s) => s.asset),
-            contains('parts/${character}_front_mouth_wide@skin3.png'));
+            contains('parts/${character}_front_mouth_wide.png'));
       }
     });
 

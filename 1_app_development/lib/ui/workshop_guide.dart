@@ -9,6 +9,7 @@ import 'celebration.dart' show CountUpText;
 import 'cozy_style.dart';
 import 'first_run.dart' show FirstRunButton, FirstRunCard;
 import 'pixel_sprites.dart';
+import 'star_rating.dart';
 
 /// First-run guide over the real home: a ring around the widget keyed
 /// [WorkshopTutorialStep.target] inside [home], and a small card beside it.
@@ -20,8 +21,15 @@ class WorkshopTutorialOverlay extends StatefulWidget {
   /// The card's left edge: 72 clear of the old left line, 12 in the
   /// guests-at-the-stall layout (WorkshopHomeLayout.guideLeft).
   final double cardLeft;
+  /// The small line over the text; null: '첫 영업 안내 n/7'. A feature tour
+  /// (4차 g5) says '도감 안내 1/2'.
+  final String? progress;
+  /// A feature tour's '다음' (or '알겠어요' on the last step, [nextLabel]);
+  /// null for the first-run guide, which moves on with the game.
+  final VoidCallback? onNext;
+  final String nextLabel;
   const WorkshopTutorialOverlay({super.key, required this.step, required this.home, required this.onSkip,
-      this.cardLeft = 72});
+      this.cardLeft = 72, this.progress, this.onNext, this.nextLabel = '다음'});
   @override
   State<WorkshopTutorialOverlay> createState() => _WorkshopTutorialOverlayState();
 }
@@ -65,12 +73,22 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
           padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
           child: Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text('첫 영업 안내 ${widget.step.number}/$workshopTutorialSteps', key: const Key('tutorial-progress'),
-                  style: const TextStyle(fontSize: 12, color: Cozy.inkSoft)),
-              Text(widget.step.text, key: const Key('tutorial-text'), style: const TextStyle(fontSize: 15)),
+              Text(widget.progress ?? '첫 영업 안내 ${widget.step.number}/$workshopTutorialSteps', key: const Key('tutorial-progress'),
+                  style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 12, color: Cozy.inkSoft)),
+              Text(widget.step.text, key: const Key('tutorial-text'),
+                  style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 15)),
             ])),
-            TextButton(key: const Key('tutorial-skip'), onPressed: widget.onSkip,
-                child: const Text('건너뛰기', style: TextStyle(color: Cozy.wood))),
+            if (widget.onNext == null)
+              TextButton(key: const Key('tutorial-skip'), onPressed: widget.onSkip,
+                  child: const Text('건너뛰기', style: TextStyle(color: Cozy.wood)))
+            else
+              Column(mainAxisSize: MainAxisSize.min, children: [
+                CozyPrimaryButton(key: const Key('tour-next'), minHeight: 34, fontSize: 14,
+                    onPressed: widget.onNext, label: widget.nextLabel),
+                TextButton(key: const Key('tour-skip'), onPressed: widget.onSkip,
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 30), padding: const EdgeInsets.symmetric(horizontal: 8)),
+                    child: const Text('건너뛰기', style: TextStyle(color: Cozy.wood, fontSize: 13))),
+              ]),
           ]));
       // Under the stage, or beside the target on the side with more room;
       // always between the top edge and the bottom menu, even at large text.
@@ -85,8 +103,11 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
       } else {
         place = _CardPlace.top(target.bottom + 10);
       }
+      // A see-through Material under the card: its words take the theme's
+      // text style instead of the no-Material fallback (yellow underline).
       final placed = Positioned.fill(child: CustomSingleChildLayout(
-          delegate: _CardLayout(place, limit: limit, left: widget.cardLeft), child: card));
+          delegate: _CardLayout(place, limit: limit, left: widget.cardLeft),
+          child: Material(type: MaterialType.transparency, child: card)));
       return Stack(children: [
         if (target != null)
           Positioned.fill(child: IgnorePointer(child: CustomPaint(
@@ -396,7 +417,7 @@ class _WorkshopSalePraiseBannerState extends State<WorkshopSalePraiseBanner> wit
       ),
       const SizedBox(height: 8),
       SizedBox(
-        width: 150,
+        width: 190,
         height: 110,
         child: Stack(alignment: Alignment.center, children: [
           if (!widget.reduceMotion)
@@ -408,7 +429,9 @@ class _WorkshopSalePraiseBannerState extends State<WorkshopSalePraiseBanner> wit
                 ]).animate(_t),
                 child: const CustomPaint(key: Key('sale-praise-sparkle'), painter: SparklePainter()))),
           Column(mainAxisSize: MainAxisSize.min, children: [
-            const PixelIcon('star', key: Key('sale-praise-star'), size: 64),
+            // 4차 피드백 IC9: the same five-star row as the bake result.
+            StarRating(key: const Key('sale-praise-star'), stars: p.stars, size: 28),
+            const SizedBox(height: 4),
             Text('별 ${p.stars}개!', key: const Key('sale-praise-stars'),
                 style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 24, color: Cozy.cream,
                     shadows: [Shadow(color: Cozy.woodDark, offset: Offset(2, 2)), Shadow(color: Cozy.woodDark, blurRadius: 4)])),
@@ -427,7 +450,7 @@ class _WorkshopSalePraiseBannerState extends State<WorkshopSalePraiseBanner> wit
             child: content);
     return Semantics(
       liveRegion: true,
-      label: '${p.name}: ${p.speech} 별 ${p.stars}개',
+      label: '${p.name}: ${p.speech} ${StarRating.label(p.stars)}',
       excludeSemantics: true,
       child: IgnorePointer(child: Center(key: const Key('sale-praise'), child: shown)),
     );

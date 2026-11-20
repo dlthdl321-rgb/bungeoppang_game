@@ -41,6 +41,12 @@ const griddleCavities = [
   Offset(.743, .715),
 ];
 
+/// The top of the griddle's front rim as a fraction of the stove sprite's
+/// height (the art above it is see-through; all four stoves, closed, empty
+/// and full, are wide from 163–186 of 470 px). The griddle's lock notice
+/// sits on this edge (4차 피드백 IB2).
+const griddleRimTop = .38;
+
 /// The bungeoppang in each cavity of the stove art as fractions of the
 /// sprite (all four stoves, measured with tools/empty_griddle.py's fish
 /// masks). The two rows meet at .6085. GriddlePainter cuts a cooking cell's

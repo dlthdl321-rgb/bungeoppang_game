@@ -155,6 +155,22 @@ void main() {
       again.dispose();
     });
 
+    // 4차 피드백 IA5 · 사용자 답(2026-11-21): the order customer's words stay
+    // by them after the result closes, until they leave or speak again.
+    test('결과를 닫아도 주문 손님 대사는 그 손님이 있는 동안 남는다', () async {
+      await controller.openBusiness();
+      await controller.command(() => controller.state.customers.add(CustomerOrder(
+          id: 'order', remainingMs: 100000, lines: [CustomerOrderLine(flavor: 'redbean', quantity: 1)])));
+      final who = controller.state.customers.single.customerId;
+      expect(await controller.startOrderProduction('order', 'redbean'), isTrue);
+      await bake(controller);
+      expect(await controller.storeResult(true), isTrue);
+      expect(controller.guestWords[who], (order: 'order', text: '와, 이건 사진 찍고 싶을 만큼 예뻐요!'));
+      // Business closed: everyone leaves, the words with them.
+      expect(await controller.closeBusiness(), isTrue);
+      expect(controller.guestWords, isEmpty);
+    });
+
     test('연습에는 반응 없음', () async {
       expect(await controller.startPractice(), isTrue);
       await bake(controller);

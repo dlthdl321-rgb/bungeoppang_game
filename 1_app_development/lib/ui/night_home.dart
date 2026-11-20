@@ -64,10 +64,6 @@ class NightHome extends StatelessWidget {
   /// check towel of the background (DEC-038).
   final Widget? counter;
 
-  /// The counter's one action button (sell, bake, open…), floating centred
-  /// on the screen just above the counter (26번 4-1단계 F6, S4-1-Q6).
-  final Widget? counterAction;
-
   /// A small slip just under the HUD's settings button, right edges lined
   /// up (26번 7단계: the '오늘' slip for 오늘의 주문서·출석; moved there from
   /// above the cooking cut by the 2nd mockup check, 2026-11-19).
@@ -119,7 +115,6 @@ class NightHome extends StatelessWidget {
       this.vendor,
       this.centerBuilder,
       this.counter,
-      this.counterAction,
       this.counterSlip,
       this.statusAction,
       this.hudLeading,
@@ -173,7 +168,7 @@ class NightHome extends StatelessWidget {
           final fishArea = box.maxHeight - padding.top - reserved;
           final scroll = largeText || fishArea < 360;
           // Large text scrolls the stage, so the fish keeps its own place.
-          final night = isNightTime(e(CosmeticSlot.time), DateTime.now());
+          final night = isNightTime(e(CosmeticSlot.time), sceneClock());
           final low = lowStall && centerBuilder != null;
           final cleanCounter = centerBuilder != null &&
               (low || PixelSprites.hasCleanBackground(e(CosmeticSlot.background), night));
@@ -184,11 +179,8 @@ class NightHome extends StatelessWidget {
                   box.biggest, e(CosmeticSlot.background), night,
                   clean: cleanCounter, low: low);
           // Without a measured towel the counter sits above the griddle's
-          // first row; the floating action keeps above it the same way.
+          // first row.
           final counterBottom = griddleBottom + griddleH * .66;
-          final actionBottom = towelTop == null
-              ? counterBottom + 52 + WorkshopHomeLayout.actionGap
-              : box.maxHeight - towelTop + WorkshopHomeLayout.actionGap;
           final fishRect = scroll && centerBuilder == null
               ? null
               : NightStallPainter.bakedFishOnScreen(
@@ -319,11 +311,6 @@ class NightHome extends StatelessWidget {
                 // griddle's first row of cells, as before.
                 bottom: towelTop == null ? counterBottom : null,
                 child: counter!),
-            if (counterAction != null) Positioned(
-                left: side,
-                width: w,
-                bottom: actionBottom,
-                child: Center(child: counterAction!)),
             // Under the settings button, over the stage and the guests' tap
             // targets (2nd mockup check).
             if (counterSlip != null && header == null) Positioned(
@@ -446,10 +433,16 @@ class NightHome extends StatelessWidget {
     final next = activeLevelMission(s);
     final progress = headerData?.progressPermille ?? levelProgressPermille(s);
     final level = headerData?.level ?? s.level;
-    return Semantics(
+    final top = headerData == null ? next == null : level >= 50;
+    // A '레시피 받기' waiting shows on the emblem too, not only on the
+    // menu button (4차 피드백 IA1).
+    return CountBadge(
+      count: headerData?.claimable ?? 0,
+      badgeKey: const Key('level-badge'),
+      child: Semantics(
       button: true,
       label:
-          'Lv.$level 레벨 미션 ${(headerData == null ? next == null : level >= 50) ? '최고 레벨 달성' : '진행 ${progress ~/ 10}%'}',
+          'Lv.$level 레벨 미션 ${top ? '최고 레벨 달성' : '진행 ${progress ~/ 10}%'}',
       excludeSemantics: true,
       onTap: () => onOpen('missions'),
       child: GestureDetector(
@@ -457,11 +450,22 @@ class NightHome extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () => onOpen('missions'),
         child: Center(
-          child: SizedBox.square(
+          child: Stack(clipBehavior: Clip.none, alignment: Alignment.bottomCenter, children: [
+          SizedBox.square(
             dimension: levelSize,
-            child: CustomPaint(
-              key: const Key('level-progress'),
-              painter: _LevelRingPainter(progress / 1000),
+            // The ring is the gauge to the next level (4차 피드백 g1): it
+            // fills clockwise from 12 o'clock, glides to a new value
+            // (still with reduced motion) and a dot marks the start at 0%.
+            child: Builder(builder: (context) => TweenAnimationBuilder<double>(
+              tween: Tween(end: progress / 1000),
+              duration: s.settings.reduceMotion || (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
+                  ? Duration.zero
+                  : levelRingMs,
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) => CustomPaint(
+                key: const Key('level-progress'),
+                painter: _LevelRingPainter(value),
+                child: child),
               child: Padding(
                 padding: const EdgeInsets.all(9),
                 child: FittedBox(
@@ -480,12 +484,34 @@ class NightHome extends StatelessWidget {
                   ),
                 ]),
               )),
-            ),
+            )),
           ),
+          if (!top)
+            Positioned(
+              bottom: -7,
+              child: IgnorePointer(
+                child: Container(
+                  key: const Key('level-percent'),
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                      color: Cozy.honey,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Cozy.woodDark, width: 1.5)),
+                  child: Text('${progress ~/ 10}%',
+                      textScaler: TextScaler.noScaling,
+                      style: const TextStyle(
+                          fontSize: 11, height: 1.1, fontWeight: FontWeight.w900, color: Cozy.ink)),
+                ),
+              ),
+            ),
+          ]),
         ),
       ),
-    );
+    ));
   }
+
+  /// How long the level ring takes to glide to a new value.
+  static const levelRingMs = Duration(milliseconds: 600);
 
   /// 붕어빵력 with a big icon and, in the Workshop, 황금붕어빵력 beside it
   /// (on one line when the card is wide, under it when the rates take the
@@ -841,6 +867,8 @@ class _LevelRingPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..color = Cozy.honey);
     }
+    // The start at 12 o'clock, seen even at 0% (4차 피드백 g1).
+    canvas.drawCircle(Offset(c.dx, c.dy - (r - 3.5)), 3, Paint()..color = Cozy.honey);
   }
 
   @override

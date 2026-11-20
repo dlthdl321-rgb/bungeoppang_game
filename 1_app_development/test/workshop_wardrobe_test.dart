@@ -11,6 +11,7 @@ import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/ui/avatar_face.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
+import 'package:todays_bungeoppang/ui/center_toast.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/public_menus.dart';
@@ -73,11 +74,11 @@ void main() {
       await c.command(() => c.state
         ..level = 7
         ..claimedLevels.addAll([2, 3, 4, 5, 6, 7])
-        ..buns = BigInt.from(5000)
-        ..lifetime = BigInt.from(5000));
+        ..buns = BigInt.from(5000000)
+        ..lifetime = BigInt.from(5000000));
       expect(await c.purchaseSkill(c.purchaseGateway!, 'cosmetic:padding'), isTrue, reason: c.notice);
       final saved = c.state.toJson();
-      expect(saved['schema'], 10);
+      expect(saved['schema'], workshopSchema);
       final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>
         ..['schema'] = 8
         ..['avatarEquipment'] = {'outfit': 'padding', 'top': 'tee'}
@@ -85,7 +86,7 @@ void main() {
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.avatarEquipment['top'], 'padding');
       expect(migrated.avatarEquipment['outfit'], 'noapron');
-      expect(migrated.toJson()['schema'], 10);
+      expect(migrated.toJson()['schema'], workshopSchema);
       final strict = jsonDecode(jsonEncode(old)) as Map<String, dynamic>..['schema'] = 9;
       expect(() => WorkshopState.fromJson(strict, config), throwsFormatException);
     });
@@ -98,12 +99,16 @@ void main() {
         // without an icon) until it is on.
         if (!['girl', 'boy'].any((c) => PixelSprites.avatarArtReady(c, d.slot, d.id))) continue;
         expect(File('assets/images/cosmetic_icons/${d.id}.png').existsSync(), isTrue, reason: d.id);
+        // 26번 3차 AV3d made the boy's own hair/hat icons
+        // (cosmetic_icons/boy/); the 4차 merge keeps the 43~49 art, so both
+        // characters use the shared icon (PixelSprites.cosmeticIcon falls
+        // back to it).
       }
     });
   });
 
   group('사장님·피부톤 규칙 (3차 피드백 H11·H12)', () {
-    test('새 가게는 여자 사장님과 피부톤 1만 갖고, 남자 사장님·피부톤 2·3은 설정값 가격으로 판다', () async {
+    test('새 가게는 여자 사장님과 피부톤 1만 갖고, 남자 사장님은 설정값 가격으로 판다 (피부톤 2·3은 없음, 26번 3차 AV3)', () async {
       final c = WorkshopController(config, MemoryRepository(), purchaseGateway: Gateway());
       await c.initialize();
       expect([for (final id in ['girl', 'boy', 'skin1', 'skin2', 'skin3']) c.ownsAvatar(id)],
@@ -111,14 +116,16 @@ void main() {
       expect(await c.equipAvatar('boy'), isFalse);
       expect(await c.equipAvatar('skin2'), isFalse);
       final prices = config.section('cosmetic_purchase');
-      for (final id in ['girl', 'boy', 'skin2', 'skin3']) {
+      expect(prices.containsKey('skin2') || prices.containsKey('skin3'), isFalse);
+      expect(config.section('avatar_catalog').keys.where((k) => k.startsWith('skin')), ['skin1']);
+      for (final id in ['girl', 'boy']) {
         final quote = quoteWorkshopProduct(config, 'cosmetic:$id', owned: 0, quantity: 1);
         expect(quote.gold, BigInt.from((prices[id] as Map)['gold'] as int), reason: id);
         expect(quote.gold, greaterThan(BigInt.zero), reason: '황금으로 산다: $id');
       }
       // The server reads the same generated config.
       final server = jsonDecode(File('firebase/functions/src/generated/development_balance.json').readAsStringSync());
-      for (final id in ['girl', 'boy', 'skin2', 'skin3']) {
+      for (final id in ['girl', 'boy']) {
         expect(server['avatar_catalog'][id]['free'], isFalse, reason: id);
         expect(server['cosmetic_purchase'][id], prices[id], reason: id);
       }
@@ -139,21 +146,28 @@ void main() {
       expect(restored.avatarEquipment['character'], 'boy');
       // Buying the other one works like any item.
       await c.command(() => c.state
-        ..buns = BigInt.from(5000)
-        ..lifetime = BigInt.from(5000));
+        ..buns = BigInt.from(5000000)
+        ..lifetime = BigInt.from(5000000));
       expect(await c.purchaseSkill(c.purchaseGateway!, 'cosmetic:girl'), isTrue, reason: c.notice);
       expect(await c.equipAvatar('girl'), isTrue);
     });
 
-    test('규칙 전 저장은 입던 사장님·피부톤을 그대로 갖는다(기존 저장 존중)', () async {
+    test('규칙 전 저장은 입던 사장님을 그대로 갖고, 없어진 피부톤 2·3은 피부톤 1로 읽는다', () async {
       final c = WorkshopController(config, MemoryRepository(), purchaseGateway: Gateway());
       await c.initialize();
       final old = jsonDecode(jsonEncode(c.state.toJson())) as Map<String, dynamic>
         ..remove('avatarGrants')
         ..['avatarEquipment'] = {'character': 'boy', 'skin': 'skin3'};
       final migrated = WorkshopState.fromJson(old, config);
-      expect(migrated.avatarGrants, {'boy', 'skin3'});
-      expect(migrated.avatarEquipment, {'character': 'boy', 'skin': 'skin3'});
+      expect(migrated.avatarGrants, {'boy', 'skin1'});
+      expect(migrated.avatarEquipment, {'character': 'boy', 'skin': 'skin1'});
+      // A save that granted skin2 (26번 3차 AV3: removed before launch).
+      final granted = jsonDecode(jsonEncode(c.state.toJson())) as Map<String, dynamic>
+        ..['avatarGrants'] = ['girl', 'skin2']
+        ..['avatarEquipment'] = {'skin': 'skin2'};
+      final read = WorkshopState.fromJson(granted, config);
+      expect(read.avatarGrants, {'girl'});
+      expect(read.avatarEquipment['skin'], 'skin1');
       // Nothing worn yet: the girl, as before.
       final fresh = jsonDecode(jsonEncode(c.state.toJson())) as Map<String, dynamic>
         ..remove('avatarGrants')
@@ -187,16 +201,16 @@ void main() {
       expect(again.avatarWorn(CosmeticSlot.hair, 'long'), 'short');
       // 여자 사장님을 사서 입으면 그 사장님의 기본 머리(긴 생머리)로.
       await boy.command(() => boy.state
-        ..buns = BigInt.from(5000)
-        ..lifetime = BigInt.from(5000));
+        ..buns = BigInt.from(5000000)
+        ..lifetime = BigInt.from(5000000));
       expect(await boy.purchaseSkill(boy.purchaseGateway!, 'cosmetic:girl'), isTrue, reason: boy.notice);
       expect(await boy.equipAvatar('girl'), isTrue);
       expect(boy.state.avatarWorn(CosmeticSlot.hair, 'long'), 'long');
       expect(boy.ownsAvatar('short'), isTrue, reason: '남자 사장님을 가졌으니 계속 가짐');
       // 여자로 시작해 남자 사장님을 사면 짧은 머리도 생기고 입는다.
       await girl.command(() => girl.state
-        ..buns = BigInt.from(5000)
-        ..lifetime = BigInt.from(5000));
+        ..buns = BigInt.from(5000000)
+        ..lifetime = BigInt.from(5000000));
       expect(await girl.purchaseSkill(girl.purchaseGateway!, 'cosmetic:boy'), isTrue, reason: girl.notice);
       expect(girl.ownsAvatar('short'), isTrue);
       expect(await girl.equipAvatar('boy'), isTrue);
@@ -226,15 +240,15 @@ void main() {
       for (final grants in [
         ['short'],
         ['girl', 'boy'],
-        ['skin2'],
+        ['skin1'],
         ['girl', 'girl'],
         'girl',
       ]) {
         final bad = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['avatarGrants'] = grants;
         expect(() => WorkshopState.fromJson(bad, config), throwsFormatException, reason: '$grants');
       }
-      // Wearing a skin tone that is neither granted nor bought is refused.
-      final worn = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['avatarEquipment'] = {'skin': 'skin2'};
+      // Wearing an item that is neither granted nor bought is refused.
+      final worn = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['avatarEquipment'] = {'character': 'boy'};
       expect(() => WorkshopState.fromJson(worn, config), throwsFormatException);
     });
   });
@@ -263,15 +277,15 @@ void main() {
     });
 
     testWidgets('여러 칸을 바꿔 입어 보고: 모두 적용은 가진 것만, 모두 사기는 확인 창 뒤 사고 모두 입고 창을 닫는다 (H15)', (tester) async {
-      final (c, _) = await _open(tester, const Size(390, 844), gold: 20);
+      final (c, _) = await _open(tester, const Size(390, 844), gold: 20, buns: BigInt.from(1000000));
       await _tap(tester, 'menu-skins');
       expect(find.byKey(const Key('cosmetic-preview-status')), findsNothing);
       // Wearing what is worn already shows no '입어 보는 중' (G15).
       await _tap(tester, 'preview-girl');
       expect(find.byKey(const Key('cosmetic-preview-status')), findsNothing);
       await _tap(tester, 'preview-boy');
-      await _tap(tester, 'cosmetic-slot-skin');
-      await _tap(tester, 'preview-skin2');
+      // 26번 3차 AV3: no skin tone tab (skin1 only).
+      expect(find.byKey(const Key('cosmetic-slot-skin')), findsNothing);
       await _tap(tester, 'cosmetic-category-outfit');
       await _tap(tester, 'cosmetic-slot-outfit');
       await _tap(tester, 'preview-noapron');
@@ -283,7 +297,7 @@ void main() {
       }
       // All picks are drawn together.
       final look = tester.widget<CustomPaint>(find.byKey(const Key('preview-avatar-face'))).painter! as AvatarPainter;
-      expect((look.look.character, look.look.skin, look.look.outfit), ('boy', 'skin2', 'noapron'));
+      expect((look.look.character, look.look.skin, look.look.outfit), ('boy', 'skin1', 'noapron'));
       expect(c.state.avatarEquipment['character'], isNot('boy'));
       // '모두 적용' wears what is owned; the rest waits for '모두 사기'.
       await _tap(tester, 'wardrobe-apply-all');
@@ -293,15 +307,12 @@ void main() {
       expect(find.byKey(const Key('wardrobe-apply-all')), findsNothing);
       await _tap(tester, 'wardrobe-buy-all');
       expect(find.byKey(const Key('wardrobe-buy-all-dialog')), findsOneWidget);
-      expect(find.text('2개 모두 사기'), findsOneWidget);
+      expect(find.text('남자 사장님 사기'), findsOneWidget); // one item (no skin tone since AV3)
       expect(find.byKey(const Key('wardrobe-buy-row-boy')), findsOneWidget);
-      expect(find.byKey(const Key('wardrobe-buy-row-skin2')), findsOneWidget);
-      expect(find.byKey(const Key('wardrobe-buy-all-total')), findsOneWidget);
+      expect(find.byKey(const Key('wardrobe-buy-all-total')), findsNothing); // a total only for 2+
       await _tap(tester, 'wardrobe-buy-all-confirm');
       expect(c.ownsAvatar('boy'), isTrue, reason: c.notice);
-      expect(c.ownsAvatar('skin2'), isTrue, reason: c.notice);
       expect(c.state.avatarEquipment['character'], 'boy');
-      expect(c.state.avatarEquipment['skin'], 'skin2');
       // Everything worn: the window closed by itself (no back button needed).
       expect(find.byKey(const Key('workshop-window-title')), findsNothing);
     });
@@ -400,19 +411,19 @@ void main() {
           price: (_) => '',
           action: (_) => '',
           apply: (d) async {
-            if (d.id == 'skin3') return false;
+            if (d.id == 'beanie') return false;
             worn[d.slot] = d.id;
             return true;
           },
           listed: (d) => d.slot.category == CosmeticCategory.avatar);
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: WardrobePanel(controller: game, access: access))));
       await _tap(tester, 'preview-boy');
-      await _tap(tester, 'cosmetic-slot-skin');
-      await _tap(tester, 'preview-skin3');
+      await _tap(tester, 'cosmetic-slot-hat');
+      await _tap(tester, 'preview-beanie');
       await _tap(tester, 'wardrobe-apply-all');
       expect(worn[CosmeticSlot.character], 'boy');
       expect(find.byKey(const Key('wardrobe-message')), findsOneWidget);
-      expect(find.textContaining('피부톤 3'), findsWidgets);
+      expect(find.textContaining('털 비니'), findsWidgets);
       expect(find.text('모두 적용'), findsOneWidget);
     });
   });
@@ -441,7 +452,8 @@ void main() {
           find.descendant(of: find.byKey(Key('preview-$id')), matching: find.byKey(Key(key)));
       expect(inTile('beanie', 'tile-price'), findsOneWidget);
       expect(inTile('earmuffs', 'tile-price'), findsOneWidget);
-      expect(tester.getSize(inTile('beanie', 'tile-price')).height, lessThanOrEqualTo(20));
+      // 4차 ID2: the price line is 24 high so its 붕어빵 icon can be seen.
+      expect(tester.getSize(inTile('beanie', 'tile-price')).height, lessThanOrEqualTo(24));
       await tester.ensureVisible(find.byKey(const Key('preview-santa')));
       expect(inTile('santa', 'lock-hatch'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp('산타 모자 Lv.9 해금')), findsOneWidget);
@@ -463,7 +475,7 @@ void main() {
 
   group('상점 꾸미기 탭', () {
     testWidgets('잠긴 것도 입어 보고, 사면 확인 창 뒤 바로 입는다', (tester) async {
-      final (c, _) = await _open(tester, const Size(390, 844), gold: 5);
+      final (c, _) = await _open(tester, const Size(390, 844), gold: 5, buns: BigInt.from(300000));
       await _tap(tester, 'menu-shop');
       expect(find.byKey(const Key('shop-tab-gear')), findsNothing);
       expect(find.byKey(const Key('shop-wardrobe')), findsOneWidget);
@@ -485,29 +497,114 @@ void main() {
     });
   });
 
-  group('가게 탭 (F33·S45-Q6)', () {
-    // 26번 3차 H42: 배경·밤낮 from Lv.1; 화로·장식·등불 still from Lv.8.
-    testWidgets('Lv.7 가게 탭은 배경·밤낮만, Lv.8부터 화로·장식·등불, 미리보기는 장면 전체가 상자 안', (tester) async {
+  group('배경 탭 (F33·S45-Q6, 4차 피드백 g10 ID5·ID8)', () {
+    // 26번 3차 H42: 배경·밤낮 from Lv.1. 4차 g10(ID8): the tab is '배경'
+    // with 풍경·등불·밤낮 from Lv.1; 화로·장식 still from Lv.8.
+    testWidgets('Lv.7 배경 탭은 풍경·등불·밤낮, Lv.8부터 화로·장식, 미리보기는 가게 전체 카드', (tester) async {
       await _open(tester, const Size(390, 844), level: 7);
       await _tap(tester, 'menu-skins');
       expect(find.byKey(const Key('cosmetic-category-bungeoppang')), findsOneWidget);
+      expect(find.text('배경'), findsOneWidget);
+      expect(find.text('가게'), findsNothing);
       await _tap(tester, 'cosmetic-category-stall');
-      expect(find.byKey(const Key('cosmetic-slot-background')), findsOneWidget);
-      expect(find.byKey(const Key('cosmetic-slot-time')), findsOneWidget);
-      for (final slot in ['stove', 'decoration', 'lamp']) {
-        expect(find.byKey(Key('cosmetic-slot-$slot')), findsNothing, reason: slot);
+      for (final (slot, label) in [('background', '풍경'), ('lamp', '등불'), ('time', '밤낮')]) {
+        expect(find.descendant(of: find.byKey(Key('cosmetic-slot-$slot')), matching: find.text(label)), findsOneWidget,
+            reason: slot);
       }
+      // 4차 g5: 화로·장식 are listed locked (stripe + corner padlock), not
+      // hidden; a tap says when it opens.
+      for (final slot in ['stove', 'decoration']) {
+        expect(find.byKey(Key('cosmetic-slot-$slot-locked')), findsOneWidget, reason: slot);
+      }
+      expect(find.byKey(const Key('cosmetic-slot-lamp-locked')), findsNothing);
+      await tester.tap(find.byKey(const Key('cosmetic-slot-stove')));
+      await tester.pump();
+      expect(find.textContaining('Lv.8 달성하면 열려요'), findsOneWidget);
+      CenterToast.hide();
+      await tester.pumpAndSettle();
+      // ID5: the whole stall as a home-shaped card, no vendor.
+      final box = tester.getRect(find.byKey(const Key('preview-stall')));
+      final scene = tester.getRect(find.byKey(const Key('preview-stall-scene')));
+      expect(scene, box);
+      expect(box.height, greaterThan(220));
+      final card = StallPreviewPainter.cardIn(box.size);
+      expect(card.height / card.width, closeTo(844 / 390, .01));
+      expect(card.left, greaterThan(0));
+      final painter = tester.widget<CustomPaint>(find.byKey(const Key('preview-stall-scene'))).painter;
+      expect(painter, isA<StallPreviewPainter>());
+      // 등불 sells the lamp glass from Lv.1 (locked by level until then).
+      await _tap(tester, 'cosmetic-slot-lamp');
+      for (final id in ['amberlamp', 'roselamp', 'mintlamp', 'lilaclamp']) {
+        expect(find.byKey(Key('preview-$id')), findsOneWidget, reason: id);
+      }
+      await tester.pumpWidget(const SizedBox());
+      // Before Lv.5 the 붕어빵 tab is listed locked too.
+      await _open(tester, const Size(390, 844), level: 4);
+      await _tap(tester, 'menu-skins');
+      expect(find.byKey(const Key('cosmetic-category-bungeoppang-locked')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('cosmetic-category-bungeoppang')));
+      await tester.pump();
+      expect(find.text('붕어빵: Lv.5 달성하면 열려요'), findsOneWidget);
+      CenterToast.hide();
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('cosmetic-slot-pattern')), findsNothing, reason: '탭은 그대로');
       await tester.pumpWidget(const SizedBox());
       await _open(tester, const Size(390, 844), level: 8);
       await _tap(tester, 'menu-skins');
       await _tap(tester, 'cosmetic-category-stall');
-      expect(find.byKey(const Key('cosmetic-slot-lamp')), findsOneWidget);
-      // 시안 확인 2차: a wide stall scene filling the box, no vendor.
-      final box = tester.getRect(find.byKey(const Key('preview-stall')));
-      final scene = tester.getRect(find.byKey(const Key('preview-stall-scene')));
-      expect(scene, box);
-      final painter = tester.widget<CustomPaint>(find.byKey(const Key('preview-stall-scene'))).painter;
-      expect(painter, isA<StallPreviewPainter>());
+      expect(find.byKey(const Key('cosmetic-slot-stove')), findsOneWidget);
+      expect(find.byKey(const Key('cosmetic-slot-decoration')), findsOneWidget);
+    });
+
+    // 4차 g10(ID9): 기기 시간 따라 is free and worn; 낮·밤 고정 are sold
+    // at the special background's price.
+    testWidgets('밤낮 칸: 기기 시간 따라가 기본, 밤 고정을 사면 바로 쓴다', (tester) async {
+      final (c, _) = await _open(tester, const Size(390, 844), level: 1, gold: 20, buns: BigInt.from(20000000));
+      await _tap(tester, 'menu-skins');
+      await _tap(tester, 'cosmetic-category-stall');
+      await _tap(tester, 'cosmetic-slot-time');
+      expect(find.byKey(const Key('preview-scenetime')), findsNothing);
+      for (final id in ['clock', 'day', 'night_time']) {
+        expect(find.byKey(Key('preview-$id')), findsOneWidget, reason: id);
+      }
+      expect(c.state.sceneTime, 'clock');
+      final quote = quoteWorkshopProduct(config, 'cosmetic:night_time', owned: 0, quantity: 1);
+      final special = quoteWorkshopProduct(config, 'cosmetic:seaside', owned: 0, quantity: 1);
+      expect(quote.buns, greaterThanOrEqualTo(special.buns));
+      expect(quote.gold, greaterThanOrEqualTo(special.gold));
+      await _tap(tester, 'preview-night_time');
+      await _tap(tester, 'wardrobe-buy-all');
+      await _tap(tester, 'wardrobe-buy-all-confirm');
+      expect(c.ownsAvatar('night_time'), isTrue, reason: c.notice);
+      expect(c.state.sceneTime, 'night_time');
+      expect(c.state.avatarEquipment.containsKey('time'), isFalse);
+    });
+
+    testWidgets('설정의 밤낮은 가진 것만: 기기 시간 따라 + 산 밤 고정', (tester) async {
+      final (c, _) = await _open(tester, const Size(390, 844), level: 1, gold: 20, buns: BigInt.from(20000000));
+      expect(await c.purchaseSkill(c.purchaseGateway!, 'cosmetic:night_time'), isTrue, reason: c.notice);
+      await tester.pumpAndSettle();
+      await _tap(tester, 'home-settings');
+      // The settings list builds lazily: scroll down to the 밤낮 row.
+      await tester.scrollUntilVisible(find.byKey(const Key('settings-time')), 200,
+          scrollable: find.byType(Scrollable).last);
+      await _tap(tester, 'settings-time');
+      expect(find.text('밤 고정'), findsWidgets);
+      expect(find.text('낮 고정'), findsNothing);
+      expect(find.text('기기 시간 따라'), findsWidgets);
+    });
+
+    testWidgets('등불을 사면 가게 저장에 입고 홈 등불이 바뀐다', (tester) async {
+      final (c, _) = await _open(tester, const Size(390, 844), level: 2, gold: 20, buns: BigInt.from(20000000));
+      await _tap(tester, 'menu-shop');
+      await _tap(tester, 'cosmetic-category-stall');
+      await _tap(tester, 'cosmetic-slot-lamp');
+      await _tap(tester, 'preview-roselamp');
+      await _tap(tester, 'buy-cosmetic-roselamp');
+      await _tap(tester, 'wardrobe-buy-confirm');
+      expect(c.ownsAvatar('roselamp'), isTrue, reason: c.notice);
+      expect(c.state.avatarEquipment['lamp'], 'roselamp');
+      expect(WorkshopState.fromJson(c.state.toJson(), config).avatarEquipment['lamp'], 'roselamp');
     });
   });
 
@@ -516,7 +613,7 @@ void main() {
   // only). They are sold and chosen again from Lv.1.
   group('배경 되살리기 (H42)', () {
     testWidgets('Lv.1 상점 가게 탭에서 배경을 사면 바로 입고 홈 배경이 바뀐다', (tester) async {
-      final (c, _) = await _open(tester, const Size(390, 844), level: 1, gold: 5, buns: BigInt.from(5000));
+      final (c, _) = await _open(tester, const Size(390, 844), level: 1, gold: 10, buns: BigInt.from(4000000));
       await _tap(tester, 'menu-shop');
       await _tap(tester, 'cosmetic-category-stall');
       for (final id in ['night', 'dusk', 'rain', 'snow', 'autumn', 'forest', 'cherry', 'snowday', 'seaside']) {
@@ -620,8 +717,9 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
     c.state.level = level;
     c.state.claimedLevels.addAll([for (var n = 2; n <= level; n++) n]);
     c.state.featureIntros.addAll(['skills', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
-    c.state.lifetime = BigInt.from(20000);
     c.state.buns = buns ?? BigInt.from(20000);
+    // Never less than what is in hand (a save check).
+    c.state.lifetime = c.state.buns > BigInt.from(20000) ? c.state.buns : BigInt.from(20000);
   });
   game.state.premium.gold = gold;
   await tester.pumpWidget(GameApp(controller: game, workshop: c));

@@ -109,7 +109,7 @@ void main() {
     // 숙련(익힘 5단계 발견, 연습·손기술 횟수)까지 남은 연습은 명령으로 채운다
     // (손 조작은 위에서 확인함). 꺼내는 시간을 바꿔 익힘 5단계를 모두 본다.
     const takeOutMs = [5000, 12000, 15000, 19000, 25000];
-    for (var i = 0; i < 20 && !c.state.masteryAwards.containsKey('redbean'); i++) {
+    for (var i = 0; i < 40 && !c.state.collection(c.config, 'redbean').collected; i++) {
       expect(await c.startPractice(), isTrue);
       var s = c.state.session!;
       expect(await c.cookingCommand(s.pour(s.token, PaintAmount.even)), isTrue);
@@ -129,7 +129,8 @@ void main() {
       expect(await c.cookingCommand(s.takeOut(s.token, out)), isTrue);
       expect(await c.storeResult(false), isTrue);
     }
-    expect(c.state.masteryAwards.containsKey('redbean'), isTrue);
+    // 4차 g6: 팥 도감 완성(다섯 칸을 정해진 횟수만큼)이 6구를 연다.
+    expect(c.state.collection(c.config, 'redbean').collected, isTrue);
     await tester.pump();
 
     // 3. 영업 시작: 스페셜 붕어빵 틀 대신 클리커, 숙련된 붕어빵 칸이 열림.
@@ -143,7 +144,11 @@ void main() {
     // 4. 숙련된 붕어빵: 1번 칸 굽기 → 익으면 수확 → 재고.
     await tapKey('workshop-cell-0');
     expect(c.state.grid.cells[0].cooking, isTrue);
-    await elapse(17000);
+    // 4차 g6: batter, filling and batter go in by themselves first.
+    await elapse(1000);
+    expect(key('griddle-prep-0'), findsOneWidget);
+    await elapse(16000);
+    expect(key('griddle-cue-0'), findsOneWidget);
     final grade = c.state.grid.doneness(0, c.config);
     expect(grade, inInclusiveRange(1, 3), reason: '17초면 덜익음~알맞음 사이');
     final stockBefore = c.state.inventory.toJson().toString();
@@ -169,10 +174,36 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(key('sale-praise'), findsNothing);
+    // 4차 g5: first the 꾸미기·상점·오늘 card and its short tour, then the
+    // griddle's card and its one-step tour.
+    expect(key('feature-intro-wardrobe'), findsOneWidget);
+    await tester.tap(key('feature-intro-ok'));
+    await tester.pumpAndSettle();
+    await tester.tap(key('tour-skip'));
+    await tester.pumpAndSettle();
     expect(key('feature-intro-griddle'), findsOneWidget);
     await tester.tap(key('feature-intro-ok'));
     await tester.pumpAndSettle();
     expect(c.state.featureIntros, contains('griddle'));
+    expect(key('tour-next'), findsOneWidget);
+    await tester.tap(key('tour-next'));
+    await tester.pumpAndSettle();
+    expect(key('tutorial-card'), findsNothing);
+    // 4차 IA3: no guest after the first sale, so the 붕어빵 요정 is out: its
+    // story card comes next (after the griddle's), once.
+    await tester.pump();
+    await tester.pump();
+    expect(key('feature-intro-fairy'), findsOneWidget);
+    expect(find.text('붕어빵 요정을 만났어요'), findsOneWidget);
+    await tester.tap(key('feature-intro-ok'));
+    await tester.pumpAndSettle();
+    expect(c.state.featureIntros, contains('fairy'));
+    expect(key('feature-intro-fairy'), findsNothing);
+    // 4차 병합: the fairy's one-step tour (g5) points at the fairy.
+    expect(key('tour-next'), findsOneWidget);
+    await tester.tap(key('tour-next'));
+    await tester.pumpAndSettle();
+    expect(key('tutorial-card'), findsNothing);
 
     // 둘째 손님에게는 남은 재고(보관한 연습 붕어빵과 수확분 중 남은 1개)를 판다.
     await nextGuest();
@@ -214,8 +245,13 @@ void main() {
     expect(key('active-empty-mold'), findsNothing);
     // The order bake went to stock for that customer.
     expect(c.saleReadyCount(c.state.customers.firstWhere((o) => o.id == orderId)), greaterThan(0));
+    // 4차 IA3: the guest still waits, so the 붕어빵 요정 peeks from the right
+    // edge; its part on screen still takes the tap.
+    expect(key('fairy-hiding'), findsOneWidget);
     final after = c.state.taps;
-    await tapKey('workshop-clicker');
+    final fairy = tester.getRect(key('workshop-clicker'));
+    await tester.tapAt(Offset(fairy.center.dx.clamp(0, tester.getSize(find.byType(GameApp)).width - 20), fairy.center.dy));
+    await tester.pump();
     expect(c.state.taps, after + 1);
     // 주문 제작한 붕어빵을 그 손님에게 판다.
     await tapKey('sale-button');

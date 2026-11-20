@@ -84,7 +84,8 @@ String avatarV2Feature(
     'avatar_v2/$character/face_${channel}_$frame@$skin.png';
 
 /// Every picture v2 needs: the three bases and every item layer the
-/// wardrobe can show (defaults included; blanks have none), girl and boy.
+/// wardrobe can show (defaults included; blanks and withdrawn items have
+/// none), girl and boy.
 /// tools/avatar_v2.py `required()` makes the same list.
 Iterable<String> avatarV2Required() sync* {
   final characters = [
@@ -100,7 +101,10 @@ Iterable<String> avatarV2Required() sync* {
       yield avatarV2Base(c, s);
     }
     for (final d in cosmeticDefinitions) {
-      if (!rigSlotLayers.containsKey(d.slot) || blankCosmetics.contains(d.id)) {
+      // Withdrawn items are not shown, so they wait for their art without
+      // holding v2 back (26번 3차 AV3: the low ponytail).
+      if (!rigSlotLayers.containsKey(d.slot) || blankCosmetics.contains(d.id) ||
+          avatarItemWithdrawn(c, d.id)) {
         continue;
       }
       final item = avatarV2Item(c, d.slot, d.id);

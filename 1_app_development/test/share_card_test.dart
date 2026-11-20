@@ -4,6 +4,7 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/workshop_collection_rules.dart';
 import 'package:todays_bungeoppang/avatar_v2.dart';
 import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/cooking_result_rules.dart';
@@ -108,6 +109,7 @@ void main() {
       await c.openBusiness();
       expect(await c.command(() {
         c.state.tutorial = 'done';
+        c.state.featureIntros.add('fairy');
         c.state.level = 5;
         c.state.claimedLevels..clear()..addAll([2, 3, 4, 5]);
         c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
@@ -234,8 +236,16 @@ void main() {
       late FlavorMasteryProgress original;
       final (c, _) = await mount(tester, setup: (c) {
         original = c.state.flavorMasteries['redbean']!;
-        c.state.flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
-            difficulty: c.state.flavorMasteries['redbean']!.difficulty, discovered: {0, 1, 2, 3, 4});
+        // 4차 g6: every cell baked its count (도감 완성).
+        var m = original;
+        final need = collectionRequired(c.config, 'redbean');
+        for (var v = 0; v < 5; v++) {
+          for (var i = 0; i < need[v]; i++) {
+            m = m.record(MasteryResult(id: 'share-$v-$i', flavor: 'redbean', variant: v,
+                completed: true, practice: true, techniquePassed: false));
+          }
+        }
+        c.state.flavorMasteries['redbean'] = m;
       });
       await tester.tap(find.byKey(const Key('menu-menubar')));
       await tester.pumpAndSettle();
@@ -250,6 +260,8 @@ void main() {
       Navigator.of(tester.element(find.byKey(const Key('collection-share-redbean')))).pop();
       await tester.pumpAndSettle();
       c.state.flavorMasteries['redbean'] = original;
+      c.state.collectionClaims.remove('redbean');
+      c.state.pendingGold.remove('collection:redbean');
       await c.command(() => c.state.customerScene = {'kind': 'story', 'id': 'story_doyun_01', 'npc': 'npc_doyun'});
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('story-share')), findsOneWidget);

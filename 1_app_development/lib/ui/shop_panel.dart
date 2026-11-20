@@ -25,7 +25,11 @@ class ShopPanel extends StatefulWidget {
   /// The Workshop shop opens its 꾸미기 tab at this slot (from the
   /// wardrobe's '상점에서 더 보기').
   final CosmeticSlot? initialSlot;
-  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access,this.initialSlot});
+  /// A build without the online settings: the charge tab hands out free
+  /// test gold instead of Play packs (4차 피드백 IC10 후속).
+  final bool localTestGold;
+  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access,this.initialSlot,
+    this.localTestGold=false});
   @override
   State<ShopPanel> createState() => _ShopPanelState();
 }
@@ -75,8 +79,19 @@ class _ShopPanelState extends State<ShopPanel> {
                 ShopTab.cosmetics => 'tab_outfit',
                 ShopTab.theme => 'theme',
                 ShopTab.gold => 'gold_bun',
-              }, size: 20),
-              label: Text(_label(t), style: const TextStyle(fontWeight: FontWeight.w900)),
+              }, size: 28),
+              // 4차 피드백 ID4: a chip keeps its avatar at 18 unless told.
+              avatarBoxConstraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              // Less padding above and below, so the bigger icon does not
+              // make the chip taller than before.
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              // The label is as tall as the icon: a chip's content must not be
+              // shorter than its avatar.
+              label: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 28),
+                  child: Center(
+                      widthFactor: 1,
+                      child: Text(_label(t), style: const TextStyle(fontWeight: FontWeight.w900)))),
               showCheckmark: false,
               // H41: a hairline pill; the picked one honey (no wooden outline).
               shape: StadiumBorder(side: BorderSide(color: t == tab ? Cozy.honeyDeep : Cozy.line)),
@@ -99,7 +114,7 @@ class _ShopPanelState extends State<ShopPanel> {
           child: tab == ShopTab.gold
               ? SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: GoldChargeTab(controller: c, legacyBoost: false))
+                  child: GoldChargeTab(controller: c, legacyBoost: false, localTestGold: widget.localTestGold))
               : WardrobePanel(
                   key: const Key('shop-wardrobe'),
                   controller: c,

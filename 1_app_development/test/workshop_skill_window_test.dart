@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
@@ -76,13 +77,13 @@ void main() {
     expect(_button(tester, 'tap_1').enabled, isFalse);
     await tester.tap(find.byKey(const Key('buy-tap_1')));
     await tester.pump();
-    expect(find.text('인터넷에 연결하면 레벨업할 수 있어요.'), findsOneWidget);
+    expect(find.text(OnlineTexts.skillNotSetUp), findsWidgets);
     expect(c.state.purchases.owned['tap_1'], isNull);
   });
 
   testWidgets('다음 잠긴 스킬 하나만 실루엣으로, 그 뒤는 숨김', (tester) async {
     await _open(tester, const Size(390, 844), buns: BigInt.from(100));
-    // Lifetime 100: tap_1 open, tap_2 (누적 500) is the next locked one.
+    // Lifetime 100: tap_1 open, tap_2 (누적 150, 4차 g7) is the next locked one.
     expect(find.byKey(const Key('skill-tap_1')), findsOneWidget);
     expect(find.byKey(const Key('skill-tap_2')), findsOneWidget);
     expect(find.byKey(const Key('skill-tap_3')), findsNothing);
@@ -90,20 +91,21 @@ void main() {
     expect(lock.style, LockStyle.hidden);
     expect(find.descendant(of: find.byKey(const Key('skill-tap_2')), matching: find.byKey(const Key('lock-silhouette'))),
         findsOneWidget);
-    expect(find.text('누적 500개 만들면 해금'), findsOneWidget);
+    expect(find.text('누적 150개 만들면 해금'), findsOneWidget);
     expect(find.byKey(const Key('cost-tap_2')), findsNothing);
     expect(_button(tester, 'tap_2').enabled, isFalse);
     await tester.tap(find.byKey(const Key('buy-tap_2')));
     await tester.pump();
-    expect(find.text('누적 500개 만들면 열려요.'), findsOneWidget);
+    expect(find.text('누적 150개 만들면 열려요.'), findsOneWidget);
   });
 
-  testWidgets('큰 해금 숫자는 줄여 쓴다(누적 2000조 개)', (tester) async {
-    await _open(tester, const Size(390, 844), lifetime: BigInt.from(2) * BigInt.from(10).pow(14));
+  testWidgets('큰 해금 숫자는 줄여 쓴다(누적 4000억 개)', (tester) async {
+    // 4차 g7: auto_16 opens at 400,000,000,000 (was 2e16).
+    await _open(tester, const Size(390, 844), lifetime: BigInt.from(2) * BigInt.from(10).pow(11));
     await _tap(tester, 'kind-auto');
-    await tester.scrollUntilVisible(find.byKey(const Key('unlock-auto_15')), 200, scrollable: find.byType(Scrollable).last);
-    expect(tester.widget<Text>(find.byKey(const Key('unlock-auto_15'))).data, '누적 2000조 개 만들면 해금');
-    expect(find.textContaining('2000000000000000'), findsNothing);
+    await tester.scrollUntilVisible(find.byKey(const Key('unlock-auto_16')), 200, scrollable: find.byType(Scrollable).last);
+    expect(tester.widget<Text>(find.byKey(const Key('unlock-auto_16'))).data, '누적 4000억 개 만들면 해금');
+    expect(find.textContaining('400000000000'), findsNothing);
   });
 
   testWidgets('돈이 모자라면 + 꺼짐, 모자란 비용은 빨간색, 누르면 모자란 양', (tester) async {
@@ -112,10 +114,10 @@ void main() {
     final cost = tester.widget<CurrencyAmount>(
         find.descendant(of: find.byKey(const Key('cost-tap_1')), matching: find.byType(CurrencyAmount)).first);
     expect(cost.missing, isTrue);
-    // tap_1 costs 15 at Lv.0; 10 in hand.
+    // tap_1 costs 20 at Lv.0 (4차 g7); 10 in hand.
     await tester.tap(find.byKey(const Key('buy-tap_1')));
     await tester.pump();
-    expect(find.text('붕어빵력이 5 모자라요.'), findsOneWidget);
+    expect(find.text('붕어빵력이 10 모자라요.'), findsOneWidget);
   });
 
   testWidgets('로그인 전에는 + 꺼짐, 로그인 안내', (tester) async {
@@ -127,7 +129,7 @@ void main() {
   });
 
   testWidgets('×10·×100 레벨업, 남은 레벨이 적으면 남은 만큼, 다 차면 MAX', (tester) async {
-    final big = BigInt.from(10).pow(90);
+    final big = BigInt.from(10).pow(200);
     final (c, account) = await _open(tester, const Size(390, 844), buns: big);
     expect(_button(tester, 'tap_1').enabled, isTrue);
     expect(_level(tester, 'tap_1'), 'Lv.0/1000\n+1/클릭');
@@ -163,7 +165,7 @@ void main() {
 
   testWidgets('한 화면에 보이는 스킬 칸 수(F13: 전에는 약 2칸)', (tester) async {
     for (final size in [const Size(390, 844), const Size(360, 640)]) {
-      final huge = BigInt.from(10).pow(90);
+      final huge = BigInt.from(10).pow(200);
       await _open(tester, size, buns: huge, lifetime: huge);
       final list = tester.getRect(find.byType(Scrollable).last);
       final whole = find
@@ -190,7 +192,7 @@ void main() {
     ('states_360x800', const Size(360, 800), 'tap', 100),
   ]) {
     testWidgets('스킬 창 골든 $name', (tester) async {
-      final huge = BigInt.from(10).pow(90);
+      final huge = BigInt.from(10).pow(200);
       final (c, account) = await _open(tester, size, buns: huge, fonts: true, gold: name.startsWith('states') ? 3 : 0);
       await _buy(c, 'tap_1', 1000);
       await _buy(c, 'tap_2', 3);
@@ -219,6 +221,13 @@ void main() {
       // ignore: avoid_print
       print('skill rows fully visible in $name: $whole (row height ${tester.getSize(rows.first).height})');
       expect(account.state.premium.gold, name.startsWith('states') ? 3 : 0);
+      // 4차 피드백 ID1: MAX, lit, dark, Lv.0 and locked rows, wheel or not,
+      // are all one height, and every wheel shows its three steps.
+      final heights = {for (final e in rows.evaluate()) tester.getSize(find.byWidget(e.widget)).height};
+      expect(heights, hasLength(1), reason: '$heights');
+      for (final s in skillLevelUpSteps) {
+        expect(find.byKey(Key('step-${kind == 'auto' ? 'auto_1' : 'tap_2'}-$s')).hitTestable(), findsOneWidget);
+      }
     });
   }
 }

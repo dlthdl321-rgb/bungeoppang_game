@@ -10,9 +10,11 @@ import '../mission_alerts.dart';
 import '../weekly_config.dart';
 import 'avatar_face.dart';
 import 'avatar_painter.dart';
+import 'center_toast.dart';
 import 'count_badge.dart';
 import 'cozy_style.dart';
 import 'fish_painter.dart';
+import 'lock_overlay.dart';
 import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'support_panels.dart';
@@ -45,19 +47,26 @@ class CosmeticMenuAccess {
   /// An item's price as icons and numbers, with what the player lacks.
   final WardrobePrice? Function(CosmeticDefinition)? cost;
 
-  /// Tabs open at this level (붕어빵 Lv.5, 가게 Lv.8; S45-Q6); null: all.
-  final bool Function(WardrobeTab)? tabOpen;
+  /// Why a tab is still closed ('Lv.5 달성하면 열려요', 붕어빵 Lv.5; S45-Q6),
+  /// or null when open; null function: all open. A closed tab is still
+  /// listed, faded under the lock, and says why when tapped (4차 g5).
+  final String? Function(WardrobeTab)? tabLock;
 
-  /// Slots open inside an open tab (26번 3차 H42: the 가게 tab shows 배경
-  /// and 시간 from Lv.1, the stove, decoration and lamp from Lv.8); null: all.
-  final bool Function(CosmeticSlot)? slotOpen;
+  /// Why a slot inside a tab is still closed (26번 3차 H42: the 가게 tab
+  /// shows 배경 and 시간 from Lv.1, the stove, decoration and lamp from
+  /// Lv.8), or null; listed locked like [tabLock].
+  final String? Function(CosmeticSlot)? slotLock;
 
   /// What several items cost together, with what the player lacks for all
   /// of them ('모두 사기', 3차 피드백 H15); null: not sold together.
   final WardrobePrice? Function(List<CosmeticDefinition>)? total;
+
+  /// Why nothing can be bought right now (a build without the online
+  /// settings, or before the login; 4차 피드백 IC10), or null.
+  final String? Function()? purchaseBlock;
   const CosmeticMenuAccess({required this.equipped,required this.owned,required this.unlocked,
     required this.canApply,required this.price,required this.action,required this.apply,this.requirement,
-    this.listed=_always,this.forSale,this.cost,this.tabOpen,this.slotOpen,this.total});
+    this.listed=_always,this.forSale,this.cost,this.tabLock,this.slotLock,this.total,this.purchaseBlock});
   static bool _always(CosmeticDefinition _)=>true;
 }
 
@@ -165,7 +174,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
           Semantics(
               label: '${wardrobeTabLabel(tab)} 꾸미기 미리보기',
               child: SizedBox(
-                  height: 180,
+                  height: tab == WardrobeTab.stall ? 260 : 180,
                   child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: _preview()))),
@@ -310,7 +319,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
   }
 
   /// Each tab previews its own subject: the pastry up close, the vendor
-  /// alone, or the whole stall with vendor and pastry.
+  /// alone, or the whole stall without the vendor (4차 피드백 g10 ID5).
   Widget _preview() {
     final fish = CustomPaint(
         painter: FishPainter(
@@ -343,17 +352,18 @@ class _WardrobePanelState extends State<WardrobePanel> {
                         painter:
                             AvatarPainter(AvatarLook.of(_shown), face: face)))),
           ])),
+      // 4차 피드백 g10(ID5): the whole stall as the home shows it, without
+      // the vendor, as in the Workshop wardrobe.
       WardrobeTab.stall => CustomPaint(
           key: const Key('preview-stall'),
-          painter: NightStallPainter(
+          size: Size.infinite,
+          painter: StallPreviewPainter(
               background: _shown(CosmeticSlot.background),
-              night: isNightTime(_shown(CosmeticSlot.time), DateTime.now()),
+              night: isNightTime(_shown(CosmeticSlot.time), sceneClock()),
               stove: _shown(CosmeticSlot.stove),
               decoration: _shown(CosmeticSlot.decoration),
-              avatar: AvatarLook.of(_shown)),
-          // Post lamps live in the stall frame.
-          foregroundPainter: StallFramePainter(lamp: _shown(CosmeticSlot.lamp)),
-          child: Center(child: SizedBox(width: 120, height: 90, child: fish))),
+              lamp: _shown(CosmeticSlot.lamp),
+              lowStall: false)),
     };
   }
 }
@@ -378,7 +388,8 @@ class CosmeticThumb extends StatelessWidget {
               skin: shown(CosmeticSlot.fish),
               pattern: shown(CosmeticSlot.pattern),
               topping: shown(CosmeticSlot.topping))),
-      CosmeticCategory.avatar => switch (PixelSprites.cosmeticIcon(item.id)) {
+      CosmeticCategory.avatar => switch (PixelSprites.cosmeticIcon(item.id,
+            character: shown(CosmeticSlot.character))) {
           final icon? => CustomPaint(
               key: Key('icon-${item.id}'),
               size: Size.infinite,
@@ -393,7 +404,6 @@ class CosmeticThumb extends StatelessWidget {
           switch (item.id) {
             'night_time' => Icons.nightlight_round,
             'clock' => Icons.schedule,
-            'scenetime' => Icons.landscape_rounded,
             _ => Icons.wb_sunny_rounded,
           },
           color: Cozy.woodLight,
@@ -455,9 +465,15 @@ class MenuPanel extends StatelessWidget {
   /// online ranking, friends and sharing: DEC-029).
   final Set<String> hidden;
 
-  /// Destinations shown but not open yet, with the reason ('Lv.3에 열려요'):
-  /// a small lock and the reason under the title (3차 피드백 H32).
+  /// Destinations shown but not open yet, with the reason ('Lv.3 달성하면
+  /// 열려요'): the icon under the common lock (one stripe, the padlock art
+  /// in its corner), the reason in red under the title, no arrow, and a tap
+  /// says '도감: Lv.3 달성하면 열려요' in a center toast instead of opening
+  /// (3차 피드백 H32 → 4차 g5).
   final Map<String,String> locks;
+
+  /// The padlock's side on a locked row's icon.
+  static const lockSize = 18.0;
   const MenuPanel({super.key, required this.controller, required this.onOpen,
     this.rewardCounts,this.legacyDescriptions=true,this.hidden=const {},this.locks=const {}});
 
@@ -561,7 +577,7 @@ class MenuPanel extends StatelessWidget {
       child: Column(children: [
         for (final (dest, title, subtitle, icon, key) in rows)
           if (!hidden.contains(dest))
-          Padding(
+          Builder(builder: (context) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
             // H41: a white card with a hairline, not a wooden frame.
             child: Material(
@@ -574,7 +590,13 @@ class MenuPanel extends StatelessWidget {
               child: InkWell(
                 key: key,
                 borderRadius: BorderRadius.circular(14),
-                onTap: () => onOpen(dest),
+                onTap: () {
+                  if (locks[dest] case final lock?) {
+                    showCenterToast(context, '$title: $lock');
+                  } else {
+                    onOpen(dest);
+                  }
+                },
                 child: Container(
                   constraints: const BoxConstraints(minHeight: 56),
                   padding:
@@ -583,7 +605,17 @@ class MenuPanel extends StatelessWidget {
                     CountBadge(
                         count: claimable[dest] ?? 0,
                         badgeKey: Key('badge-$dest'),
-                        child: icon),
+                        child: locks.containsKey(dest)
+                            ? SizedBox.square(
+                                dimension: 36,
+                                child: LockedOverlay(
+                                    key: Key('menu-locked-$dest'),
+                                    caption: '$title: ${locks[dest]}',
+                                    showCaption: false,
+                                    maxLock: lockSize,
+                                    lockAlignment: const Alignment(1, -1),
+                                    child: Center(child: icon)))
+                            : icon),
                     const SizedBox(width: 12),
                     Expanded(
                         child: Column(
@@ -598,7 +630,9 @@ class MenuPanel extends StatelessWidget {
                             Text(lock,
                                 key: Key('menu-lock-$dest'),
                                 style: const TextStyle(
-                                    color: Cozy.inkSoft, fontSize: 12))
+                                    color: Cozy.brick,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800))
                           else if (subtitle != null)
                             Text(subtitle,
                                 key: dest == 'event'
@@ -607,15 +641,13 @@ class MenuPanel extends StatelessWidget {
                                 style: const TextStyle(
                                     color: Cozy.inkSoft, fontSize: 12)),
                         ])),
-                    if (locks.containsKey(dest))
-                      const Icon(Icons.lock_rounded,
-                          color: Cozy.inkSoft, size: 18),
-                    const Icon(Icons.chevron_right_rounded, color: Cozy.caption),
+                    if (!locks.containsKey(dest))
+                      const Icon(Icons.chevron_right_rounded, color: Cozy.caption),
                   ]),
                 ),
               ),
             ),
-          ),
+          )),
       ]),
     );
   }

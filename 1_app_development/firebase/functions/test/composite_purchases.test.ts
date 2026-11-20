@@ -15,7 +15,7 @@ import { MemoryStore } from "../src/store";
 const ctx: PurchaseContext = { account: "a", progress: "progress_0001", epoch: 1 };
 function intent(id = "transaction_0001"): CompositeIntent {
   return { account: "a", transaction: id, revision: config.metadata.revision,
-    skill: "tap_1", owned: 0, quantity: 1, buns: "15", gold: "1" };
+    skill: "tap_1", owned: 0, quantity: 1, buns: "20", gold: "1" };
 }
 const verifier: PurchaseEvidenceVerifier = { verify: async (context, value, phase) => ({
   account: context.account, progress: context.progress, transaction: value.transaction,
@@ -77,15 +77,15 @@ test("알 수 없는 거래 조회는 환불/취소를 만들지 않고 동일 I
 // 26번 3단계(DEC-041): 실제 설정은 1~4단계 스킬이 황금 0, 5단계부터 그대로 유료.
 test("실제 설정: 1~4단계 스킬은 몇 번째든 황금 0, 5단계는 기존 황금 가격", () => {
   const base = { account: "a", transaction: "transaction_0009", revision: realConfig.metadata.revision };
-  const free = { ...base, skill: "tap_1", owned: 10, quantity: 1, buns: "61", gold: "0" };
+  const free = { ...base, skill: "tap_1", owned: 10, quantity: 1, buns: "403", gold: "0" };
   assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, free, "a", 10), free);
   assert.throws(() => validateDevelopmentCompositeQuote(realConfig, { ...free, gold: "1" }, "a", 10));
-  const bundle = { ...base, skill: "tap_1", owned: 0, quantity: 12, buns: "439", gold: "0" };
+  const bundle = { ...base, skill: "tap_1", owned: 0, quantity: 12, buns: "2042", gold: "0" };
   assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, bundle, "a", 0), bundle);
   for (const id of ["tap_1", "tap_2", "tap_3", "tap_4", "auto_1", "auto_2", "auto_3", "auto_4"]) {
     assert.equal(realConfig.skill_purchase.entries[id].gold, 0, id);
   }
-  const paid = { ...base, skill: "tap_5", owned: 9, quantity: 2, buns: "756344", gold: "5" };
+  const paid = { ...base, skill: "tap_5", owned: 9, quantity: 2, buns: "1400013", gold: "5" };
   assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, paid, "a", 9), paid);
   assert.throws(() => validateDevelopmentCompositeQuote(realConfig, { ...paid, gold: "0" }, "a", 9));
 });

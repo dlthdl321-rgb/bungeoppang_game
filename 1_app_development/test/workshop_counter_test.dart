@@ -15,8 +15,10 @@ import 'step02_controller_test.dart' show MemoryRepository;
 import 'widget_test.dart' show mountGame;
 
 /// 3단계: "가게 관리" 시트 없이 홈에서 손님 → 주문 → 재고 → 판매.
-/// 26번 4-1단계: 손님은 매대 앞에 서고, 카운터 버튼은 화면 가운데에 뜨며,
-/// 저장 점검(checkpoint) 중에도 버튼이 깜빡이지 않는다(F1).
+/// 26번 4-1단계: 손님은 매대 앞에 서고, 저장 점검(checkpoint) 중에도 버튼이
+/// 깜빡이지 않는다(F1). 4차 사용자 결정(2026-11-20): 판매는 맨 앞 손님 몸
+/// 가운데의 작은 버튼, 주문 제작은 손님을 눌러서('눌러서 팥 만들기' 표시),
+/// 영업 종료는 영업 중 내내 위쪽 간판 옆, 손님 대사는 그 손님 말풍선(IA5).
 void main() {
   Future<WorkshopController> mount(WidgetTester tester, Size size) async {
     final account = await mountGame(tester, size, reduced: true);
@@ -27,7 +29,7 @@ void main() {
         monotonicMs: () => 0);
     await c.initialize();
     // A player past the first-run guide (workshop_guide_test covers the guide).
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
     await tester.pump();
     return c;
@@ -74,29 +76,40 @@ void main() {
     expect(c.state.customers.first.delivered(0), 1);
     expect(c.state.buns, greaterThan(BigInt.zero));
     expect(tester.widget<Text>(find.byKey(const Key('counter-title'))).data, '일반 손님 · 팥 1/2');
-    expect(tester.widget<Text>(find.byKey(const Key('counter-order'))).data, '재고 0개');
-    // Nothing left to hand over: the action becomes baking the missing flavor.
+    expect(tester.widget<Text>(find.byKey(const Key('counter-order'))).data, '재고 0개 · 손님을 눌러 팥 만들기');
+    // Nothing left to hand over: the guest shows that tapping them bakes it
+    // (no big '팥 제작' bar over the guests any more).
     expect(find.byKey(const Key('sale-button')), findsNothing);
-    expect(label(tester, 'order-produce'), '팥 제작');
+    expect(find.byKey(const Key('order-produce')), findsNothing);
+    expect(label(tester, 'customer-produce-cue'), '눌러서 팥 만들기');
 
     await stock(c, 'two');
     await tester.pump();
     expect(label(tester, 'sale-button'), '판매 완료');
-    expect(find.byKey(const Key('order-produce')), findsNothing);
+    expect(find.byKey(const Key('customer-produce-cue')), findsNothing);
     await tester.tap(find.byKey(const Key('sale-button')));
     await tester.pump();
     expect(c.state.completedSales, 1);
     expect(c.state.customers.single.id, 'second');
     expect(c.state.pendingGold.keys, ['sale:first']);
 
-    await c.command(() => c.state.customers.clear());
-    await tester.pump();
+    // '영업 종료' stays by the sign while a guest waits, and asks first.
+    expect(find.byKey(const Key('business-close')), findsOneWidget);
     await tester.tap(find.byKey(const Key('business-close')));
     await tester.pumpAndSettle();
+    expect(find.text('오늘 영업을 끝낼까요?'), findsOneWidget);
     await tester.tap(find.text('영업 종료').last);
     await tester.pumpAndSettle();
     expect(c.state.business.open, isFalse);
+    expect(c.state.customers, isEmpty);
     expect(find.byKey(const Key('business-open')), findsOneWidget);
+    // Nobody waiting: it closes right away.
+    await tester.tap(find.byKey(const Key('business-open')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('business-close')));
+    await tester.pumpAndSettle();
+    expect(find.text('오늘 영업을 끝낼까요?'), findsNothing);
+    expect(c.state.business.open, isFalse);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
@@ -136,6 +149,7 @@ void main() {
   testWidgets('메뉴에는 관리 시트 대신 영업 종료와 황금 심사 대기만 남는다', (tester) async {
     final c = await mount(tester, const Size(360, 800));
     await c.openBusiness();
+    await queue(c);
     await tester.pump();
     await tester.tap(find.byKey(const Key('menu-menubar')));
     await tester.pumpAndSettle();
@@ -177,7 +191,7 @@ void main() {
     final repo = MemoryRepository();
     final c = WorkshopController(config, repo, now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => mono);
     await c.initialize();
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await c.openBusiness();
     await queue(c);
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
@@ -188,7 +202,8 @@ void main() {
           (w) => w is ButtonStyleButton || w is InkWell));
       return tester.widgetList(button).any((w) => w is ButtonStyleButton ? w.onPressed != null : (w as InkWell).onTap != null);
     }
-    expect(enabled('order-produce'), isTrue);
+    bool cue() => find.byKey(const Key('customer-produce-cue')).evaluate().isNotEmpty;
+    expect(cue(), isTrue);
     // Five checkpoints, each held open: the button never turns off.
     for (var i = 0; i < 5; i++) {
       repo.pauseSave = Completer<void>();
@@ -196,7 +211,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
       expect(c.busy, isTrue, reason: 'checkpoint $i saving');
       expect(c.inputBusy, isFalse);
-      expect(enabled('order-produce'), isTrue, reason: 'checkpoint $i');
+      expect(cue(), isTrue, reason: 'checkpoint $i');
       expect(tester.widget<GestureDetector>(find.descendant(of: find.byKey(const Key('customer-0')),
           matching: find.byType(GestureDetector)).first).onTap, isNotNull);
       // A clicker tap during the save still counts.
@@ -212,6 +227,7 @@ void main() {
     mono += checkpointMs + 10;
     await tester.pump(const Duration(milliseconds: 120));
     expect(c.busy, isTrue);
+    expect(enabled('sale-button'), isTrue);
     await tester.tap(find.byKey(const Key('sale-button')));
     await tester.pump();
     expect(c.state.customers.first.delivered(0), 0);
@@ -220,36 +236,54 @@ void main() {
     await tester.pump();
     await tester.pump();
     expect(c.state.customers.first.delivered(0), 1);
-    // A guest who runs out of time leaves words that a checkpoint and a
-    // player command started in the same moment do not wipe.
+    // A guest who runs out of time leaves words (a bubble by them, IA5)
+    // that a checkpoint and a player command started in the same moment do
+    // not wipe; the counter never says them.
     await c.command(() => c.state.customers[0] = CustomerOrder(id: 'first', customerId: 'anonymous_first',
         remainingMs: 200, lines: [CustomerOrderLine(flavor: 'redbean', quantity: 2)]));
     mono += 300;
     expect(await c.selectFlavor('redbean'), isTrue);
-    expect(c.notice, startsWith('일반 손님: '));
+    expect(c.guestWords['anonymous_first']?.order, 'first');
+    expect(c.notice, isNull);
     mono += checkpointMs + 10;
     await tester.pump(const Duration(milliseconds: 120));
     await tester.pump();
-    expect(c.notice, startsWith('일반 손님: '));
-    expect(find.byKey(const Key('counter-notice')), findsOneWidget);
+    expect(c.guestWords['anonymous_first']?.order, 'first');
+    expect(find.byKey(const Key('guest-speech')), findsOneWidget);
+    expect(label(tester, 'guest-speech').replaceAll('\n', ' '), c.guestWords['anonymous_first']!.text);
+    expect(find.byKey(const Key('counter-notice')), findsNothing);
+    // The words stay while the guest is there: after
+    // [WorkshopHomeLayout.speechMs] the leaving guest and the words are gone.
+    mono += WorkshopHomeLayout.speechMs;
+    await tester.pump(const Duration(milliseconds: 120));
+    expect(find.byKey(const Key('guest-speech')), findsNothing);
+    expect(find.byKey(const Key('customer-leaving')), findsNothing);
     // A refused command still shows its reason (FormatException order).
     expect(await c.sellToCustomer('gone'), isFalse);
     expect(c.notice, '이미 종료된 주문이에요.');
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  testWidgets('카운터 버튼은 화면 가로 가운데, 카운터 윗변 6 위에 뜬다 (폭 160 이상, 높이 44)', (tester) async {
+  testWidgets('판매 버튼은 맨 앞 손님 몸 가운데의 작은 버튼이고, 손님을 크게 가리는 버튼은 없다', (tester) async {
     for (final size in const [Size(360, 640), Size(412, 915)]) {
       final c = await mount(tester, size);
       await c.openBusiness();
+      await stock(c, 'one');
       await queue(c);
       await tester.pump();
-      final counter = tester.getRect(find.byKey(const Key('sale-counter')));
-      final action = tester.getRect(find.byKey(const Key('counter-action')));
-      expect(action.center.dx, closeTo(size.width / 2, .5));
-      expect(action.bottom, closeTo(counter.top - WorkshopHomeLayout.actionGap, .5));
-      expect(action.width, greaterThanOrEqualTo(160));
-      expect(action.height, greaterThanOrEqualTo(44));
+      final art = tester.getRect(find.byKey(const Key('customer-art-0')));
+      final button = tester.getRect(find.byKey(const Key('sale-button')));
+      expect(button.center.dx, closeTo(art.center.dx, 1));
+      // On the chest, under the face (사용자 답 2026-11-21).
+      expect(button.center.dy, closeTo(art.top + art.height * WorkshopHomeLayout.guestButtonShare, 1));
+      expect(button.top, greaterThan(art.top + art.height * .5));
+      expect(button.height, lessThanOrEqualTo(WorkshopHomeLayout.guestButtonHeight + 4));
+      // Narrower than the old floating bar (at least 160 wide); the test
+      // font is wider than Jua.
+      expect(button.width, lessThan(160));
+      // Nothing else floats over the guests.
+      expect(find.byKey(const Key('counter-action')), findsNothing);
+      expect(find.byKey(const Key('order-produce')), findsNothing);
       await tester.pumpWidget(const SizedBox.shrink());
     }
   });
@@ -260,7 +294,7 @@ void main() {
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
     final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);
     await c.initialize();
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await c.openBusiness();
     expect(await c.welcomeCustomer(visitor: 'npc_taeo'), isTrue);
     await tester.pumpWidget(GameApp(controller: account, workshop: c));

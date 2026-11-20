@@ -41,7 +41,8 @@ class CookingSessionControls extends StatelessWidget {
                 filling: filling,
                 flavor: session.flavor,
                 config: config,
-                onFinished: (paint, _) => onCommand(filling
+                before: session.phase == CookingPhase.secondBatter ? session.firstBatter : null,
+                onFinished: (paint, _, __) => onCommand(filling
                     ? session.squeezeFilling(token, paint)
                     : session.pour(token, paint))));
       case CookingPhase.closing:

@@ -84,7 +84,7 @@ extension PremiumCommands on GameController {
   Future<String?> spendGold(PremiumKind kind, String itemId) async {
     final price = goldPrice(kind, itemId);
     if (price == null) return '살 수 없는 항목이에요';
-    if (!online.configured) return '지금은 온라인에 연결할 수 없어요';
+    if (!online.configured) return OnlineTexts.notSetUp;
     if (state.premium.gold < price) return '$goldName이 부족해요';
     try {
       if (await _requireSignIn() case final error?) return error;
@@ -162,6 +162,16 @@ extension PremiumCommands on GameController {
           '${upgrades.where((u) => u.id == g.itemId).firstOrNull?.name ?? g.itemId} 먼저 해금',
         PremiumKind.boost => boostOf(BoostKind.bought).name,
       };
+
+  /// A build without the online settings only (4차 피드백 IC10 후속): its
+  /// test gold lives on this device, for LocalTestPurchaseGateway and the
+  /// charge tab's free test gold. An online build's gold is the server's, so
+  /// this refuses there. True once [gold] is stored.
+  Future<bool> setLocalTestGold(int gold) async {
+    if (online.configured || gold < 0) return false;
+    await _setGold(gold);
+    return state.premium.gold == gold;
+  }
 
   Future<void> _setGold(int gold) async {
     if (busy || _away || _disposed || state.premium.gold == gold) return;
