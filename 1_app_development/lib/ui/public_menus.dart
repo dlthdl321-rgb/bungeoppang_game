@@ -378,7 +378,8 @@ class CosmeticThumb extends StatelessWidget {
               skin: shown(CosmeticSlot.fish),
               pattern: shown(CosmeticSlot.pattern),
               topping: shown(CosmeticSlot.topping))),
-      CosmeticCategory.avatar => switch (PixelSprites.cosmeticIcon(item.id)) {
+      CosmeticCategory.avatar => switch (PixelSprites.cosmeticIcon(item.id,
+            character: shown(CosmeticSlot.character))) {
           final icon? => CustomPaint(
               key: Key('icon-${item.id}'),
               size: Size.infinite,

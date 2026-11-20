@@ -98,3 +98,6 @@ flutter:
     # 26번 4-5단계: wardrobe item icons (tools/make_cosmetic_icons.py
     # temporary ones until 25번 필요한 그림 31번).
     - assets/images/cosmetic_icons/
+    # 26번 3차 AV3d: the boy's own worn-layer icons (tools/avatar_v2.py
+    # wornicons; the girl's are the shared ones above).
+    - assets/images/cosmetic_icons/boy/

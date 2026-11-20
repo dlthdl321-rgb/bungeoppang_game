@@ -314,6 +314,9 @@ class PixelSprites {
     for (final d in cosmeticDefinitions) {
       if (d.slot.category == CosmeticCategory.avatar) {
         yield _cosmeticIconPath(d.id);
+        for (final c in _slot(CosmeticSlot.character)) {
+          yield _cosmeticIconPath(d.id, c.id);
+        }
       }
     }
     yield* fxNames.map((n) => 'assets/images/fx/$n.png');
@@ -643,15 +646,20 @@ class PixelSprites {
   /// One of [fxNames].
   static ui.Image? fx(String name) => _images['assets/images/fx/$name.png'];
 
-  static String _cosmeticIconPath(String id) =>
-      'assets/images/cosmetic_icons/$id.png';
+  static String _cosmeticIconPath(String id, [String? character]) =>
+      'assets/images/cosmetic_icons/${character == null ? '' : '$character/'}$id.png';
 
-  /// The wardrobe tile icon of avatar item [id] (64x64, both characters;
-  /// 26번 4-5단계, G5): the 'none' hanger for the take-off items (and the
-  /// tool default, drawn as no tool since 26번 3차 H8), null
-  /// when not drawn.
-  static ui.Image? cosmeticIcon(String id) => _images[_cosmeticIconPath(
-      const {'nohat', 'noapron', 'noacc', 'tongs'}.contains(id) ? 'none' : id)];
+  /// The wardrobe tile icon of avatar item [id] (64x64; 26번 4-5단계, G5):
+  /// [character]'s own when it has one (`cosmetic_icons/<character>/<id>.png`,
+  /// 26번 3차 AV3d: the boy's worn-layer icons), else the shared one (the
+  /// girl's); the 'none' hanger for the take-off items (and the tool
+  /// default, drawn as no tool since 26번 3차 H8), null when not drawn.
+  static ui.Image? cosmeticIcon(String id, {String? character}) {
+    final name =
+        const {'nohat', 'noapron', 'noacc', 'tongs'}.contains(id) ? 'none' : id;
+    return (character == null ? null : _images[_cosmeticIconPath(name, character)]) ??
+        _images[_cosmeticIconPath(name)];
+  }
 
   /// The wardrobe tile picture of a stall item when it has its own (lamps:
   /// the whole post lamp; day/night: an icon), else null.
