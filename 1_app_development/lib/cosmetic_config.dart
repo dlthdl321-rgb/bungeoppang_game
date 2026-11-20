@@ -80,8 +80,9 @@ extension CosmeticSlotCategory on CosmeticSlot {
           WardrobeTab.stall,
       };
 
-  /// Slots the wardrobe lists. The flavour slot has only redbean left.
-  bool get shown => this != CosmeticSlot.fish;
+  /// Slots the wardrobe lists. The flavour slot has only redbean left;
+  /// the skin slot only skin1 (26번 3차 AV3, DEC-TBD-hAV3-2).
+  bool get shown => this != CosmeticSlot.fish && this != CosmeticSlot.skin;
 
   /// Character and skin tone are free personal choices, never priced or
   /// collected.
@@ -152,8 +153,6 @@ const cosmeticDefinitions = [
   CosmeticDefinition('boy', '남자 사장님', CosmeticSlot.character, '0', 1),
   // Stage 12: the vendor. Skin tones are free and always owned.
   CosmeticDefinition('skin1', '피부톤 1', CosmeticSlot.skin, '0', 1),
-  CosmeticDefinition('skin2', '피부톤 2', CosmeticSlot.skin, '0', 1),
-  CosmeticDefinition('skin3', '피부톤 3', CosmeticSlot.skin, '0', 1),
   CosmeticDefinition('long', '긴 생머리', CosmeticSlot.hair, '0', 1),
   CosmeticDefinition('short', '짧은 머리', CosmeticSlot.hair, '3', 1),
   CosmeticDefinition('ponytail', '묶은 머리', CosmeticSlot.hair, '5', 2),
@@ -279,6 +278,11 @@ String defaultAvatarItem(CosmeticSlot slot, String character) =>
 /// Free choices besides the slot defaults, owned from the start and not
 /// collected: taking off the default apron (stage 26 4-4).
 const freeChoiceCosmetics = {'noapron'};
+
+/// Removed items and what a save holding them wears instead (26번 3차
+/// AV3, DEC-TBD-hAV3-2: skin tones 2·3 left the game before launch, so a
+/// save wearing one wears skin1 and nothing is refunded).
+const removedCosmetics = {'skin2': 'skin1', 'skin3': 'skin1'};
 
 /// Items that were aprons ([CosmeticSlot.outfit]) before 26번 4-5단계 and
 /// are tops now. An older save wearing one wears it as the top and takes

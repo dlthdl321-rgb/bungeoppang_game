@@ -334,7 +334,19 @@ def align(data, src, demo):
 def base_full(c, skin, demo):
     path = out_dir(demo) / f'avatar_v2/{c}/base@{skin}.png'
     if not path.exists():
-        return None
+        # 26번 3차 AV3: skin2·3 are not shipped (atlas moves them to
+        # UNSHIPPED); the tool still reads skin3 to tell skin apart.
+        kept = UNSHIPPED / f'avatar_v2/{c}/base@{skin}.png'
+        if demo or not kept.exists():
+            return None
+        img = np.array(Image.open(kept).convert('RGBA'))
+        if img.shape[:2] == (CANVAS[1], CANVAS[0]):
+            return img
+        x, y = load_data().get('trim', {}).get(
+            f'avatar_v2/{c}/base@{skin}.png', (0, 0))
+        out = np.zeros((CANVAS[1], CANVAS[0], 4), np.uint8)
+        out[y:y + img.shape[0], x:x + img.shape[1]] = img
+        return out
     # Back on its full canvas: trim may have run already.
     return full(path, load_data() if not demo else {}, demo)
 
@@ -1673,7 +1685,21 @@ def shipped(demo=False):
                   for p in (root / 'avatar_v2').glob('*/*.png'))
 
 
+# 26번 3차 AV3 (DEC-TBD-hAV3-2): only skin1 is in the game. The other
+# tones' pictures the jobs still make (skin3 tells skin apart) are moved
+# out of the assets to here by atlas.
+SHIPPED_SKINS = ('skin1',)
+UNSHIPPED = BUILD / 'unshipped'
+
+
 def atlas(data):
+    import shutil
+    for path in sorted((IMAGES / 'avatar_v2').glob('*/*@*.png')):
+        skin = path.stem.rsplit('@', 1)[1]
+        if skin in SKINS and skin not in SHIPPED_SKINS:
+            dest = UNSHIPPED / path.relative_to(IMAGES)
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            shutil.move(str(path), str(dest))
     files = shipped()
     ready = all(f in files for f in required())
     missing = [f for f in required() if f not in files]

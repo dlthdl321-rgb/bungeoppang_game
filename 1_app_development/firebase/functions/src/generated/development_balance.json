@@ -591,14 +591,6 @@
     "boy": {
       "buns": "1000",
       "gold": 10
-    },
-    "skin2": {
-      "buns": "1000",
-      "gold": 2
-    },
-    "skin3": {
-      "buns": "1000",
-      "gold": 2
     }
   },
   "boost_purchase": {
@@ -1493,20 +1485,6 @@
       "label": "피부톤 1",
       "slot": "skin",
       "free": true,
-      "unlock_level": 1,
-      "unlock_total": "0"
-    },
-    "skin2": {
-      "label": "피부톤 2",
-      "slot": "skin",
-      "free": false,
-      "unlock_level": 1,
-      "unlock_total": "0"
-    },
-    "skin3": {
-      "label": "피부톤 3",
-      "slot": "skin",
-      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },

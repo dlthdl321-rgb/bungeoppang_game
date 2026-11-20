@@ -405,7 +405,9 @@ class WorkshopState {
         if (e.value is! Map<String,dynamic> || state.rewardAccount==null) throw const FormatException('광고 기록 형식 오류');
         state.adAttempts[e.key]=validateWorkshopAd(e.value as Map<String,dynamic>,state.rewardAccount!,e.key);
       }
-      final worn=Map<String,dynamic>.of(object('avatarEquipment'));
+      // 26번 3차 AV3: a removed item (skin tones 2·3) worn is its
+      // replacement; removed grants are dropped.
+      final worn=Map<String,dynamic>.of(object('avatarEquipment'))..updateAll((_,id)=>removedCosmetics[id] ?? id);
       // Schema 9 (26번 4-5단계, G12): the chef coat and padded vest are
       // tops now. An older save wearing one as its apron wears it as the
       // top with no apron, so the vendor looks the same.
@@ -415,7 +417,8 @@ class WorkshopState {
       }
       final catalog=config.section('avatar_catalog');
       bool granted(Object? id)=>catalog[id] is Map<String,dynamic> && avatarGrantSlots.contains((catalog[id] as Map)['slot']);
-      final grants=row['avatarGrants'];
+      final rawGrants=row['avatarGrants'];
+      final grants=rawGrants is List ? [for(final id in rawGrants) if(!removedCosmetics.containsKey(id)) id] : rawGrants;
       if (grants!=null) {
         // 3차 피드백 H11·H12: what this shop has without buying.
         if (grants is! List || grants.any((id) => !granted(id)) || grants.toSet().length!=grants.length ||
