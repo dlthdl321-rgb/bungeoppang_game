@@ -16,6 +16,7 @@ snaps the alpha so there is no halo:
     python tools/apply_25_art.py <26_feedback_generated> --only gold --only levelup --only tabs --preview
     python tools/apply_25_art.py <26_feedback_generated> --only room --only title --only stall16 --preview
     python tools/apply_25_art.py <26_feedback_generated> --only intro --preview
+    python tools/apply_25_art.py <26_feedback_generated> --only firstrun --only today --only packs --preview
 
 Run it in 1_app_development. Outputs:
 
@@ -74,6 +75,14 @@ Run it in 1_app_development. Outputs:
   22번 feature introduction card pictures from 22_intro_cards/ (1448x1086,
   dots about 9 source pixels = exactly 1448/160), box-averaged so each output
   pixel is one source dot, then 64 flat colours without dither (see intro()).
+* assets/images/ui/first_run.png (416x945, opaque, 256 colours): 25번 37번
+  winter stall of the first-run screens from 37_first_run/first_run.png
+  (832x1890 = exactly 2x, box-averaged; see first_run()).
+* assets/images/icons/stamp.png, order.png (72x72): 25번 38번 '오늘' window
+  icons from 38번_today_icons/ (see today()).
+* assets/images/ui/gold_pack_1..5.png (128x128): 25번 40번 shop gold packs
+  from 40_gold_packs/, each a little bigger than the one before
+  ([PACK_FILL], see packs()).
 """
 import argparse
 import sys
@@ -668,6 +677,71 @@ def intro(src):
     return made
 
 
+# ---------------------------------------------------------------- 26번 3차 F2
+
+FIRST_RUN_SIZE = (416, 945)
+# Drawn part of each gold pack (longer side) on the 128 canvas: the packs
+# grow from one fish to the chest, so the bigger packs also look bigger.
+PACK_SIZE = 128
+PACK_FILL = [100, 108, 114, 118, 122]
+
+
+def first_run(src):
+    """25번 37번: the first-run screens' winter stall (lib/ui/first_run.dart
+    covers the screen with it, bottom-aligned). The source is 832x1890
+    (ratio .4402 like the home backgrounds), so BOX halves it exactly and
+    256 flat colours without dither keep the file small."""
+    folder = src / "37_first_run" if (src / "37_first_run").is_dir() else src
+    img = Image.open(folder / "first_run.png").convert("RGB")
+    out = img.resize(FIRST_RUN_SIZE, Image.BOX).quantize(
+        256, method=Image.Quantize.MEDIANCUT, dither=Image.Dither.NONE)
+    out.save(IMAGES / "ui" / "first_run.png", optimize=True)
+    return {"ui/first_run": out.convert("RGBA")}
+
+
+def biggest_piece(img, low=40):
+    """[img] with only its biggest connected drawn part (alpha over [low])."""
+    a = np.asarray(img).copy()
+    labels, count = nd.label(a[..., 3] > low)
+    if count > 1:
+        sizes = nd.sum(np.ones_like(labels), labels, range(1, count + 1))
+        a[labels != 1 + int(np.argmax(sizes))] = 0
+    return Image.fromarray(a, "RGBA")
+
+
+def today(src):
+    """25번 38번: the attendance stamp and the daily order slip (drawn 26-28
+    px by AttendanceStampIcon / DailyOrderIcon), cut to their drawn part
+    and fitted into 72x72 like the other icons. The stamp keeps only its
+    biggest piece: the printed check ring beside it took half the width, so
+    at 26 px the stamp itself was a speck."""
+    folder = next((src / f for f in ("38번_today_icons", "H-D-1_today_icons")
+                   if (src / f).is_dir()), src)
+    made = {}
+    for name in ("stamp", "order"):
+        img = load(folder / f"{name}.png")
+        if name == "stamp":
+            img = biggest_piece(img)
+        out = snap_alpha(fit_box(img, 128, (ICON_SIZE, ICON_SIZE), 3), 40, 215)
+        out.save(IMAGES / "icons" / f"{name}.png")
+        made[f"icons/{name}"] = out
+    return made
+
+
+def packs(src):
+    """25번 40번: the shop's gold packs 1..5 (drawn 54x54 by GoldPackArt),
+    each cut to its drawn part and fitted to PACK_FILL on 128x128."""
+    folder = next((src / f for f in ("40_gold_packs", "H-E-1_gold_packs")
+                   if (src / f).is_dir()), src)
+    made = {}
+    for tier, side in enumerate(PACK_FILL, 1):
+        margin = (PACK_SIZE - side) // 2
+        out = snap_alpha(fit_box(load(folder / f"gold_pack_{tier}.png"), 40, (PACK_SIZE, PACK_SIZE), margin), 40, 215)
+        out.save(IMAGES / "ui" / f"gold_pack_{tier}.png")
+        made[f"ui/gold_pack_{tier}"] = out
+    return made
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("source", type=Path, help="the 25_generated folder")
@@ -675,7 +749,8 @@ def main():
     p.add_argument("--measure", action="store_true",
                    help="re-measure STOVE_FIT (slow, a few minutes)")
     steps = ["stoves", "bags", "drips", "rings", "textures", "locks", "sparkles",
-             "gold", "levelup", "tabs", "room", "title", "stall16", "intro"]
+             "gold", "levelup", "tabs", "room", "title", "stall16", "intro",
+             "firstrun", "today", "packs"]
     p.add_argument("--only", choices=steps, action="append",
                    help="run only these steps (repeatable)")
     args = p.parse_args()
@@ -705,7 +780,8 @@ def main():
         made.update(sparkles(src))
     for step, run_step in (("gold", gold), ("levelup", levelup), ("tabs", tabs),
                            ("room", room), ("title", title), ("stall16", stall16),
-                           ("intro", intro)):
+                           ("intro", intro), ("firstrun", first_run), ("today", today),
+                           ("packs", packs)):
         if step in run and args.only:
             print(step)
             made.update(run_step(src))
