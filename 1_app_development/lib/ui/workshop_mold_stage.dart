@@ -992,7 +992,9 @@ class WorkshopGriddleLayer extends StatelessWidget {
                 child: LockedOverlay(
                     key: const Key('griddle-locked'),
                     caption: lock,
-                    maxLock: 48,
+                    // On the griddle's top rim, not over its cells (4차 IB2).
+                    maxLock: 20,
+                    edgeBadgeAt: griddleRimTop,
                     onTap: () => showCenterToast(context, '숙련된 붕어빵 틀: $lock'),
                     child: const SizedBox.expand())),
           for (var i = 0; i < s.grid.cells.length; i++)

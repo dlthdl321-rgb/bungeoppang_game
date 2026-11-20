@@ -64,10 +64,6 @@ class NightHome extends StatelessWidget {
   /// check towel of the background (DEC-038).
   final Widget? counter;
 
-  /// The counter's one action button (sell, bake, open…), floating centred
-  /// on the screen just above the counter (26번 4-1단계 F6, S4-1-Q6).
-  final Widget? counterAction;
-
   /// A small slip just under the HUD's settings button, right edges lined
   /// up (26번 7단계: the '오늘' slip for 오늘의 주문서·출석; moved there from
   /// above the cooking cut by the 2nd mockup check, 2026-11-19).
@@ -119,7 +115,6 @@ class NightHome extends StatelessWidget {
       this.vendor,
       this.centerBuilder,
       this.counter,
-      this.counterAction,
       this.counterSlip,
       this.statusAction,
       this.hudLeading,
@@ -184,11 +179,8 @@ class NightHome extends StatelessWidget {
                   box.biggest, e(CosmeticSlot.background), night,
                   clean: cleanCounter, low: low);
           // Without a measured towel the counter sits above the griddle's
-          // first row; the floating action keeps above it the same way.
+          // first row.
           final counterBottom = griddleBottom + griddleH * .66;
-          final actionBottom = towelTop == null
-              ? counterBottom + 52 + WorkshopHomeLayout.actionGap
-              : box.maxHeight - towelTop + WorkshopHomeLayout.actionGap;
           final fishRect = scroll && centerBuilder == null
               ? null
               : NightStallPainter.bakedFishOnScreen(
@@ -319,11 +311,6 @@ class NightHome extends StatelessWidget {
                 // griddle's first row of cells, as before.
                 bottom: towelTop == null ? counterBottom : null,
                 child: counter!),
-            if (counterAction != null) Positioned(
-                left: side,
-                width: w,
-                bottom: actionBottom,
-                child: Center(child: counterAction!)),
             // Under the settings button, over the stage and the guests' tap
             // targets (2nd mockup check).
             if (counterSlip != null && header == null) Positioned(

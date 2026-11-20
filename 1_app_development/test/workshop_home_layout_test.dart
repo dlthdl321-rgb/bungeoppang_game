@@ -138,7 +138,8 @@ void main() {
       // 2차), so the floating button's room above the counter is empty.
       expect(find.byKey(const Key('counter-action')), findsNothing);
       final close = tester.getRect(find.byKey(const Key('business-close')));
-      final actionTop = counter.top - WorkshopHomeLayout.actionGap - WorkshopHomeLayout.actionHeight;
+      // The clicker keeps the room the old floating button had (4차 사용자 결정).
+      final actionTop = counter.top - WorkshopHomeLayout.clickerLift;
       final clicker = tester.getRect(find.byKey(const Key('workshop-clicker')));
       final hud = tester.getRect(find.byKey(const Key('level-mission-entry')));
       expect(close.height, closeTo(WorkshopHomeLayout.businessHeight, .5));

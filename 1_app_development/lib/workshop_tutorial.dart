@@ -47,7 +47,7 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
     }
     return ready > 0
         ? const WorkshopTutorialStep(1, '구운 붕어빵을 손님에게 판매해요.', 'sale-button')
-        : const WorkshopTutorialStep(1, '손님 주문은 주문 제작으로 바로 구워요.', 'order-produce');
+        : const WorkshopTutorialStep(1, '손님을 눌러 주문 제작으로 바로 구워요.', 'customer-0');
   }
   if (!s.business.open) {
     return const WorkshopTutorialStep(7, "'영업 시작'을 눌러 가게 문을 열어요.", 'business-open');
@@ -57,7 +57,7 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
   }
   return ready > 0
       ? const WorkshopTutorialStep(7, '구운 붕어빵을 손님에게 판매해요.', 'sale-button')
-      : const WorkshopTutorialStep(7, '모자란 맛은 주문 제작으로 바로 구워요.', 'order-produce');
+      : const WorkshopTutorialStep(7, '모자란 맛은 손님을 눌러 주문 제작으로 바로 구워요.', 'customer-0');
 }
 
 /// 26번 3차 H6: a short story told before a guide stage, line by line in

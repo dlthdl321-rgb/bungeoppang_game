@@ -533,6 +533,16 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// moment ([departureAgeMs]).
   ({String customerId, bool happy, int atMs})? guestDeparture;
   int get departureAgeMs => guestDeparture == null ? 1 << 30 : _mono - guestDeparture!.atMs;
+  /// What a guest just said aloud (memory only): their parting words after
+  /// a sale or when time runs out. The guest layer shows them as a speech
+  /// bubble by that guest (4차 피드백 IA5 '누가 말하는지'), not as a line in
+  /// the counter; [guestSpeechAgeMs] says for how long.
+  ({String customerId, String text, int atMs})? guestSpeech;
+  /// The guest whose photo reaction waits for '반응 확인' ([photoReactionSale])
+  /// and what he says then: shown as his bubble at the front (IA5).
+  static const photoGuest = 'npc_taeo';
+  static const photoReactionWords = '와, 냄새 좋다.\n……아! 또 사진 전에 먹었네.';
+  int get guestSpeechAgeMs => guestSpeech == null ? 1 << 30 : _mono - guestSpeech!.atMs;
   /// The level-up step (×1·×10·×100, [skillLevelUpSteps]) each skill's own
   /// wheel shows in the skill window, by skill id (26번 시안 확인 2차).
   /// Memory only: kept while the app runs, not saved; ×1 when missing.
@@ -719,9 +729,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   }
   /// Runs [mutate] and saves. A command that comes in while the periodic
   /// checkpoint save runs waits for it instead of being dropped (26번 4-1 F1).
-  /// The notice is cleared before the active time is settled, so a guest's
-  /// timeout line set by that settlement survives; [keepNotice] (checkpoint,
-  /// lifecycle and recovery saves) leaves it alone.
+  /// The notice is cleared before the active time is settled, so a notice
+  /// set by that settlement survives; [keepNotice] (checkpoint, lifecycle
+  /// and recovery saves) leaves it alone. (A guest's timeout words are
+  /// [guestSpeech], which no command clears.)
   Future<bool> command(void Function() mutate, {bool production = false, bool keepNotice = false}) async {
     while (busy && _savingCheckpoint && !disposed && _commandIdle != null) {
       await _commandIdle!.future;
@@ -789,7 +800,8 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final advanced=state.customers.map((c)=>c.advanceActive(ms)).toList();
       for(final order in advanced.where((c)=>c.remainingMs==0)) {
         final speech=selectCustomerSpeech(customerCatalog,'timeout',_dialogueFacts(order));
-        if(speech!=null) notice='${customerShortName(order.customerId)}: ${speech['text']}';
+        // The words show by the leaving guest (IA5), not in the counter.
+        if(speech!=null) guestSpeech=(customerId:order.customerId,text:speech['text']!,atMs:_mono);
         guestDeparture=(customerId:order.customerId,happy:false,atMs:_mono);
       }
       state.customers=advanced.where((c)=>c.remainingMs>0).toList();
@@ -1214,7 +1226,12 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     // It gets the big praise (26번 2단계, S2-Q4): the guest's words, the
     // stars and a short sparkle, not saved.
     if (state.tutorialActive) { state.tutorial = 'done'; salePraise = _lastSale(); }
-    else if(customerCatalog.contains(order.customerId)) { _afterNamedSale(order); }
+    else {
+      // The thanks show by the leaving guest (IA5); the guide's first sale
+      // has them in its big praise instead.
+      if (_lastSale()?.speech case final words?) guestSpeech = (customerId: order.customerId, text: words, atMs: _mono);
+      if(customerCatalog.contains(order.customerId)) _afterNamedSale(order);
+    }
     _syncArrivals(); // A freed place (or the guide's end) starts a stopped clock.
   });
   Map<String,dynamic>? _matchingFollowup(CustomerOrder order) {
@@ -1283,7 +1300,8 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   }
   String? get lastSaleFeedback {
     final sale=_lastSale();
-    return sale==null ? null : '${sale.name} · 별 ${sale.stars} · ${sale.speech}';
+    // The guest's words are a bubble by them (IA5), not part of this line.
+    return sale==null ? null : '판매 완료 · ${sale.name} · 별 ${sale.stars}';
   }
   /// The first-run guide's first sale, shown big for a moment over the
   /// stall (26번 2단계). Never saved: a restart simply skips it.
