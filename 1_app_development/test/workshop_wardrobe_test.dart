@@ -98,12 +98,10 @@ void main() {
         // without an icon) until it is on.
         if (!['girl', 'boy'].any((c) => PixelSprites.avatarArtReady(c, d.slot, d.id))) continue;
         expect(File('assets/images/cosmetic_icons/${d.id}.png').existsSync(), isTrue, reason: d.id);
-        // 26번 3차 AV3d: hair and hats have the boy's own icon too
-        // (tools/avatar_v2.py wornicons, his own hair and hat layers).
-        if (const {CosmeticSlot.hair, CosmeticSlot.hat}.contains(d.slot) &&
-            PixelSprites.avatarArtReady('boy', d.slot, d.id)) {
-          expect(File('assets/images/cosmetic_icons/boy/${d.id}.png').existsSync(), isTrue, reason: 'boy ${d.id}');
-        }
+        // 26번 3차 AV3d made the boy's own hair/hat icons
+        // (cosmetic_icons/boy/); the 4차 merge keeps the 43~49 art, so both
+        // characters use the shared icon (PixelSprites.cosmeticIcon falls
+        // back to it).
       }
     });
   });
@@ -453,7 +451,8 @@ void main() {
           find.descendant(of: find.byKey(Key('preview-$id')), matching: find.byKey(Key(key)));
       expect(inTile('beanie', 'tile-price'), findsOneWidget);
       expect(inTile('earmuffs', 'tile-price'), findsOneWidget);
-      expect(tester.getSize(inTile('beanie', 'tile-price')).height, lessThanOrEqualTo(20));
+      // 4차 ID2: the price line is 24 high so its 붕어빵 icon can be seen.
+      expect(tester.getSize(inTile('beanie', 'tile-price')).height, lessThanOrEqualTo(24));
       await tester.ensureVisible(find.byKey(const Key('preview-santa')));
       expect(inTile('santa', 'lock-hatch'), findsOneWidget);
       expect(find.bySemanticsLabel(RegExp('산타 모자 Lv.9 해금')), findsOneWidget);

@@ -18,6 +18,9 @@ enum Currency {
 /// shared with the wardrobe of 4-5단계). [short] shortens big numbers
 /// ('3.2만', [compactNumber]); then a long press shows the exact number.
 /// [short] amounts in [missing] colour (red) mark what the player lacks.
+/// The icon is [defaultSize] by default (4차 피드백 ID2: the 붕어빵 before
+/// a price was too small to see at 18; the art fills about two thirds of
+/// its square, so the icon is drawn well above the number's height).
 class CurrencyAmount extends StatelessWidget {
   final Currency kind;
   final BigInt amount;
@@ -27,7 +30,9 @@ class CurrencyAmount extends StatelessWidget {
   final double size;
   final double fontSize;
   const CurrencyAmount(this.kind, this.amount,
-      {super.key, this.short = true, this.missing = false, this.size = 18, this.fontSize = 14});
+      {super.key, this.short = true, this.missing = false, this.size = defaultSize, this.fontSize = 14});
+
+  static const defaultSize = 30.0;
 
   static const missingColor = Color(0xffc0392b);
 

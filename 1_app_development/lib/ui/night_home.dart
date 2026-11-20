@@ -446,10 +446,16 @@ class NightHome extends StatelessWidget {
     final next = activeLevelMission(s);
     final progress = headerData?.progressPermille ?? levelProgressPermille(s);
     final level = headerData?.level ?? s.level;
-    return Semantics(
+    final top = headerData == null ? next == null : level >= 50;
+    // A '레시피 받기' waiting shows on the emblem too, not only on the
+    // menu button (4차 피드백 IA1).
+    return CountBadge(
+      count: headerData?.claimable ?? 0,
+      badgeKey: const Key('level-badge'),
+      child: Semantics(
       button: true,
       label:
-          'Lv.$level 레벨 미션 ${(headerData == null ? next == null : level >= 50) ? '최고 레벨 달성' : '진행 ${progress ~/ 10}%'}',
+          'Lv.$level 레벨 미션 ${top ? '최고 레벨 달성' : '진행 ${progress ~/ 10}%'}',
       excludeSemantics: true,
       onTap: () => onOpen('missions'),
       child: GestureDetector(
@@ -457,11 +463,22 @@ class NightHome extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         onTap: () => onOpen('missions'),
         child: Center(
-          child: SizedBox.square(
+          child: Stack(clipBehavior: Clip.none, alignment: Alignment.bottomCenter, children: [
+          SizedBox.square(
             dimension: levelSize,
-            child: CustomPaint(
-              key: const Key('level-progress'),
-              painter: _LevelRingPainter(progress / 1000),
+            // The ring is the gauge to the next level (4차 피드백 g1): it
+            // fills clockwise from 12 o'clock, glides to a new value
+            // (still with reduced motion) and a dot marks the start at 0%.
+            child: Builder(builder: (context) => TweenAnimationBuilder<double>(
+              tween: Tween(end: progress / 1000),
+              duration: s.settings.reduceMotion || (MediaQuery.maybeDisableAnimationsOf(context) ?? false)
+                  ? Duration.zero
+                  : levelRingMs,
+              curve: Curves.easeOutCubic,
+              builder: (context, value, child) => CustomPaint(
+                key: const Key('level-progress'),
+                painter: _LevelRingPainter(value),
+                child: child),
               child: Padding(
                 padding: const EdgeInsets.all(9),
                 child: FittedBox(
@@ -480,12 +497,34 @@ class NightHome extends StatelessWidget {
                   ),
                 ]),
               )),
-            ),
+            )),
           ),
+          if (!top)
+            Positioned(
+              bottom: -7,
+              child: IgnorePointer(
+                child: Container(
+                  key: const Key('level-percent'),
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                      color: Cozy.honey,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Cozy.woodDark, width: 1.5)),
+                  child: Text('${progress ~/ 10}%',
+                      textScaler: TextScaler.noScaling,
+                      style: const TextStyle(
+                          fontSize: 11, height: 1.1, fontWeight: FontWeight.w900, color: Cozy.ink)),
+                ),
+              ),
+            ),
+          ]),
         ),
       ),
-    );
+    ));
   }
+
+  /// How long the level ring takes to glide to a new value.
+  static const levelRingMs = Duration(milliseconds: 600);
 
   /// 붕어빵력 with a big icon and, in the Workshop, 황금붕어빵력 beside it
   /// (on one line when the card is wide, under it when the rates take the
@@ -841,6 +880,8 @@ class _LevelRingPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..color = Cozy.honey);
     }
+    // The start at 12 o'clock, seen even at 0% (4차 피드백 g1).
+    canvas.drawCircle(Offset(c.dx, c.dy - (r - 3.5)), 3, Paint()..color = Cozy.honey);
   }
 
   @override

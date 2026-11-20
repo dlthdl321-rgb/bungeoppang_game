@@ -2,11 +2,13 @@ import '../cooking_result_rules.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../development_balance.dart';
+import '../game_audio.dart';
 import '../game_controller.dart';
 import '../workshop_controller.dart';
 import '../cosmetic_config.dart';
 import '../workshop_purchases.dart';
 import 'center_toast.dart';
+import 'level_up_celebration.dart';
 import 'flavor_picker.dart';
 import 'night_home.dart';
 import 'workshop_mold_stage.dart';
@@ -73,6 +75,20 @@ class _WorkshopPageState extends State<WorkshopPage> {
         _leaveWindow();_awayShowing=false;
         if(c.awayReport==report) c.dismissAwayReport();
       }
+    });
+  }
+  /// The automatic 승급's big celebration (4차 피드백 IA1, user decision):
+  /// the level-up sound and [LevelUpCelebration] over the whole screen,
+  /// once per saved level-up (the last level when several came at once).
+  void _showPromotion() {
+    final level=c.promotedTo;
+    if(level==null) return;
+    c.dismissPromotion();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if(!mounted) return;
+      GameAudioScope.of(context).play(Sfx.levelUp);
+      showLevelUpCelebration(context,level,
+        reduceMotion:widget.accountController.state.settings.reduceMotion || MediaQuery.disableAnimationsOf(context));
     });
   }
   bool _introShowing=false;
@@ -436,7 +452,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     final m=c.state.missions;
     int ready(String scope)=>[...m.goals(c.config,scope).keys,if(scope=='daily')'all'].where((id)=>
       m.complete(c.config,scope,id) && !m.claims.containsKey(m.claimKey(scope,id))).length;
-    return {'daily':ready('daily'),'event':ready('weekly'),'missions':c.canLevelUp ? 1:0};
+    return {'daily':ready('daily'),'event':ready('weekly'),'missions':c.claimableRecipeCount};
   }
   Future<void> _menu()=>_window('메뉴',(ctx)=>Column(children:[
     // 26번 2-1단계: where the owner name shows.
@@ -545,7 +561,6 @@ class _WorkshopPageState extends State<WorkshopPage> {
   /// H34·H45, readable rows with bars instead of one long line).
   Widget _levelMissions(){
     final s=c.state,top=s.level>=50;
-    final row=top ? null : c.config.rows('level_progression')[s.level];
     Widget bar(String label,BigInt current,BigInt target,{Key? key})=>Padding(key:key,padding:const EdgeInsets.only(top:8),
       child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         Row(children:[Expanded(child:Text(label,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w700,color:Cozy.ink))),
@@ -561,20 +576,18 @@ class _WorkshopPageState extends State<WorkshopPage> {
         trailing:Text(top ? '최고 레벨' : '다음 Lv.${s.level+1}',style:const TextStyle(fontFamily:'Jua',fontFamilyFallback:Cozy.fontFallback,fontSize:14,color:Cozy.inkSoft)),
         child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
           if(top)const Text('최고 레벨에 도달했어요.')
-          else ...[
-            bar('누적 붕어빵력',s.lifetime,BigInt.parse('${row!['season_total_buns']}')),
-            bar('이번 레벨 탭',BigInt.from(s.taps-s.levelStartTaps),BigInt.from(DevelopmentBalance.integer(row,'additional_taps'))),
-            bar('이번 레벨 판매',BigInt.from(s.completedSales-s.levelStartSales),BigInt.from(DevelopmentBalance.integer(row,'additional_sales'))),
-          ],
-          const SizedBox(height:10),
-          CozyPrimaryButton(minHeight:40,fontSize:16,label:'승급',onPressed:c.inputBusy || !c.canLevelUp ? null:c.levelUp),
+          // The same requirements as the automatic 승급 and the ring.
+          else for(final r in c.levelRequirements)bar(r.label,r.current,r.target),
+          // 4차 피드백 IA1: no 승급 button, the level rises by itself.
+          if(!top)const Padding(padding:EdgeInsets.only(top:10),child:Text('세 가지를 모두 채우면 저절로 다음 레벨이 돼요.',
+            key:Key('level-auto-note'),textAlign:TextAlign.center,
+            style:TextStyle(fontSize:13,fontWeight:FontWeight.w700,color:Cozy.inkSoft))),
         ])),
       for(final flavor in ['custard','cocoa'])
         if(!s.recipes.contains(flavor))Builder(builder:(context){
-          final tier=DevelopmentBalance.integer(c.config.section('active_recipes')[flavor] as Map<String,dynamic>,'acquisition_tier');
-          final requirement=c.config.rows('additional_recipe_acquisition_tiers').firstWhere((r)=>r['tier']==tier);
+          final requirement=c.recipeMissionRule(flavor)!;
           final level=DevelopmentBalance.integer(requirement,'unlock_level');
-          final ready=s.level>=level && s.completedSales>=DevelopmentBalance.integer(requirement,'mission_sales');
+          final ready=c.canClaimRecipe(flavor);
           return Padding(padding:const EdgeInsets.only(top:10),child:TodaySection(key:Key('recipe-mission-$flavor'),
             icon:const PixelIcon('mission',size:26),title:'${c.flavorLabel(flavor)} 레시피 미션',
             trailing:Text('Lv.$level부터',style:const TextStyle(fontFamily:'Jua',fontFamilyFallback:Cozy.fontFallback,fontSize:14,color:Cozy.inkSoft)),
@@ -587,22 +600,14 @@ class _WorkshopPageState extends State<WorkshopPage> {
         }),
     ]);
   }
-  int _levelProgress() {
-    final s=c.state;
-    if(s.level>=50)return 1000;
-    final row=c.config.rows('level_progression')[s.level];
-    final total=BigInt.parse('${row['season_total_buns']}');
-    int fraction(int current,int required)=>required<=0 ? 1000 : (current*1000~/required).clamp(0,1000);
-    final values=[total==BigInt.zero ? 1000 : (s.lifetime*BigInt.from(1000)~/total).toInt().clamp(0,1000),
-      fraction(s.taps-s.levelStartTaps,DevelopmentBalance.integer(row,'additional_taps')),
-      fraction(s.completedSales-s.levelStartSales,DevelopmentBalance.integer(row,'additional_sales'))];
-    return values.reduce((a,b)=>a<b ? a:b);
-  }
+  /// The ring gauge's value, from the controller's one level rule.
+  int _levelProgress() => c.levelProgressPermille;
   @override
   Widget build(BuildContext context) => AnimatedBuilder(animation:Listenable.merge([c,widget.accountController]),
     builder:(context,_)=>_content(context));
   Widget _content(BuildContext context) {
     _showAwayReport();
+    _showPromotion();
     _showFeatureIntro();
     _askNotifications();
     final s = c.state;

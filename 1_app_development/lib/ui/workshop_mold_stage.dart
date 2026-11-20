@@ -848,11 +848,11 @@ Widget _pill(String text) => Container(
         border: Border.all(color: Cozy.woodLight, width: 2),
         boxShadow: const [BoxShadow(color: Color(0x55000000), blurRadius: 4, offset: Offset(0, 2))]),
     child: Row(mainAxisSize: MainAxisSize.min, children: [
-      const PixelIcon('bun', size: 18),
+      const PixelIcon('bun', size: 26),
       const SizedBox(width: 6),
       Text(text, style: const TextStyle(color: Cozy.ink, fontWeight: FontWeight.bold, fontSize: 15)),
       const SizedBox(width: 6),
-      const PixelIcon('bun', size: 18),
+      const PixelIcon('bun', size: 26),
     ]));
 
 /// The bake's title over the mold: a small translucent plate (H19).

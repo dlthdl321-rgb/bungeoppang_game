@@ -202,7 +202,7 @@ class _Attendance extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(color: const Color(0xfffff3cf), borderRadius: BorderRadius.circular(10)),
           child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-            PixelIcon(lastGold ? 'gold_bun' : 'bun', size: 22),
+            PixelIcon(lastGold ? 'gold_bun' : 'bun', size: 28),
             const SizedBox(width: 6),
             Flexible(child: Text(
               lastGold
@@ -423,7 +423,7 @@ class WorkshopMissionSection extends StatelessWidget {
         ])),
         const SizedBox(width: 10),
         Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
-          CurrencyAmount(Currency.gold, BigInt.from(gold), key: Key('mission-$scope-$goal-gold'), size: 18, fontSize: 14),
+          CurrencyAmount(Currency.gold, BigInt.from(gold), key: Key('mission-$scope-$goal-gold')),
           if (action != null) ...[const SizedBox(height: 4), action],
         ]),
       ]),

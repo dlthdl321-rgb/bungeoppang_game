@@ -33,6 +33,9 @@ class WorkshopSkillShop extends StatefulWidget {
 class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
   UpgradeKind _kind = UpgradeKind.tap;
 
+  /// The height of every skill row, wheel or not (4차 피드백 ID1).
+  static const rowHeight = 80.0;
+
   int _step(String id) => widget.controller.skillSteps[id] ?? skillLevelUpSteps.first;
 
   /// Leading tiers whose tap and auto skills cost no gold (DEC-041: 4).
@@ -167,14 +170,19 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
     final reason = maxed ? null : _blocked(unlocked: unlocked, id: id, quote: quote, buns: buns, gold: gold);
     final picture = PixelImage(PixelSprites.skill(id), size: 40);
     final unit = _kind == UpgradeKind.tap ? '클릭' : '초';
+    // Every row the same height (4차 피드백 ID1): locked and MAX rows have
+    // no wheel, so the row is at least [rowHeight], and the lit row's
+    // thicker edge comes out of its padding instead of adding to it.
+    final edge = reason == null && !maxed ? 2.0 : 1.0;
     return Container(
       key: Key('skill-$id'),
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.fromLTRB(8, 6, 6, 6),
+      constraints: const BoxConstraints(minHeight: rowHeight),
+      padding: EdgeInsets.fromLTRB(10 - edge, 8 - edge, 8 - edge, 8 - edge),
       decoration: BoxDecoration(
         color: unlocked ? Cozy.cream : Cozy.creamDeep,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: reason == null && !maxed ? Cozy.honeyDeep : Cozy.tan, width: reason == null && !maxed ? 2 : 1),
+        border: Border.all(color: edge > 1 ? Cozy.honeyDeep : Cozy.tan, width: edge),
       ),
       child: Row(children: [
         SizedBox.square(
@@ -332,7 +340,7 @@ class _KindTab extends StatelessWidget {
               border: Border.all(color: selected ? Cozy.honeyDeep : Cozy.line),
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              PixelIcon(kind == UpgradeKind.tap ? 'tab_tap' : 'tab_auto', size: 28),
+              PixelIcon(kind == UpgradeKind.tap ? 'tab_tap' : 'tab_auto', size: 34),
               const SizedBox(width: 2),
               Flexible(
                 child: Text(kind == UpgradeKind.tap ? '클릭 생산' : '자동 생산',
@@ -348,9 +356,11 @@ class _KindTab extends StatelessWidget {
 }
 
 /// A skill's small vertical wheel that picks its level-up step (S43-Q8,
-/// one per skill since 시안 확인 2차): the chosen '×10' sits in the middle
-/// band with its neighbours above and below; a swipe up or down moves one
-/// step, a tap on a neighbour picks it. Keys `step-<skill>-<step>`.
+/// one per skill since 시안 확인 2차): ×1·×10·×100 always stand in their
+/// own places and the honey band moves to the chosen one, so every wheel
+/// shows three steps and looks the same (4차 피드백 ID1: a wheel at ×1 or
+/// ×100 used to show only two). A swipe up or down moves one step, a tap
+/// picks a step. Keys `step-<skill>-<step>`.
 class SkillStepWheel extends StatelessWidget {
   final String skillId;
   final int value;
@@ -383,24 +393,24 @@ class SkillStepWheel extends StatelessWidget {
         },
         child: Container(
           width: width,
-          height: rowHeight * 3 + 4,
+          height: rowHeight * skillLevelUpSteps.length + 4,
           decoration: BoxDecoration(
               color: Cozy.cream, borderRadius: BorderRadius.circular(10), border: Border.all(color: Cozy.woodLight, width: 1.5)),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Stack(children: [
-              Positioned(
+              AnimatedPositioned(
+                  duration: still ? Duration.zero : const Duration(milliseconds: 160),
+                  curve: Curves.easeOut,
                   left: 0,
                   right: 0,
-                  top: rowHeight,
+                  top: rowHeight * index,
                   height: rowHeight,
                   child: Container(color: Cozy.honey)),
-              AnimatedPositioned(
-                duration: still ? Duration.zero : const Duration(milliseconds: 160),
-                curve: Curves.easeOut,
+              Positioned(
                 left: 0,
                 right: 0,
-                top: rowHeight * (1 - index),
+                top: 0,
                 child: Column(children: [
                   for (final step in skillLevelUpSteps)
                     GestureDetector(
