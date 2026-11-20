@@ -688,18 +688,28 @@ def hatfit(data, src, demo):
                 plain, _ = shrink(path, c)
                 al = shift(shift(plain, *shift_by), *dxy)[..., 3] > 0
                 cx, row = hat_geometry(al, band)
-                y = row if band else row - fit['rows_above_brim']
-                hx, wx = np.nonzero(al[y])[0], np.nonzero(hal[y])[0]
-                ratio = (np.ptp(wx) / max(np.ptp(hx), 1)) + fit['extra'] \
-                    if len(hx) and len(wx) else 1
-                s = float(min(max(ratio, fit['min']), fit['max']))
-                report[f'{c}/{main}'] = {'scale': round(s, 3),
-                                         'pivot': [round(float(cx), 1), row]}
+                # 26번 3차 AV3c: the place and size of the v1 hat of the
+                # same id (avatar_v1art.fit_to_v1), not the hair's width.
+                adj = A.FIT_ADJUST.get(f'{c}/{hat_id}', {})
+                if 'set' in adj:  # the v1 hat could not be told from the hair
+                    iou, (s, mx, my) = 0.0, adj['set']
+                else:
+                    target = A.v1_hat_mask(
+                        c, hat_id, shift(shift(plain, *shift_by), *dxy))
+                    iou, s, mx, my = A.fit_to_v1(al, target, (cx, row + 1))
+                s = round(s + adj.get('scale', 0), 3)
+                mx += adj.get('move', (0, 0))[0]
+                my += adj.get('move', (0, 0))[1]
+                report[f'{c}/{main}'] = {'scale': s,
+                                         'pivot': [round(float(cx), 1), row],
+                                         'move': [int(mx), int(my)],
+                                         'iou': round(float(iou), 3)}
             entry = report.get(f'{c}/{main}')
             if not entry:
                 continue
             s = entry['scale']
             px, py = entry['pivot']
+            mx, my = entry.get('move', (0, 0))
             ox, oy = shift_by[0] + dxy[0], shift_by[1] + dxy[1]
             big = to_4x(path, c)
             if big is None:
@@ -713,14 +723,16 @@ def hatfit(data, src, demo):
             w, h = img.size
             if main == stem:
                 img = img.resize((round(w * s), round(h * s)), Image.LANCZOS)
-                at = (round(p4x - p4x * s), round(p4y - p4y * s))
+                at = (round(p4x - p4x * s + mx * SCALE),
+                      round(p4y - p4y * s + my * SCALE))
             else:
                 # A knot behind the head keeps its size.
                 ys_, xs_ = np.nonzero(big[..., 3] > 127)
                 kx, ky = (xs_.min() + xs_.max()) / 2, ys_.min()
                 # Sideways with the hat's edge, at the same height (beside
                 # the ear, half behind the fuller hair).
-                at = (round(KNOT_FOLLOW * (s - 1) * (kx - p4x)), 0)
+                at = (round(KNOT_FOLLOW * (s - 1) * (kx - p4x) + mx * SCALE),
+                      round(my * SCALE))
             canvas = Image.new('RGBa', (w, h), (0, 0, 0, 0))
             canvas.paste(img, at)
             arr = np.array(canvas.convert('RGBA'))
@@ -732,7 +744,8 @@ def hatfit(data, src, demo):
             save(small, key)
             data.setdefault('trim', {}).pop(
                 key.relative_to(out_dir(demo)).as_posix(), None)
-            print(f'hatfit {c}/{stem}: x{s:.2f} about ({px}, {py})')
+            print(f'hatfit {c}/{stem}: x{s:.2f} about ({px}, {py}) '
+                  f'moved ({mx}, {my})')
 
 
 # ---------------------------------------------------------------- bare
@@ -930,11 +943,15 @@ def hairmask(data, demo):
                 # 26번 3차 AV: beside the hat, hair above the hat's edge at
                 # its nearest column goes too (no tufts floating over the
                 # brim); hair hanging lower stays.
+                flat = mask.copy()
                 for x in range(CANVAS[0]):
                     if x in lows or not len(cols):
                         continue
                     near = cols[np.abs(cols - x).argmin()]
-                    mask[:lows[near] - HAT_SIDE_KEEP, x] = True
+                    flat[:lows[near] - HAT_SIDE_KEEP, x] = True
+                    drop = min(int(HAT_SIDE_SLOPE * abs(int(near) - x)),
+                               HAT_SIDE_DROP)
+                    mask[:lows[near] - HAT_SIDE_KEEP + drop, x] = True
             if rule['mode'] == 'cover':
                 # The bare head the hat leaves showing above that same edge
                 # (a hat a little smaller than the head) goes from the base.
@@ -943,7 +960,8 @@ def hairmask(data, demo):
                 rx, ry = BASEMASK['face']
                 ys, xs = np.mgrid[0:CANVAS[1], 0:CANVAS[0]]
                 face_ = ((xs - ex) / rx) ** 2 + ((ys - ey) / ry) ** 2 <= 1
-                scalp = mask & ~on & (base[..., 3] > 0) & ~face_
+                # (the flat cut: the sloped one would reach the ears)
+                scalp = flat & ~on & (base[..., 3] > 0) & ~face_
                 scalp |= ndimage.binary_dilation(scalp) & (base[..., 3] == 0)
                 sm = np.zeros(hat.shape, np.uint8)
                 sm[scalp] = (0, 0, 0, 255)
@@ -1316,6 +1334,12 @@ def sleeves(data, src, demo, c, shift_by, dxy):
 
 # Hair beside a hat: rows this far above the hat's edge stay.
 HAT_SIDE_KEEP = 0
+# 26번 3차 AV3c: beside the hat the cut goes down this many rows per column
+# away from the hat's edge (at most HAT_SIDE_DROP): the v1 hair wider than
+# the hat flares out from under the brim instead of standing beside it in a
+# flat-topped block.
+HAT_SIDE_SLOPE = 0.9
+HAT_SIDE_DROP = 22
 
 # The hanging arms' mask grows this many pixels (sleeves are wider).
 POSE_HIDE_GROW = 2

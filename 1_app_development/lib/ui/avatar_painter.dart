@@ -243,12 +243,11 @@ class AvatarRig {
         // a copy per skin tone.
         final plain = main.replaceFirst('.png', '_$half.png');
         final skinned = plain.replaceFirst('.png', '@$skin.png');
-        // 26번 3차 AV: the hat presses the hair behind the head too (no
-        // back hair standing above a cap).
-        add(PixelSprites.byPath(skinned) != null ? skinned : plain, halfLayer,
-            erase: slot == CosmeticSlot.hair && hairMask != null
-                ? [hairMask]
-                : const []);
+        // 26번 3차 AV3c: the hair's back half (below the chin, and the
+        // ponytail's tail behind the head) is not pressed by the hat: the
+        // tail comes out from under the hat whole instead of a piece
+        // floating beside the head (tools/avatar_v1art.py PONY_TAIL).
+        add(PixelSprites.byPath(skinned) != null ? skinned : plain, halfLayer);
       }
     }
     if (posed) {
