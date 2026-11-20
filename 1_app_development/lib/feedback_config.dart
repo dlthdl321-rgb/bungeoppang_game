@@ -76,6 +76,8 @@ const flipAxleDoneDegrees = 120.0;
 const flipAxleStartPx = 6.0;
 
 /// The axle's place in the mold picture (mold/*.png, 1200x880): the centres
-/// of the two side rings (measured on mold/closed.png).
-const flipAxleLeftRing = (114.0, 430.0);
-const flipAxleRightRing = (1072.0, 430.0);
+/// of the two side rings' holes, where the brass pins of mold/axle_front.png
+/// sit (25번 36번 art, measured on mold/closed.png; tools/apply_25_art.py
+/// --only mold).
+const flipAxleLeftRing = (118.0, 441.5);
+const flipAxleRightRing = (1076.0, 441.5);

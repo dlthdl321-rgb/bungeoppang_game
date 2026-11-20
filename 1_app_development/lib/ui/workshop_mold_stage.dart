@@ -354,8 +354,9 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   }
 }
 
-/// The top and bottom of the mold picture's opaque part (mold/*.png rows
-/// 89~847 of 880) drawn over [rect] with [grow] (WorkshopMoldArt.fit).
+/// The top and bottom of the mold picture's opaque part with its axle
+/// (mold/*.png rows 102~833 of 880) drawn over [rect] with [grow]
+/// (WorkshopMoldArt.fit).
 (double, double) moldPictureSpan(Rect rect, double grow) {
   final (k, origin) = WorkshopMoldArt.fit(rect.size, grow);
   return (rect.top + origin.dy + WorkshopMoldArt.pictureTop * k,
@@ -496,8 +497,9 @@ class WorkshopMoldArt extends CustomPainter {
   /// (tools/make_home_stage_art.py).
   static const fishRect = Rect.fromLTRB(215, 174, 984, 706);
 
-  /// The first and last rows of the mold pictures' opaque part.
-  static const pictureTop = 89.0, pictureBottom = 847.0;
+  /// The first row of the mold pictures' opaque part and the last row of
+  /// the axle's feet under it (mold/axle_back.png), which stand lower.
+  static const pictureTop = 102.0, pictureBottom = 833.0;
   static const fishAt = Offset(100, 66);
   static final _smooth = Paint()..filterQuality = FilterQuality.medium;
 
@@ -567,8 +569,9 @@ class WorkshopMoldArt extends CustomPainter {
 /// mold), and while flipping the push's [progress] as a honey ring round
 /// the right pin and, before a push, a small curved arrow ([hint]). Drawn
 /// in the mold picture's coordinates (WorkshopMoldArt.fit), so it follows
-/// the mold's place and size. A stand-in until the new mold art with its
-/// own axle (25번 36번 주문) is in.
+/// the mold's place and size. The rods, posts and pins are 25번 36번 art
+/// (mold/axle_back.png, axle_front.png, 1200x880 like the mold); without
+/// them they are drawn in code.
 class MoldAxlePainter extends CustomPainter {
   final double grow, progress;
   final bool front, hint;
@@ -581,7 +584,11 @@ class MoldAxlePainter extends CustomPainter {
     final (k, origin) = WorkshopMoldArt.fit(size, grow);
     Offset at(double x, double y) => origin + Offset(x, y) * k;
     final rings = [flipAxleLeftRing, flipAxleRightRing];
-    if (!front) {
+    final art = PixelSprites.mold(front ? 'axle_front' : 'axle_back');
+    if (art != null) {
+      WorkshopMoldArt.drawAt(canvas, art, Offset.zero, k, origin);
+      if (!front) return;
+    } else if (!front) {
       for (final (i, (x, y)) in rings.indexed) {
         final out = i == 0 ? x - 66 : x + 66;
         // The rod from the ring out to the bracket.
@@ -609,7 +616,7 @@ class MoldAxlePainter extends CustomPainter {
       }
       return;
     }
-    for (final (x, y) in rings) {
+    for (final (x, y) in art == null ? rings : const <(double, double)>[]) {
       canvas.drawCircle(at(x, y), 21 * k, Paint()..color = iron);
       canvas.drawCircle(at(x, y), 13 * k, Paint()..color = brass);
       canvas.drawCircle(at(x - 4, y - 4), 5 * k, Paint()..color = const Color(0xfff3dca0));

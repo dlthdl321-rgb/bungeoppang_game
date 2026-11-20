@@ -101,6 +101,22 @@ void main() {
       await shot(tester, 'batter');
       await tester.pumpWidget(const SizedBox.shrink());
     });
+    // 25번 36번 틀 그림(26번 3차 F3): 속·덮기 단계의 틀과 걸이 축.
+    for (final (name, steps) in const [('filling', 1), ('second', 2), ('closing', 3)]) {
+      testWidgets('틀 $name ${size.width}', (tester) async {
+        final c = await open(tester, size);
+        expect(await c.startPractice(), isTrue);
+        var s = c.state.session!;
+        if (steps >= 1) s = s.pour(s.token, PaintAmount.even);
+        if (steps >= 2) s = s.squeezeFilling(s.token, PaintAmount.even);
+        if (steps >= 3) s = s.pour(s.token, PaintAmount.even);
+        final at = s;
+        await c.command(() => c.state.session = at);
+        await tester.pump();
+        await shot(tester, 'mold_$name');
+        await tester.pumpWidget(const SizedBox.shrink());
+      });
+    }
     testWidgets('뒤집기 ${size.width}', (tester) async {
       final c = await open(tester, size, reduced: false);
       expect(await c.startPractice(), isTrue);
@@ -120,6 +136,12 @@ void main() {
         await tester.pump();
       }
       await shot(tester, 'flipping');
+      // Past standing on edge (about 100°, before 120° falls over).
+      for (var d = box.height * .3; d <= box.height * .55; d += 8) {
+        await gesture.moveTo(box.center + Offset(0, box.height * .2 - d));
+        await tester.pump();
+      }
+      await shot(tester, 'flipping_edge');
       await gesture.up();
       await tester.pumpWidget(const SizedBox.shrink());
     });
