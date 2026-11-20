@@ -25,7 +25,10 @@ Jobs (safe to run again, in this order; no job = all):
             leg beside a slim item, erased from the base (26번 3차 AV).
   skinned   tool_<id>_front@<skin>.png: the finger pieces per skin tone.
   pose      The share card's proud pose (25번 39번): pose_proud_arms@<skin>
-            and pose_proud_hide (where the hanging arms were).
+            and pose_proud_hide (where the hanging arms were), and each
+            top's sleeves on the raised arms pose_proud_sleeve_<top>
+            (25번 50번; fitted by shape, cached in avatar_v2.json
+            sleeve_fit).
   face      Eye and mouth frames for each base (its own skin colour):
             face_<eyes_half|eyes_closed|mouth_small|mouth_wide>@<skin>.png.
   icons     31번 icons (512x512) -> assets/images/cosmetic_icons/<id>.png
@@ -872,6 +875,7 @@ def pose(data, src, demo):
             data.setdefault('trim', {}).pop(key, None)
         from scipy import ndimage
         mask = ndimage.binary_dilation(mask, iterations=POSE_HIDE_GROW)
+        mask |= pose_remnants(c, mask, data, demo)
         out = np.zeros((CANVAS[1], CANVAS[0], 4), np.uint8)
         out[mask] = (0, 0, 0, 255)
         key = f'avatar_v2/{c}/pose_proud_hide.png'
@@ -879,6 +883,247 @@ def pose(data, src, demo):
         data.setdefault('trim', {}).pop(key, None)
         print(f'pose {c}: arms {int((arms[..., 3] > 0).sum())} px, '
               f'hide {int(mask.sum())} px')
+        sleeves(data, src, demo, c, shift_by, dxy)
+
+
+def pose_remnants(c, mask, data, demo):
+    """26번 3차 AV2: bits of the hanging arm's outline that the hide mask
+    leaves of the base, a top, an apron or an accessory (a thin line beside
+    the body, an arc over the shoulder): every small piece cut off from the
+    rest of its layer, unless some layer has its main part there."""
+    from scipy import ndimage
+    folder = out_dir(demo) / 'avatar_v2' / c
+    names = [folder / 'base@skin1.png'] + [
+        p for slot in ('top', 'outfit', 'accessory')
+        for p in sorted(folder.glob(f'{slot}_*.png'))
+        if not re.search(r'_(basemask|hairmask|back|front)', p.stem)]
+    small, main = np.zeros_like(mask), np.zeros_like(mask)
+    for path in names:
+        if not path.exists():
+            continue
+        seen = (full(path, data, demo)[..., 3] > 0) & ~mask
+        lab, n = ndimage.label(seen)
+        if not n:
+            continue
+        size = ndimage.sum(seen, lab, range(1, n + 1))
+        big = np.nonzero(size >= POSE_REMNANT)[0] + 1
+        main |= np.isin(lab, big)
+        small |= seen & ~np.isin(lab, big)
+    out = small & ~main
+    # Below the chin the hanging sleeve's outer outline may still hang on
+    # at the shoulder (a top drawn wider than the hidden base): everything
+    # further than POSE_BAND_REACH beside the base's body in that row goes.
+    base = (full(folder / 'base@skin1.png', data, demo)[..., 3] > 0) & ~mask
+    lab, n = ndimage.label(base)
+    if n:
+        size = ndimage.sum(base, lab, range(1, n + 1))
+        body = lab == (int(np.argmax(size)) + 1)
+        for y in range(*POSE_BAND_ROWS):
+            xs = np.nonzero(body[y])[0]
+            if len(xs):
+                out[y, :max(xs.min() - POSE_BAND_REACH, 0)] = True
+                out[y, xs.max() + 1 + POSE_BAND_REACH:] = True
+    print(f'pose {c}: remnants {int((out & ~mask).sum())} px')
+    return out
+
+
+POSE_REMNANT = 60  # a visible piece smaller than this is a remnant
+POSE_BAND_ROWS = (216, 300)  # chin to elbow of the hanging arm
+POSE_BAND_REACH = 14  # cloth may stand this far beside the hidden base
+
+
+# 26번 3차 AV2 (25번 50번): the worn top's sleeves on the raised arms,
+# pose_proud_sleeve_<top>.png. The sources came at another size than the
+# arms (girl 880x1787, boy 971x1620; arms 920x1709) and each sleeve a bit
+# off, so each of the two sleeves is fitted to its arm by shape (sleeve_fit)
+# on the arms' 1120x2080 canvas, then shrunk and moved like the arms.
+# Hand and bungeoppang per arm on that canvas (l, t, r, b): the sleeve may
+# not lie there, and where it does the hand stays in front of the cuff.
+SLEEVE_HANDS = {'girl': [(0, 0, 330, 1035), (810, 0, 1120, 1095)],
+                'boy': [(0, 0, 320, 1010), (820, 0, 1120, 1090)]}
+SLEEVE_SHOULDER = 40  # arm pixels this near the shoulder cut weigh more
+SLEEVE_FILL = 48  # bare arm this near the cut is covered with the sleeve
+SLEEVE_HEM = 6  # the cuff's hem line where the hand covers it
+SLEEVE_SHORT = ('tee',)  # short sleeves: the long sleeves' size, moved only
+SLEEVE_HELD = {}  # 'character/top' -> why it is not shipped (25번 50번)
+
+
+def _big(path):
+    img = Image.open(path).convert('RGBa')
+    return np.array(img.resize((CANVAS[0] * SCALE, CANVAS[1] * SCALE),
+                               Image.LANCZOS).convert('RGBA'))
+
+
+def _two(mask):
+    """The two biggest pieces of [mask], left one first."""
+    from scipy import ndimage
+    lab, n = ndimage.label(mask)
+    if n < 2:
+        return []
+    size = ndimage.sum(mask, lab, range(1, n + 1))
+    out = [lab == i for i in np.argsort(size)[::-1][:2] + 1]
+    return sorted(out, key=lambda m: np.nonzero(m)[1].mean())
+
+
+def _sleeve_weights(arms_a, c):
+    """Score map on the 4x canvas: +1 on the arm, more near the shoulder
+    cut, 0 just around it and past the cut (into the body), -2 on the hand
+    and bungeoppang, -1 further out."""
+    from scipy import ndimage
+    hand = np.zeros_like(arms_a)
+    for l, t, r, b in SLEEVE_HANDS[c]:
+        hand[t:b, l:r] = True
+    near = ndimage.binary_dilation(arms_a, iterations=24)
+    w = np.where(arms_a & ~hand, 1.0, np.where(arms_a & hand, -2.0,
+                 np.where(near, 0.0, -1.0))).astype(np.float32)
+    for side, arm in enumerate(_two(arms_a)):
+        ys, xs = np.nonzero(arm)
+        cut = xs.max() if side == 0 else xs.min()
+        rows = ys[xs >= cut - 2] if side == 0 else ys[xs <= cut + 2]
+        strip = arm.copy()
+        if side == 0:
+            strip[:, :cut - SLEEVE_SHOULDER] = False
+            body = (slice(rows.min() - 30, rows.max() + 30), slice(cut, cut + 60))
+        else:
+            strip[:, cut + SLEEVE_SHOULDER:] = False
+            body = (slice(rows.min() - 30, rows.max() + 30), slice(cut - 60, cut))
+        w[strip] = 3.0
+        w[body] = np.maximum(w[body], 0)
+    return w, hand
+
+
+def _search(weights, piece, scales, shifts, step, centre):
+    """Best (score, sx, sy, dx, dy) of [piece] (bool crop) scaled and moved
+    about [centre] on [weights] (already 1/step of the 4x canvas)."""
+    best = None
+    h0, w0 = piece.shape
+    img = Image.fromarray((piece * 255).astype(np.uint8))
+    H, W = weights.shape
+    for sx, sy in scales:
+        w, h = w0 * sx, h0 * sy
+        k = np.array(img.resize((max(1, int(w / step)), max(1, int(h / step))),
+                                Image.BILINEAR)) > 127
+        kh, kw = k.shape
+        for dx, dy in shifts:
+            x0 = int((centre[0] + dx - w / 2) / step)
+            y0 = int((centre[1] + dy - h / 2) / step)
+            if x0 < 0 or y0 < 0 or x0 + kw > W or y0 + kh > H:
+                continue
+            v = float((weights[y0:y0 + kh, x0:x0 + kw] * k).sum())
+            if best is None or v > best[0]:
+                best = (v, sx, sy, dx, dy)
+    return best
+
+
+def sleeve_fit(arms_a, sleeve_a, c, size=None):
+    """Where each of the two sleeves goes: [{box, to, scale}] (4x canvas,
+    box in the stretched source, to on the arms' canvas). [size] fixes the
+    (sx, sy) per side (short sleeves)."""
+    weights, _ = _sleeve_weights(arms_a, c)
+    fits = []
+    for side, piece in enumerate(_two(sleeve_a)):
+        ys, xs = np.nonzero(piece)
+        l, t = int(xs.min()), int(ys.min())
+        r, b = int(xs.max()) + 1, int(ys.max()) + 1
+        crop = piece[t:b, l:r]
+        centre = ((l + r) / 2, (t + b) / 2)
+        if size:
+            scales = [tuple(size[side])]
+        else:
+            scales = [(s * a, s / a) for s in np.arange(0.84, 1.20, 0.04)
+                      for a in np.arange(0.92, 1.09, 0.04)]
+        coarse = [(dx, dy) for dx in range(-64, 65, 8)
+                  for dy in range(-64, 65, 8)]
+        _, sx, sy, dx, dy = _search(weights[::4, ::4], crop, scales, coarse,
+                                    4, centre)
+        fine_s = [tuple(size[side])] if size else \
+            [(sx * f, sy * g) for f in (0.98, 1.0, 1.02) for g in (0.98, 1.0, 1.02)]
+        fine = [(dx + i, dy + j) for i in range(-8, 9, 2) for j in range(-8, 9, 2)]
+        _, sx, sy, dx, dy = _search(weights[::2, ::2], crop, fine_s, fine, 2,
+                                    centre)
+        w, h = (r - l) * sx, (b - t) * sy
+        to = [round(centre[0] + dx - w / 2), round(centre[1] + dy - h / 2)]
+        to += [to[0] + round(w), to[1] + round(h)]
+        fits.append({'box': [l, t, r, b], 'to': to,
+                     'scale': [round(float(sx), 3), round(float(sy), 3)]})
+    return fits
+
+
+def sleeves(data, src, demo, c, shift_by, dxy):
+    import hashlib
+    from scipy import ndimage
+    folder = src / POSE_DIR / c
+    arms_a = _big(folder / 'pose_proud_arms.png')[..., 3] > 128
+    _, hand = _sleeve_weights(arms_a, c)
+    tops = [i for i, slot in definitions() if slot == 'top' and i not in BLANK]
+    cache = data.setdefault('sleeve_fit', {})
+    for top in sorted(tops, key=lambda t: t in SLEEVE_SHORT):  # long first
+        path = folder / f'pose_proud_sleeve_{top}.png'
+        key = f'avatar_v2/{c}/pose_proud_sleeve_{top}.png'
+        out_path = out_dir(demo) / key
+        if not path.exists() or f'{c}/{top}' in SLEEVE_HELD:
+            out_path.unlink(missing_ok=True)
+            data.setdefault('trim', {}).pop(key, None)
+            continue
+        big = _big(path)
+        pieces = _two(big[..., 3] > 128)
+        sha = hashlib.sha256(path.read_bytes()).hexdigest()[:16]
+        entry = cache.get(f'{c}/{top}')
+        if not entry or entry.get('sha') != sha:
+            size = None
+            if top in SLEEVE_SHORT:
+                longs = [cache[f'{c}/{t}']['fits'] for t in tops
+                         if t not in SLEEVE_SHORT and f'{c}/{t}' in cache]
+                if longs:
+                    size = [np.median([f[s]['scale'] for f in longs], 0).tolist()
+                            for s in (0, 1)]
+            entry = {'sha': sha,
+                     'fits': sleeve_fit(arms_a, big[..., 3] > 128, c, size)}
+            cache[f'{c}/{top}'] = entry
+        canvas = Image.new('RGBA', (CANVAS[0] * SCALE, CANVAS[1] * SCALE))
+        for fit, piece in zip(entry['fits'], pieces):
+            l, t, r, b = fit['box']
+            part = big.copy()
+            part[~ndimage.binary_dilation(piece, iterations=3)] = 0
+            pl, pt, pr, pb = fit['to']
+            img = Image.fromarray(part[t:b, l:r]).convert('RGBa')
+            img = img.resize((pr - pl, pb - pt), Image.LANCZOS).convert('RGBA')
+            canvas.alpha_composite(img, (pl, pt))
+        arr = np.array(canvas)
+        # The hand (and the bungeoppang) stays in front of the cuff, and the
+        # cuff gets a hem line where it meets the hand (no flat cut).
+        held = arms_a & hand
+        hem = ndimage.binary_dilation(held, iterations=SLEEVE_HEM) &             ~held & (arr[..., 3] > 128)
+        arr[hem, :3] = (arr[hem, :3] * 0.45).astype(np.uint8)
+        arr[held] = 0
+        # Bare arm left just inside the shoulder cut takes the nearest
+        # sleeve colour, so no skin shows between the top and the sleeve.
+        for side, arm in enumerate(_two(arms_a)):
+            xs = np.nonzero(arm)[1]
+            strip = arm.copy()
+            if side == 0:
+                strip[:, :xs.max() - SLEEVE_FILL] = False
+            else:
+                strip[:, xs.min() + SLEEVE_FILL:] = False
+            solid = arr[..., 3] > 128
+            gap = strip & ~solid
+            if gap.any() and solid.any():
+                _, (iy, ix) = ndimage.distance_transform_edt(
+                    ~solid, return_indices=True)
+                arr[gap] = arr[iy[gap], ix[gap]]
+        small = X.area_sample(arr, *CANVAS)
+        small[..., 3] = np.where(small[..., 3] >= 128, 255, 0)
+        small = small.astype(np.uint8)
+        # Specks of the generated picture's soft edge.
+        lab, n = ndimage.label(small[..., 3] > 0)
+        if n:
+            size = ndimage.sum(small[..., 3] > 0, lab, range(1, n + 1))
+            small[np.isin(lab, np.nonzero(size < 6)[0] + 1)] = 0
+        small = shift(shift(small, *shift_by), *dxy)
+        save(small, out_path)
+        data.setdefault('trim', {}).pop(key, None)
+        print(f'pose {c}: sleeve {top} {int((small[..., 3] > 0).sum())} px '
+              f'{[f["scale"] for f in entry["fits"]]}')
 
 
 # Hair beside a hat: rows this far above the hat's edge stay.
