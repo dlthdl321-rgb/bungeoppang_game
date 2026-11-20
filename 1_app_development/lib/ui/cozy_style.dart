@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'center_toast.dart';
+import 'lock_overlay.dart';
 import 'pixel_sprites.dart';
 
 /// The app's colours. 26번 3차 피드백 H41 (2026-11-19): the old look was
@@ -994,6 +996,10 @@ class CozyMenuRow extends StatelessWidget {
   final Key? subtitleKey;
   final VoidCallback? onPressed;
   final double iconSize, minHeight;
+  /// Why the row is still closed ('첫 영업 안내가 끝나면 열려요'), or null.
+  /// Like a locked menu row (4차 g5): the icon under the common lock, the
+  /// reason in red instead of [subtitle], no arrow; a tap says why.
+  final String? lock;
   const CozyMenuRow(
       {super.key,
       required this.icon,
@@ -1002,7 +1008,8 @@ class CozyMenuRow extends StatelessWidget {
       this.subtitle,
       this.subtitleKey,
       this.iconSize = 48,
-      this.minHeight = 64});
+      this.minHeight = 64,
+      this.lock});
 
   @override
   Widget build(BuildContext context) => Container(
@@ -1012,7 +1019,7 @@ class CozyMenuRow extends StatelessWidget {
             border: Border.all(color: Cozy.line),
             boxShadow: Cozy.cardShadow),
         child: CozyPressable(
-          onPressed: onPressed,
+          onPressed: lock == null ? onPressed : () => showCenterToast(context, '$title: $lock'),
           borderRadius: BorderRadius.circular(14),
           child: Container(
             constraints: BoxConstraints(minHeight: minHeight),
@@ -1021,7 +1028,14 @@ class CozyMenuRow extends StatelessWidget {
               SizedBox(
                   width: iconSize,
                   height: iconSize,
-                  child: FittedBox(child: icon)),
+                  child: lock == null
+                      ? FittedBox(child: icon)
+                      : LockedOverlay(
+                          caption: '$title: $lock',
+                          showCaption: false,
+                          maxLock: 18,
+                          lockAlignment: const Alignment(1, -1),
+                          child: FittedBox(child: icon))),
               const SizedBox(width: 12),
               Expanded(
                   child: Column(
@@ -1031,14 +1045,20 @@ class CozyMenuRow extends StatelessWidget {
                     Text(title,
                         style: const TextStyle(
                             fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 20, color: Cozy.ink)),
-                    if (subtitle case final text?)
+                    if (lock case final text?)
+                      Text(text,
+                          key: subtitleKey,
+                          style: const TextStyle(
+                              color: Cozy.brick, fontSize: 12.5, fontWeight: FontWeight.w800))
+                    else if (subtitle case final text?)
                       Text(text,
                           key: subtitleKey,
                           style: const TextStyle(
                               color: Cozy.inkSoft, fontSize: 12)),
                   ])),
-              const Icon(Icons.chevron_right_rounded,
-                  color: Cozy.caption, size: 26),
+              if (lock == null)
+                const Icon(Icons.chevron_right_rounded,
+                    color: Cozy.caption, size: 26),
             ]),
           ),
         ),

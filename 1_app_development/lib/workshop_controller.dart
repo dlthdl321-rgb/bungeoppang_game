@@ -75,6 +75,10 @@ class WorkshopState {
   /// Feature introduction cards already shown (schema 8, 26번 2단계):
   /// [WorkshopFeature] names from [workshopIntroIds].
   final Set<String> featureIntros = {};
+  /// The first-run guide ended in this run of the app (not saved, 4차 g5):
+  /// only then does the 꾸미기·상점·오늘 card come, so a game loaded with the
+  /// guide long finished is not shown it again.
+  bool guideJustEnded = false;
   /// 오늘의 주문서·출석·행사 (schema 10, 26번 7단계).
   WorkshopDaily daily = WorkshopDaily.empty;
   final Set<String> recipes = {'redbean'};
@@ -1033,6 +1037,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   Future<bool> skipTutorial() => command(() {
     if (!state.tutorialActive) throw const FormatException('진행 중인 안내가 없어요.');
     state.tutorial = 'skipped';
+    state.guideJustEnded = true;
     _syncArrivals(); // Open already: the real-time clocks start now.
   });
   Future<bool> startCell(int index) => command(() {
@@ -1213,7 +1218,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     // The guide's first sale stays free of story, follow-up and choice scenes.
     // It gets the big praise (26번 2단계, S2-Q4): the guest's words, the
     // stars and a short sparkle, not saved.
-    if (state.tutorialActive) { state.tutorial = 'done'; salePraise = _lastSale(); }
+    if (state.tutorialActive) { state.tutorial = 'done'; state.guideJustEnded = true; salePraise = _lastSale(); }
     else if(customerCatalog.contains(order.customerId)) { _afterNamedSale(order); }
     _syncArrivals(); // A freed place (or the guide's end) starts a stopped clock.
   });

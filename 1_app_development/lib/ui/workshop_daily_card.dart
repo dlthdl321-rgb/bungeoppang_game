@@ -4,8 +4,10 @@ import '../development_balance.dart';
 import '../economy.dart';
 import '../workshop_controller.dart';
 import '../workshop_feature_unlocks.dart';
+import 'center_toast.dart';
 import 'cozy_style.dart';
 import 'currency_amount.dart';
+import 'lock_overlay.dart';
 import 'pixel_sprites.dart';
 
 /// 26번 7단계 — 매일 돌아올 이유 on the home (MASTER 10장).
@@ -15,8 +17,8 @@ import 'pixel_sprites.dart';
 /// 오늘의 주문서 (S7-Q1), during a seasonal event its greeting (S7-Q3) and,
 /// since H36, the daily missions and 주간 도전 that used to be menu rows. A
 /// red dot shows while today's stamp or order still waits or a mission
-/// reward is ready. Hidden during the first-run guide and while the big mold
-/// is in use, like the counter.
+/// reward is ready. Locked during the first-run guide (4차 g5) and hidden
+/// while the big mold is in use, like the counter.
 class WorkshopDailyTicket extends StatelessWidget {
   final WorkshopController controller;
   final VoidCallback onOpen;
@@ -29,7 +31,24 @@ class WorkshopDailyTicket extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = controller;
-    if (c.state.tutorialActive || c.state.session != null) return const SizedBox.shrink();
+    if (c.state.session != null) return const SizedBox.shrink();
+    // 4차 g5: during the first-run guide it is listed locked (one stripe,
+    // the padlock in the corner like the bottom menu) and a tap says why.
+    if (c.state.tutorialActive) {
+      final reason = c.featureLock(WorkshopFeature.wardrobe) ?? '첫 영업 안내가 끝나면 열려요';
+      return SizedBox.square(
+        dimension: width,
+        child: LockedOverlay(
+          key: const Key('daily-ticket-locked'),
+          caption: '오늘: $reason',
+          showCaption: false,
+          maxLock: 18,
+          lockAlignment: const Alignment(.82, -.78),
+          onTap: () => showCenterToast(context, '오늘: $reason'),
+          child: const CozyPanel(padding: EdgeInsets.all(6), child: Center(child: PixelIcon('daily', size: 34))),
+        ),
+      );
+    }
     final waiting = c.dailyWaiting || claimable > 0;
     return Semantics(
       button: true,

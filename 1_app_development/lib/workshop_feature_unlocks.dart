@@ -37,6 +37,9 @@ enum WorkshopFeature {
 /// when several open together. The saved id is the enum name (schema 8
 /// `featureIntros`).
 const workshopIntroFeatures = [
+  // 4차 g5: every feature that opens later gets a card and a short tour;
+  // the 꾸미기·상점·오늘 card only right after the first-run guide.
+  WorkshopFeature.wardrobe,
   WorkshopFeature.skills,
   WorkshopFeature.griddle,
   WorkshopFeature.collection,
@@ -89,7 +92,7 @@ bool featureOpen(WorkshopState s, DevelopmentBalance config, WorkshopFeature fea
   };
 }
 
-/// What a locked [feature] says: 'Lv.2에 열려요', the guide, or the mastery
+/// What a locked [feature] says: 'Lv.2 달성하면 열려요' (4차 g5), the guide, or the mastery
 /// still to go for the six-cell griddle (S2-Q2). Null when it is open.
 String? featureLockReason(WorkshopState s, DevelopmentBalance config, WorkshopFeature feature) {
   if (featureOpen(s, config, feature)) return null;
@@ -105,17 +108,85 @@ String? featureLockReason(WorkshopState s, DevelopmentBalance config, WorkshopFe
         '손기술 ${m.techniquePasses}/${rule['technique_passes_required']})';
   }
   if (feature == WorkshopFeature.freshness) return null;
-  return 'Lv.$level에 열려요';
+  return 'Lv.$level 달성하면 열려요';
 }
 
 /// The first introduction card still to show, or null.
 WorkshopFeature? pendingFeatureIntro(WorkshopState s, DevelopmentBalance config) {
   if (s.tutorialActive) return null;
   for (final f in workshopIntroFeatures) {
+    if (f == WorkshopFeature.wardrobe && !s.guideJustEnded) continue;
     if (!s.featureIntros.contains(f.name) && featureOpen(s, config, f)) return f;
   }
   return null;
 }
+
+/// What the replay list says about a closed [feature] (4차 g5): the lock
+/// reason, or for 신선도 (never locked by level) when it comes.
+String featureWaitText(WorkshopState s, DevelopmentBalance config, WorkshopFeature feature) =>
+    featureLockReason(s, config, feature) ?? '재고가 영업일을 넘기면 열려요';
+
+/// The short name in the '튜토리얼 다시 보기' list.
+String featureName(WorkshopFeature feature) => switch (feature) {
+      WorkshopFeature.wardrobe => '꾸미기·상점·오늘',
+      WorkshopFeature.skills => '스킬',
+      WorkshopFeature.griddle => '숙련된 붕어빵 틀',
+      WorkshopFeature.collection => '도감',
+      WorkshopFeature.recipes => '새 맛 레시피',
+      WorkshopFeature.specialOrders => '특별 주문',
+      WorkshopFeature.fishCosmetics => '붕어빵 꾸미기',
+      WorkshopFeature.freshness => '붕어빵의 신선도',
+      WorkshopFeature.stallCosmetics => '가게 꾸미기',
+      WorkshopFeature.stallBackground => '배경 테마',
+    };
+
+/// One step of a feature's short tour (4차 g5): a ring around the home
+/// widget keyed [target] and a card with [text], '다음' and '건너뛰기'.
+/// When [target] is not on screen the card shows without the ring.
+class FeatureTourStep {
+  final String text, target;
+  const FeatureTourStep(this.text, this.target);
+}
+
+/// The 1–3 steps after a feature's card (4차 g5), pointing at the real
+/// buttons on the home. The words stay about where to tap, not about the
+/// unlock condition (the six-cell griddle's condition may change).
+List<FeatureTourStep> featureTour(WorkshopFeature feature) => switch (feature) {
+      WorkshopFeature.wardrobe => const [
+          FeatureTourStep('여기 ‘꾸미기’에서 사장님 머리와 옷을 바꿔 입어요.', 'menu-skins'),
+          FeatureTourStep('‘상점’에서는 새 꾸미기를 사요.', 'menu-shop'),
+          FeatureTourStep('이 쪽지를 누르면 출석 도장과 오늘의 주문서가 있어요.', 'daily-ticket'),
+        ],
+      WorkshopFeature.skills => const [
+          FeatureTourStep('여기 ‘스킬’을 눌러 클릭 생산과 자동 생산 스킬을 레벨업해요.', 'menu-skills'),
+          FeatureTourStep('위쪽에서 초당·클릭당 붕어빵력을 볼 수 있어요.', 'auto-rate'),
+        ],
+      WorkshopFeature.griddle => const [
+          FeatureTourStep('영업 중에 이 틀의 빈 칸을 누르면 굽기 시작해요. 익으면 눌러 꺼내요.', 'workshop-cell-0'),
+        ],
+      WorkshopFeature.collection => const [
+          FeatureTourStep('여기 ‘메뉴’를 누르면 맨 위에 ‘도감’이 있어요.', 'menu-menubar'),
+        ],
+      WorkshopFeature.recipes => const [
+          FeatureTourStep('‘메뉴’의 ‘레벨 미션’에서 레시피 미션을 마치면 새 맛을 받아요.', 'menu-menubar'),
+          FeatureTourStep('받은 맛은 이 맛 버튼을 눌러 골라요.', 'flavor-button'),
+        ],
+      WorkshopFeature.specialOrders => const [
+          FeatureTourStep('손님을 누르면 원하는 익힘을 볼 수 있어요. 그 익힘으로 구워 드려요.', 'customer-0'),
+          FeatureTourStep('이 쪽지에는 하루 한 장 오늘의 주문서가 와요.', 'daily-ticket'),
+        ],
+      WorkshopFeature.fishCosmetics => const [
+          FeatureTourStep('‘꾸미기’의 ‘붕어빵’ 칸에서 붕어빵 모양을 바꿔요.', 'menu-skins'),
+        ],
+      WorkshopFeature.freshness => const [
+          FeatureTourStep('판매대의 재고는 오래된 붕어빵부터 손님에게 드려요.', 'sale-counter'),
+        ],
+      WorkshopFeature.stallCosmetics => const [
+          FeatureTourStep('‘꾸미기’의 ‘가게’ 칸에서 화로·장식·등불을 바꿔요.', 'menu-skins'),
+          FeatureTourStep('배경은 ‘메뉴’의 ‘배경 테마’에서도 바꿀 수 있어요.', 'menu-menubar'),
+        ],
+      WorkshopFeature.stallBackground => const [],
+    };
 
 /// Intro ids already open for [s]: an older save counts them as seen, so a
 /// player past those levels gets no cards (schema 7 → 8).
@@ -164,6 +235,8 @@ WorkshopFeatureIntro featureIntro(WorkshopFeature feature) => switch (feature) {
       WorkshopFeature.stallCosmetics => const WorkshopFeatureIntro('가게 꾸미기가 열렸어요',
           '꾸미기의 가게 칸에서 화로와 장식, 등불도 바꿀 수 있어요. 배경은 메뉴의 배경 테마에서도 바꿔요.',
           'intro_stall_cosmetics', 'tab_stall'),
-      WorkshopFeature.wardrobe => const WorkshopFeatureIntro('꾸미기', '', 'intro_wardrobe', 'tab_outfit'),
+      WorkshopFeature.wardrobe => const WorkshopFeatureIntro('꾸미기·상점·오늘이 열렸어요',
+          '아래 꾸미기와 상점에서 사장님과 가게 모습을 바꿀 수 있어요. 오른쪽 위 쪽지에서는 출석 도장과 오늘의 주문서를 받아요.',
+          'intro_wardrobe', 'tab_outfit'),
       WorkshopFeature.stallBackground => const WorkshopFeatureIntro('배경 테마', '', 'intro_stall_cosmetics', 'theme'),
     };
