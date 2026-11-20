@@ -1,4 +1,5 @@
-"""The vendor redrawn from a bare base (26번 4-7단계, 25번 문서 23~31번).
+"""The vendor redrawn from a bare base (26번 4-7단계, 25번 문서 23~31번;
+since 26번 3차 AV the 42번 bare base and the 43~49번 worn items).
 
 The v1 vendor (tools/avatar_layers.py) has hair, a tee, shorts and flats
 painted into its base picture; items are laid over it and `_cut` masks
@@ -20,6 +21,11 @@ Jobs (safe to run again, in this order; no job = all):
   hairmask  hat_<id>_hairmask.png for every hat: where the game erases the
             HAIR layer under that hat (never the base, it has no hair).
             Rules per hat in avatar_v2.json hat_hair.
+  slim      <slot>_<id>_basemask.png for trousers and shoes: the sliver of
+            leg beside a slim item, erased from the base (26번 3차 AV).
+  skinned   tool_<id>_front@<skin>.png: the finger pieces per skin tone.
+  pose      The share card's proud pose (25번 39번): pose_proud_arms@<skin>
+            and pose_proud_hide (where the hanging arms were).
   face      Eye and mouth frames for each base (its own skin colour):
             face_<eyes_half|eyes_closed|mouth_small|mouth_wide>@<skin>.png.
   icons     31번 icons (512x512) -> assets/images/cosmetic_icons/<id>.png
@@ -68,9 +74,19 @@ CHARACTERS = ('girl', 'boy')
 SKINS = ('skin1', 'skin2', 'skin3')
 HAIR_BACKS = ('long', 'ponytail', 'curly')
 # Item slot -> 25번 source folder (CosmeticSlot names, as the game files).
-FOLDERS = {'hair': '24_hair', 'hat': '25_hats', 'top': '26_tops',
-           'bottom': '27_bottoms', 'shoes': '28_shoes', 'outfit': '29_aprons',
-           'accessory': '30_props', 'tool': '30_props'}
+# 26번 3차 AV (2026-11-20, DEC-145·147): the 42번 bare base (the v1 face
+# and body, hair and clothes taken off) and the 43~49번 items drawn worn
+# on it replace the 23번 base and 24~30번 items (kept in 4_image).
+FOLDERS = {'hair': '43_hair_v1', 'hat': '44_hats_v1', 'top': '45_tops_v1',
+           'bottom': '46_bottoms_v1', 'shoes': '47_shoes_v1',
+           'outfit': '48_aprons_v1', 'accessory': '49_props_v1',
+           'tool': '49_props_v1'}
+# Items drawn in another 25번 section: id -> folder (41번 황금 뒤집개).
+EXTRA_FOLDERS = {'goldtongs': '41_gold_turner'}
+BASE_DIR = '42_v1_bare_base'
+# Skin-coloured item halves (the fingers round a tool's handle): recoloured
+# for skin2/3 like the face frames, as <name>@<skin>.png.
+SKINNED_HALVES = ('_front',)
 ITEM_SLOTS = tuple(FOLDERS)
 # 'tongs' draws nothing since 26번 3차 H8 (cosmetic_config.dart blankCosmetics).
 BLANK = {'nohat', 'noacc', 'noapron', 'tongs'}
@@ -133,6 +149,17 @@ def out_dir(demo):
 # tools/normalize_avatar_base.py (23_avatar_base/normalized/report.json), so
 # it lands where the normalized base is.
 RAW = {}  # character -> (scale, dx, dy), filled by main() from the report
+STRETCHED = True  # 43~49번: see to_4x
+# character/stem -> where the whole picture goes on the 1120x2080 canvas
+# (l, t, r, b), for a picture that came at another size or position.
+# The boy's sage sweater came at 949x1657, drawn at the same size as his
+# other sweaters on a cropped canvas: placed by its centre on the pink one's.
+STRETCH_FIX = {'boy/top_sagesweater': (-16, 179, 1192, 2108)}
+# character/stem -> (dx, dy) on the 280x520 canvas after the base's shift:
+# the boy's shorts and two trousers came with the waist ~5px below his
+# sweaters' hem (a strip of belly showed); up to meet them.
+ITEM_SHIFT = {'boy/bottom_shorts': (0, -6), 'boy/bottom_widepants': (0, -5),
+              'boy/bottom_brownpants': (0, -5)}
 RAW_SOLE = {}  # character -> last opaque row of the raw skin1 base
 SOLE_SLOTS = ('shoes_',)
 
@@ -144,6 +171,20 @@ def to_4x(path, character):
     want = (CANVAS[0] * SCALE, CANVAS[1] * SCALE)
     if img.size == want:
         return np.array(img.convert('RGBA'))
+    if STRETCHED:
+        # 26번 3차 AV: 43~49번 came at 880x1787 (some a few px off), drawn
+        # on the 42번 normalized 1120x2080 base squeezed to that size, so
+        # stretching back to 1120x2080 lays them on the base (checked by
+        # overlay, avatar_v2.json 'items'). STRETCH_FIX moves the odd ones.
+        fix = STRETCH_FIX.get(f'{character}/{path.stem}')
+        if fix:
+            l, t, r, b = fix
+            canvas = Image.new('RGBA', want, (0, 0, 0, 0))
+            part = img.convert('RGBa').resize((r - l, b - t), Image.LANCZOS)
+            canvas.paste(part.convert('RGBA'), (l, t))
+            return np.array(canvas)
+        big = img.convert('RGBa').resize(want, Image.LANCZOS).convert('RGBA')
+        return np.array(big)
     if character in RAW and img.size == RAW[character][3]:
         import normalize_avatar_base as N
         s, dx, dy, _ = RAW[character]
@@ -224,7 +265,7 @@ def save(arr, path):
 
 def align(data, src, demo):
     report = data.setdefault('align', {})
-    norm_dir = src / '23_avatar_base' / 'normalized'
+    norm_dir = src / BASE_DIR / 'normalized'
     norm_report = norm_dir / 'report.json'
     measured = (json.loads(norm_report.read_text('utf-8'))['characters']
                 if norm_report.exists() else {})
@@ -236,7 +277,7 @@ def align(data, src, demo):
             path = norm_dir / c / f'base_{skin}.png'
             normalized = path.exists() and c in measured
             if not normalized:
-                path = src / '23_avatar_base' / c / f'base_{skin}.png'
+                path = src / BASE_DIR / c / f'base_{skin}.png'
             key = f'avatar_v2/{c}/base@{skin}.png'
             if not path.exists():
                 report[key] = {'state': '없음'}
@@ -253,12 +294,26 @@ def align(data, src, demo):
                 # v1 face match is for bases drawn like the v1 face.
                 offset = (0 if normalized or fx is None else -fx,
                           SOLE_ROW - sole)
+                if normalized and 'landmarks_280x520' in measured[c]:
+                    # 26번 3차 AV: the 42번 base (soles on row 519) moves so
+                    # its eyes sit on the v1 anchors: the vendor stands where
+                    # the v1 vendor stood and the v1 face boxes fit.
+                    mx, my = measured[c]['landmarks_280x520']['eyes']
+                    ax, ay = data['anchors'][c]['eyes']
+                    offset = (int(round(ax - mx)), int(round(ay - my)))
             arr = shift(arr, *offset)
             sole, fx, fy = landmarks(arr, c)
             # Left over after the shift: the soles decide the height, so a
             # face drawn higher or lower than v1's shows up in eyes_y.
             err = {'sole': sole - SOLE_ROW, 'eyes_x': fx, 'eyes_y': fy}
-            if normalized:  # its own eyes (4x error / 4), v1 match kept
+            if normalized and 'landmarks_280x520' in measured[c]:
+                mx, my = measured[c]['landmarks_280x520']['eyes']
+                ax, ay = data['anchors'][c]['eyes']
+                err = {'sole': sole - SOLE_ROW,
+                       'eyes_x': round(mx + offset[0] - ax, 2),
+                       'eyes_y': round(my + offset[1] - ay, 2),
+                       'v1_face_x': fx, 'v1_face_y': fy}
+            elif normalized:  # its own eyes (4x error / 4), v1 match kept
                 ex, ey = measured[c]['error_after']['eyes']
                 err = {'sole': sole - SOLE_ROW,
                        'eyes_x': round(ex / SCALE + offset[0], 2),
@@ -304,6 +359,28 @@ def despeck(arr):
     return out
 
 
+def defringe(arr, passes=2, lighter=45):
+    """26번 3차 AV: the 43~49번 pictures keep a pale rim of the white
+    background outside their dark outline. A rim pixel much lighter than
+    the opaque pixels next to it (inside) goes."""
+    from scipy import ndimage
+    out = arr.copy()
+    for _ in range(passes):
+        a = out[..., 3] > 0
+        rim = a & ndimage.binary_dilation(~a)
+        lum = out[..., :3].astype(np.float64).mean(-1)
+        inner = a & ~rim
+        k = np.ones((3, 3))
+        s = ndimage.convolve(np.where(inner, lum, 0), k, mode='constant')
+        n = ndimage.convolve(inner.astype(np.float64), k, mode='constant')
+        mean = np.where(n > 0, s / np.maximum(n, 1), lum)
+        rgb = out[..., :3].astype(np.int32)
+        pale = (rgb.max(-1) - rgb.min(-1)) < 60
+        drop = rim & (n > 0) & (lum - mean > lighter) & pale
+        out[drop, 3] = 0
+    return out
+
+
 # 26번 3차 H10: items centred on a face anchor. The glasses came drawn
 # over the mouth; their box's centre goes on the eyes' anchor.
 ON_ANCHOR = {'accessory_glasses': 'eyes'}
@@ -317,8 +394,83 @@ def on_anchor(arr, anchor):
     return shift(arr, int(round(anchor[0] - cx)), int(round(anchor[1] - cy)))
 
 
+# 26번 3차 AV: each 43~49번 picture came a few px off sideways (each its
+# own: -3..-16 at game size; the stretch gets the height right). It is
+# centred on the base by its own shape: 'sym' - its rows' midpoints on the
+# base's (the base is symmetric), 'crown' - only its top rows on the base
+# (hair and hats: a side part or a knot does not count), 'low' - its bottom
+# rows, 'hand' - its finger piece
+# on the base's hand, 'follow:<stem>' - moved like that picture (a pin
+# drawn on that hair; the santa hat's tip and the ponytail's knot lean to
+# one side), 'anchor' - ON_ANCHOR. Halves move with their main.
+CENTER = {'hair': 'crown', 'hat': 'crown', 'top': 'sym', 'bottom': 'sym',
+          'shoes': 'sym', 'outfit': 'sym', 'accessory': 'sym', 'tool': 'hand'}
+CENTER_ITEM = {'hat_santa': 'follow:hat_beanie',
+               'hair_ponytail': 'follow:hair_long', 'accessory_scarf': 'crown',
+               'accessory_glasses': 'anchor',
+               'accessory_ribbon': 'follow:hair_long',
+               'accessory_fishpin': 'follow:hair_long'}
+CENTER_ROWS = 16
+HAND_ROWS = 22  # the fist's height on the base
+
+
+def row_mids(alpha, rows):
+    out = {}
+    for y in rows:
+        xs = np.nonzero(alpha[y])[0]
+        if len(xs):
+            out[y] = (xs.min() + xs.max()) / 2
+    return out
+
+
+def center_dx(arr, base, mode, front=None):
+    """(dx, dy) that centres [arr] on [base] by [mode] (see CENTER)."""
+    a = arr[..., 3] > 0
+    b = base[..., 3] > 0
+    rows = np.nonzero(a.any(1))[0]
+    if not len(rows):
+        return 0, 0
+    if mode == 'hand':
+        f = (front if front is not None else arr)[..., 3] > 0
+        ys, xs = np.nonzero(f)
+        if not len(xs):
+            return 0, 0
+        # The vendor's left hand (viewer's right): the lowest HAND_ROWS
+        # rows of the arm hanging apart from the body (rows 280~420, the
+        # outermost run right of the body) - the fist. The finger piece's box
+        # centre goes on the fist's.
+        mid = np.median(list(row_mids(b, range(220, 300)).values()))
+        hx, hy = [], []
+        for y in range(280, 420):
+            xs_ = np.nonzero(b[y, int(mid):])[0] + int(mid)
+            if not len(xs_):
+                continue
+            gaps = np.nonzero(np.diff(xs_) > 1)[0]
+            if not len(gaps):
+                continue  # the arm touches the body here
+            seg = xs_[gaps[-1] + 1:]  # the outermost run: the arm
+            if seg.min() > mid + 40:
+                hx += list(seg)
+                hy += [y] * len(seg)
+        if not hx:
+            return 0, 0
+        hx, hy = np.array(hx), np.array(hy)
+        low = hy >= hy.max() - HAND_ROWS
+        hx, hy = hx[low], hy[low]
+        return (int(round((hx.min() + hx.max()) / 2 - (xs.min() + xs.max()) / 2)),
+                int(round((hy.min() + hy.max()) / 2 - (ys.min() + ys.max()) / 2)))
+    if mode == 'crown':
+        rows = [y for y in rows if b[y].any()][:CENTER_ROWS]
+    elif mode == 'low':
+        rows = [y for y in rows if b[y].any()][-CENTER_ROWS:]
+    ia, ib = row_mids(a, rows), row_mids(b, rows)
+    d = [ib[y] - ia[y] for y in ia if y in ib]
+    return (int(round(float(np.median(d)))) if d else 0), 0
+
+
 def items(data, src, demo):
     report = data.setdefault('items', {})
+    moved = data.setdefault('centred', {})
     for c in CHARACTERS:
         base = base_full(c, 'skin1', demo)
         if base is None:
@@ -333,7 +485,10 @@ def items(data, src, demo):
                     if a.startswith('--only=')]
             if only and slot not in only[0]:
                 continue
-            for path in sorted((src / folder / c).glob(f'{slot}_*.png')):
+            paths = sorted((src / folder / c).glob(f'{slot}_*.png'))
+            for item, extra in EXTRA_FOLDERS.items():
+                paths += sorted((src / extra / c).glob(f'{slot}_{item}*.png'))
+            for path in paths:
                 if path.stem[len(slot) + 1:] in BLANK:
                     continue  # drawn as nothing (the tongs, 3차 H8)
                 key = f'avatar_v2/{c}/{path.name}'
@@ -343,6 +498,24 @@ def items(data, src, demo):
                     print(f'items {key}: skipped, {why}')
                     continue
                 arr = shift(arr, *shift_by)
+                stem = path.stem
+                main = re.sub(r'_(back|front)$', '', stem)
+                mode = CENTER_ITEM.get(main, CENTER.get(slot, 'sym'))
+                if main == stem and mode != 'anchor':
+                    if mode.startswith('follow:'):
+                        dxy = tuple(moved.get(f'{c}/{mode[7:]}', (0, 0)))
+                    else:
+                        front = None
+                        fp = path.with_name(f'{stem}_front.png')
+                        if mode == 'hand' and fp.exists():
+                            front, _ = shrink(fp, c)
+                            front = shift(front, *shift_by)
+                        dxy = center_dx(arr, base, mode, front)
+                    moved[f'{c}/{stem}'] = list(dxy)
+                dxy = tuple(moved.get(f'{c}/{main}', (0, 0)))
+                arr = shift(arr, *dxy)
+                if f'{c}/{path.stem}' in ITEM_SHIFT:
+                    arr = shift(arr, *ITEM_SHIFT[f'{c}/{path.stem}'])
                 # Only what differs from the base, for a picture drawn ON
                 # the base (it covers most of the figure). A picture of the
                 # item alone keeps every pixel: beige shorts over the legs
@@ -355,6 +528,7 @@ def items(data, src, demo):
                     arr[same, 3] = 0
                 if slot == 'hair':
                     arr = despeck(arr)
+                arr = defringe(arr)
                 if path.stem in ON_ANCHOR:
                     arr = on_anchor(arr, data['anchors'][c][ON_ANCHOR[path.stem]])
                 # Skin painted into the item: item pixels over the base's
@@ -367,7 +541,7 @@ def items(data, src, demo):
                 state = 'ok' if warn <= SKIN_WARN else f'피부색 {warn}px 경고'
                 report[key] = {'state': state, 'pixels': int((arr[..., 3] > 0).sum())}
                 save(arr, out_dir(demo) / key)
-                print(f'items {key}: {state}')
+                print(f'items {key}: {state}, centred {dxy}')
 
 
 # ---------------------------------------------------------------- bare
@@ -381,7 +555,10 @@ def items(data, src, demo):
 # (each tone from its own nearest skin), with the seam lines inside them.
 BARE = {'forehead': {'girl': 108, 'boy': 108},  # above the eyebrows
         'grey_sat': 28, 'grey_lum': (80, 245),
-        'face': (95, 125, 215, 200)}  # l, t, r, b: eye whites are grey too
+        'face': (95, 125, 215, 200),  # l, t, r, b: eye whites are grey too
+        # 26번 3차 AV: the 42번 base has a bare head already (DEC-147); its
+        # outline stays and the hair layer and basemask do the rest.
+        'cap': False}
 
 
 def bare(data, demo):
@@ -405,6 +582,8 @@ def bare(data, demo):
         # Head cover: the grey above the forehead and the dark outline
         # around it (the hair layer draws the head's outline).
         cap = top & alpha & (grey | (lum < 110)) & ~skin
+        if not BARE.get('cap', True):
+            cap = np.zeros_like(cap)
         cap = ndimage.binary_dilation(cap, iterations=1) & top & alpha &             ~(skin & (sat >= BARE['grey_sat']))
         # Vest and shorts: the grey, plus the seams between them and the
         # skin (dark pixels next to the grey, away from the outer outline).
@@ -431,7 +610,7 @@ def bare(data, demo):
 # scalp show above or beside it. hair_<id>_basemask.png erases from the
 # BASE what that hair leaves bare above the ears (rows < BASEMASK['above'])
 # outside the face (an ellipse round the eyes anchor, radii 'face').
-BASEMASK = {'above': 138, 'face': (60, 48), 'brow': 50}
+BASEMASK = {'above': 138, 'face': (60, 48), 'brow': 50, 'forehead_row': 118}
 
 
 def basemask(data, demo):
@@ -448,14 +627,24 @@ def basemask(data, demo):
         for path in sorted(folder.glob('hair_*.png')):
             if path.stem.endswith(('_back', '_basemask')):
                 continue
+            # 26번 3차 AV: only the front part counts - the back part is
+            # drawn behind the base, so bare head over it would show.
             hair = full(path, data, demo)[..., 3] > 0
-            back = path.with_name(f'{path.stem}_back.png')
-            if back.exists():
-                hair |= full(back, data, demo)[..., 3] > 0
-            hair = ndimage.binary_fill_holes(hair)
             # The forehead's skin stays (a short fringe shows it); skin of
             # the bare head beside the hair (temples above the ears) goes.
-            keep = skin_pixels(c, demo) & (np.abs(xs - ex) <= BASEMASK['brow'])
+            # 26번 3차 AV: only inside the hair's outline (below); the old
+            # forehead box kept bare head sticking out above a side part.
+            keep = skin_pixels(c, demo) & (np.abs(xs - ex) <= BASEMASK['brow'])                 & (ys >= BASEMASK['forehead_row'])
+            # Bare head inside the hair's outline (a temple between the
+            # fringe and the cheek) stays: only what sticks out past the
+            # hair - beside it in its row or above it in its column - goes.
+            inside = np.zeros_like(hair)
+            for y in np.nonzero(hair.any(1))[0]:
+                xs_ = np.nonzero(hair[y])[0]
+                inside[y, xs_.min():xs_.max() + 1] = True
+            top = np.where(hair.any(0), hair.argmax(0), CANVAS[1])
+            inside &= ys >= top[None, :]
+            hair = ndimage.binary_fill_holes(hair) | inside
             mask = (base[..., 3] > 0) & (ys < BASEMASK['above']) & ~face &                 ~hair & ~keep
             # One pixel wider (not into the face or kept skin): the game
             # draws the mask smoothed, which left a faint rim.
@@ -469,6 +658,57 @@ def basemask(data, demo):
                   f'{int(mask.sum())} px')
 
 
+# ---------------------------------------------------------------- slim
+
+# 26번 3차 AV: slim trousers and boots drawn a little narrower than the bare
+# legs left a sliver of leg along their sides. <slot>_<id>_basemask.png
+# erases from the base the leg pixels just outside such an item (within
+# SLIM['reach'] px of it), below the hands (row SLIM['below']) only.
+SLIM = {'slots': ('bottom', 'shoes'), 'reach': 3, 'below': 372}
+
+
+def slim(data, demo):
+    from scipy import ndimage
+    for c in CHARACTERS:
+        base = base_full(c, 'skin1', demo)
+        folder = out_dir(demo) / 'avatar_v2' / c
+        if base is None:
+            continue
+        b = base[..., 3] > 0
+        for slot in SLIM['slots']:
+            for path in sorted(folder.glob(f'{slot}_*.png')):
+                if path.stem.endswith(('_basemask', '_back', '_front')) or                         '@' in path.stem:
+                    continue
+                on = ndimage.binary_fill_holes(full(path, data, demo)[..., 3] > 0)
+                near = ndimage.binary_dilation(on, iterations=SLIM['reach'])
+                mask = near & ~on & b
+                mask[:SLIM['below']] = False
+                rows = np.nonzero(on.any(1))[0]
+                if not len(rows):
+                    continue
+                # Only beside the item, never below its hem (the ankles
+                # under trousers, the feet under a skirt stay).
+                mask[rows.max() + 1:] = False
+                # Not between the legs: only pixels left of the item's
+                # leftmost or right of its rightmost pixel in that row.
+                for y in np.nonzero(mask.any(1))[0]:
+                    xs = np.nonzero(on[y])[0]
+                    if not len(xs):
+                        mask[y] = False
+                        continue
+                    mask[y, xs.min():xs.max() + 1] = False
+                key = path.with_name(f'{path.stem}_basemask.png')
+                if not mask.any():
+                    key.unlink(missing_ok=True)
+                    continue
+                out = np.zeros(base.shape, np.uint8)
+                out[mask] = (0, 0, 0, 255)
+                save(out, key)
+                data.setdefault('trim', {}).pop(
+                    key.relative_to(out_dir(demo)).as_posix(), None)
+                print(f'slim {key.name}: {int(mask.sum())} px')
+
+
 # ---------------------------------------------------------------- hairmask
 
 def hairmask(data, demo):
@@ -477,18 +717,46 @@ def hairmask(data, demo):
     for c in CHARACTERS:
         folder = out_dir(demo) / 'avatar_v2' / c
         for path in sorted(folder.glob('hat_*.png')):
-            if path.stem.endswith('_hairmask'):
-                continue
+            if path.stem.endswith(('_hairmask', '_back', '_basemask')):
+                continue  # a knot behind the body presses no hair
             hat_id = path.stem[len('hat_'):]
             rule = rules.get(hat_id, rules['default'])
             hat = full(path, data, demo)
             on = ndimage.binary_fill_holes(hat[..., 3] > 0)
-            mask = ndimage.binary_dilation(on, iterations=2)
+            # 26번 3차 AV: no rim round the hat (its pale rim is gone,
+            # defringe), so the hair meets it with no gap of bare head.
+            mask = on.copy()
             if rule['mode'] == 'cover':
+                # 26번 3차 AV: no rim below the hat's edge (the pale rim is
+                # gone, defringe): hair meets the brim with no gap.
+                mask = on.copy()
                 cols = np.nonzero(on.any(0))[0]
+                lows = {}
                 for x in cols:
                     low = np.nonzero(on[:, x])[0].max()
+                    lows[x] = low
                     mask[:low + 1, x] = True
+                # 26번 3차 AV: beside the hat, hair above the hat's edge at
+                # its nearest column goes too (no tufts floating over the
+                # brim); hair hanging lower stays.
+                for x in range(CANVAS[0]):
+                    if x in lows or not len(cols):
+                        continue
+                    near = cols[np.abs(cols - x).argmin()]
+                    mask[:lows[near] - HAT_SIDE_KEEP, x] = True
+            if rule['mode'] == 'cover':
+                # The bare head the hat leaves showing above that same edge
+                # (a hat a little smaller than the head) goes from the base.
+                base = base_full(c, 'skin1', demo)
+                ex, ey = data['anchors'][c]['eyes']
+                rx, ry = BASEMASK['face']
+                ys, xs = np.mgrid[0:CANVAS[1], 0:CANVAS[0]]
+                face_ = ((xs - ex) / rx) ** 2 + ((ys - ey) / ry) ** 2 <= 1
+                scalp = mask & ~on & (base[..., 3] > 0) & ~face_
+                scalp |= ndimage.binary_dilation(scalp) & (base[..., 3] == 0)
+                sm = np.zeros(hat.shape, np.uint8)
+                sm[scalp] = (0, 0, 0, 255)
+                save(sm, path.with_name(f'{path.stem}_basemask.png'))
             for l, t, r, b in rule.get('keep', []):
                 mask[t:b, l:r] = False
             out = np.zeros(hat.shape, np.uint8)
@@ -511,7 +779,142 @@ def full(path, data, demo):
     return out
 
 
+# ---------------------------------------------------------------- skinned
+
+def skin_ratio(c, skin, demo):
+    """Median colour ratio skin<n> / skin1 over the base's skin pixels."""
+    one, other = base_full(c, 'skin1', demo), base_full(c, skin, demo)
+    if one is None or other is None or skin == 'skin1':
+        return np.ones(3)
+    changed = (one[..., 3] > 0) & (np.abs(
+        one[..., :3].astype(int) - other[..., :3]).sum(-1) > 30)
+    if not changed.any():
+        return np.ones(3)
+    return np.median(other[changed][:, :3].astype(float) /
+                     np.maximum(one[changed][:, :3], 1), 0)
+
+
+def skinned(data, demo):
+    """26번 3차 AV: an item half drawn in skin (the fingers round a tool's
+    handle, tool_<id>_front.png, skin1) gets a copy per skin tone,
+    <name>@<skin>.png, recoloured like the face frames."""
+    for c in CHARACTERS:
+        folder = out_dir(demo) / 'avatar_v2' / c
+        for path in sorted(folder.glob('*.png')):
+            if '@' in path.stem or not path.stem.endswith(SKINNED_HALVES):
+                continue
+            arr = full(path, data, demo).astype(np.int32)
+            where = (L.skinlike(arr) | L.skinish(arr)) & (arr[..., 3] > 0)
+            for skin in SKINS:
+                out = L.recolour(arr, where, skin_ratio(c, skin, demo))                     if skin != 'skin1' else arr
+                key = path.with_name(f'{path.stem}@{skin}.png')
+                save(out, key)
+                data.setdefault('trim', {}).pop(
+                    key.relative_to(out_dir(demo)).as_posix(), None)
+            print(f'skinned {path.name}: {int(where.sum())} skin px')
+
+
+# ---------------------------------------------------------------- pose
+
+POSE_DIR = '39번_proud_pose'
+
+
+def pose(data, src, demo):
+    """26번 3차 AV (25번 39번): the share card's proud pose for the v2
+    vendor. pose_proud_arms@<skin>.png = two raised bare arms and the
+    bungeoppang (skin2/3 recoloured), pose_proud_hide.png = where the
+    hanging arms were (opaque = erase), both on the base's canvas."""
+    for c in CHARACTERS:
+        shift_by = tuple(data.get('align', {}).get(
+            f'avatar_v2/{c}/base@skin1.png', {}).get('shift', (0, 0)))
+        folder = out_dir(demo) / 'avatar_v2' / c
+        arms_src = src / POSE_DIR / c / 'pose_proud_arms.png'
+        hide_src = src / POSE_DIR / c / 'pose_proud_hide.png'
+        if not arms_src.exists() or not hide_src.exists():
+            continue
+        arms, _ = shrink(arms_src, c)
+        arms = shift(arms, *shift_by)
+        img = Image.open(hide_src).convert('RGBA')
+        big = np.array(img.resize((CANVAS[0] * SCALE, CANVAS[1] * SCALE),
+                                  Image.LANCZOS))
+        on = (big[..., 3] > 128) & (big[..., :3].mean(-1) > 200)
+        small = X.area_sample(np.dstack([np.zeros(on.shape + (3,), np.uint8),
+                                         (on * 255).astype(np.uint8)]),
+                              *CANVAS, min_cover=0.3)
+        small = shift(small, *shift_by)
+        # Both arms' mask is symmetric: centred on the base like the items
+        # (center_dx 'sym'), the raised arms moved with it.
+        dxy = center_dx(small, base_full(c, 'skin1', demo), 'sym')
+        data.setdefault('centred', {})[f'{c}/pose_proud'] = list(dxy)
+        mask = shift(small, *dxy)[..., 3] > 0
+        # Where the hanging arm stands apart from the body, everything
+        # outside the gap goes too: the generated mask missed the arm's
+        # outline and a wide sleeve's edge in places.
+        b = base_full(c, 'skin1', demo)[..., 3] > 0
+        mid = int(np.median(list(row_mids(b, range(220, 300)).values())))
+        for y in range(*POSE_ARM_ROWS):
+            for sign in (-1, 1):
+                xs_ = np.nonzero(b[y, mid:] if sign > 0 else b[y, :mid][::-1])[0]
+                gaps = np.nonzero(np.diff(xs_) > 1)[0]
+                if not len(gaps):
+                    continue
+                gap = xs_[gaps[-1]] + 1  # first empty pixel past the body
+                if sign > 0:
+                    mask[y, mid + gap + 1:] = True
+                else:
+                    mask[y, :mid - gap - 1] = True
+        arms = shift(arms, *dxy).astype(np.int32)
+        where = (L.skinlike(arms) | L.skinish(arms)) & (arms[..., 3] > 0)
+        for skin in SKINS:
+            out = L.recolour(arms, where, skin_ratio(c, skin, demo))                 if skin != 'skin1' else arms
+            key = f'avatar_v2/{c}/pose_proud_arms@{skin}.png'
+            save(out, out_dir(demo) / key)
+            data.setdefault('trim', {}).pop(key, None)
+        from scipy import ndimage
+        mask = ndimage.binary_dilation(mask, iterations=POSE_HIDE_GROW)
+        out = np.zeros((CANVAS[1], CANVAS[0], 4), np.uint8)
+        out[mask] = (0, 0, 0, 255)
+        key = f'avatar_v2/{c}/pose_proud_hide.png'
+        save(out, out_dir(demo) / key)
+        data.setdefault('trim', {}).pop(key, None)
+        print(f'pose {c}: arms {int((arms[..., 3] > 0).sum())} px, '
+              f'hide {int(mask.sum())} px')
+
+
+# Hair beside a hat: rows this far above the hat's edge stay.
+HAT_SIDE_KEEP = 0
+
+# The hanging arms' mask grows this many pixels (sleeves are wider).
+POSE_HIDE_GROW = 2
+POSE_ARM_ROWS = (230, 430)  # rows where a hanging arm may stand apart
+
+
 # ---------------------------------------------------------------- face
+
+EYE_MARGIN = 2
+
+
+def eye_box(a, box):
+    """(box, centre) of the eye near the v1 [box] on base [a]."""
+    from scipy import ndimage
+    l, t, r, b = box
+    feat = ~L.skinlike(a) & (a[..., 3] > 0)
+    near = np.zeros_like(feat)
+    near[t:b, l:r] = True
+    lab, _ = ndimage.label(feat)
+    # The blob with most pixels inside the box (not the outline, which
+    # runs round the whole figure: only its pixels inside count).
+    inside = lab[near & feat]
+    ids, cnt = np.unique(inside[inside > 0], return_counts=True)
+    if not len(ids):
+        return box, ((l + r) // 2, (t + b) // 2)
+    blob = (lab == ids[cnt.argmax()]) & near
+    blob |= (lab == ids[cnt.argmax()]) & ndimage.binary_dilation(near, iterations=6)
+    ys, xs = np.nonzero(blob)
+    l, t = int(xs.min()) - EYE_MARGIN, int(ys.min()) - EYE_MARGIN
+    r, b = int(xs.max()) + 1 + EYE_MARGIN, int(ys.max()) + 1 + EYE_MARGIN
+    return (l, t, r, b), ((l + r) // 2, round(t + (b - t) * .55))
+
 
 def face(data, demo):
     """Frames are drawn on the skin1 base (the face boxes and skin test of
@@ -530,16 +933,20 @@ def face(data, demo):
         except ValueError:
             print(f'face {c}: no skin found in the face box')
             continue
-        eyes_c = [p for _, p in f['eyes']]
-        eye_mid = (sum(x for x, _ in eyes_c) / 2,
-                   sum(y for _, y in eyes_c) / 2)
+        # 26번 3차 AV: the 42번 base's eyes are a little larger than the v1
+        # boxes (an edge of the eye white stayed under a blink): each box
+        # is the eye itself - its largest non-skin blob near the v1 box -
+        # plus a margin. The frames hang on the anchors (pivot = anchor).
+        eyes = [eye_box(a, box) for box, _ in f['eyes']]
         made = {}
+        eye_mid = tuple(data['anchors'][c]['eyes'])
         for frame, (out, keep) in zip(('half', 'closed'),
-                                      L.eye_frames(a, f['eyes'], tone)):
+                                      L.eye_frames(a, eyes, tone)):
             made[f'eyes_{frame}'] = (L.cut(out, keep), eye_mid)
         for frame, (out, keep) in zip(('small', 'wide'),
                                       L.mouth_frames(a, f['mouth'], tone)):
-            made[f'mouth_{frame}'] = (L.cut(out, keep), f['mouth'][1])
+            made[f'mouth_{frame}'] = (L.cut(out, keep),
+                                      tuple(data['anchors'][c]['mouth']))
         one = a.astype(np.uint8)
         for skin in SKINS:
             other = base_full(c, skin, demo)
@@ -565,6 +972,20 @@ def face(data, demo):
 # ---------------------------------------------------------------- icons
 
 ICON = 64
+
+
+def icon_from(path, item):
+    arr = X.load_cut(path)
+    l, t, r, b = X.bbox(arr[..., 3])
+    part = arr[t:b, l:r]
+    k = (ICON - 4) / max(part.shape[:2])
+    w, h = max(1, round(part.shape[1] * k)), max(1, round(part.shape[0] * k))
+    small = X.area_sample(part, w, h)
+    small[..., 3] = np.where(small[..., 3] >= 128, 255, 0)
+    out = np.zeros((ICON, ICON, 4), np.uint8)
+    out[(ICON - h) // 2:(ICON - h) // 2 + h,
+        (ICON - w) // 2:(ICON - w) // 2 + w] = small
+    save(out, IMAGES / 'cosmetic_icons' / f'{item}.png')
 
 
 def icons(data, src):
@@ -595,6 +1016,13 @@ def icons(data, src):
             save(out, IMAGES / 'cosmetic_icons' / f'{i}.png')
         done[slot] = '적용'
         print(f'icons {slot}: {len(ids)} applied')
+    # 26번 3차 AV: an item drawn in another 25번 section brings its own
+    # icon (41번 황금 뒤집개: 41_gold_turner/icon_goldtongs.png).
+    for i, extra in EXTRA_FOLDERS.items():
+        path = src / extra / f'icon_{i}.png'
+        if path.exists():
+            icon_from(path, i)
+            print(f'icons {i}: from {extra}')
     if (folder / 'none.png').exists() and all(
             v == '적용' for v in done.values()):
         arr = X.load_cut(folder / 'none.png')
@@ -844,7 +1272,8 @@ def main():
         jobs = ['align', 'items', 'hairmask', 'face', 'trim']
     else:
         jobs = args or ['align', 'items', 'bare', 'basemask', 'hairmask',
-                        'face', 'icons', 'trim', 'atlas']
+                        'slim', 'skinned', 'pose', 'face', 'icons', 'trim',
+                        'atlas']
     if 'align' in jobs:
         align(data, src, demo)
     if 'items' in jobs:
@@ -855,6 +1284,12 @@ def main():
         basemask(data, demo)
     if 'hairmask' in jobs:
         hairmask(data, demo)
+    if 'slim' in jobs:
+        slim(data, demo)
+    if 'skinned' in jobs:
+        skinned(data, demo)
+    if 'pose' in jobs:
+        pose(data, src, demo)
     if 'face' in jobs:
         face(data, demo)
     if 'icons' in jobs and not demo:

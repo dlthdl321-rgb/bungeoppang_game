@@ -34,622 +34,6 @@
  },
  "ready": true,
  "missing": 0,
- "align": {
-  "avatar_v2/girl/base@skin1.png": {
-   "state": "ok",
-   "shift": [
-    0,
-    0
-   ],
-   "error": {
-    "sole": 0,
-    "eyes_x": -0.06,
-    "eyes_y": -0.12,
-    "v1_face_x": 1,
-    "v1_face_y": 1
-   },
-   "source": "23_avatar_base/normalized/girl/base_skin1.png"
-  },
-  "avatar_v2/girl/base@skin2.png": {
-   "state": "ok",
-   "shift": [
-    0,
-    0
-   ],
-   "error": {
-    "sole": 0,
-    "eyes_x": -0.06,
-    "eyes_y": -0.12,
-    "v1_face_x": 1,
-    "v1_face_y": 1
-   },
-   "source": "23_avatar_base/normalized/girl/base_skin2.png"
-  },
-  "avatar_v2/girl/base@skin3.png": {
-   "state": "ok",
-   "shift": [
-    0,
-    0
-   ],
-   "error": {
-    "sole": 0,
-    "eyes_x": -0.06,
-    "eyes_y": -0.12,
-    "v1_face_x": 1,
-    "v1_face_y": 1
-   },
-   "source": "23_avatar_base/normalized/girl/base_skin3.png"
-  },
-  "avatar_v2/boy/base@skin1.png": {
-   "state": "ok",
-   "shift": [
-    0,
-    0
-   ],
-   "error": {
-    "sole": 0,
-    "eyes_x": 0.0,
-    "eyes_y": 0.25,
-    "v1_face_x": 4,
-    "v1_face_y": 4
-   },
-   "source": "23_avatar_base/normalized/boy/base_skin1.png"
-  },
-  "avatar_v2/boy/base@skin2.png": {
-   "state": "ok",
-   "shift": [
-    0,
-    0
-   ],
-   "error": {
-    "sole": 0,
-    "eyes_x": 0.0,
-    "eyes_y": 0.25,
-    "v1_face_x": 4,
-    "v1_face_y": 4
-   },
-   "source": "23_avatar_base/normalized/boy/base_skin2.png"
-  },
-  "avatar_v2/boy/base@skin3.png": {
-   "state": "ok",
-   "shift": [
-    0,
-    0
-   ],
-   "error": {
-    "sole": 0,
-    "eyes_x": 0.0,
-    "eyes_y": 0.25,
-    "v1_face_x": 4,
-    "v1_face_y": 4
-   },
-   "source": "23_avatar_base/normalized/boy/base_skin3.png"
-  }
- },
- "items": {
-  "avatar_v2/girl/hair_curly.png": {
-   "state": "피부색 744px 경고",
-   "pixels": 16065
-  },
-  "avatar_v2/girl/hair_curly_back.png": {
-   "state": "피부색 47px 경고",
-   "pixels": 6670
-  },
-  "avatar_v2/girl/hair_long.png": {
-   "state": "피부색 3002px 경고",
-   "pixels": 17741
-  },
-  "avatar_v2/girl/hair_long_back.png": {
-   "state": "피부색 1498px 경고",
-   "pixels": 14406
-  },
-  "avatar_v2/girl/hair_ponytail.png": {
-   "state": "피부색 208px 경고",
-   "pixels": 9765
-  },
-  "avatar_v2/girl/hair_ponytail_back.png": {
-   "state": "피부색 185px 경고",
-   "pixels": 10446
-  },
-  "avatar_v2/girl/hair_short.png": {
-   "state": "피부색 166px 경고",
-   "pixels": 11080
-  },
-  "avatar_v2/girl/hat_ballcap.png": {
-   "state": "피부색 1463px 경고",
-   "pixels": 6336
-  },
-  "avatar_v2/girl/hat_bandana.png": {
-   "state": "피부색 1094px 경고",
-   "pixels": 5811
-  },
-  "avatar_v2/girl/hat_beanie.png": {
-   "state": "피부색 1723px 경고",
-   "pixels": 5943
-  },
-  "avatar_v2/girl/hat_blackcap.png": {
-   "state": "ok",
-   "pixels": 7734
-  },
-  "avatar_v2/girl/hat_chefhat.png": {
-   "state": "ok",
-   "pixels": 9289
-  },
-  "avatar_v2/girl/hat_earmuffs.png": {
-   "state": "피부색 327px 경고",
-   "pixels": 4602
-  },
-  "avatar_v2/girl/hat_newsboy.png": {
-   "state": "피부색 443px 경고",
-   "pixels": 6541
-  },
-  "avatar_v2/girl/hat_redbandana.png": {
-   "state": "ok",
-   "pixels": 6245
-  },
-  "avatar_v2/girl/hat_santa.png": {
-   "state": "피부색 699px 경고",
-   "pixels": 6634
-  },
-  "avatar_v2/girl/top_cardigan.png": {
-   "state": "피부색 2862px 경고",
-   "pixels": 11366
-  },
-  "avatar_v2/girl/top_chefcoat.png": {
-   "state": "피부색 62px 경고",
-   "pixels": 10985
-  },
-  "avatar_v2/girl/top_creamlong.png": {
-   "state": "피부색 2092px 경고",
-   "pixels": 10619
-  },
-  "avatar_v2/girl/top_creamsweater.png": {
-   "state": "피부색 2427px 경고",
-   "pixels": 12790
-  },
-  "avatar_v2/girl/top_padding.png": {
-   "state": "피부색 2758px 경고",
-   "pixels": 13049
-  },
-  "avatar_v2/girl/top_pinksweater.png": {
-   "state": "피부색 462px 경고",
-   "pixels": 12645
-  },
-  "avatar_v2/girl/top_sagesweater.png": {
-   "state": "ok",
-   "pixels": 11728
-  },
-  "avatar_v2/girl/top_tee.png": {
-   "state": "ok",
-   "pixels": 7103
-  },
-  "avatar_v2/girl/bottom_brownpants.png": {
-   "state": "ok",
-   "pixels": 15784
-  },
-  "avatar_v2/girl/bottom_cargopants.png": {
-   "state": "피부색 5595px 경고",
-   "pixels": 15603
-  },
-  "avatar_v2/girl/bottom_checkskirt.png": {
-   "state": "피부색 43px 경고",
-   "pixels": 7599
-  },
-  "avatar_v2/girl/bottom_denimshorts.png": {
-   "state": "ok",
-   "pixels": 5915
-  },
-  "avatar_v2/girl/bottom_jeans.png": {
-   "state": "ok",
-   "pixels": 14202
-  },
-  "avatar_v2/girl/bottom_joggers.png": {
-   "state": "피부색 53px 경고",
-   "pixels": 13438
-  },
-  "avatar_v2/girl/bottom_longskirt.png": {
-   "state": "피부색 5948px 경고",
-   "pixels": 16190
-  },
-  "avatar_v2/girl/bottom_shorts.png": {
-   "state": "피부색 2023px 경고",
-   "pixels": 8814
-  },
-  "avatar_v2/girl/bottom_skirt.png": {
-   "state": "피부색 909px 경고",
-   "pixels": 7721
-  },
-  "avatar_v2/girl/bottom_widepants.png": {
-   "state": "피부색 6417px 경고",
-   "pixels": 17393
-  },
-  "avatar_v2/girl/shoes_boots.png": {
-   "state": "피부색 142px 경고",
-   "pixels": 2340
-  },
-  "avatar_v2/girl/shoes_flats.png": {
-   "state": "피부색 74px 경고",
-   "pixels": 1530
-  },
-  "avatar_v2/girl/shoes_furboots.png": {
-   "state": "피부색 932px 경고",
-   "pixels": 2190
-  },
-  "avatar_v2/girl/shoes_sneakers.png": {
-   "state": "피부색 529px 경고",
-   "pixels": 1994
-  },
-  "avatar_v2/girl/outfit_apron.png": {
-   "state": "ok",
-   "pixels": 10117
-  },
-  "avatar_v2/girl/outfit_creamapron.png": {
-   "state": "피부색 40px 경고",
-   "pixels": 9685
-  },
-  "avatar_v2/girl/outfit_darkapron.png": {
-   "state": "ok",
-   "pixels": 10238
-  },
-  "avatar_v2/girl/outfit_stripe.png": {
-   "state": "피부색 130px 경고",
-   "pixels": 10825
-  },
-  "avatar_v2/girl/outfit_waistapron.png": {
-   "state": "ok",
-   "pixels": 7571
-  },
-  "avatar_v2/girl/accessory_crossbag.png": {
-   "state": "피부색 395px 경고",
-   "pixels": 3433
-  },
-  "avatar_v2/girl/accessory_fishpin.png": {
-   "state": "피부색 46px 경고",
-   "pixels": 468
-  },
-  "avatar_v2/girl/accessory_glasses.png": {
-   "state": "ok",
-   "pixels": 671
-  },
-  "avatar_v2/girl/accessory_mittens.png": {
-   "state": "피부색 835px 경고",
-   "pixels": 2389
-  },
-  "avatar_v2/girl/accessory_ribbon.png": {
-   "state": "피부색 86px 경고",
-   "pixels": 1307
-  },
-  "avatar_v2/girl/accessory_scarf.png": {
-   "state": "피부색 2695px 경고",
-   "pixels": 3865
-  },
-  "avatar_v2/girl/tool_fishhold.png": {
-   "state": "피부색 83px 경고",
-   "pixels": 1520
-  },
-  "avatar_v2/girl/tool_goldtongs.png": {
-   "state": "피부색 54px 경고",
-   "pixels": 1267
-  },
-  "avatar_v2/girl/tool_paperbag.png": {
-   "state": "피부색 100px 경고",
-   "pixels": 4266
-  },
-  "avatar_v2/girl/tool_tongs.png": {
-   "state": "ok",
-   "pixels": 1270
-  },
-  "avatar_v2/boy/hair_curly.png": {
-   "state": "피부색 221px 경고",
-   "pixels": 14144
-  },
-  "avatar_v2/boy/hair_curly_back.png": {
-   "state": "ok",
-   "pixels": 1990
-  },
-  "avatar_v2/boy/hair_long.png": {
-   "state": "피부색 1011px 경고",
-   "pixels": 27802
-  },
-  "avatar_v2/boy/hair_long_back.png": {
-   "state": "피부색 1423px 경고",
-   "pixels": 21878
-  },
-  "avatar_v2/boy/hair_ponytail.png": {
-   "state": "ok",
-   "pixels": 18049
-  },
-  "avatar_v2/boy/hair_ponytail_back.png": {
-   "state": "ok",
-   "pixels": 11633
-  },
-  "avatar_v2/boy/hair_short.png": {
-   "state": "피부색 85px 경고",
-   "pixels": 13894
-  },
-  "avatar_v2/boy/hat_ballcap.png": {
-   "state": "ok",
-   "pixels": 9203
-  },
-  "avatar_v2/boy/hat_bandana.png": {
-   "state": "ok",
-   "pixels": 9247
-  },
-  "avatar_v2/boy/hat_beanie.png": {
-   "state": "피부색 905px 경고",
-   "pixels": 11605
-  },
-  "avatar_v2/boy/hat_blackcap.png": {
-   "state": "ok",
-   "pixels": 9524
-  },
-  "avatar_v2/boy/hat_chefhat.png": {
-   "state": "피부색 34px 경고",
-   "pixels": 11658
-  },
-  "avatar_v2/boy/hat_earmuffs.png": {
-   "state": "피부색 26px 경고",
-   "pixels": 8034
-  },
-  "avatar_v2/boy/hat_newsboy.png": {
-   "state": "피부색 362px 경고",
-   "pixels": 10947
-  },
-  "avatar_v2/boy/hat_redbandana.png": {
-   "state": "ok",
-   "pixels": 11596
-  },
-  "avatar_v2/boy/hat_santa.png": {
-   "state": "피부색 179px 경고",
-   "pixels": 11088
-  },
-  "avatar_v2/boy/top_cardigan.png": {
-   "state": "피부색 3849px 경고",
-   "pixels": 15789
-  },
-  "avatar_v2/boy/top_chefcoat.png": {
-   "state": "피부색 45px 경고",
-   "pixels": 18366
-  },
-  "avatar_v2/boy/top_creamlong.png": {
-   "state": "피부색 3404px 경고",
-   "pixels": 15306
-  },
-  "avatar_v2/boy/top_creamsweater.png": {
-   "state": "피부색 4795px 경고",
-   "pixels": 16819
-  },
-  "avatar_v2/boy/top_padding.png": {
-   "state": "피부색 5222px 경고",
-   "pixels": 20715
-  },
-  "avatar_v2/boy/top_pinksweater.png": {
-   "state": "피부색 84px 경고",
-   "pixels": 15351
-  },
-  "avatar_v2/boy/top_sagesweater.png": {
-   "state": "ok",
-   "pixels": 16089
-  },
-  "avatar_v2/boy/top_tee.png": {
-   "state": "ok",
-   "pixels": 10680
-  },
-  "avatar_v2/boy/bottom_brownpants.png": {
-   "state": "ok",
-   "pixels": 15383
-  },
-  "avatar_v2/boy/bottom_cargopants.png": {
-   "state": "피부색 4151px 경고",
-   "pixels": 15075
-  },
-  "avatar_v2/boy/bottom_checkskirt.png": {
-   "state": "피부색 66px 경고",
-   "pixels": 10452
-  },
-  "avatar_v2/boy/bottom_denimshorts.png": {
-   "state": "ok",
-   "pixels": 8909
-  },
-  "avatar_v2/boy/bottom_jeans.png": {
-   "state": "피부색 75px 경고",
-   "pixels": 14854
-  },
-  "avatar_v2/boy/bottom_joggers.png": {
-   "state": "ok",
-   "pixels": 15126
-  },
-  "avatar_v2/boy/bottom_longskirt.png": {
-   "state": "피부색 4289px 경고",
-   "pixels": 17787
-  },
-  "avatar_v2/boy/bottom_shorts.png": {
-   "state": "피부색 1035px 경고",
-   "pixels": 9460
-  },
-  "avatar_v2/boy/bottom_skirt.png": {
-   "state": "피부색 950px 경고",
-   "pixels": 11430
-  },
-  "avatar_v2/boy/bottom_widepants.png": {
-   "state": "피부색 5773px 경고",
-   "pixels": 17017
-  },
-  "avatar_v2/boy/shoes_boots.png": {
-   "state": "피부색 394px 경고",
-   "pixels": 3875
-  },
-  "avatar_v2/boy/shoes_flats.png": {
-   "state": "피부색 186px 경고",
-   "pixels": 2686
-  },
-  "avatar_v2/boy/shoes_furboots.png": {
-   "state": "피부색 1428px 경고",
-   "pixels": 3905
-  },
-  "avatar_v2/boy/shoes_sneakers.png": {
-   "state": "피부색 476px 경고",
-   "pixels": 3565
-  },
-  "avatar_v2/boy/outfit_apron.png": {
-   "state": "ok",
-   "pixels": 12948
-  },
-  "avatar_v2/boy/outfit_creamapron.png": {
-   "state": "ok",
-   "pixels": 13142
-  },
-  "avatar_v2/boy/outfit_darkapron.png": {
-   "state": "ok",
-   "pixels": 14668
-  },
-  "avatar_v2/boy/outfit_stripe.png": {
-   "state": "피부색 203px 경고",
-   "pixels": 17176
-  },
-  "avatar_v2/boy/outfit_waistapron.png": {
-   "state": "ok",
-   "pixels": 9278
-  },
-  "avatar_v2/boy/accessory_crossbag.png": {
-   "state": "피부색 252px 경고",
-   "pixels": 3414
-  },
-  "avatar_v2/boy/accessory_fishpin.png": {
-   "state": "ok",
-   "pixels": 849
-  },
-  "avatar_v2/boy/accessory_glasses.png": {
-   "state": "피부색 32px 경고",
-   "pixels": 1037
-  },
-  "avatar_v2/boy/accessory_mittens.png": {
-   "state": "피부색 1796px 경고",
-   "pixels": 3751
-  },
-  "avatar_v2/boy/accessory_ribbon.png": {
-   "state": "ok",
-   "pixels": 1288
-  },
-  "avatar_v2/boy/accessory_scarf.png": {
-   "state": "피부색 3642px 경고",
-   "pixels": 5706
-  },
-  "avatar_v2/boy/tool_fishhold.png": {
-   "state": "피부색 80px 경고",
-   "pixels": 1946
-  },
-  "avatar_v2/boy/tool_goldtongs.png": {
-   "state": "피부색 158px 경고",
-   "pixels": 2410
-  },
-  "avatar_v2/boy/tool_paperbag.png": {
-   "state": "피부색 242px 경고",
-   "pixels": 4375
-  },
-  "avatar_v2/boy/tool_tongs.png": {
-   "state": "ok",
-   "pixels": 2462
-  }
- },
- "pivots": {
-  "avatar_v2/girl/face_eyes_half@skin1.png": [
-   53.5,
-   20.0
-  ],
-  "avatar_v2/girl/face_eyes_closed@skin1.png": [
-   53.5,
-   20.0
-  ],
-  "avatar_v2/girl/face_mouth_small@skin1.png": [
-   11,
-   3
-  ],
-  "avatar_v2/girl/face_mouth_wide@skin1.png": [
-   11,
-   5
-  ],
-  "avatar_v2/girl/face_eyes_half@skin2.png": [
-   53.5,
-   20.0
-  ],
-  "avatar_v2/girl/face_eyes_closed@skin2.png": [
-   53.5,
-   20.0
-  ],
-  "avatar_v2/girl/face_mouth_small@skin2.png": [
-   11,
-   3
-  ],
-  "avatar_v2/girl/face_mouth_wide@skin2.png": [
-   11,
-   5
-  ],
-  "avatar_v2/girl/face_eyes_half@skin3.png": [
-   53.5,
-   20.0
-  ],
-  "avatar_v2/girl/face_eyes_closed@skin3.png": [
-   53.5,
-   20.0
-  ],
-  "avatar_v2/girl/face_mouth_small@skin3.png": [
-   11,
-   3
-  ],
-  "avatar_v2/girl/face_mouth_wide@skin3.png": [
-   11,
-   5
-  ],
-  "avatar_v2/boy/face_eyes_half@skin1.png": [
-   59.5,
-   19.5
-  ],
-  "avatar_v2/boy/face_eyes_closed@skin1.png": [
-   60.5,
-   19.5
-  ],
-  "avatar_v2/boy/face_mouth_small@skin1.png": [
-   9,
-   3
-  ],
-  "avatar_v2/boy/face_mouth_wide@skin1.png": [
-   9,
-   5
-  ],
-  "avatar_v2/boy/face_eyes_half@skin2.png": [
-   59.5,
-   19.5
-  ],
-  "avatar_v2/boy/face_eyes_closed@skin2.png": [
-   60.5,
-   19.5
-  ],
-  "avatar_v2/boy/face_mouth_small@skin2.png": [
-   9,
-   3
-  ],
-  "avatar_v2/boy/face_mouth_wide@skin2.png": [
-   9,
-   5
-  ],
-  "avatar_v2/boy/face_eyes_half@skin3.png": [
-   59.5,
-   19.5
-  ],
-  "avatar_v2/boy/face_eyes_closed@skin3.png": [
-   60.5,
-   19.5
-  ],
-  "avatar_v2/boy/face_mouth_small@skin3.png": [
-   9,
-   3
-  ],
-  "avatar_v2/boy/face_mouth_wide@skin3.png": [
-   9,
-   5
-  ]
- },
  "icons": {
   "character": "적용",
   "skin": "적용",
@@ -662,626 +46,1996 @@
   "shoes": "적용",
   "accessory": "적용"
  },
+ "align": {
+  "avatar_v2/girl/base@skin1.png": {
+   "state": "ok",
+   "shift": [
+    0,
+    -17
+   ],
+   "error": {
+    "sole": -17,
+    "eyes_x": -0.19,
+    "eyes_y": -0.06,
+    "v1_face_x": 0,
+    "v1_face_y": 2
+   },
+   "source": "42_v1_bare_base/normalized/girl/base_skin1.png"
+  },
+  "avatar_v2/girl/base@skin2.png": {
+   "state": "ok",
+   "shift": [
+    0,
+    -17
+   ],
+   "error": {
+    "sole": -17,
+    "eyes_x": -0.19,
+    "eyes_y": -0.06,
+    "v1_face_x": 0,
+    "v1_face_y": 2
+   },
+   "source": "42_v1_bare_base/normalized/girl/base_skin2.png"
+  },
+  "avatar_v2/girl/base@skin3.png": {
+   "state": "ok",
+   "shift": [
+    0,
+    -17
+   ],
+   "error": {
+    "sole": -17,
+    "eyes_x": -0.19,
+    "eyes_y": -0.06,
+    "v1_face_x": 0,
+    "v1_face_y": 2
+   },
+   "source": "42_v1_bare_base/normalized/girl/base_skin3.png"
+  },
+  "avatar_v2/boy/base@skin1.png": {
+   "state": "ok",
+   "shift": [
+    0,
+    -14
+   ],
+   "error": {
+    "sole": -14,
+    "eyes_x": -0.06,
+    "eyes_y": 0.12,
+    "v1_face_x": 0,
+    "v1_face_y": 1
+   },
+   "source": "42_v1_bare_base/normalized/boy/base_skin1.png"
+  },
+  "avatar_v2/boy/base@skin2.png": {
+   "state": "ok",
+   "shift": [
+    0,
+    -14
+   ],
+   "error": {
+    "sole": -14,
+    "eyes_x": -0.06,
+    "eyes_y": 0.12,
+    "v1_face_x": 0,
+    "v1_face_y": 1
+   },
+   "source": "42_v1_bare_base/normalized/boy/base_skin2.png"
+  },
+  "avatar_v2/boy/base@skin3.png": {
+   "state": "ok",
+   "shift": [
+    0,
+    -14
+   ],
+   "error": {
+    "sole": -14,
+    "eyes_x": -0.06,
+    "eyes_y": 0.12,
+    "v1_face_x": 0,
+    "v1_face_y": 1
+   },
+   "source": "42_v1_bare_base/normalized/boy/base_skin3.png"
+  }
+ },
+ "items": {
+  "avatar_v2/girl/hair_curly.png": {
+   "state": "피부색 3534px 경고",
+   "pixels": 17155
+  },
+  "avatar_v2/girl/hair_curly_back.png": {
+   "state": "피부색 2945px 경고",
+   "pixels": 23011
+  },
+  "avatar_v2/girl/hair_long.png": {
+   "state": "피부색 4117px 경고",
+   "pixels": 19490
+  },
+  "avatar_v2/girl/hair_long_back.png": {
+   "state": "피부색 8763px 경고",
+   "pixels": 33700
+  },
+  "avatar_v2/girl/hair_ponytail.png": {
+   "state": "피부색 5896px 경고",
+   "pixels": 11727
+  },
+  "avatar_v2/girl/hair_ponytail_back.png": {
+   "state": "피부색 7204px 경고",
+   "pixels": 16352
+  },
+  "avatar_v2/girl/hair_short.png": {
+   "state": "피부색 6703px 경고",
+   "pixels": 13092
+  },
+  "avatar_v2/girl/hat_ballcap.png": {
+   "state": "피부색 5339px 경고",
+   "pixels": 6593
+  },
+  "avatar_v2/girl/hat_bandana.png": {
+   "state": "피부색 4272px 경고",
+   "pixels": 6408
+  },
+  "avatar_v2/girl/hat_bandana_back.png": {
+   "state": "피부색 63px 경고",
+   "pixels": 890
+  },
+  "avatar_v2/girl/hat_beanie.png": {
+   "state": "피부색 6289px 경고",
+   "pixels": 7881
+  },
+  "avatar_v2/girl/hat_blackcap.png": {
+   "state": "피부색 33px 경고",
+   "pixels": 7563
+  },
+  "avatar_v2/girl/hat_chefhat.png": {
+   "state": "피부색 1966px 경고",
+   "pixels": 11451
+  },
+  "avatar_v2/girl/hat_earmuffs.png": {
+   "state": "피부색 2220px 경고",
+   "pixels": 5697
+  },
+  "avatar_v2/girl/hat_newsboy.png": {
+   "state": "피부색 3815px 경고",
+   "pixels": 7363
+  },
+  "avatar_v2/girl/hat_redbandana.png": {
+   "state": "ok",
+   "pixels": 5701
+  },
+  "avatar_v2/girl/hat_redbandana_back.png": {
+   "state": "ok",
+   "pixels": 1001
+  },
+  "avatar_v2/girl/hat_santa.png": {
+   "state": "피부색 1227px 경고",
+   "pixels": 6586
+  },
+  "avatar_v2/girl/top_cardigan.png": {
+   "state": "피부색 7515px 경고",
+   "pixels": 14594
+  },
+  "avatar_v2/girl/top_chefcoat.png": {
+   "state": "피부색 942px 경고",
+   "pixels": 12822
+  },
+  "avatar_v2/girl/top_creamlong.png": {
+   "state": "피부색 9880px 경고",
+   "pixels": 12391
+  },
+  "avatar_v2/girl/top_creamsweater.png": {
+   "state": "피부색 10717px 경고",
+   "pixels": 14306
+  },
+  "avatar_v2/girl/top_padding.png": {
+   "state": "피부색 9309px 경고",
+   "pixels": 11814
+  },
+  "avatar_v2/girl/top_pinksweater.png": {
+   "state": "피부색 7685px 경고",
+   "pixels": 11068
+  },
+  "avatar_v2/girl/top_sagesweater.png": {
+   "state": "ok",
+   "pixels": 12146
+  },
+  "avatar_v2/girl/top_tee.png": {
+   "state": "피부색 278px 경고",
+   "pixels": 7022
+  },
+  "avatar_v2/girl/bottom_brownpants.png": {
+   "state": "피부색 74px 경고",
+   "pixels": 14220
+  },
+  "avatar_v2/girl/bottom_cargopants.png": {
+   "state": "피부색 7753px 경고",
+   "pixels": 15149
+  },
+  "avatar_v2/girl/bottom_checkskirt.png": {
+   "state": "피부색 650px 경고",
+   "pixels": 7257
+  },
+  "avatar_v2/girl/bottom_denimshorts.png": {
+   "state": "피부색 62px 경고",
+   "pixels": 5593
+  },
+  "avatar_v2/girl/bottom_jeans.png": {
+   "state": "ok",
+   "pixels": 12522
+  },
+  "avatar_v2/girl/bottom_joggers.png": {
+   "state": "피부색 421px 경고",
+   "pixels": 12778
+  },
+  "avatar_v2/girl/bottom_longskirt.png": {
+   "state": "피부색 10515px 경고",
+   "pixels": 18076
+  },
+  "avatar_v2/girl/bottom_shorts.png": {
+   "state": "피부색 4465px 경고",
+   "pixels": 5238
+  },
+  "avatar_v2/girl/bottom_skirt.png": {
+   "state": "피부색 3876px 경고",
+   "pixels": 7367
+  },
+  "avatar_v2/girl/bottom_widepants.png": {
+   "state": "피부색 11053px 경고",
+   "pixels": 16781
+  },
+  "avatar_v2/girl/shoes_boots.png": {
+   "state": "피부색 546px 경고",
+   "pixels": 2037
+  },
+  "avatar_v2/girl/shoes_flats.png": {
+   "state": "피부색 330px 경고",
+   "pixels": 1199
+  },
+  "avatar_v2/girl/shoes_furboots.png": {
+   "state": "피부색 1114px 경고",
+   "pixels": 2752
+  },
+  "avatar_v2/girl/shoes_sneakers.png": {
+   "state": "피부색 961px 경고",
+   "pixels": 2494
+  },
+  "avatar_v2/girl/outfit_apron.png": {
+   "state": "피부색 247px 경고",
+   "pixels": 8270
+  },
+  "avatar_v2/girl/outfit_apron_back.png": {
+   "state": "ok",
+   "pixels": 1422
+  },
+  "avatar_v2/girl/outfit_creamapron.png": {
+   "state": "피부색 8817px 경고",
+   "pixels": 10219
+  },
+  "avatar_v2/girl/outfit_creamapron_back.png": {
+   "state": "피부색 632px 경고",
+   "pixels": 981
+  },
+  "avatar_v2/girl/outfit_darkapron.png": {
+   "state": "ok",
+   "pixels": 10046
+  },
+  "avatar_v2/girl/outfit_darkapron_back.png": {
+   "state": "ok",
+   "pixels": 1009
+  },
+  "avatar_v2/girl/outfit_stripe.png": {
+   "state": "피부색 4475px 경고",
+   "pixels": 9626
+  },
+  "avatar_v2/girl/outfit_stripe_back.png": {
+   "state": "피부색 560px 경고",
+   "pixels": 1723
+  },
+  "avatar_v2/girl/outfit_waistapron.png": {
+   "state": "피부색 3544px 경고",
+   "pixels": 5455
+  },
+  "avatar_v2/girl/outfit_waistapron_back.png": {
+   "state": "피부색 582px 경고",
+   "pixels": 1216
+  },
+  "avatar_v2/girl/accessory_crossbag.png": {
+   "state": "피부색 313px 경고",
+   "pixels": 2653
+  },
+  "avatar_v2/girl/accessory_crossbag_back.png": {
+   "state": "피부색 27px 경고",
+   "pixels": 425
+  },
+  "avatar_v2/girl/accessory_fishpin.png": {
+   "state": "피부색 239px 경고",
+   "pixels": 715
+  },
+  "avatar_v2/girl/accessory_glasses.png": {
+   "state": "피부색 47px 경고",
+   "pixels": 1412
+  },
+  "avatar_v2/girl/accessory_mittens.png": {
+   "state": "피부색 1165px 경고",
+   "pixels": 2119
+  },
+  "avatar_v2/girl/accessory_ribbon.png": {
+   "state": "피부색 302px 경고",
+   "pixels": 665
+  },
+  "avatar_v2/girl/accessory_scarf.png": {
+   "state": "피부색 3177px 경고",
+   "pixels": 4946
+  },
+  "avatar_v2/girl/tool_fishhold.png": {
+   "state": "피부색 186px 경고",
+   "pixels": 1137
+  },
+  "avatar_v2/girl/tool_fishhold_front.png": {
+   "state": "피부색 101px 경고",
+   "pixels": 201
+  },
+  "avatar_v2/girl/tool_paperbag.png": {
+   "state": "피부색 103px 경고",
+   "pixels": 2548
+  },
+  "avatar_v2/girl/tool_paperbag_front.png": {
+   "state": "피부색 122px 경고",
+   "pixels": 239
+  },
+  "avatar_v2/girl/tool_goldtongs.png": {
+   "state": "피부색 61px 경고",
+   "pixels": 1369
+  },
+  "avatar_v2/girl/tool_goldtongs_front.png": {
+   "state": "피부색 204px 경고",
+   "pixels": 395
+  },
+  "avatar_v2/boy/hair_curly.png": {
+   "state": "피부색 1897px 경고",
+   "pixels": 11139
+  },
+  "avatar_v2/boy/hair_curly_back.png": {
+   "state": "피부색 195px 경고",
+   "pixels": 2052
+  },
+  "avatar_v2/boy/hair_long.png": {
+   "state": "피부색 7942px 경고",
+   "pixels": 18608
+  },
+  "avatar_v2/boy/hair_long_back.png": {
+   "state": "피부색 13553px 경고",
+   "pixels": 33662
+  },
+  "avatar_v2/boy/hair_ponytail.png": {
+   "state": "피부색 5558px 경고",
+   "pixels": 13336
+  },
+  "avatar_v2/boy/hair_ponytail_back.png": {
+   "state": "피부색 82px 경고",
+   "pixels": 5156
+  },
+  "avatar_v2/boy/hair_short.png": {
+   "state": "피부색 754px 경고",
+   "pixels": 11325
+  },
+  "avatar_v2/boy/hat_ballcap.png": {
+   "state": "피부색 5848px 경고",
+   "pixels": 7677
+  },
+  "avatar_v2/boy/hat_bandana.png": {
+   "state": "피부색 5470px 경고",
+   "pixels": 7172
+  },
+  "avatar_v2/boy/hat_bandana_back.png": {
+   "state": "피부색 177px 경고",
+   "pixels": 1008
+  },
+  "avatar_v2/boy/hat_beanie.png": {
+   "state": "피부색 6212px 경고",
+   "pixels": 7601
+  },
+  "avatar_v2/boy/hat_blackcap.png": {
+   "state": "ok",
+   "pixels": 7665
+  },
+  "avatar_v2/boy/hat_chefhat.png": {
+   "state": "피부색 857px 경고",
+   "pixels": 9894
+  },
+  "avatar_v2/boy/hat_earmuffs.png": {
+   "state": "피부색 1572px 경고",
+   "pixels": 4617
+  },
+  "avatar_v2/boy/hat_newsboy.png": {
+   "state": "피부색 2306px 경고",
+   "pixels": 8040
+  },
+  "avatar_v2/boy/hat_redbandana.png": {
+   "state": "ok",
+   "pixels": 7126
+  },
+  "avatar_v2/boy/hat_redbandana_back.png": {
+   "state": "ok",
+   "pixels": 1262
+  },
+  "avatar_v2/boy/hat_santa.png": {
+   "state": "피부색 1339px 경고",
+   "pixels": 7914
+  },
+  "avatar_v2/boy/top_cardigan.png": {
+   "state": "피부색 8039px 경고",
+   "pixels": 15949
+  },
+  "avatar_v2/boy/top_chefcoat.png": {
+   "state": "피부색 693px 경고",
+   "pixels": 15297
+  },
+  "avatar_v2/boy/top_creamlong.png": {
+   "state": "피부색 12121px 경고",
+   "pixels": 14868
+  },
+  "avatar_v2/boy/top_creamsweater.png": {
+   "state": "피부색 13183px 경고",
+   "pixels": 16672
+  },
+  "avatar_v2/boy/top_padding.png": {
+   "state": "피부색 12755px 경고",
+   "pixels": 16571
+  },
+  "avatar_v2/boy/top_pinksweater.png": {
+   "state": "피부색 11719px 경고",
+   "pixels": 14548
+  },
+  "avatar_v2/boy/top_sagesweater.png": {
+   "state": "ok",
+   "pixels": 14898
+  },
+  "avatar_v2/boy/top_tee.png": {
+   "state": "피부색 37px 경고",
+   "pixels": 11918
+  },
+  "avatar_v2/boy/bottom_brownpants.png": {
+   "state": "피부색 338px 경고",
+   "pixels": 12994
+  },
+  "avatar_v2/boy/bottom_cargopants.png": {
+   "state": "피부색 6546px 경고",
+   "pixels": 12919
+  },
+  "avatar_v2/boy/bottom_checkskirt.png": {
+   "state": "피부색 219px 경고",
+   "pixels": 8062
+  },
+  "avatar_v2/boy/bottom_denimshorts.png": {
+   "state": "피부색 37px 경고",
+   "pixels": 5438
+  },
+  "avatar_v2/boy/bottom_jeans.png": {
+   "state": "ok",
+   "pixels": 11461
+  },
+  "avatar_v2/boy/bottom_joggers.png": {
+   "state": "ok",
+   "pixels": 12164
+  },
+  "avatar_v2/boy/bottom_longskirt.png": {
+   "state": "피부색 8687px 경고",
+   "pixels": 15308
+  },
+  "avatar_v2/boy/bottom_shorts.png": {
+   "state": "피부색 4760px 경고",
+   "pixels": 5837
+  },
+  "avatar_v2/boy/bottom_skirt.png": {
+   "state": "피부색 4981px 경고",
+   "pixels": 7665
+  },
+  "avatar_v2/boy/bottom_widepants.png": {
+   "state": "피부색 9110px 경고",
+   "pixels": 15756
+  },
+  "avatar_v2/boy/shoes_boots.png": {
+   "state": "피부색 362px 경고",
+   "pixels": 2512
+  },
+  "avatar_v2/boy/shoes_flats.png": {
+   "state": "피부색 210px 경고",
+   "pixels": 1512
+  },
+  "avatar_v2/boy/shoes_furboots.png": {
+   "state": "피부색 1229px 경고",
+   "pixels": 2687
+  },
+  "avatar_v2/boy/shoes_sneakers.png": {
+   "state": "피부색 806px 경고",
+   "pixels": 2615
+  },
+  "avatar_v2/boy/outfit_apron.png": {
+   "state": "피부색 499px 경고",
+   "pixels": 12785
+  },
+  "avatar_v2/boy/outfit_apron_back.png": {
+   "state": "피부색 36px 경고",
+   "pixels": 1592
+  },
+  "avatar_v2/boy/outfit_creamapron.png": {
+   "state": "피부색 11669px 경고",
+   "pixels": 14150
+  },
+  "avatar_v2/boy/outfit_creamapron_back.png": {
+   "state": "피부색 661px 경고",
+   "pixels": 1280
+  },
+  "avatar_v2/boy/outfit_darkapron.png": {
+   "state": "피부색 34px 경고",
+   "pixels": 13916
+  },
+  "avatar_v2/boy/outfit_darkapron_back.png": {
+   "state": "ok",
+   "pixels": 1733
+  },
+  "avatar_v2/boy/outfit_stripe.png": {
+   "state": "피부색 6102px 경고",
+   "pixels": 13614
+  },
+  "avatar_v2/boy/outfit_stripe_back.png": {
+   "state": "피부색 622px 경고",
+   "pixels": 1749
+  },
+  "avatar_v2/boy/outfit_waistapron.png": {
+   "state": "피부색 1656px 경고",
+   "pixels": 6291
+  },
+  "avatar_v2/boy/outfit_waistapron_back.png": {
+   "state": "피부색 477px 경고",
+   "pixels": 1077
+  },
+  "avatar_v2/boy/accessory_crossbag.png": {
+   "state": "피부색 131px 경고",
+   "pixels": 3929
+  },
+  "avatar_v2/boy/accessory_crossbag_back.png": {
+   "state": "ok",
+   "pixels": 762
+  },
+  "avatar_v2/boy/accessory_fishpin.png": {
+   "state": "피부색 98px 경고",
+   "pixels": 824
+  },
+  "avatar_v2/boy/accessory_glasses.png": {
+   "state": "ok",
+   "pixels": 839
+  },
+  "avatar_v2/boy/accessory_mittens.png": {
+   "state": "피부색 1439px 경고",
+   "pixels": 2645
+  },
+  "avatar_v2/boy/accessory_ribbon.png": {
+   "state": "피부색 433px 경고",
+   "pixels": 1066
+  },
+  "avatar_v2/boy/accessory_scarf.png": {
+   "state": "피부색 2485px 경고",
+   "pixels": 3919
+  },
+  "avatar_v2/boy/tool_fishhold.png": {
+   "state": "피부색 143px 경고",
+   "pixels": 1149
+  },
+  "avatar_v2/boy/tool_fishhold_front.png": {
+   "state": "피부색 68px 경고",
+   "pixels": 182
+  },
+  "avatar_v2/boy/tool_paperbag.png": {
+   "state": "피부색 289px 경고",
+   "pixels": 3074
+  },
+  "avatar_v2/boy/tool_paperbag_front.png": {
+   "state": "피부색 169px 경고",
+   "pixels": 385
+  },
+  "avatar_v2/boy/tool_goldtongs.png": {
+   "state": "피부색 228px 경고",
+   "pixels": 1555
+  },
+  "avatar_v2/boy/tool_goldtongs_front.png": {
+   "state": "피부색 219px 경고",
+   "pixels": 581
+  }
+ },
  "trim": {
   "avatar_v2/boy/accessory_crossbag.png": [
-   118,
-   216
+   83,
+   214
+  ],
+  "avatar_v2/boy/accessory_crossbag_back.png": [
+   96,
+   203
   ],
   "avatar_v2/boy/accessory_fishpin.png": [
-   191,
-   54
+   187,
+   82
   ],
   "avatar_v2/boy/accessory_glasses.png": [
-   98,
+   88,
    132
   ],
   "avatar_v2/boy/accessory_mittens.png": [
-   73,
-   307
+   64,
+   320
   ],
   "avatar_v2/boy/accessory_ribbon.png": [
-   74,
-   42
+   183,
+   68
   ],
   "avatar_v2/boy/accessory_scarf.png": [
-   106,
-   202
+   113,
+   205
   ],
   "avatar_v2/boy/bottom_brownpants.png": [
-   98,
-   323
+   96,
+   327
   ],
   "avatar_v2/boy/bottom_cargopants.png": [
-   98,
-   329
+   95,
+   324
   ],
   "avatar_v2/boy/bottom_checkskirt.png": [
-   86,
-   335
+   87,
+   314
   ],
   "avatar_v2/boy/bottom_denimshorts.png": [
-   98,
-   337
+   97,
+   326
   ],
   "avatar_v2/boy/bottom_jeans.png": [
-   100,
-   341
+   103,
+   320
   ],
   "avatar_v2/boy/bottom_joggers.png": [
-   100,
-   334
+   98,
+   320
   ],
   "avatar_v2/boy/bottom_longskirt.png": [
-   81,
-   336
+   82,
+   326
   ],
   "avatar_v2/boy/bottom_shorts.png": [
-   94,
-   333
+   96,
+   329
   ],
   "avatar_v2/boy/bottom_skirt.png": [
-   81,
-   332
+   83,
+   317
   ],
   "avatar_v2/boy/bottom_widepants.png": [
-   92,
-   342
+   82,
+   327
   ],
   "avatar_v2/boy/hair_curly.png": [
-   59,
-   23
+   67,
+   50
   ],
   "avatar_v2/boy/hair_curly_back.png": [
-   106,
-   195
+   93,
+   178
+  ],
+  "avatar_v2/boy/hair_curly_basemask.png": [
+   117,
+   47
   ],
   "avatar_v2/boy/hair_long.png": [
-   60,
-   23
+   73,
+   48
   ],
   "avatar_v2/boy/hair_long_back.png": [
-   78,
-   176
+   76,
+   47
+  ],
+  "avatar_v2/boy/hair_long_basemask.png": [
+   104,
+   58
   ],
   "avatar_v2/boy/hair_ponytail.png": [
-   66,
-   0
+   76,
+   35
   ],
   "avatar_v2/boy/hair_ponytail_back.png": [
-   108,
-   0
+   181,
+   34
+  ],
+  "avatar_v2/boy/hair_ponytail_basemask.png": [
+   74,
+   47
   ],
   "avatar_v2/boy/hair_short.png": [
-   62,
-   21
+   69,
+   47
+  ],
+  "avatar_v2/boy/hair_short_basemask.png": [
+   74,
+   127
   ],
   "avatar_v2/boy/hat_ballcap.png": [
-   58,
-   9
+   68,
+   43
   ],
   "avatar_v2/boy/hat_ballcap_hairmask.png": [
-   56,
+   0,
    0
   ],
   "avatar_v2/boy/hat_bandana.png": [
-   73,
-   23
+   75,
+   46
+  ],
+  "avatar_v2/boy/hat_bandana_back.png": [
+   210,
+   154
   ],
   "avatar_v2/boy/hat_bandana_hairmask.png": [
-   71,
+   0,
    0
   ],
   "avatar_v2/boy/hat_beanie.png": [
-   65,
-   21
+   77,
+   46
   ],
   "avatar_v2/boy/hat_beanie_hairmask.png": [
-   63,
+   0,
    0
   ],
   "avatar_v2/boy/hat_blackcap.png": [
-   54,
-   23
+   62,
+   46
   ],
   "avatar_v2/boy/hat_blackcap_hairmask.png": [
-   52,
+   0,
    0
   ],
   "avatar_v2/boy/hat_chefhat.png": [
-   78,
-   6
+   71,
+   35
   ],
   "avatar_v2/boy/hat_chefhat_hairmask.png": [
-   76,
+   0,
    0
   ],
   "avatar_v2/boy/hat_earmuffs.png": [
-   53,
-   32
+   66,
+   50
   ],
   "avatar_v2/boy/hat_earmuffs_hairmask.png": [
-   51,
-   30
+   66,
+   50
   ],
   "avatar_v2/boy/hat_newsboy.png": [
-   66,
-   23
+   77,
+   45
   ],
   "avatar_v2/boy/hat_newsboy_hairmask.png": [
-   64,
+   0,
    0
   ],
   "avatar_v2/boy/hat_redbandana.png": [
-   67,
-   24
+   73,
+   47
+  ],
+  "avatar_v2/boy/hat_redbandana_back.png": [
+   215,
+   149
   ],
   "avatar_v2/boy/hat_redbandana_hairmask.png": [
-   65,
+   0,
    0
   ],
   "avatar_v2/boy/hat_santa.png": [
-   65,
-   22
+   68,
+   46
   ],
   "avatar_v2/boy/hat_santa_hairmask.png": [
-   63,
+   0,
    0
   ],
   "avatar_v2/boy/outfit_apron.png": [
-   98,
-   224
+   90,
+   214
+  ],
+  "avatar_v2/boy/outfit_apron_back.png": [
+   117,
+   210
   ],
   "avatar_v2/boy/outfit_creamapron.png": [
-   97,
-   221
+   91,
+   213
+  ],
+  "avatar_v2/boy/outfit_creamapron_back.png": [
+   121,
+   209
   ],
   "avatar_v2/boy/outfit_darkapron.png": [
-   97,
-   217
+   94,
+   211
+  ],
+  "avatar_v2/boy/outfit_darkapron_back.png": [
+   111,
+   207
   ],
   "avatar_v2/boy/outfit_stripe.png": [
-   95,
+   94,
    213
+  ],
+  "avatar_v2/boy/outfit_stripe_back.png": [
+   118,
+   203
   ],
   "avatar_v2/boy/outfit_waistapron.png": [
    96,
-   282
+   333
+  ],
+  "avatar_v2/boy/outfit_waistapron_back.png": [
+   125,
+   317
   ],
   "avatar_v2/boy/shoes_boots.png": [
-   97,
+   90,
    467
   ],
   "avatar_v2/boy/shoes_flats.png": [
-   92,
-   485
+   90,
+   481
   ],
   "avatar_v2/boy/shoes_furboots.png": [
-   98,
-   467
+   96,
+   461
   ],
   "avatar_v2/boy/shoes_sneakers.png": [
-   93,
-   471
+   92,
+   464
   ],
   "avatar_v2/boy/tool_fishhold.png": [
-   189,
-   335
+   190,
+   318
+  ],
+  "avatar_v2/boy/tool_fishhold_front.png": [
+   208,
+   356
   ],
   "avatar_v2/boy/tool_goldtongs.png": [
-   200,
-   273
+   205,
+   305
+  ],
+  "avatar_v2/boy/tool_goldtongs_front.png": [
+   203,
+   346
   ],
   "avatar_v2/boy/tool_paperbag.png": [
-   198,
-   336
+   189,
+   338
   ],
-  "avatar_v2/boy/tool_tongs.png": [
-   200,
-   272
+  "avatar_v2/boy/tool_paperbag_front.png": [
+   205,
+   352
   ],
   "avatar_v2/boy/top_cardigan.png": [
-   72,
-   218
+   64,
+   216
   ],
   "avatar_v2/boy/top_chefcoat.png": [
-   66,
-   210
+   68,
+   206
   ],
   "avatar_v2/boy/top_creamlong.png": [
-   80,
-   222
+   70,
+   214
   ],
   "avatar_v2/boy/top_creamsweater.png": [
-   66,
-   219
+   67,
+   208
   ],
   "avatar_v2/boy/top_padding.png": [
-   60,
-   213
+   68,
+   207
   ],
   "avatar_v2/boy/top_pinksweater.png": [
-   74,
-   215
+   71,
+   207
   ],
   "avatar_v2/boy/top_sagesweater.png": [
-   78,
-   219
+   73,
+   207
   ],
   "avatar_v2/boy/top_tee.png": [
-   93,
-   221
+   80,
+   217
   ],
   "avatar_v2/girl/accessory_crossbag.png": [
-   125,
-   220
+   87,
+   216
+  ],
+  "avatar_v2/girl/accessory_crossbag_back.png": [
+   97,
+   212
   ],
   "avatar_v2/girl/accessory_fishpin.png": [
-   193,
-   111
+   190,
+   92
   ],
   "avatar_v2/girl/accessory_glasses.png": [
-   100,
-   130
+   85,
+   129
   ],
   "avatar_v2/girl/accessory_mittens.png": [
-   80,
-   316
+   72,
+   314
   ],
   "avatar_v2/girl/accessory_ribbon.png": [
-   185,
-   83
+   186,
+   74
   ],
   "avatar_v2/girl/accessory_scarf.png": [
-   120,
-   215
+   111,
+   201
   ],
   "avatar_v2/girl/bottom_brownpants.png": [
-   116,
-   303
+   104,
+   306
   ],
   "avatar_v2/girl/bottom_cargopants.png": [
-   109,
-   308
+   95,
+   289
   ],
   "avatar_v2/girl/bottom_checkskirt.png": [
-   104,
-   311
+   91,
+   306
   ],
   "avatar_v2/girl/bottom_denimshorts.png": [
-   111,
-   308
+   100,
+   306
   ],
   "avatar_v2/girl/bottom_jeans.png": [
    108,
-   306
+   308
   ],
   "avatar_v2/girl/bottom_joggers.png": [
-   113,
+   103,
    306
   ],
   "avatar_v2/girl/bottom_longskirt.png": [
-   93,
-   312
+   81,
+   290
   ],
   "avatar_v2/girl/bottom_shorts.png": [
-   100,
-   310
+   103,
+   292
   ],
   "avatar_v2/girl/bottom_skirt.png": [
-   97,
-   305
+   83,
+   314
   ],
   "avatar_v2/girl/bottom_widepants.png": [
-   99,
-   307
+   92,
+   286
   ],
   "avatar_v2/girl/hair_curly.png": [
-   64,
-   58
+   56,
+   47
   ],
   "avatar_v2/girl/hair_curly_back.png": [
-   92,
-   187
+   64,
+   46
+  ],
+  "avatar_v2/girl/hair_curly_basemask.png": [
+   138,
+   46
   ],
   "avatar_v2/girl/hair_long.png": [
-   86,
-   60
+   74,
+   49
   ],
   "avatar_v2/girl/hair_long_back.png": [
-   94,
-   180
+   74,
+   48
+  ],
+  "avatar_v2/girl/hair_long_basemask.png": [
+   138,
+   46
   ],
   "avatar_v2/girl/hair_ponytail.png": [
-   92,
-   42
+   75,
+   43
   ],
   "avatar_v2/girl/hair_ponytail_back.png": [
-   123,
-   42
+   86,
+   43
+  ],
+  "avatar_v2/girl/hair_ponytail_basemask.png": [
+   129,
+   46
   ],
   "avatar_v2/girl/hair_short.png": [
-   91,
-   61
+   73,
+   50
+  ],
+  "avatar_v2/girl/hair_short_basemask.png": [
+   129,
+   46
   ],
   "avatar_v2/girl/hat_ballcap.png": [
-   77,
-   54
+   69,
+   48
   ],
   "avatar_v2/girl/hat_ballcap_hairmask.png": [
-   75,
+   0,
    0
   ],
   "avatar_v2/girl/hat_bandana.png": [
-   92,
-   59
+   82,
+   43
+  ],
+  "avatar_v2/girl/hat_bandana_back.png": [
+   220,
+   161
   ],
   "avatar_v2/girl/hat_bandana_hairmask.png": [
-   90,
+   0,
    0
   ],
   "avatar_v2/girl/hat_beanie.png": [
-   93,
-   58
+   81,
+   47
   ],
   "avatar_v2/girl/hat_beanie_hairmask.png": [
-   91,
+   0,
    0
   ],
   "avatar_v2/girl/hat_blackcap.png": [
-   73,
-   54
+   67,
+   47
   ],
   "avatar_v2/girl/hat_blackcap_hairmask.png": [
-   71,
+   0,
    0
   ],
   "avatar_v2/girl/hat_chefhat.png": [
-   89,
-   20
+   80,
+   23
   ],
   "avatar_v2/girl/hat_chefhat_hairmask.png": [
-   87,
+   0,
    0
   ],
   "avatar_v2/girl/hat_earmuffs.png": [
-   79,
-   63
+   62,
+   56
   ],
   "avatar_v2/girl/hat_earmuffs_hairmask.png": [
-   77,
-   61
+   62,
+   56
   ],
   "avatar_v2/girl/hat_newsboy.png": [
-   90,
-   55
+   83,
+   45
   ],
   "avatar_v2/girl/hat_newsboy_hairmask.png": [
-   88,
+   0,
    0
   ],
   "avatar_v2/girl/hat_redbandana.png": [
-   91,
-   60
+   80,
+   47
+  ],
+  "avatar_v2/girl/hat_redbandana_back.png": [
+   218,
+   141
   ],
   "avatar_v2/girl/hat_redbandana_hairmask.png": [
-   89,
+   0,
    0
   ],
   "avatar_v2/girl/hat_santa.png": [
-   88,
-   58
+   84,
+   49
   ],
   "avatar_v2/girl/hat_santa_hairmask.png": [
-   86,
+   0,
    0
   ],
   "avatar_v2/girl/outfit_apron.png": [
-   107,
-   220
-  ],
-  "avatar_v2/girl/outfit_creamapron.png": [
-   106,
-   216
-  ],
-  "avatar_v2/girl/outfit_darkapron.png": [
-   103,
-   220
-  ],
-  "avatar_v2/girl/outfit_stripe.png": [
-   106,
+   101,
    213
   ],
+  "avatar_v2/girl/outfit_apron_back.png": [
+   125,
+   211
+  ],
+  "avatar_v2/girl/outfit_creamapron.png": [
+   101,
+   215
+  ],
+  "avatar_v2/girl/outfit_creamapron_back.png": [
+   130,
+   211
+  ],
+  "avatar_v2/girl/outfit_darkapron.png": [
+   101,
+   205
+  ],
+  "avatar_v2/girl/outfit_darkapron_back.png": [
+   108,
+   201
+  ],
+  "avatar_v2/girl/outfit_stripe.png": [
+   102,
+   209
+  ],
+  "avatar_v2/girl/outfit_stripe_back.png": [
+   115,
+   201
+  ],
   "avatar_v2/girl/outfit_waistapron.png": [
-   99,
-   279
+   103,
+   290
+  ],
+  "avatar_v2/girl/outfit_waistapron_back.png": [
+   126,
+   298
   ],
   "avatar_v2/girl/shoes_boots.png": [
-   115,
-   478
+   110,
+   465
   ],
   "avatar_v2/girl/shoes_flats.png": [
-   119,
-   495
+   107,
+   479
   ],
   "avatar_v2/girl/shoes_furboots.png": [
-   116,
-   480
+   108,
+   458
   ],
   "avatar_v2/girl/shoes_sneakers.png": [
-   115,
-   486
+   101,
+   463
   ],
   "avatar_v2/girl/tool_fishhold.png": [
-   199,
-   318
+   187,
+   311
+  ],
+  "avatar_v2/girl/tool_fishhold_front.png": [
+   208,
+   344
   ],
   "avatar_v2/girl/tool_goldtongs.png": [
-   211,
-   276
+   206,
+   295
   ],
-  "avatar_v2/girl/tool_paperbag.png": [
-   192,
+  "avatar_v2/girl/tool_goldtongs_front.png": [
+   206,
    338
   ],
-  "avatar_v2/girl/tool_tongs.png": [
-   211,
-   276
+  "avatar_v2/girl/tool_paperbag.png": [
+   191,
+   337
+  ],
+  "avatar_v2/girl/tool_paperbag_front.png": [
+   206,
+   346
   ],
   "avatar_v2/girl/top_cardigan.png": [
-   87,
+   71,
    209
   ],
   "avatar_v2/girl/top_chefcoat.png": [
-   87,
-   220
+   78,
+   207
   ],
   "avatar_v2/girl/top_creamlong.png": [
-   82,
-   229
-  ],
-  "avatar_v2/girl/top_creamsweater.png": [
-   88,
-   220
-  ],
-  "avatar_v2/girl/top_padding.png": [
-   83,
-   219
-  ],
-  "avatar_v2/girl/top_pinksweater.png": [
-   80,
-   223
-  ],
-  "avatar_v2/girl/top_sagesweater.png": [
-   83,
+   76,
    221
   ],
+  "avatar_v2/girl/top_creamsweater.png": [
+   74,
+   212
+  ],
+  "avatar_v2/girl/top_padding.png": [
+   81,
+   211
+  ],
+  "avatar_v2/girl/top_pinksweater.png": [
+   84,
+   212
+  ],
+  "avatar_v2/girl/top_sagesweater.png": [
+   77,
+   217
+  ],
   "avatar_v2/girl/top_tee.png": [
-   107,
-   220
-  ],
-  "avatar_v2/boy/hair_curly_basemask.png": [
-   83,
-   114
-  ],
-  "avatar_v2/boy/hair_ponytail_basemask.png": [
-   62,
-   105
-  ],
-  "avatar_v2/boy/hair_short_basemask.png": [
-   62,
-   109
-  ],
-  "avatar_v2/girl/hair_curly_basemask.png": [
-   79,
-   105
-  ],
-  "avatar_v2/girl/hair_long_basemask.png": [
-   79,
-   105
-  ],
-  "avatar_v2/girl/hair_ponytail_basemask.png": [
-   79,
-   105
-  ],
-  "avatar_v2/girl/hair_short_basemask.png": [
-   79,
-   105
+   101,
+   221
   ],
   "avatar_v2/boy/base@skin1.png": [
-   62,
-   90
+   64,
+   49
   ],
   "avatar_v2/boy/base@skin2.png": [
-   62,
-   90
+   64,
+   49
   ],
   "avatar_v2/boy/base@skin3.png": [
-   62,
-   90
+   64,
+   49
+  ],
+  "avatar_v2/boy/hat_ballcap_basemask.png": [
+   78,
+   88
+  ],
+  "avatar_v2/boy/hat_bandana_basemask.png": [
+   163,
+   48
+  ],
+  "avatar_v2/boy/hat_beanie_basemask.png": [
+   75,
+   88
+  ],
+  "avatar_v2/boy/hat_blackcap_basemask.png": [
+   75,
+   48
+  ],
+  "avatar_v2/boy/hat_chefhat_basemask.png": [
+   219,
+   95
+  ],
+  "avatar_v2/boy/hat_newsboy_basemask.png": [
+   119,
+   48
+  ],
+  "avatar_v2/boy/hat_redbandana_basemask.png": [
+   164,
+   48
+  ],
+  "avatar_v2/boy/hat_santa_basemask.png": [
+   206,
+   125
   ],
   "avatar_v2/girl/base@skin1.png": [
-   67,
-   93
+   72,
+   48
   ],
   "avatar_v2/girl/base@skin2.png": [
-   67,
-   93
+   72,
+   48
   ],
   "avatar_v2/girl/base@skin3.png": [
-   67,
-   93
+   72,
+   48
+  ],
+  "avatar_v2/girl/hat_ballcap_basemask.png": [
+   83,
+   47
+  ],
+  "avatar_v2/girl/hat_bandana_basemask.png": [
+   166,
+   47
+  ],
+  "avatar_v2/girl/hat_beanie_basemask.png": [
+   83,
+   47
+  ],
+  "avatar_v2/girl/hat_blackcap_basemask.png": [
+   86,
+   47
+  ],
+  "avatar_v2/girl/hat_chefhat_basemask.png": [
+   89,
+   106
+  ],
+  "avatar_v2/girl/hat_newsboy_basemask.png": [
+   130,
+   47
+  ],
+  "avatar_v2/girl/hat_redbandana_basemask.png": [
+   155,
+   47
+  ],
+  "avatar_v2/girl/hat_santa_basemask.png": [
+   83,
+   47
+  ],
+  "avatar_v2/boy/bottom_brownpants_basemask.png": [
+   104,
+   469
+  ],
+  "avatar_v2/boy/bottom_cargopants_basemask.png": [
+   99,
+   371
+  ],
+  "avatar_v2/boy/bottom_checkskirt_basemask.png": [
+   99,
+   394
+  ],
+  "avatar_v2/boy/bottom_denimshorts_basemask.png": [
+   99,
+   371
+  ],
+  "avatar_v2/boy/bottom_jeans_basemask.png": [
+   100,
+   371
+  ],
+  "avatar_v2/boy/bottom_joggers_basemask.png": [
+   99,
+   371
+  ],
+  "avatar_v2/boy/bottom_longskirt_basemask.png": [
+   99,
+   371
+  ],
+  "avatar_v2/boy/bottom_shorts_basemask.png": [
+   99,
+   389
+  ],
+  "avatar_v2/boy/bottom_skirt_basemask.png": [
+   80,
+   371
+  ],
+  "avatar_v2/boy/shoes_boots_basemask.png": [
+   91,
+   467
+  ],
+  "avatar_v2/boy/shoes_flats_basemask.png": [
+   95,
+   481
+  ],
+  "avatar_v2/boy/shoes_furboots_basemask.png": [
+   93,
+   461
+  ],
+  "avatar_v2/boy/shoes_sneakers_basemask.png": [
+   91,
+   464
+  ],
+  "avatar_v2/girl/bottom_brownpants_basemask.png": [
+   109,
+   484
+  ],
+  "avatar_v2/girl/bottom_cargopants_basemask.png": [
+   187,
+   458
+  ],
+  "avatar_v2/girl/bottom_checkskirt_basemask.png": [
+   110,
+   381
+  ],
+  "avatar_v2/girl/bottom_jeans_basemask.png": [
+   108,
+   371
+  ],
+  "avatar_v2/girl/bottom_joggers_basemask.png": [
+   115,
+   463
+  ],
+  "avatar_v2/girl/bottom_longskirt_basemask.png": [
+   115,
+   463
+  ],
+  "avatar_v2/girl/bottom_skirt_basemask.png": [
+   110,
+   380
+  ],
+  "avatar_v2/girl/bottom_widepants_basemask.png": [
+   187,
+   467
+  ],
+  "avatar_v2/girl/shoes_boots_basemask.png": [
+   109,
+   465
+  ],
+  "avatar_v2/girl/shoes_flats_basemask.png": [
+   109,
+   479
+  ],
+  "avatar_v2/girl/shoes_furboots_basemask.png": [
+   109,
+   458
+  ],
+  "avatar_v2/girl/shoes_sneakers_basemask.png": [
+   115,
+   463
+  ],
+  "avatar_v2/boy/tool_fishhold_front@skin1.png": [
+   208,
+   356
+  ],
+  "avatar_v2/boy/tool_fishhold_front@skin2.png": [
+   208,
+   356
+  ],
+  "avatar_v2/boy/tool_fishhold_front@skin3.png": [
+   208,
+   356
+  ],
+  "avatar_v2/boy/tool_goldtongs_front@skin1.png": [
+   203,
+   346
+  ],
+  "avatar_v2/boy/tool_goldtongs_front@skin2.png": [
+   203,
+   346
+  ],
+  "avatar_v2/boy/tool_goldtongs_front@skin3.png": [
+   203,
+   346
+  ],
+  "avatar_v2/boy/tool_paperbag_front@skin1.png": [
+   205,
+   352
+  ],
+  "avatar_v2/boy/tool_paperbag_front@skin2.png": [
+   205,
+   352
+  ],
+  "avatar_v2/boy/tool_paperbag_front@skin3.png": [
+   205,
+   352
+  ],
+  "avatar_v2/girl/tool_fishhold_front@skin1.png": [
+   208,
+   344
+  ],
+  "avatar_v2/girl/tool_fishhold_front@skin2.png": [
+   208,
+   344
+  ],
+  "avatar_v2/girl/tool_fishhold_front@skin3.png": [
+   208,
+   344
+  ],
+  "avatar_v2/girl/tool_goldtongs_front@skin1.png": [
+   206,
+   338
+  ],
+  "avatar_v2/girl/tool_goldtongs_front@skin2.png": [
+   206,
+   338
+  ],
+  "avatar_v2/girl/tool_goldtongs_front@skin3.png": [
+   206,
+   338
+  ],
+  "avatar_v2/girl/tool_paperbag_front@skin1.png": [
+   206,
+   346
+  ],
+  "avatar_v2/girl/tool_paperbag_front@skin2.png": [
+   206,
+   346
+  ],
+  "avatar_v2/girl/tool_paperbag_front@skin3.png": [
+   206,
+   346
+  ],
+  "avatar_v2/boy/pose_proud_arms@skin1.png": [
+   30,
+   172
+  ],
+  "avatar_v2/boy/pose_proud_arms@skin2.png": [
+   30,
+   172
+  ],
+  "avatar_v2/boy/pose_proud_arms@skin3.png": [
+   30,
+   172
+  ],
+  "avatar_v2/boy/pose_proud_hide.png": [
+   0,
+   219
+  ],
+  "avatar_v2/girl/pose_proud_arms@skin1.png": [
+   41,
+   181
+  ],
+  "avatar_v2/girl/pose_proud_arms@skin2.png": [
+   41,
+   181
+  ],
+  "avatar_v2/girl/pose_proud_arms@skin3.png": [
+   41,
+   181
+  ],
+  "avatar_v2/girl/pose_proud_hide.png": [
+   0,
+   219
   ]
  },
- "faceaudit": {
-  "girl v1 asset": {
-   "rows": "192~213",
-   "left_mean": 22.0,
-   "right_mean": 19.3,
-   "diff_mean": -2.7,
-   "diff_max": -11.0
-  },
-  "girl concept sheet": {
-   "rows": "192~213",
-   "left_mean": 22.0,
-   "right_mean": 19.3,
-   "diff_mean": -2.7,
-   "diff_max": -11.0
-  },
-  "girl v2 skin1": {
-   "rows": "192~213",
-   "left_mean": 20.9,
-   "right_mean": 21.6,
-   "diff_mean": 0.7,
-   "diff_max": 2.0
-  },
-  "girl v2 skin2": {
-   "rows": "192~213",
-   "left_mean": 21.1,
-   "right_mean": 21.6,
-   "diff_mean": 0.5,
-   "diff_max": 1.0
-  },
-  "girl v2 skin3": {
-   "rows": "192~213",
-   "left_mean": 20.9,
-   "right_mean": 21.5,
-   "diff_mean": 0.7,
-   "diff_max": 2.0
-  },
-  "boy v1 asset": {
-   "rows": "192~207",
-   "left_mean": 31.2,
-   "right_mean": 26.9,
-   "diff_mean": -4.3,
-   "diff_max": -13.0
-  },
-  "boy concept sheet": {
-   "rows": "192~205",
-   "left_mean": 33.9,
-   "right_mean": 32.0,
-   "diff_mean": -1.9,
-   "diff_max": -4.0
-  },
-  "boy v2 skin1": {
-   "rows": "192~213",
-   "left_mean": 35.0,
-   "right_mean": 34.3,
-   "diff_mean": -0.7,
-   "diff_max": -1.0
-  },
-  "boy v2 skin2": {
-   "rows": "192~213",
-   "left_mean": 35.0,
-   "right_mean": 34.3,
-   "diff_mean": -0.7,
-   "diff_max": -1.0
-  },
-  "boy v2 skin3": {
-   "rows": "192~209",
-   "left_mean": 39.2,
-   "right_mean": 38.7,
-   "diff_mean": -0.5,
-   "diff_max": -6.0
-  }
+ "pivots": {
+  "avatar_v2/girl/face_eyes_half@skin1.png": [
+   56.5,
+   21.0
+  ],
+  "avatar_v2/girl/face_eyes_closed@skin1.png": [
+   58.5,
+   21.0
+  ],
+  "avatar_v2/girl/face_mouth_small@skin1.png": [
+   13,
+   4
+  ],
+  "avatar_v2/girl/face_mouth_wide@skin1.png": [
+   13,
+   6
+  ],
+  "avatar_v2/girl/face_eyes_half@skin2.png": [
+   56.5,
+   21.0
+  ],
+  "avatar_v2/girl/face_eyes_closed@skin2.png": [
+   58.5,
+   21.0
+  ],
+  "avatar_v2/girl/face_mouth_small@skin2.png": [
+   13,
+   4
+  ],
+  "avatar_v2/girl/face_mouth_wide@skin2.png": [
+   13,
+   6
+  ],
+  "avatar_v2/girl/face_eyes_half@skin3.png": [
+   56.5,
+   21.0
+  ],
+  "avatar_v2/girl/face_eyes_closed@skin3.png": [
+   58.5,
+   21.0
+  ],
+  "avatar_v2/girl/face_mouth_small@skin3.png": [
+   13,
+   4
+  ],
+  "avatar_v2/girl/face_mouth_wide@skin3.png": [
+   13,
+   6
+  ],
+  "avatar_v2/boy/face_eyes_half@skin1.png": [
+   58.5,
+   20.0
+  ],
+  "avatar_v2/boy/face_eyes_closed@skin1.png": [
+   60.5,
+   20.0
+  ],
+  "avatar_v2/boy/face_mouth_small@skin1.png": [
+   13,
+   4
+  ],
+  "avatar_v2/boy/face_mouth_wide@skin1.png": [
+   13,
+   6
+  ],
+  "avatar_v2/boy/face_eyes_half@skin2.png": [
+   58.5,
+   20.0
+  ],
+  "avatar_v2/boy/face_eyes_closed@skin2.png": [
+   60.5,
+   20.0
+  ],
+  "avatar_v2/boy/face_mouth_small@skin2.png": [
+   13,
+   4
+  ],
+  "avatar_v2/boy/face_mouth_wide@skin2.png": [
+   13,
+   6
+  ],
+  "avatar_v2/boy/face_eyes_half@skin3.png": [
+   58.5,
+   20.0
+  ],
+  "avatar_v2/boy/face_eyes_closed@skin3.png": [
+   60.5,
+   20.0
+  ],
+  "avatar_v2/boy/face_mouth_small@skin3.png": [
+   13,
+   4
+  ],
+  "avatar_v2/boy/face_mouth_wide@skin3.png": [
+   13,
+   6
+  ]
+ },
+ "centred": {
+  "girl/hair_curly": [
+   12,
+   0
+  ],
+  "girl/hair_long": [
+   12,
+   0
+  ],
+  "girl/hair_ponytail": [
+   12,
+   0
+  ],
+  "girl/hair_short": [
+   15,
+   0
+  ],
+  "girl/hat_ballcap": [
+   9,
+   0
+  ],
+  "girl/hat_bandana": [
+   16,
+   0
+  ],
+  "girl/hat_beanie": [
+   16,
+   0
+  ],
+  "girl/hat_blackcap": [
+   7,
+   0
+  ],
+  "girl/hat_chefhat": [
+   16,
+   0
+  ],
+  "girl/hat_earmuffs": [
+   15,
+   0
+  ],
+  "girl/hat_newsboy": [
+   16,
+   0
+  ],
+  "girl/hat_redbandana": [
+   15,
+   0
+  ],
+  "girl/hat_santa": [
+   16,
+   0
+  ],
+  "girl/top_cardigan": [
+   12,
+   0
+  ],
+  "girl/top_chefcoat": [
+   10,
+   0
+  ],
+  "girl/top_creamlong": [
+   12,
+   0
+  ],
+  "girl/top_creamsweater": [
+   8,
+   0
+  ],
+  "girl/top_padding": [
+   10,
+   0
+  ],
+  "girl/top_pinksweater": [
+   6,
+   0
+  ],
+  "girl/top_sagesweater": [
+   12,
+   0
+  ],
+  "girl/top_tee": [
+   6,
+   0
+  ],
+  "girl/bottom_brownpants": [
+   7,
+   0
+  ],
+  "girl/bottom_cargopants": [
+   6,
+   0
+  ],
+  "girl/bottom_checkskirt": [
+   6,
+   0
+  ],
+  "girl/bottom_denimshorts": [
+   12,
+   0
+  ],
+  "girl/bottom_jeans": [
+   7,
+   0
+  ],
+  "girl/bottom_joggers": [
+   12,
+   0
+  ],
+  "girl/bottom_longskirt": [
+   12,
+   0
+  ],
+  "girl/bottom_shorts": [
+   10,
+   0
+  ],
+  "girl/bottom_skirt": [
+   8,
+   0
+  ],
+  "girl/bottom_widepants": [
+   7,
+   0
+  ],
+  "girl/shoes_boots": [
+   12,
+   0
+  ],
+  "girl/shoes_flats": [
+   6,
+   0
+  ],
+  "girl/shoes_furboots": [
+   11,
+   0
+  ],
+  "girl/shoes_sneakers": [
+   12,
+   0
+  ],
+  "girl/outfit_apron": [
+   9,
+   0
+  ],
+  "girl/outfit_creamapron": [
+   8,
+   0
+  ],
+  "girl/outfit_darkapron": [
+   7,
+   0
+  ],
+  "girl/outfit_stripe": [
+   3,
+   0
+  ],
+  "girl/outfit_waistapron": [
+   11,
+   0
+  ],
+  "girl/accessory_crossbag": [
+   7,
+   0
+  ],
+  "girl/accessory_fishpin": [
+   12,
+   0
+  ],
+  "girl/accessory_mittens": [
+   12,
+   0
+  ],
+  "girl/accessory_ribbon": [
+   12,
+   0
+  ],
+  "girl/accessory_scarf": [
+   4,
+   0
+  ],
+  "girl/tool_fishhold": [
+   -9,
+   5
+  ],
+  "girl/tool_paperbag": [
+   16,
+   4
+  ],
+  "girl/tool_goldtongs": [
+   0,
+   20
+  ],
+  "boy/hair_curly": [
+   12,
+   0
+  ],
+  "boy/hair_long": [
+   12,
+   0
+  ],
+  "boy/hair_ponytail": [
+   12,
+   0
+  ],
+  "boy/hair_short": [
+   12,
+   0
+  ],
+  "boy/hat_ballcap": [
+   11,
+   0
+  ],
+  "boy/hat_bandana": [
+   12,
+   0
+  ],
+  "boy/hat_beanie": [
+   12,
+   0
+  ],
+  "boy/hat_blackcap": [
+   8,
+   0
+  ],
+  "boy/hat_chefhat": [
+   12,
+   0
+  ],
+  "boy/hat_earmuffs": [
+   12,
+   0
+  ],
+  "boy/hat_newsboy": [
+   12,
+   0
+  ],
+  "boy/hat_redbandana": [
+   12,
+   0
+  ],
+  "boy/hat_santa": [
+   12,
+   0
+  ],
+  "boy/top_cardigan": [
+   10,
+   0
+  ],
+  "boy/top_chefcoat": [
+   9,
+   0
+  ],
+  "boy/top_creamlong": [
+   9,
+   0
+  ],
+  "boy/top_creamsweater": [
+   10,
+   0
+  ],
+  "boy/top_padding": [
+   10,
+   0
+  ],
+  "boy/top_pinksweater": [
+   3,
+   0
+  ],
+  "boy/top_sagesweater": [
+   3,
+   0
+  ],
+  "boy/top_tee": [
+   8,
+   0
+  ],
+  "boy/bottom_brownpants": [
+   4,
+   0
+  ],
+  "boy/bottom_cargopants": [
+   6,
+   0
+  ],
+  "boy/bottom_checkskirt": [
+   6,
+   0
+  ],
+  "boy/bottom_denimshorts": [
+   8,
+   0
+  ],
+  "boy/bottom_jeans": [
+   8,
+   0
+  ],
+  "boy/bottom_joggers": [
+   9,
+   0
+  ],
+  "boy/bottom_longskirt": [
+   8,
+   0
+  ],
+  "boy/bottom_shorts": [
+   7,
+   0
+  ],
+  "boy/bottom_skirt": [
+   2,
+   0
+  ],
+  "boy/bottom_widepants": [
+   6,
+   0
+  ],
+  "boy/shoes_boots": [
+   5,
+   0
+  ],
+  "boy/shoes_flats": [
+   4,
+   0
+  ],
+  "boy/shoes_furboots": [
+   8,
+   0
+  ],
+  "boy/shoes_sneakers": [
+   8,
+   0
+  ],
+  "boy/outfit_apron": [
+   10,
+   0
+  ],
+  "boy/outfit_creamapron": [
+   10,
+   0
+  ],
+  "boy/outfit_darkapron": [
+   10,
+   0
+  ],
+  "boy/outfit_stripe": [
+   9,
+   0
+  ],
+  "boy/outfit_waistapron": [
+   9,
+   0
+  ],
+  "boy/accessory_crossbag": [
+   11,
+   0
+  ],
+  "boy/accessory_fishpin": [
+   12,
+   0
+  ],
+  "boy/accessory_mittens": [
+   10,
+   0
+  ],
+  "boy/accessory_ribbon": [
+   12,
+   0
+  ],
+  "boy/accessory_scarf": [
+   2,
+   0
+  ],
+  "boy/tool_fishhold": [
+   18,
+   -6
+  ],
+  "boy/tool_paperbag": [
+   6,
+   -16
+  ],
+  "boy/tool_goldtongs": [
+   4,
+   -25
+  ],
+  "girl/pose_proud": [
+   4,
+   0
+  ],
+  "boy/pose_proud": [
+   5,
+   0
+  ]
  }
 }

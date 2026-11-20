@@ -311,13 +311,16 @@ void main() {
     final data = jsonDecode(File('tools/avatar_v2.json').readAsStringSync())
         as Map<String, dynamic>;
 
-    test('바탕 6장: 발바닥 선 y=519, 눈 앵커 오차 1px 이하', () {
+    test('바탕 6장: 눈 앵커(v1 자리) 오차 1px 이하, 발바닥은 캔버스 안', () {
       final align = (data['align'] as Map<String, dynamic>?) ?? {};
       for (final MapEntry(:key, :value) in align.entries) {
         if ((value as Map)['state'] != 'ok') continue;
         final err = value['error'] as Map;
-        expect(err['sole'], 0, reason: key);
+        // 26번 3차 AV: the 42번 base stands where the v1 vendor stood (its
+        // eyes on the v1 anchors), so its soles are above row 519.
+        expect(err['sole'] as num, lessThanOrEqualTo(0), reason: key);
         expect((err['eyes_x'] as num).abs(), lessThanOrEqualTo(1), reason: key);
+        expect((err['eyes_y'] as num).abs(), lessThanOrEqualTo(1), reason: key);
       }
       if (avatarV2Ready) {
         expect(align.values.where((v) => (v as Map)['state'] == 'ok').length, 6);
@@ -350,7 +353,11 @@ void main() {
             required.contains(f) ||
                 name.startsWith('face_') ||
                 name.endsWith('_hairmask.png') ||
-                name.endsWith('_basemask.png'),
+                name.endsWith('_basemask.png') ||
+                // 26번 3차 AV: halves behind / in front of the body (one per
+                // skin when drawn in skin) and the share card's proud pose.
+                RegExp(r'_(back|front)(@skin\d)?\.png$').hasMatch(name) ||
+                name.startsWith('pose_proud_'),
             isTrue,
             reason: f);
         final (x, y) = avatarV2TrimOffsets[f] ?? (0, 0);

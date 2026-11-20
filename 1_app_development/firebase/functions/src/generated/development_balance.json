@@ -1616,7 +1616,7 @@
       "unlock_total": "0"
     },
     "goldtongs": {
-      "label": "황금 집게",
+      "label": "황금 뒤집개",
       "slot": "tool",
       "free": false,
       "unlock_level": 9,

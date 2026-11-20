@@ -63,10 +63,13 @@ class AvatarLook {
   void paint(Canvas canvas, Offset at,
       {double lift = 0,
       Map<String, String> face = const {},
-      bool flip = false}) {
+      bool flip = false,
+      bool proud = false}) {
     const scale = 56 / 280; // scene units per rig pixel
     final hop = (lift * 2).roundToDouble(), raise = (lift * 3).roundToDouble();
-    AvatarRig(character, frontPose, look: this, face: face, flip: flip).paint(
+    AvatarRig(character, frontPose,
+            look: this, face: face, flip: flip, proud: proud)
+        .paint(
         canvas, _paint,
         at: at.translate(0, -hop), scale: scale, toolLift: raise / scale);
   }
@@ -132,8 +135,12 @@ class AvatarRig {
   final AvatarLook? look;
   final Map<String, String> face;
   final bool flip;
+
+  /// The share card's proud pose (25번 39번, v2 only): the hanging arms
+  /// erased, both arms raised with a bungeoppang, no tool.
+  final bool proud;
   const AvatarRig(this.character, this.pose,
-      {this.look, this.face = const {}, this.flip = false});
+      {this.look, this.face = const {}, this.flip = false, this.proud = false});
 
   /// Size of the pose in rig pixels: the front canvas, or the picture's own.
   Size get size {
@@ -192,12 +199,20 @@ class AvatarRig {
       if (sprite != null) out.add(sprite);
     }
 
-    // 26번 3차 H10: what the worn hair leaves bare of the head goes
-    // (avatarV2BaseMask, made by tools/avatar_v2.py basemask).
-    final scalp = make(avatarV2BaseMask(character, look.worn(CosmeticSlot.hair)),
-        RigLayer.base);
-    add(avatarV2Base(character, skin), RigLayer.base,
-        erase: scalp == null ? const [] : [scalp]);
+    // What the worn items leave bare goes from the base: the head beside
+    // the hair (26번 3차 H10) or above a hat, a sliver of leg beside slim
+    // trousers or boots (26번 3차 AV) - each item's optional
+    // `<slot>_<id>_basemask.png` (avatarV2ItemBaseMask, tools/avatar_v2.py).
+    final bare = <RigSprite>[
+      for (final slot in rigSlotLayers.keys)
+        if (!blankCosmetics.contains(look.worn(slot)) &&
+            !avatarItemWithdrawn(character, look.worn(slot)))
+          if (make(avatarV2ItemBaseMask(character, slot, look.worn(slot)),
+                  RigLayer.base)
+              case final mask?)
+            mask,
+    ];
+    add(avatarV2Base(character, skin), RigLayer.base, erase: bare);
     for (final channel in rigChannels) {
       final frame = face[channel.id] ?? channel.rest;
       final anchor = avatarV2FaceAnchors[character]?[channel.id];
@@ -209,11 +224,14 @@ class AvatarRig {
     final hairMask = blankCosmetics.contains(hat)
         ? null
         : make(avatarV2HairMask(character, hat), RigLayer.hair);
+    final posed = proud && avatarV2ProudReady(character, skin);
     for (final MapEntry(key: slot, value: layer) in rigSlotLayers.entries) {
       final id = look.worn(slot);
       if (blankCosmetics.contains(id) || avatarItemWithdrawn(character, id)) {
         continue;
       }
+      // The raised hands hold the bungeoppang, not the tool.
+      if (posed && slot == CosmeticSlot.tool) continue;
       final main = avatarV2Item(character, slot, id);
       add(main, layer,
           erase: slot == CosmeticSlot.hair && hairMask != null
@@ -221,8 +239,34 @@ class AvatarRig {
               : const []);
       for (final MapEntry(key: half, value: halfLayer)
           in rigItemHalves.entries) {
-        add(main.replaceFirst('.png', '_$half.png'), halfLayer);
+        // A half drawn in skin (the fingers round a tool, 26번 3차 AV) has
+        // a copy per skin tone.
+        final plain = main.replaceFirst('.png', '_$half.png');
+        final skinned = plain.replaceFirst('.png', '@$skin.png');
+        // 26번 3차 AV: the hat presses the hair behind the head too (no
+        // back hair standing above a cap).
+        add(PixelSprites.byPath(skinned) != null ? skinned : plain, halfLayer,
+            erase: slot == CosmeticSlot.hair && hairMask != null
+                ? [hairMask]
+                : const []);
       }
+    }
+    if (posed) {
+      // 26번 3차 AV (25번 39번): the hanging arms go from the body and what
+      // is worn over them (sleeves, apron, mittens), never from the hair;
+      // the raised arms come on top.
+      final hide = make(avatarV2ProudHide(character), RigLayer.base)!;
+      const hidden = {
+        RigLayer.base, RigLayer.top, RigLayer.outfit, RigLayer.accessory,
+      };
+      for (var i = 0; i < out.length; i++) {
+        final s = out[i];
+        if (!hidden.contains(s.layer)) continue;
+        out[i] = RigSprite(s.asset, s.image, s.layer, s.placement, s.anchor,
+            s.pivot, s.trim,
+            erase: [...s.erase, hide]);
+      }
+      add(avatarV2ProudArms(character, skin), RigLayer.front);
     }
     final indexed = out.indexed.toList()
       ..sort((a, b) {

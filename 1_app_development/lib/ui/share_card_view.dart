@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import '../avatar_v2.dart';
 import '../cosmetic_config.dart';
 import '../share_card.dart';
 import '../usage_stats.dart';
@@ -16,9 +17,10 @@ import 'workshop_mold_stage.dart' show ResultLook;
 /// The share card (26번 8단계, DEC-048; 3차 피드백 H43 재설계 A안): laid out
 /// at [size] (4:5) and captured at 1080×1350 (`share.card_width`). The top
 /// is a photo of the street in front of the stall with **the player's own
-/// vendor standing big in front**, smiling with the tool raised (the pose,
-/// [vendorFace]·lift; its own pose art is 25번 39번), the bungeoppang held
-/// up beside it with sparkles and the guest on the right. The bottom is a
+/// vendor standing big in front**, smiling in its proud pose - both arms
+/// raised with a bungeoppang (25번 39번, 26번 3차 AV; the v1 vendor raises
+/// its tool and the bungeoppang is held up beside it) - with sparkles and
+/// the guest on the right. The bottom is a
 /// light band with the badge, the title, one line and the store line. No
 /// owner name, account, level, currency, date or device detail
 /// (ShareCardData).
@@ -56,6 +58,11 @@ class ShareCardView extends StatelessWidget {
   };
 
   static const _paper = Color(0xfffffaf0);
+
+  /// Whether the vendor is drawn in the proud pose (it holds the
+  /// bungeoppang itself).
+  bool get _posed => avatarV2ProudReady(
+      _equipped(CosmeticSlot.character), _equipped(CosmeticSlot.skin));
 
   @override
   Widget build(BuildContext context) {
@@ -117,7 +124,9 @@ class ShareCardView extends StatelessWidget {
                       child: CustomPaint(
                           key: const Key('share-card-vendor'),
                           painter: _PosePainter(AvatarLook.of(_equipped)))),
-                  // The bungeoppang held out in the vendor's tongs, with sparkles.
+                  // The bungeoppang held out beside the vendor, with sparkles;
+                  // the proud pose holds its own (26번 3차 AV, 25번 39번).
+                  if (!_posed)
                   Positioned(
                       left: 124,
                       top: guest == null ? 130 : 138,
@@ -203,7 +212,10 @@ class _PosePainter extends CustomPainter {
     canvas.save();
     canvas.translate((size.width - art.width * scale) / 2, size.height - art.height * scale);
     canvas.scale(scale);
-    look.paint(canvas, Offset.zero, lift: 1, face: ShareCardView.vendorFace);
+    // 26번 3차 AV: the proud pose (raised arms, 25번 39번) when the v2
+    // vendor has it; the tool is not held then.
+    look.paint(canvas, Offset.zero,
+        lift: 1, face: ShareCardView.vendorFace, proud: true);
     canvas.restore();
   }
 

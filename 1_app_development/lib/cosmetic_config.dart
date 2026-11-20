@@ -170,7 +170,9 @@ const cosmeticDefinitions = [
   // 26번 3차 H8: the tongs in the vendor's hand are gone ("집게를 지워"):
   // the tool default keeps its id for saves but draws nothing.
   CosmeticDefinition('tongs', '도구 없음', CosmeticSlot.tool, '0', 1),
-  CosmeticDefinition('goldtongs', '황금 집게', CosmeticSlot.tool, '15', 9),
+  // 26번 3차 AV (25번 41번, DEC-146 갱신): drawn again as a golden turner;
+  // same id, price and unlock, owners keep it.
+  CosmeticDefinition('goldtongs', '황금 뒤집개', CosmeticSlot.tool, '15', 9),
   // Stage 14: the concept art (개발에셋 261006_1905_01). Prices estimated.
   CosmeticDefinition('tee', '흰 티셔츠', CosmeticSlot.top, '0', 1),
   CosmeticDefinition('creamlong', '크림 긴팔', CosmeticSlot.top, '3', 2),
@@ -339,8 +341,9 @@ const blankCosmetics = {
 /// one keeps it (ownership is not touched), and the vendor wearing one is
 /// drawn without it. A redraw goes to 25번 and the entry comes out.
 const withdrawnAvatarItems = <String, Set<String>>{
-  'girl': {'goldtongs'},
-  'boy': {'goldtongs'},
+  // 26번 3차 AV: the golden tongs came back as the golden turner (25번 41번).
+  'girl': {},
+  'boy': {},
 };
 
 bool avatarItemWithdrawn(String character, String id) =>
