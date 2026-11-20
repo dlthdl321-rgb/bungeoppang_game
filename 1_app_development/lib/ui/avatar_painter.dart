@@ -270,8 +270,16 @@ class AvatarRig {
     }
     final look = this.look;
     if (look != null && pose.wearsItems) {
+      final hatOn = !blankCosmetics.contains(look.worn(CosmeticSlot.hat));
       for (final MapEntry(key: slot, value: layer) in rigSlotLayers.entries) {
-        final id = look.worn(slot);
+        var id = look.worn(slot);
+        // 26번 3차 G: v1 hats were cut with the base hair they press, so
+        // under a hat the character's own default hair (the boy's short
+        // hair) is drawn as the base hair (v1HatHairAsBase).
+        if (slot == CosmeticSlot.hair && hatOn &&
+            v1HatHairAsBase[character] == id) {
+          id = defaultCosmetics[CosmeticSlot.hair]!;
+        }
         // Withdrawn items (26번 3차 H10) are drawn as not worn.
         if (blankCosmetics.contains(id) ||
             avatarItemWithdrawn(character, id)) {

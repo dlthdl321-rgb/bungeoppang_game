@@ -258,6 +258,13 @@ const defaultCosmetics = {
 /// picked wears it. The girl keeps [defaultCosmetics]' long hair.
 const characterDefaultHair = {'girl': 'long', 'boy': 'short'};
 
+/// v1 vendor only (26번 3차 G): the hair style drawn as the base's own hair
+/// while a hat is on. v1 hats were cut from pictures of the base hair under
+/// them, so the boy's short hair (his default, close to his base hair) and
+/// a hat left loose strands; under a hat he shows the base hair instead.
+/// Goes away with the 25번 43~44번 art.
+const v1HatHairAsBase = {'boy': 'short'};
+
 /// The hair [character] wears until another is picked.
 String defaultHairOf(String character) =>
     characterDefaultHair[character] ?? defaultCosmetics[CosmeticSlot.hair]!;
