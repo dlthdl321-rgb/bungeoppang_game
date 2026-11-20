@@ -56,8 +56,9 @@ void main() {
       await c.command(() => c.state
         ..level = 9
         ..claimedLevels.addAll([2, 3, 4, 5, 6, 7, 8, 9])
-        ..buns = BigInt.from(100000)
-        ..lifetime = BigInt.from(100000));
+        // 4차 g7 prices: 20만~60만 each (4차 병합).
+        ..buns = BigInt.from(10000000)
+        ..lifetime = BigInt.from(10000000));
       for (final id in items) {
         expect(await c.purchaseSkill(c.purchaseGateway!, 'cosmetic:$id'), isTrue, reason: '$id ${c.notice}');
       }

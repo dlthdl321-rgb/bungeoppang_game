@@ -15,7 +15,7 @@ async function setup() {
   await service.claim("a",{progress:"progress_0001"});return {store,service};
 }
 const intent={account:"a",transaction:"transaction_0001",revision:config.metadata.revision,
-  skill:"tap_1",owned:0,quantity:1,buns:"15",gold:"1"};
+  skill:"tap_1",owned:0,quantity:1,buns:"20",gold:"1"};
 const context={progress:"progress_0001",epoch:1};
 test("클라이언트 차감 JSON만으로는 황금 홀드/상품 지급이 열리지 않는다",async()=>{
   const {store,service}=await setup();store.docs.set("users/a",{gold:5});
@@ -93,7 +93,7 @@ test("아바타 구매도 서버 가격·레벨·보유 회차와 승인 증거�
     gold:String(config.cosmetic_purchase.short.gold)};
   const proof={source:"trustedServerValidation",verifierVersion:1,account:"a",progress:context.progress,epoch:1,
     transaction:cosmetic.transaction,fingerprint:purchaseFingerprint(cosmetic),snapshotDigest:"protected",
-    availableBuns:"2000",lifetimeBuns:"2000",phase:"reservation",level:0};
+    availableBuns:"2000000",lifetimeBuns:"2000000",phase:"reservation",level:0};
   const path=evidencePath("a","reservation",cosmetic.transaction);
   store.docs.set(path,proof);
   await assert.rejects(service.purchase("a","reserve",{...context,intent:cosmetic}));
@@ -106,14 +106,14 @@ test("아바타 구매도 서버 가격·레벨·보유 회차와 승인 증거�
 
 // 26번 3차 H42: the backgrounds are sold through the same catalog again.
 test("배경 구매도 같은 꾸미기 카탈로그의 서버 가격·레벨로 검사한다",async()=>{
-  const {store,service}=await setup();store.docs.set("users/a",{gold:10});
+  const {store,service}=await setup();store.docs.set("users/a",{gold:20});
   const entry=(config as unknown as {avatar_catalog:Record<string,{slot:string;unlock_level:number;free:boolean}>}).avatar_catalog.seaside;
   assert.equal(entry.slot,"background");assert.equal(entry.free,false);
   const bg={...intent,transaction:"cosmetic_0002",skill:"cosmetic:seaside",buns:config.cosmetic_purchase.seaside.buns,
     gold:String(config.cosmetic_purchase.seaside.gold)};
   const proof={source:"trustedServerValidation",verifierVersion:1,account:"a",progress:context.progress,epoch:1,
     transaction:bg.transaction,fingerprint:purchaseFingerprint(bg),snapshotDigest:"protected",
-    availableBuns:"2000",lifetimeBuns:"2000",phase:"reservation",level:entry.unlock_level-1};
+    availableBuns:"20000000",lifetimeBuns:"20000000",phase:"reservation",level:entry.unlock_level-1};
   const path=evidencePath("a","reservation",bg.transaction);
   store.docs.set(path,proof);
   await assert.rejects(service.purchase("a","reserve",{...context,intent:bg}));

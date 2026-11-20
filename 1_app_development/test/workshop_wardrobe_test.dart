@@ -74,11 +74,11 @@ void main() {
       await c.command(() => c.state
         ..level = 7
         ..claimedLevels.addAll([2, 3, 4, 5, 6, 7])
-        ..buns = BigInt.from(5000)
-        ..lifetime = BigInt.from(5000));
+        ..buns = BigInt.from(5000000)
+        ..lifetime = BigInt.from(5000000));
       expect(await c.purchaseSkill(c.purchaseGateway!, 'cosmetic:padding'), isTrue, reason: c.notice);
       final saved = c.state.toJson();
-      expect(saved['schema'], 10);
+      expect(saved['schema'], workshopSchema);
       final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>
         ..['schema'] = 8
         ..['avatarEquipment'] = {'outfit': 'padding', 'top': 'tee'}
@@ -86,7 +86,7 @@ void main() {
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.avatarEquipment['top'], 'padding');
       expect(migrated.avatarEquipment['outfit'], 'noapron');
-      expect(migrated.toJson()['schema'], 10);
+      expect(migrated.toJson()['schema'], workshopSchema);
       final strict = jsonDecode(jsonEncode(old)) as Map<String, dynamic>..['schema'] = 9;
       expect(() => WorkshopState.fromJson(strict, config), throwsFormatException);
     });
@@ -146,8 +146,8 @@ void main() {
       expect(restored.avatarEquipment['character'], 'boy');
       // Buying the other one works like any item.
       await c.command(() => c.state
-        ..buns = BigInt.from(5000)
-        ..lifetime = BigInt.from(5000));
+        ..buns = BigInt.from(5000000)
+        ..lifetime = BigInt.from(5000000));
       expect(await c.purchaseSkill(c.purchaseGateway!, 'cosmetic:girl'), isTrue, reason: c.notice);
       expect(await c.equipAvatar('girl'), isTrue);
     });
@@ -201,16 +201,16 @@ void main() {
       expect(again.avatarWorn(CosmeticSlot.hair, 'long'), 'short');
       // 여자 사장님을 사서 입으면 그 사장님의 기본 머리(긴 생머리)로.
       await boy.command(() => boy.state
-        ..buns = BigInt.from(5000)
-        ..lifetime = BigInt.from(5000));
+        ..buns = BigInt.from(5000000)
+        ..lifetime = BigInt.from(5000000));
       expect(await boy.purchaseSkill(boy.purchaseGateway!, 'cosmetic:girl'), isTrue, reason: boy.notice);
       expect(await boy.equipAvatar('girl'), isTrue);
       expect(boy.state.avatarWorn(CosmeticSlot.hair, 'long'), 'long');
       expect(boy.ownsAvatar('short'), isTrue, reason: '남자 사장님을 가졌으니 계속 가짐');
       // 여자로 시작해 남자 사장님을 사면 짧은 머리도 생기고 입는다.
       await girl.command(() => girl.state
-        ..buns = BigInt.from(5000)
-        ..lifetime = BigInt.from(5000));
+        ..buns = BigInt.from(5000000)
+        ..lifetime = BigInt.from(5000000));
       expect(await girl.purchaseSkill(girl.purchaseGateway!, 'cosmetic:boy'), isTrue, reason: girl.notice);
       expect(girl.ownsAvatar('short'), isTrue);
       expect(await girl.equipAvatar('boy'), isTrue);
@@ -277,7 +277,7 @@ void main() {
     });
 
     testWidgets('여러 칸을 바꿔 입어 보고: 모두 적용은 가진 것만, 모두 사기는 확인 창 뒤 사고 모두 입고 창을 닫는다 (H15)', (tester) async {
-      final (c, _) = await _open(tester, const Size(390, 844), gold: 20);
+      final (c, _) = await _open(tester, const Size(390, 844), gold: 20, buns: BigInt.from(1000000));
       await _tap(tester, 'menu-skins');
       expect(find.byKey(const Key('cosmetic-preview-status')), findsNothing);
       // Wearing what is worn already shows no '입어 보는 중' (G15).
@@ -475,7 +475,7 @@ void main() {
 
   group('상점 꾸미기 탭', () {
     testWidgets('잠긴 것도 입어 보고, 사면 확인 창 뒤 바로 입는다', (tester) async {
-      final (c, _) = await _open(tester, const Size(390, 844), gold: 5);
+      final (c, _) = await _open(tester, const Size(390, 844), gold: 5, buns: BigInt.from(300000));
       await _tap(tester, 'menu-shop');
       expect(find.byKey(const Key('shop-tab-gear')), findsNothing);
       expect(find.byKey(const Key('shop-wardrobe')), findsOneWidget);
@@ -547,7 +547,7 @@ void main() {
   // only). They are sold and chosen again from Lv.1.
   group('배경 되살리기 (H42)', () {
     testWidgets('Lv.1 상점 가게 탭에서 배경을 사면 바로 입고 홈 배경이 바뀐다', (tester) async {
-      final (c, _) = await _open(tester, const Size(390, 844), level: 1, gold: 5, buns: BigInt.from(5000));
+      final (c, _) = await _open(tester, const Size(390, 844), level: 1, gold: 10, buns: BigInt.from(4000000));
       await _tap(tester, 'menu-shop');
       await _tap(tester, 'cosmetic-category-stall');
       for (final id in ['night', 'dusk', 'rain', 'snow', 'autumn', 'forest', 'cherry', 'snowday', 'seaside']) {
@@ -651,8 +651,8 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
     c.state.level = level;
     c.state.claimedLevels.addAll([for (var n = 2; n <= level; n++) n]);
     c.state.featureIntros.addAll(['skills', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
-    c.state.lifetime = BigInt.from(20000);
     c.state.buns = buns ?? BigInt.from(20000);
+    c.state.lifetime = c.state.buns > BigInt.from(20000) ? c.state.buns : BigInt.from(20000);
   });
   game.state.premium.gold = gold;
   await tester.pumpWidget(GameApp(controller: game, workshop: c));

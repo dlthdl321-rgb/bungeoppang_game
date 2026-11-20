@@ -1,7 +1,7 @@
 {
   "metadata": {
     "schema_version": 1,
-    "revision": "development-provisional-3",
+    "revision": "development-provisional-4",
     "status": "approved_for_provisional_development",
     "release_validated": false,
     "runtime_connected": false,
@@ -38,562 +38,562 @@
     "gold_step_amount": 1,
     "entries": {
       "tap_1": {
-        "buns": "15",
+        "buns": "20",
         "gold": 0,
         "effect": "1",
         "unlock_total": "0",
-        "ratio_numerator": 115,
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_2": {
-        "buns": "250",
+        "buns": "80",
         "gold": 0,
-        "effect": "8",
-        "unlock_total": "500",
-        "ratio_numerator": 118,
+        "effect": "2",
+        "unlock_total": "150",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_3": {
-        "buns": "4000",
+        "buns": "300",
         "gold": 0,
-        "effect": "60",
-        "unlock_total": "10000",
-        "ratio_numerator": 120,
+        "effect": "3",
+        "unlock_total": "600",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_4": {
-        "buns": "10000",
+        "buns": "1200",
         "gold": 0,
-        "effect": "600",
-        "unlock_total": "10000",
-        "ratio_numerator": 115,
+        "effect": "4",
+        "unlock_total": "2500",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_5": {
-        "buns": "100000",
+        "buns": "40000",
         "gold": 2,
-        "effect": "3390",
-        "unlock_total": "100000",
-        "ratio_numerator": 115,
+        "effect": "6",
+        "unlock_total": "800000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_6": {
-        "buns": "1000000",
+        "buns": "150000",
         "gold": 2,
-        "effect": "19200",
-        "unlock_total": "1000000",
-        "ratio_numerator": 115,
+        "effect": "8",
+        "unlock_total": "3000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_7": {
-        "buns": "10000000",
+        "buns": "500000",
         "gold": 2,
-        "effect": "108000",
+        "effect": "12",
         "unlock_total": "10000000",
-        "ratio_numerator": 115,
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_8": {
-        "buns": "100000000",
+        "buns": "1500000",
         "gold": 2,
-        "effect": "611000",
-        "unlock_total": "100000000",
-        "ratio_numerator": 115,
+        "effect": "17",
+        "unlock_total": "30000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_9": {
-        "buns": "1000000000",
+        "buns": "5000000",
         "gold": 3,
-        "effect": "3450000",
-        "unlock_total": "1000000000",
-        "ratio_numerator": 115,
+        "effect": "26",
+        "unlock_total": "100000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_10": {
-        "buns": "10000000000",
+        "buns": "15000000",
         "gold": 3,
-        "effect": "19500000",
-        "unlock_total": "10000000000",
-        "ratio_numerator": 115,
+        "effect": "38",
+        "unlock_total": "300000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_11": {
-        "buns": "100000000000",
+        "buns": "50000000",
         "gold": 3,
-        "effect": "110000000",
-        "unlock_total": "100000000000",
-        "ratio_numerator": 115,
+        "effect": "58",
+        "unlock_total": "1000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_12": {
-        "buns": "1000000000000",
+        "buns": "150000000",
         "gold": 3,
-        "effect": "623000000",
-        "unlock_total": "1000000000000",
-        "ratio_numerator": 115,
+        "effect": "86",
+        "unlock_total": "3000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_13": {
-        "buns": "10000000000000",
+        "buns": "500000000",
         "gold": 4,
-        "effect": "3520000000",
-        "unlock_total": "10000000000000",
-        "ratio_numerator": 115,
+        "effect": "130",
+        "unlock_total": "10000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_14": {
-        "buns": "100000000000000",
+        "buns": "1500000000",
         "gold": 4,
-        "effect": "19900000000",
-        "unlock_total": "100000000000000",
-        "ratio_numerator": 115,
+        "effect": "195",
+        "unlock_total": "30000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_15": {
-        "buns": "1000000000000000",
+        "buns": "5000000000",
         "gold": 4,
-        "effect": "112000000000",
-        "unlock_total": "1000000000000000",
-        "ratio_numerator": 115,
+        "effect": "290",
+        "unlock_total": "100000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_16": {
-        "buns": "10000000000000000",
+        "buns": "15000000000",
         "gold": 4,
-        "effect": "635000000000",
-        "unlock_total": "10000000000000000",
-        "ratio_numerator": 115,
+        "effect": "440",
+        "unlock_total": "300000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_1": {
-        "buns": "50",
+        "buns": "80",
         "gold": 0,
         "effect": "1",
         "unlock_total": "0",
-        "ratio_numerator": 115,
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_2": {
-        "buns": "600",
+        "buns": "300",
         "gold": 0,
-        "effect": "10",
-        "unlock_total": "1000",
-        "ratio_numerator": 118,
+        "effect": "2",
+        "unlock_total": "600",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_3": {
-        "buns": "8000",
+        "buns": "1200",
         "gold": 0,
-        "effect": "100",
-        "unlock_total": "20000",
-        "ratio_numerator": 120,
+        "effect": "3",
+        "unlock_total": "2500",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_4": {
-        "buns": "20000",
+        "buns": "5000",
         "gold": 0,
-        "effect": "1000",
-        "unlock_total": "20000",
-        "ratio_numerator": 115,
+        "effect": "4",
+        "unlock_total": "10000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_5": {
-        "buns": "200000",
+        "buns": "50000",
         "gold": 2,
-        "effect": "5650",
-        "unlock_total": "200000",
-        "ratio_numerator": 115,
+        "effect": "5",
+        "unlock_total": "1000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_6": {
-        "buns": "2000000",
+        "buns": "200000",
         "gold": 2,
-        "effect": "31900",
-        "unlock_total": "2000000",
-        "ratio_numerator": 115,
+        "effect": "6",
+        "unlock_total": "4000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_7": {
-        "buns": "20000000",
+        "buns": "600000",
         "gold": 2,
-        "effect": "180000",
-        "unlock_total": "20000000",
-        "ratio_numerator": 115,
+        "effect": "8",
+        "unlock_total": "12000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_8": {
-        "buns": "200000000",
+        "buns": "2000000",
         "gold": 2,
-        "effect": "1020000",
-        "unlock_total": "200000000",
-        "ratio_numerator": 115,
+        "effect": "11",
+        "unlock_total": "40000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_9": {
-        "buns": "2000000000",
+        "buns": "6000000",
         "gold": 3,
-        "effect": "5760000",
-        "unlock_total": "2000000000",
-        "ratio_numerator": 115,
+        "effect": "15",
+        "unlock_total": "120000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_10": {
-        "buns": "20000000000",
+        "buns": "20000000",
         "gold": 3,
-        "effect": "32500000",
-        "unlock_total": "20000000000",
-        "ratio_numerator": 115,
+        "effect": "21",
+        "unlock_total": "400000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_11": {
-        "buns": "200000000000",
+        "buns": "60000000",
         "gold": 3,
-        "effect": "184000000",
-        "unlock_total": "200000000000",
-        "ratio_numerator": 115,
+        "effect": "29",
+        "unlock_total": "1200000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_12": {
-        "buns": "2000000000000",
+        "buns": "200000000",
         "gold": 3,
-        "effect": "1040000000",
-        "unlock_total": "2000000000000",
-        "ratio_numerator": 115,
+        "effect": "40",
+        "unlock_total": "4000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_13": {
-        "buns": "20000000000000",
+        "buns": "600000000",
         "gold": 4,
-        "effect": "5870000000",
-        "unlock_total": "20000000000000",
-        "ratio_numerator": 115,
+        "effect": "57",
+        "unlock_total": "12000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_14": {
-        "buns": "200000000000000",
+        "buns": "2000000000",
         "gold": 4,
-        "effect": "33200000000",
-        "unlock_total": "200000000000000",
-        "ratio_numerator": 115,
+        "effect": "80",
+        "unlock_total": "40000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_15": {
-        "buns": "2000000000000000",
+        "buns": "6000000000",
         "gold": 4,
-        "effect": "187000000000",
-        "unlock_total": "2000000000000000",
-        "ratio_numerator": 115,
+        "effect": "110",
+        "unlock_total": "120000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_16": {
-        "buns": "20000000000000000",
+        "buns": "20000000000",
         "gold": 4,
-        "effect": "1060000000000",
-        "unlock_total": "20000000000000000",
-        "ratio_numerator": 115,
+        "effect": "155",
+        "unlock_total": "400000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       }
     }
   },
   "cosmetic_purchase": {
     "night": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "4000000",
+      "gold": 10
     },
     "dusk": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "4000000",
+      "gold": 10
     },
     "forest": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "copper": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "lantern": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "bunting": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "snow": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "4000000",
+      "gold": 10
     },
     "cherry": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "seaside": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "castiron": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "golden": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "starlights": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "windchime": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "snowman": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "heartscale": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "starmark": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "crispgrid": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "sugar": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "choco": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "almond": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "sprinkle": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "short": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "ponytail": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "lowponytail": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "curly": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "padding": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "stripe": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "chefcoat": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "beanie": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "earmuffs": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "chefhat": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "santa": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "goldtongs": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "creamlong": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "pinksweater": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "sagesweater": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "creamsweater": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "cardigan": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "skirt": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "widepants": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "brownpants": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "jeans": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "denimshorts": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "joggers": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "checkskirt": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "cargopants": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "longskirt": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "sneakers": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "boots": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "furboots": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "darkapron": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "creamapron": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "waistapron": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "bandana": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "redbandana": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "ballcap": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "newsboy": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "blackcap": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "ribbon": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "fishpin": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "glasses": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "scarf": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "mittens": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "crossbag": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "paperbag": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "fishhold": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "rain": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "4000000",
+      "gold": 10
     },
     "autumn": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "snowday": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "paperlanterns": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "roselamp": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "mintlamp": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "lilaclamp": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "girl": {
-      "buns": "1000",
+      "buns": "600000",
       "gold": 10
     },
     "boy": {
-      "buns": "1000",
+      "buns": "600000",
       "gold": 10
     }
   },
@@ -2164,6 +2164,7 @@
     "gold": 10
   },
   "daily_return": {
+    "rate_taps_per_second": 2,
     "special_order": {
       "reward_seconds": 600,
       "min_buns": "200",

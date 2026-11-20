@@ -237,11 +237,21 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
           )
         else ...[
           if (unlocked && quote != null)
-            Column(key: Key('cost-$id'), crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-              CurrencyAmount(Currency.buns, quote.buns, missing: quote.buns > buns),
-              // DEC-041: tiers 1~4 ask no gold, so no '황금 0'.
-              if (quote.gold > BigInt.zero) CurrencyAmount(Currency.gold, quote.gold, missing: quote.gold > gold),
-            ]),
+            // 4차 g7: level prices grow 1.35× now, so ×100 can cost '2602.29조';
+            // a long price shrinks to fit instead of pushing the row over
+            // (360 wide at text scale 1.5).
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 88),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerRight,
+                child: Column(key: Key('cost-$id'), crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
+                  CurrencyAmount(Currency.buns, quote.buns, missing: quote.buns > buns),
+                  // DEC-041: tiers 1~4 ask no gold, so no '황금 0'.
+                  if (quote.gold > BigInt.zero) CurrencyAmount(Currency.gold, quote.gold, missing: quote.gold > gold),
+                ]),
+              ),
+            ),
           const SizedBox(width: 6),
           if (unlocked) ...[
             SkillStepWheel(

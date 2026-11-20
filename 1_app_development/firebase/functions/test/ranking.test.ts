@@ -56,19 +56,26 @@ test("rankingSubmit refuses calls closer together than the minimum gap", async (
 
 test("rankingSubmit refuses an implausible jump but allows growth over time", async () => {
   const store = new MemoryStore();
-  await ranking.submit(store, "kakao:1", { lifetime: "2000000000" }, start);
+  await ranking.submit(store, "kakao:1", { lifetime: "20000000" }, start);
   // Five minutes later: 1,000 times more is not believable.
-  await assert.rejects(ranking.submit(store, "kakao:1", { lifetime: "2000000000000" }, start + 5 * minute),
+  await assert.rejects(ranking.submit(store, "kakao:1", { lifetime: "20000000000" }, start + 5 * minute),
     (e) => code(e) === "implausible");
-  assert.equal(entry(store, "lifetime", "kakao:1")!.scoreText, "2000000000"); // nothing written
+  assert.equal(entry(store, "lifetime", "kakao:1")!.scoreText, "20000000"); // nothing written
   // Ten times at once is fine, and a day later anything up to the cap is.
-  await ranking.submit(store, "kakao:1", { lifetime: "20000000000" }, start + 6 * minute);
+  await ranking.submit(store, "kakao:1", { lifetime: "200000000" }, start + 6 * minute);
   await ranking.submit(store, "kakao:1", { lifetime: ranking.rankingScoreMax.toString() }, start + 30 * hour);
   // Small scores always pass.
   await ranking.submit(store, "kakao:2", { bestCombo: 900 }, start);
   await ranking.submit(store, "kakao:2", { bestCombo: 1000 }, start + 2 * minute);
   assert.equal(ranking.plausible("bestCombo", 1000n, 10000n, 0), true);
   assert.equal(ranking.plausible("bestCombo", 1000n, 10001n, 0), false);
+  // 4차 피드백 g7 (economy rebalance): auto production stays in the hundreds,
+  // so the check starts at 1,000/s and a lifetime of 10,000,000.
+  assert.equal(ranking.plausible("bestAutoRate", 0n, 1000n, 0), true);
+  assert.equal(ranking.plausible("bestAutoRate", 0n, 10000n, 0), true);
+  assert.equal(ranking.plausible("bestAutoRate", 0n, 10001n, 0), false);
+  assert.equal(ranking.plausible("lifetime", 0n, 100000000n, 0), true);
+  assert.equal(ranking.plausible("lifetime", 0n, 100000001n, 0), false);
 });
 
 test("rankingTop lists the best first, shares ranks on ties and shows my rank", async () => {
