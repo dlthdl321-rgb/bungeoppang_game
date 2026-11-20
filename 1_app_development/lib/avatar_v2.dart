@@ -66,6 +66,12 @@ String avatarV2ProudArms(String character, String skin) =>
 String avatarV2ProudHide(String character) =>
     'avatar_v2/$character/pose_proud_hide.png';
 
+/// The worn top's sleeves on the proud pose's raised arms (25번 50번, 26번
+/// 3차 AV2), drawn over [avatarV2ProudArms]. A top without this picture
+/// (none, or one held back by tools/avatar_v2.py) leaves the arms bare.
+String avatarV2ProudSleeve(String character, String top) =>
+    'avatar_v2/$character/pose_proud_sleeve_$top.png';
+
 /// Whether the v2 vendor is drawn and has its proud pose pictures.
 bool avatarV2ProudReady(String character, String skin) =>
     avatarV2On &&

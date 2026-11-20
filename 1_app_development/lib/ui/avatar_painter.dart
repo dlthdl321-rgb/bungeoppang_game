@@ -267,6 +267,12 @@ class AvatarRig {
             erase: [...s.erase, hide]);
       }
       add(avatarV2ProudArms(character, skin), RigLayer.front);
+      // 26번 3차 AV2 (25번 50번): the worn top's sleeves over the raised
+      // arms, so a long-sleeved top does not look sleeveless.
+      final top = look.worn(CosmeticSlot.top);
+      if (!blankCosmetics.contains(top) && !avatarItemWithdrawn(character, top)) {
+        add(avatarV2ProudSleeve(character, top), RigLayer.front);
+      }
     }
     final indexed = out.indexed.toList()
       ..sort((a, b) {
