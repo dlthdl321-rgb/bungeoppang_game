@@ -48,7 +48,7 @@ void main() {
     final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18),
         monotonicMs: () => 0);
     await c.initialize();
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
     await tester.pump();
     return c;

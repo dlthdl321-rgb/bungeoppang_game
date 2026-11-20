@@ -29,7 +29,7 @@ void main() {
     final c = WorkshopController(config, MemoryRepository(),
         now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);
     await c.initialize();
-    await c.command(() => c.state.tutorial = 'done');
+    await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await tester.pumpWidget(GameApp(controller: account, workshop: c));
     await tester.pump();
     await tester.pump();
@@ -162,9 +162,16 @@ void main() {
           expect(g.bottom, lessThanOrEqualTo(counter.top + 1), reason: 'guest $i');
           if (i > 0) expect(g.width, lessThan(front.width), reason: 'guest $i');
         }
-        // Tapping the clicker still counts (the guests are behind it).
+        // 4차 IA3: the 붕어빵 요정 hides from guests at the right edge, half
+        // on screen and clear of the front guest; tapping it still counts.
+        final hiding = tester.getRect(find.byKey(const Key('workshop-clicker')));
+        expect(find.byKey(const Key('fairy-hiding')), findsOneWidget);
+        expect(hiding.left, greaterThan(front.right - 1));
+        expect(hiding.right, greaterThan(size.width));
+        expect(size.width - hiding.left, greaterThanOrEqualTo(56));
+        expect(hiding.bottom, lessThanOrEqualTo(counter.top));
         final before = c.state.taps;
-        await tester.tapAt(clicker.center);
+        await tester.tapAt(Offset(size.width - 20, hiding.center.dy));
         await tester.pump();
         expect(c.state.taps, before + 1);
       }

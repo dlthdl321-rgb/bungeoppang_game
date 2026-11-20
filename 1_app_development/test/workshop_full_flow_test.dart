@@ -173,6 +173,16 @@ void main() {
     await tester.tap(key('feature-intro-ok'));
     await tester.pumpAndSettle();
     expect(c.state.featureIntros, contains('griddle'));
+    // 4차 IA3: no guest after the first sale, so the 붕어빵 요정 is out: its
+    // story card comes next (after the griddle's), once.
+    await tester.pump();
+    await tester.pump();
+    expect(key('feature-intro-fairy'), findsOneWidget);
+    expect(find.text('붕어빵 요정을 만났어요'), findsOneWidget);
+    await tester.tap(key('feature-intro-ok'));
+    await tester.pumpAndSettle();
+    expect(c.state.featureIntros, contains('fairy'));
+    expect(key('feature-intro-fairy'), findsNothing);
 
     // 둘째 손님에게는 남은 재고(보관한 연습 붕어빵과 수확분 중 남은 1개)를 판다.
     await nextGuest();
@@ -214,8 +224,13 @@ void main() {
     expect(key('active-empty-mold'), findsNothing);
     // The order bake went to stock for that customer.
     expect(c.saleReadyCount(c.state.customers.firstWhere((o) => o.id == orderId)), greaterThan(0));
+    // 4차 IA3: the guest still waits, so the 붕어빵 요정 peeks from the right
+    // edge; its part on screen still takes the tap.
+    expect(key('fairy-hiding'), findsOneWidget);
     final after = c.state.taps;
-    await tapKey('workshop-clicker');
+    final fairy = tester.getRect(key('workshop-clicker'));
+    await tester.tapAt(Offset(fairy.center.dx.clamp(0, tester.getSize(find.byType(GameApp)).width - 20), fairy.center.dy));
+    await tester.pump();
     expect(c.state.taps, after + 1);
     // 주문 제작한 붕어빵을 그 손님에게 판다.
     await tapKey('sale-button');

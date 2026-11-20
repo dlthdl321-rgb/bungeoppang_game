@@ -31,6 +31,10 @@ enum WorkshopFeature {
   /// The 가게 tab's 배경 and 시간 (and the menu's 배경 테마):
   /// `stall_background` (Lv.1, 26번 3차 H42). No introduction card.
   stallBackground,
+  /// The 붕어빵 요정's story (4차 피드백 IA3): never locks anything; its
+  /// card shows once after the first-run guide, when the fairy is out (in
+  /// business, no guests, nothing in the big mold).
+  fairy,
 }
 
 /// Features with a one-screen introduction card, in the order they are shown
@@ -45,6 +49,8 @@ const workshopIntroFeatures = [
   WorkshopFeature.fishCosmetics,
   WorkshopFeature.freshness,
   WorkshopFeature.stallCosmetics,
+  // Last: the story waits for any card that explains a new feature.
+  WorkshopFeature.fairy,
 ];
 
 final workshopIntroIds = {for (final f in workshopIntroFeatures) f.name};
@@ -64,7 +70,7 @@ int? featureUnlockLevel(DevelopmentBalance config, WorkshopFeature feature) {
     WorkshopFeature.stallCosmetics => level('stall_cosmetics'),
     WorkshopFeature.stallBackground => level('stall_background'),
     WorkshopFeature.griddle => level('six_slot_access'),
-    WorkshopFeature.wardrobe || WorkshopFeature.freshness => null,
+    WorkshopFeature.wardrobe || WorkshopFeature.freshness || WorkshopFeature.fairy => null,
   };
 }
 
@@ -83,6 +89,7 @@ bool featureOpen(WorkshopState s, DevelopmentBalance config, WorkshopFeature fea
         s.purchases.journals.values.any((j) => !j.settled),
     WorkshopFeature.griddle => byLevel && s.masteryAwards.isNotEmpty,
     WorkshopFeature.recipes => byLevel || s.recipes.length > 1,
+    WorkshopFeature.fairy => !s.tutorialActive && s.business.open && s.customers.isEmpty && s.session == null,
     WorkshopFeature.freshness => s.inventory.batches.values.any((b) =>
         (s.inventory.bindings[b.id] ?? b.madeOnBusinessIndex) < s.business.businessIndex),
     _ => byLevel,
@@ -104,7 +111,7 @@ String? featureLockReason(WorkshopState s, DevelopmentBalance config, WorkshopFe
     return '$label${_objectParticle(label)} 숙련하면 열려요 (연습 ${m.practices}/${rule['practice_required']} · '
         '손기술 ${m.techniquePasses}/${rule['technique_passes_required']})';
   }
-  if (feature == WorkshopFeature.freshness) return null;
+  if (feature == WorkshopFeature.freshness || feature == WorkshopFeature.fairy) return null;
   return 'Lv.$level에 열려요';
 }
 
@@ -118,9 +125,10 @@ WorkshopFeature? pendingFeatureIntro(WorkshopState s, DevelopmentBalance config)
 }
 
 /// Intro ids already open for [s]: an older save counts them as seen, so a
-/// player past those levels gets no cards (schema 7 → 8).
+/// player past those levels gets no cards (schema 7 → 8). The fairy's story
+/// is new to everyone, so it is never counted as seen.
 Set<String> openedIntroIds(WorkshopState s, DevelopmentBalance config) =>
-    {for (final f in workshopIntroFeatures) if (featureOpen(s, config, f)) f.name};
+    {for (final f in workshopIntroFeatures) if (f != WorkshopFeature.fairy && featureOpen(s, config, f)) f.name};
 
 /// 을/를 after [word]: by whether its last syllable has a final consonant.
 String _objectParticle(String word) {
@@ -140,6 +148,9 @@ class WorkshopFeatureIntro {
 /// assets/images/ui (25번 22번); until it is drawn the card shows
 /// [fallbackIcon], an existing icon, as the stand-in.
 WorkshopFeatureIntro featureIntro(WorkshopFeature feature) => switch (feature) {
+      WorkshopFeature.fairy => const WorkshopFeatureIntro('붕어빵 요정을 만났어요',
+          '가게에 사는 붕어빵 요정이에요. 손님이 없으면 헤엄치며 놀다가, 손님이 오면 부끄러워 구석에 숨어요. 숨은 요정을 찾아 눌러도 붕어빵력이 모여요.',
+          'intro_fairy', 'bun'),
       WorkshopFeature.skills => const WorkshopFeatureIntro('스킬이 열렸어요',
           '붕어빵력으로 클릭 스킬과 자동 생산 스킬을 레벨업해요. 카카오 로그인 후 레벨업할 수 있고, 위쪽에 초당·클릭당 숫자가 보여요.',
           'intro_skills', 'skill'),

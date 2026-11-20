@@ -108,6 +108,7 @@ void main() {
       await c.openBusiness();
       expect(await c.command(() {
         c.state.tutorial = 'done';
+        c.state.featureIntros.add('fairy');
         c.state.level = 5;
         c.state.claimedLevels..clear()..addAll([2, 3, 4, 5]);
         c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
