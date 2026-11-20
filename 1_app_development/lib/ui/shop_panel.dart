@@ -25,7 +25,11 @@ class ShopPanel extends StatefulWidget {
   /// The Workshop shop opens its 꾸미기 tab at this slot (from the
   /// wardrobe's '상점에서 더 보기').
   final CosmeticSlot? initialSlot;
-  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access,this.initialSlot});
+  /// A build without the online settings: the charge tab hands out free
+  /// test gold instead of Play packs (4차 피드백 IC10 후속).
+  final bool localTestGold;
+  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access,this.initialSlot,
+    this.localTestGold=false});
   @override
   State<ShopPanel> createState() => _ShopPanelState();
 }
@@ -110,7 +114,7 @@ class _ShopPanelState extends State<ShopPanel> {
           child: tab == ShopTab.gold
               ? SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: GoldChargeTab(controller: c, legacyBoost: false))
+                  child: GoldChargeTab(controller: c, legacyBoost: false, localTestGold: widget.localTestGold))
               : WardrobePanel(
                   key: const Key('shop-wardrobe'),
                   controller: c,

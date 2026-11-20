@@ -29,9 +29,9 @@ abstract final class OwnerTexts {
   static String otherAccount(LoginProvider? provider) =>
       '이 기기의 가게는 다른 ${provider == null ? '' : '${provider.label} '}계정에 연결돼 있어요. 처음 로그인한 계정으로 다시 로그인해 주세요.';
 
-  // 오프라인 첫 실행
-  static const offlineTitle = '인터넷 연결이 필요해요';
-  static const offlineBody = '처음 시작할 때 한 번 로그인해야 해요.\n인터넷에 연결한 뒤 다시 시도해 주세요.\n한 번 로그인하면 그다음부터는 인터넷 없이도 할 수 있어요.';
+  // 오프라인 첫 실행 (4차 피드백 IC10: 게임은 온라인 전용)
+  static const offlineTitle = '인터넷에 연결해 주세요';
+  static const offlineBody = '오늘의 붕어빵은 인터넷에 연결된 동안에만 할 수 있어요.\n와이파이나 모바일 데이터를 켜고\n다시 시도해 주세요.';
   static const retry = '다시 시도';
 
   // ② 사장님 이름

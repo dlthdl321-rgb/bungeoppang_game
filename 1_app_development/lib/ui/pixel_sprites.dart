@@ -304,6 +304,9 @@ class PixelSprites {
     for (final name in iconNames) {
       yield 'assets/images/icons/$name.png';
     }
+    // Optional (not in iconNames: 192x192, not 72x72): the connection
+    // notice's fainted bungeoppang (25번 59번); missing until drawn.
+    yield 'assets/images/icons/conn_fainted.png';
     for (final colour in postlampColors) {
       yield _stallPartPath('postlamp_$colour');
     }

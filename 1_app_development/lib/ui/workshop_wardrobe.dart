@@ -215,9 +215,12 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
     final sum = a.total?.call(buy);
     final locked = buy.any((d) => !a.unlocked(d));
     final ready = !locked && buy.every(a.canApply) && sum != null && !sum.missingBuns && !sum.missingGold;
+    final block = a.purchaseBlock?.call();
     final note = locked
         ? '잠긴 꾸미기는 아직 살 수 없어요.'
-        : sum != null && sum.missingGold
+        : block != null
+            ? block
+            : sum != null && sum.missingGold
             ? '황금붕어빵력이 모자라요.'
             : sum != null && sum.missingBuns
                 ? '붕어빵력이 모자라요.'
@@ -417,7 +420,15 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
             key: Key('buy-cosmetic-${focused.id}'),
             label: a.unlocked(focused) ? '사고 바로 입기' : a.requirement?.call(focused) ?? '잠김',
             kind: WardrobeActionKind.buy,
-            onPressed: working || !a.canApply(focused) ? null : () => _buy(focused)),
+            onPressed: working
+                ? null
+                : a.canApply(focused)
+                    ? () => _buy(focused)
+                    // 4차 피드백 IC10: say why instead of a dead button.
+                    : switch (a.unlocked(focused) ? a.purchaseBlock?.call() : null) {
+                        final why? => () => setState(() => message = why),
+                        null => null,
+                      }),
       if (!shop && unbought.isNotEmpty)
         WardrobeActionButton(
             key: const Key('wardrobe-buy-all'),

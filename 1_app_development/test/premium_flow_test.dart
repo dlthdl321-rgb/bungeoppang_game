@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/billing_service.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
@@ -207,10 +208,10 @@ void main() {
     final t = FakeTime();
     final c = GameController(MemoryGameRepository(), t);
     await c.initialize();
-    expect(await c.addFriend('BBAAAAAAAA'), '지금은 온라인에 연결할 수 없어요');
+    expect(await c.addFriend('BBAAAAAAAA'), OnlineTexts.notSetUp);
     expect(await c.spendGold(PremiumKind.boost, BoostKind.bought.name),
-        '지금은 온라인에 연결할 수 없어요');
-    expect(await c.buyGoldPack('gold_60'), '지금은 온라인에 연결할 수 없어요');
+        OnlineTexts.notSetUp);
+    expect(await c.buyGoldPack('gold_60'), OnlineTexts.notSetUp);
     expect(await c.goldPacks(), isEmpty);
     await c.syncOnline(); // no-op, no throw
     c.dispose();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
@@ -193,7 +194,7 @@ void main() {
       await c.initialize();
       await c.refreshRanking();
       expect(c.rankingStatus.configured, isFalse);
-      expect(await c.signInOnline(), '지금은 온라인에 연결할 수 없어요');
+      expect(await c.signInOnline(), OnlineTexts.notSetUp);
       expect(await c.loadRanking(rankingBestAutoRate), isNull);
       c.tap();
       expect(c.state.lifetime, BigInt.one);

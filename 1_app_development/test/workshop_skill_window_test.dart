@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
@@ -76,7 +77,7 @@ void main() {
     expect(_button(tester, 'tap_1').enabled, isFalse);
     await tester.tap(find.byKey(const Key('buy-tap_1')));
     await tester.pump();
-    expect(find.text('인터넷에 연결하면 레벨업할 수 있어요.'), findsOneWidget);
+    expect(find.text(OnlineTexts.skillNotSetUp), findsWidgets);
     expect(c.state.purchases.owned['tap_1'], isNull);
   });
 

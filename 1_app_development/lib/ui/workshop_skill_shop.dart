@@ -5,6 +5,7 @@ import '../development_rules.dart';
 import '../economy.dart';
 import '../game_controller.dart';
 import '../models.dart';
+import '../online_texts.dart';
 import '../workshop_controller.dart';
 import 'center_toast.dart';
 import 'cozy_style.dart';
@@ -84,7 +85,14 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
       ),
       Expanded(
         child: ListView(key: ValueKey('skills-${_kind.name}'), padding: const EdgeInsets.fromLTRB(12, 4, 12, 12), children: [
-          if (c.purchaseGateway != null && !account.online.signedIn)
+          // 4차 피드백 IC10: a build without the online settings says so
+          // (it is not the phone's connection).
+          if (c.purchaseGateway == null)
+            CozyPanel(
+                key: const Key('skill-setup-note'),
+                child: const Text(OnlineTexts.skillNotSetUp, textAlign: TextAlign.center)),
+          // Before the login (a test build's local purchases need none).
+          if (c.purchaseGateway != null && c.purchaseGateway!.authenticatedAccount.isEmpty)
             CozyPanel(
                 key: const Key('skill-sign-in'),
                 child: Column(children: [
@@ -145,7 +153,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
       required BigInt buns, required BigInt gold}) {
     final c = widget.controller;
     if (!unlocked) return '${unlockGoalText(c.config, id)} 만들면 열려요.';
-    if (c.purchaseGateway == null) return '인터넷에 연결하면 레벨업할 수 있어요.';
+    if (c.purchaseGateway == null) return OnlineTexts.skillNotSetUp;
     if (c.purchaseGateway!.authenticatedAccount.isEmpty) return '카카오 로그인 후 레벨업할 수 있어요.';
     if (c.error != null) return c.error;
     if (c.inputBusy || c.purchaseBusy) return '잠시 뒤에 다시 눌러 주세요.';
