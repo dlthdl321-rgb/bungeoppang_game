@@ -46,16 +46,22 @@ void main() {
   });
 
   test('꾸미기는 시험용 황금을 쓰고, 모자라면 아무것도 빠지지 않는다', () async {
+    // 4차 g7 prices (4차 병합): read the beanie's price from the settings.
+    final price = config.section('cosmetic_purchase')['beanie'] as Map<String, dynamic>;
+    final cost = BigInt.parse(price['buns'] as String), goldCost = price['gold'] as int;
+    await c.command(() => c.state
+      ..buns = cost * BigInt.two
+      ..lifetime = cost * BigInt.two);
     final buns = c.state.buns;
     expect(await c.purchaseSkill(gateway, 'cosmetic:beanie'), isTrue);
     expect(c.ownsAvatar('beanie'), isFalse, reason: '황금 0이라 거절');
     expect(c.state.buns, buns, reason: '붕어빵력 그대로');
     expect(c.state.purchases.journals.values.every((j) => j.settled), isTrue, reason: '멈춘 거래 없음');
-    gold = 5;
+    gold = goldCost + 1;
     expect(await c.purchaseSkill(gateway, 'cosmetic:beanie'), isTrue, reason: c.notice);
     expect(c.ownsAvatar('beanie'), isTrue);
-    expect(gold, 3, reason: '황금 2 사용');
-    expect(c.state.buns, buns - BigInt.from(1000));
+    expect(gold, 1, reason: '황금 $goldCost 사용');
+    expect(c.state.buns, buns - cost);
   });
 
   test('조건(누적·레벨)은 서버가 없어도 똑같이 검사한다', () async {

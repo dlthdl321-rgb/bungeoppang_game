@@ -497,26 +497,46 @@ void main() {
     });
   });
 
-  group('가게 탭 (F33·S45-Q6)', () {
-    // 26번 3차 H42: 배경·밤낮 from Lv.1; 화로·장식·등불 still from Lv.8.
-    testWidgets('Lv.7 가게 탭은 배경·밤낮만, Lv.8부터 화로·장식·등불, 미리보기는 장면 전체가 상자 안', (tester) async {
+  group('배경 탭 (F33·S45-Q6, 4차 피드백 g10 ID5·ID8)', () {
+    // 26번 3차 H42: 배경·밤낮 from Lv.1. 4차 g10(ID8): the tab is '배경'
+    // with 풍경·등불·밤낮 from Lv.1; 화로·장식 still from Lv.8.
+    testWidgets('Lv.7 배경 탭은 풍경·등불·밤낮, Lv.8부터 화로·장식, 미리보기는 가게 전체 카드', (tester) async {
       await _open(tester, const Size(390, 844), level: 7);
       await _tap(tester, 'menu-skins');
       expect(find.byKey(const Key('cosmetic-category-bungeoppang')), findsOneWidget);
+      expect(find.text('배경'), findsOneWidget);
+      expect(find.text('가게'), findsNothing);
       await _tap(tester, 'cosmetic-category-stall');
-      expect(find.byKey(const Key('cosmetic-slot-background')), findsOneWidget);
-      expect(find.byKey(const Key('cosmetic-slot-time')), findsOneWidget);
-      // 4차 g5: listed locked (stripe + corner padlock), not hidden; a tap
-      // says when it opens and keeps the slot chosen.
-      for (final slot in ['stove', 'decoration', 'lamp']) {
+      for (final (slot, label) in [('background', '풍경'), ('lamp', '등불'), ('time', '밤낮')]) {
+        expect(find.descendant(of: find.byKey(Key('cosmetic-slot-$slot')), matching: find.text(label)), findsOneWidget,
+            reason: slot);
+      }
+      // 4차 g5: 화로·장식 are listed locked (stripe + corner padlock), not
+      // hidden; a tap says when it opens.
+      for (final slot in ['stove', 'decoration']) {
         expect(find.byKey(Key('cosmetic-slot-$slot-locked')), findsOneWidget, reason: slot);
       }
-      await tester.tap(find.byKey(const Key('cosmetic-slot-lamp')));
+      expect(find.byKey(const Key('cosmetic-slot-lamp-locked')), findsNothing);
+      await tester.tap(find.byKey(const Key('cosmetic-slot-stove')));
       await tester.pump();
-      expect(find.text('등불: Lv.8 달성하면 열려요'), findsOneWidget);
+      expect(find.textContaining('Lv.8 달성하면 열려요'), findsOneWidget);
       CenterToast.hide();
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('preview-stall')), findsOneWidget);
+      // ID5: the whole stall as a home-shaped card, no vendor.
+      final box = tester.getRect(find.byKey(const Key('preview-stall')));
+      final scene = tester.getRect(find.byKey(const Key('preview-stall-scene')));
+      expect(scene, box);
+      expect(box.height, greaterThan(220));
+      final card = StallPreviewPainter.cardIn(box.size);
+      expect(card.height / card.width, closeTo(844 / 390, .01));
+      expect(card.left, greaterThan(0));
+      final painter = tester.widget<CustomPaint>(find.byKey(const Key('preview-stall-scene'))).painter;
+      expect(painter, isA<StallPreviewPainter>());
+      // 등불 sells the lamp glass from Lv.1 (locked by level until then).
+      await _tap(tester, 'cosmetic-slot-lamp');
+      for (final id in ['amberlamp', 'roselamp', 'mintlamp', 'lilaclamp']) {
+        expect(find.byKey(Key('preview-$id')), findsOneWidget, reason: id);
+      }
       await tester.pumpWidget(const SizedBox());
       // Before Lv.5 the 붕어빵 tab is listed locked too.
       await _open(tester, const Size(390, 844), level: 4);
@@ -532,13 +552,59 @@ void main() {
       await _open(tester, const Size(390, 844), level: 8);
       await _tap(tester, 'menu-skins');
       await _tap(tester, 'cosmetic-category-stall');
-      expect(find.byKey(const Key('cosmetic-slot-lamp')), findsOneWidget);
-      // 시안 확인 2차: a wide stall scene filling the box, no vendor.
-      final box = tester.getRect(find.byKey(const Key('preview-stall')));
-      final scene = tester.getRect(find.byKey(const Key('preview-stall-scene')));
-      expect(scene, box);
-      final painter = tester.widget<CustomPaint>(find.byKey(const Key('preview-stall-scene'))).painter;
-      expect(painter, isA<StallPreviewPainter>());
+      expect(find.byKey(const Key('cosmetic-slot-stove')), findsOneWidget);
+      expect(find.byKey(const Key('cosmetic-slot-decoration')), findsOneWidget);
+    });
+
+    // 4차 g10(ID9): 기기 시간 따라 is free and worn; 낮·밤 고정 are sold
+    // at the special background's price.
+    testWidgets('밤낮 칸: 기기 시간 따라가 기본, 밤 고정을 사면 바로 쓴다', (tester) async {
+      final (c, _) = await _open(tester, const Size(390, 844), level: 1, gold: 20, buns: BigInt.from(20000000));
+      await _tap(tester, 'menu-skins');
+      await _tap(tester, 'cosmetic-category-stall');
+      await _tap(tester, 'cosmetic-slot-time');
+      expect(find.byKey(const Key('preview-scenetime')), findsNothing);
+      for (final id in ['clock', 'day', 'night_time']) {
+        expect(find.byKey(Key('preview-$id')), findsOneWidget, reason: id);
+      }
+      expect(c.state.sceneTime, 'clock');
+      final quote = quoteWorkshopProduct(config, 'cosmetic:night_time', owned: 0, quantity: 1);
+      final special = quoteWorkshopProduct(config, 'cosmetic:seaside', owned: 0, quantity: 1);
+      expect(quote.buns, greaterThanOrEqualTo(special.buns));
+      expect(quote.gold, greaterThanOrEqualTo(special.gold));
+      await _tap(tester, 'preview-night_time');
+      await _tap(tester, 'wardrobe-buy-all');
+      await _tap(tester, 'wardrobe-buy-all-confirm');
+      expect(c.ownsAvatar('night_time'), isTrue, reason: c.notice);
+      expect(c.state.sceneTime, 'night_time');
+      expect(c.state.avatarEquipment.containsKey('time'), isFalse);
+    });
+
+    testWidgets('설정의 밤낮은 가진 것만: 기기 시간 따라 + 산 밤 고정', (tester) async {
+      final (c, _) = await _open(tester, const Size(390, 844), level: 1, gold: 20, buns: BigInt.from(20000000));
+      expect(await c.purchaseSkill(c.purchaseGateway!, 'cosmetic:night_time'), isTrue, reason: c.notice);
+      await tester.pumpAndSettle();
+      await _tap(tester, 'home-settings');
+      // The settings list builds lazily: scroll down to the 밤낮 row.
+      await tester.scrollUntilVisible(find.byKey(const Key('settings-time')), 200,
+          scrollable: find.byType(Scrollable).last);
+      await _tap(tester, 'settings-time');
+      expect(find.text('밤 고정'), findsWidgets);
+      expect(find.text('낮 고정'), findsNothing);
+      expect(find.text('기기 시간 따라'), findsWidgets);
+    });
+
+    testWidgets('등불을 사면 가게 저장에 입고 홈 등불이 바뀐다', (tester) async {
+      final (c, _) = await _open(tester, const Size(390, 844), level: 2, gold: 20, buns: BigInt.from(20000000));
+      await _tap(tester, 'menu-shop');
+      await _tap(tester, 'cosmetic-category-stall');
+      await _tap(tester, 'cosmetic-slot-lamp');
+      await _tap(tester, 'preview-roselamp');
+      await _tap(tester, 'buy-cosmetic-roselamp');
+      await _tap(tester, 'wardrobe-buy-confirm');
+      expect(c.ownsAvatar('roselamp'), isTrue, reason: c.notice);
+      expect(c.state.avatarEquipment['lamp'], 'roselamp');
+      expect(WorkshopState.fromJson(c.state.toJson(), config).avatarEquipment['lamp'], 'roselamp');
     });
   });
 
@@ -652,6 +718,7 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
     c.state.claimedLevels.addAll([for (var n = 2; n <= level; n++) n]);
     c.state.featureIntros.addAll(['skills', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
     c.state.buns = buns ?? BigInt.from(20000);
+    // Never less than what is in hand (a save check).
     c.state.lifetime = c.state.buns > BigInt.from(20000) ? c.state.buns : BigInt.from(20000);
   });
   game.state.premium.gold = gold;

@@ -30,18 +30,22 @@ class WardrobeState {
     if (m['owned'] is! List || m['equipped'] is! Map) {
       throw const FormatException('꾸미기 슬롯 저장 손상');
     }
-    // 26번 3차 AV3: removed items (skin tones 2·3) are dropped.
+    // 26번 3차 AV3: removed items (skin tones 2·3) and 4차 피드백 g10: an
+    // item taken out ([retiredCosmetics]) are dropped from what is owned and
+    // swapped for their replacement where they are worn.
     final raw = [
       for (final id in m['owned'] as List)
-        if (!removedCosmetics.containsKey(id)) id
+        if (!removedCosmetics.containsKey(id) && !retiredCosmetics.containsKey(id)) id
     ];
     if (raw.toSet().length != raw.length ||
         raw.any((id) => !_wardrobeCatalog.any((d) => d.id == id))) {
       throw const FormatException('잘못된 꾸미기 보유 목록');
     }
     final s = WardrobeState._(raw.cast<String>().toSet(), {});
-    final equipped = Map<dynamic, dynamic>.of(m['equipped'] as Map)
-      ..updateAll((_, id) => removedCosmetics[id] ?? id);
+    final equipped = {
+      for (final e in (m['equipped'] as Map).entries)
+        e.key: removedCosmetics[e.value] ?? retiredCosmetics[e.value] ?? e.value
+    };
     // v14 (26번 4-5단계): the chef coat and padded vest became tops. An
     // older save wearing one as its apron wears it as the top, no apron.
     if (version < 14 && movedToTop.contains(equipped[CosmeticSlot.outfit.name])) {

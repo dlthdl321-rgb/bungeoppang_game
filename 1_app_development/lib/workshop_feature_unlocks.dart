@@ -247,7 +247,7 @@ WorkshopFeatureIntro featureIntro(WorkshopFeature feature) => switch (feature) {
           '재고는 영업일이 지날수록 값과 손님 만족이 조금씩 줄어요. 오래된 붕어빵부터 손님에게 드려요.',
           'intro_freshness', 'records'),
       WorkshopFeature.stallCosmetics => const WorkshopFeatureIntro('가게 꾸미기가 열렸어요',
-          '꾸미기의 가게 칸에서 화로와 장식, 등불도 바꿀 수 있어요. 배경은 메뉴의 배경 테마에서도 바꿔요.',
+          '꾸미기의 배경 탭에서 화로와 장식도 바꿀 수 있어요. 풍경은 메뉴의 배경 테마에서도 바꿔요.',
           'intro_stall_cosmetics', 'tab_stall'),
       WorkshopFeature.wardrobe => const WorkshopFeatureIntro('꾸미기·상점·오늘이 열렸어요',
           '아래 꾸미기와 상점에서 사장님과 가게 모습을 바꿀 수 있어요. 오른쪽 위 쪽지에서는 출석 도장과 오늘의 주문서를 받아요.',

@@ -263,9 +263,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
   CosmeticMenuAccess get _cosmetics {
     final account=widget.accountController,catalog=c.config.section('avatar_catalog');
     bool avatar(CosmeticDefinition d)=>catalog[d.id] is Map<String,dynamic> && (catalog[d.id] as Map)['slot']==d.slot.name;
-    bool owned(CosmeticDefinition d)=>d.slot==CosmeticSlot.time || (avatar(d) ? c.ownsAvatar(d.id):account.state.ownsCosmetic(d));
-    bool unlocked(CosmeticDefinition d)=>d.slot==CosmeticSlot.time || (avatar(d) ? owned(d) || c.state.level>=DevelopmentBalance.integer(catalog[d.id] as Map<String,dynamic>,'unlock_level') &&
-      c.state.lifetime>=DevelopmentBalance.decimal(catalog[d.id] as Map<String,dynamic>,'unlock_total'):cosmeticUnlocked(account.state,d));
+    // 4차 피드백 g10(ID9): the device's clock is free; a fixed day or night
+    // is sold through the avatar catalog like the backgrounds and lamps.
+    bool owned(CosmeticDefinition d)=>avatar(d) ? c.ownsAvatar(d.id):d.slot==CosmeticSlot.time || account.state.ownsCosmetic(d);
+    bool unlocked(CosmeticDefinition d)=>avatar(d) ? owned(d) || c.state.level>=DevelopmentBalance.integer(catalog[d.id] as Map<String,dynamic>,'unlock_level') &&
+      c.state.lifetime>=DevelopmentBalance.decimal(catalog[d.id] as Map<String,dynamic>,'unlock_total'):d.slot==CosmeticSlot.time || cosmeticUnlocked(account.state,d);
     String price(CosmeticDefinition d){
       if(owned(d))return '보유 중';
       if(!avatar(d))return '판매하지 않아요';
@@ -302,7 +304,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // Avatar items show once their art is ready for the vendor worn now
       // (PixelSprites.avatarArtReady); owners keep seeing what they bought.
       // Withdrawn items (26번 3차 H10) stay hidden even when owned.
-      listed:(d)=>avatar(d) && (d.slot==CosmeticSlot.background || PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id)) ||
+      // Stall items (backgrounds, lamps, day/night) need no vendor art.
+      listed:(d)=>avatar(d) && (d.slot.category==CosmeticCategory.stall || PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id)) ||
         owned(d) && !avatarItemWithdrawn(_equipped(CosmeticSlot.character),d.id),
       forSale:avatar,cost:cost,total:total,
       // 4차 피드백 IC10: the real reason, not the phone's connection.
@@ -313,25 +316,27 @@ class _WorkshopPageState extends State<WorkshopPage> {
       requirement:(d)=>avatar(d) ? 'Lv.${(catalog[d.id] as Map)['unlock_level']} 해금' : '',
       // 붕어빵 꾸미기 from Lv.5, 가게 꾸미기 from Lv.8 (S45-Q6). 26번 3차
       // H42: the 가게 tab opens with its 배경·시간 from Lv.1 (the backgrounds
-      // are sold in the shop again); stove, decoration and lamp still wait
-      // for Lv.8. 4차 g5: listed locked before, not hidden.
+      // are sold in the shop again). 4차 피드백 g10(ID8): the tab is '배경'
+      // with 풍경·등불·밤낮 from Lv.1 (lamps are sold now too); stove and
+      // decoration still wait for Lv.8. 4차 g5: listed locked before, not hidden.
       tabLock:(t)=>switch(t){
         WardrobeTab.bungeoppang=>c.featureLock(WorkshopFeature.fishCosmetics),
         WardrobeTab.stall=>c.featureLock(WorkshopFeature.stallBackground),
         _=>null},
-      slotLock:(s)=>s.tab!=WardrobeTab.stall || s==CosmeticSlot.background || s==CosmeticSlot.time ? null :
+      slotLock:(s)=>s.tab!=WardrobeTab.stall || s==CosmeticSlot.background || s==CosmeticSlot.lamp || s==CosmeticSlot.time ? null :
         c.featureLock(WorkshopFeature.stallCosmetics),
       action:(d)=>_equipped(d.slot)==d.id ? '장착 중':!unlocked(d) ? '잠김':owned(d) ? '적용':!avatar(d) ? '살 수 없음':'구매하고 적용',
       apply:(d) async {
         if(!canApply(d))return false;
-        if(d.slot==CosmeticSlot.time)return c.setBackgroundTime(d.id);
         if(avatar(d)){
           if(!owned(d)){
             final ok=await c.purchaseSkill(c.purchaseGateway!,'cosmetic:${d.id}');
             await account.refreshWorkshopWallet();if(!ok)return false;
           }
-          return c.equipAvatar(d.id);
+          // The day/night choice lives in sceneTime, not avatarEquipment.
+          return d.slot==CosmeticSlot.time ? c.setBackgroundTime(d.id) : c.equipAvatar(d.id);
         }
+        if(d.slot==CosmeticSlot.time)return c.setBackgroundTime(d.id);
         return account.buyOrEquipCosmetic(d.id);
       });
   }
@@ -417,9 +422,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
       CozySettingRow(key:const Key('settings-usage-stats'),icon:const Icon(Icons.insights_outlined),label:'사용 통계 보내기',
         subtitle:'게임을 고치는 데 쓰는 사용 기록이에요(이름·계정과 연결하지 않아요)',value:settings.sendUsageStats,
         onChanged:(v)=>account.updateSettings(sendUsageStats:v)),
-      const Text('배경 시간'),
-      DropdownButton<String>(value:c.state.sceneTime,isExpanded:true,
-        items:[for(final item in cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.time))
+      // 4차 피드백 g10(ID9): only what this shop has — the device's clock
+      // and a fixed day or night once bought (sold in 꾸미기 > 배경 > 밤낮).
+      const Text('밤낮'),
+      DropdownButton<String>(key:const Key('settings-time'),value:c.state.sceneTime,isExpanded:true,
+        items:[for(final item in cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.time && _cosmetics.owned(d)))
           DropdownMenuItem(value:item.id,child:Text(item.name))],
         onChanged:c.inputBusy ? null : (value){if(value!=null)c.setBackgroundTime(value);}),
       if(account.error!=null)Text(account.error!),

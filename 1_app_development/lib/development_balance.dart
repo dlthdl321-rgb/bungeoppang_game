@@ -74,7 +74,8 @@ class DevelopmentBalance {
     }
     final avatar=result.section('avatar_catalog');
     // 26번 3차 H42: backgrounds are sold through the same catalog.
-    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool','background'};
+    // 4차 피드백 g10: the lamp glass and the fixed day/night too.
+    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool','background','lamp','time'};
     for(final e in avatar.entries) {
       final row=_map(e.value),level=integer(row,'unlock_level');
       if(row['label'] is! String || (row['label'] as String).isEmpty || !avatarSlots.contains(row['slot']) || row['free'] is! bool ||
