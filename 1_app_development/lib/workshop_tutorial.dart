@@ -7,13 +7,15 @@ import 'workshop_controller.dart';
 class WorkshopTutorialStep {
   final int number;
   final String text, target;
-  /// When set, the card sits below this widget instead of beside [target]:
-  /// mold steps keep it under the whole stage, clear of the mold's buttons.
-  final String? below;
-  const WorkshopTutorialStep(this.number, this.text, this.target, {this.below});
+  /// When set, the card sits above this widget instead of beside [target]:
+  /// mold steps keep it over the whole workbench (the mold with its title
+  /// and buttons, 4차 피드백 g11), clear of them.
+  final String? above;
+  const WorkshopTutorialStep(this.number, this.text, this.target, {this.above});
 }
 
-const _stage = 'workshop-center-stage';
+/// The special mold's title and buttons over it on the workbench (g11).
+const _bench = 'mold-dock';
 
 const workshopTutorialSteps = 7;
 
@@ -24,21 +26,21 @@ WorkshopTutorialStep? workshopTutorialStep(WorkshopState s, {required int ready}
   final session = s.session;
   if (session != null) {
     return switch (session.phase) {
-      CookingPhase.firstBatter => const WorkshopTutorialStep(2, '틀 위를 문질러 반죽을 칠하듯 부어요. 붕어빵 모양을 고르게 덮고 손을 떼요.', 'workshop-mold', below: _stage),
-      CookingPhase.filling => const WorkshopTutorialStep(3, '틀 위를 문질러 속을 짜 넣어요.', 'workshop-mold', below: _stage),
-      CookingPhase.secondBatter => const WorkshopTutorialStep(4, '반죽을 한 번 더 문질러 속을 덮어요.', 'workshop-mold', below: _stage),
-      CookingPhase.closing => const WorkshopTutorialStep(4, '뚜껑을 닫아요.', 'workshop-mold', below: _stage),
-      CookingPhase.flipping => const WorkshopTutorialStep(5, '틀 둘레에 손가락으로 원을 그리면 틀이 돌아가며 뒤집혀요.', 'workshop-mold', below: _stage),
-      CookingPhase.cooking => const WorkshopTutorialStep(6, '노릇하게 익었다 싶을 때 꺼내요.', 'workshop-mold', below: _stage),
+      CookingPhase.firstBatter => const WorkshopTutorialStep(2, '틀 위를 문질러 반죽을 칠하듯 부어요. 붕어빵 모양을 고르게 덮고 손을 떼요.', 'workshop-mold', above: _bench),
+      CookingPhase.filling => const WorkshopTutorialStep(3, '틀 위를 문질러 속을 짜 넣어요.', 'workshop-mold', above: _bench),
+      CookingPhase.secondBatter => const WorkshopTutorialStep(4, '반죽을 한 번 더 문질러 속을 덮어요.', 'workshop-mold', above: _bench),
+      CookingPhase.closing => const WorkshopTutorialStep(4, '뚜껑을 닫아요.', 'workshop-mold', above: _bench),
+      CookingPhase.flipping => const WorkshopTutorialStep(5, '틀 둘레에 손가락으로 원을 그리면 틀이 돌아가며 뒤집혀요.', 'workshop-mold', above: _bench),
+      CookingPhase.cooking => const WorkshopTutorialStep(6, '노릇하게 익었다 싶을 때 꺼내요.', 'workshop-mold', above: _bench),
       CookingPhase.result => session.practice
-          ? const WorkshopTutorialStep(6, "완성! '보관'을 눌러 판매할 재고로 넣어요.", 'mold-store', below: _stage)
-          : const WorkshopTutorialStep(6, "완성! '결과 닫기'를 누르면 재고에 들어가요.", 'mold-store', below: _stage),
+          ? const WorkshopTutorialStep(6, "완성! '보관'을 눌러 판매할 재고로 넣어요.", 'mold-store', above: _bench)
+          : const WorkshopTutorialStep(6, "완성! '결과 닫기'를 누르면 재고에 들어가요.", 'mold-store', above: _bench),
       CookingPhase.canceled => null,
     };
   }
   if (s.tutorial == 'cook') {
     if (!s.business.open) {
-      return const WorkshopTutorialStep(1, '스페셜 붕어빵 틀을 눌러 굽기 연습을 시작해요.', 'workshop-mold', below: _stage);
+      return const WorkshopTutorialStep(1, "작업대의 '스페셜 붕어빵 제작 시작'을 눌러 굽기 연습을 시작해요.", 'workshop-mold-action');
     }
     // Opened before the first bake: practice is closed in business
     // (DEC-035), so the first bungeoppang is an order (DEC-037).

@@ -83,9 +83,13 @@ void main() {
       final pill = tester.getRect(find
           .ancestor(of: find.text('스페셜 붕어빵 제작 시작'), matching: find.byType(Container))
           .first);
-      // 26번 3차 피드백 H18: the pill sits on the empty mold, which stays
-      // clear of the counter and the cooking cut.
-      expect(pill.bottom, lessThanOrEqualTo(counter.top - WorkshopHomeLayout.moldGap));
+      // 4차 피드백 g11: the pill sits on the closed griddle on the lower
+      // workbench (no mold hangs over the guests), under the counter and
+      // over the menu bar.
+      expect(find.byKey(const Key('idle-mold')), findsNothing);
+      expect(pill.top, greaterThan(counter.bottom));
+      expect(pill.bottom, lessThan(tester.getRect(find.byKey(const Key('home-nav'))).top));
+      expect(griddle.contains(pill.center), isTrue);
       expect(find.byKey(const Key('counter-action')), findsNothing);
       final open = tester.getRect(find.byKey(const Key('business-open')));
       final sign = tester.getRect(find.byKey(const Key('workshop-status-badge')));
@@ -211,9 +215,10 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
   });
 
-  // 24번 6단계: 제작 단계 안내 글이 '제작 취소' 버튼(누르는 영역 48)과 겹치지 않음.
+  // 24번 6단계: 제작 단계 안내 글이 '제작 취소' 버튼과 겹치지 않음. 4차 g11부터
+  // 버튼은 작업대 틀 위, 안내 글은 틀 아래끝이고 하단 메뉴 위.
   for (final size in const [Size(360, 640), Size(360, 800), Size(390, 844), Size(412, 915)]) {
-    testWidgets('단계 안내 글은 제작 취소 버튼 4 위 ${size.width.toInt()}x${size.height.toInt()}', (tester) async {
+    testWidgets('단계 안내 글은 제작 취소 버튼 아래, 하단 메뉴 위 ${size.width.toInt()}x${size.height.toInt()}', (tester) async {
       final c = await mount(tester, size);
       expect(await c.startPractice(), isTrue);
       await tester.pump();
@@ -222,8 +227,9 @@ void main() {
           .ancestor(of: find.byKey(const Key('piping-amount')), matching: find.byType(Container))
           .first);
       final cancel = tester.getRect(find.byKey(const Key('mold-cancel')));
-      expect(caption.bottom, lessThanOrEqualTo(cancel.top - 4 + .5));
+      expect(caption.top, greaterThan(cancel.bottom));
       expect(caption.bottom, lessThanOrEqualTo(tester.getRect(find.byKey(const Key('workshop-mold'))).bottom));
+      expect(caption.bottom, lessThanOrEqualTo(tester.getRect(find.byKey(const Key('home-nav'))).top));
       await tester.pumpWidget(const SizedBox.shrink());
     });
   }
