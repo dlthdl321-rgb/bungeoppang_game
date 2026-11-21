@@ -91,11 +91,23 @@ class _WorkshopWardrobeState extends State<WorkshopWardrobe> {
           if (d.slot == s && a.listed(d) && !a.owned(d) && _forSale(d)) d,
       ];
 
-  /// Every slot of [t], open or not: a closed one stays listed under the
-  /// lock (4차 g5 '잠긴 것도 보이게').
+  /// Whether [s] has anything to show: in the shop something for sale; in
+  /// the wardrobe something sold here (listed, for sale, owned or not) or
+  /// at least two owned items to switch between (4차 피드백 g15: the 배경
+  /// tab's 화로·장식 slots hide while nothing is sold there and come back by
+  /// themselves once something is; an older owner of two stoves keeps the
+  /// slot to switch).
+  bool _hasItems(CosmeticSlot s) {
+    if (shop) return _items(s).isNotEmpty;
+    final listed = [for (final d in cosmeticDefinitions) if (d.slot == s && a.listed(d)) d];
+    return listed.any((d) => a.forSale?.call(d) ?? !a.owned(d)) || listed.where(a.owned).length > 1;
+  }
+
+  /// Every slot of [t] with items ([_hasItems]), open or not: a closed one
+  /// stays listed under the lock (4차 g5 '잠긴 것도 보이게').
   List<CosmeticSlot> _slots(WardrobeTab t) => [
         for (final s in CosmeticSlot.values)
-          if (s.shown && s.tab == t && (!shop || _items(s).isNotEmpty)) s
+          if (s.shown && s.tab == t && _hasItems(s)) s
       ];
 
   List<WardrobeTab> get _tabs => [

@@ -175,6 +175,29 @@ class PixelSprites {
     ..filterQuality = FilterQuality.none
     ..isAntiAlias = false;
 
+  /// Drawing a picture smaller than its own pixels on the screen
+  /// (4차 피드백 g15: 72px icons at 30~34 dp on a 2x phone): nearest
+  /// sampling would drop whole rows and columns, so outlines broke up; a
+  /// smoothed (mipmapped) downscale keeps every line. At or above its own
+  /// size a picture stays nearest-sampled, crisp (icons: see [drawPart]).
+  static final _downscalePaint = Paint()
+    ..filterQuality = FilterQuality.medium
+    ..isAntiAlias = false;
+
+  /// The screen's pixels per logical pixel, for [draw]'s choice of
+  /// sampling (1 when unknown).
+  static double get _pixelRatio {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    return views.isEmpty ? 1 : views.first.devicePixelRatio;
+  }
+
+  /// Icons whose art fills less of its square than its neighbours', drawn
+  /// zoomed about the centre so they look the same size (4차 피드백 g15):
+  /// `bun.png` fills only 47×36 of 72 while `gold_bun.png` fills 62×48, so
+  /// the 붕어빵력 icon is drawn 62/47 larger in the same box (no pixels
+  /// edited). Remove the entry once 25번 63번's redrawn `bun.png` is in.
+  static const iconZoom = {'bun': 62 / 47};
+
   /// Null for blank items, for patterns (baked into the fish images, see
   /// [fish]) and for the character and hair, whose art depends on each
   /// other (see [face] and [hair]).
@@ -706,13 +729,24 @@ class PixelSprites {
       stallPart('postlamp');
 
   /// Draws [image] stretched into [dst]; does nothing if it is not loaded.
+  /// Smoothed when it lands smaller than its own pixels on the screen
+  /// ([_downscalePaint]), nearest-sampled otherwise.
   static void draw(Canvas canvas, ui.Image? image, Rect dst) {
     if (image == null) return;
-    canvas.drawImageRect(
-        image,
-        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-        dst,
-        _paint);
+    drawPart(canvas, image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), dst);
+  }
+
+  /// Draws the [src] part of [image] into [dst], sampled like [draw]. With
+  /// [icon] a picture enlarged by a fraction (72px at 34dp on a 3x phone =
+  /// ×1.42) is smoothed too: nearest sampling would make some pixel rows
+  /// one screen pixel and others two, so thin outlines looked broken
+  /// (4차 피드백 g15). Only whole-number enlargements stay nearest. Scenes
+  /// and backgrounds keep nearest sampling when enlarged.
+  static void drawPart(Canvas canvas, ui.Image image, Rect src, Rect dst, {bool icon = false}) {
+    final ratio = _pixelRatio, sx = dst.width * ratio / src.width, sy = dst.height * ratio / src.height;
+    bool whole(double s) => (s - s.roundToDouble()).abs() < .05;
+    final smooth = sx < .99 || sy < .99 || icon && !(whole(sx) && whole(sy));
+    canvas.drawImageRect(image, src, dst, smooth ? _downscalePaint : _paint);
   }
 
   /// Draws [image] at its native pixel size with its top-left at [at].
@@ -730,8 +764,9 @@ class PixelIcon extends StatelessWidget {
   const PixelIcon(this.name, {super.key, this.size = 24});
 
   @override
-  Widget build(BuildContext context) =>
-      PixelImage(PixelSprites.icon(name), size: size);
+  Widget build(BuildContext context) => SizedBox.square(
+      dimension: size,
+      child: CustomPaint(painter: _IconPainter(PixelSprites.icon(name), zoom: PixelSprites.iconZoom[name] ?? 1)));
 }
 
 /// Any loaded sprite as a square widget (skill and item icons).
@@ -801,12 +836,20 @@ class _FitPainter extends CustomPainter {
 
 class _IconPainter extends CustomPainter {
   final ui.Image? image;
-  const _IconPainter(this.image);
+  /// >1 draws the middle 1/[zoom] of the picture over the whole box
+  /// ([PixelSprites.iconZoom]).
+  final double zoom;
+  const _IconPainter(this.image, {this.zoom = 1});
 
   @override
-  void paint(Canvas canvas, Size size) =>
-      PixelSprites.draw(canvas, image, Offset.zero & size);
+  void paint(Canvas canvas, Size size) {
+    final image = this.image;
+    if (image == null) return;
+    final w = image.width.toDouble(), h = image.height.toDouble();
+    PixelSprites.drawPart(canvas, image, Rect.fromCenter(center: Offset(w / 2, h / 2), width: w / zoom, height: h / zoom),
+        Offset.zero & size, icon: true);
+  }
 
   @override
-  bool shouldRepaint(covariant _IconPainter old) => image != old.image;
+  bool shouldRepaint(covariant _IconPainter old) => image != old.image || zoom != old.zoom;
 }

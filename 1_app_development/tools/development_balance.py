@@ -117,8 +117,9 @@ def validate(data, catalog):
     avatar = data['avatar_catalog']
     # 26번 3차 H42: backgrounds are sold through the same catalog.
     # 4차 피드백 g10(ID8·ID9): 등불 색과 낮·밤 고정도 같은 목록으로 판다.
+    # 4차 피드백 g15: 화로·장식·틀 무늬·토핑도 같은 목록으로 팔 수 있다(팔기 시작하면 꾸미기 칸이 저절로 보임).
     avatar_slots = {'character', 'skin', 'hair', 'top', 'bottom', 'shoes', 'outfit', 'hat', 'accessory', 'tool', 'background',
-                    'lamp', 'time'}
+                    'lamp', 'time', 'stove', 'decoration', 'pattern', 'topping'}
     require(bool(avatar), '아바타 카탈로그 누락')
     for key, row in avatar.items():
         require(row['slot'] in avatar_slots and type(row['free']) is bool and
@@ -207,7 +208,8 @@ def validate(data, catalog):
     # 26번 4단계: 결과 등급 '완벽'(보여 주기 전용, 판정·판매는 그대로). 성공 기준 안쪽이어야 한다.
     grade = data['cooking_grade']
     require(set(grade) == {'perfect_min_coverage_permille', 'perfect_max_total_amount_permille',
-                           'perfect_max_spill_permille', 'perfect_doneness_index'},
+                           'perfect_max_spill_permille', 'perfect_doneness_index', 'good_min_coverage_permille',
+                           'good_min_total_amount_permille', 'good_max_total_amount_permille', 'good_max_spill_permille'},
             '결과 등급 설정 키')
     require(manual['batter_min_coverage_permille'] <= grade['perfect_min_coverage_permille'] <= 1000 and
             manual['batter_total_min_amount_permille'] <= grade['perfect_max_total_amount_permille'] <=
@@ -215,6 +217,15 @@ def validate(data, catalog):
             0 <= grade['perfect_max_spill_permille'] <=
             manual['batter_total_overflow_amount_permille'] - grade['perfect_max_total_amount_permille'],
             '완벽 기준(덮은 면적·1·2차 합·흘림)은 성공 기준 안쪽')
+    # 4차 피드백 g15: '잘 구움'과 '보통'의 경계(보여 주기 전용). 성공 기준과 완벽 기준 사이.
+    require(manual['batter_min_coverage_permille'] <= grade['good_min_coverage_permille'] <=
+            grade['perfect_min_coverage_permille'] and
+            manual['batter_total_min_amount_permille'] <= grade['good_min_total_amount_permille'] <=
+            grade['perfect_max_total_amount_permille'] <= grade['good_max_total_amount_permille'] <=
+            manual['batter_total_overflow_amount_permille'] and
+            grade['perfect_max_spill_permille'] <= grade['good_max_spill_permille'] <=
+            manual['batter_total_overflow_amount_permille'] - grade['good_min_total_amount_permille'],
+            '잘 구움 기준(덮은 면적·1·2차 합·흘림)은 성공 기준과 완벽 기준 사이')
     require(all(row['success_doneness_min_index'] <= grade['perfect_doneness_index'] <= row['success_doneness_max_index']
                 for row in data['mastery_difficulties']), '완벽 익힘은 성공 익힘 범위 안')
     sale = data['ordinary_sale']

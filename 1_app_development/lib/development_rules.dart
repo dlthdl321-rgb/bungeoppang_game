@@ -52,8 +52,14 @@ const skillLevelUpMax = 0;
 /// and recomputes its price, so no deploy is needed.
 const skillLevelUpSteps = [1, 10, skillLevelUpMax];
 
-/// The wheel's word for [step]: '×1', '×10', '최대'.
-String skillLevelUpLabel(int step) => step == skillLevelUpMax ? '최대' : '×$step';
+/// The wheel's word for [step]: '×1', '×10', 'MAX' (4차 피드백 g15, user
+/// decision 2026-11-21: '최대' → 'MAX' on the wheel; a fully levelled row's
+/// 'MAX' badge replaces the wheel, so the two never show on one row).
+String skillLevelUpLabel(int step) => step == skillLevelUpMax ? 'MAX' : '×$step';
+
+/// What a screen reader says for [step]: '×1', '×10', '최대' (the wheel
+/// shows 'MAX', [skillLevelUpLabel]).
+String skillLevelUpSpoken(int step) => step == skillLevelUpMax ? '최대' : '×$step';
 
 /// How many levels one press of LEVEL UP adds for a fixed [step]: [step],
 /// or fewer near the cap (995 with ×10 → 5), never negative. '최대' is not

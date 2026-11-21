@@ -73,7 +73,7 @@
         "buns": "40000",
         "gold": 2,
         "effect": "6",
-        "unlock_total": "800000",
+        "unlock_total": "2000000",
         "ratio_numerator": 135,
         "ratio_denominator": 100
       },
@@ -201,7 +201,7 @@
         "buns": "50000",
         "gold": 2,
         "effect": "5",
-        "unlock_total": "1000000",
+        "unlock_total": "2500000",
         "ratio_numerator": 135,
         "ratio_denominator": 100
       },
@@ -752,7 +752,11 @@
     "perfect_min_coverage_permille": 950,
     "perfect_max_total_amount_permille": 2300,
     "perfect_max_spill_permille": 50,
-    "perfect_doneness_index": 2
+    "perfect_doneness_index": 2,
+    "good_min_coverage_permille": 925,
+    "good_min_total_amount_permille": 1900,
+    "good_max_total_amount_permille": 2450,
+    "good_max_spill_permille": 150
   },
   "griddle": {
     "slot_speed_permille": [

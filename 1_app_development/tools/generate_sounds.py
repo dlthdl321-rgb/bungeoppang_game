@@ -176,6 +176,10 @@ def sounds():
         'result_good': place(1.0, (0, crackle(r, .18, 30, .6)), (.03, bell(1760, .95, .9))),
         'result_near': place(.6, (0, pop(720, 330, .55, 1.0)), (.05, bell(1175, .5, .25))),
         'result_fail': place(.8, (0, thud(r, .35, 1.0)), (.08, hiss(r, .7, .35))),
+        # 4차 피드백 g15 '보통': between good (crackle + high bell) and near
+        # (pop + low soft bell) — a light pop and a middle bell, no random
+        # parts so the other sounds keep their seeds.
+        'result_fair': place(.8, (0, pop(900, 520, .4, .6)), (.04, bell(1480, .7, .55))),
     }
     # 4차 피드백 IB4 '짤짤 말고 가볍고 상큼하게': a rising bubble blip, no
     # crackle (also the special mold's tap).

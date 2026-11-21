@@ -5,7 +5,7 @@ import 'models.dart';
 import 'music_config.dart';
 import 'development_audio_defaults.dart';
 
-enum Sfx { tap, purchase, reward, levelUp, resultPerfect, resultGood, resultNear, resultFail }
+enum Sfx { tap, purchase, reward, levelUp, resultPerfect, resultGood, resultFair, resultNear, resultFail }
 
 /// Sound port. Audio is optional: every failure is swallowed so the game
 /// never stops because a device cannot play sound.
@@ -170,6 +170,7 @@ class AudioplayersAudio extends SoundPolicy {
     // 26번 4단계: bake result grades.
     Sfx.resultPerfect: 'audio/result_perfect.wav',
     Sfx.resultGood: 'audio/result_good.wav',
+    Sfx.resultFair: 'audio/result_fair.wav',
     Sfx.resultNear: 'audio/result_near.wav',
     Sfx.resultFail: 'audio/result_fail.wav',
   };

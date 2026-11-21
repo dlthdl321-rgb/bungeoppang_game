@@ -137,7 +137,7 @@ const cosmeticDefinitions = [
   CosmeticDefinition('castiron', '무쇠 화로', CosmeticSlot.stove, '6', 2),
   CosmeticDefinition('golden', '황금 화로', CosmeticSlot.stove, '15', 9),
   CosmeticDefinition('starlights', '별 전구', CosmeticSlot.decoration, '5', 3),
-  CosmeticDefinition('windchime', '풍경', CosmeticSlot.decoration, '9', 5),
+  CosmeticDefinition('windchime', '풍경 종', CosmeticSlot.decoration, '9', 5),
   CosmeticDefinition('snowman', '눈사람', CosmeticSlot.decoration, '12', 7),
   // Stage 12: pastry pattern and topping.
   CosmeticDefinition('scales', '기본 모양', CosmeticSlot.pattern, '0', 1),

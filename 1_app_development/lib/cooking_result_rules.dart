@@ -83,17 +83,44 @@ MasteryResult evaluateCookingResult(DevelopmentBalance config, CookingSession se
 
 /// How a finished bake is shown (26번 4단계): presentation only. The
 /// technique pass, mastery, stock and sale price stay those of
-/// [evaluateCookingResult] (DEC-031~034·040).
-enum CookingGrade { perfect, good, near, fail }
+/// [evaluateCookingResult] (DEC-031~034·040). Five grades with
+/// [cookingStars] 5·4·3·2·0: 완벽·잘 구움·보통·아깝다·실패 (4차 피드백 g15).
+enum CookingGrade { perfect, good, fair, near, fail }
+
+/// Why a technique pass is only **fair** ('보통', 4차 피드백 g15), or null
+/// when its batter is within the `cooking_grade.good_*` lines: the larger
+/// batter stroke covers less than `good_min_coverage_permille`, the two
+/// strokes' amount together is under `good_min_total_amount_permille` or
+/// over `good_max_total_amount_permille`, or more than
+/// `good_max_spill_permille` spilled.
+enum FairReason { coverage, little, much, spill }
+
+FairReason? _fairReason(DevelopmentBalance config, CookingSession session) {
+  final first = session.firstBatter, second = session.secondBatter;
+  if (first == null || second == null) return null;
+  final grade = config.section('cooking_grade');
+  final total = first.amount + second.amount;
+  if (first.spill + second.spill > DevelopmentBalance.integer(grade, 'good_max_spill_permille')) {
+    return FairReason.spill;
+  }
+  if (total > DevelopmentBalance.integer(grade, 'good_max_total_amount_permille')) return FairReason.much;
+  if (total < DevelopmentBalance.integer(grade, 'good_min_total_amount_permille')) return FairReason.little;
+  if (math.max(first.coverage, second.coverage) < DevelopmentBalance.integer(grade, 'good_min_coverage_permille')) {
+    return FairReason.coverage;
+  }
+  return null;
+}
 
 /// From the top: **perfect** = technique passed, the larger batter stroke
 /// covers ≥ `cooking_grade.perfect_min_coverage_permille`, the two strokes'
 /// amount together is ≤ `perfect_max_total_amount_permille` with at most
 /// `perfect_max_spill_permille` spilled (4차 피드백 IC4·IC6), and the doneness is
-/// `perfect_doneness_index` (미디엄); **good** = technique passed; **near**
-/// = technique failed but the doneness is still in the success range (short
-/// or spilled batter, an older hold-time save); **fail** = the doneness is
-/// outside it (덜 익음·타버림).
+/// `perfect_doneness_index` (미디엄); **good** = technique passed with the
+/// batter inside the `good_*` lines; **fair** = technique passed but the
+/// batter is outside them (4차 피드백 g15, still sold and counted like good);
+/// **near** = technique failed but the doneness is still in the success range
+/// (short or spilled batter, an older hold-time save); **fail** = the doneness
+/// is outside it (덜 익음·타버림).
 CookingGrade cookingGrade(DevelopmentBalance config, CookingSession session,
     {required int difficulty}) {
   final result = evaluateCookingResult(config, session, difficulty: difficulty);
@@ -104,6 +131,7 @@ CookingGrade cookingGrade(DevelopmentBalance config, CookingSession session,
     return CookingGrade.fail;
   }
   if (!result.techniquePassed) return CookingGrade.near;
+  if (_fairReason(config, session) != null) return CookingGrade.fair;
   final grade = config.section('cooking_grade');
   final first = session.firstBatter, second = session.secondBatter;
   final neat = first != null && second != null &&
@@ -118,6 +146,7 @@ CookingGrade cookingGrade(DevelopmentBalance config, CookingSession session,
 String cookingGradeTitle(CookingGrade grade) => switch (grade) {
       CookingGrade.perfect => '완벽해요!',
       CookingGrade.good => '잘 구웠어요!',
+      CookingGrade.fair => '보통이에요',
       CookingGrade.near => '아깝다!',
       CookingGrade.fail => '다음엔 더 잘할 수 있어요',
     };
@@ -133,6 +162,14 @@ String cookingGradeLine(DevelopmentBalance config, CookingSession session, Cooki
         1 => '부드럽게 잘 익었어요',
         3 => '바삭하게 잘 익었어요',
         _ => '알맞게 잘 익었어요',
+      };
+    case CookingGrade.fair:
+      return switch (_fairReason(config, session)) {
+        FairReason.spill => '반죽이 틀 밖으로 조금 흘렀어요',
+        FairReason.much => '반죽이 조금 많았어요',
+        FairReason.little => '반죽이 살짝 적었어요',
+        FairReason.coverage => '반죽이 군데군데 비었어요',
+        null => '무난하게 구웠어요',
       };
     case CookingGrade.near:
       return switch (batterFailureLabel(config, session)) {
@@ -151,6 +188,7 @@ String cookingGradeLine(DevelopmentBalance config, CookingSession session, Cooki
 String cookingGradeEvent(CookingGrade grade) => switch (grade) {
       CookingGrade.perfect => 'result_perfect',
       CookingGrade.good => 'result_good',
+      CookingGrade.fair => 'result_fair',
       CookingGrade.near => 'result_near',
       CookingGrade.fail => 'result_fail',
     };
@@ -160,6 +198,7 @@ String cookingGradeEvent(CookingGrade grade) => switch (grade) {
 int cookingStars(CookingGrade grade) => switch (grade) {
       CookingGrade.perfect => cookingStarsPerfect,
       CookingGrade.good => cookingStarsGood,
+      CookingGrade.fair => cookingStarsFair,
       CookingGrade.near => cookingStarsNear,
       CookingGrade.fail => cookingStarsFail,
     };

@@ -435,8 +435,8 @@ class _FitImagePainter extends CustomPainter {
       final src = Rect.fromLTWH((image.width - w) / 2, (image.height - h) / 2, w, h);
       canvas.save();
       canvas.clipRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(8)));
-      canvas.drawImageRect(image, src, Offset.zero & size,
-          Paint()..filterQuality = FilterQuality.none);
+      // 4차 피드백 g15: smoothed when shrunk, like every sprite.
+      PixelSprites.drawPart(canvas, image, src, Offset.zero & size);
       canvas.restore();
       return;
     }

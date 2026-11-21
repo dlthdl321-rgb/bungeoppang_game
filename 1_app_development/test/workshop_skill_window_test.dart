@@ -30,7 +30,9 @@ void main() {
     test('한 번에 올리는 양은 단위와 남은 레벨 중 작은 쪽이고 서버 한도(cap − 보유)와 같다', () {
       // 4차 g13 (user decision 2026-11-21): ×100 became '최대'.
       expect(skillLevelUpSteps, [1, 10, skillLevelUpMax]);
-      expect([for (final s in skillLevelUpSteps) skillLevelUpLabel(s)], ['×1', '×10', '최대']);
+      // 4차 g15 (user decision 2026-11-21): the wheel shows 'MAX', a screen reader says '최대'.
+      expect([for (final s in skillLevelUpSteps) skillLevelUpLabel(s)], ['×1', '×10', 'MAX']);
+      expect([for (final s in skillLevelUpSteps) skillLevelUpSpoken(s)], ['×1', '×10', '최대']);
       expect(skillLevelUpQuantity(10, owned: 95, cap: cap), 5);
       expect(skillLevelUpQuantity(1, owned: cap, cap: cap), 0);
       for (final step in [1, 10]) {
