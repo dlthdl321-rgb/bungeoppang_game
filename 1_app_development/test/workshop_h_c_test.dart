@@ -90,6 +90,8 @@ void main() {
     await c.command(() {
       c.state.recipes.add('custard');
       c.state.flavorMasteries['custard'] = FlavorMasteryProgress(flavor: 'custard', difficulty: c.difficulty('custard'));
+      // 재료 타이쿤 B: the new recipe's gift filling (the mold takes a portion).
+      c.state.pantry.grantRecipeGift(c.pantryConfig, 'custard', c.now().millisecondsSinceEpoch);
     });
     await tester.pump();
     await tester.tap(find.byKey(const Key('workshop-mold-action')));

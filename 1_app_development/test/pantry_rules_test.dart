@@ -203,9 +203,10 @@ void main() {
         ..lots.addAll([PantryLot('batter', true, _t0, 1), PantryLot('redbean', true, _t0, 1),
           PantryLot('batter', false, _t0 + 1, 1), PantryLot('redbean', false, _t0 + 1, 1)]);
       p.ledger..['batter'] = PantryLedger(2)..['redbean'] = PantryLedger(2);
-      final first = p.takePortion(c, 'redbean', _t0 + 2)!;
+      // 묶음 B: 특제를 고르면 특제부터, 아니면 일반부터.
+      final first = p.takePortion(c, 'redbean', _t0 + 2, premium: true)!;
       expect(p.bonusPermille(c, first), 2000);
-      final second = p.takePortion(c, 'redbean', _t0 + 2)!;
+      final second = p.takePortion(c, 'redbean', _t0 + 2, premium: true)!;
       expect(p.bonusPermille(c, second), 1000);
     });
 
@@ -238,24 +239,46 @@ void main() {
   });
 
   group('24시간 지나면 버림', () {
-    test('오래된 통부터 쓰고, 지난 통은 쓰지 않으며 expire가 버리고 안내한다', () {
+    // 묶음 B (사용자 결정 2026-11-21): 처음 재료는 상하지 않고, 상하는 통을 먼저 씀.
+    test('상하는 통을 오래된 것부터 먼저 쓰고, 지난 통은 쓰지 않으며 expire가 버리고 안내한다. 처음 재료는 상하지 않는다', () {
       final p = PantryState.starting(c, _t0);
+      expect(p.lots.every((l) => l.keeps), isTrue);
       p.make(c, 'batter', 1, 1, _t0 + 2 * _hour, owned);
-      final use = p.takePortion(c, 'redbean', _t0 + 3 * _hour)!;
-      expect(use.batterMadeAtMs, _t0, reason: '오래된 통부터');
-      final late = _t0 + 24 * _hour;
-      expect(p.usable(c, 'batter', late), 100, reason: '처음 통은 24시간이 지나 못 씀');
-      expect(p.usable(c, 'redbean', late), 0);
-      expect(p.takePortion(c, 'redbean', late), isNull);
+      p.make(c, 'redbean', 1, 1, _t0 + 3 * _hour, owned);
+      final use = p.takePortion(c, 'redbean', _t0 + 4 * _hour)!;
+      expect(use.batterMadeAtMs, _t0 + 2 * _hour, reason: '상하는 통부터');
+      expect(use.fillingMadeAtMs, _t0 + 3 * _hour);
+      final late = _t0 + 27 * _hour;
+      expect(p.usable(c, 'batter', late), 300, reason: '만든 통은 24시간이 지나 못 씀, 처음 재료 3통은 그대로');
+      expect(p.usable(c, 'redbean', late), 300);
+      expect(p.takePortion(c, 'redbean', late)!.batterMadeAtMs, pantryKeepMs);
       final gone = p.expire(c, late);
       expect(gone.length, 2);
-      expect(expiredNotice(c, gone), '만든 지 24시간이 지난 반죽 299인분, 팥소 299인분을 버렸어요.');
-      expect(p.portions('batter'), 100);
-      expect(p.ledger['batter']!.expired, 299);
-      expect(p.basic['adzuki'], 2, reason: '산 재료는 상하지 않음');
+      expect(expiredNotice(c, gone), '만든 지 24시간이 지난 반죽 99인분, 팥소 99인분을 버렸어요.');
+      expect(p.portions('batter'), 299);
+      expect(p.ledger['batter']!.expired, 99);
+      expect(p.expire(c, late + 365 * 24 * _hour), isEmpty, reason: '처음 재료는 1년 뒤에도');
+      expect(p.basic['flour'], isNull, reason: '처음 재료 1벌을 다 씀');
       expect(PantryState.fromJson(jsonDecode(jsonEncode(p.toJson())), c).toJson(), p.toJson());
       expect(expiredNotice(c, const []), isNull);
       expect(expiredNotice(c, [PantryLot('redbean', true, 0, 300)]), '만든 지 24시간이 지난 특제 팥소 3통을 버렸어요.');
+    });
+  });
+
+  group('특제 고르기 (묶음 B)', () {
+    test('특제를 고르면 특제 반죽·속을 먼저, 아니면 일반을 먼저 쓰고 없으면 다른 쪽으로 이어 쓴다', () {
+      final p = PantryState.starting(c, _t0)
+        ..buyPremium(c, 'cultured_butter', 1, 5)
+        ..buyPremium(c, 'fresh_adzuki', 1, 5);
+      p.make(c, 'redbean', 1, 5, _t0, owned, premium: true);
+      final plain = p.takePortion(c, 'redbean', _t0)!;
+      expect((plain.batterPremium, plain.fillingPremium), (false, false));
+      final premium = p.takePortion(c, 'redbean', _t0, premium: true)!;
+      expect((premium.batterPremium, premium.fillingPremium), (false, true), reason: '특제 반죽이 없으면 일반 반죽');
+      expect(p.bonusPermille(c, premium), 1500);
+      final tap = p.tap(c, 'redbean', _t0, premium: true)!;
+      expect(tap.fillingPremium, isTrue);
+      expect(p.runAuto(c, 'redbean', 10000, _t0, premium: true).single.bonusPermille, 1500);
     });
   });
 
@@ -361,7 +384,7 @@ void main() {
       expect(workshopSchema, 12);
       final pantry = PantryState.fromJson(saved['pantry'], c);
       expect(pantry.usable(c, 'batter', start.millisecondsSinceEpoch), 300);
-      expect(pantry.lots.first.madeAtMs, start.millisecondsSinceEpoch);
+      expect(pantry.lots.first.madeAtMs, pantryKeepMs, reason: '처음 재료는 상하지 않음 (묶음 B)');
       expect(shop.pantryRate, c.incomeRate(tapRate: shop.tapRate, autoRate: shop.autoRate));
     });
 
