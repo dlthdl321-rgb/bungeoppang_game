@@ -54,9 +54,9 @@ CookingSession _bakedPractice(String id) {
 /// 26번 5단계: Firebase Analytics 사용 통계(DEC-045·046).
 void main() {
   group('기록기', () {
-    test('이벤트는 10개 이하, 영문 소문자·밑줄 40자 이하, Analytics 예약어가 아니다', () {
+    test('이벤트는 11개 이하(재료 타이쿤 B ingredient_out), 영문 소문자·밑줄 40자 이하, Analytics 예약어가 아니다', () {
       final names = UsageEvent.values.map((e) => e.wireName).toList();
-      expect(names.length, lessThanOrEqualTo(10));
+      expect(names.length, lessThanOrEqualTo(11));
       expect(names.toSet().length, names.length);
       for (final n in names) {
         expect(RegExp(r'^[a-z][a-z0-9_]{0,39}$').hasMatch(n), isTrue, reason: n);

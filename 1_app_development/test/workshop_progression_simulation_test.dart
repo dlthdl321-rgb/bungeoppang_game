@@ -8,6 +8,7 @@ import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/development_purchase_journal.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
+import 'package:todays_bungeoppang/pantry_rules.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_purchases.dart';
 import 'workshop_controller_test.dart' show Repository;
@@ -54,8 +55,60 @@ class _Result {
   final String? waiting;
   /// Minute each level was reached (index = level).
   final Map<int, int> reached;
+  /// 재료 타이쿤 B: 붕어빵력 spent on ingredients, mini-games played and
+  /// the seconds they took, taps that found no ingredients.
+  final BigInt ingredientBuns;
+  final int makes, makeSeconds, emptyTaps;
   _Result(this.level, this.minutes, this.skills, this.gold, this.goldSpentOnSkills, this.tap5Level, this.auto5Level,
-      this.waiting, this.reached);
+      this.waiting, this.reached, this.ingredientBuns, this.makes, this.makeSeconds, this.emptyTaps);
+  String get pantryText => '재료비 $ingredientBuns, 재료 준비 $makes번($makeSeconds초), 재료 없는 탭 $emptyTaps번';
+}
+
+/// 재료 타이쿤 B: seconds one 재료 준비 takes — the mini-game (설계안 3장:
+/// 반죽 젓기 8초, 불 조절 10초, 휘젓기 6초) and about 5 s to choose in the window.
+const _makeSeconds = {'stir': 8 + 5, 'heat': 10 + 5, 'whisk': 6 + 5};
+
+/// 재료 타이쿤 B: the player keeps at least one tub of batter and of 팥소. When
+/// one falls below, they buy what is missing ('모자란 재료 한 번에 사기') and
+/// make the most tubs (5·3·1) that fit the stock limit and the 붕어빵력 on
+/// hand, the mini-game a success (+10 portions a tub). With [free] (the
+/// game before ingredients) tubs come at no cost and no time.
+/// Returns (붕어빵력 spent, makes, seconds).
+Future<(BigInt, int, int)> _restock(WorkshopController c, {required bool free}) async {
+  final p = c.pantryConfig;
+  var spent = BigInt.zero, makes = 0, seconds = 0;
+  for (final kind in [p.batterKind, 'redbean']) {
+    final at = c.now().millisecondsSinceEpoch;
+    final held = c.state.pantry.usable(p, kind, at);
+    if (held >= p.portionsPerTub) continue;
+    if (free) {
+      expect(await c.command(() {
+        final keep = c.state.pantry.lots.where((l) => l.kind == kind && !l.premium && l.keeps).firstOrNull;
+        if (keep != null) {
+          keep.portions += 5 * p.portionsPerTub;
+        } else {
+          c.state.pantry.lots.insert(0, PantryLot(kind, false, pantryKeepMs, 5 * p.portionsPerTub));
+        }
+        c.state.pantry.ledger.putIfAbsent(kind, PantryLedger.new).produced += 5 * p.portionsPerTub;
+      }), isTrue);
+      makes++;
+      continue;
+    }
+    for (final tubs in p.batchTubs.reversed) {
+      if (held + tubs * p.portionsPerTub > p.stockLimitPortions(c.state.level)) continue;
+      final cost = c.state.pantry.shortfallCost(p, kind, tubs, c.pantryRate);
+      if (cost > c.state.purchases.available(c.state.buns)) continue;
+      expect(await c.command(() {
+        if (cost > BigInt.zero) {
+          c.state.buns -= c.state.pantry.buyShortfall(p, kind, tubs, c.pantryRate, c.state.recipes);
+        }
+        c.state.pantry.make(p, kind, tubs, c.state.level, c.now().millisecondsSinceEpoch, c.state.recipes, success: true);
+      }), isTrue, reason: c.notice);
+      spent += cost; makes++; seconds += _makeSeconds[p.kind(kind).minigame]!;
+      break;
+    }
+  }
+  return (spent, makes, seconds);
 }
 
 /// A new player tapping 2 times/s and selling one order per minute, claiming
@@ -70,9 +123,18 @@ class _Result {
 /// DEC-106, about 3 minutes on average), so [saleEvery] sells only
 /// every that many minutes and
 /// [target] is the level to reach.
+///
+/// 재료 타이쿤 B: every tap and every product sold uses ingredients (taps:
+/// one portion per `taps_per_portion`, products: one each, made in the
+/// mold or the six-cell griddle), bought and made by [_restock]; the
+/// mini-game seconds are taken from the next minute's taps. [freeIngredients]
+/// plays the game as before ingredients, to compare. (Auto production is
+/// not counted here, as before: the simulated minutes pass on the wall
+/// clock only; the ingredient prices still follow R with it.)
 Future<_Result> _play(DevelopmentBalance config, {required int welcome, int target = 5, int minutes = 60,
-    int saleEvery = 1, int tapsPerMinute = 120, int extraGold = 0}) async {
+    int saleEvery = 1, int tapsPerMinute = 120, int extraGold = 0, bool freeIngredients = false}) async {
   final server = _Server(welcome)..gold = extraGold;
+  var ingredientBuns = BigInt.zero, makes = 0, makeSeconds = 0, emptyTaps = 0, lostTaps = 0;
   var sold = 0;
   final reached = <int, int>{1: 0};
   var clock = DateTime.utc(2026, 11, 3, 1);
@@ -84,8 +146,13 @@ Future<_Result> _play(DevelopmentBalance config, {required int welcome, int targ
     await c.openBusiness();
     var skills = 0;
     for (var minute = 1; minute <= minutes; minute++) {
-      for (var i = 0; i < tapsPerMinute; i++) { c.tap(); }
+      for (var i = 0; i < tapsPerMinute - lostTaps; i++) {
+        if (c.tap() == null) emptyTaps++;
+      }
       clock = clock.add(const Duration(minutes: 1));
+      final (spent, made, seconds) = await _restock(c, free: freeIngredients);
+      ingredientBuns += spent; makes += made; makeSeconds += seconds;
+      lostTaps = seconds * tapsPerMinute ~/ 60;
       if (minute % saleEvery == 0) {
       final id = 'sale_$minute';
       final limit = DevelopmentBalance.integer(config.rows('level_progression')[c.state.level - 1], 'order_quantity_limit');
@@ -93,6 +160,10 @@ Future<_Result> _play(DevelopmentBalance config, {required int welcome, int targ
       // uniform order sizes on average, without a lucky or unlucky seed.
       final quantity = 1 + sold++ % limit;
       await c.command(() {
+        // The products were made in the mold or the griddle: one portion each.
+        for (var i = 0; i < quantity; i++) {
+          c.state.pantry.takePortion(c.pantryConfig, 'redbean', c.now().millisecondsSinceEpoch);
+        }
         c.state.inventory = c.state.inventory.recordResult(ProductBatch(id: 'batch_$minute', flavor: 'redbean', variant: 2,
           quantity: quantity, madeOnBusinessIndex: c.state.business.businessIndex), keep: true);
         c.state.customers.insert(0, CustomerOrder(id: id, remainingMs: 60000, lines: [CustomerOrderLine(flavor: 'redbean', quantity: quantity)]));
@@ -137,10 +208,14 @@ Future<_Result> _play(DevelopmentBalance config, {required int welcome, int targ
       }
       c.goldBalance = server.gold;
       if (_trace) debugPrint('분 $minute Lv.${c.state.level} 보유 ${c.state.buns} 누적 ${c.state.lifetime} 탭 ${c.tapRate} 자동 ${c.autoRate} 판매 ${c.levelPiecesSold} 대기 ${c.levelWaitReason}');
-      if (c.state.level >= target) return _Result(c.state.level, minute, skills, server.gold, server.spent, tap5, auto5, null, reached);
+      if (c.state.level >= target) {
+        return _Result(c.state.level, minute, skills, server.gold, server.spent, tap5, auto5, null, reached,
+            ingredientBuns, makes, makeSeconds, emptyTaps);
+      }
     }
     c.goldBalance = server.gold;
-    return _Result(c.state.level, minutes, skills, server.gold, server.spent, tap5, auto5, c.levelWaitReason, reached);
+    return _Result(c.state.level, minutes, skills, server.gold, server.spent, tap5, auto5, c.levelWaitReason, reached,
+        ingredientBuns, makes, makeSeconds, emptyTaps);
   } finally { c.dispose(); }
 }
 
@@ -175,6 +250,14 @@ void main() {
     // Lv.10 with the level-up gold on hand (a second day's player).
     final lv10 = await _play(config, welcome: welcome, minutes: 1200, saleEvery: every, target: 10, extraGold: lv10Gold());
     debugPrint('일반 손님 시뮬레이션: Lv.5 ${lv5.minutes}분, Lv.10 ${lv10.minutes}분 (탭 2/초, $every분마다 판매, 레벨별 ${lv10.reached})');
+    // 재료 타이쿤 B: the same players with ingredients free (the game before them).
+    final lv5Free = await _play(config, welcome: welcome, minutes: 600, saleEvery: every, freeIngredients: true);
+    final lv10Free = await _play(config, welcome: welcome, minutes: 1200, saleEvery: every, target: 10,
+        extraGold: lv10Gold(), freeIngredients: true);
+    debugPrint('재료 사기·만들기 포함: Lv.5 ${lv5.minutes}분(재료 없이 ${lv5Free.minutes}분), '
+        'Lv.10 ${lv10.minutes}분(재료 없이 ${lv10Free.minutes}분), Lv.10까지 ${lv10.pantryText}');
+    expect(lv10.emptyTaps, 0, reason: '재료를 채우는 사람은 재료가 떨어져 멈추지 않음');
+    expect(lv10.makes, greaterThan(0));
     expect(every, 3);
     expect(lv5.level, 5);
     expect(lv5.minutes, lessThanOrEqualTo(15));
@@ -190,7 +273,7 @@ void main() {
     final welcome = DevelopmentBalance.integer(config.section('welcome_reward'), 'gold');
     final levelGold = config.rows('level_progression').fold(0, (n, r) => n + DevelopmentBalance.integer(r, 'level_cost_gold'));
     final result = await _play(config, welcome: welcome, minutes: 1500, saleEvery: 3, target: 50, extraGold: levelGold);
-    debugPrint('Lv.50 시뮬레이션(3분마다 판매): ${[for (final l in [5, 10, 20, 30, 40, 50]) 'Lv.$l ${result.reached[l]}분'].join(', ')}');
+    debugPrint('Lv.50 시뮬레이션(3분마다 판매, 재료 사기·만들기 포함): ${[for (final l in [5, 10, 20, 30, 40, 50]) 'Lv.$l ${result.reached[l]}분'].join(', ')}, ${result.pantryText}');
     expect(result.level, 50, reason: '${result.waiting}');
   }, timeout: const Timeout(Duration(minutes: 6)));
   test('환영 황금은 초반 스킬에 쓰이지 않고 꾸미기에 쓸 만큼 남는다', () async {

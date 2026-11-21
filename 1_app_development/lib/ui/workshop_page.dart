@@ -770,6 +770,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
         status:c.error!=null ? '저장 확인 필요' : s.business.open ? '영업 중' : '영업 준비',
         statusKind:c.error!=null ? WorkshopStatusKind.error : s.business.open ? WorkshopStatusKind.open : WorkshopStatusKind.preparing,
         showRates:c.featureIsOpen(WorkshopFeature.skills),
+        // 재료 타이쿤 B: '초당 N개 멈춤' when auto production ran out of ingredients.
+        autoStopped:c.autoStopped,
         // 황금붕어빵력 beside 붕어빵력 (26번 3차 피드백 H30).
         gold:BigInt.from(widget.accountController.state.premium.gold)),
       // The menu is only in the bottom bar (H28); the special bungeoppang's

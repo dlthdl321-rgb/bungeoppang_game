@@ -42,10 +42,13 @@ class NightHomeHeaderData {
   /// What the next level-up takes ('레벨업할 때 붕어빵력 3만이 쓰여요', 4차
   /// 피드백 g9): the Lv emblem's long-press tooltip, null for none.
   final String? levelHint;
+  /// 재료 타이쿤 B: auto production stopped for lack of batter or filling —
+  /// '멈춤' beside the per-second number.
+  final bool autoStopped;
   const NightHomeHeaderData({required this.level, required this.progressPermille,
     required this.buns, required this.lifetime, required this.autoRate,
     required this.tapRate, required this.status, this.claimable = 0, this.showRates = true,
-    this.statusKind = WorkshopStatusKind.open, this.gold, this.levelHint});
+    this.statusKind = WorkshopStatusKind.open, this.gold, this.levelHint, this.autoStopped = false});
 }
 
 class NightHome extends StatelessWidget {
@@ -410,7 +413,8 @@ class NightHome extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _rate(const Key('auto-rate'), Icons.timer_outlined, '초당',
-                          headerData?.autoRate ?? controller.currentAutoRate),
+                          headerData?.autoRate ?? controller.currentAutoRate,
+                          stopped: headerData?.autoStopped ?? false),
                       const SizedBox(height: 4),
                       _rate(const Key('tap-rate'), Icons.touch_app_outlined,
                           '클릭당', headerData?.tapRate ?? controller.currentTapRate),
@@ -664,7 +668,7 @@ class NightHome extends StatelessWidget {
     );
   }
 
-  Widget _rate(Key key, IconData icon, String label, BigInt value) => CozyPanel(
+  Widget _rate(Key key, IconData icon, String label, BigInt value, {bool stopped = false}) => CozyPanel(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Row(children: [
           Icon(icon, size: 16, color: Cozy.wood),
@@ -673,7 +677,10 @@ class NightHome extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text('$label ${compactNumber(value)}개',
+              child: Text.rich(
+                  TextSpan(text: '$label ${compactNumber(value)}개', children: [
+                    if (stopped) const TextSpan(text: ' 멈춤', style: TextStyle(color: Color(0xFFC0392B))),
+                  ]),
                   key: key,
                   style: const TextStyle(
                       fontSize: 13, fontWeight: FontWeight.w800)),
