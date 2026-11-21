@@ -89,7 +89,7 @@ bool featureOpen(WorkshopState s, DevelopmentBalance config, WorkshopFeature fea
     // A skill already bought, or a purchase still being settled, keeps the
     // window open whatever the level (old saves, recovery).
     WorkshopFeature.skills => byLevel ||
-        s.purchases.owned.entries.any((e) => !e.key.startsWith('cosmetic:') && e.value > 0) ||
+        s.purchases.owned.entries.any((e) => !e.key.contains(':') && e.value > 0) ||
         s.purchases.journals.values.any((j) => !j.settled),
     WorkshopFeature.griddle => byLevel && s.griddleFlavors(config).isNotEmpty,
     WorkshopFeature.recipes => byLevel || s.recipes.length > 1,

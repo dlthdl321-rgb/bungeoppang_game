@@ -39,10 +39,13 @@ class NightHomeHeaderData {
   /// 황금붕어빵력 beside 붕어빵력 in the HUD (26번 3차 피드백 H30), null
   /// hides it (the old clicker home).
   final BigInt? gold;
+  /// What the next level-up takes ('레벨업할 때 붕어빵력 3만이 쓰여요', 4차
+  /// 피드백 g9): the Lv emblem's long-press tooltip, null for none.
+  final String? levelHint;
   const NightHomeHeaderData({required this.level, required this.progressPermille,
     required this.buns, required this.lifetime, required this.autoRate,
     required this.tapRate, required this.status, this.claimable = 0, this.showRates = true,
-    this.statusKind = WorkshopStatusKind.open, this.gold});
+    this.statusKind = WorkshopStatusKind.open, this.gold, this.levelHint});
 }
 
 class NightHome extends StatelessWidget {
@@ -432,14 +435,11 @@ class NightHome extends StatelessWidget {
     final s = controller.state;
     final next = activeLevelMission(s);
     final progress = headerData?.progressPermille ?? levelProgressPermille(s);
-    final level = headerData?.level ?? s.level;
+    final level = headerData?.level ?? s.level, hint = headerData?.levelHint;
     final top = headerData == null ? next == null : level >= 50;
     // A '레시피 받기' waiting shows on the emblem too, not only on the
     // menu button (4차 피드백 IA1).
-    return CountBadge(
-      count: headerData?.claimable ?? 0,
-      badgeKey: const Key('level-badge'),
-      child: Semantics(
+    final badge = Semantics(
       button: true,
       label:
           'Lv.$level 레벨 미션 ${top ? '최고 레벨 달성' : '진행 ${progress ~/ 10}%'}',
@@ -507,7 +507,13 @@ class NightHome extends StatelessWidget {
           ]),
         ),
       ),
-    ));
+    );
+    // 4차 피드백 g9: the ring's tooltip says what the next level-up takes.
+    return CountBadge(
+      count: headerData?.claimable ?? 0,
+      badgeKey: const Key('level-badge'),
+      child: hint == null ? badge : Tooltip(key: const Key('level-hint'), message: hint, child: badge),
+    );
   }
 
   /// How long the level ring takes to glide to a new value.

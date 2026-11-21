@@ -14,6 +14,7 @@ import 'development_inventory.dart';
 import 'development_orders.dart';
 import 'development_rules.dart';
 import 'development_purchase_journal.dart';
+import 'economy.dart' show compactNumber;
 import 'feedback_config.dart';
 import 'workshop_purchases.dart';
 import 'workshop_online.dart';
@@ -27,7 +28,6 @@ import 'workshop_arrivals.dart';
 import 'workshop_feature_unlocks.dart';
 import 'workshop_daily.dart';
 import 'workshop_collection_rules.dart';
-import 'economy.dart' show compactNumber;
 import 'usage_stats.dart';
 import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, hairHatClash, hairUnderHatText, hatOverHairText, movedToTop, removedCosmetics, retiredCosmetics;
 
@@ -73,6 +73,11 @@ class WorkshopSalePraise {
 class WorkshopState {
   int sequence = 0, level = 1, taps = 0, completedSales = 0, phaseMs = 0,
       levelStartTaps = 0, levelStartSales = 0, arrivalMs = 0;
+  /// Bungeoppang pieces handed over in finished sales, and that count when
+  /// the current level began (4차 피드백 g9: a level asks for pieces sold in
+  /// it). Saved as `soldPieces`·`levelStartPieces` (schema 11); a save
+  /// without them counts its sale ledger and credits it to this level.
+  int soldPieces = 0, levelStartPieces = 0;
   String selectedFlavor = 'redbean',sceneTime='clock';
   /// First-run guide: `cook` → `sell` → `done`, or `skipped` (schema 6).
   String tutorial = 'cook';
@@ -201,6 +206,7 @@ class WorkshopState {
     'regularClock': regularClock.toJson(), 'namedClock': namedClock.toJson(), 'lastNamedVisitor': lastNamedVisitor,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
     'levelStartTaps': levelStartTaps, 'levelStartSales': levelStartSales, 'arrivalMs': arrivalMs,
+    'soldPieces': soldPieces, 'levelStartPieces': levelStartPieces,
     'selectedFlavor': selectedFlavor,'sceneTime':sceneTime, 'recipes': recipes.toList()..sort(),
     'recipeMissions': recipeMissions.toList()..sort(),
     'masteryAwards': {for (final e in masteryAwards.entries) e.key: Map<String, dynamic>.from(e.value)},
@@ -463,6 +469,22 @@ class WorkshopState {
     if (state.sales.length != state.completedSales || state.claimedLevels.length != state.level - 1) {
       throw const FormatException('판매/승급 원장 불일치');
     }
+    // 4차 피드백 g9: pieces sold. A save from before them counts its sale
+    // ledger (each finished sale keeps the order as placed) and credits all
+    // of it to the current level.
+    if (row.containsKey('soldPieces')) {
+      state..soldPieces = DevelopmentBalance.integer(row, 'soldPieces')
+        ..levelStartPieces = DevelopmentBalance.integer(row, 'levelStartPieces');
+    } else {
+      state.soldPieces = state.sales.values.fold(0, (n, encoded) {
+        final evidence = (jsonDecode(encoded) as Map<String, dynamic>)['evidence'];
+        if (evidence is! Map<String, dynamic> || evidence['order'] is! Map<String, dynamic>) throw const FormatException('판매 기록 형식 오류');
+        return n + CustomerOrder.fromJson(evidence['order'] as Map<String, dynamic>).lines.fold(0, (a, l) => a + l.quantity);
+      });
+    }
+    if (state.levelStartPieces > state.soldPieces || state.soldPieces < state.completedSales) {
+      throw const FormatException('판매 개수 기록 불일치');
+    }
     if ((row['schema'] as int)>=3) {
       if(!['scenetime','day','night_time','clock'].contains(row['sceneTime'])) throw const FormatException('배경 시간 저장 오류');
       // 4차 피드백 g10(ID9): '배경 그대로' is gone and the device's clock is
@@ -598,6 +620,12 @@ class WorkshopState {
 
 /// One requirement of the next level ([WorkshopController.levelRequirements]).
 typedef LevelRequirement = ({String label, BigInt current, BigInt target});
+/// '이' or '가' after a number written by [compactNumber], as it is read
+/// (200 이백이, 12 십이가, 3만 삼만이, 2조 이조가).
+String subjectParticle(String number) {
+  if (number.isEmpty) return '이';
+  return '2459조'.contains(number[number.length - 1]) ? '가' : '이';
+}
 class WorkshopController extends ChangeNotifier implements WorkshopProgressSource {
   final DevelopmentBalance config;
   final WorkshopRepository repository;
@@ -785,7 +813,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   }
   @override
   Map<String,dynamic> progressSnapshot() => {'buns':state.buns.toString(),'lifetimeBuns':state.lifetime.toString(),
-    'level':state.level,'taps':state.taps,'sales':state.completedSales};
+    'level':state.level,'taps':state.taps,'sales':state.completedSales,'pieces':state.soldPieces};
   @override
   PurchaseJournal? purchaseJournal(String transaction) => state.purchases.journals[transaction];
   // Retained through reloadAfterError; storage integration can persist these
@@ -1358,6 +1386,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       state.relationships = state.relationships.successfulSale(order.id,order.id,state.business.businessIndex,config);
     }
     state.completedSales++; state.customers.removeAt(index);
+    state.soldPieces += order.lines.fold(0, (n, line) => n + line.quantity);
     guestDeparture = (customerId: order.customerId, happy: true, atMs: _mono);
     // The guide's first sale stays free of story, follow-up and choice scenes.
     // It gets the big praise (26번 2단계, S2-Q4): the guest's words, the
@@ -1604,32 +1633,64 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     }
     state.customerScene=null;
   });
-  /// What the next level asks for, as (label, how far, how much): the one
-  /// place the level-up rule lives. [canLevelUp] (automatic 승급), the
-  /// home's ring gauge ([levelProgressPermille]) and the 레벨 미션 bars all
-  /// read it, so the rule can change here alone. Empty at the top level.
+  // ---- 레벨업 조건 (4차 피드백 g9, `level_progression`) ----
+  // The one place the level-up rule lives. A level asks for pieces sold and
+  // taps in that level (both start again at 0 on level-up) and a payment
+  // taken when it is reached: `level_cost_buns` 붕어빵력, and at the levels
+  // with `level_cost_gold` (Lv.10·20·30·40·50) 황금붕어빵력 too, which the
+  // server wallet takes through a `level:N` purchase ([payLevelGold]).
+  // API for the automatic 승급 and the Lv ring (4차 피드백 g1):
+  //   [levelRequirements] rows for the window, [levelProgressPermille] the
+  //   ring, [canLevelUp] whether [_promote] raises the level now,
+  //   [levelGoalsMet] sales and taps only, [levelGoldDue] the gold purchase
+  //   to start, [levelCostNote] / [levelWaitReason] the texts.
+  Map<String, dynamic>? get _nextLevelRule => state.level >= 50 ? null : config.rows('level_progression')[state.level];
+  /// 붕어빵력 the next level-up takes (0 at the top level).
+  BigInt get levelCostBuns => _nextLevelRule == null ? BigInt.zero : DevelopmentBalance.decimal(_nextLevelRule!, 'level_cost_buns');
+  /// 황금붕어빵력 the next level-up takes (Lv.10·20·30·40·50 only).
+  int get levelCostGold => _nextLevelRule == null ? 0 : DevelopmentBalance.integer(_nextLevelRule!, 'level_cost_gold');
+  int get levelPiecesSold => state.soldPieces - state.levelStartPieces;
+  int get levelTaps => state.taps - state.levelStartTaps;
+  /// The server wallet's 황금붕어빵력 as last shown (the page keeps it up to
+  /// date from the account); only for the window and [levelGoldDue].
+  int goldBalance = 0;
+  /// The `level:N` purchase id of the next level when it asks for gold.
+  String? get _levelGoldProduct => levelCostGold > 0 ? 'level:${state.level + 1}' : null;
+  bool get _levelGoldPaid => _levelGoldProduct != null && state.purchases.owned[_levelGoldProduct] == 1;
+  /// Sales and taps of this level are done (the payment may still wait).
+  bool get levelGoalsMet {
+    final rule = _nextLevelRule;
+    return rule != null && levelPiecesSold >= DevelopmentBalance.integer(rule, 'additional_sold_pieces') &&
+        levelTaps >= DevelopmentBalance.integer(rule, 'additional_taps');
+  }
+  /// What the next level asks for, as (label, how far, how much). Empty at
+  /// the top level. The payment rows are full once it can be paid.
   List<LevelRequirement> get levelRequirements {
-    if (state.level >= 50) return const [];
-    final rule = config.rows('level_progression')[state.level];
+    final rule = _nextLevelRule;
+    if (rule == null) return const [];
+    final paid = _levelGoldPaid, cost = levelCostBuns, gold = levelCostGold;
     return [
-      (label: '누적 붕어빵력', current: state.lifetime, target: DevelopmentBalance.decimal(rule, 'season_total_buns')),
-      (label: '이번 레벨 탭', current: BigInt.from(state.taps - state.levelStartTaps),
-        target: BigInt.from(DevelopmentBalance.integer(rule, 'additional_taps'))),
-      (label: '이번 레벨 판매', current: BigInt.from(state.completedSales - state.levelStartSales),
-        target: BigInt.from(DevelopmentBalance.integer(rule, 'additional_sales'))),
+      (label: '이번 레벨에 판 붕어빵', current: BigInt.from(levelPiecesSold),
+        target: BigInt.from(DevelopmentBalance.integer(rule, 'additional_sold_pieces'))),
+      (label: '이번 레벨 탭', current: BigInt.from(levelTaps), target: BigInt.from(DevelopmentBalance.integer(rule, 'additional_taps'))),
+      (label: '레벨업 비용 붕어빵력', current: paid ? cost : state.purchases.available(state.buns), target: cost),
+      if (gold > 0) (label: '레벨업 비용 황금붕어빵력', current: BigInt.from(paid ? gold : goldBalance), target: BigInt.from(gold)),
     ];
   }
-  bool get canLevelUp => state.level < 50 && levelRequirements.every((r) => r.current >= r.target);
-  /// The way to the next level in permille: the average of the
-  /// requirements, each counted up to its target, so it is 1000 exactly
-  /// when [canLevelUp] (and at the top level).
+  /// Whether the next level can be taken now: goals met and the payment
+  /// ready (붕어빵력 on hand; at a gold level the `level:N` purchase done).
+  bool get canLevelUp => levelGoalsMet &&
+      (_levelGoldProduct != null ? _levelGoldPaid : state.purchases.available(state.buns) >= levelCostBuns);
+  /// The way to the next level in permille for the Lv ring: the average of
+  /// [levelRequirements], each up to its target; 1000 only when [canLevelUp]
+  /// (and at the top level).
   int get levelProgressPermille {
     final rows = levelRequirements;
     if (rows.isEmpty) return 1000;
     var sum = 0;
     for (final r in rows) {
-      sum += r.target <= BigInt.zero ? 1000
-          : ((r.current < BigInt.zero ? BigInt.zero : r.current > r.target ? r.target : r.current) * BigInt.from(1000) ~/ r.target).toInt();
+      final current = r.current < BigInt.zero ? BigInt.zero : r.current > r.target ? r.target : r.current;
+      sum += r.target <= BigInt.zero ? 1000 : (current * BigInt.from(1000) ~/ r.target).toInt();
     }
     final average = sum ~/ rows.length;
     return average >= 1000 && !canLevelUp ? 999 : average;
@@ -1638,16 +1699,54 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// short celebration (4차 피드백 IA1); null once shown.
   int? promotedTo;
   void dismissPromotion() { promotedTo = null; }
+  /// '레벨업할 때 붕어빵력 3만 개가 쓰여요' (and the gold at Lv.10·20·…), or
+  /// null at the top level. Shown in the window and the ring's tooltip.
+  String? get levelCostNote {
+    if (_nextLevelRule == null) return null;
+    final buns = compactNumber(levelCostBuns);
+    return levelCostGold > 0 ? '레벨업할 때 붕어빵력 $buns, 황금붕어빵력 $levelCostGold개가 쓰여요'
+        : '레벨업할 때 붕어빵력 $buns${subjectParticle(buns)} 쓰여요';
+  }
+  /// Why the level waits although sales and taps are done, or null.
+  String? get levelWaitReason {
+    if (!levelGoalsMet || canLevelUp) return null;
+    final lack = levelCostBuns - state.purchases.available(state.buns), lackGold = levelCostGold - goldBalance;
+    if (lack > BigInt.zero && lackGold > 0) return '붕어빵력이 ${compactNumber(lack)}, 황금붕어빵력이 $lackGold 모자라요.';
+    if (lack > BigInt.zero) return '붕어빵력이 ${compactNumber(lack)} 모자라요.';
+    if (lackGold > 0) return '황금붕어빵력이 $lackGold 모자라요.';
+    if (purchaseGateway == null) return '인터넷에 연결해 주세요.';
+    if (purchaseGateway!.authenticatedAccount.isEmpty) return '카카오 로그인 후 레벨업할 수 있어요.';
+    return '황금붕어빵력을 내는 중이에요.';
+  }
+  /// A gold level whose sales, taps and 붕어빵력 are ready and whose gold
+  /// the wallet seems to have: start [payLevelGold] (the page does it by
+  /// itself, so 승급 stays automatic).
+  bool get levelGoldDue => _levelGoldProduct != null && !_levelGoldPaid && levelGoalsMet &&
+      state.purchases.available(state.buns) >= levelCostBuns && goldBalance >= levelCostGold &&
+      purchaseGateway != null && purchaseGateway!.authenticatedAccount.isNotEmpty &&
+      !_purchaseBusy && state.purchases.journals.values.every((j) => j.settled);
+  /// Pays a gold level's 붕어빵력 and 황금붕어빵력 through the server
+  /// purchase path (reserve → local debit → commit, like a skill); the
+  /// level itself is raised by [_promote] after.
+  Future<bool> payLevelGold() async {
+    final product = _levelGoldProduct, gateway = purchaseGateway;
+    if (product == null || gateway == null || !levelGoalsMet || _levelGoldPaid) return false;
+    return purchaseSkill(gateway, product);
+  }
   /// 승급 is automatic (4차 피드백 IA1): every command — the checkpoint save
   /// each `manual_cooking.checkpoint_ms` included — raises the level while
-  /// its 붕어빵력·탭·판매 are met, several levels at once if need be. Each
-  /// level's 붕어빵력 reward is added and its 황금 waits for the server's
-  /// review as before (`pendingGold['level:N']`).
+  /// [canLevelUp], several levels at once if need be, taking each level's payment:
+  /// 붕어빵력 from the balance (lifetime stays), or nothing more at a gold
+  /// level (its purchase took both). Sales and taps start again at 0.
+  /// Each level's 붕어빵력 reward is added and its 황금 waits for the
+  /// server's review as before (`pendingGold['level:N']`).
   void _promote() {
     while (canLevelUp) {
       final next = state.level + 1, rule = config.rows('level_progression')[state.level];
       if (!state.claimedLevels.add(next)) throw const FormatException('중복 승급');
-      state.level = next; state.levelStartTaps = state.taps; state.levelStartSales = state.completedSales;
+      if (_levelGoldProduct == null) state.buns -= levelCostBuns;
+      state..level = next ..levelStartTaps = state.taps ..levelStartSales = state.completedSales
+        ..levelStartPieces = state.soldPieces;
       final buns = DevelopmentBalance.decimal(rule, 'buns_reward'); state.buns += buns; state.lifetime += buns;
       final gold = DevelopmentBalance.integer(rule, 'gold_reward');
       if (gold > 0) state.pendingGold['level:$next'] = jsonEncode({'level': next, 'gold': gold, 'revision': config.revision});
@@ -1855,7 +1954,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final result = state.purchases.settle(transaction, state.buns);
       state.purchases = result.purchases; state.buns = result.buns;
       final current=state.purchases.journal(transaction);
-      if(!previous.applied && current.applied && !current.quote.skillId.startsWith('cosmetic:')) {
+      if(!previous.applied && current.applied && !current.quote.skillId.contains(':')) {
         state.missions=state.missions.observe(now(),purchases:current.quote.quantity,autoPeak:autoRate);
       }
     });

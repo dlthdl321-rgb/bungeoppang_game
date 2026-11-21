@@ -144,6 +144,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
 
   static String _pendingLabel(String id) {
     if (id.startsWith('cosmetic:')) return '구매 확인 대기: ${id.substring(9)}';
+    if (id.startsWith('level:')) return '레벨업 확인 대기: Lv.${id.substring(6)} 황금붕어빵력';
     final skill = upgrades.where((u) => u.id == id);
     return '레벨업 확인 대기: ${skill.isEmpty ? id : skill.first.name}';
   }
