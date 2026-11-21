@@ -182,6 +182,64 @@ void main() {
     }
   });
 
+  testWidgets('단위 휠은 스크롤처럼 끌면 따라오고 놓으면 가까운 단위에 멈춘다(4차 g13)', (tester) async {
+    final big = BigInt.from(10).pow(200);
+    final (c, _) = await _open(tester, const Size(390, 844), buns: big);
+    final wheel = find.byKey(const Key('skill-step-tap_1'));
+    Rect band() => tester.getRect(wheel).deflate(1.5);
+    double middleOf(int step) => tester.getCenter(find.byKey(Key('step-tap_1-$step'))).dy;
+    // At rest the chosen step sits in the middle band.
+    expect(middleOf(1), closeTo(band().center.dy, 1));
+    // Mid-drag the steps follow the finger (half a row up, not yet snapped).
+    final gesture = await tester.startGesture(tester.getCenter(wheel));
+    await gesture.moveBy(const Offset(0, -20));
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, -10));
+    await tester.pump();
+    expect(middleOf(1), lessThan(band().center.dy - 5));
+    expect(c.skillSteps['tap_1'], isNull);
+    // Let go past half a row: snaps to ×10.
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(c.skillSteps['tap_1'], 10);
+    expect(middleOf(10), closeTo(band().center.dy, 1));
+    // A long pull down cannot run past ×1, and lands on it.
+    await tester.drag(wheel, const Offset(0, 120));
+    await tester.pumpAndSettle();
+    expect(c.skillSteps['tap_1'], 1);
+    // A short quick flick (not past half a row) still moves one step.
+    await tester.timedDrag(wheel, const Offset(0, -24), const Duration(milliseconds: 40));
+    await tester.pumpAndSettle();
+    expect(c.skillSteps['tap_1'], 10);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final size in [const Size(390, 844), const Size(360, 800)]) {
+    testWidgets('×100 비용이 아주 커도 비용 칸 안에서 줄여 보이고, 모자라면 LEVEL UP 꺼짐(4차 g13) ${size.width.toInt()}', (tester) async {
+      final (c, _) = await _open(tester, size, buns: BigInt.from(10).pow(200));
+      await _buy(c, 'tap_1', 880);
+      await c.command(() => c.state.buns = BigInt.from(1000));
+      await tester.pumpAndSettle();
+      await _tap(tester, 'step-tap_1-10');
+      await _tap(tester, 'step-tap_1-100');
+      expect(_button(tester, 'tap_1').quantity, 100);
+      expect(_button(tester, 'tap_1').enabled, isFalse);
+      final cost = find.byKey(const Key('cost-tap_1'));
+      final amount = tester.widget<CurrencyAmount>(find.descendant(of: cost, matching: find.byType(CurrencyAmount)).first);
+      expect(amount.missing, isTrue);
+      // The price box never grows past its 88 wide slot.
+      final fitted = find.ancestor(of: cost, matching: find.byType(FittedBox));
+      expect(tester.getSize(fitted).width, lessThanOrEqualTo(88));
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.byKey(const Key('buy-tap_1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('buy-tap_1')));
+      await tester.pump();
+      expect(find.textContaining('붕어빵력이 '), findsWidgets);
+      expect(c.state.purchases.owned['tap_1'], 880);
+    });
+  }
+
   // Goldens: the window as it opens from the home menu, with the app's own
   // fonts. tap: one of each state (MAX · 올릴 수 있음 · 돈 부족 · 해금됨 Lv.0 ·
   // 잠김); auto: ×10 with a gold-priced tier 5 the player cannot pay; states:
@@ -222,11 +280,16 @@ void main() {
       print('skill rows fully visible in $name: $whole (row height ${tester.getSize(rows.first).height})');
       expect(account.state.premium.gold, name.startsWith('states') ? 3 : 0);
       // 4차 피드백 ID1: MAX, lit, dark, Lv.0 and locked rows, wheel or not,
-      // are all one height, and every wheel shows its three steps.
+      // are all one height, and every wheel box is one size.
       final heights = {for (final e in rows.evaluate()) tester.getSize(find.byWidget(e.widget)).height};
       expect(heights, hasLength(1), reason: '$heights');
-      for (final s in skillLevelUpSteps) {
-        expect(find.byKey(Key('step-${kind == 'auto' ? 'auto_1' : 'tap_2'}-$s')).hitTestable(), findsOneWidget);
+      final wheels = {for (final e in find.byType(SkillStepWheel).evaluate()) tester.getSize(find.byWidget(e.widget))};
+      expect(wheels, {const Size(40, 46)});
+      // g13: a scrolling drum again — the chosen step and its neighbours show.
+      final wheelOf = kind == 'auto' ? 'auto_1' : 'tap_2';
+      final at = skillLevelUpSteps.indexOf(step);
+      for (final (i, s) in skillLevelUpSteps.indexed) {
+        expect(find.byKey(Key('step-$wheelOf-$s')).hitTestable(), (i - at).abs() <= 1 ? findsOneWidget : findsNothing);
       }
     });
   }
