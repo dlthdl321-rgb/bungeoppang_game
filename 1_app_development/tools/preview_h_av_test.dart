@@ -61,7 +61,7 @@ Future<GameController> _open(WidgetTester tester, Map<CosmeticSlot, String> worn
     c.state.tutorial = 'done';
     c.state.level = 8;
     c.state.claimedLevels.addAll([for (var n = 2; n <= 8; n++) n]);
-    c.state.featureIntros.addAll(['skills', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
+    c.state.featureIntros.addAll(['skills', 'pantry', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
     c.state.lifetime = BigInt.from(20000);
     c.state.buns = BigInt.from(1500);
   });

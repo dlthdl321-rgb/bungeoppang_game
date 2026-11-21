@@ -112,7 +112,7 @@ void main() {
         c.state.featureIntros.add('fairy');
         c.state.level = 5;
         c.state.claimedLevels..clear()..addAll([2, 3, 4, 5]);
-        c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
+        c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
         c.state.relationships = c.state.relationships.visit('known-doyun', 'npc_doyun', 1, c.customerCatalog);
       }), isTrue, reason: c.error ?? c.notice);
       // Shown only, never saved (a real 도감 needs the result ledger).

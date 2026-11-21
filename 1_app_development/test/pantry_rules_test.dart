@@ -239,23 +239,43 @@ void main() {
 
   group('24시간 지나면 버림', () {
     test('오래된 통부터 쓰고, 지난 통은 쓰지 않으며 expire가 버리고 안내한다', () {
-      final p = PantryState.starting(c, _t0);
+      final p = PantryState();
+      p.basic.addAll({'flour': 4, 'milk': 2, 'egg': 2, 'sugar': 4, 'salt': 3, 'adzuki': 2});
+      p.make(c, 'batter', 1, 1, _t0, owned);
+      p.make(c, 'redbean', 1, 1, _t0, owned);
       p.make(c, 'batter', 1, 1, _t0 + 2 * _hour, owned);
       final use = p.takePortion(c, 'redbean', _t0 + 3 * _hour)!;
       expect(use.batterMadeAtMs, _t0, reason: '오래된 통부터');
       final late = _t0 + 24 * _hour;
-      expect(p.usable(c, 'batter', late), 100, reason: '처음 통은 24시간이 지나 못 씀');
+      expect(p.usable(c, 'batter', late), 100, reason: '처음 만든 통은 24시간이 지나 못 씀');
       expect(p.usable(c, 'redbean', late), 0);
       expect(p.takePortion(c, 'redbean', late), isNull);
       final gone = p.expire(c, late);
       expect(gone.length, 2);
-      expect(expiredNotice(c, gone), '만든 지 24시간이 지난 반죽 299인분, 팥소 299인분을 버렸어요.');
+      expect(expiredNotice(c, gone), '만든 지 24시간이 지난 반죽 99인분, 팥소 99인분을 버렸어요.');
       expect(p.portions('batter'), 100);
-      expect(p.ledger['batter']!.expired, 299);
-      expect(p.basic['adzuki'], 2, reason: '산 재료는 상하지 않음');
+      expect(p.ledger['batter']!.expired, 99);
+      expect(p.basic['sugar'], 1, reason: '산 재료는 상하지 않음');
       expect(PantryState.fromJson(jsonDecode(jsonEncode(p.toJson())), c).toJson(), p.toJson());
       expect(expiredNotice(c, const []), isNull);
       expect(expiredNotice(c, [PantryLot('redbean', true, 0, 300)]), '만든 지 24시간이 지난 특제 팥소 3통을 버렸어요.');
+    });
+  });
+
+  group('처음 재료는 상하지 않음 (묶음 E)', () {
+    test('며칠이 지나도 쓸 수 있고 버리지 않으며, 맨 먼저 쓴다', () {
+      final p = PantryState.starting(c, _t0);
+      p.make(c, 'batter', 1, 1, _t0 + _hour, owned);
+      final week = _t0 + 7 * 24 * _hour;
+      expect(p.usable(c, 'batter', _t0 + 2 * _hour), 400);
+      expect(p.takePortion(c, 'redbean', _t0 + 2 * _hour)!.batterMadeAtMs, pantryKeepMadeAtMs, reason: '맨 먼저');
+      final gone = p.expire(c, week);
+      expect(gone.map((l) => l.madeAtMs), [_t0 + _hour], reason: '만든 통만 버림');
+      expect(p.usable(c, 'batter', week), 299);
+      expect(p.usable(c, 'redbean', week), 299);
+      expect(p.lots.every((l) => l.keeps), isTrue);
+      final read = PantryState.fromJson(jsonDecode(jsonEncode(p.toJson())), c);
+      expect(read.usable(c, 'batter', week), 299);
     });
   });
 
@@ -361,7 +381,7 @@ void main() {
       expect(workshopSchema, 12);
       final pantry = PantryState.fromJson(saved['pantry'], c);
       expect(pantry.usable(c, 'batter', start.millisecondsSinceEpoch), 300);
-      expect(pantry.lots.first.madeAtMs, start.millisecondsSinceEpoch);
+      expect(pantry.lots.first.madeAtMs, pantryKeepMadeAtMs, reason: '처음 재료는 상하지 않음(묶음 E)');
       expect(shop.pantryRate, c.incomeRate(tapRate: shop.tapRate, autoRate: shop.autoRate));
     });
 
@@ -385,7 +405,7 @@ void main() {
       expect(reopened.state.buns, BigInt.from(77), reason: '경제 초기화 없음');
       expect(reopened.notice, isNot(economyResetNotice));
       final pantry = reopened.state.pantry;
-      expect(pantry.usable(c, 'batter', later.millisecondsSinceEpoch), 300, reason: '3일 지난 시각이 아니라 지금 만든 것');
+      expect(pantry.usable(c, 'batter', later.millisecondsSinceEpoch), 300, reason: '처음 재료는 상하지 않음');
       expect(pantry.gifts, {'start'});
       expect(reopenedRepository.stored!['schema'], 12);
     });

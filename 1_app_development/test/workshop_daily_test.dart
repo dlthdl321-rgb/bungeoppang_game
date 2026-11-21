@@ -355,7 +355,7 @@ void _widgets() {
     final shop = _Shop(DevelopmentBalance.fromJson(_raw()), at ?? DateTime.utc(2026, 11, 2, 3));
     await shop.start();
     // Feature cards already seen: they would cover the home.
-    await shop.c.command(() => shop.c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes',
+    await shop.c.command(() => shop.c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes',
         'specialOrders', 'fishCosmetics', 'freshness']));
     await tester.pumpWidget(GameApp(controller: account, workshop: shop.c));
     await tester.pump();

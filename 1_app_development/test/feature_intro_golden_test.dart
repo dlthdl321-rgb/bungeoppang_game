@@ -12,12 +12,19 @@ void main() {
   // The 붕어빵 요정 card (4차 IA3) waits for its picture (ui/intro_fairy, to
   // be ordered); until then it shows the 'bun' icon (checked below).
   final features = [for (final f in WorkshopFeature.values)
-    if (f != WorkshopFeature.wardrobe && f != WorkshopFeature.fairy) f];
+    if (f != WorkshopFeature.wardrobe && f != WorkshopFeature.fairy && f != WorkshopFeature.pantry) f];
 
   test('붕어빵 요정 카드: 그림 자리는 등록돼 있고, 그림이 없으면 아이콘', () {
     final intro = featureIntro(WorkshopFeature.fairy);
     expect(PixelSprites.uiNames, contains(intro.art));
     expect(intro.fallbackIcon, 'bun');
+  });
+
+  test('재료 준비 카드(재료 타이쿤 E): 그림 자리는 등록돼 있고, 그림이 없으면 재료 준비 아이콘', () {
+    final intro = featureIntro(WorkshopFeature.pantry);
+    expect(PixelSprites.uiNames, contains(intro.art));
+    expect(intro.fallbackIcon, 'btn_prep');
+    expect(PixelSprites.iconNames, contains('btn_prep'));
   });
 
   test('소개 카드 8장 모두 그림 파일이 160×120으로 있다', () async {

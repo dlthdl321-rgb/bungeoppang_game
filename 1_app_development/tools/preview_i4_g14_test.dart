@@ -61,7 +61,7 @@ void main() {
           c.state.tutorial = 'done';
           c.state.level = 2;
           c.state.claimedLevels.add(2);
-          c.state.featureIntros.add('skills');
+          c.state.featureIntros.addAll(['skills', 'pantry']);
           c.state.lifetime = BigInt.from(10).pow(200);
           c.state.buns = BigInt.from(10).pow(200);
         });

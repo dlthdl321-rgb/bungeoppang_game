@@ -75,6 +75,25 @@ class PixelSprites {
     'time_day',
     'time_night',
     'time_clock',
+    // 재료 타이쿤 (25번 62번; tools/apply_25_art.py --only ingredients):
+    // 기본 재료 7, 특별한 재료 4, 반죽·속 통 4, 상점 '재료' 탭, '재료 준비'.
+    'ing_flour',
+    'ing_milk',
+    'ing_egg',
+    'ing_sugar',
+    'ing_salt',
+    'ing_redbean',
+    'ing_cocoa',
+    'prem_butter',
+    'prem_redbean',
+    'prem_vanilla',
+    'prem_chocolate',
+    'tub_batter',
+    'tub_redbean',
+    'tub_custard',
+    'tub_cocoa',
+    'tab_ingredients',
+    'btn_prep',
   ];
 
   /// Effects in assets/images/fx: a tiny bungeoppang for tap particles
@@ -125,6 +144,8 @@ class PixelSprites {
     'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics',
     // The 붕어빵 요정's story card (4차 IA3); until drawn the 'bun' icon.
     'intro_fairy',
+    // 재료 타이쿤 E: '재료 준비' card, not drawn yet (btn_prep icon until then).
+    'intro_pantry',
     // The shop's gold packs, smallest to largest (25번 40번, 26번 3차 H31;
     // until drawn ui/gold_widgets.dart heaps the gold icon instead).
     'gold_pack_1', 'gold_pack_2', 'gold_pack_3', 'gold_pack_4', 'gold_pack_5',

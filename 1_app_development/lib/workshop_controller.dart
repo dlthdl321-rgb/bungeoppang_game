@@ -30,6 +30,7 @@ import 'workshop_daily.dart';
 import 'workshop_collection_rules.dart';
 import 'usage_stats.dart';
 import 'pantry_rules.dart';
+import 'pantry_home.dart';
 import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, hairHatClash, hairUnderHatText, hatOverHairText, movedToTop, removedCosmetics, retiredCosmetics;
 
 part 'workshop_storage.dart';
@@ -864,6 +865,11 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     // made now (not at the last settlement, which may be over a day ago).
     if (saved != null && !reset && (saved['schema'] as int) < pantrySchema) {
       state.pantry = PantryState.starting(PantryConfig.of(config), now().millisecondsSinceEpoch);
+      // 재료 타이쿤 E: recipes obtained before the pantry get their gift too,
+      // so a 슈크림 or 초코 chosen in the flavor button is not out at once.
+      for (final flavor in state.recipes.toList()..sort()) {
+        if (flavor != 'redbean') state.pantry.grantRecipeGift(pantryConfig, flavor, now().millisecondsSinceEpoch);
+      }
     }
     // 26번 3차 피드백 H20: the painted cells are not saved (G2), so a bake
     // reopened between the first batter and the lid would show the whole
@@ -904,13 +910,18 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final progressBefore = _usageProgress;
     final levelBefore = state.level;
     final newsBefore = collectionNews.length;
+    final pantryNewsBefore = pantryNews.length;
     var saved = false;
     try {
       // 4차 병합: g6 collection rewards settle first, so their buns count
       // toward g1's automatic promotion in the same command.
-      try { mutate(); _observeDaily(); _settleCollection(); _promote(); } on FormatException catch (e) {
+      try {
+        _expirePantry(); // 재료 타이쿤 E: 24시간 지난 통을 먼저 버림
+        mutate(); _observeDaily(); _settleCollection(); _promote();
+        _rescuePantry(); // 재료 타이쿤 E: 빈털터리 방지 꾸러미
+      } on FormatException catch (e) {
         state = WorkshopState.fromJson(before, config); notice = e.message;
-        collectionNews.length = newsBefore; return false;
+        collectionNews.length = newsBefore; pantryNews.length = pantryNewsBefore; return false;
       }
       state.sequence++;
       final next = state.toJson();
@@ -923,7 +934,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       return saved = true;
     } catch (e) {
       state = WorkshopState.fromJson(before, config);
-      collectionNews.length = newsBefore;
+      collectionNews.length = newsBefore; pantryNews.length = pantryNewsBefore;
       error = '저장 또는 명령 확인이 필요해요: $e';
       return false;
     } finally {
@@ -1110,6 +1121,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (!canClaimRecipe(flavor)) throw const FormatException('레시피 미션 조건을 확인해 주세요.');
     state.recipes.add(flavor); state.recipeMissions.add(flavor);
     state.flavorMasteries[flavor] = FlavorMasteryProgress(flavor: flavor, difficulty: difficulty(flavor));
+    // 재료 타이쿤 E: the new filling's gift (once per flavor).
+    if (state.pantry.grantRecipeGift(pantryConfig, flavor, now().millisecondsSinceEpoch)) {
+      pantryNews.add(recipeGiftNotice(pantryConfig, flavor));
+    }
   });
   void _startCooking(String flavor, {required bool practice}) {
     if (gameplayPaused || state.session != null || !state.recipes.contains(flavor) ||
@@ -2040,6 +2055,39 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   PantryConfig get pantryConfig => PantryConfig.of(config);
   /// R for ingredient prices: tap power × `ingredients.rate_taps_per_second` + auto/s.
   BigInt get pantryRate => pantryConfig.incomeRate(tapRate: tapRate, autoRate: autoRate);
+  // ---- 재료 타이쿤 E: 홈 표시·안내 (lib/pantry_home.dart) ----
+  /// Gift, rescue and thrown-away notices of the last command, for one short
+  /// centre notice each. Memory only; the page takes them.
+  final List<String> pantryNews = [];
+  List<String> takePantryNews() { final news = pantryNews.toList(); pantryNews.clear(); return news; }
+  int get _pantryNow => now().millisecondsSinceEpoch;
+  /// Every command first throws away tubs made `expiry_ms` ago (the
+  /// starting stock never goes bad) and says so.
+  void _expirePantry() {
+    final notice = expiredNotice(pantryConfig, state.pantry.expire(pantryConfig, _pantryNow));
+    if (notice != null) pantryNews.add(notice);
+  }
+  /// After every command: when the batter or every filling is out and
+  /// 붕어빵력 cannot buy one tub of it, the free 기본 재료 꾸러미 (up to
+  /// `rescue_pack.daily_limit` a KST day). Not during the first-run guide.
+  void _rescuePantry() {
+    if (state.tutorialActive) return;
+    final day = businessDayKst(now());
+    if (!state.pantry.rescueAvailable(pantryConfig, day, _pantryNow, state.recipes,
+        state.purchases.available(state.buns), pantryRate)) {
+      return;
+    }
+    state.pantry.grantRescue(pantryConfig, day);
+    pantryNews.add(rescueNotice(pantryConfig, state.pantry.rescueCount));
+  }
+  /// What stops production now: in business, the batter or every owned
+  /// filling out ([PantryState.productionFlavor] null). None before opening.
+  PantryShortage get pantryOut {
+    if (!state.business.open || state.tutorialActive) return PantryShortage.none;
+    final c = pantryConfig, at = _pantryNow;
+    if (state.pantry.productionFlavor(c, state.selectedFlavor, state.recipes, at) != null) return PantryShortage.none;
+    return state.pantry.usable(c, c.batterKind, at) < 1 ? PantryShortage.batter : PantryShortage.filling;
+  }
   /// The buns the order pays now: `reward_seconds` of [dailyRate], at least `min_buns`.
   BigInt get dailyOrderReward => dailyBuns(dailyRate, DevelopmentBalance.integer(_orderRules, 'reward_seconds'),
       DevelopmentBalance.decimal(_orderRules, 'min_buns'));

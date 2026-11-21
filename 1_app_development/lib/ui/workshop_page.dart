@@ -42,6 +42,9 @@ import 'share_card_view.dart';
 import 'workshop_collection.dart';
 import '../workshop_collection_rules.dart' show collectionRequired, collectionTitle;
 import 'workshop_records.dart';
+import '../pantry_home.dart';
+import '../pantry_rules.dart' show PantryShortage;
+import 'pantry_home.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -72,6 +75,42 @@ class _WorkshopPageState extends State<WorkshopPage> {
       if(mounted) showCenterToast(context,news.join('\n'));
     });
   }
+  // ---- 재료 타이쿤 E: 홈 재료 표시·안내 (lib/ui/pantry_home.dart) ----
+  /// Gift, rescue and thrown-away notices, one short centre notice.
+  void _showPantryNews() {
+    if(c.pantryNews.isEmpty) return;
+    final news=c.takePantryNews();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if(mounted) showCenterToast(context,news.join('\n'));
+    });
+  }
+  /// The run-out noticed (in business, production stopped) and whether its
+  /// bubble still shows: once per run-out, then only the red stock line.
+  bool _pantryOutNoted=false,_pantryBubble=false;
+  Timer? _pantryBubbleTimer;
+  static const pantryBubbleTime=Duration(seconds:6);
+  void _watchPantryOut(PantryShortage out) {
+    if(out==PantryShortage.none){
+      _pantryOutNoted=false;_pantryBubble=false;_pantryBubbleTimer?.cancel();
+      return;
+    }
+    if(_pantryOutNoted) return;
+    _pantryOutNoted=true;_pantryBubble=true;
+    c.usage.record(UsageEvent.ingredientOut,{'what':pantryOutWhat(out)}); // 사용 통계, 하루 1번
+    _pantryBubbleTimer?.cancel();
+    _pantryBubbleTimer=Timer(pantryBubbleTime,(){if(mounted)setState(()=>_pantryBubble=false);});
+  }
+  /// The stock line or the bubble: the '재료 준비' window during 영업 준비,
+  /// else why not.
+  void _openPantry() {
+    if(_pantryBubble) setState(()=>_pantryBubble=false);
+    if(c.state.business.open){showCenterToast(context,pantryOpenOnlyText);return;}
+    if(c.featureLock(WorkshopFeature.pantry) case final lock?){showCenterToast(context,lock);return;}
+    // 묶음 D: its '재료 준비' window replaces PantryStockSummary here.
+    unawaited(_window('재료 준비',(_)=>PantryStockSummary(controller:c)));
+  }
+  @override
+  void dispose(){_pantryBubbleTimer?.cancel();super.dispose();}
   /// The welcome-back card, once per report, after the frame that noticed it.
   void _showAwayReport() {
     final report=c.awayReport;
@@ -728,9 +767,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
     _showAwayReport();
     _showPromotion();
     _showCollectionNews();
+    _showPantryNews();
     _showFeatureIntro();
     _askNotifications();
     final s = c.state;
+    _watchPantryOut(c.pantryOut);
     final scene=s.customerScene;
     if(scene!=null) {
       final id=scene['id'] as String,npc=scene['npc'] as String;
@@ -792,6 +833,10 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // workbench; the six-cell griddle slides aside while it is there.
       bench:(griddle)=>WorkshopMoldStage(controller:c,fishOnScreen:null,bench:griddle,
         lowStall:low,reduceMotion:reduceMotion,onSharePerfect:_sharePerfect,
+        // 재료 타이쿤 E: '재료 준비' beside '스페셜 붕어빵 제작 시작' (영업 준비).
+        prepAction:s.tutorialActive ? null : PantryPrepButton(onPressed:c.inputBusy ? null : _openPantry,
+          lock:c.featureLock(WorkshopFeature.pantry),
+          onLocked:()=>showCenterToast(context,c.featureLock(WorkshopFeature.pantry) ?? '')),
         vibration:widget.accountController.state.settings.vibration),
       griddleAside:s.session!=null,
       counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock),
@@ -801,6 +846,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
         claimable:_rewardCounts()['daily']!+_rewardCounts()['event']!),
       // '영업 시작'·'영업 종료' small beside the '영업 중' sign (시안 확인 2차).
       statusAction:WorkshopBusinessButton(controller:c,onCloseBusiness:_closeBusiness),
+      // 재료 타이쿤 E: the batter and the chosen filling under the sign
+      // (after the first-run guide), the run-out bubble once under it.
+      statusBelow:s.tutorialActive ? null : (compact)=>PantryStockLine(controller:c,onTap:_openPantry,compact:compact,
+        bubble:_pantryBubble ? pantryOutTitle(c.pantryConfig,c.pantryOut,s.selectedFlavor) : null,
+        onBubbleTap:()=>setState(()=>_pantryBubble=false)),
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
       // The griddle art is empty; only cooking cells show a bungeoppang, and
       // none before opening (24번 4단계).

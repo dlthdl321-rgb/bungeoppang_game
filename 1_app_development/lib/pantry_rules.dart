@@ -16,7 +16,8 @@ import 'development_balance.dart';
 /// * 재료 준비(미니게임)는 영업 준비 중에만, 늘 미니게임('바로 만들기' 없음).
 /// * 앱을 닫아 둔 동안은 재료를 쓰지 않음(부재 정산은 지금처럼).
 /// * 만든 반죽·속은 만든 지 24시간(`expiry_ms`)이 지나면 버림. 오래된 통부터
-///   씀. 산 재료(기본·특별한)는 상하지 않음.
+///   씀. 산 재료(기본·특별한)는 상하지 않음. 처음 재료의 통은 상하지 않음
+///   (묶음 E, 사용자 결정: 만든 시각 [pantryKeepMadeAtMs]로 저장, 맨 먼저 씀).
 ///
 /// ## 다른 묶음이 쓰는 API
 ///
@@ -69,7 +70,15 @@ import 'development_balance.dart';
 ///   `lowStock(c, kind, level, nowMs)`(20% 아래), `pantryEmptyText`.
 /// * 레시피를 얻을 때 `grantRecipeGift(c, flavor, nowMs)`(한 번만).
 /// * 빈털터리 방지 `rescueAvailable(...)` / `grantRescue(c, today)`.
+/// * (묶음 E 구현) 홈 표시 규칙·문구는 `lib/pantry_home.dart`, 화면은
+///   `lib/ui/pantry_home.dart`. 컨트롤러가 모든 명령 앞에서 `expire`, 뒤에서
+///   꾸러미를 부르고 안내는 `WorkshopController.pantryNews`, 멈춤 판정은
+///   `pantryOut`. 다른 묶음은 `expire`를 따로 부르지 않아도 됨.
 const pantryEmptyText = '재료를 준비하세요';
+
+/// The made-at time of tubs that never go bad: the starting stock (묶음 E,
+/// 사용자 결정 2026-11-21). Older than any real tub, so they are used first.
+const pantryKeepMadeAtMs = 0;
 
 /// Why production stops.
 enum PantryShortage { none, batter, filling }
@@ -323,7 +332,9 @@ class PantryLot {
   final int madeAtMs;
   int portions;
   PantryLot(this.kind, this.premium, this.madeAtMs, this.portions);
-  bool expired(PantryConfig c, int nowMs) => nowMs - madeAtMs >= c.expiryMs;
+  /// The starting stock ([pantryKeepMadeAtMs]) never goes bad.
+  bool get keeps => madeAtMs == pantryKeepMadeAtMs;
+  bool expired(PantryConfig c, int nowMs) => !keeps && nowMs - madeAtMs >= c.expiryMs;
   Map<String, dynamic> toJson() => {'kind': kind, 'premium': premium, 'madeAtMs': madeAtMs, 'portions': portions};
 }
 
@@ -368,12 +379,12 @@ class PantryState {
   PantryState();
 
   /// A new shop, or a save from before the pantry (schema ≤ 11) once:
-  /// `starting_stock` tubs made at [nowMs] and the ingredients for
-  /// `recipe_sets` more.
+  /// `starting_stock` tubs that never go bad ([pantryKeepMadeAtMs], 묶음 E)
+  /// and the ingredients for `recipe_sets` more. [nowMs] is kept for callers.
   factory PantryState.starting(PantryConfig c, int nowMs) {
     final state = PantryState()..gifts.add('start');
     for (final e in c.startingTubs.entries) {
-      state._addLot(e.key, false, nowMs, e.value * c.portionsPerTub);
+      state._addLot(e.key, false, pantryKeepMadeAtMs, e.value * c.portionsPerTub);
     }
     for (final e in c.startingSets.entries) {
       state._addSets(c, e.key, e.value);
