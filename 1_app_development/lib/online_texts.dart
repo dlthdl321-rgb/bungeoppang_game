@@ -10,6 +10,8 @@ abstract final class OnlineTexts {
   static const rankingNotSetUp = '온라인 설정 없이 만든 빌드라 랭킹을 볼 수 없어요';
   static const skillNotSetUp = '온라인 설정 없이 만든 빌드라 레벨업할 수 없어요.\n온라인 빌드로 설치해 주세요.';
   static const cosmeticNotSetUp = '온라인 설정 없이 만든 빌드라 꾸미기를 살 수 없어요.\n온라인 빌드로 설치해 주세요.';
+  /// 재료 타이쿤 C: special ingredients go through the server like cosmetics.
+  static const premiumIngredientNotSetUp = '온라인 설정 없이 만든 빌드라 특별한 재료를 살 수 없어요.\n온라인 빌드로 설치해 주세요.';
   /// The small band a debug build without the settings shows at the top:
   /// it plays without a server, its progress kept on this device only.
   static const devBuild = '시험용 빌드: 서버 없이 이 기기에만 저장돼요';
@@ -35,4 +37,5 @@ abstract final class OnlineTexts {
 
   // Purchases in an online build before the login.
   static const cosmeticSignIn = '로그인 후 꾸미기를 살 수 있어요.';
+  static const premiumIngredientSignIn = '로그인 후 특별한 재료를 살 수 있어요.';
 }

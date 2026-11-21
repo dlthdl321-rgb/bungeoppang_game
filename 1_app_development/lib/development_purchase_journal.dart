@@ -17,7 +17,9 @@ class PurchaseJournal {
   factory PurchaseJournal.start(String accountId, String transactionId, CompositeQuote quote) {
     if (accountId.isEmpty || transactionId.isEmpty || quote.revision.isEmpty ||
         quote.skillId.isEmpty || quote.quantity <= 0 || quote.owned < 0 ||
-        quote.buns <= BigInt.zero || quote.gold.isNegative ||
+        quote.buns.isNegative ||
+        // 재료 타이쿤 C: only a special ingredient costs no 붕어빵력 (gold only).
+        (quote.buns == BigInt.zero && (!quote.skillId.startsWith('ingredient:') || quote.gold == BigInt.zero)) || quote.gold.isNegative ||
         // DEC-041: skills may cost no gold; cosmetics always cost some.
         (quote.skillId.startsWith('cosmetic:') && quote.gold == BigInt.zero)) {
       throw const FormatException('구매 의도 오류');

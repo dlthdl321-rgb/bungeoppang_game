@@ -185,3 +185,27 @@ test("SSV accepted before wallet failure is recoverable by query across KST midn
   const next=await later.adStart("a",{attempt:"recover_0002"});assert.equal(next.day,"2026-10-17");
   assert.equal((await later.adStart("a",{attempt:"recover_0001"})).day,"2026-10-16");
 });
+
+// 재료 타이쿤 C: special ingredients go through the same purchase path.
+test("특별한 재료 구매는 서버 가격·Lv.5 해금·보유 묶음 수를 검사하고 몇 번이든 산다",async()=>{
+  const {store,service}=await setup();store.docs.set("users/a",{gold:10});
+  const premium=(config as unknown as {ingredients:{premium:{unlock_level:number;pack_gold:number}}}).ingredients.premium;
+  const buy=async(transaction:string,owned:number,quantity:number,level:number)=>{
+    const item={...intent,transaction,skill:"ingredient:vanilla_bean",owned,quantity,buns:"0",gold:String(premium.pack_gold*quantity)};
+    const proof={source:"trustedServerValidation",verifierVersion:1,account:"a",progress:context.progress,epoch:1,
+      transaction,fingerprint:purchaseFingerprint(item),snapshotDigest:"protected",
+      availableBuns:"0",lifetimeBuns:"0",phase:"reservation",level};
+    store.docs.set(evidencePath("a","reservation",transaction),proof);
+    await service.purchase("a","reserve",{...context,intent:item});
+    store.docs.set(evidencePath("a","debit",transaction),{...proof,phase:"debit"});
+    return service.purchase("a","commit",{...context,intent:item});
+  };
+  await assert.rejects(buy("ingredient_0001",0,2,premium.unlock_level-1));
+  assert.equal(store.docs.get("users/a")!.gold,10,"해금 전에는 황금을 잡지 않음");
+  assert.equal((await buy("ingredient_0002",0,2,premium.unlock_level)).status,"committed");
+  assert.equal((await buy("ingredient_0003",2,3,premium.unlock_level)).status,"committed");
+  assert.equal(store.docs.get("users/a/compositeSkills/ingredient:vanilla_bean")!.owned,5);
+  assert.equal(store.docs.get("users/a")!.gold,10-premium.pack_gold*5);
+  // A stale owned count (2 again) is refused.
+  await assert.rejects(buy("ingredient_0004",2,1,premium.unlock_level));
+});
