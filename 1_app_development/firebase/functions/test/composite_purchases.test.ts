@@ -99,3 +99,36 @@ test("실제 설정: 황금 0 스킬은 지갑을 건드리지 않고 예약·�
   assert.equal(store.docs.get("users/a")!.gold, 5);
   assert.equal(store.docs.get("users/a/compositeSkills/tap_1")!.owned, 1);
 });
+
+// 4차 g13: the skill window's '최대' asks for any count the player can pay
+// for (not just 1·10·100). The server takes any 1 ≤ n ≤ cap − owned at the
+// price it recomputes, and refuses 0 or more than the levels left.
+test("실제 설정: '최대' 레벨업은 1·10·100이 아닌 개수도 받고, 0개·남은 레벨 초과는 거절", () => {
+  const purchase = realConfig.skill_purchase, row = purchase.entries.tap_1;
+  const price = (owned: number, quantity: number) => {
+    let num = BigInt(row.buns) * BigInt(row.ratio_numerator) ** BigInt(owned);
+    let den = BigInt(row.ratio_denominator) ** BigInt(owned);
+    let buns = 0n;
+    for (let n = 0; n < quantity; n++) {
+      buns += (num + den - 1n) / den;
+      num *= BigInt(row.ratio_numerator); den *= BigInt(row.ratio_denominator);
+    }
+    return buns.toString();
+  };
+  const base = { account: "a", transaction: "transaction_0011", revision: realConfig.metadata.revision,
+    skill: "tap_1", gold: "0" };
+  for (const [owned, quantity] of [[5, 37], [0, 1000], [994, 6], [123, 377]]) {
+    const value = { ...base, owned, quantity, buns: price(owned, quantity) };
+    assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, value, "a", owned), value, `${owned}+${quantity}`);
+  }
+  const cap = purchase.max_owned_per_skill;
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
+    { ...base, owned: 995, quantity: 6, buns: price(995, 6) }, "a", 995));
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
+    { ...base, owned: cap, quantity: 1, buns: price(cap, 1) }, "a", cap));
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
+    { ...base, owned: 5, quantity: 0, buns: "0" }, "a", 5));
+  // A count with the wrong price is refused too.
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
+    { ...base, owned: 5, quantity: 37, buns: price(5, 36) }, "a", 5));
+});
