@@ -755,6 +755,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
       centerBuilder:(fish,clean,counterTop,moldLimit)=>Stack(children:[
         Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,moldLimit:moldLimit,
           lowStall:low,reduceMotion:reduceMotion,onSharePerfect:_sharePerfect,
+          // Its tour's ring stays on the fairy (4차 g12: it swims wide now).
+          fairyStill:_tourFeature==WorkshopFeature.fairy,
           vibration:widget.accountController.state.settings.vibration)),
         // The old layout: below the flavor row, clear of the counter strip.
         if(!low)Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
