@@ -299,7 +299,18 @@ class NightHome extends StatelessWidget {
                         controller: controller, reduceMotion: reduce))),
             if (vendor != null) Positioned(
                 right: side + 8, width: cookW, bottom: cookBottom, height: cookH,
-                child: IgnorePointer(child: vendor!)),
+                // 4차 g11 (사용자 답): the special mold never overlaps the
+                // cooking cut, so the cut slides out to the right (fading)
+                // while the mold is on the workbench, and comes back.
+                child: IgnorePointer(child: TweenAnimationBuilder<double>(
+                    tween: Tween(end: griddleAside ? 1 : 0),
+                    duration: reduce ? Duration.zero : const Duration(milliseconds: WorkshopHomeLayout.benchSlideMs),
+                    curve: Curves.easeInOutCubic,
+                    child: vendor,
+                    builder: (context, t, child) => Opacity(
+                        opacity: 1 - t,
+                        child: FractionalTranslation(
+                            translation: Offset(t * WorkshopHomeLayout.cookCutAsideShare, 0), child: child))))),
             Positioned(
                 left: side,
                 width: w,

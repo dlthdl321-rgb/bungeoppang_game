@@ -146,6 +146,11 @@ class WorkshopHomeLayout {
   static const benchSlideMs = 320;
   static const benchAsideShare = 1.06;
 
+  /// The owner's cooking cut never overlaps the mold (사용자 답 2026-11-21):
+  /// in the same time it slides [cookCutAsideShare] of its width to the
+  /// right, off the screen, fading out, and comes back with the griddle.
+  static const cookCutAsideShare = 1.1;
+
   /// The mold picture (mold/*.png with its axle, 1200 wide) is
   /// [benchMoldShare] of the griddle box's width, at most
   /// [benchMoldMaxWidth]; its axle feet stand [benchFootGap] above the menu

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
+import 'package:todays_bungeoppang/ui/cook_cut.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/workshop_home_layout.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
@@ -44,8 +45,11 @@ void main() {
       expect(await c.startOrderProduction('first', 'redbean'), isTrue);
       await tester.pump();
       await tester.pump();
-      // The griddle is off the screen to the left.
+      // The griddle is off the screen to the left, the cooking cut to the
+      // right (사용자 답: the mold never overlaps the cut).
       expect(tester.getRect(key('griddle')).right, lessThanOrEqualTo(0));
+      final cut = tester.getRect(find.byType(CookCut));
+      expect(cut.left, greaterThanOrEqualTo(size.width));
       // The mold works in the griddle's place: centred on it, its feet on
       // the bench over the menu bar, below the counter's line.
       final mold = tester.getRect(key('active-empty-mold'));
@@ -65,6 +69,7 @@ void main() {
       await tester.pump();
       expect(c.state.session, isNull);
       expect(tester.getRect(key('griddle')), griddle);
+      expect(tester.getRect(find.byType(CookCut)).right, lessThanOrEqualTo(size.width));
       expect(key('workshop-mold'), findsNothing);
       expect(tester.takeException(), isNull);
       await tester.pumpWidget(const SizedBox.shrink());
