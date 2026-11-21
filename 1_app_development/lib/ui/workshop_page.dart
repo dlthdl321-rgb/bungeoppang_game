@@ -39,6 +39,9 @@ import '../local_test_purchases.dart';
 import 'owner_settings.dart';
 import 'notice_permission_hint.dart';
 import '../share_card.dart';
+// 재료 타이쿤 D: '재료 준비' 창.
+import '../workshop_pantry_prep.dart';
+import 'pantry_window.dart';
 import 'share_card_view.dart';
 import 'workshop_collection.dart';
 import '../workshop_collection_rules.dart' show collectionRequired, collectionTitle;
@@ -574,6 +577,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
     'shop' || 'skins' || 'skins:avatar' => c.featureLock(WorkshopFeature.wardrobe),
     'skins:stall' => c.featureLock(WorkshopFeature.wardrobe) ?? c.featureLock(WorkshopFeature.stallBackground),
     'achievements:collection' => c.featureLock(WorkshopFeature.collection),
+    // 재료 타이쿤 D: 재료 준비는 영업 준비 중에만 (영업 중이면 까닭을 띄움).
+    'pantry' => c.pantryPrepLock,
     _ => null,
   };
   void _open(String destination) {
@@ -597,6 +602,10 @@ class _WorkshopPageState extends State<WorkshopPage> {
       case 'missions': unawaited(_window('레벨 미션',(_)=>_levelMissions()));
       case 'gold': unawaited(_goldPacks());
       case 'photo': _sharePhoto();
+      // 재료 타이쿤 D: '재료 준비' 창 (들어가는 버튼은 묶음 E).
+      case 'pantry': unawaited(_window('재료 준비',(_)=>PantryWindow(controller:c,
+        reduceMotion:widget.accountController.state.settings.reduceMotion || MediaQuery.disableAnimationsOf(context),
+        vibration:widget.accountController.state.settings.vibration)));
     }
   }
   /// 생산 기록 (3차 피드백 H44·H45): icon + number tiles.

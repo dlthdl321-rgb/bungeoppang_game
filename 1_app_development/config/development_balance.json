@@ -748,6 +748,30 @@
     "flip_turn_degrees": 320,
     "flip_dead_zone_permille": 150
   },
+  "prep_minigames": {
+    "stir": {
+      "duration_ms": 8000,
+      "full_degrees": 1440,
+      "dead_zone_permille": 150,
+      "green_min_permille": 700,
+      "green_max_permille": 900
+    },
+    "heat": {
+      "duration_ms": 10000,
+      "start_permille": 550,
+      "fall_permille_per_second": 220,
+      "rise_permille_per_second": 380,
+      "green_min_permille": 450,
+      "green_max_permille": 700,
+      "success_time_permille": 700
+    },
+    "whisk": {
+      "duration_ms": 6000,
+      "stroke_min_permille": 120,
+      "fill_per_stroke_permille": 70,
+      "decay_permille_per_second": 50
+    }
+  },
   "cooking_grade": {
     "perfect_min_coverage_permille": 950,
     "perfect_max_total_amount_permille": 2300,

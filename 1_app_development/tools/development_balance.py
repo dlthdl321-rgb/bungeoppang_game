@@ -322,6 +322,19 @@ def validate(data, catalog):
     for group in (pantry['starting_stock']['tubs'], pantry['starting_stock']['recipe_sets'], pantry['rescue_pack']['recipe_sets']):
         require(set(group) <= initial and all(n >= 1 for n in group.values()), '처음 재료·꾸러미(반죽과 처음 맛만)')
     require(max(pantry['starting_stock']['tubs'].values()) <= limits[0]['tubs'], '처음 재료 ≤ 보관 한도')
+    # 재료 타이쿤 D(2026-11-21): 재료 준비 미니게임 3종. 앱 lib/prep_minigames.dart PrepGameConfig와 같은 검사.
+    games = data['prep_minigames']
+    require(set(games) == {'stir', 'heat', 'whisk'} and
+            all(6000 <= g['duration_ms'] <= 10000 for g in games.values()), '재료 준비 미니게임(3종, 6~10초)')
+    stir, heat, whisk = games['stir'], games['heat'], games['whisk']
+    require(stir['full_degrees'] >= 360 and 0 <= stir['dead_zone_permille'] < 500 and
+            0 < stir['green_min_permille'] < stir['green_max_permille'] < 1000, '반죽 젓기(바퀴·가운데·초록 칸)')
+    require(0 < heat['green_min_permille'] <= heat['start_permille'] <= heat['green_max_permille'] < 1000 and
+            heat['fall_permille_per_second'] >= 1 and heat['rise_permille_per_second'] >= 1 and
+            0 < heat['success_time_permille'] <= 1000, '불 조절(시작·내려감·올라감·초록 칸·성공 시간)')
+    require(0 < whisk['stroke_min_permille'] < 1000 and whisk['fill_per_stroke_permille'] >= 1 and
+            whisk['decay_permille_per_second'] >= 0, '휘젓기(한 번 거리·채움·줄어듦)')
+    require(all(r['minigame'] in games for r in prepared.values()), '준비물 미니게임이 설정에 있음')
     # 26번 8단계: 공유 카드(보상 없음). 정식 출시 뒤 store_line_mode만 live로 바꾼다.
     share = data['share']
     require(share['card_width'] == 1080 and share['card_height'] == 1350, '공유 카드 크기(1080×1350, 4:5)')
