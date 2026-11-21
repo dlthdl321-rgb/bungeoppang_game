@@ -13,7 +13,8 @@ export class PlausibilityError extends Error {
  * Apps from before it leave it out; then sales stand in for it. */
 export interface ProgressSnapshot { buns: bigint; lifetime: bigint; level: number; taps: number; sales: number; pieces?: number }
 interface Checkpoint extends ProgressSnapshot { atMs: number; saleEvidence: number }
-interface Rates { tap: bigint; auto: bigint; skills: number }
+/** premium: special ingredients bought so far (재료 타이쿤 C, items, not packs). */
+interface Rates { tap: bigint; auto: bigint; skills: number; premium: bigint }
 type Row = Record<string, unknown>;
 
 function fail(message: string, final = false): never { throw new PlausibilityError(message, final); }
@@ -67,6 +68,23 @@ export class PlausibilityValidator {
       levels, revision: String(object(root.metadata).revision),
       daily: PlausibilityValidator.dailyLimits(object(root.daily_return)),
       collection: PlausibilityValidator.collectionLimits(root),
+      premium: PlausibilityValidator.premiumLimits(root),
+    };
+  }
+  /** 재료 타이쿤 C: a 특제 portion (special batter or filling) adds
+   * `bonus_permille` of what that portion makes; a bun can have both, so at
+   * most twice that on top of all production. Each special ingredient makes
+   * one tub (`portions_per_tub` + the mini-game's bonus portions), and one
+   * portion lasts `taps_per_portion` taps or `auto_ms_per_portion` of auto
+   * time (or one bake: a sale's worth), which caps the extra over the whole
+   * progress. A config without `ingredients` allows no extra. */
+  private static premiumLimits(root: Row) {
+    if (root.ingredients === undefined) return { packCount: 0n, permille: 0n, portions: 0n, taps: 0n, autoSeconds: 0n };
+    const i = object(root.ingredients), premium = object(i.premium), consume = object(i.consume);
+    return {
+      packCount: BigInt(natural(premium.pack_count)), permille: BigInt(natural(premium.bonus_permille)),
+      portions: BigInt(natural(i.portions_per_tub) + natural(i.minigame_bonus_portions_per_tub)),
+      taps: BigInt(natural(consume.taps_per_portion)), autoSeconds: BigInt(Math.ceil(natural(consume.auto_ms_per_portion) / 1000)),
     };
   }
   /** 4차 피드백 g6: a completed 도감 cell pays `cell_buns_seconds` of auto
@@ -95,18 +113,27 @@ export class PlausibilityValidator {
     };
   }
   private skill(id: string): Row { return object(object(object(this.config).skill_purchase).entries)[id] as Row; }
+  private premiumItem(id: string): boolean {
+    const root = object(this.config);
+    return root.ingredients !== undefined && Object.prototype.hasOwnProperty.call(object(object(object(root.ingredients).premium).items), id);
+  }
   /** Read outside the transaction: ownership only grows, and a stale read can
    * only make the bound tighter, never looser. */
   private async rates(account: string): Promise<Rates> {
-    let tap = 1n, auto = 0n, skills = 0;
+    let tap = 1n, auto = 0n, skills = 0, premium = 0n;
     for (const { id, data } of await this.store.list(`users/${account}/compositeSkills`)) {
+      // 재료 타이쿤 C: packs of special ingredients bought (not skills).
+      if (id.startsWith("ingredient:")) {
+        if (this.premiumItem(id.slice(11))) premium += BigInt(natural(data.owned ?? 0)) * this.limits.premium.packCount;
+        continue;
+      }
       const row = this.skill(id), owned = natural(data.owned ?? 0);
       if (!row) continue;
       skills += owned;
       if (id.startsWith("tap_")) tap += decimal(row.effect) * BigInt(owned);
       else auto += decimal(row.effect) * BigInt(owned);
     }
-    return { tap, auto, skills };
+    return { tap, auto, skills, premium };
   }
   private checkpointPath(account: string, progress: string) { return `users/${account}/workshopPlausibility/${progress}`; }
   private decodeCheckpoint(row: Doc | undefined): Checkpoint | undefined {
@@ -145,9 +172,22 @@ export class PlausibilityValidator {
     // `server_min_ms_per_cell`, plus one, at most every cell there is).
     const cells = BigInt(Math.min(l.collection.cells, Math.floor(elapsedMs / l.collection.msPerCell) + 1));
     const collection = cells * (l.collection.seconds * rates.auto + l.collection.minimum);
-    const bound = prev.lifetime + BigInt(taps) * rates.tap + seconds * rates.auto + BigInt(sales) * l.saleBuns + rewards + daily + collection + l.slackBuns;
+    const made = BigInt(taps) * rates.tap + seconds * rates.auto + BigInt(sales) * l.saleBuns;
+    const bound = prev.lifetime + made + this.premiumExtra(made, rates) + rewards + daily + collection + l.slackBuns;
     if (next.lifetime > bound) fail("붕어빵력 증가가 서버 시간 한도를 넘었습니다.");
     return { ...next, atMs: Math.max(now, prev.atMs), saleEvidence: prev.saleEvidence + saleEvidence };
+  }
+  /** 재료 타이쿤 C: the most the 특제 bonus can add to [made] (production
+   * in the interval): twice `bonus_permille` of it (special batter and
+   * filling together), and never more than all special ingredients bought
+   * could cover (each a tub of portions, each portion at most its taps, its
+   * auto seconds or one sale). 0 without special ingredients. */
+  private premiumExtra(made: bigint, rates: Rates): bigint {
+    const p = this.limits.premium;
+    if (rates.premium === 0n || p.permille === 0n) return 0n;
+    const portion = [p.taps * rates.tap, p.autoSeconds * rates.auto, this.limits.saleBuns].reduce((a, b) => a > b ? a : b);
+    const byTime = made * 2n * p.permille / 1000n, byStock = rates.premium * p.portions * portion * p.permille / 1000n;
+    return byTime < byStock ? byTime : byStock;
   }
   /** 4차 피드백 g9: each level asks for taps and pieces sold in that level
    * (0 again on level-up) and a payment, with no lifetime 붕어빵력 goal.

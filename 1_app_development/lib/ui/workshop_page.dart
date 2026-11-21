@@ -20,6 +20,7 @@ import 'pixel_sprites.dart';
 import '../menu_rules.dart';
 import '../economy.dart';
 import 'public_menus.dart';
+import 'pantry_shop.dart';
 import 'shop_panel.dart';
 import 'workshop_windows.dart';
 import 'workshop_counter.dart';
@@ -352,7 +353,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
   Future<void> _store({CosmeticSlot? slot}){
     c.usage.record(UsageEvent.shopOpen); // 사용 통계(26번 5단계), 하루 1번
     return _window('상점',(_)=>ShopPanel(controller:widget.accountController,access:_cosmetics,onOpen:_open,initialSlot:slot,
-      localTestGold:c.purchaseGateway is LocalTestPurchaseGateway));
+      localTestGold:c.purchaseGateway is LocalTestPurchaseGateway,
+      // 재료 타이쿤 C: the '재료' tab between 꾸미기 and 충전.
+      ingredients:(_)=>PantryShop(controller:c,account:widget.accountController)));
   }
   Future<void> _goldPacks() async {
     _enterWindow();

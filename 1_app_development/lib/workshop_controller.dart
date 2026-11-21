@@ -30,6 +30,7 @@ import 'workshop_daily.dart';
 import 'workshop_collection_rules.dart';
 import 'usage_stats.dart';
 import 'pantry_rules.dart';
+import 'online_texts.dart';
 import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, hairHatClash, hairUnderHatText, hatOverHairText, movedToTop, removedCosmetics, retiredCosmetics;
 
 part 'workshop_storage.dart';
@@ -1973,7 +1974,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final account = gateway.authenticatedAccount;
       if (account.isEmpty) {
         // Signed out is not a stuck purchase: say plainly that login is needed.
-        notice = skill.startsWith('cosmetic:') ? '카카오 로그인 후 살 수 있어요.' : '카카오 로그인 후 레벨업할 수 있어요.';
+        notice = _buysGoods(skill) ? '카카오 로그인 후 살 수 있어요.' : '카카오 로그인 후 레벨업할 수 있어요.';
         return false;
       }
       if (state.rewardAccount != null && state.rewardAccount != account) throw const FormatException('원래 보상 계정으로 확인해 주세요.');
@@ -1987,7 +1988,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       if (!await _purchaseResponse(gateway, account, intent.transactionId, response)) return false;
       return await _finishPurchase(gateway, account, intent.transactionId);
     } catch (e) {
-      notice = '${skill.startsWith('cosmetic:') ? '구매' : '레벨업'} 확인이 남아 있어요. 새 거래 대신 같은 기록을 복구해 주세요: $e';
+      notice = '${_buysGoods(skill) ? '구매' : '레벨업'} 확인이 남아 있어요. 새 거래 대신 같은 기록을 복구해 주세요: $e';
       return false;
     } finally { _purchaseBusy = false; if (!disposed) notifyListeners(); }
   }
@@ -2010,10 +2011,13 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       }
       return await _finishPurchase(gateway, account, transaction);
     } catch (e) {
-      final cosmetic = state.purchases.journals[transaction]?.quote.skillId.startsWith('cosmetic:') ?? false;
+      final cosmetic = _buysGoods(state.purchases.journals[transaction]?.quote.skillId ?? '');
       notice = '${cosmetic ? '구매' : '레벨업'} 복구 확인이 필요해요: $e'; return false;
     } finally { _purchaseBusy = false; if (!disposed) notifyListeners(); }
   }
+  /// A cosmetic or a special ingredient is bought ('구매'), a skill or a
+  /// level's gold is a level-up ('레벨업').
+  static bool _buysGoods(String product) => product.startsWith('cosmetic:') || product.startsWith('ingredient:');
   Future<bool> _purchaseResponse(WorkshopPurchaseGateway gateway, String account, String transaction,
       Map<String, dynamic> response) async {
     if (disposed || gateway.authenticatedAccount != account) return false;
@@ -2039,6 +2043,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final current=state.purchases.journal(transaction);
       if(!previous.applied && current.applied && !current.quote.skillId.contains(':')) {
         state.missions=state.missions.observe(now(),purchases:current.quote.quantity,autoPeak:autoRate);
+      }
+      // 재료 타이쿤 C: the special ingredients bought arrive with the purchase.
+      if(!previous.applied && current.applied && current.quote.skillId.startsWith('ingredient:')) {
+        state.pantry.buyPremium(pantryConfig,current.quote.skillId.substring(11),current.quote.quantity,state.level);
       }
     });
   }
@@ -2172,6 +2180,86 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final text = expiredNotice(pantryConfig, state.pantry.expire(pantryConfig, _nowMs));
     if (text != null) notice = text;
   }
+  // ---- 재료 타이쿤 C: 상점 '재료' 탭 (lib/ui/pantry_shop.dart) ----
+  /// Basic ingredients the shop lists now, in config order (코코아 가루 only
+  /// after the 초코 recipe, [PantryState.basicVisible]).
+  List<String> get shopBasicIngredients => [for (final id in pantryConfig.basic.keys)
+    if (state.pantry.basicVisible(pantryConfig, id, state.recipes)) id];
+  /// Whether [step] of the shop's wheel is its biggest one, shown '최대': a
+  /// step of `buy_steps` no smaller than [limit] (`max_stock`, 99, so ×100
+  /// could never be bought whole).
+  static bool pantryMaxStep(int step, int limit) => step >= limit;
+  /// What one press of [step] buys of basic ingredient [id]: [step], at most
+  /// the room left; the '최대' step ([pantryMaxStep]) as many as the room and
+  /// the 붕어빵력 allow. At least 1, so a dark button can still say why.
+  int basicBuyQuantity(String id, int step) {
+    final c = pantryConfig, room = state.pantry.basicRoom(c, id);
+    if (room < 1) return 1;
+    if (!pantryMaxStep(step, c.basic[id]!.maxStock)) return min(step, room);
+    final price = c.basicPrice(id, pantryRate), afford = state.purchases.available(state.buns) ~/ price;
+    return afford >= BigInt.from(room) ? room : max(1, afford.toInt());
+  }
+  /// Why [quantity] of basic ingredient [id] cannot be bought now (Korean),
+  /// or null.
+  String? basicBuyBlocker(String id, int quantity) {
+    final c = pantryConfig, item = c.basic[id]!;
+    if (error != null) return error;
+    if (busy || inputBusy || purchaseBusy) return '잠시 뒤에 다시 눌러 주세요.';
+    if (quantity > state.pantry.basicRoom(c, id)) return '${item.label}${_topicOf(item.label)} ${item.maxStock}개까지 보관할 수 있어요.';
+    if (state.purchases.available(state.buns) < c.basicCost(id, quantity, pantryRate)) return '붕어빵력이 모자라요.';
+    return null;
+  }
+  /// Buys [quantity] of basic ingredient [id] on this device: the 붕어빵력
+  /// leaves in the same save as the ingredients arrive (no server: the
+  /// server only bounds how fast 붕어빵력 grows, and this only spends it).
+  Future<bool> buyIngredient(String id, int quantity) => command(() {
+    final c = pantryConfig, cost = c.basicCost(id, quantity, pantryRate);
+    state.pantry.buyBasic(c, id, quantity, state.recipes);
+    if (state.purchases.available(state.buns) < cost) throw const FormatException('붕어빵력이 모자라요.');
+    state.buns -= cost;
+  });
+  /// Packs of special ingredient [id] one press of [step] buys: [step], at
+  /// most what fits (room ÷ `pack_count`); the '최대' step (no smaller than
+  /// `max_stock` ÷ `pack_count`) as many as fit and [gold] pays. At least 1.
+  int premiumBuyPacks(String id, int step, int gold) {
+    final c = pantryConfig, fit = state.pantry.premiumRoom(c, id) ~/ c.premiumPackCount;
+    if (fit < 1) return 1;
+    if (!pantryMaxStep(step, c.premium[id]!.maxStock ~/ c.premiumPackCount)) return min(step, fit);
+    return max(1, min(fit, gold ~/ c.premiumPackGold));
+  }
+  /// Why [packs] packs of special ingredient [id] cannot be bought now with
+  /// [gold] 황금붕어빵력 (Korean), or null.
+  String? premiumBuyBlocker(String id, int packs, int gold) {
+    final c = pantryConfig, item = c.premium[id]!;
+    if (!state.pantry.premiumVisible(c, state.level)) return '특별한 재료는 Lv.${c.premiumUnlockLevel}부터 살 수 있어요.';
+    if (packs * c.premiumPackCount > state.pantry.premiumRoom(c, id)) {
+      return '${item.label}${_topicOf(item.label)} ${item.maxStock}개까지 보관할 수 있어요.';
+    }
+    if (purchaseGateway == null) return OnlineTexts.premiumIngredientNotSetUp;
+    if (purchaseGateway!.authenticatedAccount.isEmpty) return OnlineTexts.premiumIngredientSignIn;
+    if (error != null) return error;
+    if (busy || inputBusy || purchaseBusy) return '잠시 뒤에 다시 눌러 주세요.';
+    if (state.purchases.journals.values.any((j) => !j.settled)) return '앞의 구매 확인이 남아 있어요.';
+    if (gold < packs * c.premiumPackGold) return '황금붕어빵력이 모자라요.';
+    return null;
+  }
+  /// Buys [packs] packs of special ingredient [id] through the server
+  /// purchase path (`ingredient:<id>`, like a cosmetic: reserve → local
+  /// record → commit); the pantry gets them when the purchase settles
+  /// ([_finishPurchase]). A test build's gateway answers on this device.
+  Future<bool> buyPremiumIngredient(String id, int packs) async {
+    final c = pantryConfig;
+    if (purchaseGateway == null || !state.pantry.premiumVisible(c, state.level) ||
+        packs * c.premiumPackCount > state.pantry.premiumRoom(c, id)) {
+      return false;
+    }
+    return purchaseSkill(purchaseGateway!, ingredientProduct(id), quantity: packs);
+  }
+  static String _topicOf(String word) {
+    final last = word.codeUnitAt(word.length - 1);
+    return last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 != 0 ? '은' : '는';
+  }
+  // ---- 재료 타이쿤 C 끝 ----
   /// The buns the order pays now: `reward_seconds` of [dailyRate], at least `min_buns`.
   BigInt get dailyOrderReward => dailyBuns(dailyRate, DevelopmentBalance.integer(_orderRules, 'reward_seconds'),
       DevelopmentBalance.decimal(_orderRules, 'min_buns'));

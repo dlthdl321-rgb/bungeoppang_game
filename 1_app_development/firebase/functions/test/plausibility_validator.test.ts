@@ -248,3 +248,35 @@ test("레벨 조건은 앞 확인 이후 시작한 레벨만 그 구간의 판�
   await assert.rejects(check(at(6,200,2)),/레벨 조건/);
   await check(at(6,200,4));
 });
+
+// 재료 타이쿤 C: 특제 portions add `bonus_permille` of what they make, so a
+// shop with special ingredients may grow faster, but only by that much.
+test("산 특별한 재료가 있으면 특제 덤만큼 붕어빵력 증가 한도가 늘고, 그 이상은 거절한다",async()=>{
+  const taps=1240;
+  async function attempt(lifetime:bigint,packs:number) {
+    const {store,service,clock}=setup();await service.claim("a",{progress});
+    await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+    await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+    if (packs) store.docs.set("users/a/compositeSkills/ingredient:cultured_butter",{owned:packs});
+    clock.now+=600000;
+    try {
+      await service.purchase("a","reserve",{...context,intent:intent("transaction_0002",1),snapshot:snapshot(lifetime.toString(),lifetime.toString(),taps)});
+      return true;
+    } catch { return false; }
+  }
+  // The highest lifetime accepted without special ingredients.
+  async function highest(packs:number) {
+    let low=40n,high=10n**12n;
+    while (high-low>1n) { const mid=(low+high)/2n; if (await attempt(mid,packs)) low=mid; else high=mid; }
+    return low;
+  }
+  const plain=await highest(0),special=await highest(10);
+  // tap_1 bought: tap power 1 + its effect; 1200 taps since the checkpoint.
+  const tap=1n+BigInt(config.skill_purchase.entries.tap_1.effect),made=1200n*tap;
+  const permille=BigInt(config.ingredients.premium.bonus_permille);
+  assert.ok(special>plain,`${special} > ${plain}`);
+  assert.ok(special-plain<=made*2n*permille/1000n,`덤은 생산의 ${2n*permille}‰까지: ${special-plain}`);
+  // With very few special ingredients the stock caps the extra instead.
+  const one=await highest(1);
+  assert.ok(one>plain && one<=special);
+});

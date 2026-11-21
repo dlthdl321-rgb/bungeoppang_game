@@ -12,7 +12,9 @@ import 'support_panels.dart';
 
 /// Shop tabs of the concept art (3.5_completed_game_mockups/상점): gear (griddle, tongs), the
 /// vendor and pastry cosmetics, and stall themes.
-enum ShopTab { gear, cosmetics, theme, gold }
+/// 재료 타이쿤 C: [ingredients] (the Workshop's '재료' tab, between 꾸미기
+/// and 충전) only when [ShopPanel.ingredients] is given.
+enum ShopTab { gear, cosmetics, ingredients, theme, gold }
 
 /// The concept art's shop (3.5_completed_game_mockups/상점): tabs 장비 / 꾸미기 / 테마 and item
 /// cards (picture, name, price, 구매). Buying a cosmetic also wears it.
@@ -28,8 +30,11 @@ class ShopPanel extends StatefulWidget {
   /// A build without the online settings: the charge tab hands out free
   /// test gold instead of Play packs (4차 피드백 IC10 후속).
   final bool localTestGold;
+  /// The '재료' tab's content (재료 타이쿤 C, lib/ui/pantry_shop.dart); the
+  /// Workshop passes it, the old clicker has no such tab.
+  final WidgetBuilder? ingredients;
   const ShopPanel({super.key, required this.controller, required this.onOpen,this.access,this.initialSlot,
-    this.localTestGold=false});
+    this.localTestGold=false,this.ingredients});
   @override
   State<ShopPanel> createState() => _ShopPanelState();
 }
@@ -43,6 +48,7 @@ class _ShopPanelState extends State<ShopPanel> {
   static String _label(ShopTab t) => switch (t) {
         ShopTab.gear => '장비',
         ShopTab.cosmetics => '꾸미기',
+        ShopTab.ingredients => '재료',
         ShopTab.theme => '테마',
         ShopTab.gold => '충전',
       };
@@ -65,9 +71,9 @@ class _ShopPanelState extends State<ShopPanel> {
 
   /// Tabs with something in them; a tab with nothing for sale is left out.
   /// The Workshop sells avatar items only, all in 꾸미기 (26번 4-5단계).
-  List<ShopTab> get _tabs => widget.access != null ? const [ShopTab.cosmetics, ShopTab.gold] : [
+  List<ShopTab> get _tabs => widget.access != null ? [ShopTab.cosmetics, if (widget.ingredients != null) ShopTab.ingredients, ShopTab.gold] : [
         for (final t in ShopTab.values)
-          if (t == ShopTab.gold || _catalog(t).isNotEmpty) t
+          if (t == ShopTab.gold || (t != ShopTab.ingredients && _catalog(t).isNotEmpty)) t
       ];
 
   Widget _tabChips(List<ShopTab> tabs, ShopTab tab) => Wrap(spacing: 6, runSpacing: 4, children: [
@@ -77,6 +83,7 @@ class _ShopPanelState extends State<ShopPanel> {
               avatar: PixelIcon(switch (t) {
                 ShopTab.gear => 'tab_gear',
                 ShopTab.cosmetics => 'tab_outfit',
+                ShopTab.ingredients => 'tab_ingredients',
                 ShopTab.theme => 'theme',
                 ShopTab.gold => 'gold_bun',
               }, size: 28),
@@ -111,7 +118,9 @@ class _ShopPanelState extends State<ShopPanel> {
       Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: _tabChips(tabs, tab)),
       saveError(c),
       Expanded(
-          child: tab == ShopTab.gold
+          child: tab == ShopTab.ingredients
+              ? widget.ingredients!(context)
+              : tab == ShopTab.gold
               ? SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: GoldChargeTab(controller: c, legacyBoost: false, localTestGold: widget.localTestGold))
@@ -141,6 +150,7 @@ class _ShopPanelState extends State<ShopPanel> {
                 avatar: PixelIcon(switch (t) {
                   ShopTab.gear => 'tab_gear',
                   ShopTab.cosmetics => 'tab_outfit',
+                  ShopTab.ingredients => 'tab_ingredients',
                   ShopTab.theme => 'theme',
                   ShopTab.gold => 'coin',
                 }, size: 18),

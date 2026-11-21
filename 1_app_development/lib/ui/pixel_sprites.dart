@@ -75,7 +75,37 @@ class PixelSprites {
     'time_day',
     'time_night',
     'time_clock',
+    // 재료 타이쿤 C: the shop's '재료' tab (25번 62번,
+    // tools/apply_62_ingredient_icons.py --only shop).
+    'tab_ingredients',
+    'ing_flour',
+    'ing_milk',
+    'ing_egg',
+    'ing_sugar',
+    'ing_salt',
+    'ing_redbean',
+    'ing_cocoa',
+    'prem_butter',
+    'prem_redbean',
+    'prem_vanilla',
+    'prem_chocolate',
   ];
+
+  /// 재료 타이쿤: each ingredient id of the `ingredients` config (basic and
+  /// special) and its icon in assets/images/icons (25번 62번).
+  static const ingredientIcons = {
+    'flour': 'ing_flour',
+    'milk': 'ing_milk',
+    'egg': 'ing_egg',
+    'sugar': 'ing_sugar',
+    'salt': 'ing_salt',
+    'adzuki': 'ing_redbean',
+    'cocoa_powder': 'ing_cocoa',
+    'cultured_butter': 'prem_butter',
+    'fresh_adzuki': 'prem_redbean',
+    'vanilla_bean': 'prem_vanilla',
+    'fine_chocolate': 'prem_chocolate',
+  };
 
   /// Effects in assets/images/fx: a tiny bungeoppang for tap particles
   /// (12x9), three twinkle frames with no outline (32x32, 25번 12번 →

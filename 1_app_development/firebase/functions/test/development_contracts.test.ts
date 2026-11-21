@@ -142,3 +142,22 @@ test("레벨업 황금 비용(level:N)은 그 레벨 행의 두 비용으로 한
   }
   assert.throws(() => validateDevelopmentCompositeQuote(config, value, "a", 1));
 });
+
+test("특별한 재료(ingredient:<id>)는 황금만, 묶음 수 × pack_gold로 몇 번이든 산다 (재료 타이쿤 C)", () => {
+  const config = JSON.parse(readFileSync(resolve(__dirname, "../../../../config/development_balance.json"), "utf8"));
+  const premium = config.ingredients.premium, limit = Math.floor(premium.items.cultured_butter.max_stock / premium.pack_count);
+  const value = { account: "a", transaction: "purchase_1", revision: config.metadata.revision, skill: "ingredient:cultured_butter",
+    owned: 3, quantity: 2, buns: "0", gold: String(premium.pack_gold * 2) };
+  assert.deepEqual(validateDevelopmentCompositeQuote(config, value, "a", 3), value);
+  assert.deepEqual(validateDevelopmentCompositeQuote(config, { ...value, quantity: limit, gold: String(premium.pack_gold * limit) }, "a", 3),
+    { ...value, quantity: limit, gold: String(premium.pack_gold * limit) });
+  for (const change of [{ gold: String(premium.pack_gold * 2 + 1) }, { buns: "1" }, { gold: "0" }, { owned: 2 },
+    { quantity: limit + 1, gold: String(premium.pack_gold * (limit + 1)) }, { skill: "ingredient:flour" }, { skill: "ingredient:nothing" }]) {
+    assert.throws(() => validateDevelopmentCompositeQuote(config, { ...value, ...change }, "a", 3), Error, JSON.stringify(change));
+  }
+  // The server's own count wins over the request's.
+  assert.throws(() => validateDevelopmentCompositeQuote(config, value, "a", 4));
+  // Only a special ingredient may cost no 붕어빵력.
+  assert.throws(() => parseCompositeIntent({ ...value, skill: "tap_1" }, "a"));
+  assert.throws(() => parseCompositeIntent({ ...value, skill: "cosmetic:short" }, "a"));
+});

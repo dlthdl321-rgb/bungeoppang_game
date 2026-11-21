@@ -46,9 +46,11 @@ export function parseCompositeIntent(value: unknown, authenticatedUid: string): 
     buns: decimal(row.buns), gold: decimal(row.gold),
   };
   // DEC-041: a skill may cost 0 gold (tiers 1~4); a cosmetic always costs gold.
+  // 재료 타이쿤 C: a special ingredient costs gold only (no 붕어빵력).
+  const ingredient = result.skill.startsWith("ingredient:");
   if (result.account !== authenticatedUid || !authenticatedUid ||
-      result.quantity === 0 || BigInt(result.buns) === 0n ||
-      (BigInt(result.gold) === 0n && (result.skill.startsWith("cosmetic:") || result.skill.startsWith("level:")))) {
+      result.quantity === 0 || (BigInt(result.buns) === 0n) !== ingredient ||
+      (BigInt(result.gold) === 0n && (result.skill.startsWith("cosmetic:") || result.skill.startsWith("level:") || ingredient))) {
     return fail("계정 또는 유상 견적 불일치");
   }
   return result;
@@ -221,6 +223,19 @@ export function validateDevelopmentCompositeQuote(config: unknown, input: unknow
     const row = object(rows[level - 1]), gold = natural(row.level_cost_gold);
     if (!gold || natural(row.level) !== level || natural(authoritativeOwned) !== 0 || requested.owned !== 0 || requested.quantity !== 1) return fail("레벨업 비용 보유/수량 오류");
     const expected = { ...requested, revision: text(metadata.revision), buns: decimal(row.level_cost_buns), gold: String(gold) };
+    assertSameCompositeIntent(expected, requested); return expected;
+  }
+  if (requested.skill.startsWith("ingredient:")) {
+    // 재료 타이쿤 C: packs of a special ingredient (`ingredients.premium`),
+    // `pack_gold` each, as many times as wanted. owned counts the packs
+    // bought so far; one purchase fits in `max_stock` (÷ `pack_count`).
+    const premium = object(object(root.ingredients).premium), items = object(premium.items);
+    const id = requested.skill.slice(11);
+    if (!Object.prototype.hasOwnProperty.call(items, id)) return fail("알 수 없는 특별한 재료");
+    const limit = Math.floor(natural(object(items[id]).max_stock) / Math.max(1, natural(premium.pack_count)));
+    const owned = natural(authoritativeOwned), gold = BigInt(natural(premium.pack_gold)) * BigInt(requested.quantity);
+    if (requested.owned !== owned || requested.quantity > limit || gold === 0n) return fail("특별한 재료 보유/수량 오류");
+    const expected = { ...requested, revision: text(metadata.revision), buns: "0", gold: gold.toString() };
     assertSameCompositeIntent(expected, requested); return expected;
   }
   if (requested.skill.startsWith("cosmetic:")) {
