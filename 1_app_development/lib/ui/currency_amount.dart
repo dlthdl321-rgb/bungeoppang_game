@@ -46,11 +46,17 @@ class CurrencyAmount extends StatelessWidget {
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         PixelIcon(kind.icon, size: size),
         const SizedBox(width: 2),
-        Text(text,
-            style: TextStyle(
-                fontSize: fontSize,
-                fontWeight: FontWeight.w800,
-                color: missing ? missingColor : Cozy.ink)),
+        // 4차 g14: a very long amount ('1불가사의 무량대수 무량대수') shrinks to
+        // the space it gets instead of overflowing.
+        Flexible(
+            child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(text,
+                    maxLines: 1,
+                    style: TextStyle(
+                        fontSize: fontSize,
+                        fontWeight: FontWeight.w800,
+                        color: missing ? missingColor : Cozy.ink)))),
       ]),
     );
     if (text == exact) return row;

@@ -31,7 +31,9 @@ Future<void> showWorkshopWindow(BuildContext context,{required WorkshopControlle
             padding:const EdgeInsets.symmetric(horizontal:12,vertical:4),
             child:Wrap(key:const Key('workshop-balance'),alignment:WrapAlignment.center,crossAxisAlignment:WrapCrossAlignment.center,
               spacing:18,runSpacing:2,children:[
-              CurrencyAmount(Currency.buns,controller.state.buns,key:const Key('balance-buns'),size:30,fontSize:19),
+              // 4차 g14: a huge balance shrinks in its own width so 황금 stays on the same line.
+              ConstrainedBox(constraints:const BoxConstraints(maxWidth:200),
+                child:CurrencyAmount(Currency.buns,controller.state.buns,key:const Key('balance-buns'),size:30,fontSize:19)),
               Row(mainAxisSize:MainAxisSize.min,children:[
                 CurrencyAmount(Currency.gold,BigInt.from(account.state.premium.gold),key:const Key('balance-gold'),size:30,fontSize:19),
                 if(onGold!=null)Padding(padding:const EdgeInsets.only(left:4),child:Material(color:Cozy.honey,
