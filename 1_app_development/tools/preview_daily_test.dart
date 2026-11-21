@@ -54,7 +54,7 @@ void main() {
         c.state.tutorial = 'done';
         c.state.level = 5;
         c.state.claimedLevels..clear()..addAll([2, 3, 4, 5]);
-        c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
+        c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
         c.state.relationships = c.state.relationships.visit('known-doyun', 'npc_doyun', 1, c.customerCatalog);
       });
       await tester.pumpWidget(GameApp(controller: account, workshop: c));

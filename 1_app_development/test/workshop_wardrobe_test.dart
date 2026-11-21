@@ -740,7 +740,7 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
     c.state.tutorial = 'done';
     c.state.level = level;
     c.state.claimedLevels.addAll([for (var n = 2; n <= level; n++) n]);
-    c.state.featureIntros.addAll(['skills', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
+    c.state.featureIntros.addAll(['skills', 'pantry', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
     c.state.buns = buns ?? BigInt.from(20000);
     // Never less than what is in hand (a save check).
     c.state.lifetime = c.state.buns > BigInt.from(20000) ? c.state.buns : BigInt.from(20000);

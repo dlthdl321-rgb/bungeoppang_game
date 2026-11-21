@@ -32,6 +32,10 @@ enum WorkshopFeature {
   /// The 가게 tab's 배경 and 시간 (and the menu's 배경 테마):
   /// `stall_background` (Lv.1, 26번 3차 H42). No introduction card.
   stallBackground,
+  /// 재료 준비 (재료 타이쿤 E): the '재료 준비' button beside '스페셜 붕어빵
+  /// 제작 시작' (during 영업 준비): `feature_unlock_levels.pantry_prep` (Lv.2).
+  /// The stock line on the home and using ingredients are never locked.
+  pantry,
   /// The 붕어빵 요정's story (4차 피드백 IA3): never locks anything; its
   /// card shows once after the first-run guide, when the fairy is out (in
   /// business, no guests, nothing in the big mold).
@@ -46,6 +50,8 @@ const workshopIntroFeatures = [
   // the 꾸미기·상점·오늘 card only right after the first-run guide.
   WorkshopFeature.wardrobe,
   WorkshopFeature.skills,
+  // 재료 타이쿤 E: opens with the skills at Lv.2, its card right after theirs.
+  WorkshopFeature.pantry,
   WorkshopFeature.griddle,
   WorkshopFeature.collection,
   WorkshopFeature.recipes,
@@ -65,6 +71,7 @@ int? featureUnlockLevel(DevelopmentBalance config, WorkshopFeature feature) {
   int level(String key) => DevelopmentBalance.integer(levels, key);
   return switch (feature) {
     WorkshopFeature.skills => level('skill_shop'),
+    WorkshopFeature.pantry => level('pantry_prep'),
     WorkshopFeature.collection => level('full_recipe_collection_ui'),
     WorkshopFeature.recipes => config.rows('additional_recipe_acquisition_tiers')
         .map((r) => DevelopmentBalance.integer(r, 'unlock_level')).reduce((a, b) => a < b ? a : b),
@@ -159,6 +166,7 @@ bool featureReplayable(WorkshopState s, DevelopmentBalance config, WorkshopFeatu
 String featureName(WorkshopFeature feature) => switch (feature) {
       WorkshopFeature.wardrobe => '꾸미기·상점·오늘',
       WorkshopFeature.skills => '스킬',
+      WorkshopFeature.pantry => '재료 준비',
       WorkshopFeature.griddle => '숙련된 붕어빵 틀',
       WorkshopFeature.collection => '도감',
       WorkshopFeature.recipes => '새 맛 레시피',
@@ -190,6 +198,10 @@ List<FeatureTourStep> featureTour(WorkshopFeature feature) => switch (feature) {
       WorkshopFeature.skills => const [
           FeatureTourStep('여기 ‘스킬’을 눌러 클릭 생산과 자동 생산 스킬을 레벨업해요.', 'menu-skills'),
           FeatureTourStep('위쪽에서 초당·클릭당 붕어빵력을 볼 수 있어요.', 'auto-rate'),
+        ],
+      WorkshopFeature.pantry => const [
+          FeatureTourStep('여기에 남은 반죽과 속이 보여요. 조금 남으면 주황색, 다 떨어지면 빨간색이 돼요.', 'pantry-stock'),
+          FeatureTourStep('영업 준비 중에는 ‘스페셜 붕어빵 제작 시작’ 옆의 ‘재료 준비’에서 미니게임으로 반죽과 속을 만들어요.', 'pantry-prep'),
         ],
       WorkshopFeature.griddle => const [
           FeatureTourStep('영업 중에 이 틀의 빈 칸을 누르면 굽기 시작해요. 익으면 눌러 꺼내요.', 'workshop-cell-0'),
@@ -224,9 +236,11 @@ List<FeatureTourStep> featureTour(WorkshopFeature feature) => switch (feature) {
 
 /// Intro ids already open for [s]: an older save counts them as seen, so a
 /// player past those levels gets no cards (schema 7 → 8). The fairy's story
-/// is new to everyone, so it is never counted as seen.
-Set<String> openedIntroIds(WorkshopState s, DevelopmentBalance config) =>
-    {for (final f in workshopIntroFeatures) if (f != WorkshopFeature.fairy && featureOpen(s, config, f)) f.name};
+/// and 재료 준비 (재료 타이쿤 E) are new to everyone, so they are never
+/// counted as seen.
+Set<String> openedIntroIds(WorkshopState s, DevelopmentBalance config) => {
+      for (final f in workshopIntroFeatures)
+        if (f != WorkshopFeature.fairy && f != WorkshopFeature.pantry && featureOpen(s, config, f)) f.name};
 
 /// One introduction card: a picture, two sentences and '알겠어요'.
 class WorkshopFeatureIntro {
@@ -244,6 +258,9 @@ WorkshopFeatureIntro featureIntro(WorkshopFeature feature) => switch (feature) {
       WorkshopFeature.skills => const WorkshopFeatureIntro('스킬이 열렸어요',
           '붕어빵력으로 클릭 스킬과 자동 생산 스킬을 레벨업해요. 카카오 로그인 후 레벨업할 수 있고, 위쪽에 초당·클릭당 숫자가 보여요.',
           'intro_skills', 'skill'),
+      WorkshopFeature.pantry => const WorkshopFeatureIntro('재료 준비가 열렸어요',
+          '붕어빵을 하나 만들 때마다 반죽과 속이 1인분씩 들어가요. 영업 준비 중에 ‘재료 준비’에서 반죽과 속을 넉넉히 만들어 두세요. 만든 반죽과 속은 하루가 지나면 상해요.',
+          'intro_pantry', 'btn_prep'),
       WorkshopFeature.griddle => const WorkshopFeatureIntro('숙련된 붕어빵 틀이 열렸어요',
           '도감을 완성한 맛은 아래 6구 틀에서 구울 수 있어요. 빈 칸을 누르면 반죽과 속이 저절로 들어가고, 원하는 익힘이 됐을 때 눌러 꺼내요.',
           'intro_griddle', 'bun'),

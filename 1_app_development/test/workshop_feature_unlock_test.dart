@@ -97,7 +97,7 @@ void main() {
       }
       // 26번 3차 H42: 배경 테마 opens with the wardrobe.
       expect(opened[1], {WorkshopFeature.wardrobe, WorkshopFeature.stallBackground});
-      expect(opened[2]!.difference(opened[1]!), {WorkshopFeature.skills});
+      expect(opened[2]!.difference(opened[1]!), {WorkshopFeature.skills, WorkshopFeature.pantry}, reason: '재료 타이쿤 E: 재료 준비도 Lv.2');
       expect(opened[3]!.difference(opened[2]!), {WorkshopFeature.collection});
       expect(opened[4]!.difference(opened[3]!), {WorkshopFeature.recipes});
       expect(opened[5]!.difference(opened[4]!), {WorkshopFeature.specialOrders, WorkshopFeature.fishCosmetics});
@@ -206,16 +206,18 @@ void main() {
       expect(await c.markIntroSeen(WorkshopFeature.wardrobe), isTrue);
       expect(c.pendingIntro, WorkshopFeature.skills);
       expect(await c.markIntroSeen(WorkshopFeature.skills), isTrue);
+      expect(c.pendingIntro, WorkshopFeature.pantry, reason: '재료 타이쿤 E: 스킬 다음');
+      expect(await c.markIntroSeen(WorkshopFeature.pantry), isTrue);
       expect(c.pendingIntro, WorkshopFeature.collection);
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue);
       expect(c.pendingIntro, isNull);
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue, reason: '두 번 눌러도 그대로');
       expect(repository.saved!['schema'], workshopSchema);
-      expect(repository.saved!['featureIntros'], ['collection', 'skills', 'wardrobe']);
+      expect(repository.saved!['featureIntros'], ['collection', 'pantry', 'skills', 'wardrobe']);
       c.dispose();
       final again = await open(repository);
       addTearDown(again.dispose);
-      expect(again.state.featureIntros, {'skills', 'collection', 'wardrobe'});
+      expect(again.state.featureIntros, {'skills', 'pantry', 'collection', 'wardrobe'});
       expect(again.pendingIntro, isNull);
     });
 
@@ -229,6 +231,10 @@ void main() {
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.featureIntros, containsAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders',
           'fishCosmetics', 'stallCosmetics']));
+      // 재료 타이쿤 E: 재료 준비는 모두에게 새 기능이라 이전 저장도 카드 한 장.
+      expect(migrated.featureIntros, isNot(contains('pantry')));
+      expect(pendingFeatureIntro(migrated, config), WorkshopFeature.pantry);
+      migrated.featureIntros.add('pantry');
       expect(pendingFeatureIntro(migrated, config), isNull);
       expect(migrated.toJson()['schema'], workshopSchema);
       // A low-level old save still gets the cards still to come.
@@ -366,6 +372,13 @@ void main() {
       expect(find.text('스킬 안내 2/2'), findsOneWidget);
       expect(find.text('알겠어요'), findsOneWidget);
       await tester.tap(find.byKey(const Key('tour-next')));
+      await tester.pumpAndSettle();
+      // 재료 타이쿤 E: the 재료 준비 card comes right after the skills tour.
+      expect(find.byKey(const Key('feature-intro-pantry')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('feature-intro-ok')));
+      await tester.pumpAndSettle();
+      expect(find.text('재료 준비 안내 1/2'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('tour-skip')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('tutorial-card')), findsNothing);
       expect(find.byKey(const Key('menu-skills-locked')), findsNothing);

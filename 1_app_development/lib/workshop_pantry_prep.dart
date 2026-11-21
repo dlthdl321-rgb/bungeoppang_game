@@ -24,9 +24,8 @@ extension WorkshopPantryPrep on WorkshopController {
     PantryMakeResult? made;
     final ok = await command(() {
       if (pantryPrepLock case final lock?) throw FormatException(lock);
-      final nowMs = _nowMs;
-      state.pantry.expire(pantryConfig, nowMs);
-      made = state.pantry.make(pantryConfig, kind, tubs, state.level, nowMs, state.recipes,
+      // Tubs past their time were already thrown away by [command] (4차 병합 3).
+      made = state.pantry.make(pantryConfig, kind, tubs, state.level, _nowMs, state.recipes,
           premium: premium, success: success);
     });
     return ok ? made : null;

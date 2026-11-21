@@ -17,7 +17,8 @@ import 'development_balance.dart';
 /// * 앱을 닫아 둔 동안은 재료를 쓰지 않음(부재 정산은 지금처럼).
 /// * 만든 반죽·속은 만든 지 24시간(`expiry_ms`)이 지나면 버림. 상하는 통을
 ///   오래된 것부터 먼저 씀. 산 재료(기본·특별한)는 상하지 않음.
-/// * 처음 재료(`starting_stock`)의 통은 상하지 않음 ([pantryKeepMs], 묶음 B).
+/// * 처음 재료(`starting_stock`)의 통은 상하지 않음 ([pantryKeepMs] 하나로, 묶음 B·E를
+///   4차 병합 3에서 합침).
 /// * 특제는 플레이어가 맛 고르기에서 '특제 팥'처럼 고를 때 씀: 그때 특제
 ///   반죽도 먼저 쓰고, 아니면 일반 반죽·속을 먼저 씀(없으면 특제로 이어 씀).
 ///
@@ -72,6 +73,10 @@ import 'development_balance.dart';
 ///   `lowStock(c, kind, level, nowMs)`(20% 아래), `pantryEmptyText`.
 /// * 레시피를 얻을 때 `grantRecipeGift(c, flavor, nowMs)`(한 번만).
 /// * 빈털터리 방지 `rescueAvailable(...)` / `grantRescue(c, today)`.
+/// * (묶음 E 구현) 홈 표시 규칙·문구는 `lib/pantry_home.dart`, 화면은
+///   `lib/ui/pantry_home.dart`. 컨트롤러가 모든 명령 앞에서 `expire`, 뒤에서
+///   꾸러미를 부르고 안내는 `WorkshopController.pantryNews`, 멈춤 판정은
+///   `pantryOut`. 다른 묶음은 `expire`를 따로 부르지 않아도 됨.
 const pantryEmptyText = '재료를 준비하세요';
 
 /// `madeAtMs` of the starting stock's tubs (묶음 B, 사용자 결정 2026-11-21):

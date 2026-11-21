@@ -98,7 +98,6 @@ flutter:
     # 26번 4-5단계: wardrobe item icons (tools/make_cosmetic_icons.py
     # temporary ones until 25번 필요한 그림 31번).
     - assets/images/cosmetic_icons/
-    # 재료 타이쿤: ingredient and tub icons, the 재료 준비 mini-game scenes
-    # (tools/apply_62_prep_art.py, 25번 필요한 그림 62번).
-    - assets/images/ingredients/
+    # 재료 타이쿤: the 재료 준비 mini-game scenes (tools/apply_62_prep_art.py,
+    # 25번 필요한 그림 62번; the icons are in assets/images/icons/).
     - assets/images/prep/

@@ -417,7 +417,7 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
     c.state.tutorial = 'done';
     c.state.level = 2;
     c.state.claimedLevels.add(2);
-    c.state.featureIntros.add('skills');
+    c.state.featureIntros.addAll(['skills', 'pantry']);
     // Saved progress needs buns ≤ lifetime.
     if (lifetime != null) c.state.lifetime = lifetime;
     if (buns != null) {

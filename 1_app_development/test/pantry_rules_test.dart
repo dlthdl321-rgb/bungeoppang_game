@@ -408,7 +408,7 @@ void main() {
       expect(reopened.state.buns, BigInt.from(77), reason: '경제 초기화 없음');
       expect(reopened.notice, isNot(economyResetNotice));
       final pantry = reopened.state.pantry;
-      expect(pantry.usable(c, 'batter', later.millisecondsSinceEpoch), 300, reason: '3일 지난 시각이 아니라 지금 만든 것');
+      expect(pantry.usable(c, 'batter', later.millisecondsSinceEpoch), 300, reason: '처음 재료는 상하지 않음');
       expect(pantry.gifts, {'start'});
       expect(reopenedRepository.stored!['schema'], 12);
     });

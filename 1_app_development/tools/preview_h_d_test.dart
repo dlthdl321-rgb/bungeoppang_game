@@ -60,7 +60,7 @@ void main() {
       c.state.level = level;
       c.state.claimedLevels..clear()..addAll([for (var i = 2; i <= level; i++) i]);
       if (level >= 5) {
-        c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
+        c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
       }
       if (rich) {
         c.state.buns = BigInt.parse('1234567');

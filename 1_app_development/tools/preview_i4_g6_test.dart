@@ -72,7 +72,7 @@ void main() {
       c.state.tutorial = 'done';
       c.state.level = 5;
       c.state.claimedLevels..clear()..addAll([for (var i = 2; i <= 5; i++) i]);
-      c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
+      c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
       c.state.recipes.add('custard');
       c.state.recipeMissions.add('custard');
       c.state.flavorMasteries['custard'] = FlavorMasteryProgress(flavor: 'custard', difficulty: 1);

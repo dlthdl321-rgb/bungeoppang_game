@@ -263,7 +263,8 @@ void main() {
       expect(shop.state.pantry.usable(c, 'batter', at()), 400);
       clock = clock.add(const Duration(hours: 24));
       expect(await shop.command(() {}), isTrue);
-      expect(shop.notice, '만든 지 24시간이 지난 반죽 1통을 버렸어요.');
+      // 4차 병합 3: E's centre notice (`pantryNews`), not the notice line.
+      expect(shop.takePantryNews(), ['만든 지 24시간이 지난 반죽 1통을 버렸어요.']);
       expect(shop.state.pantry.usable(c, 'batter', at()), 300, reason: '처음 재료 3통은 그대로');
       clock = clock.add(const Duration(days: 30));
       expect(await shop.command(() {}), isTrue);

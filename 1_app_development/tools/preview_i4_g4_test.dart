@@ -69,7 +69,7 @@ Future<WorkshopController> _open(WidgetTester tester, {bool gateway = true, bool
     c.state.tutorial = 'done';
     c.state.level = 2;
     c.state.claimedLevels.add(2);
-    c.state.featureIntros.addAll(['skills']);
+    c.state.featureIntros.addAll(['skills', 'pantry']);
     c.state.lifetime = BigInt.from(20000);
     c.state.buns = BigInt.from(5000);
   });

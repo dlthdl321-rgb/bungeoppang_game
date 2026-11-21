@@ -18,6 +18,7 @@ snaps the alpha so there is no halo:
     python tools/apply_25_art.py <26_feedback_generated> --only intro --preview
     python tools/apply_25_art.py <26_feedback_generated> --only firstrun --only today --only packs --preview
     python tools/apply_25_art.py <26_feedback_generated> --only mold --preview
+    python tools/apply_25_art.py <26_feedback_generated> --only ingredients --preview
 
 Run it in 1_app_development. Outputs:
 
@@ -90,8 +91,13 @@ Run it in 1_app_development. Outputs:
   plain resize keeps fishRect within 2 px). Every state takes its side lugs
   from the closed mold (the lugs moved up to 10 px between states) and each
   side of the axle layers is moved onto those lugs' holes (see molds()).
+* assets/images/icons/<ing_*|prem_*|tub_*|tab_ingredients|btn_prep>.png
+  (72x72): 25번 62번 재료 타이쿤 icons from 62_ingredients/icons/. They are
+  delivered at the game size on a 1 px dot grid with hard alpha, so they
+  are copied as they are (see ingredients()).
 """
 import argparse
+import shutil
 import sys
 from pathlib import Path
 
@@ -805,6 +811,30 @@ def molds(src):
     return made
 
 
+INGREDIENT_ICONS = (
+    [f"ing_{n}" for n in ("flour", "milk", "egg", "sugar", "salt", "redbean", "cocoa")]
+    + [f"prem_{n}" for n in ("butter", "redbean", "vanilla", "chocolate")]
+    + [f"tub_{n}" for n in ("batter", "redbean", "custard", "cocoa")]
+    + ["tab_ingredients", "btn_prep"])
+
+
+def ingredients(src):
+    """25번 62번: the 재료 타이쿤 icons (재료 7, 특별한 재료 4, 통 4, 상점 탭,
+    '재료 준비' 버튼). Already 72x72 with alpha 0/255 only, so they are only
+    checked and copied; anything else stops the run."""
+    folder = src / "62_ingredients" / "icons"
+    made = {}
+    for name in INGREDIENT_ICONS:
+        img = load(folder / f"{name}.png")
+        alpha = set(np.unique(np.asarray(img)[..., 3]))
+        if img.size != (ICON_SIZE, ICON_SIZE) or not alpha <= {0, 255}:
+            sys.exit(f"{name}: {img.size}, alpha {sorted(alpha)[:5]} (72x72, 0/255 expected)")
+        # Byte for byte, so every branch that applies them has the same file.
+        shutil.copyfile(folder / f"{name}.png", IMAGES / "icons" / f"{name}.png")
+        made[f"icons/{name}"] = img
+    return made
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument("source", type=Path, help="the 25_generated folder")
@@ -813,7 +843,7 @@ def main():
                    help="re-measure STOVE_FIT (slow, a few minutes)")
     steps = ["stoves", "bags", "drips", "rings", "textures", "locks", "sparkles",
              "gold", "levelup", "tabs", "room", "title", "stall16", "intro",
-             "firstrun", "today", "packs", "mold"]
+             "firstrun", "today", "packs", "mold", "ingredients"]
     p.add_argument("--only", choices=steps, action="append",
                    help="run only these steps (repeatable)")
     args = p.parse_args()
@@ -844,7 +874,7 @@ def main():
     for step, run_step in (("gold", gold), ("levelup", levelup), ("tabs", tabs),
                            ("room", room), ("title", title), ("stall16", stall16),
                            ("intro", intro), ("firstrun", first_run), ("today", today),
-                           ("packs", packs), ("mold", molds)):
+                           ("packs", packs), ("mold", molds), ("ingredients", ingredients)):
         if step in run and args.only:
             print(step)
             made.update(run_step(src))

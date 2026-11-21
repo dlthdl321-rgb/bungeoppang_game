@@ -93,6 +93,18 @@ class NightHome extends StatelessWidget {
   /// floating counter button). Null leaves the sign alone.
   final Widget? statusAction;
 
+  /// A small line just under the business-state sign, centred on it (재료
+  /// 타이쿤 E: the pantry stock and its out-of-ingredients bubble). It
+  /// floats over the stage, so the HUD and the stage keep their places.
+  /// On a short screen ([compactStatusHeight], guests stand high and the
+  /// line would cover a face) it is built with compact true and hangs
+  /// under the HUD's top-left slot instead, left edges lined up.
+  final Widget Function(bool compact)? statusBelow;
+
+  /// Below this height the [statusBelow] line goes compact (360x640: yes,
+  /// 360x800 and up: no).
+  static const compactStatusHeight = 720.0;
+
   /// The HUD's top-left round slot. The old clicker home keeps the menu
   /// button there; the Workshop home has its menu only in the bottom bar
   /// (26번 3차 피드백 H28) and puts the special bungeoppang's flavor here
@@ -138,6 +150,7 @@ class NightHome extends StatelessWidget {
       this.counter,
       this.counterSlip,
       this.statusAction,
+      this.statusBelow,
       this.hudLeading,
       this.lowStall = false,
       this.guests,
@@ -164,6 +177,8 @@ class NightHome extends StatelessWidget {
     // The '오늘' slip follows the HUD's settings button wherever the HUD
     // lays it out (text size, scrolling stage).
     final settingsLink = LayerLink();
+    // The pantry line follows the business sign the same way (재료 타이쿤 E).
+    final statusLink = LayerLink(), leadingLink = LayerLink();
     return Scaffold(
       backgroundColor: Cozy.woodDark,
       body: RepaintBoundary(
@@ -326,7 +341,7 @@ class NightHome extends StatelessWidget {
                     ? SingleChildScrollView(
                         key: const Key('home-scroll'),
                         child: Column(children: [
-                          header ?? _hud(settingsLink),
+                          header ?? _hud(settingsLink, statusLink, leadingLink),
                           SizedBox(
                               height: centerBuilder != null
                                   ? 460
@@ -336,7 +351,7 @@ class NightHome extends StatelessWidget {
                               child: stage),
                         ]))
                     : Column(children: [
-                        header ?? _hud(settingsLink),
+                        header ?? _hud(settingsLink, statusLink, leadingLink),
                         Expanded(child: stage),
                       ])),
             if (low && guests != null && towelTop != null)
@@ -376,6 +391,27 @@ class NightHome extends StatelessWidget {
                     followerAnchor: Alignment.topRight,
                     offset: const Offset(0, WorkshopHomeLayout.slipGap),
                     child: counterSlip!)),
+            if (statusBelow != null && header == null && headerData != null)
+              if (box.maxHeight < compactStatusHeight) Positioned(
+                  left: 0,
+                  top: 0,
+                  child: CompositedTransformFollower(
+                      link: leadingLink,
+                      showWhenUnlinked: false,
+                      targetAnchor: Alignment.bottomLeft,
+                      followerAnchor: Alignment.topLeft,
+                      offset: const Offset(0, WorkshopHomeLayout.statusBelowGap + 4),
+                      child: statusBelow!(true)))
+              else Positioned(
+                  left: 0,
+                  top: 0,
+                  child: CompositedTransformFollower(
+                      link: statusLink,
+                      showWhenUnlinked: false,
+                      targetAnchor: Alignment.bottomCenter,
+                      followerAnchor: Alignment.topCenter,
+                      offset: const Offset(0, WorkshopHomeLayout.statusBelowGap),
+                      child: statusBelow!(false))),
             if (vendor == null) Positioned(
                 right: side + 8,
                 width: cookW,
@@ -395,7 +431,7 @@ class NightHome extends StatelessWidget {
     );
   }
 
-  Widget _hud(LayerLink settingsLink) {
+  Widget _hud(LayerLink settingsLink, LayerLink statusLink, LayerLink leadingLink) {
     final s = controller.state;
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
@@ -436,14 +472,17 @@ class NightHome extends StatelessWidget {
                     icon: const PixelIcon('menu', size: 28),
                     onPressed: () => onOpen('menu')))
           else
-            SizedBox(width: 48, child: hudLeading),
+            CompositedTransformTarget(link: leadingLink, child: SizedBox(width: 48, child: hudLeading)),
           Expanded(
               child: Column(children: [
             if (headerData != null)
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Flexible(child: WorkshopStatusBadge(text: headerData!.status, kind: headerData!.statusKind)),
-                if (statusAction != null) statusAction!,
-              ]),
+              CompositedTransformTarget(
+                link: statusLink,
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Flexible(child: WorkshopStatusBadge(text: headerData!.status, kind: headerData!.statusKind)),
+                  if (statusAction != null) statusAction!,
+                ]),
+              ),
             if (headerData == null && s.prestige.stars > 0)
               _note(const Key('home-prestige'),
                   '명성 별 ${s.prestige.stars} · 생산 +${(prestigePermille(s) - 1000) ~/ 10}%'),

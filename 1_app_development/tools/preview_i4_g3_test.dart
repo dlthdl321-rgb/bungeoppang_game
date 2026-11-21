@@ -71,7 +71,7 @@ void main() {
       c.state.buns = BigInt.from(1668);
       c.state.lifetime = BigInt.from(1668);
       c.state.claimedLevels..clear()..addAll([2, 3]);
-      c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders',
+      c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes', 'specialOrders',
         'fishCosmetics', 'freshness', 'stallCosmetics'].where(workshopIntroIds.contains));
     });
     expect(c.error, isNull);
