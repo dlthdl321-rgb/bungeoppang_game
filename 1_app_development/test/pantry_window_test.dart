@@ -138,7 +138,8 @@ void main() {
       expect(find.byKey(const Key('pantry-tab-custard')), findsNothing);
       expect(find.byKey(const Key('pantry-tab-cocoa')), findsNothing);
       expect(count(tester), '3통 / 10통');
-      expect(tester.widget<Text>(find.byKey(const Key('pantry-expiry'))).data, '가장 오래된 통은 24시간 뒤 버려요.');
+      // 4차 병합 3: the starting stock never goes off (묶음 B·E 사용자 결정).
+      expect(tester.widget<Text>(find.byKey(const Key('pantry-expiry'))).data, '처음 받은 통은 상하지 않아요.');
       expect(find.text('반죽 젓기 미니게임을 하면 만들어요.\n잘하면 1통에 덤 10인분, 못해도 통은 그대로 만들어져요.'), findsOneWidget);
     });
 

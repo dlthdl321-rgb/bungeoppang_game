@@ -199,16 +199,18 @@ class PantryWindowState extends State<PantryWindow> {
   }
 
   /// When the oldest usable tub of [kind] goes off ('가장 오래된 통은
-  /// 23시간 10분 뒤 버려요'), or that none is made.
+  /// 23시간 10분 뒤 버려요'); with only the starting stock, which never goes
+  /// off ([PantryLot.keeps], 사용자 결정), '처음 받은 통은 상하지 않아요.';
+  /// or that none is made.
   String _expiryLine(PreparedKind kind, int nowMs) {
+    var keeps = false;
     for (final lot in pantry.lots) {
       if (lot.kind != kind.id || lot.portions <= 0 || lot.expired(pc, nowMs)) continue;
-      // A tub that is not past its time even at its limit never goes off
-      // (사용자 결정: the starting stock), whatever the rules decide.
-      if (!lot.expired(pc, lot.madeAtMs + pc.expiryMs)) return '처음 받은 통은 상하지 않아요.';
+      if (lot.keeps) { keeps = true; continue; }
       final left = lot.madeAtMs + pc.expiryMs - nowMs;
       return '가장 오래된 통은 ${durationText(left)} 뒤 버려요.';
     }
+    if (keeps) return '처음 받은 통은 상하지 않아요.';
     return '만든 ${kind.label}${_jong(kind.label) ? '이' : '가'} 없어요.';
   }
 
