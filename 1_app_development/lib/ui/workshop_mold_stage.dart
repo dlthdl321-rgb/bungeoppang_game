@@ -55,6 +55,10 @@ class WorkshopMoldStage extends StatefulWidget {
   /// bubble over the guest (WorkshopGuestLayer) instead of under the result.
   final bool lowStall;
 
+  /// The 붕어빵 요정 holds still at its place (its short tour points at it,
+  /// 4차 g12).
+  final bool fairyStill;
+
   /// '자랑하기' on a perfect result (26번 8단계 공유 카드); null hides it.
   final void Function(ResultLook look)? onSharePerfect;
   const WorkshopMoldStage(
@@ -65,6 +69,7 @@ class WorkshopMoldStage extends StatefulWidget {
       this.moldLimit,
       this.cleanCounter = false,
       this.lowStall = false,
+      this.fairyStill = false,
       this.onSharePerfect,
       this.reduceMotion = false,
       this.vibration = false});
@@ -308,6 +313,7 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                   // edge, clear of the cooking cut and the counter.
                   hideBottom: hideAbove == null ? null : hideAbove - FairyMotion.hideGap,
                   floating: floating,
+                  still: widget.fairyStill,
                   reduceMotion: widget.reduceMotion,
                   vibration: widget.vibration)),
         Positioned(
