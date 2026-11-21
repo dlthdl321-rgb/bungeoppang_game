@@ -37,7 +37,6 @@ class PrepArt {
 
   static Future<void> _loadAll() async {
     await Future.wait([
-      PixelSprites.load(), // the icons (usually already in)
       for (final n in scenes) _one('assets/images/prep/$n.png'),
     ]);
     loaded.value++;

@@ -425,7 +425,7 @@ void main() {
     pantryTest('영업 중이면 창 대신 까닭, 영업 준비 중이면 창', (tester) async {
       final account = await mountGame(tester, const Size(390, 844), reduced: true);
       // Lv.2: 재료 준비 opens with `pantry_prep` (묶음 E, 4차 병합 3).
-      final c = await controller(setup: (c) => c.state.level = 2);
+      final c = await controller(setup: (c) => c..state.level = 2 ..state.claimedLevels.add(2));
       await tester.pumpWidget(GameApp(controller: account, workshop: c));
       await tester.pump();
       await c.openBusiness();

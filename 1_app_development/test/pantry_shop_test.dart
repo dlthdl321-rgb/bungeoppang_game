@@ -282,7 +282,8 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
   await c.command(() {
     c.state.tutorial = 'done';
     _grant(c, level: level, recipes: recipes);
-    c.state.featureIntros.addAll(['wardrobe', 'skills', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
+    // 4차 병합 3: E's '재료 준비' card (Lv.2) too, so it does not cover the menu.
+    c.state.featureIntros.addAll(['wardrobe', 'skills', 'pantry', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
     c.state.lifetime = BigInt.from(1000000);
     c.state.buns = BigInt.from(500000);
   });
