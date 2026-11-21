@@ -171,8 +171,17 @@ def validate(data, catalog):
             data['rewarded_ads']['reservation_soft_timeout_ms'] > 0, '광고 검증/예약 시간 관계')
     rows = data['level_progression']
     require([v['level'] for v in rows] == list(range(1, 51)), '레벨1~50 누락/중복')
-    totals = [int(v['season_total_buns']) for v in rows]
-    require(all(a < b for a, b in zip(totals, totals[1:])), '누적 목표 단조 증가')
+    # 4차 피드백 g9: 레벨마다 새로 세는 조건(이번 레벨 판매 개수·탭)과 레벨업 때 내는 값.
+    costs = [int(v['level_cost_buns']) for v in rows]
+    require(costs[0] == 0 and rows[0]['level_cost_gold'] == 0 and rows[0]['additional_sold_pieces'] == 0 and
+            all(c > 0 for c in costs[1:]) and all(a <= b for a, b in zip(costs[1:], costs[2:])),
+            '레벨업 붕어빵력 비용(Lv.2부터 0보다 크고 줄지 않음)')
+    require(all(type(v['level_cost_gold']) is int and v['level_cost_gold'] >= 0 and
+                type(v['additional_sold_pieces']) is int and type(v['additional_taps']) is int and
+                not any(k in v for k in ('season_total_buns', 'additional_sales')) for v in rows),
+            '레벨업 황금·판매 개수·탭 형식(옛 누적·판매 번 항목 없음)')
+    require(all(v['additional_sold_pieces'] >= 1 and v['additional_taps'] >= 0 for v in rows[1:]),
+            '레벨마다 판매 개수 1개 이상')
     for v in rows:
         require(v['order_wait_ms'] > 0 and
                 v['order_quantity_limit'] >= v['order_flavor_limit'] >= 1, '주문 임시 표 관계')
@@ -330,9 +339,12 @@ def render(data):
     for group in ('cosmetic_purchase', 'boost_purchase'):
         for key, v in data[group].items():
             text += f"| {group} | {key} | {v['buns']} | {v['gold']} |\n"
-    text += '\n## 4. Lv.1~50 임시 표\n\n| Lv | 시즌 누적 붕어빵력 | 구간 탭 | 구간 판매 | 주문 맛 상한 | 주문 수량 상한 | 대기 ms |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: |\n'
+    text += ('\n## 4. Lv.1~50 임시 표\n\n그 레벨이 되려면 이번 레벨에 판 붕어빵 개수와 탭(레벨이 오르면 0부터 다시 셈)을 채우고, '
+             '레벨업할 때 붕어빵력(과 Lv.10·20·30·40·50은 황금붕어빵력)을 냅니다(4차 피드백 g9).\n\n'
+             '| Lv | 이번 레벨 판매(개) | 이번 레벨 탭 | 내는 붕어빵력 | 내는 황금 | 주문 맛 상한 | 주문 수량 상한 | 대기 ms |\n'
+             '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n')
     for v in data['level_progression']:
-        text += '| ' + ' | '.join(str(v[k]) for k in ('level', 'season_total_buns', 'additional_taps', 'additional_sales', 'order_flavor_limit', 'order_quantity_limit', 'order_wait_ms')) + ' |\n'
+        text += '| ' + ' | '.join(str(v[k]) for k in ('level', 'additional_sold_pieces', 'additional_taps', 'level_cost_buns', 'level_cost_gold', 'order_flavor_limit', 'order_quantity_limit', 'order_wait_ms')) + ' |\n'
     text += '\n## 5. 나머지 설정 전체\n\n| 설정 경로 | 임시값/확정값 |\n| --- | --- |\n'
     excluded = {'metadata', 'cosmetic_purchase', 'unresolved_non_numeric_policies', 'avatar_catalog', 'mission_targets'}
     for key, val in data.items():

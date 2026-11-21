@@ -78,7 +78,7 @@ export async function reserveCompositePurchase(store: Store, config: unknown,
     verifier: PurchaseEvidenceVerifier, context: PurchaseContext, input: unknown): Promise<Record<string, unknown>> {
   context = { ...context };
   const intent = parseCompositeIntent(input, context.account), base = user(context);
-  if (!/^(?:(tap|auto)_([1-9]|1[0-6])|cosmetic:[A-Za-z0-9_]+)$/.test(intent.skill)) throw new CompositePurchaseError("스킬 식별자 오류");
+  if (!/^(?:(tap|auto)_([1-9]|1[0-6])|cosmetic:[A-Za-z0-9_]+|level:([2-9]|[1-4][0-9]|50))$/.test(intent.skill)) throw new CompositePurchaseError("스킬 식별자 오류");
   const prior = await store.run(async tx => {
     await active(tx, context);
     const row = await tx.get(transactionPath(context, intent.transaction));
@@ -106,12 +106,17 @@ export async function reserveCompositePurchase(store: Store, config: unknown,
     const owned = natural(ownership?.owned ?? 0);
     validateDevelopmentCompositeQuote(config, intent, context.account, owned);
     const root=config as { skill_purchase:{ entries:Record<string,{unlock_total:string}> };avatar_catalog:Record<string,{unlock_total:string;unlock_level:number}> };
-    const entry=intent.skill.startsWith("cosmetic:") ? root.avatar_catalog[intent.skill.slice(9)] : root.skill_purchase.entries[intent.skill];
-    if (intent.skill.startsWith("cosmetic:")) {
-      const cosmetic=root.avatar_catalog[intent.skill.slice(9)];
-      if (!Number.isSafeInteger(proof.level) || proof.level!<cosmetic.unlock_level) throw new CompositePurchaseError("꾸미기 레벨 해금 전");
+    if (intent.skill.startsWith("level:")) {
+      // 4차 피드백 g9: a level-up's gold payment, only from the level just below.
+      if (!Number.isSafeInteger(proof.level) || proof.level! + 1 !== Number(intent.skill.slice(6))) throw new CompositePurchaseError("레벨업 비용은 바로 아래 레벨에서만 낼 수 있습니다.");
+    } else {
+      const entry=intent.skill.startsWith("cosmetic:") ? root.avatar_catalog[intent.skill.slice(9)] : root.skill_purchase.entries[intent.skill];
+      if (intent.skill.startsWith("cosmetic:")) {
+        const cosmetic=root.avatar_catalog[intent.skill.slice(9)];
+        if (!Number.isSafeInteger(proof.level) || proof.level!<cosmetic.unlock_level) throw new CompositePurchaseError("꾸미기 레벨 해금 전");
+      }
+      if (decimal(proof.lifetimeBuns) < decimal(entry.unlock_total)) throw new CompositePurchaseError("스킬 해금 전");
     }
-    if (decimal(proof.lifetimeBuns) < decimal(entry.unlock_total)) throw new CompositePurchaseError("스킬 해금 전");
     const gold = natural(wallet?.gold ?? 0), cost = BigInt(intent.gold);
     if (cost > BigInt(gold)) throw new CompositePurchaseError("황금붕어빵력 부족");
     const next: PurchaseRecord = { ...intent, progress: context.progress, epoch: context.epoch,
@@ -126,7 +131,7 @@ export async function finishCompositePurchase(store: Store, verifier: PurchaseEv
   if (action !== "commit" && action !== "cancel") throw new CompositePurchaseError("구매 명령 오류");
   context = { ...context };
   const intent = parseCompositeIntent(input, context.account), base = user(context);
-  if (!/^(?:(tap|auto)_([1-9]|1[0-6])|cosmetic:[A-Za-z0-9_]+)$/.test(intent.skill)) throw new CompositePurchaseError("스킬 식별자 오류");
+  if (!/^(?:(tap|auto)_([1-9]|1[0-6])|cosmetic:[A-Za-z0-9_]+|level:([2-9]|[1-4][0-9]|50))$/.test(intent.skill)) throw new CompositePurchaseError("스킬 식별자 오류");
   const terminal = await store.run(async tx => {
     await active(tx, context);
     const row = await tx.get(transactionPath(context, intent.transaction));

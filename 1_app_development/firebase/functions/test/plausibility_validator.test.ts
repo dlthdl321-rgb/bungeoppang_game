@@ -60,18 +60,18 @@ test("서버 시간으로 설명할 수 없는 붕어빵력 증가는 거절하�
   clock.now+=600000;
   assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot("2425","2440",1240)})).status,"reserved");
 });
-test("자동 승급(4차 IA1)으로 두 레벨이 한꺼번에 오른 스냅샷도 조건을 채웠으면 받고, 못 채웠으면 거절한다",async()=>{
+test("자동 승급(4차 IA1)으로 두 레벨이 한꺼번에 오른 스냅샷도 조건을 채웠으면 받고, 못 채웠으면 거절한다 (4차 g9 조건)",async()=>{
   const {service,clock}=setup();await service.claim("a",{progress});
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
   await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
   clock.now+=600000;
   const second={...context,intent:intent("transaction_0002",1)};
   const lv3=config.level_progression[2];
-  // Lv.3 needs both levels' taps and sales since the start.
-  const taps=config.level_progression[1].additional_taps+lv3.additional_taps;
-  const sales=config.level_progression[1].additional_sales+lv3.additional_sales;
-  await assert.rejects(service.purchase("a","reserve",{...second,snapshot:snapshot("385",lv3.season_total_buns,taps,sales-1,3)}));
-  assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot("385",lv3.season_total_buns,taps,sales,3)})).status,"reserved");
+  // The checkpoint was at Lv.1 with 40 taps: Lv.2 may have been partly done
+  // then, so Lv.3's taps and pieces sold must come after it (4차 g9).
+  const at=(taps:number)=>({buns:"385",lifetimeBuns:"400",level:3,taps,sales:lv3.additional_sold_pieces,pieces:lv3.additional_sold_pieces});
+  await assert.rejects(service.purchase("a","reserve",{...second,snapshot:at(40+lv3.additional_taps-1)}),/레벨 조건/);
+  assert.equal((await service.purchase("a","reserve",{...second,snapshot:at(40+lv3.additional_taps)})).status,"reserved");
 });
 test("진행 기록이 줄어든 스냅샷은 거절한다",async()=>{
   const {service}=setup();await service.claim("a",{progress});
@@ -226,4 +226,25 @@ test("도감 칸 완성 붕어빵력은 지난 시간만큼의 칸 수까지만 
   otherClock.now+=2*per;
   const tooMuch=(base+4n*cell).toString();
   await assert.rejects(other.purchase("a","reserve",{...second,snapshot:snapshot(tooMuch,tooMuch,40)}));
+});
+test("레벨 조건은 앞 확인 이후 시작한 레벨만 그 구간의 판매 개수·탭으로 확인하고 누적 붕어빵력은 보지 않는다 (4차 g9)",async()=>{
+  const {store,service,clock}=setup();await service.claim("a",{progress});
+  const v=new PlausibilityValidator(store,config,()=>clock.now);
+  let n=0;
+  const check=(s:object)=>v.purchase({account:"a",...context},intent(`transaction_g9${String(++n).padStart(3,"0")}`),"reservation",s);
+  const at=(level:number,taps:number,sales:number,pieces?:number)=>({buns:"40",lifetimeBuns:"40",level,taps,sales,...(pieces===undefined ? {} : {pieces})});
+  const row=(level:number)=>config.level_progression[level-1];
+  // First check: every level so far in full (Lv.2), but no lifetime goal.
+  await assert.rejects(check(at(2,row(2).additional_taps-1,1,1)),/레벨 조건/);
+  await check(at(2,row(2).additional_taps,1,row(2).additional_sold_pieces));
+  clock.now+=600000;
+  // Lv.3 may have been begun before the last check; Lv.4 must be done since.
+  await assert.rejects(check(at(4,row(2).additional_taps+row(4).additional_taps,1,1)),/레벨 조건/);
+  await check(at(4,row(2).additional_taps+row(4).additional_taps,1+row(4).additional_sold_pieces,1+row(4).additional_sold_pieces));
+  clock.now+=600000;
+  // More pieces than the new sales can hand over is refused.
+  await assert.rejects(check(at(4,100,3,1+row(4).additional_sold_pieces+1000)),/판매 개수/);
+  // An app from before pieces: sales stand in for them (Lv.6 is done since).
+  await assert.rejects(check(at(6,200,2)),/레벨 조건/);
+  await check(at(6,200,4));
 });

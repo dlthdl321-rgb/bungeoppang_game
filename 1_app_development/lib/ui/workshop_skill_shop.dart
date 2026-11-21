@@ -15,9 +15,9 @@ import 'pixel_sprites.dart';
 
 /// The Workshop skill window (26번 4-3단계, F12~F19): a list of skills to
 /// level up, not things to buy. Two tabs (클릭 생산·자동 생산) share one
-/// layout. Each row: picture, name, 'Lv.12/1000 · +60/클릭' (one level's
+/// layout. Each row: picture, name, 'Lv.12/100 · +60/클릭' (one level's
 /// effect), the price of the chosen step, the skill's own small wheel that
-/// picks how many levels one press adds (×1·×10·×100, [skillLevelUpSteps];
+/// picks how many levels one press adds (×1·×10·최대, [skillLevelUpSteps];
 /// 시안 확인 2차: one wheel per skill, remembered in
 /// [WorkshopController.skillSteps] while the app runs) and a 'LEVEL UP'
 /// button that is lit only when the level-up can go through. A dark button
@@ -144,6 +144,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
 
   static String _pendingLabel(String id) {
     if (id.startsWith('cosmetic:')) return '구매 확인 대기: ${id.substring(9)}';
+    if (id.startsWith('level:')) return '레벨업 확인 대기: Lv.${id.substring(6)} 황금붕어빵력';
     final skill = upgrades.where((u) => u.id == id);
     return '레벨업 확인 대기: ${skill.isEmpty ? id : skill.first.name}';
   }
@@ -172,9 +173,14 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
     final rule = c.config.skill(id);
     final maxed = owned >= cap;
     final step = _step(id);
-    final quantity = skillLevelUpQuantity(step, owned: owned, cap: cap);
-    final quote = maxed ? null : quoteCompositeSkill(c.config, id, owned: owned, quantity: quantity);
     final buns = c.state.purchases.available(c.state.buns), gold = BigInt.from(account.state.premium.gold);
+    // 4차 g13: '최대' buys as many levels as buns (and gold) pay for now;
+    // when none, the quote is one level (shown red, button off).
+    final quote = maxed || !unlocked
+        ? null
+        : skillLevelUpQuote(c.config, id, step: step, owned: owned, availableBuns: buns, availableGold: gold);
+    final quantity = quote?.quantity ?? 0;
+    final maxStep = step == skillLevelUpMax;
     final reason = maxed ? null : _blocked(unlocked: unlocked, id: id, quote: quote, buns: buns, gold: gold);
     final picture = PixelImage(PixelSprites.skill(id), size: 40);
     final unit = _kind == UpgradeKind.tap ? '클릭' : '초';
@@ -215,11 +221,18 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
             if (unlocked)
               // Two short lines so the per-skill wheel leaves them room
               // (시안 확인 2차): the level, then one level's effect.
-              Text('Lv.$owned/$cap\n+${compactNumber(DevelopmentBalance.decimal(rule, 'effect'))}/$unit',
-                  key: Key('level-$id'),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12, color: Cozy.inkSoft, fontWeight: FontWeight.w700))
+              // 4차 g13: a wide price ('최대' with a huge balance) at 360 used to break 'Lv.880/1000'
+              // into 'Lv.880/100' + '0' and push '+1/클릭' out; the two
+              // lines shrink together instead.
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text('Lv.$owned/$cap\n+${compactNumber(DevelopmentBalance.decimal(rule, 'effect'))}/$unit',
+                    key: Key('level-$id'),
+                    maxLines: 2,
+                    softWrap: false,
+                    style: const TextStyle(fontSize: 12, color: Cozy.inkSoft, fontWeight: FontWeight.w700)),
+              )
             else
               Text('${unlockGoalText(c.config, id)} 만들면 해금',
                   key: Key('unlock-$id'),
@@ -237,7 +250,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
           )
         else ...[
           if (unlocked && quote != null)
-            // 4차 g7: level prices grow 1.35× now, so ×100 can cost '2602.29조';
+            // 4차 g7: level prices grow 1.35× now, so a big '최대' or ×10 can cost '2602.29조';
             // a long price shrinks to fit instead of pushing the row over
             // (360 wide at text scale 1.5).
             ConstrainedBox(
@@ -246,7 +259,16 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerRight,
                 child: Column(key: Key('cost-$id'), crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-                  CurrencyAmount(Currency.buns, quote.buns, missing: quote.buns > buns),
+                  // '최대' says how many levels it buys: '+37 · 🐟 1.2만'.
+                  if (maxStep && quote.affordable(buns, gold))
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text('+$quantity · ',
+                          key: Key('max-count-$id'),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Cozy.ink)),
+                      CurrencyAmount(Currency.buns, quote.buns, missing: quote.buns > buns),
+                    ])
+                  else
+                    CurrencyAmount(Currency.buns, quote.buns, missing: quote.buns > buns),
                   // DEC-041: tiers 1~4 ask no gold, so no '황금 0'.
                   if (quote.gold > BigInt.zero) CurrencyAmount(Currency.gold, quote.gold, missing: quote.gold > gold),
                 ]),
@@ -374,12 +396,17 @@ class _KindTab extends StatelessWidget {
 }
 
 /// A skill's small vertical wheel that picks its level-up step (S43-Q8,
-/// one per skill since 시안 확인 2차): ×1·×10·×100 always stand in their
-/// own places and the honey band moves to the chosen one, so every wheel
-/// shows three steps and looks the same (4차 피드백 ID1: a wheel at ×1 or
-/// ×100 used to show only two). A swipe up or down moves one step, a tap
-/// picks a step. Keys `step-<skill>-<step>`.
-class SkillStepWheel extends StatelessWidget {
+/// one per skill since 시안 확인 2차): a little drum that scrolls. The
+/// honey band stays in the middle and the chosen '×10' sits in it with its
+/// neighbours above and below; the steps follow the finger while it drags
+/// and snap to the nearest step when it lets go (a quick flick moves one
+/// step), and a tap on a neighbour picks it. 4차 피드백 g13 brought the
+/// scroll back after ID1 had turned it into three fixed cells with a moving
+/// band ("전처럼 스크롤 하듯이"); the box keeps one size for every step, so
+/// at ×1 or 최대 one end of the drum is simply empty. Steps ×1 · ×10 · 최대
+/// (4차 g13, user decision: '최대' replaced ×100). Keys
+/// `step-<skill>-1`, `step-<skill>-10`, `step-<skill>-max`.
+class SkillStepWheel extends StatefulWidget {
   final String skillId;
   final int value;
   final ValueChanged<int> onChanged;
@@ -387,63 +414,95 @@ class SkillStepWheel extends StatelessWidget {
 
   static const rowHeight = 14.0, width = 40.0;
 
-  void _move(int by) {
-    final i = skillLevelUpSteps.indexOf(value) + by;
-    if (i >= 0 && i < skillLevelUpSteps.length) onChanged(skillLevelUpSteps[i]);
+  /// How far past the first or last step a drag may pull, in rows.
+  static const overscroll = 0.35;
+
+  @override
+  State<SkillStepWheel> createState() => _SkillStepWheelState();
+}
+
+class _SkillStepWheelState extends State<SkillStepWheel> {
+  /// The finger's pull in pixels while dragging (down is positive), 0 at rest.
+  double _drag = 0;
+  bool _dragging = false;
+
+  int get _index => skillLevelUpSteps.indexOf(widget.value);
+
+  /// The step position under the band, in rows: [_index] at rest.
+  double get _position {
+    final last = skillLevelUpSteps.length - 1.0;
+    return (_index - _drag / SkillStepWheel.rowHeight)
+        .clamp(-SkillStepWheel.overscroll, last + SkillStepWheel.overscroll)
+        .toDouble();
+  }
+
+  int get _centered => _position.round().clamp(0, skillLevelUpSteps.length - 1);
+
+  void _pick(int i) {
+    if (i >= 0 && i < skillLevelUpSteps.length && i != _index) widget.onChanged(skillLevelUpSteps[i]);
+  }
+
+  void _end(DragEndDetails d) {
+    var target = _centered;
+    // A flick that did not cross half a row still moves one step its way.
+    final v = d.primaryVelocity ?? 0;
+    if (target == _index && v.abs() > 50) target = _index + (v < 0 ? 1 : -1);
+    setState(() {
+      _dragging = false;
+      _drag = 0;
+    });
+    _pick(target.clamp(0, skillLevelUpSteps.length - 1));
   }
 
   @override
   Widget build(BuildContext context) {
-    final index = skillLevelUpSteps.indexOf(value);
-    final still = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    final index = _index, h = SkillStepWheel.rowHeight, centered = _centered;
+    final still = _dragging || (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     return Semantics(
       label: '한 번에 올릴 레벨',
-      value: '×$value',
-      increasedValue: index + 1 < skillLevelUpSteps.length ? '×${skillLevelUpSteps[index + 1]}' : null,
-      decreasedValue: index > 0 ? '×${skillLevelUpSteps[index - 1]}' : null,
-      onIncrease: index + 1 < skillLevelUpSteps.length ? () => _move(1) : null,
-      onDecrease: index > 0 ? () => _move(-1) : null,
+      value: skillLevelUpLabel(widget.value),
+      increasedValue: index + 1 < skillLevelUpSteps.length ? skillLevelUpLabel(skillLevelUpSteps[index + 1]) : null,
+      decreasedValue: index > 0 ? skillLevelUpLabel(skillLevelUpSteps[index - 1]) : null,
+      onIncrease: index + 1 < skillLevelUpSteps.length ? () => _pick(index + 1) : null,
+      onDecrease: index > 0 ? () => _pick(index - 1) : null,
       child: GestureDetector(
-        onVerticalDragEnd: (d) {
-          final v = d.primaryVelocity ?? 0;
-          if (v < -50) _move(1);
-          if (v > 50) _move(-1);
-        },
+        onVerticalDragStart: (_) => setState(() => _dragging = true),
+        onVerticalDragUpdate: (d) => setState(() => _drag += d.primaryDelta ?? 0),
+        onVerticalDragEnd: _end,
+        onVerticalDragCancel: () => setState(() {
+          _dragging = false;
+          _drag = 0;
+        }),
         child: Container(
-          width: width,
-          height: rowHeight * skillLevelUpSteps.length + 4,
+          width: SkillStepWheel.width,
+          height: h * 3 + 4,
           decoration: BoxDecoration(
               color: Cozy.cream, borderRadius: BorderRadius.circular(10), border: Border.all(color: Cozy.woodLight, width: 1.5)),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: Stack(children: [
+              Positioned(left: 0, right: 0, top: h, height: h, child: Container(color: Cozy.honey)),
               AnimatedPositioned(
-                  duration: still ? Duration.zero : const Duration(milliseconds: 160),
-                  curve: Curves.easeOut,
-                  left: 0,
-                  right: 0,
-                  top: rowHeight * index,
-                  height: rowHeight,
-                  child: Container(color: Cozy.honey)),
-              Positioned(
+                duration: still ? Duration.zero : const Duration(milliseconds: 160),
+                curve: Curves.easeOut,
                 left: 0,
                 right: 0,
-                top: 0,
+                top: h * (1 - _position),
                 child: Column(children: [
-                  for (final step in skillLevelUpSteps)
+                  for (final (i, step) in skillLevelUpSteps.indexed)
                     GestureDetector(
-                      key: Key('step-$skillId-$step'),
+                      key: Key('step-${widget.skillId}-${step == skillLevelUpMax ? 'max' : step}'),
                       behavior: HitTestBehavior.opaque,
-                      onTap: () => onChanged(step),
+                      onTap: () => _pick(i),
                       child: SizedBox(
-                        height: rowHeight,
+                        height: h,
                         child: Center(
-                          child: Text('×$step',
+                          child: Text(skillLevelUpLabel(step),
                               style: TextStyle(
-                                  fontSize: step == value ? 12 : 9.5,
+                                  fontSize: i == centered ? 12 : 9.5,
                                   height: 1,
-                                  fontWeight: step == value ? FontWeight.w900 : FontWeight.w700,
-                                  color: step == value ? Cozy.ink : Cozy.inkSoft)),
+                                  fontWeight: i == centered ? FontWeight.w900 : FontWeight.w700,
+                                  color: i == centered ? Cozy.ink : Cozy.inkSoft)),
                         ),
                       ),
                     ),

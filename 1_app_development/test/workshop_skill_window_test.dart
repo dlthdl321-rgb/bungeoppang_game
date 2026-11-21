@@ -28,12 +28,13 @@ void main() {
 
   group('레벨업 단위', () {
     test('한 번에 올리는 양은 단위와 남은 레벨 중 작은 쪽이고 서버 한도(cap − 보유)와 같다', () {
-      expect(skillLevelUpSteps, [1, 10, 100]);
-      expect(skillLevelUpQuantity(10, owned: 995, cap: cap), 5);
-      expect(skillLevelUpQuantity(100, owned: 0, cap: cap), 100);
+      // 4차 g13 (user decision 2026-11-21): ×100 became '최대'.
+      expect(skillLevelUpSteps, [1, 10, skillLevelUpMax]);
+      expect([for (final s in skillLevelUpSteps) skillLevelUpLabel(s)], ['×1', '×10', '최대']);
+      expect(skillLevelUpQuantity(10, owned: 95, cap: cap), 5);
       expect(skillLevelUpQuantity(1, owned: cap, cap: cap), 0);
-      for (final step in skillLevelUpSteps) {
-        for (final owned in [0, 1, 899, 950, 995, 999, 1000]) {
+      for (final step in [1, 10]) {
+        for (final owned in [0, 1, 50, 89, 95, 99, 100]) {
           final q = skillLevelUpQuantity(step, owned: owned, cap: cap);
           // development_contracts.ts: quantity > cap − owned is refused.
           expect(q, lessThanOrEqualTo(cap - owned));
@@ -41,7 +42,34 @@ void main() {
         }
       }
       // ×10 near the cap prices the five levels left, not ten.
-      expect(quoteCompositeSkill(config, 'auto_1', owned: 995, quantity: skillLevelUpQuantity(10, owned: 995, cap: cap)).quantity, 5);
+      expect(quoteCompositeSkill(config, 'auto_1', owned: 95, quantity: skillLevelUpQuantity(10, owned: 95, cap: cap)).quantity, 5);
+    });
+
+    test("'최대'는 가진 붕어빵력(황금)으로 살 수 있는 만큼, 최대 레벨까지, 0이면 1레벨 가격(4차 g13)", () {
+      CompositeQuote? q(String id, int owned, BigInt buns, [int gold = 0]) => skillLevelUpQuote(config, id,
+          step: skillLevelUpMax, owned: owned, availableBuns: buns, availableGold: BigInt.from(gold));
+      // Exactly the price of 37 levels buys 37; one bun less buys 36.
+      final price37 = quoteCompositeSkill(config, 'tap_1', owned: 5, quantity: 37).buns;
+      expect(q('tap_1', 5, price37)!.quantity, 37);
+      expect(q('tap_1', 5, price37)!.buns, price37);
+      expect(q('tap_1', 5, price37 - BigInt.one)!.quantity, 36);
+      // Capped at the skill's max level; nothing at the cap.
+      expect(q('tap_1', 90, BigInt.from(10).pow(300))!.quantity, 10);
+      expect(q('tap_1', cap, BigInt.from(10).pow(300)), isNull);
+      // None affordable: the price of one level, which the window shows red.
+      final none = q('tap_1', 5, BigInt.zero)!;
+      expect(none.quantity, 1);
+      expect(none.affordable(BigInt.zero, BigInt.zero), isFalse);
+      // A gold tier stops at the gold the player has.
+      final rich = BigInt.from(10).pow(300);
+      final oneGold = quoteCompositeSkill(config, 'tap_5', owned: 0, quantity: 1).gold.toInt();
+      expect(q('tap_5', 0, rich, oneGold)!.quantity, 1);
+      expect(q('tap_5', 0, rich, 0)!.affordable(rich, BigInt.zero), isFalse);
+      // Every '최대' count is one the server takes (1 <= n <= cap - owned).
+      for (final owned in [0, 1, 37, 50, 99]) {
+        final n = q('auto_1', owned, BigInt.from(10).pow(40))!.quantity;
+        expect(n, inInclusiveRange(1, cap - owned));
+      }
     });
 
     test('일일 미션 문구는 스킬 레벨업 횟수', () {
@@ -128,11 +156,13 @@ void main() {
     expect(find.text('카카오 로그인 후 레벨업할 수 있어요.'), findsWidgets);
   });
 
-  testWidgets('×10·×100 레벨업, 남은 레벨이 적으면 남은 만큼, 다 차면 MAX', (tester) async {
+  testWidgets("×10·최대 레벨업, 남은 레벨이 적으면 남은 만큼, 다 차면 MAX", (tester) async {
     final big = BigInt.from(10).pow(200);
     final (c, account) = await _open(tester, const Size(390, 844), buns: big);
     expect(_button(tester, 'tap_1').enabled, isTrue);
-    expect(_level(tester, 'tap_1'), 'Lv.0/1000\n+1/클릭');
+    // 4차 g14 (user decision 2026-11-21): every skill tops out at Lv.100.
+    expect(cap, 100);
+    expect(_level(tester, 'tap_1'), 'Lv.0/100\n+1/클릭');
     await _tap(tester, 'buy-tap_1');
     expect(c.state.purchases.owned['tap_1'], 1);
     await _tap(tester, 'step-tap_1-10');
@@ -141,25 +171,24 @@ void main() {
     expect(_button(tester, 'tap_2').quantity, 1);
     await _tap(tester, 'buy-tap_1');
     expect(c.state.purchases.owned['tap_1'], 11);
-    await _tap(tester, 'step-tap_1-100');
-    for (var i = 0; i < 9; i++) {
-      await _tap(tester, 'buy-tap_1');
-    }
-    expect(c.state.purchases.owned['tap_1'], 911);
+    // '최대' with a huge balance buys every level left at once, up to Lv.100.
+    await _tap(tester, 'step-tap_1-max');
+    expect(_button(tester, 'tap_1').quantity, 89);
+    expect(tester.widget<Text>(find.byKey(const Key('max-count-tap_1'))).data, '+89 · ');
     await _tap(tester, 'buy-tap_1');
-    expect(c.state.purchases.owned['tap_1'], 1000);
+    expect(c.state.purchases.owned['tap_1'], 100);
     expect(find.byKey(const Key('max-tap_1')), findsOneWidget);
     expect(find.byKey(const Key('buy-tap_1')), findsNothing);
-    expect(_level(tester, 'tap_1'), 'Lv.1000/1000\n+1/클릭');
-    // 995 with ×10 offers five levels.
-    await _buy(c, 'auto_1', 995);
+    expect(_level(tester, 'tap_1'), 'Lv.100/100\n+1/클릭');
+    // 95 with ×10 offers five levels.
+    await _buy(c, 'auto_1', 95);
     await _tap(tester, 'kind-auto');
     await _tap(tester, 'step-auto_1-10');
     await _tap(tester, 'step-auto_1-1');
     await _tap(tester, 'step-auto_1-10');
     expect(_button(tester, 'auto_1').quantity, 5);
     // The choice is kept while the app runs (memory only), per skill.
-    expect(c.skillSteps, {'tap_1': 100, 'auto_1': 10});
+    expect(c.skillSteps, {'tap_1': skillLevelUpMax, 'auto_1': 10});
     expect(account.state.premium.gold, 0);
   });
 
@@ -182,19 +211,92 @@ void main() {
     }
   });
 
+  testWidgets('단위 휠은 스크롤처럼 끌면 따라오고 놓으면 가까운 단위에 멈춘다(4차 g13)', (tester) async {
+    final big = BigInt.from(10).pow(200);
+    final (c, _) = await _open(tester, const Size(390, 844), buns: big);
+    final wheel = find.byKey(const Key('skill-step-tap_1'));
+    Rect band() => tester.getRect(wheel).deflate(1.5);
+    double middleOf(int step) => tester.getCenter(find.byKey(Key('step-tap_1-$step'))).dy;
+    // At rest the chosen step sits in the middle band.
+    expect(middleOf(1), closeTo(band().center.dy, 1));
+    // Mid-drag the steps follow the finger (half a row up, not yet snapped).
+    final gesture = await tester.startGesture(tester.getCenter(wheel));
+    await gesture.moveBy(const Offset(0, -20));
+    await tester.pump();
+    await gesture.moveBy(const Offset(0, -10));
+    await tester.pump();
+    expect(middleOf(1), lessThan(band().center.dy - 5));
+    expect(c.skillSteps['tap_1'], isNull);
+    // Let go past half a row: snaps to ×10.
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(c.skillSteps['tap_1'], 10);
+    expect(middleOf(10), closeTo(band().center.dy, 1));
+    // A long pull down cannot run past ×1, and lands on it.
+    await tester.drag(wheel, const Offset(0, 120));
+    await tester.pumpAndSettle();
+    expect(c.skillSteps['tap_1'], 1);
+    // A short quick flick (not past half a row) still moves one step.
+    await tester.timedDrag(wheel, const Offset(0, -24), const Duration(milliseconds: 40));
+    await tester.pumpAndSettle();
+    expect(c.skillSteps['tap_1'], 10);
+    expect(tester.takeException(), isNull);
+  });
+
+  for (final size in [const Size(390, 844), const Size(360, 800)]) {
+    testWidgets("'최대': 살 수 있는 만큼 '+N · 비용', 하나도 못 사면 1레벨 비용 빨강·LEVEL UP 꺼짐(4차 g13) ${size.width.toInt()}", (tester) async {
+      final (c, _) = await _open(tester, size, buns: BigInt.from(10).pow(200));
+      await _buy(c, 'tap_1', 80);
+      await c.command(() => c.state.buns = BigInt.from(1000));
+      await tester.pumpAndSettle();
+      await _tap(tester, 'step-tap_1-10');
+      await _tap(tester, 'step-tap_1-max');
+      // Lv.80 costs far more than 1,000: one level's price, red, button off.
+      expect(_button(tester, 'tap_1').quantity, 1);
+      expect(_button(tester, 'tap_1').enabled, isFalse);
+      expect(find.byKey(const Key('max-count-tap_1')), findsNothing);
+      final cost = find.byKey(const Key('cost-tap_1'));
+      final amount = tester.widget<CurrencyAmount>(find.descendant(of: cost, matching: find.byType(CurrencyAmount)).first);
+      expect(amount.missing, isTrue);
+      // The price box never grows past its 88 wide slot.
+      final fitted = find.ancestor(of: cost, matching: find.byType(FittedBox));
+      expect(tester.getSize(fitted).width, lessThanOrEqualTo(88));
+      expect(tester.takeException(), isNull);
+      await tester.ensureVisible(find.byKey(const Key('buy-tap_1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('buy-tap_1')));
+      await tester.pump();
+      expect(find.textContaining('붕어빵력이 '), findsWidgets);
+      expect(c.state.purchases.owned['tap_1'], 80);
+      await tester.pumpAndSettle(const Duration(seconds: 5));
+      // tap_2 at Lv.0 with 1,000: '최대' buys what 1,000 pays for, and it goes through.
+      await _tap(tester, 'step-tap_2-10');
+      await _tap(tester, 'step-tap_2-max');
+      final best = maximumCompositeSkill(c.config, 'tap_2', owned: 0, availableBuns: BigInt.from(1000), availableGold: BigInt.zero);
+      expect(best.quantity, greaterThan(1));
+      expect(_button(tester, 'tap_2').quantity, best.quantity);
+      expect(_button(tester, 'tap_2').enabled, isTrue);
+      expect(tester.widget<Text>(find.byKey(const Key('max-count-tap_2'))).data, '+${best.quantity} · ');
+      await _tap(tester, 'buy-tap_2');
+      expect(c.state.purchases.owned['tap_2'], best.quantity);
+      expect(c.state.buns, BigInt.from(1000) - best.buns);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   // Goldens: the window as it opens from the home menu, with the app's own
   // fonts. tap: one of each state (MAX · 올릴 수 있음 · 돈 부족 · 해금됨 Lv.0 ·
   // 잠김); auto: ×10 with a gold-priced tier 5 the player cannot pay; states:
-  // 360 wide, ×100, both currencies.
+  // 360 wide, '최대' (4차 g13), both currencies.
   for (final (name, size, kind, step) in [
     ('tap_390x844', const Size(390, 844), 'tap', 1),
     ('auto_390x844', const Size(390, 844), 'auto', 10),
-    ('states_360x800', const Size(360, 800), 'tap', 100),
+    ('states_360x800', const Size(360, 800), 'tap', skillLevelUpMax),
   ]) {
     testWidgets('스킬 창 골든 $name', (tester) async {
       final huge = BigInt.from(10).pow(200);
       final (c, account) = await _open(tester, size, buns: huge, fonts: true, gold: name.startsWith('states') ? 3 : 0);
-      await _buy(c, 'tap_1', 1000);
+      await _buy(c, 'tap_1', 100);
       await _buy(c, 'tap_2', 3);
       await _buy(c, 'auto_1', 12);
       await c.command(() {
@@ -203,9 +305,9 @@ void main() {
       });
       await tester.pumpAndSettle();
       if (kind == 'auto') await _tap(tester, 'kind-auto');
-      for (final s in skillLevelUpSteps.where((s) => s > 1 && s <= step)) {
+      for (final s in skillLevelUpSteps.skip(1).take(skillLevelUpSteps.indexOf(step))) {
         // 시안 확인 2차: the wheel of the first skill that can still level up.
-        await _tap(tester, 'step-${kind == 'auto' ? 'auto_1' : 'tap_2'}-$s');
+        await _tap(tester, 'step-${kind == 'auto' ? 'auto_1' : 'tap_2'}-${s == skillLevelUpMax ? 'max' : s}');
       }
       await expectLater(find.byType(GameApp), matchesGoldenFile('goldens/skill_shop_$name.png'));
       expect(tester.takeException(), isNull);
@@ -222,11 +324,16 @@ void main() {
       print('skill rows fully visible in $name: $whole (row height ${tester.getSize(rows.first).height})');
       expect(account.state.premium.gold, name.startsWith('states') ? 3 : 0);
       // 4차 피드백 ID1: MAX, lit, dark, Lv.0 and locked rows, wheel or not,
-      // are all one height, and every wheel shows its three steps.
+      // are all one height, and every wheel box is one size.
       final heights = {for (final e in rows.evaluate()) tester.getSize(find.byWidget(e.widget)).height};
       expect(heights, hasLength(1), reason: '$heights');
-      for (final s in skillLevelUpSteps) {
-        expect(find.byKey(Key('step-${kind == 'auto' ? 'auto_1' : 'tap_2'}-$s')).hitTestable(), findsOneWidget);
+      final wheels = {for (final e in find.byType(SkillStepWheel).evaluate()) tester.getSize(find.byWidget(e.widget))};
+      expect(wheels, {const Size(40, 46)});
+      // g13: a scrolling drum again — the chosen step and its neighbours show.
+      final wheelOf = kind == 'auto' ? 'auto_1' : 'tap_2';
+      final at = skillLevelUpSteps.indexOf(step);
+      for (final (i, s) in skillLevelUpSteps.indexed) {
+        expect(find.byKey(Key('step-$wheelOf-${s == skillLevelUpMax ? 'max' : s}')).hitTestable(), (i - at).abs() <= 1 ? findsOneWidget : findsNothing);
       }
     });
   }

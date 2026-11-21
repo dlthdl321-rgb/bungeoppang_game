@@ -117,7 +117,7 @@ void main() {
     test('안내 cook 단계에서 먼저 영업을 열면 주문 제작으로 안내한다', () async {
       final (c, _) = await make(tutorial: 'cook');
       addTearDown(c.dispose);
-      expect(workshopTutorialStep(c.state, ready: 0)!.target, 'workshop-mold');
+      expect(workshopTutorialStep(c.state, ready: 0)!.target, 'workshop-mold-action');
       await c.openBusiness();
       final waiting = workshopTutorialStep(c.state, ready: 0)!;
       expect(waiting.text, contains('붕어빵 요정을 톡톡'));
@@ -146,10 +146,13 @@ void main() {
 
     Finder key(String name) => find.byKey(Key(name));
 
-    testWidgets('영업 준비 중: 스페셜 붕어빵 틀과 제작 시작만, 숙련된 붕어빵 틀은 빈 틀', (tester) async {
+    testWidgets('영업 준비 중: 스페셜 붕어빵 제작 시작만, 숙련된 붕어빵 틀은 빈 틀', (tester) async {
       final c = await mount(tester);
-      expect(key('idle-mold'), findsOneWidget);
+      // 4차 g11: no empty mold over the stall; the start button sits on
+      // the closed griddle.
+      expect(key('idle-mold'), findsNothing);
       expect(find.text('스페셜 붕어빵 제작 시작'), findsOneWidget);
+      expect(tester.getRect(key('griddle')).contains(tester.getCenter(key('workshop-mold-action'))), isTrue);
       // 26번 3차 피드백 H26: the flavor button at the HUD's top-left.
       expect(key('flavor-button'), findsOneWidget);
       expect(find.byType(DropdownButton<String>), findsNothing);

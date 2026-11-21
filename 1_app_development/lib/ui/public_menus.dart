@@ -15,7 +15,6 @@ import 'count_badge.dart';
 import 'cozy_style.dart';
 import 'fish_painter.dart';
 import 'lock_overlay.dart';
-import 'night_stall_painter.dart';
 import 'pixel_sprites.dart';
 import 'support_panels.dart';
 import 'weather_layer.dart';

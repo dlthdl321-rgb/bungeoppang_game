@@ -25,35 +25,42 @@ import 'workshop_home_layout.dart';
 
 /// Presentation only. All commands still pass through WorkshopController.
 ///
-/// The two molds follow the business state (DEC-035, 24번 3단계):
-/// - before opening the special bungeoppang mold sits empty with
-///   '스페셜 붕어빵 제작 시작' and the flavor choice (practice only);
-/// - in business, with nothing in the mold, the big bungeoppang floats with
-///   no mold and is a clicker ([WorkshopClicker]);
-/// - while a session runs (practice before opening, or an order started
-///   from the customer window) the mold and its step controls show.
-/// Without [cleanCounter] (a background with the mold baked in) the baked
-/// art shows instead of the drawn mold and floating fish.
+/// Two places use it (4차 피드백 g11, 사용자 결정 2026-11-21):
+/// - the centre stage ([bench] null): in business, with no bake, the
+///   붕어빵 요정 clicker ([WorkshopClicker]) over the guests;
+/// - the lower workbench ([bench] = the six-cell griddle's box): the
+///   special bungeoppang mold. When a bake starts (practice before
+///   opening, an order from a guest, 오늘의 주문서) the griddle slides aside
+///   (NightHome.griddleAside) and the mold slides into its place with its
+///   step controls, the bake's title and its buttons over it; when it ends
+///   the mold slides out again. Before opening '스페셜 붕어빵 제작 시작'
+///   sits on the closed griddle (the flavor choice comes first, H26).
+/// The mold is drawn in one box ([moldBenchRect]); a new hearth-mold
+/// picture (25번 56번) only replaces mold/*.png.
 class WorkshopMoldStage extends StatefulWidget {
   final WorkshopController controller;
   final Rect? fishOnScreen;
 
   /// The sale counter's top on screen (NightHome.centerBuilder), or null.
-  /// The practice start button sits 4 above it (24번 4단계).
   final double? counterTop;
 
-  /// The highest of the sale counter's top and the cooking cut's top on
-  /// screen (NightHome), or null. The special bungeoppang mold (practice,
-  /// a bake) keeps its whole picture [WorkshopHomeLayout.moldGap] above it,
-  /// so it never covers the owner's cooking cut or the six-cell griddle
-  /// (26번 3차 피드백 H18).
-  final double? moldLimit;
+  /// The higher of the sale counter's top and the cooking cut's top on
+  /// screen (NightHome), or null: the 붕어빵 요정 hides above it.
+  final double? cutTop;
+
+  /// The griddle's box in this widget's coordinates: this is the workbench
+  /// (NightHome.bench). Null: the centre stage.
+  final Rect? bench;
   final bool cleanCounter, reduceMotion, vibration;
 
   /// The new home layout (26번 4-1단계): the clicker sits just above the
   /// counter at 0.8 (S4-1-Q5) and the order customer's words go in a
   /// bubble over the guest (WorkshopGuestLayer) instead of under the result.
   final bool lowStall;
+
+  /// The 붕어빵 요정 holds still at its place (its short tour points at it,
+  /// 4차 g12).
+  final bool fairyStill;
 
   /// '자랑하기' on a perfect result (26번 8단계 공유 카드); null hides it.
   final void Function(ResultLook look)? onSharePerfect;
@@ -62,9 +69,11 @@ class WorkshopMoldStage extends StatefulWidget {
       required this.controller,
       required this.fishOnScreen,
       this.counterTop,
-      this.moldLimit,
+      this.cutTop,
+      this.bench,
       this.cleanCounter = false,
       this.lowStall = false,
+      this.fairyStill = false,
       this.onSharePerfect,
       this.reduceMotion = false,
       this.vibration = false});
@@ -73,8 +82,20 @@ class WorkshopMoldStage extends StatefulWidget {
   State<WorkshopMoldStage> createState() => _WorkshopMoldStageState();
 }
 
-/// The '제작 취소' TextButton's height (Material minimum tap target).
-const _cancelHeight = 48.0;
+/// The mold's fish box on the workbench (4차 피드백 g11): the mold picture
+/// (with its axle, WorkshopMoldArt) [WorkshopHomeLayout.benchMoldShare] of
+/// the [griddle] box's width (at most benchMoldMaxWidth), centred on it,
+/// its axle feet [WorkshopHomeLayout.benchFootGap] above [height] (the
+/// menu bar's top) and its top no higher than benchTopRoom.
+Rect moldBenchRect(Rect griddle, double height) {
+  final line = height - WorkshopHomeLayout.benchFootGap;
+  const art = WorkshopMoldArt.pictureSize, fish = WorkshopMoldArt.fishRect;
+  final k = math.max(.05, math.min(
+      math.min(griddle.width * WorkshopHomeLayout.benchMoldShare, WorkshopHomeLayout.benchMoldMaxWidth) / art.width,
+      (line - WorkshopHomeLayout.benchTopRoom) / (WorkshopMoldArt.pictureBottom - WorkshopMoldArt.pictureTop)));
+  final origin = Offset(griddle.center.dx - art.width * k / 2, line - WorkshopMoldArt.pictureBottom * k);
+  return Rect.fromLTWH(origin.dx + fish.left * k, origin.dy + fish.top * k, fish.width * k, fish.height * k);
+}
 
 class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   Offset _origin = Offset.zero;
@@ -113,29 +134,18 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
   }
   @override
   Widget build(BuildContext context) {
+    final bench = widget.bench;
+    if (bench != null) return _bench(context, bench);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final box = context.findRenderObject();
       if (!mounted || box is! RenderBox || !box.hasSize) return;
       final next = box.localToGlobal(Offset.zero);
       if (next != _origin) setState(() => _origin = next);
     });
-    final c = widget.controller, s = c.state, session = s.session;
-    final blocked = c.cookingInputBlocked;
-    if (session?.id != _keptId) {
-      _keptId = session?.id;
-      _kept.clear();
-      _spills.clear();
-    }
-    final manual = c.config.section('manual_cooking');
-    // In business (and not waiting to continue a new day) the idle mold is
-    // the clicker; before opening it is the practice mold.
-    final inBusiness = s.business.permitsProducts(c.now());
-    final clicker = session == null && inBusiness;
-    final preparing = session == null && !s.business.open;
-    // The finished bake's grade and look (26번 4단계), presentation only.
-    final ResultLook? look = session?.phase == CookingPhase.result
-        ? ResultLook.of(c.config, session!, difficulty: c.difficulty(session.flavor))
-        : null;
+    final c = widget.controller, s = c.state;
+    // In business (and not waiting to continue a new day) with no bake the
+    // stage is the clicker.
+    final clicker = s.session == null && s.business.permitsProducts(c.now());
     return LayoutBuilder(builder: (context, box) {
       final fallback = Rect.fromCenter(
           center: Offset(box.maxWidth / 2, box.maxHeight * .59),
@@ -145,30 +155,63 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
       final counterLocal =
           widget.counterTop == null ? null : widget.counterTop! - _origin.dy;
       final clean = widget.cleanCounter || mapped == null;
-      var rect = mapped ?? fallback;
-      // H18: the mold (not the floating clicker) rises until its whole
-      // picture is clear of the cooking cut and the counter, but not into
-      // the caption line under the HUD.
-      final limitLocal = widget.moldLimit == null ? null : widget.moldLimit! - _origin.dy;
-      if (limitLocal != null && !(clicker && clean)) {
-        final (top, bottom) = moldPictureSpan(rect, clean ? 1 : 1.12);
-        final over = bottom - (limitLocal - WorkshopHomeLayout.moldGap);
-        final room = top - WorkshopHomeLayout.moldTopRoom;
-        final lift = math.min(over, room);
-        if (lift > 0) rect = rect.shift(Offset(0, -lift));
-      }
-      final moldBottom = moldPictureSpan(rect, clean ? 1 : 1.12).$2;
-      // The step caption at the mold's bottom stays clear of the
-      // '제작 취소' button (48 tall at the stage's bottom) and 4 above it.
-      final captionLift = math.max(0.0, rect.bottom - (box.maxHeight - _cancelHeight) + 4);
+      final rect = mapped ?? fallback;
       // The clicker fish floats with no mold, above the mold's place.
       final floating = clicker && clean;
-      final String? idleMold = session != null || floating
-          ? null
-          : clean ? 'empty' : null;
+      final cutLocal = widget.cutTop == null ? null : widget.cutTop! - _origin.dy;
+      final hideAbove = cutLocal ?? counterLocal;
+      return Stack(key: const Key('workshop-center-stage'), children: [
+        // In the stage itself: the floating fish must be hit-testable there.
+        if (clicker)
+          Positioned.fill(
+              child: WorkshopClicker(
+                  controller: c,
+                  home: !floating
+                      ? rect
+                      : widget.lowStall && counterLocal != null
+                          // Just above the counter's button row, 0.8 of the
+                          // mold's place, the guests behind it (S4-1-Q5).
+                          ? Rect.fromCenter(
+                              center: Offset(box.maxWidth / 2,
+                                  counterLocal - WorkshopHomeLayout.clickerLift - rect.height * WorkshopHomeLayout.clickerScale / 2),
+                              width: rect.width * WorkshopHomeLayout.clickerScale,
+                              height: rect.height * WorkshopHomeLayout.clickerScale)
+                          : rect.shift(Offset(0, -rect.height * .75)),
+                  // 붕어빵 요정 (4차 IA3): hides from guests at the right
+                  // edge, clear of the cooking cut and the counter.
+                  hideBottom: hideAbove == null ? null : hideAbove - FairyMotion.hideGap,
+                  floating: floating,
+                  still: widget.fairyStill,
+                  reduceMotion: widget.reduceMotion,
+                  vibration: widget.vibration)),
+      ]);
+    });
+  }
+
+  /// The workbench: the special mold in the griddle's place (g11).
+  Widget _bench(BuildContext context, Rect griddle) {
+    final c = widget.controller, s = c.state, session = s.session;
+    final blocked = c.cookingInputBlocked;
+    final reduce = widget.reduceMotion || MediaQuery.disableAnimationsOf(context);
+    if (session?.id != _keptId) {
+      _keptId = session?.id;
+      _kept.clear();
+      _spills.clear();
+    }
+    final manual = c.config.section('manual_cooking');
+    // Before opening '스페셜 붕어빵 제작 시작' sits on the closed griddle;
+    // waiting to continue a new day nothing does (the counter's '이어서 영업').
+    final preparing = session == null && !s.business.open;
+    // The finished bake's grade and look (26번 4단계), presentation only.
+    final ResultLook? look = session?.phase == CookingPhase.result
+        ? ResultLook.of(c.config, session!, difficulty: c.difficulty(session.flavor))
+        : null;
+    return LayoutBuilder(builder: (context, box) {
+      final rect = moldBenchRect(griddle, box.maxHeight);
+      final (moldTop, _) = moldPictureSpan(rect, 1);
       Widget activeMold(CookingSession session) => IgnorePointer(child: CustomPaint(
           key: const Key('active-empty-mold'),
-          painter: paintedMoldFor(session, _kept, c.config, clean: clean, look: look, spills: _spills)));
+          painter: paintedMoldFor(session, _kept, c.config, clean: true, look: look, spills: _spills)));
       // 4차 피드백 IC3·IC4: the hand steps take touches on the whole mold
       // picture (its rim and handles reach past the fish's box) and a
       // little past it, so a stroke may start on the edge or outside.
@@ -177,22 +220,19 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
           ? WorkshopHomeLayout.moldTouchOutset : EdgeInsets.zero;
       Widget mold(Widget interaction) => Positioned.fromRect(
           rect: touch.inflateRect(rect),
-          child: Stack(key: const Key('workshop-mold'), fit: StackFit.expand, clipBehavior:Clip.none, children: [
+          child: Stack(key: session == null ? null : const Key('workshop-mold'), fit: StackFit.expand,
+              clipBehavior: Clip.none, children: [
            Padding(padding: touch, child: Stack(fit: StackFit.expand, clipBehavior: Clip.none, children: [
-            // The axle the mold hangs on (H21), behind it.
-            if (idleMold != null || session != null)
-              IgnorePointer(child: CustomPaint(key: const Key('mold-axle'),
-                  painter: MoldAxlePainter(grow: clean ? 1 : 1.12))),
-            if (idleMold != null)
-              IgnorePointer(child: CustomPaint(
-                  key: const Key('idle-mold'),
-                  // H20: the mold waits empty; batter goes in first.
-                  painter: WorkshopMoldArt(idleMold))),
+            // The axle the mold turns on (H21), behind it, its feet on the bench.
+            const IgnorePointer(child: CustomPaint(key: Key('mold-axle'), painter: MoldAxlePainter())),
+            if (session == null)
+              // Sliding out after the bake: the mold empty again.
+              const IgnorePointer(child: CustomPaint(key: Key('idle-mold'), painter: WorkshopMoldArt('empty'))),
             // While flipping the control turns the mold itself.
             if (session != null && session.phase != CookingPhase.flipping) activeMold(session),
             // The pin heads in front (the flip control draws its own).
-            if ((idleMold != null || session != null) && session?.phase != CookingPhase.flipping)
-              IgnorePointer(child: CustomPaint(painter: MoldAxlePainter(grow: clean ? 1 : 1.12, front: true))),
+            if (session?.phase != CookingPhase.flipping)
+              const IgnorePointer(child: CustomPaint(painter: MoldAxlePainter(front: true))),
            ])),
             interaction,
           ]));
@@ -203,18 +243,10 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
               key: const Key('workshop-mold-action'),
               onTap: blocked ? null : command,
               child: session == null
-                  // On the empty mold's middle (H18·H20: the mold stands
-                  // clear of the counter now).
                   ? Center(child: FittedBox(fit: BoxFit.scaleDown, child: _pill(label)))
                   : Center(child: _caption(label))));
-      final Widget control;
-      if (session == null) {
-        // Practice only before opening; waiting to continue a new day the
-        // mold just sits there until the counter's '이어서 영업'.
-        control = preparing
-            ? action('스페셜 붕어빵 제작 시작', () => _startPractice(context))
-            : const SizedBox.shrink();
-      } else {
+      Widget control = const SizedBox.shrink();
+      if (session != null) {
         switch (session.phase) {
           case CookingPhase.firstBatter:
           case CookingPhase.secondBatter:
@@ -227,8 +259,6 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 filling: phase == CookingPhase.filling,
                 flavor: session.flavor,
                 config: c.config,
-                grow: clean ? 1 : 1.12,
-                captionLift: captionLift,
                 touchOutset: touch,
                 before: phase == CookingPhase.secondBatter ? session.firstBatter : null,
                 reduceMotion: widget.reduceMotion,
@@ -252,8 +282,6 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 stageToken: session.token,
                 blocked: blocked,
                 config: c.config,
-                grow: clean ? 1 : 1.12,
-                captionLift: captionLift,
                 touchOutset: touch,
                 reduceMotion: widget.reduceMotion,
                 vibration: widget.vibration,
@@ -281,91 +309,85 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                 reduceMotion: widget.reduceMotion,
                 vibration: widget.vibration);
           case CookingPhase.canceled:
-            control = const SizedBox.shrink();
+            break;
         }
       }
-      final hideAbove = limitLocal ?? counterLocal;
-      return Stack(key: const Key('workshop-center-stage'), children: [
-        mold(control),
-        // In the stage itself, not the mold: the floating fish sits above the
-        // mold's place and must still be hit-testable there.
-        if (clicker)
-          Positioned.fill(
-              child: WorkshopClicker(
-                  controller: c,
-                  home: !floating
-                      ? rect
-                      : widget.lowStall && counterLocal != null
-                          // Just above the counter's button row, 0.8 of the
-                          // mold's place, the guests behind it (S4-1-Q5).
-                          ? Rect.fromCenter(
-                              center: Offset(box.maxWidth / 2,
-                                  counterLocal - WorkshopHomeLayout.clickerLift - rect.height * WorkshopHomeLayout.clickerScale / 2),
-                              width: rect.width * WorkshopHomeLayout.clickerScale,
-                              height: rect.height * WorkshopHomeLayout.clickerScale)
-                          : rect.shift(Offset(0, -rect.height * .75)),
-                  // 붕어빵 요정 (4차 IA3): hides from guests at the right
-                  // edge, clear of the cooking cut and the counter.
-                  hideBottom: hideAbove == null ? null : hideAbove - FairyMotion.hideGap,
-                  floating: floating,
-                  reduceMotion: widget.reduceMotion,
-                  vibration: widget.vibration)),
-        Positioned(
-            top: 0,
-            left: 8,
-            right: 8,
-            child: Column(mainAxisSize: MainAxisSize.min, children: [
-              // H19: only which bungeoppang is being made (the flavor is
-              // chosen with the HUD's flavor button, H26), and a pause.
-              if (session != null)
+      // Over the mold picture: the bake's title, then its buttons (H19·H25),
+      // higher on the result, over the grade band.
+      final dockBottom = math.min(moldTop, touch.inflateRect(rect).top) - WorkshopHomeLayout.moldButtonGap -
+          (session?.phase == CookingPhase.result ? WorkshopHomeLayout.benchResultRoom : 0);
+      final dock = session == null
+          ? null
+          : Positioned(
+              left: 8,
+              right: 8,
+              bottom: box.maxHeight - dockBottom,
+              child: Column(key: const Key('mold-dock'), mainAxisSize: MainAxisSize.min, children: [
+                // H19: only which bungeoppang is being made, and a pause.
                 _sessionTitle(
                     '${c.flavorLabel(session.flavor)} 붕어빵 ${session.practice ? '연습' : '주문'}${c.gameplayPaused ? ' · 일시정지' : ''}'),
-            ])),
-        // Under the mold, left of the cooking cut when the mold keeps clear
-        // of it (H18·H25), else centred.
-        if (session != null)
-          Positioned(
-              // Right under the mold picture, never past the stage's bottom.
-              top: math.min(moldBottom + WorkshopHomeLayout.moldButtonGap,
-                  box.maxHeight - StageButton.height - 4),
-              left: 0,
-              right: limitLocal == null ? 0 : box.maxWidth * WorkshopHomeLayout.cookCutShare + 8,
-              child: Center(
-                  child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (session.phase == CookingPhase.result) ...[
-                  // H25: two real buttons of one size: keep (honey) and,
-                  // for practice, throw away (light). An order bake goes to
-                  // its customer, so it only closes.
-                  StageButton(
-                      key: const Key('mold-store'),
-                      label: session.practice ? '보관하기' : '결과 닫기',
-                      primary: true,
-                      onPressed: blocked ? null : () => c.storeResult(true)),
-                  if (session.practice) ...[
-                    const SizedBox(width: 8),
-                    StageButton(
-                        key: const Key('mold-discard'),
-                        label: '버리기',
-                        onPressed: blocked ? null : () => c.storeResult(false)),
-                  ],
-                  if (look!.grade == CookingGrade.perfect && widget.onSharePerfect != null) ...[
-                    const SizedBox(width: 8),
-                    StageButton(
-                        key: const Key('mold-share'),
-                        label: '자랑하기',
-                        onPressed: () => widget.onSharePerfect!(look)),
-                  ],
-                ] else
-                  StageButton(
-                      key: const Key('mold-cancel'),
-                      label: '제작 취소',
-                      quiet: true,
-                      onPressed: blocked
-                          ? null
-                          : () => c.cookingCommand(session.cancel())),
-              ])))),
+                const SizedBox(height: WorkshopHomeLayout.moldButtonGap),
+                FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      if (session.phase == CookingPhase.result) ...[
+                        // H25: two real buttons of one size: keep (honey) and,
+                        // for practice, throw away (light). An order bake goes to
+                        // its customer, so it only closes.
+                        StageButton(
+                            key: const Key('mold-store'),
+                            label: session.practice ? '보관하기' : '결과 닫기',
+                            primary: true,
+                            onPressed: blocked ? null : () => c.storeResult(true)),
+                        if (session.practice) ...[
+                          const SizedBox(width: 8),
+                          StageButton(
+                              key: const Key('mold-discard'),
+                              label: '버리기',
+                              onPressed: blocked ? null : () => c.storeResult(false)),
+                        ],
+                        if (look!.grade == CookingGrade.perfect && widget.onSharePerfect != null) ...[
+                          const SizedBox(width: 8),
+                          StageButton(
+                              key: const Key('mold-share'),
+                              label: '자랑하기',
+                              onPressed: () => widget.onSharePerfect!(look)),
+                        ],
+                      ] else
+                        StageButton(
+                            key: const Key('mold-cancel'),
+                            label: '제작 취소',
+                            quiet: true,
+                            onPressed: blocked
+                                ? null
+                                : () => c.cookingCommand(session.cancel())),
+                    ])),
+              ]));
+      final onBench = session != null;
+      return Stack(key: const Key('workshop-bench'), clipBehavior: Clip.none, children: [
+        // The mold slides in from the right while the griddle slides out to
+        // the left, and back (WorkshopHomeLayout.benchSlideMs).
+        Positioned.fill(
+            child: TweenAnimationBuilder<double>(
+                tween: Tween(end: onBench ? 0 : 1),
+                duration: reduce ? Duration.zero : const Duration(milliseconds: WorkshopHomeLayout.benchSlideMs),
+                curve: Curves.easeInOutCubic,
+                builder: (context, t, child) => t >= 1
+                    ? const SizedBox.shrink()
+                    : IgnorePointer(
+                        ignoring: !onBench || t > 0,
+                        child: FractionalTranslation(translation: Offset(t, 0), child: child)),
+                child: Stack(clipBehavior: Clip.none, children: [
+                  mold(control),
+                  if (dock != null) dock,
+                ]))),
+        if (preparing)
+          Positioned.fromRect(
+              rect: Rect.fromCenter(
+                  center: Offset(griddle.center.dx, griddle.top + griddle.height * WorkshopHomeLayout.benchPillAt),
+                  width: griddle.width,
+                  height: 48),
+              child: action('스페셜 붕어빵 제작 시작', () => _startPractice(context))),
       ]);
     });
   }

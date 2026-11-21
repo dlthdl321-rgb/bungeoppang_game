@@ -130,3 +130,15 @@ test("같은 업체 거래를 다른 시도에 재사용하거나 증거 없이 
   await assert.rejects(recordDevelopmentAdVerification(store, "a", "attempt_1", "eligible", proof("attempt_1", "changed-proof")));
   await assert.rejects(recordDevelopmentAdVerification(store, "a", "attempt_2", "eligible", { ...proof("attempt_2"), account: "b" }));
 });
+
+test("레벨업 황금 비용(level:N)은 그 레벨 행의 두 비용으로 한 번만 받는다 (4차 g9)", () => {
+  const rows = Array.from({ length: 50 }, (_, i) => ({ level: i + 1, level_cost_buns: i ? String((i + 1) * 100) : "0", level_cost_gold: (i + 1) % 10 ? 0 : (i + 1) * 2 }));
+  const config = { metadata: { revision: "draft" }, level_progression: rows, skill_purchase: { entries: {} } };
+  const value = { account: "a", transaction: "purchase_1", revision: "draft", skill: "level:10",
+    owned: 0, quantity: 1, buns: "1000", gold: "20" };
+  assert.deepEqual(validateDevelopmentCompositeQuote(config, value, "a", 0), value);
+  for (const change of [{ buns: "999" }, { gold: "19" }, { quantity: 2 }, { owned: 1 }, { skill: "level:9", buns: "900", gold: "0" }, { skill: "level:010" }]) {
+    assert.throws(() => validateDevelopmentCompositeQuote(config, { ...value, ...change }, "a", 0));
+  }
+  assert.throws(() => validateDevelopmentCompositeQuote(config, value, "a", 1));
+});

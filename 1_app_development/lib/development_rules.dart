@@ -42,15 +42,44 @@ CompositeQuote quoteCompositeSkill(DevelopmentBalance config, String id,
   return CompositeQuote(config.revision, id, owned, quantity, buns, gold);
 }
 
-/// Level-up steps of the Workshop skill window (26번 4-3단계, S43-Q8).
-/// A Dart constant, not a config value: the server accepts any quantity up
-/// to `max_owned_per_skill − owned`, so no deploy is needed.
-const skillLevelUpSteps = [1, 10, 100];
+/// The '최대' step of the skill window wheel: as many levels as the player
+/// can pay for now (4차 g13, user decision 2026-11-21: '×100' → '최대').
+const skillLevelUpMax = 0;
 
-/// How many levels one press of the '+' adds: [step], or fewer near the
-/// cap (995 with ×10 → 5), never negative (S43-Q2: no '최대' button).
-int skillLevelUpQuantity(int step, {required int owned, required int cap}) =>
-    (cap - owned).clamp(0, step);
+/// Level-up steps of the Workshop skill window (26번 4-3단계, S43-Q8;
+/// 4차 g13: ×1 · ×10 · 최대). A Dart constant, not a config value: the
+/// server accepts any quantity from 1 up to `max_owned_per_skill − owned`
+/// and recomputes its price, so no deploy is needed.
+const skillLevelUpSteps = [1, 10, skillLevelUpMax];
+
+/// The wheel's word for [step]: '×1', '×10', '최대'.
+String skillLevelUpLabel(int step) => step == skillLevelUpMax ? '최대' : '×$step';
+
+/// How many levels one press of LEVEL UP adds for a fixed [step]: [step],
+/// or fewer near the cap (995 with ×10 → 5), never negative. '최대' is not
+/// a fixed count; it uses [skillLevelUpQuote].
+int skillLevelUpQuantity(int step, {required int owned, required int cap}) {
+  if (step == skillLevelUpMax) throw ArgumentError.value(step, 'step', '최대는 skillLevelUpQuote로');
+  return (cap - owned).clamp(0, step);
+}
+
+/// The quote LEVEL UP buys for [step]. ×1·×10: that many levels (fewer near
+/// the cap). '최대': the most levels [availableBuns] and [availableGold] pay
+/// for ([maximumCompositeSkill], capped at the skill's max level); when not
+/// even one is affordable, the price of one level so the window can show
+/// it in red and keep the button off. Null at the cap.
+CompositeQuote? skillLevelUpQuote(DevelopmentBalance config, String id,
+    {required int step, required int owned, required BigInt availableBuns, required BigInt availableGold}) {
+  final cap = DevelopmentBalance.integer(config.section('skill_purchase'), 'max_owned_per_skill');
+  if (owned >= cap) return null;
+  if (step != skillLevelUpMax) {
+    return quoteCompositeSkill(config, id, owned: owned, quantity: skillLevelUpQuantity(step, owned: owned, cap: cap));
+  }
+  final best = maximumCompositeSkill(config, id, owned: owned,
+      availableBuns: availableBuns.isNegative ? BigInt.zero : availableBuns,
+      availableGold: availableGold.isNegative ? BigInt.zero : availableGold);
+  return best.quantity > 0 ? best : quoteCompositeSkill(config, id, owned: owned, quantity: 1);
+}
 
 CompositeQuote maximumCompositeSkill(DevelopmentBalance config, String id,
     {required int owned, required BigInt availableBuns,

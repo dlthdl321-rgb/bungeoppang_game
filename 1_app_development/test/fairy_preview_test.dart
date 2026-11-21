@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'widget_test.dart' show mountGame;
 
-/// 4차 피드백 IA3 붕어빵 요정 미리보기: 헤엄·숨기·나오기·톡 반짝이·속 흘리기를
+/// 4차 피드백 IA3 붕어빵 요정 미리보기: 헤엄·숨기·나오기·톡 반짝이를
 /// 시간별 정지 화면으로 그린다. 보통 테스트에서는 건너뛰고,
 /// `FAIRY_PREVIEW=1 flutter test test/fairy_preview_test.dart --update-goldens`
 /// 로 build/fairy_preview/에 남긴다(눈 확인용, 골든 아님).
@@ -81,7 +81,8 @@ void main() {
     final tag = '${size.width.toInt()}x${size.height.toInt()}';
     testWidgets('요정 미리보기 $tag', (tester) async {
       final c = await mount(tester, size);
-      // Swimming with no guests: a frame every 1.4 s, drips among them.
+      // Swimming with no guests (4차 g12: wide, out past a side and back):
+      // a frame every 1.4 s.
       for (var ms = 0; ms <= 9800; ms += 1400) {
         await shot(tester, '${tag}_swim_${ms.toString().padLeft(5, '0')}', ms);
       }
@@ -101,14 +102,17 @@ void main() {
     }, skip: skip);
   }
 
-  for (final flavor in ['custard', 'cocoa']) {
-    testWidgets('요정 미리보기 속 흘리기 $flavor', (tester) async {
-      await mount(tester, const Size(390, 844), flavor: flavor);
-      for (final ms in [3500, 3900, 4400]) {
-        await shot(tester, '390x844_drip_${flavor}_$ms', ms);
+  // 4차 g12: frame sequences of the wide swim (a frame every 250 ms,
+  // two rounds with their trips out of the stage), for the review folder.
+  for (final size in [const Size(390, 844), const Size(360, 800)]) {
+    final tag = '${size.width.toInt()}x${size.height.toInt()}';
+    testWidgets('요정 넓은 헤엄 연속 $tag', (tester) async {
+      await mount(tester, size);
+      for (var ms = 0; ms <= 52000; ms += 250) {
+        await shot(tester, 'seq_$tag/${ms.toString().padLeft(5, '0')}', ms);
       }
       await tester.pumpWidget(const SizedBox.shrink());
-    }, skip: skip);
+    }, skip: skip || Platform.environment['FAIRY_SEQ'] == null);
   }
 
   testWidgets('요정 소개 카드 390x844', (tester) async {

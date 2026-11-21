@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
+import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/local_test_purchases.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
@@ -45,6 +46,15 @@ void main() {
     expect(isLocalTestSave(c.state), isTrue);
   });
 
+  test("'최대'(살 수 있는 만큼, 1·10·100이 아닌 개수)도 시험용 빌드에서 된다(4차 g13)", () async {
+    final best = skillLevelUpQuote(config, 'tap_1', step: skillLevelUpMax, owned: 0,
+        availableBuns: c.state.purchases.available(c.state.buns), availableGold: BigInt.zero)!;
+    expect(best.quantity, isNot(anyOf(1, 10, 100)), reason: '${best.quantity}');
+    expect(await c.purchaseSkill(gateway, 'tap_1', quantity: best.quantity), isTrue, reason: c.notice);
+    expect(c.state.purchases.owned['tap_1'], best.quantity);
+    expect(c.state.buns, BigInt.from(5000) - best.buns);
+  });
+
   test('꾸미기는 시험용 황금을 쓰고, 모자라면 아무것도 빠지지 않는다', () async {
     // 4차 g7 prices (4차 병합): read the beanie's price from the settings.
     final price = config.section('cosmetic_purchase')['beanie'] as Map<String, dynamic>;
@@ -71,5 +81,32 @@ void main() {
         BigInt.parse((e.value as Map)['unlock_total'] as String) > BigInt.from(10000)).key;
     expect(await c.purchaseSkill(gateway, id), isFalse);
     expect(c.state.purchases.owned[id], isNull);
+  });
+  test('황금이 드는 레벨업(level:N, 4차 g9)도 서버 없이 시험용 황금으로 내고 저절로 오른다', () async {
+    // Lv.10's row: sales and taps of Lv.9 → 10 done, 붕어빵력 on hand.
+    final row = config.rows('level_progression')[9];
+    final cost = DevelopmentBalance.decimal(row, 'level_cost_buns'), goldCost = DevelopmentBalance.integer(row, 'level_cost_gold');
+    expect(goldCost, greaterThan(0));
+    await c.command(() {
+      c.state
+        ..level = 9
+        ..claimedLevels.addAll([for (var l = 2; l <= 9; l++) l])
+        ..buns = cost + BigInt.from(7)
+        ..lifetime = cost * BigInt.two
+        ..soldPieces = 100
+        ..taps = 1000;
+    });
+    expect(c.state.level, 9, reason: '황금을 내기 전에는 오르지 않음');
+    expect(c.levelGoalsMet, isTrue);
+    c.goldBalance = gold = goldCost - 1;
+    expect(c.levelGoldDue, isFalse);
+    c.goldBalance = gold = goldCost + 2;
+    expect(c.levelGoldDue, isTrue, reason: '시험용 빌드도 계정(${gateway.authenticatedAccount})이 있어 스스로 시작');
+    expect(await c.payLevelGold(), isTrue, reason: c.notice);
+    await c.command(() {});
+    expect(c.state.level, 10);
+    expect(gold, 2, reason: '시험용 황금 $goldCost 사용');
+    expect(c.state.buns, BigInt.from(7) + DevelopmentBalance.decimal(row, 'buns_reward'), reason: '붕어빵력은 한 번만 빠짐');
+    expect(c.state.purchases.owned['level:10'], 1);
   });
 }

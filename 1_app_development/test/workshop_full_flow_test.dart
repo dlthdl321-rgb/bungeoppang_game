@@ -7,6 +7,7 @@ import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
+import 'package:todays_bungeoppang/ui/workshop_home_layout.dart';
 import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
@@ -58,6 +59,8 @@ void main() {
     /// Bakes the open special bungeoppang in the mold through the real
     /// controls: paint three times, close, draw a circle, take out.
     Future<void> bakeOnScreen() async {
+      // 4차 g11: the mold slides onto the workbench first (no touches meanwhile).
+      await tester.pump(const Duration(milliseconds: WorkshopHomeLayout.benchSlideMs + 50));
       expect(key('active-empty-mold'), findsOneWidget);
       for (final next in [CookingPhase.filling, CookingPhase.secondBatter, CookingPhase.closing]) {
         expect(find.byType(MoldPaintControl), findsOneWidget);
@@ -89,8 +92,11 @@ void main() {
     expect(c.state.tutorial, 'cook');
     expect(c.state.business.open, isFalse);
     expect(key('tutorial-card'), findsOneWidget);
-    expect(tutorialText(), contains('스페셜 붕어빵 틀을 눌러'));
-    expect(key('idle-mold'), findsOneWidget);
+    expect(tutorialText(), contains("'스페셜 붕어빵 제작 시작'을 눌러"));
+    // 4차 g11: no mold hangs over the stall; the start button is on the
+    // closed griddle on the workbench.
+    expect(key('idle-mold'), findsNothing);
+    expect(key('workshop-mold-action'), findsOneWidget);
     expect(key('griddle-idle'), findsOneWidget);
     expect(key('workshop-clicker'), findsNothing);
 

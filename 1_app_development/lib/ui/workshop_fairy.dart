@@ -6,13 +6,12 @@ import '../economy.dart' show compactNumber;
 import '../feedback_config.dart';
 import '../game_audio.dart';
 import '../workshop_controller.dart';
-import 'piping_bag_control.dart' show fillingPasteColor;
 import 'pixel_sprites.dart';
 import 'sparkle_art.dart';
 import 'tap_effects.dart';
 import 'workshop_mold_stage.dart' show FloatingFishPainter;
 
-/// The 붕어빵 요정's motion (4차 피드백 IA3, MASTER 10장 '붕어빵 요정').
+/// The 붕어빵 요정's motion (4차 피드백 IA3·g12, MASTER 10장 '붕어빵 요정').
 /// Every number of the fairy lives here.
 class FairyMotion {
   FairyMotion._();
@@ -28,29 +27,67 @@ class FairyMotion {
   /// to draw its twinkle. Null in the game.
   static int? previewMs, previewSwitchMs, previewTapMs;
 
-  /// One slow swim: across the stage and back in [swimXMs], up and down in
-  /// [swimYMs] (two periods that never line up, so the path wanders). A
-  /// small bob of [bob] every [bobMs].
-  static const swimXMs = 17000, swimYMs = 7300, bobMs = 1700;
+  /// The wide swim (4차 g12): one round ("tour") is [legsPerTour] swims
+  /// from point to point over the stage, then out past the left or right
+  /// edge. It stays out [offMinMs]–[offMaxMs], then comes back in at the
+  /// left or right edge, at another height (at least [reentryGap] × the
+  /// swim's height away, or from the other side). The first round starts
+  /// at its place; each round is drawn by lot from [seed] and its number,
+  /// so the path is never the same but a preview can draw any moment.
+  static const legsPerTour = 6, seed = 2611;
+  static const offMinMs = 900, offMaxMs = 2000;
+  static const reentryGap = .35;
+
+  /// Out of the stage: this far past the edge (fully out of sight).
+  static const offOutside = 10.0;
+
+  /// The kinds of swim and their share: up or down (sideways at most
+  /// [verticalDrift] × the swim's width), slanting across, or across at
+  /// about the same height (up or down at most [acrossDrift] × its height).
+  /// A swim is at least [minHop] long. It bends to one side by up to
+  /// [curve] × its length.
+  static const verticalShare = .35, diagonalShare = .4;
+  static const verticalDrift = .2, acrossDrift = .2;
+  static const minHop = 70.0, curve = .35;
+
+  /// Its average speed (px a second); a swim lasts at least [minLegMs].
+  /// It speeds up from a stop and slows into the next point.
+  static const speed = 62.0;
+  static const minLegMs = 1500;
+
+  /// Leaving the stage it heads for the nearer side this often.
+  static const nearSideShare = .65;
+
+  /// A small bob of [bob] every [bobMs].
+  static const bobMs = 1700;
   static const bob = 3.0;
 
   /// Redraws a second while it only swims (tap effects use every frame).
   static const swimFps = 30;
 
-  /// How quickly it turns round at the swim's ends: about 0.7 s flat.
-  static const turnSharpness = 8.0;
+  /// It turns to face the way it swims at the start of a swim, in
+  /// [turnMs] (flattening as it turns). A swim with less than
+  /// [turnShare] × its length sideways keeps the old facing.
+  static const turnMs = 700;
+  static const turnShare = .25;
 
-  /// How far the nose tilts up or down with the swim (radians).
-  static const tilt = .14;
+  /// How far the nose tilts up or down with the swim (radians, at full
+  /// speed straight up or down).
+  static const tilt = .3;
 
   /// The swim keeps the fish this far inside the stage's sides, and its
   /// top this far under the stage's top (the status sign and the bake
-  /// title line).
+  /// title line). Its lowest point is its place (above the counter).
   static const sideMargin = 6.0, topClearance = 56.0;
+
+  /// When it must hold still (the first-run guide, its tour pointing at
+  /// it) it glides back to its place in [settleMs].
+  static const settleMs = 600;
 
   /// Guests come: the fairy runs to its hiding spot in [hideMs] (a quick,
   /// shy dash with a little hop of [hop] × its height). They all leave: it
-  /// comes out again slowly in [emergeMs].
+  /// comes out again slowly in [emergeMs] and starts a new round from its
+  /// place.
   static const hideMs = 650, emergeMs = 1400;
   static const hop = .3;
 
@@ -70,18 +107,6 @@ class FairyMotion {
   /// The tap box is the fish's box, never smaller than [minHit] either way
   /// (a fair target, also while peeking).
   static const minHit = 56.0;
-
-  /// A filling drip (the flavor picked with the HUD's flavor button) every
-  /// [dripEveryMs] while it swims, skipping every third, none for
-  /// [quietAfterTapMs] after a tap. One drip lives [dripLifeMs]: it swells
-  /// at the belly for [dripHangShare] of its life, then falls [dripFall] ×
-  /// the fish height, fading at the end.
-  static const dripEveryMs = 3400, dripLifeMs = 1700, quietAfterTapMs = 2000;
-  static const dripHangShare = .3, dripFall = .45, dripSize = .13;
-
-  /// Where on the fish (unmirrored, as fractions of its box) a drip hangs:
-  /// the belly seam under the filling.
-  static const dripFrom = Offset(.47, .84);
 }
 
 /// Where the fairy is at one moment: its centre, size scale, which way it
@@ -93,6 +118,25 @@ class FairyPose {
   const FairyPose(this.center, this.scale, this.face, this.tilt);
 }
 
+/// One swim of a round: along a curve from [a] by [c] to [b] (a wait out
+/// of the stage when [a] == [b]), from [start] for [ms], turning from
+/// [fromFace] to [face].
+class _Leg {
+  final Offset a, c, b;
+  final int start, ms;
+  final double fromFace, face;
+  const _Leg(this.a, this.c, this.b, this.start, this.ms, this.fromFace, this.face);
+  int get end => start + ms;
+}
+
+/// Every round of one stage, drawn as far as asked (rounds are short, a
+/// long swim only adds a few a minute).
+class _Rounds {
+  final legs = <_Leg>[];
+  double exitY = 0;
+  int tours = 0;
+}
+
 /// The fairy's path, a pure function of time so previews can draw any
 /// moment (MASTER 10장 '붕어빵 요정').
 class FairyPath {
@@ -102,30 +146,141 @@ class FairyPath {
   final Rect home;
   /// The hiding spot's bottom in the stage.
   final double hideBottom;
-  /// Whether it swims (motion on, the first-run guide over).
+  /// Whether it swims (motion on, the first-run guide over, nothing
+  /// pointing at it).
   final bool wander;
   const FairyPath(this.stage, this.home, this.hideBottom, {required this.wander});
 
   static double _wave(int ms, int period, [double shift = 0]) => math.sin(2 * math.pi * ms / period + shift);
-  static double _slope(int ms, int period, [double shift = 0]) => math.cos(2 * math.pi * ms / period + shift);
 
-  /// The swim at [ms]: from the home place (bottom centre) out over the
-  /// stage and back.
+  /// The swim's box for the fish's centre.
+  double get _xMin => home.width / 2 + FairyMotion.sideMargin;
+  double get _xMax => math.max(_xMin, stage.width - home.width / 2 - FairyMotion.sideMargin);
+  double get _yBottom => home.center.dy;
+  double get _yTop => math.min(_yBottom, FairyMotion.topClearance + home.height / 2);
+
+  /// Out of the stage at the left (or right) side, at height [y].
+  Offset _outside(bool left, double y) => Offset(
+      left ? -home.width / 2 - FairyMotion.offOutside : stage.width + home.width / 2 + FairyMotion.offOutside, y);
+
+  /// Whether the fish is wholly out of the stage at [pose].
+  bool offStage(FairyPose pose) {
+    final w = home.width * pose.scale / 2;
+    return pose.center.dx + w <= 0 || pose.center.dx - w >= stage.width;
+  }
+
+  static final _cache = <String, _Rounds>{};
+
+  _Rounds _rounds(int ms) {
+    final key = '${stage.width},${stage.height},${home.left},${home.top},${home.width},${home.height}';
+    if (_cache.length > 8 && !_cache.containsKey(key)) _cache.clear();
+    final r = _cache.putIfAbsent(key, _Rounds.new);
+    while (r.legs.isEmpty || r.legs.last.end <= ms) {
+      _addRound(r);
+    }
+    return r;
+  }
+
+  /// Draws round number [_Rounds.tours] by lot.
+  void _addRound(_Rounds r) {
+    final k = r.tours++;
+    final rnd = math.Random(FairyMotion.seed + k * 7919);
+    final xMin = _xMin, xMax = _xMax, yTop = _yTop, yBottom = _yBottom;
+    final bw = xMax - xMin, bh = yBottom - yTop;
+    double lerp(double a, double b, double t) => a + (b - a) * t;
+    var t = r.legs.isEmpty ? 0 : r.legs.last.end;
+    var face = r.legs.isEmpty ? 1.0 : r.legs.last.face;
+    late Offset p;
+    void add(Offset b, {bool bend = true}) {
+      final d = (b - p).distance;
+      var c = Offset.lerp(p, b, .5)!;
+      if (bend && d > 0) {
+        final n = Offset(-(b.dy - p.dy) / d, (b.dx - p.dx) / d);
+        c += n * (d * FairyMotion.curve * (rnd.nextDouble() * 2 - 1));
+        // Never bends behind the counter, under the stage's top line or
+        // past a side (only the way out leaves the stage).
+        c = Offset(c.dx.clamp(xMin, xMax), c.dy.clamp(yTop, yBottom));
+      }
+      final length = ((p - c).distance + (c - b).distance + d) / 2;
+      final ms = math.max(FairyMotion.minLegMs, (length / FairyMotion.speed * 1000).round());
+      final dx = b.dx - p.dx;
+      final next = d > 0 && dx.abs() >= d * FairyMotion.turnShare ? (dx < 0 ? 1.0 : -1.0) : face;
+      r.legs.add(_Leg(p, c, b, t, ms, face, next));
+      t += ms;
+      face = next;
+      p = b;
+    }
+
+    if (k == 0) {
+      p = home.center;
+    } else {
+      // Back in from a side, at another height.
+      final left = rnd.nextBool();
+      var y = lerp(yTop, yBottom, rnd.nextDouble());
+      for (var i = 0; i < 6 && (y - r.exitY).abs() < bh * FairyMotion.reentryGap; i++) {
+        y = lerp(yTop, yBottom, rnd.nextDouble());
+      }
+      p = _outside(left, y);
+      final wait = FairyMotion.offMinMs + rnd.nextInt(FairyMotion.offMaxMs - FairyMotion.offMinMs + 1);
+      face = left ? -1 : 1;
+      r.legs.add(_Leg(p, p, p, t, wait, face, face));
+      t += wait;
+      add(Offset(lerp(xMin, xMax, left ? .15 + .35 * rnd.nextDouble() : .5 + .35 * rnd.nextDouble()),
+          lerp(yTop, yBottom, rnd.nextDouble())));
+    }
+    for (var i = 0; i < FairyMotion.legsPerTour; i++) {
+      Offset q = p;
+      for (var tries = 0; tries < 8; tries++) {
+        final kind = rnd.nextDouble();
+        final upper = (p.dy - yTop) < bh / 2, leftHalf = (p.dx - xMin) < bw / 2;
+        double other(bool firstHalf) => firstHalf ? .55 + .45 * rnd.nextDouble() : .45 * rnd.nextDouble();
+        if (kind < FairyMotion.verticalShare) {
+          q = Offset((p.dx + bw * FairyMotion.verticalDrift * (rnd.nextDouble() * 2 - 1)).clamp(xMin, xMax),
+              lerp(yTop, yBottom, upper ? .7 + .3 * rnd.nextDouble() : .3 * rnd.nextDouble()));
+        } else if (kind < FairyMotion.verticalShare + FairyMotion.diagonalShare) {
+          q = Offset(lerp(xMin, xMax, other(leftHalf)), lerp(yTop, yBottom, other(upper)));
+        } else {
+          q = Offset(lerp(xMin, xMax, other(leftHalf)),
+              (p.dy + bh * FairyMotion.acrossDrift * (rnd.nextDouble() * 2 - 1)).clamp(yTop, yBottom));
+        }
+        if ((q - p).distance >= FairyMotion.minHop) break;
+      }
+      add(q);
+    }
+    // Out past a side for a moment.
+    final near = (p.dx - xMin) < bw / 2;
+    final left = rnd.nextDouble() < FairyMotion.nearSideShare ? near : !near;
+    r.exitY = (p.dy + bh * .3 * (rnd.nextDouble() * 2 - 1)).clamp(yTop, yBottom);
+    add(_outside(left, r.exitY));
+  }
+
+  /// The swim [ms] after it set out from its place (or the place itself
+  /// when it does not swim).
   FairyPose swim(int ms) {
     if (!wander) return FairyPose(home.center, 1, 1, 0);
-    final w = home.width, h = home.height;
-    final xMin = w / 2 + FairyMotion.sideMargin, xMax = stage.width - w / 2 - FairyMotion.sideMargin;
-    final ax = math.max(0.0, (xMax - xMin) / 2), cx = stage.width / 2;
-    final yBottom = home.center.dy, yTop = math.min(yBottom, FairyMotion.topClearance + h / 2);
-    final ay = (yBottom - yTop) / 2, cy = yBottom - ay;
-    final x = cx + ax * _wave(ms, FairyMotion.swimXMs);
-    final y = cy + ay * _wave(ms, FairyMotion.swimYMs, math.pi / 2) +
-        FairyMotion.bob * _wave(ms, FairyMotion.bobMs);
-    // Moving right: mirrored. A quick turn where it changes direction.
-    final face = (-_slope(ms, FairyMotion.swimXMs) * FairyMotion.turnSharpness).clamp(-1.0, 1.0);
+    if (ms <= 0) return FairyPose(home.center, 1, 1, 0);
+    final legs = _rounds(ms).legs;
+    var lo = 0, hi = legs.length - 1;
+    while (lo < hi) {
+      final mid = (lo + hi) ~/ 2;
+      if (legs[mid].end <= ms) {
+        lo = mid + 1;
+      } else {
+        hi = mid;
+      }
+    }
+    final leg = legs[lo];
+    final u = ((ms - leg.start) / leg.ms).clamp(0.0, 1.0);
+    // Starts and stops gently: smoothstep along the curve.
+    final s = u * u * (3 - 2 * u), ds = 6 * u * (1 - u);
+    final pos = leg.a * ((1 - s) * (1 - s)) + leg.c * (2 * (1 - s) * s) + leg.b * (s * s);
+    final dir = (leg.c - leg.a) * (2 * (1 - s)) + (leg.b - leg.c) * (2 * s);
+    final vy = dir.dy * ds / leg.ms * 1000 / FairyMotion.speed;
+    final turn = ((ms - leg.start) / FairyMotion.turnMs).clamp(0.0, 1.0);
+    final face = leg.fromFace + (leg.face - leg.fromFace) * (turn * turn * (3 - 2 * turn));
+    final y = pos.dy + FairyMotion.bob * _wave(ms, FairyMotion.bobMs);
     // Nose up while rising.
-    final down = _slope(ms, FairyMotion.swimYMs, math.pi / 2);
-    return FairyPose(Offset(x, y), 1, face, -down * FairyMotion.tilt * face);
+    return FairyPose(Offset(pos.dx, y), 1, face, -vy.clamp(-1.0, 1.0) * FairyMotion.tilt * face);
   }
 
   /// The hiding spot's size scale.
@@ -141,24 +296,25 @@ class FairyPath {
         wander ? .05 * _wave(ms, 2900) : 0);
   }
 
-  /// Between the swim and the hiding spot: [amount] 0 swims, 1 hides.
-  /// [hiding] is the way it is going (running away, or coming out).
-  FairyPose at(int ms, double amount, {required bool hiding}) {
-    if (amount <= 0) return swim(ms);
+  /// Between the swim (at swim time [swimMs]) and the hiding spot (at
+  /// [ms]): [amount] 0 swims, 1 hides. [hiding] is the way it is going
+  /// (running away, or coming out).
+  FairyPose at(int swimMs, int ms, double amount, {required bool hiding}) {
+    if (amount <= 0) return swim(swimMs);
     if (amount >= 1) return hide(ms);
     final a = Curves.easeInOut.transform(amount);
-    final from = swim(ms), to = hide(ms);
+    final from = swim(swimMs), to = hide(ms);
     final center = Offset.lerp(from.center, to.center, a)! -
         Offset(0, math.sin(math.pi * a) * home.height * FairyMotion.hop);
     // Running away it looks where it goes (right), turning back at the
     // spot to peek; coming out it looks left, into the stage.
     final double face = hiding
-        ? _lerp(from.face, a < .7 ? -1.0 : -1 + 2 * (a - .7) / .3, math.min(1.0, a * 4))
-        : _lerp(from.face, 1, a);
-    return FairyPose(center, _lerp(from.scale, to.scale, a), face, _lerp(from.tilt, to.tilt, a));
+        ? lerpPose(from.face, a < .7 ? -1.0 : -1 + 2 * (a - .7) / .3, math.min(1.0, a * 4))
+        : lerpPose(from.face, 1, a);
+    return FairyPose(center, lerpPose(from.scale, to.scale, a), face, lerpPose(from.tilt, to.tilt, a));
   }
 
-  static double _lerp(double a, double b, double t) => a + (b - a) * t;
+  static double lerpPose(double a, double b, double t) => a + (b - a) * t;
 
   /// The tap box for [pose]: the fish's box, at least [FairyMotion.minHit]
   /// each way.
@@ -167,24 +323,17 @@ class FairyPath {
     final h = math.max(home.height * pose.scale, FairyMotion.minHit);
     return Rect.fromCenter(center: pose.center, width: w, height: h);
   }
-
-  /// A point of the fish (fractions of its unmirrored box) on the stage.
-  Offset point(FairyPose pose, Offset share) {
-    final w = home.width * pose.scale, h = home.height * pose.scale;
-    final local = Offset((share.dx - .5) * w * pose.face, (share.dy - .5) * h);
-    final c = math.cos(pose.tilt), s = math.sin(pose.tilt);
-    return pose.center + Offset(local.dx * c - local.dy * s, local.dx * s + local.dy * c);
-  }
 }
 
 /// The 붕어빵 요정 (4차 피드백 IA3, was the big bungeoppang clicker DEC-036):
-/// with no guests it swims slowly over the stage; when guests come it is
+/// with no guests it swims over the whole stage, up and down and across,
+/// now and then out past a side and back in elsewhere (4차 g12); when guests
+/// come it is
 /// shy, runs to the right edge and peeks out from there. Wherever it is,
 /// each tap goes through [WorkshopController.clickerTap] (buns +tapRate,
 /// the same taps for missions) and shows the tap effects of
 /// tap_effects.dart (a pop, small bungeoppang crumbs, a floating gain) and,
-/// only then, a twinkle. While it swims it now and then drips a little of
-/// the filling picked with the HUD's flavor button. Taps past the
+/// only then, a twinkle. Taps past the
 /// per-second limit still pop and crumble but earn nothing, so they show no
 /// gain. Reduced motion: it stays put (or jumps to the hiding spot), with
 /// only a still gain.
@@ -203,6 +352,10 @@ class WorkshopClicker extends StatefulWidget {
   /// Draws the fairy (a clean counter); otherwise the background's baked
   /// fish is the target at [home] and only the effects are drawn.
   final bool floating, reduceMotion, vibration;
+
+  /// Hold still at its place (its short tour points at it): it glides
+  /// back home and starts a new round when let go.
+  final bool still;
   const WorkshopClicker(
       {super.key,
       required this.controller,
@@ -210,7 +363,8 @@ class WorkshopClicker extends StatefulWidget {
       required this.floating,
       this.hideBottom,
       this.reduceMotion = false,
-      this.vibration = false});
+      this.vibration = false,
+      this.still = false});
   @override
   State<WorkshopClicker> createState() => _WorkshopClickerState();
 }
@@ -232,6 +386,11 @@ class _WorkshopClickerState extends State<WorkshopClicker>
   bool? _hidden;
   int _switchAt = -100000;
   double _from = 0;
+
+  /// Swimming: since when its round started (it sets out from its place),
+  /// and when it last stopped to hold still, at which swim moment.
+  bool? _swimming;
+  int _epoch = 0, _settleAt = -100000, _settleSwimMs = 0;
 
   WorkshopController get c => widget.controller;
   bool get _moving => widget.floating && FairyMotion.animate && !widget.reduceMotion && FairyMotion.previewMs == null;
@@ -295,6 +454,16 @@ class _WorkshopClickerState extends State<WorkshopClicker>
         : (_from - t / FairyMotion.emergeMs).clamp(0.0, 1.0);
   }
 
+  /// How long it has swum in this round at [ms] (previews: since the
+  /// guests left, or from 0).
+  int _swimMs(int ms) {
+    if (FairyMotion.previewMs != null) {
+      final switched = FairyMotion.previewSwitchMs;
+      return switched != null && _hidden == false ? ms - switched : ms;
+    }
+    return ms - _epoch;
+  }
+
   void _tap() {
     if (c.gameplayPaused || c.error != null) return;
     final amount = c.clickerTap();
@@ -338,21 +507,42 @@ class _WorkshopClickerState extends State<WorkshopClicker>
       _from = _amount(t);
       _switchAt = t;
       _hidden = hidden;
+      // Coming out it starts a new round from its place.
+      if (!hidden) _epoch = t;
+    }
+    final canSwim = widget.floating && !reduce && (FairyMotion.animate || FairyMotion.previewMs != null);
+    final swimming = canSwim && !s.tutorialActive && !widget.still;
+    if (_swimming == null) {
+      _swimming = swimming;
+    } else if (_swimming != swimming) {
+      if (swimming) {
+        // A new round from its place.
+        _epoch = t;
+      } else {
+        _settleAt = t;
+        _settleSwimMs = _swimMs(t);
+      }
+      _swimming = swimming;
     }
     final pop = reduce ? 1.0 : tapPopScale((_now - _lastTap) / tapPopMs);
     return LayoutBuilder(builder: (context, box) {
-      final path = FairyPath(box.biggest, widget.home, widget.hideBottom ?? widget.home.bottom,
-          wander: widget.floating && !reduce && (FairyMotion.animate || FairyMotion.previewMs != null) && !s.tutorialActive);
+      final hideBottom = widget.hideBottom ?? widget.home.bottom;
+      final path = FairyPath(box.biggest, widget.home, hideBottom, wander: swimming);
       final amount = _amount(t);
-      final pose = widget.floating
-          ? path.at(t, amount, hiding: _hidden!)
+      var pose = widget.floating
+          ? path.at(_swimMs(t), t, amount, hiding: _hidden!)
           : FairyPose(widget.home.center, 1, 1, 0);
+      // Told to hold still: back to its place from where it swam.
+      if (widget.floating && canSwim && !swimming && amount == 0 && t - _settleAt < FairyMotion.settleMs) {
+        final from = FairyPath(box.biggest, widget.home, hideBottom, wander: true).swim(_settleSwimMs);
+        final a = Curves.easeInOut.transform(((t - _settleAt) / FairyMotion.settleMs).clamp(0.0, 1.0));
+        pose = FairyPose(Offset.lerp(from.center, pose.center, a)!, 1, FairyPath.lerpPose(from.face, pose.face, a),
+            FairyPath.lerpPose(from.tilt, pose.tilt, a));
+      }
       final hit = _hit = widget.floating ? path.hitBox(pose) : widget.home;
       final fishW = widget.home.width * pose.scale, fishH = widget.home.height * pose.scale;
       final sparkleAt = FairyMotion.previewTapMs ?? _sparkleAt;
       final twinkle = widget.floating && !reduce && t - sparkleAt < SparkleArt.cycleMs * 1.5;
-      // Drips: only while swimming, quiet for a while after a tap.
-      final dripping = widget.floating && path.wander && amount == 0 && !_hidden! && t - _lastTap > FairyMotion.quietAfterTapMs;
       return Stack(clipBehavior: Clip.none, children: [
         Positioned.fromRect(
             rect: hit,
@@ -381,13 +571,6 @@ class _WorkshopClickerState extends State<WorkshopClicker>
                                     child: const CustomPaint(
                                         key: Key('floating-fish'), painter: FloatingFishPainter()))))
                         : const SizedBox.expand()))),
-        // In front of the fish: the drop hangs at its belly's edge.
-        if (dripping)
-          Positioned.fill(
-              child: IgnorePointer(
-                  child: CustomPaint(
-                      key: const Key('fairy-drips'),
-                      painter: _DripPainter(path, t, fillingPasteColor(s.selectedFlavor), fishH)))),
         // A twinkle around the fairy, only after a tap (IA3).
         if (twinkle)
           Positioned.fromRect(
@@ -451,63 +634,4 @@ class _TapTwinklePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _TapTwinklePainter old) => old.progress != progress;
-}
-
-/// The filling drips: a drop swells at the fish's belly, then falls and
-/// fades (drawn in code; 25번 그림이 오면 바꿈).
-class _DripPainter extends CustomPainter {
-  final FairyPath path;
-  final int ms;
-  final Color color;
-  final double fishHeight;
-  const _DripPainter(this.path, this.ms, this.color, this.fishHeight);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const every = FairyMotion.dripEveryMs, life = FairyMotion.dripLifeMs;
-    final first = ((ms - life) / every).floor();
-    for (var k = math.max(1, first); k * every <= ms; k++) {
-      if (k % 3 == 2) continue;
-      final born = k * every, p = (ms - born) / life;
-      if (p < 0 || p >= 1) continue;
-      final hang = FairyMotion.dripHangShare;
-      // Hanging, the drop follows the fish; then it falls from where it let go.
-      final from = path.point(path.swim(p < hang ? ms : born + (life * hang).round()), FairyMotion.dripFrom);
-      final r = fishHeight * FairyMotion.dripSize / 2;
-      final double radius, fall, alpha;
-      if (p < hang) {
-        radius = r * (.4 + .6 * p / hang);
-        fall = radius * .6;
-        alpha = 1;
-      } else {
-        final q = (p - hang) / (1 - hang);
-        radius = r;
-        fall = r * .6 + fishHeight * FairyMotion.dripFall * q * q;
-        alpha = q < .6 ? 1 : 1 - (q - .6) / .4;
-      }
-      _drop(canvas, from + Offset(0, fall), radius, alpha.clamp(0.0, 1.0));
-    }
-  }
-
-  /// A small teardrop (point up) with a light spot.
-  void _drop(Canvas canvas, Offset c, double r, double alpha) {
-    final body = Path()
-      ..moveTo(c.dx, c.dy - r * 2.1)
-      ..quadraticBezierTo(c.dx + r * .35, c.dy - r * 1.1, c.dx + r, c.dy)
-      ..arcToPoint(Offset(c.dx - r, c.dy), radius: Radius.circular(r))
-      ..quadraticBezierTo(c.dx - r * .35, c.dy - r * 1.1, c.dx, c.dy - r * 2.1)
-      ..close();
-    canvas.drawPath(body, Paint()..color = color.withValues(alpha: alpha));
-    canvas.drawPath(
-        body,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1
-          ..color = const Color(0xff2a1710).withValues(alpha: alpha * .6));
-    canvas.drawCircle(c.translate(-r * .35, -r * .3), r * .28,
-        Paint()..color = Colors.white.withValues(alpha: alpha * .55));
-  }
-
-  @override
-  bool shouldRepaint(covariant _DripPainter old) => old.ms != ms || old.color != color;
 }

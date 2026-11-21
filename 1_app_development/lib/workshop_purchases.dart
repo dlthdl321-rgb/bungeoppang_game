@@ -2,7 +2,18 @@ import 'development_balance.dart';
 import 'development_purchase_journal.dart';
 import 'development_rules.dart';
 
+/// The level-up payment of Lv.[level] as a purchase (4차 피드백 g9): only
+/// levels with `level_cost_gold` go through the server, once each.
+String levelProduct(int level) => 'level:$level';
 CompositeQuote quoteWorkshopProduct(DevelopmentBalance config,String id,{required int owned,required int quantity}) {
+  if (id.startsWith('level:')) {
+    final level=int.tryParse(id.substring(6));
+    if (level==null || level<2 || level>50 || id!=levelProduct(level) || owned<0 || owned>1 || quantity<0 || quantity>1-owned) throw const FormatException('레벨업 비용 범위 오류');
+    final row=config.rows('level_progression')[level-1],gold=DevelopmentBalance.integer(row,'level_cost_gold');
+    if (gold<=0) throw const FormatException('황금이 필요 없는 레벨이에요.');
+    return CompositeQuote(config.revision,id,owned,quantity,DevelopmentBalance.decimal(row,'level_cost_buns')*BigInt.from(quantity),
+      BigInt.from(gold*quantity));
+  }
   if (!id.startsWith('cosmetic:')) return quoteCompositeSkill(config,id,owned:owned,quantity:quantity);
   final item=id.substring(9),catalog=config.section('avatar_catalog'),entry=catalog[item];
   if (entry is! Map<String,dynamic> || entry['free']!=false || owned<0 || owned>1 || quantity<0 || quantity>1-owned) throw const FormatException('꾸미기 구매 범위 오류');
@@ -10,7 +21,8 @@ CompositeQuote quoteWorkshopProduct(DevelopmentBalance config,String id,{require
   return CompositeQuote(config.revision,id,owned,quantity,DevelopmentBalance.decimal(price,'buns')*BigInt.from(quantity),
     BigInt.from(DevelopmentBalance.integer(price,'gold'))*BigInt.from(quantity));
 }
-Map<String,dynamic> workshopProductRequirements(DevelopmentBalance config,String id) => id.startsWith('cosmetic:') ?
+Map<String,dynamic> workshopProductRequirements(DevelopmentBalance config,String id) => id.startsWith('level:') ?
+  const {'unlock_total':'0'} : id.startsWith('cosmetic:') ?
   config.section('avatar_catalog')[id.substring(9)] as Map<String,dynamic> : config.skill(id);
 
 /// Embedded in the SAME durable snapshot as buns. No separate journal-only
@@ -107,7 +119,7 @@ class WorkshopPurchases {
     for (final e in (row['owned'] as Map<String, dynamic>).entries) {
       quoteWorkshopProduct(config,e.key,owned:0,quantity:0);
       final count = DevelopmentBalance.integer(row['owned'] as Map<String, dynamic>, e.key);
-      if (count <= 0 || (e.key.startsWith('cosmetic:') && count!=1) || count != expected.remove(e.key)) throw const FormatException('상품 보유 근거 오류');
+      if (count <= 0 || (e.key.contains(':') && count!=1) || count != expected.remove(e.key)) throw const FormatException('상품 보유 근거 오류');
       owned[e.key] = count;
     }
     if (expected.isNotEmpty || unsettled > 1 || (journals.isNotEmpty && row['account'] == null)) throw const FormatException('구매 집계 불일치');
