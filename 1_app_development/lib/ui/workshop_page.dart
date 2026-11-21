@@ -752,13 +752,19 @@ class _WorkshopPageState extends State<WorkshopPage> {
       lowStall:low,
       guests:(clicker,taps)=>WorkshopGuestLayer(controller:c,onOpenCustomer:_customerCard,taps:taps,clicker:clicker,
         reduceMotion:reduceMotion || MediaQuery.disableAnimationsOf(context)),
-      centerBuilder:(fish,clean,counterTop,moldLimit)=>Stack(children:[
-        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,moldLimit:moldLimit,
-          lowStall:low,reduceMotion:reduceMotion,onSharePerfect:_sharePerfect,
+      centerBuilder:(fish,clean,counterTop,cutTop)=>Stack(children:[
+        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,cutTop:cutTop,
+          lowStall:low,reduceMotion:reduceMotion,
           vibration:widget.accountController.state.settings.vibration)),
         // The old layout: below the flavor row, clear of the counter strip.
         if(!low)Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
       ]),
+      // 4차 피드백 g11 (사용자 결정): the special mold works on the lower
+      // workbench; the six-cell griddle slides aside while it is there.
+      bench:(griddle)=>WorkshopMoldStage(controller:c,fishOnScreen:null,bench:griddle,
+        lowStall:low,reduceMotion:reduceMotion,onSharePerfect:_sharePerfect,
+        vibration:widget.accountController.state.settings.vibration),
+      griddleAside:s.session!=null,
       counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock),
       // The '오늘' slip (오늘의 주문서·출석, 26번 7단계) under the settings
       // button (시안 확인 2차).

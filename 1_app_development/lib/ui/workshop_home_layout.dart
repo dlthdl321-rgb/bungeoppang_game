@@ -136,21 +136,44 @@ class WorkshopHomeLayout {
   /// does not jump).
   static const practiceLift = 60.0;
 
-  /// The special bungeoppang mold (26번 3차 피드백 H18 '조리 컷과 6구를
-  /// 가리지 않게'): its whole picture stays [moldGap] above the higher of
-  /// the sale counter's top and the cooking cut's top, rising at most until
-  /// its top is [moldTopRoom] under the HUD (the bake's title line). The
-  /// keep / throw away / cancel buttons sit [moldButtonGap] under it, left
-  /// of the cooking cut ([cookCutShare] of the width, 8 from the right).
-  static const moldGap = 8.0;
-  static const moldTopRoom = 34.0;
+  /// The special bungeoppang mold works on the lower workbench, in the
+  /// six-cell griddle's place (4차 피드백 g11, 사용자 결정 2026-11-21 '손님
+  /// 누르면 6구가 옆으로 밀려나고 그 자리에'; it no longer hangs over the
+  /// guests). When a bake starts (an order, practice, 오늘의 주문서) the
+  /// griddle slides [benchAsideShare] of its width to the left, off the
+  /// screen, and the mold slides in from the right in [benchSlideMs]; when
+  /// the bake ends they swap back (no slide with reduced motion).
+  static const benchSlideMs = 320;
+  static const benchAsideShare = 1.06;
+
+  /// The mold picture (mold/*.png with its axle, 1200 wide) is
+  /// [benchMoldShare] of the griddle box's width, at most
+  /// [benchMoldMaxWidth]; its axle feet stand [benchFootGap] above the menu
+  /// bar's top, and it never rises above [benchTopRoom] from the top of the
+  /// screen under the status bar (the HUD, the bake's title and buttons).
+  static const benchMoldShare = 1.0;
+  static const benchMoldMaxWidth = 400.0;
+  static const benchFootGap = 4.0;
+  static const benchTopRoom = 230.0;
+
+  /// Before opening '스페셜 붕어빵 제작 시작' sits on the closed griddle,
+  /// this share down its box (on the plate).
+  static const benchPillAt = .66;
+
+  /// The bake's title and its buttons (keep / throw away / show off /
+  /// cancel) stand over the mold picture, [moldButtonGap] apart; on the
+  /// result the grade band hangs over the mold's top, so they go
+  /// [benchResultRoom] higher.
   static const moldButtonGap = 6.0;
+  static const benchResultRoom = 48.0;
 
   /// 4차 피드백 IC3·IC4: how far the hand steps' touch area (batter,
   /// filling, flip) reaches past the mold's fish box — over the mold's rim
   /// and handles and a little past them, so a stroke started on the edge
   /// or outside still counts (paste there is spilled).
   static const moldTouchOutset = EdgeInsets.symmetric(horizontal: 48, vertical: 32);
+
+  /// The owner's cooking cut's width share, at the right over the griddle.
   static const cookCutShare = .32;
 
   /// The first-run guide card's left edge: clear of the old left queue

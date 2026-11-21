@@ -56,10 +56,23 @@ class NightHome extends StatelessWidget {
   /// background shows without its baked mold, so the stage draws the mold.
   /// [counterTop] is the sale counter's top on screen (null when the
   /// background has no measured towel), so the stage keeps clear of it.
-  /// [moldLimit] is the higher of the counter's and the cooking cut's tops
-  /// (26번 3차 피드백 H18): the special mold stays above it.
-  final Widget Function(Rect? fishOnScreen, bool cleanCounter, double? counterTop, double? moldLimit)?
+  /// [cutTop] is the higher of the counter's and the cooking cut's tops
+  /// (26번 3차 피드백 H18): the 붕어빵 요정 hides above it.
+  final Widget Function(Rect? fishOnScreen, bool cleanCounter, double? counterTop, double? cutTop)?
       centerBuilder;
+
+  /// The lower workbench (4차 피드백 g11): a layer from the top under the
+  /// status bar down to the menu bar's top, over the griddle, the cooking
+  /// cut and the counter. [griddle] is the griddle's box in it. The
+  /// special bungeoppang mold works there while [griddleAside] has slid the
+  /// griddle off to the side.
+  final Widget Function(Rect griddle)? bench;
+
+  /// The six-cell griddle (its lid, picture and cells) slides to the left
+  /// off the screen, so the special mold takes its place on the workbench
+  /// (WorkshopHomeLayout.benchSlideMs; at once with reduced motion). Its
+  /// cells keep their state.
+  final bool griddleAside;
   /// Workshop's sale counter: left of the cooking cut, its top on the red
   /// check towel of the background (DEC-038).
   final Widget? counter;
@@ -114,6 +127,8 @@ class NightHome extends StatelessWidget {
       this.griddleContent,
       this.vendor,
       this.centerBuilder,
+      this.bench,
+      this.griddleAside = false,
       this.counter,
       this.counterSlip,
       this.statusAction,
@@ -195,10 +210,21 @@ class NightHome extends StatelessWidget {
                   towelTop - WorkshopHomeLayout.clickerLift - padding.top);
           // The cooking cut's top on screen (H18).
           final cookTop = box.maxHeight - cookBottom - cookH;
-          final moldLimit = towelTop == null || scroll ? null : math.min(towelTop, cookTop);
+          final cutTop = towelTop == null || scroll ? null : math.min(towelTop, cookTop);
           final stage = centerBuilder != null
-              ? centerBuilder!(fishRect, cleanCounter, towelTop, moldLimit)
+              ? centerBuilder!(fishRect, cleanCounter, towelTop, cutTop)
               : _stage(reduce, fishRect);
+          // 4차 피드백 g11: the griddle slides aside for the special mold.
+          Widget aside(Widget child) => TweenAnimationBuilder<double>(
+              tween: Tween(end: griddleAside ? 1 : 0),
+              duration: reduce ? Duration.zero : const Duration(milliseconds: WorkshopHomeLayout.benchSlideMs),
+              curve: Curves.easeInOutCubic,
+              child: child,
+              builder: (context, t, child) => IgnorePointer(
+                  ignoring: griddleAside || t > 0,
+                  child: FractionalTranslation(
+                      translation: Offset(-t * WorkshopHomeLayout.benchAsideShare, 0), child: child)));
+          final navTop = box.maxHeight - navBottom;
           return Stack(children: [
             Positioned.fill(
                 child: RepaintBoundary(
@@ -248,29 +274,29 @@ class NightHome extends StatelessWidget {
                   width: griddleW,
                   bottom: griddleBottom + griddleH,
                   height: GriddleLidPainter.heightFor(griddleW, stove.width.toDouble()),
-                  child: IgnorePointer(
+                  child: aside(IgnorePointer(
                       child: CustomPaint(
                           key: const Key('griddle-lid'),
-                          painter: GriddleLidPainter(e(CosmeticSlot.stove))))),
+                          painter: GriddleLidPainter(e(CosmeticSlot.stove)))))),
             Positioned(
                 left: side + (w - griddleW) / 2,
                 width: griddleW,
                 bottom: griddleBottom,
                 height: griddleH,
-                child: IgnorePointer(
+                child: aside(IgnorePointer(
                     child: CustomPaint(
                         key: const Key('griddle'),
                         painter: GriddlePainter(e(CosmeticSlot.stove),
                             filled: griddleFilled,
-                            closed: griddleOpen == false)))),
+                            closed: griddleOpen == false))))),
             Positioned(
                 left: side + (w - griddleW) / 2,
                 width: griddleW,
                 bottom: griddleBottom,
                 height: griddleH,
-                child: griddleContent ??
+                child: aside(griddleContent ??
                     GoldenGriddleLayer(
-                        controller: controller, reduceMotion: reduce)),
+                        controller: controller, reduceMotion: reduce))),
             if (vendor != null) Positioned(
                 right: side + 8, width: cookW, bottom: cookBottom, height: cookH,
                 child: IgnorePointer(child: vendor!)),
@@ -311,6 +337,16 @@ class NightHome extends StatelessWidget {
                 // griddle's first row of cells, as before.
                 bottom: towelTop == null ? counterBottom : null,
                 child: counter!),
+            // The workbench over the griddle, the cooking cut and the
+            // counter, under the '오늘' slip and the menu bar (g11).
+            if (bench != null)
+              Positioned(
+                  left: side,
+                  width: w,
+                  top: padding.top,
+                  height: math.max(0.0, navTop - padding.top),
+                  child: bench!(Rect.fromLTWH((w - griddleW) / 2,
+                      box.maxHeight - griddleBottom - griddleH - padding.top, griddleW, griddleH))),
             // Under the settings button, over the stage and the guests' tap
             // targets (2nd mockup check).
             if (counterSlip != null && header == null) Positioned(

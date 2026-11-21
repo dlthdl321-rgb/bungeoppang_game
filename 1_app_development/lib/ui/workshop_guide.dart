@@ -35,7 +35,7 @@ class WorkshopTutorialOverlay extends StatefulWidget {
 }
 
 class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
-  Rect? _target, _below, _nav;
+  Rect? _target, _above, _nav;
   Rect? _find(String name) {
     final overlay = context.findRenderObject(), root = widget.home.currentContext;
     if (overlay is! RenderBox || !overlay.hasSize || root is! Element) return null;
@@ -55,10 +55,10 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
   }
   void _measure() {
     if (!mounted) return;
-    final target = _find(widget.step.target), below = widget.step.below == null ? null : _find(widget.step.below!);
+    final target = _find(widget.step.target), above = widget.step.above == null ? null : _find(widget.step.above!);
     final nav = _find('home-nav');
-    if (target != _target || below != _below || nav != _nav) {
-      setState(() { _target = target; _below = below; _nav = nav; });
+    if (target != _target || above != _above || nav != _nav) {
+      setState(() { _target = target; _above = above; _nav = nav; });
     }
   }
 
@@ -94,8 +94,8 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
       // always between the top edge and the bottom menu, even at large text.
       final limit = (_nav?.top ?? box.maxHeight) - 6;
       final _CardPlace place;
-      if (_below != null) {
-        place = _CardPlace.top(_below!.bottom + 6);
+      if (_above != null) {
+        place = _CardPlace.bottom(_above!.top - 6);
       } else if (target == null) {
         place = const _CardPlace.bottom(double.infinity);
       } else if (target.center.dy > box.maxHeight / 2) {
