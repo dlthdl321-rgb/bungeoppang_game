@@ -645,7 +645,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// and what he says then: shown as his bubble at the front (IA5).
   static const photoGuest = 'npc_taeo';
   static const photoReactionWords = '와, 냄새 좋다.\n……아! 또 사진 전에 먹었네.';
-  /// The level-up step (×1·×10·×100, [skillLevelUpSteps]) each skill's own
+  /// The level-up step (×1·×10·최대, [skillLevelUpSteps]) each skill's own
   /// wheel shows in the skill window, by skill id (26번 시안 확인 2차).
   /// Memory only: kept while the app runs, not saved; ×1 when missing.
   final Map<String, int> skillSteps = {};

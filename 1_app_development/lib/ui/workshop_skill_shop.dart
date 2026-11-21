@@ -17,7 +17,7 @@ import 'pixel_sprites.dart';
 /// level up, not things to buy. Two tabs (클릭 생산·자동 생산) share one
 /// layout. Each row: picture, name, 'Lv.12/1000 · +60/클릭' (one level's
 /// effect), the price of the chosen step, the skill's own small wheel that
-/// picks how many levels one press adds (×1·×10·×100, [skillLevelUpSteps];
+/// picks how many levels one press adds (×1·×10·최대, [skillLevelUpSteps];
 /// 시안 확인 2차: one wheel per skill, remembered in
 /// [WorkshopController.skillSteps] while the app runs) and a 'LEVEL UP'
 /// button that is lit only when the level-up can go through. A dark button
@@ -172,9 +172,14 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
     final rule = c.config.skill(id);
     final maxed = owned >= cap;
     final step = _step(id);
-    final quantity = skillLevelUpQuantity(step, owned: owned, cap: cap);
-    final quote = maxed ? null : quoteCompositeSkill(c.config, id, owned: owned, quantity: quantity);
     final buns = c.state.purchases.available(c.state.buns), gold = BigInt.from(account.state.premium.gold);
+    // 4차 g13: '최대' buys as many levels as buns (and gold) pay for now;
+    // when none, the quote is one level (shown red, button off).
+    final quote = maxed || !unlocked
+        ? null
+        : skillLevelUpQuote(c.config, id, step: step, owned: owned, availableBuns: buns, availableGold: gold);
+    final quantity = quote?.quantity ?? 0;
+    final maxStep = step == skillLevelUpMax;
     final reason = maxed ? null : _blocked(unlocked: unlocked, id: id, quote: quote, buns: buns, gold: gold);
     final picture = PixelImage(PixelSprites.skill(id), size: 40);
     final unit = _kind == UpgradeKind.tap ? '클릭' : '초';
@@ -215,7 +220,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
             if (unlocked)
               // Two short lines so the per-skill wheel leaves them room
               // (시안 확인 2차): the level, then one level's effect.
-              // 4차 g13: a wide ×100 price at 360 used to break 'Lv.880/1000'
+              // 4차 g13: a wide price ('최대' with a huge balance) at 360 used to break 'Lv.880/1000'
               // into 'Lv.880/100' + '0' and push '+1/클릭' out; the two
               // lines shrink together instead.
               FittedBox(
@@ -244,7 +249,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
           )
         else ...[
           if (unlocked && quote != null)
-            // 4차 g7: level prices grow 1.35× now, so ×100 can cost '2602.29조';
+            // 4차 g7: level prices grow 1.35× now, so a big '최대' or ×10 can cost '2602.29조';
             // a long price shrinks to fit instead of pushing the row over
             // (360 wide at text scale 1.5).
             ConstrainedBox(
@@ -253,7 +258,16 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerRight,
                 child: Column(key: Key('cost-$id'), crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
-                  CurrencyAmount(Currency.buns, quote.buns, missing: quote.buns > buns),
+                  // '최대' says how many levels it buys: '+37 · 🐟 1.2만'.
+                  if (maxStep && quote.affordable(buns, gold))
+                    Row(mainAxisSize: MainAxisSize.min, children: [
+                      Text('+$quantity · ',
+                          key: Key('max-count-$id'),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Cozy.ink)),
+                      CurrencyAmount(Currency.buns, quote.buns, missing: quote.buns > buns),
+                    ])
+                  else
+                    CurrencyAmount(Currency.buns, quote.buns, missing: quote.buns > buns),
                   // DEC-041: tiers 1~4 ask no gold, so no '황금 0'.
                   if (quote.gold > BigInt.zero) CurrencyAmount(Currency.gold, quote.gold, missing: quote.gold > gold),
                 ]),
@@ -388,8 +402,9 @@ class _KindTab extends StatelessWidget {
 /// step), and a tap on a neighbour picks it. 4차 피드백 g13 brought the
 /// scroll back after ID1 had turned it into three fixed cells with a moving
 /// band ("전처럼 스크롤 하듯이"); the box keeps one size for every step, so
-/// at ×1 or ×100 one end of the drum is simply empty. Keys
-/// `step-<skill>-<step>`.
+/// at ×1 or 최대 one end of the drum is simply empty. Steps ×1 · ×10 · 최대
+/// (4차 g13, user decision: '최대' replaced ×100). Keys
+/// `step-<skill>-1`, `step-<skill>-10`, `step-<skill>-max`.
 class SkillStepWheel extends StatefulWidget {
   final String skillId;
   final int value;
@@ -444,9 +459,9 @@ class _SkillStepWheelState extends State<SkillStepWheel> {
     final still = _dragging || (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     return Semantics(
       label: '한 번에 올릴 레벨',
-      value: '×${widget.value}',
-      increasedValue: index + 1 < skillLevelUpSteps.length ? '×${skillLevelUpSteps[index + 1]}' : null,
-      decreasedValue: index > 0 ? '×${skillLevelUpSteps[index - 1]}' : null,
+      value: skillLevelUpLabel(widget.value),
+      increasedValue: index + 1 < skillLevelUpSteps.length ? skillLevelUpLabel(skillLevelUpSteps[index + 1]) : null,
+      decreasedValue: index > 0 ? skillLevelUpLabel(skillLevelUpSteps[index - 1]) : null,
       onIncrease: index + 1 < skillLevelUpSteps.length ? () => _pick(index + 1) : null,
       onDecrease: index > 0 ? () => _pick(index - 1) : null,
       child: GestureDetector(
@@ -475,13 +490,13 @@ class _SkillStepWheelState extends State<SkillStepWheel> {
                 child: Column(children: [
                   for (final (i, step) in skillLevelUpSteps.indexed)
                     GestureDetector(
-                      key: Key('step-${widget.skillId}-$step'),
+                      key: Key('step-${widget.skillId}-${step == skillLevelUpMax ? 'max' : step}'),
                       behavior: HitTestBehavior.opaque,
                       onTap: () => _pick(i),
                       child: SizedBox(
                         height: h,
                         child: Center(
-                          child: Text('×$step',
+                          child: Text(skillLevelUpLabel(step),
                               style: TextStyle(
                                   fontSize: i == centered ? 12 : 9.5,
                                   height: 1,

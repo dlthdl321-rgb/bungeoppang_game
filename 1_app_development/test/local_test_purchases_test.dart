@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
+import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/local_test_purchases.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
@@ -43,6 +44,15 @@ void main() {
     expect(c.state.purchases.journals.values.every((j) => j.settled), isTrue);
     expect(c.state.purchases.account, localTestAccount);
     expect(isLocalTestSave(c.state), isTrue);
+  });
+
+  test("'최대'(살 수 있는 만큼, 1·10·100이 아닌 개수)도 시험용 빌드에서 된다(4차 g13)", () async {
+    final best = skillLevelUpQuote(config, 'tap_1', step: skillLevelUpMax, owned: 0,
+        availableBuns: c.state.purchases.available(c.state.buns), availableGold: BigInt.zero)!;
+    expect(best.quantity, isNot(anyOf(1, 10, 100)), reason: '${best.quantity}');
+    expect(await c.purchaseSkill(gateway, 'tap_1', quantity: best.quantity), isTrue, reason: c.notice);
+    expect(c.state.purchases.owned['tap_1'], best.quantity);
+    expect(c.state.buns, BigInt.from(5000) - best.buns);
   });
 
   test('꾸미기는 시험용 황금을 쓰고, 모자라면 아무것도 빠지지 않는다', () async {
