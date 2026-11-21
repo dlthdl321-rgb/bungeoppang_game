@@ -31,10 +31,10 @@ void main() {
       // 4차 g13 (user decision 2026-11-21): ×100 became '최대'.
       expect(skillLevelUpSteps, [1, 10, skillLevelUpMax]);
       expect([for (final s in skillLevelUpSteps) skillLevelUpLabel(s)], ['×1', '×10', '최대']);
-      expect(skillLevelUpQuantity(10, owned: 995, cap: cap), 5);
+      expect(skillLevelUpQuantity(10, owned: 95, cap: cap), 5);
       expect(skillLevelUpQuantity(1, owned: cap, cap: cap), 0);
       for (final step in [1, 10]) {
-        for (final owned in [0, 1, 899, 950, 995, 999, 1000]) {
+        for (final owned in [0, 1, 50, 89, 95, 99, 100]) {
           final q = skillLevelUpQuantity(step, owned: owned, cap: cap);
           // development_contracts.ts: quantity > cap − owned is refused.
           expect(q, lessThanOrEqualTo(cap - owned));
@@ -42,7 +42,7 @@ void main() {
         }
       }
       // ×10 near the cap prices the five levels left, not ten.
-      expect(quoteCompositeSkill(config, 'auto_1', owned: 995, quantity: skillLevelUpQuantity(10, owned: 995, cap: cap)).quantity, 5);
+      expect(quoteCompositeSkill(config, 'auto_1', owned: 95, quantity: skillLevelUpQuantity(10, owned: 95, cap: cap)).quantity, 5);
     });
 
     test("'최대'는 가진 붕어빵력(황금)으로 살 수 있는 만큼, 최대 레벨까지, 0이면 1레벨 가격(4차 g13)", () {
@@ -54,7 +54,7 @@ void main() {
       expect(q('tap_1', 5, price37)!.buns, price37);
       expect(q('tap_1', 5, price37 - BigInt.one)!.quantity, 36);
       // Capped at the skill's max level; nothing at the cap.
-      expect(q('tap_1', 990, BigInt.from(10).pow(300))!.quantity, 10);
+      expect(q('tap_1', 90, BigInt.from(10).pow(300))!.quantity, 10);
       expect(q('tap_1', cap, BigInt.from(10).pow(300)), isNull);
       // None affordable: the price of one level, which the window shows red.
       final none = q('tap_1', 5, BigInt.zero)!;
@@ -66,7 +66,7 @@ void main() {
       expect(q('tap_5', 0, rich, oneGold)!.quantity, 1);
       expect(q('tap_5', 0, rich, 0)!.affordable(rich, BigInt.zero), isFalse);
       // Every '최대' count is one the server takes (1 <= n <= cap - owned).
-      for (final owned in [0, 1, 37, 500, 999]) {
+      for (final owned in [0, 1, 37, 50, 99]) {
         final n = q('auto_1', owned, BigInt.from(10).pow(40))!.quantity;
         expect(n, inInclusiveRange(1, cap - owned));
       }
@@ -160,7 +160,9 @@ void main() {
     final big = BigInt.from(10).pow(200);
     final (c, account) = await _open(tester, const Size(390, 844), buns: big);
     expect(_button(tester, 'tap_1').enabled, isTrue);
-    expect(_level(tester, 'tap_1'), 'Lv.0/1000\n+1/클릭');
+    // 4차 g14 (user decision 2026-11-21): every skill tops out at Lv.100.
+    expect(cap, 100);
+    expect(_level(tester, 'tap_1'), 'Lv.0/100\n+1/클릭');
     await _tap(tester, 'buy-tap_1');
     expect(c.state.purchases.owned['tap_1'], 1);
     await _tap(tester, 'step-tap_1-10');
@@ -169,17 +171,17 @@ void main() {
     expect(_button(tester, 'tap_2').quantity, 1);
     await _tap(tester, 'buy-tap_1');
     expect(c.state.purchases.owned['tap_1'], 11);
-    // '최대' with a huge balance buys every level left at once.
+    // '최대' with a huge balance buys every level left at once, up to Lv.100.
     await _tap(tester, 'step-tap_1-max');
-    expect(_button(tester, 'tap_1').quantity, 989);
-    expect(tester.widget<Text>(find.byKey(const Key('max-count-tap_1'))).data, '+989 · ');
+    expect(_button(tester, 'tap_1').quantity, 89);
+    expect(tester.widget<Text>(find.byKey(const Key('max-count-tap_1'))).data, '+89 · ');
     await _tap(tester, 'buy-tap_1');
-    expect(c.state.purchases.owned['tap_1'], 1000);
+    expect(c.state.purchases.owned['tap_1'], 100);
     expect(find.byKey(const Key('max-tap_1')), findsOneWidget);
     expect(find.byKey(const Key('buy-tap_1')), findsNothing);
-    expect(_level(tester, 'tap_1'), 'Lv.1000/1000\n+1/클릭');
-    // 995 with ×10 offers five levels.
-    await _buy(c, 'auto_1', 995);
+    expect(_level(tester, 'tap_1'), 'Lv.100/100\n+1/클릭');
+    // 95 with ×10 offers five levels.
+    await _buy(c, 'auto_1', 95);
     await _tap(tester, 'kind-auto');
     await _tap(tester, 'step-auto_1-10');
     await _tap(tester, 'step-auto_1-1');
@@ -244,12 +246,12 @@ void main() {
   for (final size in [const Size(390, 844), const Size(360, 800)]) {
     testWidgets("'최대': 살 수 있는 만큼 '+N · 비용', 하나도 못 사면 1레벨 비용 빨강·LEVEL UP 꺼짐(4차 g13) ${size.width.toInt()}", (tester) async {
       final (c, _) = await _open(tester, size, buns: BigInt.from(10).pow(200));
-      await _buy(c, 'tap_1', 880);
+      await _buy(c, 'tap_1', 80);
       await c.command(() => c.state.buns = BigInt.from(1000));
       await tester.pumpAndSettle();
       await _tap(tester, 'step-tap_1-10');
       await _tap(tester, 'step-tap_1-max');
-      // Lv.880 costs far more than 1,000: one level's price, red, button off.
+      // Lv.80 costs far more than 1,000: one level's price, red, button off.
       expect(_button(tester, 'tap_1').quantity, 1);
       expect(_button(tester, 'tap_1').enabled, isFalse);
       expect(find.byKey(const Key('max-count-tap_1')), findsNothing);
@@ -265,7 +267,7 @@ void main() {
       await tester.tap(find.byKey(const Key('buy-tap_1')));
       await tester.pump();
       expect(find.textContaining('붕어빵력이 '), findsWidgets);
-      expect(c.state.purchases.owned['tap_1'], 880);
+      expect(c.state.purchases.owned['tap_1'], 80);
       await tester.pumpAndSettle(const Duration(seconds: 5));
       // tap_2 at Lv.0 with 1,000: '최대' buys what 1,000 pays for, and it goes through.
       await _tap(tester, 'step-tap_2-10');
@@ -294,7 +296,7 @@ void main() {
     testWidgets('스킬 창 골든 $name', (tester) async {
       final huge = BigInt.from(10).pow(200);
       final (c, account) = await _open(tester, size, buns: huge, fonts: true, gold: name.startsWith('states') ? 3 : 0);
-      await _buy(c, 'tap_1', 1000);
+      await _buy(c, 'tap_1', 100);
       await _buy(c, 'tap_2', 3);
       await _buy(c, 'auto_1', 12);
       await c.command(() {

@@ -33,7 +33,7 @@ void main() {
         as Map<String, dynamic>);
     for (final kind in ['tap', 'auto']) {
       for (var tier = 1; tier <= 4; tier++) {
-        for (final owned in [0, 9, 10, 500, 990]) {
+        for (final owned in [0, 9, 10, 50, 90]) {
           expect(quoteCompositeSkill(real, '${kind}_$tier', owned: owned, quantity: 10).gold, BigInt.zero,
               reason: '${kind}_$tier owned $owned');
         }

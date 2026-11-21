@@ -117,13 +117,15 @@ test("실제 설정: '최대' 레벨업은 1·10·100이 아닌 개수도 받고
   };
   const base = { account: "a", transaction: "transaction_0011", revision: realConfig.metadata.revision,
     skill: "tap_1", gold: "0" };
-  for (const [owned, quantity] of [[5, 37], [0, 1000], [994, 6], [123, 377]]) {
+  // 4차 g14: max level 100 (max_owned_per_skill).
+  assert.equal(purchase.max_owned_per_skill, 100);
+  for (const [owned, quantity] of [[5, 37], [0, 100], [94, 6], [12, 77]]) {
     const value = { ...base, owned, quantity, buns: price(owned, quantity) };
     assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, value, "a", owned), value, `${owned}+${quantity}`);
   }
   const cap = purchase.max_owned_per_skill;
   assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
-    { ...base, owned: 995, quantity: 6, buns: price(995, 6) }, "a", 995));
+    { ...base, owned: 95, quantity: 6, buns: price(95, 6) }, "a", 95));
   assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
     { ...base, owned: cap, quantity: 1, buns: price(cap, 1) }, "a", cap));
   assert.throws(() => validateDevelopmentCompositeQuote(realConfig,

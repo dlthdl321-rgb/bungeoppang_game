@@ -15,7 +15,7 @@ import 'pixel_sprites.dart';
 
 /// The Workshop skill window (26번 4-3단계, F12~F19): a list of skills to
 /// level up, not things to buy. Two tabs (클릭 생산·자동 생산) share one
-/// layout. Each row: picture, name, 'Lv.12/1000 · +60/클릭' (one level's
+/// layout. Each row: picture, name, 'Lv.12/100 · +60/클릭' (one level's
 /// effect), the price of the chosen step, the skill's own small wheel that
 /// picks how many levels one press adds (×1·×10·최대, [skillLevelUpSteps];
 /// 시안 확인 2차: one wheel per skill, remembered in

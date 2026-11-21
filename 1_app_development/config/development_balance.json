@@ -33,7 +33,7 @@
     "free_skill_purchases": 0
   },
   "skill_purchase": {
-    "max_owned_per_skill": 1000,
+    "max_owned_per_skill": 100,
     "gold_step_purchase_count": 10,
     "gold_step_amount": 1,
     "entries": {
