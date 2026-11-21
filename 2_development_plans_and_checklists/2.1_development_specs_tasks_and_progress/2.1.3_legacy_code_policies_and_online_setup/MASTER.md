@@ -1171,7 +1171,7 @@
 | 붕어빵 | `fish/redbean.png`, 무늬는 `fish/redbean@<pattern>.png` |
 | 토핑 | `topping/<id>.png` |
 | 배경 | `bg/<id>.png`, 밤 `bg/<id>_night.png`. 매대를 행주 높이로 내린 새 구도 배경 `bg_low/<id>.png` 14장(335×762, `tools/apply_26_home_art.py --only backgrounds`, 25번 20번, 26번 4-1단계) |
-| 손님 | `customer/<npc_* 8명·walkin_1~4>_<normal·happy·sad>.png`(256×320 RGBA, 몸 아래끝이 그림 아래끝, 세 표정 같은 자리. `tools/apply_26_home_art.py --only customers`, 25번 6번. walkin_1은 3.3 원본 `customer/order·receive`를 잘라 씀) — 무기명 손님 그림은 주문 id로 4종 중 하나(`guestArtId`) |
+| 손님 | `customer/<npc_* 8명·walkin_1~4>_<normal·happy·sad>.png`(256×320 RGBA, 몸 아래끝이 그림 아래끝, 세 표정 같은 자리. `tools/apply_26_home_art.py --only customers`, 25번 6번. walkin_1은 25번 54번에서 다시 그린 `54_walkin1/`을 같은 방식으로 맞춤) — 무기명 손님 그림은 주문 id로 4종 중 하나(`guestArtId`) |
 | 화로 | `stove/<id>.png`, 빈 굽는 판 `stove_empty/<id>.png`·붕어빵만 `stove_fish/<id>.png`(941×470, `tools/apply_25_art.py`), 닫히고 불 꺼진 판 `stove_closed/<id>.png`(941×470)·열린 판 `stove_open/<id>.png`(941×700, 아래 941×470 = `stove_empty`와 같은 픽셀, 그 위에 뚜껑)(25번 7번 → 2026-11-19 25번 34번 낮게 젖힌 뚜껑, `tools/apply_26_stoves.py --low`, 26번 4-2단계) |
 | 장식 | `deco/<id>.png` (위치는 `night_stall_painter.dart` `decorationAt`) |
 | 등불 | `stall/postlamp_<색>.png` (id는 `<색>lamp`) |

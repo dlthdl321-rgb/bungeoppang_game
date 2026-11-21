@@ -12,10 +12,9 @@ Run it in 1_app_development. Outputs:
   walkin_2..4 come from 06_customers_v2/ (1122x1402, the same 0.8 shape):
   premultiplied Lanczos down, alpha snapped (no halo), and every expression
   moved by the normal face's offset so the body's cut sits on the bottom
-  edge and the three expressions line up. walkin_1 is the original customer
-  of 3.3 customer/ (white background): order.png is its normal and sad face
-  (there is no sad pose), receive.png its happy one, cut from the head to
-  the waist and fitted the same way.
+  edge and the three expressions line up. walkin_1 comes from 54_walkin1/
+  (25번 54번, redrawn in the same style, 1120x1400, the same 0.8 shape) and
+  is fitted the same way.
 * assets/images/bg_low/<id>.png (335x762, opaque): the 14 backgrounds with
   the stall lowered to the towel (20_home_background/; clear from clear-v2,
   "v2 우선"). Each is scaled to the 335 width, then moved up or down so the
@@ -33,13 +32,11 @@ from pathlib import Path
 
 import numpy as np
 from PIL import Image
-from scipy import ndimage as nd
 
 ROOT = Path(__file__).resolve().parent.parent
 REPO = ROOT.parent
 CUSTOMER_DIR = ROOT / "assets/images/customer"
 LOW_DIR = ROOT / "assets/images/bg_low"
-ORIGINAL_CUSTOMER = REPO / "3_original_images_and_visual_references/3.3_additional_character_and_background_images/customer"
 
 GUEST_SIZE = (256, 320)
 NAMED = ["npc_yunha", "npc_doyun", "npc_makrye", "npc_seojin", "npc_taeo",
@@ -84,10 +81,14 @@ def _bottom_gap(img):
     return GUEST_SIZE[1] - box[3] if box else 0
 
 
+# Each guest's generated folder (walkin_1 was redrawn later, 25번 54번).
+GUEST_FOLDER = {"walkin_1": "54_walkin1"}
+
+
 def generated_guests(src):
     made = {}
-    folder = src / "06_customers_v2"
-    for gid in NAMED + WALKINS:
+    for gid in NAMED + ["walkin_1"] + WALKINS:
+        folder = src / GUEST_FOLDER.get(gid, "06_customers_v2")
         normal = Image.open(folder / f"{gid}_normal.png").convert("RGBA")
         dy = _bottom_gap(premultiplied_resize(normal, GUEST_SIZE))
         for mood in MOODS:
@@ -96,48 +97,8 @@ def generated_guests(src):
     return made
 
 
-def _cut_white(path):
-    """The original customer on a transparent background: the near-white
-    area joined to the border becomes transparent."""
-    a = np.asarray(Image.open(path).convert("RGBA")).copy()
-    white = (a[..., :3].min(2) > 236)
-    labels, _ = nd.label(white)
-    border = set(np.unique(np.concatenate([labels[0], labels[-1], labels[:, 0], labels[:, -1]]))) - {0}
-    bg = np.isin(labels, list(border))
-    bg = nd.binary_dilation(bg, iterations=1) & (a[..., :3].min(2) > 200)
-    a[bg, 3] = 0
-    return Image.fromarray(a, "RGBA")
-
-
-def walkin_one():
-    """walkin_1 from the original full-body poses: head to waist, centred
-    on the head, the 0.8 shape of the other guests."""
-    made = {}
-    poses = {"normal": "order.png", "happy": "receive.png", "sad": "order.png"}
-    cut = {name: _cut_white(ORIGINAL_CUSTOMER / name) for name in set(poses.values())}
-    # One crop box from the order pose so the poses share the body's place.
-    ref = cut["order.png"]
-    l, t, r, b = ref.getchannel("A").getbbox()
-    height = (b - t) * .64
-    width = height * GUEST_SIZE[0] / GUEST_SIZE[1]
-    # The head's centre: the middle of the top fifth of the figure.
-    alpha = np.asarray(ref)[..., 3]
-    head = alpha[t:int(t + (b - t) * .2)]
-    xs = np.where(head.max(0) > 0)[0]
-    cx = (xs.min() + xs.max()) / 2
-    top = t - height * .05
-    box = (cx - width / 2, top, cx + width / 2, top + height)
-    pad = 200
-    for mood, name in poses.items():
-        img = Image.new("RGBA", (cut[name].width + 2 * pad, cut[name].height + 2 * pad))
-        img.paste(cut[name], (pad, pad))
-        small = premultiplied_resize(img, GUEST_SIZE, box=tuple(v + pad for v in box))
-        made[f"walkin_1_{mood}"] = snap_alpha(small)
-    return made
-
-
 def customers(src):
-    made = {**generated_guests(src), **walkin_one()}
+    made = generated_guests(src)
     CUSTOMER_DIR.mkdir(parents=True, exist_ok=True)
     for name, img in made.items():
         img.save(CUSTOMER_DIR / f"{name}.png", optimize=True)
