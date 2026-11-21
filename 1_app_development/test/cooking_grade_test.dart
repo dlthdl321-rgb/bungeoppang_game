@@ -7,7 +7,7 @@ import 'package:todays_bungeoppang/cooking_result_rules.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 
-/// 26번 4단계: 결과 등급(완벽·성공·아쉬움·실패)은 보여 주기 전용이고
+/// 26번 4단계(4차 g15에 '보통' 추가): 결과 등급(완벽·잘 구움·보통·아깝다·실패)은 보여 주기 전용이고
 /// 판정(DEC-031~034·040)은 그대로다.
 void main() {
   Map<String, dynamic> raw() => jsonDecode(File('config/development_balance.json').readAsStringSync())
@@ -45,6 +45,37 @@ void main() {
     expect(grade(finished(const PaintAmount(1000, 1151), ok)), CookingGrade.good);
     expect(grade(finished(const PaintAmount(950, 1150, 25), const PaintAmount(950, 1150, 25))), CookingGrade.perfect);
     expect(grade(finished(const PaintAmount(950, 1150, 25), const PaintAmount(950, 1150, 26))), CookingGrade.good);
+  });
+
+  test('보통(4차 g15): 기법은 통과했지만 반죽이 잘 구움 기준(덮음 925‰·합 1900~2450‰·흘림 150‰) 밖', () {
+    final g = config.section('cooking_grade');
+    expect(DevelopmentBalance.integer(g, 'good_min_coverage_permille'), 925);
+    expect(DevelopmentBalance.integer(g, 'good_min_total_amount_permille'), 1900);
+    expect(DevelopmentBalance.integer(g, 'good_max_total_amount_permille'), 2450);
+    expect(DevelopmentBalance.integer(g, 'good_max_spill_permille'), 150);
+    // 덮음 924/925
+    expect(grade(finished(const PaintAmount(924, 1000), const PaintAmount(924, 1000))), CookingGrade.fair);
+    expect(grade(finished(const PaintAmount(925, 1000), const PaintAmount(924, 1000))), CookingGrade.good);
+    // 합 1899/1900, 2450/2451
+    expect(grade(finished(const PaintAmount(950, 950), const PaintAmount(900, 949))), CookingGrade.fair);
+    expect(grade(finished(const PaintAmount(950, 950), const PaintAmount(950, 950))), CookingGrade.perfect);
+    expect(grade(finished(const PaintAmount(1000, 1225), const PaintAmount(1000, 1225))), CookingGrade.good);
+    expect(grade(finished(const PaintAmount(1000, 1225), const PaintAmount(1000, 1226))), CookingGrade.fair);
+    // 흘림 150/151
+    expect(grade(finished(const PaintAmount(950, 1000, 75), const PaintAmount(950, 1000, 75))), CookingGrade.good);
+    expect(grade(finished(const PaintAmount(950, 1000, 75), const PaintAmount(950, 1000, 76))), CookingGrade.fair);
+    // 이유 글
+    String line(PaintAmount a, PaintAmount b) {
+      final s = finished(a, b);
+      return cookingGradeLine(config, s, grade(s), variant: 2);
+    }
+    expect(line(const PaintAmount(924, 1000), const PaintAmount(924, 1000)), '반죽이 군데군데 비었어요');
+    expect(line(const PaintAmount(950, 950), const PaintAmount(900, 920)), '반죽이 살짝 적었어요');
+    expect(line(const PaintAmount(1000, 1250), const PaintAmount(1000, 1250)), '반죽이 조금 많았어요');
+    expect(line(const PaintAmount(950, 1000, 100), const PaintAmount(950, 1000, 100)), '반죽이 틀 밖으로 조금 흘렀어요');
+    // 보통도 판정 통과(판매·숙련·재고는 잘 구움과 같음).
+    expect(evaluateCookingResult(config, finished(const PaintAmount(924, 1000), const PaintAmount(924, 1000)),
+        difficulty: 0).techniquePassed, isTrue);
   });
 
   test('익힘 0~4: 미디엄만 완벽, 1·3은 성공, 0·4는 실패', () {
@@ -95,15 +126,17 @@ void main() {
     ]) {
       final r = evaluateCookingResult(config, s, difficulty: 0);
       // Perfect and good are exactly the technique passes.
-      expect(r.techniquePassed, grade(s) == CookingGrade.perfect || grade(s) == CookingGrade.good);
+      expect(r.techniquePassed, {CookingGrade.perfect, CookingGrade.good, CookingGrade.fair}.contains(grade(s)));
     }
   });
 
   test('등급 글·손님 반응 이벤트', () {
     expect(CookingGrade.values.map(cookingGradeTitle),
-        ['완벽해요!', '잘 구웠어요!', '아깝다!', '다음엔 더 잘할 수 있어요']);
+        ['완벽해요!', '잘 구웠어요!', '보통이에요', '아깝다!', '다음엔 더 잘할 수 있어요']);
     expect(CookingGrade.values.map(cookingGradeEvent),
-        ['result_perfect', 'result_good', 'result_near', 'result_fail']);
+        ['result_perfect', 'result_good', 'result_fair', 'result_near', 'result_fail']);
+    // 4차 피드백 g15 (사용자 결정 2026-11-21): 완벽 5 · 잘 구움 4 · 보통 3 · 아깝다 2 · 실패 0.
+    expect(CookingGrade.values.map(cookingStars), [5, 4, 3, 2, 0]);
   });
 
   test('설정 검사: 완벽 기준은 성공 기준 안쪽', () {
@@ -116,6 +149,14 @@ void main() {
       ('perfect_max_spill_permille', 301),
       ('perfect_doneness_index', 0),
       ('perfect_doneness_index', 4),
+      ('good_min_coverage_permille', 899),
+      ('good_min_coverage_permille', 951),
+      ('good_min_total_amount_permille', 1799),
+      ('good_min_total_amount_permille', 2301),
+      ('good_max_total_amount_permille', 2299),
+      ('good_max_total_amount_permille', 2601),
+      ('good_max_spill_permille', 49),
+      ('good_max_spill_permille', 701),
     ]) {
       final data = raw();
       (data['cooking_grade'] as Map<String, dynamic>)[key] = value;

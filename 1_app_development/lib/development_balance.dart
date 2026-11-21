@@ -75,7 +75,10 @@ class DevelopmentBalance {
     final avatar=result.section('avatar_catalog');
     // 26번 3차 H42: backgrounds are sold through the same catalog.
     // 4차 피드백 g10: the lamp glass and the fixed day/night too.
-    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool','background','lamp','time'};
+    // 4차 피드백 g15: stoves, decorations, mold patterns and toppings may be
+    // sold the same way; the wardrobe shows their slots once something is.
+    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool','background','lamp','time',
+        'stove','decoration','pattern','topping'};
     for(final e in avatar.entries) {
       final row=_map(e.value),level=integer(row,'unlock_level');
       if(row['label'] is! String || (row['label'] as String).isEmpty || !avatarSlots.contains(row['slot']) || row['free'] is! bool ||
@@ -149,6 +152,16 @@ class DevelopmentBalance {
         result.rows('mastery_difficulties').any((row) =>
             perfectDoneness < integer(row, 'success_doneness_min_index') ||
             perfectDoneness > integer(row, 'success_doneness_max_index'))) {
+      throw const FormatException('결과 등급 수치 오류');
+    }
+    // 4차 피드백 g15: '잘 구움'과 '보통'의 경계는 성공 기준과 완벽 기준 사이.
+    final goodCoverage = integer(grade, 'good_min_coverage_permille');
+    final goodMin = integer(grade, 'good_min_total_amount_permille');
+    final goodMax = integer(grade, 'good_max_total_amount_permille');
+    final goodSpill = integer(grade, 'good_max_spill_permille');
+    if (goodCoverage < coverage || goodCoverage > perfectCoverage || goodMin < totalMin ||
+        goodMin > perfectAmount || goodMax < perfectAmount || goodMax > totalCap ||
+        goodSpill < perfectSpill || goodSpill > totalCap - goodMin) {
       throw const FormatException('결과 등급 수치 오류');
     }
     final sale = result.section('ordinary_sale');

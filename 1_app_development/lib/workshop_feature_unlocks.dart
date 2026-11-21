@@ -117,11 +117,27 @@ String? featureLockReason(WorkshopState s, DevelopmentBalance config, WorkshopFe
   return 'Lv.$level 달성하면 열려요';
 }
 
+/// Whether [feature] has anything to introduce (4차 피드백 g15): 가게
+/// 꾸미기 only once the shop sells a stove or a decoration
+/// (`avatar_catalog` slot `stove`·`decoration`), 붕어빵 꾸미기 only once it
+/// sells a mold pattern or topping (slot `pattern`·`topping`) — until then
+/// those wardrobe slots (and the 붕어빵 tab) are hidden, so the card waits
+/// (not marked seen) and the replay list leaves it out.
+bool featureAvailable(DevelopmentBalance config, WorkshopFeature feature) {
+  final slots = switch (feature) {
+    WorkshopFeature.stallCosmetics => const {'stove', 'decoration'},
+    WorkshopFeature.fishCosmetics => const {'pattern', 'topping'},
+    _ => null,
+  };
+  return slots == null || config.section('avatar_catalog').values.any((row) => slots.contains((row as Map)['slot']));
+}
+
 /// The first introduction card still to show, or null.
 WorkshopFeature? pendingFeatureIntro(WorkshopState s, DevelopmentBalance config) {
   if (s.tutorialActive) return null;
   for (final f in workshopIntroFeatures) {
     if (f == WorkshopFeature.wardrobe && !s.guideJustEnded) continue;
+    if (!featureAvailable(config, f)) continue;
     if (!s.featureIntros.contains(f.name) && featureOpen(s, config, f)) return f;
   }
   return null;
@@ -196,7 +212,7 @@ List<FeatureTourStep> featureTour(WorkshopFeature feature) => switch (feature) {
           FeatureTourStep('판매대의 재고는 오래된 붕어빵부터 손님에게 드려요.', 'sale-counter'),
         ],
       WorkshopFeature.stallCosmetics => const [
-          FeatureTourStep('‘꾸미기’의 ‘가게’ 칸에서 화로·장식·등불을 바꿔요.', 'menu-skins'),
+          FeatureTourStep('‘꾸미기’의 ‘배경’ 탭에서 화로와 장식을 바꿔요.', 'menu-skins'),
           FeatureTourStep('배경은 ‘메뉴’의 ‘배경 테마’에서도 바꿀 수 있어요.', 'menu-menubar'),
         ],
       WorkshopFeature.stallBackground => const [],

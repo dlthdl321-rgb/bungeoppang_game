@@ -403,8 +403,8 @@ class _KindTab extends StatelessWidget {
 /// step), and a tap on a neighbour picks it. 4차 피드백 g13 brought the
 /// scroll back after ID1 had turned it into three fixed cells with a moving
 /// band ("전처럼 스크롤 하듯이"); the box keeps one size for every step, so
-/// at ×1 or 최대 one end of the drum is simply empty. Steps ×1 · ×10 · 최대
-/// (4차 g13, user decision: '최대' replaced ×100). Keys
+/// at ×1 or MAX one end of the drum is simply empty. Steps ×1 · ×10 · MAX
+/// (4차 g13, user decision: '최대' replaced ×100; 4차 g15: shown 'MAX'). Keys
 /// `step-<skill>-1`, `step-<skill>-10`, `step-<skill>-max`.
 class SkillStepWheel extends StatefulWidget {
   final String skillId;
@@ -460,9 +460,9 @@ class _SkillStepWheelState extends State<SkillStepWheel> {
     final still = _dragging || (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     return Semantics(
       label: '한 번에 올릴 레벨',
-      value: skillLevelUpLabel(widget.value),
-      increasedValue: index + 1 < skillLevelUpSteps.length ? skillLevelUpLabel(skillLevelUpSteps[index + 1]) : null,
-      decreasedValue: index > 0 ? skillLevelUpLabel(skillLevelUpSteps[index - 1]) : null,
+      value: skillLevelUpSpoken(widget.value),
+      increasedValue: index + 1 < skillLevelUpSteps.length ? skillLevelUpSpoken(skillLevelUpSteps[index + 1]) : null,
+      decreasedValue: index > 0 ? skillLevelUpSpoken(skillLevelUpSteps[index - 1]) : null,
       onIncrease: index + 1 < skillLevelUpSteps.length ? () => _pick(index + 1) : null,
       onDecrease: index > 0 ? () => _pick(index - 1) : null,
       child: GestureDetector(

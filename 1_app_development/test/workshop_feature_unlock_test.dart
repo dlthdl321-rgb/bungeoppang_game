@@ -173,6 +173,29 @@ void main() {
     });
   });
 
+  group('팔 것이 없는 꾸미기 소개 (4차 g15)', () {
+    test('화로·장식(틀·토핑)을 팔지 않으면 가게(붕어빵) 꾸미기 카드는 기다리고, 팔기 시작하면 뜬다', () async {
+      final c = await open();
+      addTearDown(c.dispose);
+      await c.skipTutorial();
+      expect(featureAvailable(c.config, WorkshopFeature.stallCosmetics), isFalse);
+      expect(featureAvailable(c.config, WorkshopFeature.fishCosmetics), isFalse);
+      expect(featureAvailable(c.config, WorkshopFeature.skills), isTrue);
+      await c.command(() => c.state.featureIntros.addAll(
+          [for (final f in workshopIntroFeatures) if (f != WorkshopFeature.stallCosmetics && f != WorkshopFeature.fishCosmetics) f.name]));
+      expect(await setLevel(c, 8, seen: false), isTrue);
+      expect(c.featureIsOpen(WorkshopFeature.stallCosmetics), isTrue);
+      expect(c.pendingIntro, isNull, reason: '팔 것이 없으면 카드 없음');
+      expect(c.state.featureIntros.contains('stallCosmetics'), isFalse, reason: '본 것으로 치지 않아 나중에 뜰 수 있음');
+      final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
+      (raw['avatar_catalog'] as Map<String, dynamic>)['copper'] =
+          {'label': '구리 화로', 'slot': 'stove', 'free': false, 'unlock_level': 8, 'unlock_total': '0'};
+      final selling = DevelopmentBalance.fromJson(raw);
+      expect(featureAvailable(selling, WorkshopFeature.stallCosmetics), isTrue);
+      expect(pendingFeatureIntro(c.state, selling), WorkshopFeature.stallCosmetics);
+    });
+  });
+
   group('소개 카드 저장 (schema 8)', () {
     test('한 번 본 카드는 저장되어 다시 열어도 안 뜬다', () async {
       final repository = MemoryRepository();
@@ -464,9 +487,13 @@ void main() {
       await tester.tap(find.byKey(const Key('settings-tours')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('tour-list')), findsOneWidget);
+      // 4차 g15: 붕어빵·가게 꾸미기 are left out while nothing is sold there.
       for (final f in workshopIntroFeatures) {
-        expect(find.byKey(Key('tour-replay-${f.name}')), findsOneWidget, reason: f.name);
+        expect(find.byKey(Key('tour-replay-${f.name}')), featureAvailable(c.config, f) ? findsOneWidget : findsNothing,
+            reason: f.name);
       }
+      expect(find.byKey(const Key('tour-replay-stallCosmetics')), findsNothing);
+      expect(find.byKey(const Key('tour-replay-fishCosmetics')), findsNothing);
       // 도감 waits for Lv.3: the row says so and a tap only tells why.
       await tester.ensureVisible(find.byKey(const Key('tour-replay-collection')));
       expect(find.descendant(of: find.byKey(const Key('tour-replay-collection')), matching: find.text('Lv.3 달성하면 열려요')),

@@ -165,7 +165,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
   Future<void> _tourList()=>_window('튜토리얼',(ctx)=>SingleChildScrollView(key:const Key('tour-list'),
     // Built eagerly: ten rows (the fairy's story last), every one exists for screen readers too.
     padding:const EdgeInsets.all(12),child:Column(children:[
-      for(final f in workshopIntroFeatures)Padding(padding:const EdgeInsets.only(bottom:8),child:CozyMenuRow(
+      // 4차 피드백 g15: 가게 꾸미기 only once a stove or decoration is sold.
+      for(final f in workshopIntroFeatures)if(featureAvailable(c.config,f))Padding(padding:const EdgeInsets.only(bottom:8),child:CozyMenuRow(
         key:Key('tour-replay-${f.name}'),icon:PixelIcon(featureIntro(f).fallbackIcon,size:28),iconSize:28,minHeight:52,
         title:featureName(f),subtitle:'소개와 짧은 안내 다시 보기',
         lock:featureReplayable(c.state,c.config,f) ? null : featureWaitText(c.state,c.config,f),
@@ -304,8 +305,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // Avatar items show once their art is ready for the vendor worn now
       // (PixelSprites.avatarArtReady); owners keep seeing what they bought.
       // Withdrawn items (26번 3차 H10) stay hidden even when owned.
-      // Stall items (backgrounds, lamps, day/night) need no vendor art.
-      listed:(d)=>avatar(d) && (d.slot.category==CosmeticCategory.stall || PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id)) ||
+      // Stall items (backgrounds, lamps, day/night) and the pastry's (4차
+      // g15: once patterns or toppings are sold) need no vendor art.
+      listed:(d)=>avatar(d) && (d.slot.category!=CosmeticCategory.avatar || PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id)) ||
         owned(d) && !avatarItemWithdrawn(_equipped(CosmeticSlot.character),d.id),
       forSale:avatar,cost:cost,total:total,
       // 4차 피드백 IC10: the real reason, not the phone's connection.

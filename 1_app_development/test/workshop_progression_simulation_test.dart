@@ -206,17 +206,16 @@ void main() {
     expect(cheapest, greaterThan(BigInt.zero), reason: '꾸미기는 계속 황금이 필요');
     expect(BigInt.from(welcome) >= cheapest, isTrue, reason: '환영 황금으로 꾸미기 하나 이상');
   });
-  test('5단계 스킬(첫 황금 스킬)은 Lv.15 이후에 열린다', () async {
-    // 4차 g7 checked this with a sale every 3 minutes under the old level
-    // rule (Lv.15~20). With 4차 g9's levels (pieces sold per level, the
-    // level-up payment) a sale every 3 minutes slows levels more than
-    // income, so tier 5 opens at Lv.12~13 then (4차 병합 2, 확인 필요);
-    // with a sale a minute (g9's check) it opens at Lv.17·19.
+  test('5단계 스킬(첫 황금 스킬)은 실제 손님 간격(3분마다 판매)에서 Lv.15~20에 열린다 (4차 g15)', () async {
+    // 4차 g15 (사용자 결정 2026-11-21): with 4차 g9's levels (pieces sold
+    // per level, the level-up payment) a sale every 3 minutes opened tier 5
+    // at Lv.12~13 with the old unlocks (800,000·1,000,000). The unlocks are
+    // now 2,000,000·2,500,000 — tap Lv.16·auto Lv.18 here.
     // The Lv.10·20 level-ups take gold, which this player has.
-    final result = await _play(config, welcome: 0, target: 25, minutes: 600, extraGold: lv10Gold() * 3);
+    final result = await _play(config, welcome: 0, target: 25, minutes: 900, saleEvery: 3, extraGold: lv10Gold() * 3);
     debugPrint('5단계 해금: 탭 Lv.${result.tap5Level}, 자동 Lv.${result.auto5Level} (${result.minutes}분에 Lv.${result.level})');
-    expect(result.tap5Level, inInclusiveRange(15, 25));
-    expect(result.auto5Level, inInclusiveRange(15, 25));
+    expect(result.tap5Level, inInclusiveRange(15, 20));
+    expect(result.auto5Level, inInclusiveRange(15, 20));
   }, timeout: const Timeout(Duration(minutes: 6)));
   // 4차 피드백 g7 (경제 재조정, 사용자 결정 2026-11-21): 처음 3시간 수입이
   // 약 38배로만 늘고(전에는 약 8,000배), 레벨 한 번이 수입을 두 배로 만들지
