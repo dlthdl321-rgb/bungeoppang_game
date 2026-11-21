@@ -115,12 +115,13 @@ test("accountProfileSet: only players who confirmed 만 14세 이상; no under-1
   const doc = store.docs.get(path)!;
   assert.deepEqual([doc.ageBand, doc.guardianConsentAtMs], [undefined, undefined]);
   assert.deepEqual(doc.requiredConsent, { version: requiredConsentVersion, atMs: start, over14: true }, "re-consent time");
-  // The consent before the 만 14세 이상 question (2026-11-18) is not enough.
-  for (const consentVersion of ["2020-01-01", "2026-11-18"]) {
+  // The consent before the 만 14세 이상 question (2026-11-18) is not enough,
+  // nor the one before `ingredient_out` joined the privacy notice (2026-11-19, 4차 병합 3).
+  for (const consentVersion of ["2020-01-01", "2026-11-18", "2026-11-19"]) {
     await assert.rejects(setAccountProfile(store, kakao, { name: "어린이", consentVersion, over14Confirmed: true }, start),
       (e) => code(e) === "consent-required", consentVersion);
   }
-  assert.equal(requiredConsentVersion, "2026-11-19");
+  assert.equal(requiredConsentVersion, "2026-11-21");
 });
 
 test("Google uids work with friends, invites and rankings like Kakao uids", async () => {

@@ -121,17 +121,17 @@ class PantryWindowState extends State<PantryWindow> {
         if (blocker != null && (shortfall.isEmpty || blocker != _shortText))
           CozyNotice(blocker, key: const Key('pantry-blocker'), tone: CozyTone.warning)
         else if (shortfall.isNotEmpty)
-          CozyNotice(cost > c.state.buns ? '재료가 모자라요. 붕어빵력도 모자라서 지금은 살 수 없어요.' : '재료가 모자라요. 모자란 재료를 한 번에 살 수 있어요.',
-              key: const Key('pantry-short'), tone: cost > c.state.buns ? CozyTone.warning : CozyTone.info),
+          CozyNotice(!c.prepShortfallAffordable(kind.id, _tubs) ? '재료가 모자라요. 붕어빵력도 모자라서 지금은 살 수 없어요.' : '재료가 모자라요. 모자란 재료를 한 번에 살 수 있어요.',
+              key: const Key('pantry-short'), tone: !c.prepShortfallAffordable(kind.id, _tubs) ? CozyTone.warning : CozyTone.info),
         const SizedBox(height: 10),
         if (shortfall.isNotEmpty) ...[
           CozyButton(
             key: const Key('pantry-buy-short'),
             minHeight: 44,
             fontSize: 16,
-            onPressed: busy || cost > c.state.buns ? null : () => c.buyPrepShortfall(kind.id, _tubs),
+            onPressed: busy || !c.prepShortfallAffordable(kind.id, _tubs) ? null : () => c.buyPrepShortfall(kind.id, _tubs),
             label: '모자란 재료 한 번에 사기',
-            icon: CurrencyAmount(Currency.buns, cost, size: 22, fontSize: 14, missing: cost > c.state.buns),
+            icon: CurrencyAmount(Currency.buns, cost, size: 22, fontSize: 14, missing: !c.prepShortfallAffordable(kind.id, _tubs)),
           ),
           const SizedBox(height: 8),
         ],

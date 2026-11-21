@@ -372,7 +372,11 @@ class WorkshopState {
     if (row['session'] != null) {
       if (row['session'] is! Map<String, dynamic>) throw const FormatException('제작 세션 저장 오류');
       state.session = CookingSession.fromJson(row['session'] as Map<String, dynamic>);
-      if (state.session!.flavor != state.selectedFlavor || !state.recipes.contains(state.session!.flavor)) throw const FormatException('미확정 맛 진행');
+      // 4차 병합 3 사용자 결정: in business the flavor button may change the
+      // chosen flavor while a bake is in the mold, which keeps its own (and a
+      // finished one may stay after closing).
+      if ((!state.business.open && !state.session!.finished && state.session!.flavor != state.selectedFlavor) ||
+          !state.recipes.contains(state.session!.flavor)) throw const FormatException('미확정 맛 진행');
     }
     // The special mold's portion belongs to its session; without one it is
     // simply used (nothing to give back).
@@ -405,7 +409,8 @@ class WorkshopState {
       final batch = ProductBatch.fromJson(original[1] as Map<String, dynamic>);
       if (original[0] != true || !state.recipes.contains(batch.flavor) || product['flavor'] != batch.flavor ||
           product['variant'] != batch.variant || product['madeOnBusinessIndex'] !=
-          (state.inventory.bindings[id] ?? batch.madeOnBusinessIndex)) throw const FormatException('생산/판매 제품 불일치');
+          (state.inventory.bindings[id] ?? batch.madeOnBusinessIndex) ||
+          (product['bonusPermille'] ?? 1000) != batch.bonusPermille) throw const FormatException('생산/판매 제품 불일치');
       consumed[id] = (consumed[id] ?? BigInt.zero) + BigInt.from(product['quantity'] as int);
       final remaining = state.inventory.batches[id]?.quantity ?? 0;
       if (consumed[id]! + BigInt.from(remaining) > BigInt.from(batch.quantity)) throw const FormatException('생산량보다 많은 재고/판매');
@@ -416,6 +421,8 @@ class WorkshopState {
       if ((evidence['businessIndex'] as int) > state.business.businessIndex) throw const FormatException('미래 영업일의 판매');
       for (final item in evidence['products'] as List) { sold(item as Map<String, dynamic>); }
       salesBuns += DevelopmentBalance.decimal(evidence, 'ordinaryBuns');
+      // 4차 병합 3: the 특제 bonus paid on top of it.
+      if (evidence.containsKey('premiumBuns')) salesBuns += DevelopmentBalance.decimal(evidence, 'premiumBuns');
       state.sales[e.key] = e.value as String;
     }
     // Partial deliveries of waiting customers: consumed stock, already paid.
@@ -1091,10 +1098,11 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     _syncArrivals(); // Closed: both clocks stop.
     if (state.session?.finished != true) { _refundSession(); state.session = null; state.phaseMs = 0; }
   });
-  /// One tap: 붕어빵력 + [tapRate] (× the 특제 bonus of the portion in use)
-  /// and the tap counted. 재료 타이쿤 B: every `taps_per_portion` taps use
-  /// one portion; with the ingredients out the tap counts nothing and says
-  /// '재료를 준비하세요' once. Returns the 붕어빵력 earned, or null.
+  /// One tap: 붕어빵력 + [tapRate] and the tap counted (4차 병합 3: no 특제
+  /// bonus on taps — only customer sales pay it). 재료 타이쿤 B: every
+  /// `taps_per_portion` taps use one portion; with the ingredients out the
+  /// tap counts nothing and says '재료를 준비하세요' once. Returns the
+  /// 붕어빵력 earned, or null.
   BigInt? tap() {
     if (inputBusy || !foreground || disposed || error != null || state.session != null) return null;
     _flushActive();
@@ -1107,7 +1115,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       return null;
     }
     _outNoticed = false;
-    final gain = tapRate * BigInt.from(state.pantry.bonusPermille(pantryConfig, use)) ~/ BigInt.from(1000);
+    final gain = tapRate;
     state.buns += gain; state.lifetime += gain; state.taps++;
     state.missions=state.missions.observe(now(),taps:1,production:gain,autoPeak:autoRate);
     notifyListeners();
@@ -1131,9 +1139,14 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   int difficulty(String flavor) => DevelopmentBalance.integer(config.section('active_recipes')[flavor] as Map<String, dynamic>, 'difficulty');
   String flavorLabel(String flavor) => (config.section('active_recipes')[flavor] as Map)['label'] as String;
   /// Chooses the flavor in the picker; [premium] is '특제 <맛>' (재료 타이쿤 B),
-  /// only while that 특제 filling is in stock ([premiumFlavors]).
+  /// only while that 특제 filling is in stock ([premiumFlavors]). 4차 병합 3
+  /// 사용자 결정: also in business, even with a bake in the mold (which keeps
+  /// its flavor and the portion it took); production uses the new choice
+  /// from then on.
   Future<bool> selectFlavor(String flavor, {bool premium = false}) => command(() {
-    if (state.session != null || !state.recipes.contains(flavor)) throw const FormatException('레시피 선택 불가');
+    if ((state.session != null && !state.business.open) || !state.recipes.contains(flavor)) {
+      throw const FormatException('레시피 선택 불가');
+    }
     if (premium && !premiumFlavors.contains(flavor)) {
       final label = pantryConfig.kind(flavor).premiumLabel;
       throw FormatException('$label${_subjectParticle(label)} 없어요. $pantryEmptyText');
@@ -1174,13 +1187,20 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (gameplayPaused || state.session != null || !state.recipes.contains(flavor) ||
         (state.business.open && state.business.needsContinuation(now()))) throw const FormatException('이전 결과/영업일을 먼저 확인해 주세요.');
     final count = DevelopmentBalance.integer(config.section('manual_cooking'), 'filling_inputs');
-    // 재료 타이쿤 B: the mold takes one portion now (plain first: a product
-    // carries no 특제 bonus), given back if canceled before the result.
-    final use = state.pantry.takePortion(pantryConfig, flavor, _nowMs);
+    // 재료 타이쿤 B: the mold takes one portion now, given back if canceled
+    // before the result. 4차 병합 3: 특제 first when the player chose
+    // '특제 <this flavor>' (its product's sale pays the bonus), else the
+    // plain filling only.
+    final premium = state.selectedPremium && flavor == state.selectedFlavor && premiumFlavors.contains(flavor);
+    final use = state.pantry.takePortion(pantryConfig, flavor, _nowMs, premium: premium);
     if (use == null) throw FormatException(missingFillingText(pantryConfig, flavor, _nowMs, state.pantry));
     state.sessionPortion = use;
-    if (flavor != state.selectedFlavor) state.selectedPremium = false;
-    state.selectedFlavor = flavor;
+    // Before opening the bake's flavor is the chosen one; in business an
+    // order's bake leaves the player's choice for production alone.
+    if (!state.business.open) {
+      if (flavor != state.selectedFlavor) state.selectedPremium = false;
+      state.selectedFlavor = flavor;
+    }
     state.session = CookingSession.start(id: _id(), flavor: flavor, practice: practice,
       fillingSequence: List.generate(count, (i) => i.isEven ? CookingDirection.left : CookingDirection.right));
     state.phaseMs = 0;
@@ -1224,9 +1244,12 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   void _recordCookingProduct(CookingSession session, {required bool keep}) {
     final result = evaluateCookingResult(config, session, difficulty: difficulty(session.flavor));
     final active = state.business.permitsProducts(now());
+    // 4차 병합 3: the portion's 특제 bonus goes with the product to the sale.
+    final use = state.sessionPortion;
     final batch = ProductBatch(id: session.id, flavor: session.flavor, variant: result.variant,
       quantity: DevelopmentBalance.integer(config.section('manual_cooking'), 'products_per_completed_result'),
-      madeOnBusinessIndex: active ? state.business.businessIndex : 0);
+      madeOnBusinessIndex: active ? state.business.businessIndex : 0,
+      bonusPermille: use == null || use.flavor != session.flavor ? 1000 : state.pantry.bonusPermille(pantryConfig, use));
     state.inventory = active ? state.inventory.recordResult(batch, keep: keep) : state.inventory.recordPreparedResult(batch, keep: keep);
   }
   Future<bool> cookingCommand(CookingSession next) async {
@@ -1249,9 +1272,12 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     }
     state.session = next; state.phaseMs = 0;
     if (next.phase == CookingPhase.canceled) _refundSession();
-    if (next.phase == CookingPhase.result) state.sessionPortion = null;
+    // (A result keeps `sessionPortion` until it is stored: its 특제 bonus
+    // goes with the product, 4차 병합 3.)
     if (next.phase == CookingPhase.result) {
-      state.mastery = state.mastery.record(evaluateCookingResult(config, next, difficulty: difficulty(next.flavor)));
+      // The bake's own flavor: in business the chosen one may differ (4차 병합 3).
+      state.mastery = state.flavorMasteries[next.flavor]!.record(
+          evaluateCookingResult(config, next, difficulty: difficulty(next.flavor)));
       if (!next.practice) _recordCookingProduct(next, keep: true);
       // 4차 피드백 g6 (DEC-TBD-i4g6-2): the six-cell griddle opens by the
       // 도감 ([WorkshopState.griddleFlavors]), no longer by a mastery award.
@@ -1306,14 +1332,21 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   Future<bool> startCell(int index) => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업 중, 스페셜 붕어빵을 만들지 않을 때만 쓸 수 있어요.');
     // 재료 타이쿤 B: only flavors with filling left, one portion per cell.
+    // 4차 병합 3: a cell of the chosen '특제 <맛>' uses 특제 first and its
+    // product's sale pays the bonus; other flavors use their plain filling.
     final pantry = state.pantry, c = pantryConfig, at = _nowMs, mastered = state.griddleFlavors(config);
-    final ready = pantry.griddleFlavors(c, mastered, at);
+    final premiumFlavor = state.selectedPremium && premiumFlavors.contains(state.selectedFlavor) ? state.selectedFlavor : null;
+    final ready = pantry.griddleFlavors(c, mastered, at, premiumFlavor: premiumFlavor);
     if (mastered.isNotEmpty && ready.isEmpty) {
       throw FormatException(mastered.length == 1 || pantry.usable(c, c.batterKind, at) < 1
           ? missingFillingText(c, mastered.first, at, pantry) : '속이 없어요. $pantryEmptyText');
     }
     state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in ready) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
-    if (pantry.takePortion(c, state.grid.cells[index].flavor!, at) == null) throw const FormatException(pantryEmptyText);
+    final flavor = state.grid.cells[index].flavor!;
+    final use = pantry.takePortion(c, flavor, at, premium: flavor == premiumFlavor);
+    if (use == null) throw const FormatException(pantryEmptyText);
+    final bonus = pantry.bonusPermille(c, use);
+    if (bonus != 1000) state.grid = state.grid.withBonus(index, bonus);
   });
   Future<bool> harvestCell(int index, {int? expectedCycle}) async {
     String? frozenId;
@@ -2132,24 +2165,32 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     return {for (final l in state.pantry.lots)
       if (l.premium && l.kind != c.batterKind && state.recipes.contains(l.kind) && l.portions > 0 && !l.expired(c, at)) l.kind};
   }
-  /// The flavor and 특제 choice taps and auto production use now: the
-  /// chosen one while its filling lasts (특제 → plain of the same flavor →
-  /// the next flavor of `filling_fallback_order`), null when the batter or
-  /// every filling is out. With [switchChoice] a change becomes the chosen
-  /// flavor with a short notice (not while a special bungeoppang is in the
-  /// mold, which keeps its flavor).
+  /// The filling taps and auto production use now, as (flavor, 특제):
+  /// taps and auto earn no 특제 bonus (4차 병합 3 사용자 결정), so they use
+  /// plain filling — the chosen flavor's, else the next flavor of
+  /// `filling_fallback_order` with plain filling (never the same flavor's
+  /// 특제). With a plain choice that switch becomes the chosen flavor with a
+  /// short notice ('팥소가 떨어져 슈크림으로 바꿨어요'); a '특제 <맛>' choice
+  /// stays (the mold and the six cells use it) and only when no plain
+  /// filling is left at all do taps use that 특제 filling. A 특제 choice whose
+  /// 특제 filling ran out becomes the plain flavor ('특제 팥소가 떨어져 팥소로
+  /// 바꿨어요'). Null when the batter or every usable filling is out. Only
+  /// with [switchChoice] does the choice change.
   (String, bool)? _productionChoice({bool switchChoice = true}) {
     final c = pantryConfig, p = state.pantry, at = _nowMs, selected = state.selectedFlavor;
-    if (p.usable(c, c.batterKind, at) < 1) return null;
-    final premium = state.selectedPremium && premiumFlavors.contains(selected);
-    final fallback = p.usable(c, selected, at) > 0 ? selected : p.productionFlavor(c, selected, state.recipes, at);
-    final (String, bool)? choice = premium ? (selected, true) : fallback == null ? null : (fallback, false);
-    if (choice == null) return null;
-    if (switchChoice && state.session == null && (choice.$1 != selected || choice.$2 != state.selectedPremium)) {
-      notice = fallbackNotice(c, selected, choice.$1, fromPremium: state.selectedPremium);
-      state..selectedFlavor = choice.$1 ..selectedPremium = choice.$2;
+    final premiumChosen = state.selectedPremium && premiumFlavors.contains(selected);
+    if (switchChoice && state.selectedPremium && !premiumChosen) {
+      notice = fallbackNotice(c, selected, selected, fromPremium: true);
+      state.selectedPremium = false;
     }
-    return choice;
+    if (p.usable(c, c.batterKind, at) < 1) return null;
+    final plain = p.productionFlavor(c, selected, state.recipes, at);
+    if (plain == null) return premiumChosen ? (selected, true) : null;
+    if (switchChoice && plain != selected && !premiumChosen) {
+      notice = fallbackNotice(c, selected, plain);
+      state.selectedFlavor = plain;
+    }
+    return (plain, false);
   }
   /// Why production stops now ([PantryShortage.none] while it runs).
   PantryShortage get productionShortage {
@@ -2163,17 +2204,17 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       productionShortage != PantryShortage.none;
   /// Auto production for [elapsedMs] in the foreground: each portion covers
   /// `auto_ms_per_portion`; time it does not cover makes nothing. Returns
-  /// ms × permille for [BusinessProgress.settleActive], or null (×1, nothing
-  /// to use: closed, no auto skill, no time). The away settlement never comes here.
+  /// ms × permille for [BusinessProgress.settleActive] (the covered time ×
+  /// 1000: no 특제 bonus on auto, 4차 병합 3), or null (×1, nothing to use:
+  /// closed, no auto skill, no time). The away settlement never comes here.
   int? _runAutoPantry(int elapsedMs) {
     if (elapsedMs <= 0 || !state.business.open || autoRate <= BigInt.zero) return null;
     final choice = _productionChoice();
     final segments = state.pantry.runAuto(pantryConfig, choice?.$1 ?? state.selectedFlavor, elapsedMs, _nowMs,
         premium: choice?.$2 ?? false);
-    var covered = 0, weighted = 0;
-    for (final s in segments) { covered += s.ms; weighted += s.ms * s.bonusPermille; }
+    final covered = segments.fold(0, (n, s) => n + s.ms);
     if (covered < elapsedMs) _ingredientsOut(say: false);
-    return weighted;
+    return covered * 1000;
   }
   /// Production stopped for lack of batter or filling: '재료를 준비하세요'
   /// once ([say], taps) and the usage event `ingredient_out` (once a day).

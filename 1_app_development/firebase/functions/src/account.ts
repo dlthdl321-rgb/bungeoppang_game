@@ -37,8 +37,9 @@ export const ageBands = ["14_19", "20s", "30s", "40s", "50plus", "none"] as cons
 /**
  * The terms and privacy notice the required consent refers to
  * (lib/owner_profile.dart). 2026-11-19: adds the 만 14세 이상 confirmation.
+ * 2026-11-21: the privacy notice adds the usage event `ingredient_out`.
  */
-export const requiredConsentVersion = "2026-11-19";
+export const requiredConsentVersion = "2026-11-21";
 
 export const accountProfilePath = (uid: string) => `accountProfiles/${uid}`;
 

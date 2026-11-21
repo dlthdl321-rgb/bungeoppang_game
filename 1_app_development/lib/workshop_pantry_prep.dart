@@ -35,12 +35,20 @@ extension WorkshopPantryPrep on WorkshopController {
   /// (zero when nothing is missing).
   BigInt prepShortfallCost(String kind, int tubs) => state.pantry.shortfallCost(pantryConfig, kind, tubs, pantryRate);
 
+  /// Whether the 붕어빵력 free to spend (`purchases.available`, as the shop
+  /// uses) pays [prepShortfallCost].
+  bool prepShortfallAffordable(String kind, int tubs) =>
+      state.purchases.available(state.buns) >= prepShortfallCost(kind, tubs);
+
   /// '모자란 재료 한 번에 사기' in the 재료 준비 window: buys the missing
-  /// basic ingredients with 붕어빵력 in one save.
+  /// basic ingredients with 붕어빵력 in one save. Like the shop's
+  /// [WorkshopController.buyIngredient] (4차 병합 3: one rule), only the
+  /// 붕어빵력 not held for an unsettled purchase can pay
+  /// ([prepShortfallAffordable]).
   Future<bool> buyPrepShortfall(String kind, int tubs) => command(() {
         if (pantryPrepLock case final lock?) throw FormatException(lock);
+        if (!prepShortfallAffordable(kind, tubs)) throw const FormatException('붕어빵력이 모자라요.');
         final cost = prepShortfallCost(kind, tubs);
-        if (cost > state.buns) throw const FormatException('붕어빵력이 모자라요.');
         state.pantry.buyShortfall(pantryConfig, kind, tubs, pantryRate, state.recipes);
         state.buns -= cost;
       });

@@ -6,7 +6,10 @@ class GriddleCell {
   final int cycle, elapsedMs, idleMs;
   final String? flavor;
   final int? difficulty;
-  GriddleCell._(this.cycle, this.elapsedMs, this.idleMs, this.flavor, this.difficulty);
+  /// The 특제 bonus of the portion the cell took (재료 타이쿤, 4차 병합 3):
+  /// its product carries it to the sale. 1000 = plain (not saved).
+  final int bonusPermille;
+  GriddleCell._(this.cycle, this.elapsedMs, this.idleMs, this.flavor, this.difficulty, [this.bonusPermille = 1000]);
   bool get cooking => flavor != null;
 }
 class GriddleHarvest {
@@ -47,7 +50,18 @@ class GriddleProgress {
   GriddleProgress advanceActive(int elapsedMs) {
     if (elapsedMs < 0) throw const FormatException('숙련된 붕어빵 경과 시간 오류');
     return GriddleProgress._(runId, [for (final c in cells) GriddleCell._(c.cycle,
-      c.elapsedMs + (c.cooking ? elapsedMs : 0), c.idleMs + (c.cooking ? 0 : elapsedMs), c.flavor, c.difficulty)]);
+      c.elapsedMs + (c.cooking ? elapsedMs : 0), c.idleMs + (c.cooking ? 0 : elapsedMs), c.flavor, c.difficulty,
+      c.bonusPermille)]);
+  }
+  /// The cell just started took a 특제 portion (재료 타이쿤, 4차 병합 3):
+  /// remember its bonus for the product.
+  GriddleProgress withBonus(int index, int bonusPermille) {
+    if (index < 0 || index >= cells.length || !cells[index].cooking ||
+        bonusPermille < 1000 || bonusPermille > maxProductBonusPermille) {
+      throw const FormatException('숙련된 붕어빵 틀 칸 오류');
+    }
+    final c = cells[index];
+    return _replace(index, GriddleCell._(c.cycle, c.elapsedMs, c.idleMs, c.flavor, c.difficulty, bonusPermille));
   }
   /// 4차 피드백 g6: after a cell starts, the batter, the filling and the
   /// batter again go in by themselves over `griddle.prep_ms` (a third
@@ -94,7 +108,7 @@ class GriddleProgress {
     final id = 'griddle:$runId:$index:${cell.cycle}';
     final product = variant == 4 ? null : ProductBatch(id: id, flavor: cell.flavor!,
         variant: variant, quantity: DevelopmentBalance.integer(config.section('griddle'), 'products_per_harvest'),
-        madeOnBusinessIndex: businessIndex);
+        madeOnBusinessIndex: businessIndex, bonusPermille: cell.bonusPermille);
     return GriddleHarvest(_replace(index, GriddleCell._(cell.cycle, 0, 0, null, null)), product, id);
   }
   /// Apply one previously frozen harvest after a failed save without replacing
@@ -111,6 +125,7 @@ class GriddleProgress {
   Map<String, dynamic> toJson() => {'schema': 1, 'runId': runId, 'cells': [for (final c in cells) {
     'cycle': c.cycle, 'elapsedMs': c.elapsedMs, 'idleMs': c.idleMs,
     'flavor': c.flavor, 'difficulty': c.difficulty,
+    if (c.bonusPermille != 1000) 'bonusPermille': c.bonusPermille,
   }]};
   factory GriddleProgress.fromJson(Map<String, dynamic> row, DevelopmentBalance config) {
     final raw = row['cells'];
@@ -125,15 +140,17 @@ class GriddleProgress {
       final cycle = DevelopmentBalance.integer(value, 'cycle');
       final elapsed = DevelopmentBalance.integer(value, 'elapsedMs');
       final idle = DevelopmentBalance.integer(value, 'idleMs');
+      final bonus = value.containsKey('bonusPermille') ? DevelopmentBalance.integer(value, 'bonusPermille') : 1000;
+      if (bonus < 1000 || bonus > maxProductBonusPermille) throw const FormatException('굽는 칸 특제 기록 오류');
       if (flavor == null) {
-        if (difficulty != null || elapsed != 0) throw const FormatException('빈 칸 상태 오류');
+        if (difficulty != null || elapsed != 0 || bonus != 1000) throw const FormatException('빈 칸 상태 오류');
       } else {
         if (flavor is! String || flavor.isEmpty || cycle == 0 || idle != 0 || difficulty is! int) {
           throw const FormatException('굽는 칸 상태 오류');
         }
         config.mastery(difficulty);
       }
-      cells.add(GriddleCell._(cycle, elapsed, idle, flavor as String?, difficulty as int?));
+      cells.add(GriddleCell._(cycle, elapsed, idle, flavor as String?, difficulty as int?, bonus));
     }
     return GriddleProgress._(row['runId'] as String, cells);
   }

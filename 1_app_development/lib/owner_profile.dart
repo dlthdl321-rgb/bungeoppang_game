@@ -14,7 +14,9 @@ import 'online_backend.dart';
 /// either changes so every player agrees again (server: account.ts).
 /// 2026-11-19: '(필수) 만 14세 이상입니다' joins the required consent
 /// (만 14세 미만은 가입 불가, DEC-125), so everyone confirms it once.
-const requiredConsentVersion = '2026-11-19';
+/// 2026-11-21 (4차 병합 3 사용자 결정): the privacy notice lists the new
+/// usage event `ingredient_out` (재료 타이쿤), so everyone agrees again.
+const requiredConsentVersion = '2026-11-21';
 
 /// Gender the player may tell (optional; not the character choice).
 enum PlayerGender {

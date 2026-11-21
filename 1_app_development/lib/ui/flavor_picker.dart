@@ -11,9 +11,12 @@ import 'pixel_sprites.dart';
 /// baking starts, not a small drop-down under the HUD. The round button at
 /// the HUD's top-left (where the menu button was, H28) shows the flavor in
 /// the mold — its filling as a round swatch with the name under it — and
-/// opens [showFlavorPicker] before opening (practice). While a bake is on
-/// it shows that bake's flavor and cannot change; in business with nothing
-/// in the mold (orders choose their own flavor) it is not shown.
+/// opens [showFlavorPicker] before opening (practice). While a practice
+/// bake is on before opening it shows that bake's flavor and cannot change.
+/// 4차 병합 3 사용자 결정: in business it shows the flavor production uses
+/// (taps, auto, a '특제 <맛>' for the mold and the six cells) and can change
+/// it any time, even with an order's bake in the mold (which keeps its own
+/// flavor and the portion it took).
 class WorkshopFlavorButton extends StatelessWidget {
   final WorkshopController controller;
   const WorkshopFlavorButton({super.key, required this.controller});
@@ -24,17 +27,18 @@ class WorkshopFlavorButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = controller, s = c.state, session = s.session;
-    final preparing = session == null && !s.business.open;
-    if (session == null && !preparing) return const SizedBox.square(dimension: size);
-    final flavor = session?.flavor ?? s.selectedFlavor;
-    // 재료 타이쿤 B: '특제 팥' while the 특제 choice is on (not for a bake in the mold).
-    final premium = session == null && s.selectedPremium;
+    final open = s.business.open;
+    // Before opening with a practice bake in the mold: that bake's flavor.
+    final baking = session != null && !open;
+    final flavor = baking ? session.flavor : s.selectedFlavor;
+    // 재료 타이쿤 B: '특제 팥' while the 특제 choice is on (not for a practice bake).
+    final premium = !baking && s.selectedPremium;
     final label = premium ? '특제 ${c.flavorLabel(flavor)}' : c.flavorLabel(flavor);
-    final enabled = preparing && !c.inputBusy && !c.gameplayPaused && c.error == null;
+    final enabled = !baking && !c.inputBusy && !c.gameplayPaused && c.error == null;
     return Semantics(
       button: true,
       enabled: enabled,
-      label: preparing ? '맛 고르기, 지금 $label' : '만드는 맛 $label',
+      label: baking ? '만드는 맛 $label' : '맛 고르기, 지금 $label',
       excludeSemantics: true,
       child: GestureDetector(
         key: const Key('flavor-button'),
@@ -42,7 +46,7 @@ class WorkshopFlavorButton extends StatelessWidget {
         onTap: () {
           if (enabled) {
             showFlavorPicker(context, c);
-          } else if (session != null) {
+          } else if (baking) {
             showCenterToast(context, '만드는 중에는 맛을 바꿀 수 없어요.');
           }
         },

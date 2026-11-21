@@ -68,23 +68,26 @@ export class PlausibilityValidator {
       levels, revision: String(object(root.metadata).revision),
       daily: PlausibilityValidator.dailyLimits(object(root.daily_return)),
       collection: PlausibilityValidator.collectionLimits(root),
-      premium: PlausibilityValidator.premiumLimits(root),
+      premium: PlausibilityValidator.premiumLimits(root, base),
     };
   }
-  /** 재료 타이쿤 C: a 특제 portion (special batter or filling) adds
-   * `bonus_permille` of what that portion makes; a bun can have both, so at
-   * most twice that on top of all production. Each special ingredient makes
-   * one tub (`portions_per_tub` + the mini-game's bonus portions), and one
-   * portion lasts `taps_per_portion` taps or `auto_ms_per_portion` of auto
-   * time (or one bake: a sale's worth), which caps the extra over the whole
-   * progress. A config without `ingredients` allows no extra. */
-  private static premiumLimits(root: Row) {
-    if (root.ingredients === undefined) return { packCount: 0n, permille: 0n, portions: 0n, taps: 0n, autoSeconds: 0n };
-    const i = object(root.ingredients), premium = object(i.premium), consume = object(i.consume);
+  /** 재료 타이쿤 (4차 병합 3 사용자 결정): the 특제 bonus is paid **only on
+   * customer sales** — a product made with special batter or filling sells
+   * for `bonus_permille` more each (both: twice that); taps and auto get
+   * none. Each special ingredient makes one tub (`portions_per_tub` + the
+   * mini-game's bonus portions), each portion makes at most `pieces`
+   * products (a mold result or a griddle harvest), each worth at most
+   * `pieceBuns` (the dearest base price), which caps the extra over the
+   * whole progress. A config without `ingredients` allows no extra. */
+  private static premiumLimits(root: Row, pieceBuns: bigint) {
+    if (root.ingredients === undefined) return { packCount: 0n, permille: 0n, portions: 0n, pieces: 0n, pieceBuns };
+    const i = object(root.ingredients), premium = object(i.premium);
+    const pieces = Math.max(natural(object(root.manual_cooking).products_per_completed_result),
+      natural(object(root.griddle).products_per_harvest), 1);
     return {
       packCount: BigInt(natural(premium.pack_count)), permille: BigInt(natural(premium.bonus_permille)),
       portions: BigInt(natural(i.portions_per_tub) + natural(i.minigame_bonus_portions_per_tub)),
-      taps: BigInt(natural(consume.taps_per_portion)), autoSeconds: BigInt(Math.ceil(natural(consume.auto_ms_per_portion) / 1000)),
+      pieces: BigInt(pieces), pieceBuns,
     };
   }
   /** 4차 피드백 g6: a completed 도감 cell pays `cell_buns_seconds` of auto
@@ -172,21 +175,23 @@ export class PlausibilityValidator {
     // `server_min_ms_per_cell`, plus one, at most every cell there is).
     const cells = BigInt(Math.min(l.collection.cells, Math.floor(elapsedMs / l.collection.msPerCell) + 1));
     const collection = cells * (l.collection.seconds * rates.auto + l.collection.minimum);
-    const made = BigInt(taps) * rates.tap + seconds * rates.auto + BigInt(sales) * l.saleBuns;
-    const bound = prev.lifetime + made + this.premiumExtra(made, rates) + rewards + daily + collection + l.slackBuns;
+    const saleBuns = BigInt(sales) * l.saleBuns;
+    const made = BigInt(taps) * rates.tap + seconds * rates.auto + saleBuns;
+    const bound = prev.lifetime + made + this.premiumExtra(saleBuns, rates) + rewards + daily + collection + l.slackBuns;
     if (next.lifetime > bound) fail("붕어빵력 증가가 서버 시간 한도를 넘었습니다.");
     return { ...next, atMs: Math.max(now, prev.atMs), saleEvidence: prev.saleEvidence + saleEvidence };
   }
-  /** 재료 타이쿤 C: the most the 특제 bonus can add to [made] (production
-   * in the interval): twice `bonus_permille` of it (special batter and
-   * filling together), and never more than all special ingredients bought
-   * could cover (each a tub of portions, each portion at most its taps, its
-   * auto seconds or one sale). 0 without special ingredients. */
-  private premiumExtra(made: bigint, rates: Rates): bigint {
+  /** 재료 타이쿤 (4차 병합 3): the most the 특제 bonus can add to
+   * [saleBuns] (the sale proceeds allowed in the interval — taps and auto
+   * earn no bonus): twice `bonus_permille` of it (special batter and filling
+   * together), and never more than all special ingredients bought could
+   * cover (each a tub of portions, each portion `pieces` products of at most
+   * `pieceBuns`). 0 without special ingredients. */
+  private premiumExtra(saleBuns: bigint, rates: Rates): bigint {
     const p = this.limits.premium;
     if (rates.premium === 0n || p.permille === 0n) return 0n;
-    const portion = [p.taps * rates.tap, p.autoSeconds * rates.auto, this.limits.saleBuns].reduce((a, b) => a > b ? a : b);
-    const byTime = made * 2n * p.permille / 1000n, byStock = rates.premium * p.portions * portion * p.permille / 1000n;
+    const byTime = saleBuns * 2n * p.permille / 1000n;
+    const byStock = rates.premium * p.portions * p.pieces * p.pieceBuns * p.permille / 1000n;
     return byTime < byStock ? byTime : byStock;
   }
   /** 4차 피드백 g9: each level asks for taps and pieces sold in that level

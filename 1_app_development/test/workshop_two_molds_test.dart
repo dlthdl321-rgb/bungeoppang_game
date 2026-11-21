@@ -186,7 +186,9 @@ void main() {
       expect(key('idle-mold'), findsNothing);
       expect(key('workshop-mold-action'), findsNothing);
       expect(find.text('스페셜 붕어빵 제작 시작'), findsNothing);
-      expect(key('flavor-button'), findsNothing);
+      // 4차 병합 3 사용자 결정: the flavor button stays in business to change
+      // the flavor production uses.
+      expect(key('flavor-button'), findsOneWidget);
       // The griddle is out (not idle); before a flavor is mastered it shows
       // the common lock instead of cells (26번 2단계).
       expect(key('griddle-locked'), findsOneWidget);

@@ -124,6 +124,16 @@ test("판매 보상은 판매 기록 수 안에서만 검증하고 서버 추첨
   assert.equal(extra.outcome,"unverifiable");
   assert.ok(gold(store)<=config.welcome_reward.gold+1);
 });
+// 4차 병합 3: a product made with a 특제 portion carries `bonusPermille`
+// (1500·2000) and `premiumBuns` on top of `ordinaryBuns`; the sale is verified
+// like any other.
+test("특제로 만든 붕어빵 판매(bonusPermille·premiumBuns)도 판매 증거로 받는다",async()=>{
+  const {service}=setup();await service.claim("a",{progress});
+  const payload={fingerprint:"local",evidence:{order:{id:"order_0001"},products:[{batch:"b",flavor:"redbean",bonusPermille:2000}],
+    revision:config.metadata.revision,stars:5,scorePermille:900,ordinaryBuns:"60",premiumBuns:"60",businessIndex:1}};
+  const first=await service.reward("a",{...context,claim:"order_0001",kind:"sale",payload,snapshot:snapshot("120","120",30,1)},true);
+  assert.ok(["eligible","noWin"].includes(String(first.outcome)),String(first.outcome));
+});
 test("스냅샷 없는 보상 제출은 기존처럼 대기로 남는다",async()=>{
   const {service}=setup();await service.claim("a",{progress});
   const data={...context,claim:`${progress}:mission:daily:2026-10-16:taps`,kind:"mission",payload:daily("taps","50")};
@@ -249,34 +259,37 @@ test("레벨 조건은 앞 확인 이후 시작한 레벨만 그 구간의 판�
   await check(at(6,200,4));
 });
 
-// 재료 타이쿤 C: 특제 portions add `bonus_permille` of what they make, so a
-// shop with special ingredients may grow faster, but only by that much.
-test("산 특별한 재료가 있으면 특제 덤만큼 붕어빵력 증가 한도가 늘고, 그 이상은 거절한다",async()=>{
+// 재료 타이쿤 (4차 병합 3 사용자 결정): the 특제 bonus is paid only on
+// customer sales, so special ingredients raise the bound by at most twice
+// `bonus_permille` of the sale proceeds — never for taps or auto.
+test("산 특별한 재료가 있으면 판매 대금의 특제 덤만큼만 붕어빵력 증가 한도가 늘고, 탭에는 덤이 없다",async()=>{
   const taps=1240;
-  async function attempt(lifetime:bigint,packs:number) {
+  async function attempt(lifetime:bigint,packs:number,sales:number) {
     const {store,service,clock}=setup();await service.claim("a",{progress});
     await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
     await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
     if (packs) store.docs.set("users/a/compositeSkills/ingredient:cultured_butter",{owned:packs});
     clock.now+=600000;
     try {
-      await service.purchase("a","reserve",{...context,intent:intent("transaction_0002",1),snapshot:snapshot(lifetime.toString(),lifetime.toString(),taps)});
+      await service.purchase("a","reserve",{...context,intent:intent("transaction_0002",1),snapshot:snapshot(lifetime.toString(),lifetime.toString(),taps,sales)});
       return true;
     } catch { return false; }
   }
-  // The highest lifetime accepted without special ingredients.
-  async function highest(packs:number) {
+  // The highest lifetime accepted.
+  async function highest(packs:number,sales:number) {
     let low=40n,high=10n**12n;
-    while (high-low>1n) { const mid=(low+high)/2n; if (await attempt(mid,packs)) low=mid; else high=mid; }
+    while (high-low>1n) { const mid=(low+high)/2n; if (await attempt(mid,packs,sales)) low=mid; else high=mid; }
     return low;
   }
-  const plain=await highest(0),special=await highest(10);
-  // tap_1 bought: tap power 1 + its effect; 1200 taps since the checkpoint.
-  const tap=1n+BigInt(config.skill_purchase.entries.tap_1.effect),made=1200n*tap;
+  // Taps only: special ingredients change nothing (no bonus on taps).
+  assert.equal(await highest(10,0),await highest(0,0));
+  // Three sales: the bound grows by at most twice the bonus of their proceeds.
+  const plain=await highest(0,3),special=await highest(10,3);
   const permille=BigInt(config.ingredients.premium.bonus_permille);
+  const base=(config.ordinary_sale.base_buns_by_difficulty as string[]).map(BigInt).reduce((a,b)=>a>b?a:b);
   assert.ok(special>plain,`${special} > ${plain}`);
-  assert.ok(special-plain<=made*2n*permille/1000n,`덤은 생산의 ${2n*permille}‰까지: ${special-plain}`);
+  assert.ok(special-plain<=3n*base*1000n*2n*permille/1000n,`덤은 판매 대금의 ${2n*permille}‰까지: ${special-plain}`);
   // With very few special ingredients the stock caps the extra instead.
-  const one=await highest(1);
+  const one=await highest(1,3);
   assert.ok(one>plain && one<=special);
 });

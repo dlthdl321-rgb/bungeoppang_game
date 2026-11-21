@@ -19,8 +19,13 @@ import 'development_balance.dart';
 ///   오래된 것부터 먼저 씀. 산 재료(기본·특별한)는 상하지 않음.
 /// * 처음 재료(`starting_stock`)의 통은 상하지 않음 ([pantryKeepMs] 하나로, 묶음 B·E를
 ///   4차 병합 3에서 합침).
-/// * 특제는 플레이어가 맛 고르기에서 '특제 팥'처럼 고를 때 씀: 그때 특제
-///   반죽도 먼저 쓰고, 아니면 일반 반죽·속을 먼저 씀(없으면 특제로 이어 씀).
+/// * 특제(4차 병합 3 사용자 결정): 특제 속은 플레이어가 맛 고르기에서 '특제 팥'처럼
+///   고를 때만 씀 — 일반 맛을 골랐을 때 그 맛 일반 속이 떨어져도 같은 맛 특제 속으로
+///   넘어가지 않고 다른 맛 일반 속으로 바꿈. 특제를 고르면 스페셜 틀·6구가 특제
+///   반죽·속을 먼저 쓰고(특제가 떨어지면 같은 맛 일반), 반죽은 일반이 떨어지면
+///   특제 반죽으로 이어 씀. 특제 덤(+50%, 둘 다 +100%)은 **손님 판매 대금에만**
+///   (그 1인분으로 만든 재고에 `ProductBatch.bonusPermille`로 붙음). 탭·자동은
+///   배율이 없어 특제를 아낌(특제 반죽을 먼저 꺼내지 않음).
 ///
 /// ## 다른 묶음이 쓰는 API
 ///
@@ -33,16 +38,18 @@ import 'development_balance.dart';
 /// * `productionFlavor(c, selected, owned, nowMs)` 대표 맛의 속이 없으면
 ///   팥소 → 슈크림 → 초코 크림 순으로 남은 맛, 반죽·속이 없으면 null.
 ///   `fallbackNotice(c, from, to)` = '팥소가 떨어져 슈크림으로 바꿨어요'.
-/// * `shortage(c, flavor, nowMs)` → `PantryShortage.none/batter/filling`.
+/// * `shortage(c, flavor, nowMs)` → `PantryShortage.none/batter/filling`
+///   (속은 일반 속만 셈, `plain`).
 /// * `tap(c, flavor, nowMs, premium:)` 인정된 탭 1번. 쓰는 1인분(`PortionUse`)을
 ///   돌려주고, null이면 재료가 없어 탭을 세지 않음(10번에 1인분, 남은 탭 수는 저장).
 /// * `runAuto(c, flavor, elapsedMs, nowMs, premium:)` 자동 생산 시간 [elapsedMs] 중
 ///   재료가 덮은 구간들(`AutoSegment` ms·배율). 덮지 못한 시간은 생산 없음.
 ///   앱을 닫아 둔 동안(부재 정산)은 부르지 않음.
 /// * `takePortion(c, flavor, nowMs, premium:)` 스페셜 틀 제작 시작·6구 칸 하나.
-///   결과 전 취소면 `refund(use)`. `griddleFlavors(c, candidates, nowMs)`는
-///   6구가 고를 수 있는 맛(속이 남은 맛).
-/// * `bonusPermille(c, use)` 특제 배율(1000 = 그대로, 특제 하나 1500, 둘 2000).
+///   결과 전 취소면 `refund(use)`. `griddleFlavors(c, candidates, nowMs,
+///   premiumFlavor:)`는 6구가 고를 수 있는 맛(일반 속이 남은 맛 + 특제로 고른 맛).
+/// * `bonusPermille(c, use)` 특제 배율(1000 = 그대로, 특제 하나 1500, 둘 2000) —
+///   스페셜 틀·6구 재고의 판매 대금에만 씀(4차 병합 3).
 /// * `expire(c, nowMs)` 24시간 지난 통을 버리고 버린 것 목록을 돌려줌
 ///   (명령마다 먼저 부름). 안내 문장은 `expiredNotice(c, discarded)`.
 ///
@@ -441,6 +448,11 @@ class PantryState {
     return n;
   }
   int usable(PantryConfig c, String kind, int nowMs) => portions(kind, nowMs: nowMs, config: c);
+  /// Plain (not 특제) portions of [kind] still good: a filling counts only
+  /// these unless the player chose its 특제 (4차 병합 3 사용자 결정).
+  int plain(PantryConfig c, String kind, int nowMs) => portions(kind, premium: false, nowMs: nowMs, config: c);
+  /// 특제 portions of [kind] still good.
+  int premiumLeft(PantryConfig c, String kind, int nowMs) => portions(kind, premium: true, nowMs: nowMs, config: c);
 
   /// Below 20% of the stock limit (orange on the home line); 0 is red.
   bool lowStock(PantryConfig c, String kind, int level, int nowMs) =>
@@ -448,33 +460,37 @@ class PantryState {
 
   PantryShortage shortage(PantryConfig c, String flavor, int nowMs) {
     if (usable(c, c.batterKind, nowMs) < 1) return PantryShortage.batter;
-    if (usable(c, flavor, nowMs) < 1) return PantryShortage.filling;
+    if (plain(c, flavor, nowMs) < 1) return PantryShortage.filling;
     return PantryShortage.none;
   }
 
-  /// The flavor production bakes: [selected] while its filling lasts, else
-  /// the first owned flavor of `filling_fallback_order` with filling left;
-  /// null when the batter or every filling is out (production stops).
+  /// The flavor production bakes: [selected] while its plain filling lasts,
+  /// else the first owned flavor of `filling_fallback_order` with plain
+  /// filling left (never the same flavor's 특제, 4차 병합 3 사용자 결정);
+  /// null when the batter or every plain filling is out (production stops).
   String? productionFlavor(PantryConfig c, String selected, Set<String> owned, int nowMs) {
     if (usable(c, c.batterKind, nowMs) < 1) return null;
-    if (owned.contains(selected) && usable(c, selected, nowMs) > 0) return selected;
+    if (owned.contains(selected) && plain(c, selected, nowMs) > 0) return selected;
     for (final f in c.fillingOrder) {
-      if (owned.contains(f) && usable(c, f, nowMs) > 0) return f;
+      if (owned.contains(f) && plain(c, f, nowMs) > 0) return f;
     }
     return null;
   }
 
-  /// Of [candidates] (the six-cell griddle's flavors), those it may bake now.
-  List<String> griddleFlavors(PantryConfig c, Iterable<String> candidates, int nowMs) =>
-      usable(c, c.batterKind, nowMs) < 1 ? const [] : [for (final f in candidates) if (usable(c, f, nowMs) > 0) f];
+  /// Of [candidates] (the six-cell griddle's flavors), those it may bake now:
+  /// plain filling left, or [premiumFlavor] (the player's '특제 <맛>') with
+  /// its 특제 filling left.
+  List<String> griddleFlavors(PantryConfig c, Iterable<String> candidates, int nowMs, {String? premiumFlavor}) =>
+      usable(c, c.batterKind, nowMs) < 1 ? const [] : [for (final f in candidates)
+        if (plain(c, f, nowMs) > 0 || (f == premiumFlavor && premiumLeft(c, f, nowMs) > 0)) f];
 
   // ---- 쓰기 ----
 
   /// The tub of [kind] to use next: 특제 or plain as [premium] asks first,
-  /// then the other; within that, tubs that go bad (oldest first) before
-  /// the starting stock that does not.
-  PantryLot? _next(PantryConfig c, String kind, int nowMs, bool premium) {
-    for (final (wantPremium, wantKeep) in [(premium, false), (premium, true), (!premium, false), (!premium, true)]) {
+  /// then (with [other]) the other; within that, tubs that go bad (oldest
+  /// first) before the starting stock that does not.
+  PantryLot? _next(PantryConfig c, String kind, int nowMs, bool premium, {bool other = true}) {
+    for (final (wantPremium, wantKeep) in [(premium, false), (premium, true), if (other) ...[(!premium, false), (!premium, true)]]) {
       for (final lot in lots) {
         if (lot.kind == kind && lot.premium == wantPremium && lot.keeps == wantKeep && lot.portions > 0 &&
             !lot.expired(c, nowMs)) {
@@ -486,13 +502,18 @@ class PantryState {
   }
 
   /// Takes 1 batter + 1 [flavor] filling (스페셜 틀 제작 시작, 6구 칸 하나,
-  /// 탭·자동 생산): 특제 first when [premium] (the player chose '특제 팥'),
-  /// else plain first; tubs that go bad, oldest first, before the starting
-  /// stock. Null (nothing changes) when either is out.
-  PortionUse? takePortion(PantryConfig c, String flavor, int nowMs, {bool premium = false}) {
+  /// 탭·자동 생산); tubs that go bad, oldest first, before the starting
+  /// stock. The filling: with [premium] (the player chose '특제 팥') 특제
+  /// first, then plain of the same flavor; without it plain only — never
+  /// the 특제 (4차 병합 3 사용자 결정). The batter: 특제 first when
+  /// [premiumBatter] (default [premium]), else plain first, then the other
+  /// (there is no other batter to switch to). Null (nothing changes) when
+  /// either is out.
+  PortionUse? takePortion(PantryConfig c, String flavor, int nowMs, {bool premium = false, bool? premiumBatter}) {
     final kind = c.kind(flavor);
     if (kind.isBatter) throw const FormatException('속 맛이 아니에요.');
-    final batter = _next(c, c.batterKind, nowMs, premium), filling = _next(c, flavor, nowMs, premium);
+    final batter = _next(c, c.batterKind, nowMs, premiumBatter ?? premium),
+        filling = _next(c, flavor, nowMs, premium, other: premium);
     if (batter == null || filling == null) return null;
     for (final lot in [batter, filling]) {
       lot.portions--;
@@ -519,7 +540,9 @@ class PantryState {
   /// One counted tap on the big bungeoppang (영업 중). Each portion lasts
   /// `taps_per_portion` taps: the first tap takes it out, the rest use it.
   /// Returns the portion in use, or null when the ingredients are out (the
-  /// tap is not counted).
+  /// tap is not counted). Taps earn no 특제 bonus (4차 병합 3), so the 특제
+  /// batter is not taken first; [premium] only lets the chosen '특제 <맛>'
+  /// filling be used when no plain filling is left at all.
   PortionUse? tap(PantryConfig c, String flavor, int nowMs, {bool premium = false}) {
     if (tapCredit > 0 && tapPortion != null) {
       tapCredit--;
@@ -527,7 +550,7 @@ class PantryState {
       if (tapCredit == 0) tapPortion = null;
       return use;
     }
-    final use = takePortion(c, flavor, nowMs, premium: premium);
+    final use = takePortion(c, flavor, nowMs, premium: premium, premiumBatter: false);
     if (use == null) return null;
     tapCredit = c.tapsPerPortion - 1;
     tapPortion = tapCredit == 0 ? null : use;
@@ -536,13 +559,15 @@ class PantryState {
 
   /// [elapsedMs] of auto production (only while the app is in front): each
   /// portion covers `auto_ms_per_portion`. Returns the covered stretches;
-  /// time not covered (ingredients out) produces nothing.
+  /// time not covered (ingredients out) produces nothing. Like [tap], no
+  /// 특제 bonus is paid for it (the segments' `bonusPermille` is only
+  /// informative since 4차 병합 3).
   List<AutoSegment> runAuto(PantryConfig c, String flavor, int elapsedMs, int nowMs, {bool premium = false}) {
     final segments = <AutoSegment>[];
     var left = elapsedMs;
     while (left > 0) {
       if (autoCreditMs == 0 || autoPortion == null) {
-        final use = takePortion(c, flavor, nowMs, premium: premium);
+        final use = takePortion(c, flavor, nowMs, premium: premium, premiumBatter: false);
         if (use == null) break;
         autoPortion = use;
         autoCreditMs = c.autoMsPerPortion;
