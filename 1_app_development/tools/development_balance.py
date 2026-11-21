@@ -292,6 +292,36 @@ def validate(data, catalog):
     require(all(isinstance(collection['titles'].get(f), str) for f in data['active_recipes']) and
             isinstance(collection['title_default_suffix'], str), '도감 완성 칭호(맛마다)')
     require(0 < data['griddle']['prep_ms'] <= 10000, '숙련된 붕어빵 틀 자동 준비 시간')
+    # 재료 타이쿤 A(2026-11-21): 재료·가격 초·레시피·통·한도·덤·특제·처음 재료. 앱 lib/pantry_rules.dart와 같은 검사.
+    pantry = data['ingredients']
+    recipes = data['active_recipes']
+    basic, premium, prepared = pantry['basic'], pantry['premium']['items'], pantry['prepared']
+    require(pantry['rate_taps_per_second'] >= 1 and re.fullmatch(r'[1-9][0-9]*', pantry['min_price_buns']) and
+            pantry['portions_per_tub'] >= 1 and pantry['expiry_ms'] >= 1, '재료 기준(R 탭 수·최저 가격·1통 인분·상하는 시간)')
+    for key in ('buy_steps', 'batch_tubs'):
+        require(all(b > a for a, b in zip(pantry[key], pantry[key][1:])) and pantry[key][0] >= 1, f'재료 {key} 오름차순')
+    limits = pantry['stock_limit_tubs']
+    require(limits[0]['from_level'] == 1 and all(b['from_level'] > a['from_level'] and b['tubs'] >= a['tubs']
+            for a, b in zip(limits, limits[1:])) and all(r['tubs'] >= 1 for r in limits), '재료 보관 한도(Lv.1부터 오름차순)')
+    require(all(pantry['consume'][k] >= 1 for k in ('taps_per_portion', 'auto_ms_per_portion', 'special_mold_portions',
+            'griddle_cell_portions')), '재료 쓰는 양')
+    require(sorted(pantry['filling_fallback_order']) == sorted(recipes), '대표 맛 바꾸는 순서(모든 맛 한 번씩)')
+    require(all(r['price_seconds'] >= 1 and r['max_stock'] >= 1 and r.get('requires_recipe', 'redbean') in recipes
+                for r in basic.values()), '기본 재료(가격 초·보관 수·필요 레시피)')
+    require(not set(basic) & set(premium) and all(r['prepared'] in prepared for r in premium.values()),
+            '특별한 재료(대상 준비물)')
+    require(pantry['premium']['pack_gold'] >= 1 and pantry['premium']['pack_count'] >= 1 and
+            pantry['premium']['unlock_level'] >= 1, '특별한 재료 묶음(황금·개수·레벨)')
+    require([k for k, r in prepared.items() if 'flavor' not in r] == ['batter'] and
+            all(r.get('flavor', k) == k for k, r in prepared.items() if k != 'batter') and set(recipes) <= set(prepared),
+            '준비물(반죽 하나 + 맛마다 속)')
+    for key, row in prepared.items():
+        require(row['minigame'] in ('stir', 'heat', 'whisk') and all(i in basic and n >= 1 for i, n in row['recipe'].items()) and
+                sum(1 for r in premium.values() if r['prepared'] == key) == 1, f'준비물 {key}(미니게임·레시피·특별한 재료 하나)')
+    initial = {'batter'} | {k for k, r in recipes.items() if r['initial']}
+    for group in (pantry['starting_stock']['tubs'], pantry['starting_stock']['recipe_sets'], pantry['rescue_pack']['recipe_sets']):
+        require(set(group) <= initial and all(n >= 1 for n in group.values()), '처음 재료·꾸러미(반죽과 처음 맛만)')
+    require(max(pantry['starting_stock']['tubs'].values()) <= limits[0]['tubs'], '처음 재료 ≤ 보관 한도')
     # 26번 8단계: 공유 카드(보상 없음). 정식 출시 뒤 store_line_mode만 live로 바꾼다.
     share = data['share']
     require(share['card_width'] == 1080 and share['card_height'] == 1350, '공유 카드 크기(1080×1350, 4:5)')

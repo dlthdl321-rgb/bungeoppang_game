@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'feedback_config.dart' show ratingStarsMax;
+import 'pantry_rules.dart' show PantryConfig;
 
 /// Development-only numeric contract. Existing purchases must not silently use
 /// this catalog: the server quote/recovery protocol is a separate integration.
@@ -239,6 +240,8 @@ class DevelopmentBalance {
       final preference=_map(result.section('customer_order_preferences')[id]);
       if(!recipes.containsKey(preference['flavor']) || integer(preference,'quantity')<1) throw const FormatException('손님 주문 성향 오류');
     }
+    // 재료 타이쿤 (묶음 A): the `ingredients` section reads cleanly.
+    PantryConfig.parse(result.section('ingredients'), recipes);
     return result;
   }
 

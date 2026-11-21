@@ -2370,5 +2370,188 @@
     },
     "title_default_suffix": "장인",
     "server_min_ms_per_cell": 30000
+  },
+  "ingredients": {
+    "rate_taps_per_second": 2,
+    "min_price_buns": "1",
+    "buy_steps": [
+      1,
+      10,
+      100
+    ],
+    "portions_per_tub": 100,
+    "batch_tubs": [
+      1,
+      3,
+      5
+    ],
+    "minigame_bonus_portions_per_tub": 10,
+    "expiry_ms": 86400000,
+    "stock_limit_tubs": [
+      {
+        "from_level": 1,
+        "tubs": 10
+      },
+      {
+        "from_level": 10,
+        "tubs": 15
+      },
+      {
+        "from_level": 20,
+        "tubs": 20
+      }
+    ],
+    "consume": {
+      "taps_per_portion": 10,
+      "auto_ms_per_portion": 10000,
+      "special_mold_portions": 1,
+      "griddle_cell_portions": 1
+    },
+    "filling_fallback_order": [
+      "redbean",
+      "custard",
+      "cocoa"
+    ],
+    "basic": {
+      "flour": {
+        "label": "밀가루",
+        "unit_label": "밀가루 1포대",
+        "price_seconds": 3,
+        "max_stock": 99
+      },
+      "milk": {
+        "label": "우유",
+        "unit_label": "우유 1팩",
+        "price_seconds": 3,
+        "max_stock": 99
+      },
+      "egg": {
+        "label": "달걀",
+        "unit_label": "달걀 1판",
+        "price_seconds": 3,
+        "max_stock": 99
+      },
+      "sugar": {
+        "label": "설탕",
+        "unit_label": "설탕 1봉지",
+        "price_seconds": 2,
+        "max_stock": 99
+      },
+      "salt": {
+        "label": "소금",
+        "unit_label": "소금 1봉지",
+        "price_seconds": 1,
+        "max_stock": 99
+      },
+      "adzuki": {
+        "label": "팥",
+        "unit_label": "팥 1자루",
+        "price_seconds": 4,
+        "max_stock": 99
+      },
+      "cocoa_powder": {
+        "label": "코코아 가루",
+        "unit_label": "코코아 가루 1봉지",
+        "price_seconds": 5,
+        "max_stock": 99,
+        "requires_recipe": "cocoa"
+      }
+    },
+    "premium": {
+      "unlock_level": 5,
+      "pack_gold": 1,
+      "pack_count": 2,
+      "bonus_permille": 500,
+      "items": {
+        "cultured_butter": {
+          "label": "발효 버터",
+          "prepared": "batter",
+          "max_stock": 99
+        },
+        "fresh_adzuki": {
+          "label": "국산 햇팥",
+          "prepared": "redbean",
+          "max_stock": 99
+        },
+        "vanilla_bean": {
+          "label": "바닐라 빈",
+          "prepared": "custard",
+          "max_stock": 99
+        },
+        "fine_chocolate": {
+          "label": "고급 초콜릿",
+          "prepared": "cocoa",
+          "max_stock": 99
+        }
+      }
+    },
+    "prepared": {
+      "batter": {
+        "label": "반죽",
+        "premium_label": "특제 반죽",
+        "minigame": "stir",
+        "recipe": {
+          "flour": 2,
+          "milk": 1,
+          "egg": 1,
+          "sugar": 1,
+          "salt": 1
+        }
+      },
+      "redbean": {
+        "label": "팥소",
+        "premium_label": "특제 팥소",
+        "minigame": "heat",
+        "flavor": "redbean",
+        "recipe": {
+          "adzuki": 2,
+          "sugar": 1,
+          "salt": 1
+        }
+      },
+      "custard": {
+        "label": "슈크림",
+        "premium_label": "특제 슈크림",
+        "minigame": "whisk",
+        "flavor": "custard",
+        "recipe": {
+          "milk": 2,
+          "egg": 2,
+          "sugar": 1
+        }
+      },
+      "cocoa": {
+        "label": "초코 크림",
+        "premium_label": "특제 초코 크림",
+        "minigame": "heat",
+        "flavor": "cocoa",
+        "recipe": {
+          "cocoa_powder": 2,
+          "milk": 1,
+          "sugar": 1
+        }
+      }
+    },
+    "starting_stock": {
+      "tubs": {
+        "batter": 3,
+        "redbean": 3
+      },
+      "recipe_sets": {
+        "batter": 1,
+        "redbean": 1
+      }
+    },
+    "recipe_gift": {
+      "tubs": 1,
+      "recipe_sets": 1
+    },
+    "rescue_pack": {
+      "daily_limit": 3,
+      "recipe_sets": {
+        "batter": 1,
+        "redbean": 1
+      }
+    }
   }
 }
