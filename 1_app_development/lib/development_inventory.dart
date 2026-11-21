@@ -5,21 +5,37 @@ import 'development_rules.dart';
 class ProductBatch {
   final String id, flavor;
   final int variant, quantity, madeOnBusinessIndex;
+  /// The 특제 bonus of the portion it was made with (재료 타이쿤, 4차 병합 3
+  /// 사용자 결정): 1000 plain, 1500 with 특제 반죽 or 속, 2000 with both.
+  /// Only a customer's sale pays it ([CustomerDelivery.ordinaryBuns]). Saved
+  /// only when not 1000, so older saves and fingerprints stay the same.
+  final int bonusPermille;
   ProductBatch({required this.id, required this.flavor, required this.variant,
-      required this.quantity, required this.madeOnBusinessIndex}) {
-    if (id.isEmpty || flavor.isEmpty || variant < 0 || variant >= 5 || quantity <= 0 || madeOnBusinessIndex < 0) {
+      required this.quantity, required this.madeOnBusinessIndex, this.bonusPermille = 1000}) {
+    if (id.isEmpty || flavor.isEmpty || variant < 0 || variant >= 5 || quantity <= 0 || madeOnBusinessIndex < 0 ||
+        bonusPermille < 1000 || bonusPermille > maxProductBonusPermille) {
       throw const FormatException('제품 묶음 오류');
     }
   }
+  /// The same batch with [quantity] (and, for prepared products, the day).
+  ProductBatch copyWith({int? quantity, int? madeOnBusinessIndex}) => ProductBatch(id: id, flavor: flavor,
+      variant: variant, quantity: quantity ?? this.quantity,
+      madeOnBusinessIndex: madeOnBusinessIndex ?? this.madeOnBusinessIndex, bonusPermille: bonusPermille);
   Map<String, dynamic> toJson() => {'id': id, 'flavor': flavor, 'variant': variant,
-    'quantity': quantity, 'madeOnBusinessIndex': madeOnBusinessIndex};
+    'quantity': quantity, 'madeOnBusinessIndex': madeOnBusinessIndex,
+    if (bonusPermille != 1000) 'bonusPermille': bonusPermille};
   factory ProductBatch.fromJson(Map<String, dynamic> row) {
     if (row['id'] is! String || row['flavor'] is! String) throw const FormatException('제품 식별자 오류');
     return ProductBatch(id: row['id'] as String, flavor: row['flavor'] as String,
       variant: DevelopmentBalance.integer(row, 'variant'), quantity: DevelopmentBalance.integer(row, 'quantity'),
-      madeOnBusinessIndex: DevelopmentBalance.integer(row, 'madeOnBusinessIndex'));
+      madeOnBusinessIndex: DevelopmentBalance.integer(row, 'madeOnBusinessIndex'),
+      bonusPermille: row.containsKey('bonusPermille') ? DevelopmentBalance.integer(row, 'bonusPermille') : 1000);
   }
 }
+
+/// The largest 특제 bonus a product may carry (특제 반죽 + 특제 속 at most
+/// +100% each would be 3000; the config's `bonus_permille` is 500 now).
+const maxProductBonusPermille = 3000;
 
 /// Result disposition stays even when its batch is consumed/expired, preventing
 /// the same result being reopened and turned into a new product or fresh batch.
@@ -62,8 +78,7 @@ class InventoryProgress {
     final next = {...batches}, accepted = {...bindings};
     for (final batch in prepared.values) {
       if (next.containsKey(batch.id) || accepted.containsKey(batch.id)) throw const FormatException('준비 제품 중복 귀속');
-      next[batch.id] = ProductBatch(id: batch.id, flavor: batch.flavor, variant: batch.variant,
-          quantity: batch.quantity, madeOnBusinessIndex: businessIndex);
+      next[batch.id] = batch.copyWith(madeOnBusinessIndex: businessIndex);
       accepted[batch.id] = businessIndex;
     }
     return InventoryProgress._(next, dispositions, bindings: accepted);
@@ -87,8 +102,7 @@ class InventoryProgress {
       }
       final remaining = old.quantity - entry.value;
       if (remaining == 0) { next.remove(entry.key); }
-      else { next[entry.key] = ProductBatch(id: old.id, flavor: old.flavor, variant: old.variant,
-          quantity: remaining, madeOnBusinessIndex: old.madeOnBusinessIndex); }
+      else { next[entry.key] = old.copyWith(quantity: remaining); }
     }
     return InventoryProgress._(next, dispositions, prepared: prepared, bindings: bindings);
   }
@@ -135,7 +149,7 @@ class InventoryProgress {
       if (e.value is! Map<String, dynamic>) throw const FormatException('재고 묶음 형식 오류');
       final batch = ProductBatch.fromJson(e.value as Map<String, dynamic>), original = originals[e.key];
       if (batch.id != e.key || original == null || batch.flavor != original.flavor ||
-          batch.variant != original.variant || batch.madeOnBusinessIndex != (bindings[e.key] ?? original.madeOnBusinessIndex) ||
+          batch.variant != original.variant || batch.bonusPermille != original.bonusPermille || batch.madeOnBusinessIndex != (bindings[e.key] ?? original.madeOnBusinessIndex) ||
           prepared.containsKey(e.key) || (original.madeOnBusinessIndex == 0 && !bindings.containsKey(e.key)) ||
           batch.quantity > original.quantity) throw const FormatException('재고/제품 원장 불일치');
       batches[e.key] = batch;

@@ -117,8 +117,9 @@ def validate(data, catalog):
     avatar = data['avatar_catalog']
     # 26번 3차 H42: backgrounds are sold through the same catalog.
     # 4차 피드백 g10(ID8·ID9): 등불 색과 낮·밤 고정도 같은 목록으로 판다.
+    # 4차 피드백 g15: 화로·장식·틀 무늬·토핑도 같은 목록으로 팔 수 있다(팔기 시작하면 꾸미기 칸이 저절로 보임).
     avatar_slots = {'character', 'skin', 'hair', 'top', 'bottom', 'shoes', 'outfit', 'hat', 'accessory', 'tool', 'background',
-                    'lamp', 'time'}
+                    'lamp', 'time', 'stove', 'decoration', 'pattern', 'topping'}
     require(bool(avatar), '아바타 카탈로그 누락')
     for key, row in avatar.items():
         require(row['slot'] in avatar_slots and type(row['free']) is bool and
@@ -207,7 +208,8 @@ def validate(data, catalog):
     # 26번 4단계: 결과 등급 '완벽'(보여 주기 전용, 판정·판매는 그대로). 성공 기준 안쪽이어야 한다.
     grade = data['cooking_grade']
     require(set(grade) == {'perfect_min_coverage_permille', 'perfect_max_total_amount_permille',
-                           'perfect_max_spill_permille', 'perfect_doneness_index'},
+                           'perfect_max_spill_permille', 'perfect_doneness_index', 'good_min_coverage_permille',
+                           'good_min_total_amount_permille', 'good_max_total_amount_permille', 'good_max_spill_permille'},
             '결과 등급 설정 키')
     require(manual['batter_min_coverage_permille'] <= grade['perfect_min_coverage_permille'] <= 1000 and
             manual['batter_total_min_amount_permille'] <= grade['perfect_max_total_amount_permille'] <=
@@ -215,6 +217,15 @@ def validate(data, catalog):
             0 <= grade['perfect_max_spill_permille'] <=
             manual['batter_total_overflow_amount_permille'] - grade['perfect_max_total_amount_permille'],
             '완벽 기준(덮은 면적·1·2차 합·흘림)은 성공 기준 안쪽')
+    # 4차 피드백 g15: '잘 구움'과 '보통'의 경계(보여 주기 전용). 성공 기준과 완벽 기준 사이.
+    require(manual['batter_min_coverage_permille'] <= grade['good_min_coverage_permille'] <=
+            grade['perfect_min_coverage_permille'] and
+            manual['batter_total_min_amount_permille'] <= grade['good_min_total_amount_permille'] <=
+            grade['perfect_max_total_amount_permille'] <= grade['good_max_total_amount_permille'] <=
+            manual['batter_total_overflow_amount_permille'] and
+            grade['perfect_max_spill_permille'] <= grade['good_max_spill_permille'] <=
+            manual['batter_total_overflow_amount_permille'] - grade['good_min_total_amount_permille'],
+            '잘 구움 기준(덮은 면적·1·2차 합·흘림)은 성공 기준과 완벽 기준 사이')
     require(all(row['success_doneness_min_index'] <= grade['perfect_doneness_index'] <= row['success_doneness_max_index']
                 for row in data['mastery_difficulties']), '완벽 익힘은 성공 익힘 범위 안')
     sale = data['ordinary_sale']
@@ -234,6 +245,8 @@ def validate(data, catalog):
         require(data['feature_unlock_levels'][key] == 1, '핵심 진행의 추가 성장 잠금 금지')
     # 26번 2단계(DEC-043): 스킬 창은 처음 5분 안(Lv.2~5)에 연다.
     require(2 <= data['feature_unlock_levels']['skill_shop'] <= 5, '스킬 창 해금 레벨(처음 5분)')
+    # 재료 타이쿤 E: '재료 준비' 소개는 처음 재료(반죽 3통)가 떨어지기 전(Lv.2~5)에.
+    require(2 <= data['feature_unlock_levels']['pantry_prep'] <= 5, '재료 준비 해금 레벨(처음 재료 안)')
     check = data['server_validation']
     require(check['max_taps_per_second'] > 0 and check['mission_claim_grace_days'] >= 1 and
             all(re.fullmatch(r'0|[1-9][0-9]*', check[k]) for k in ('slack_buns', 'first_checkpoint_max_lifetime')),
@@ -281,6 +294,49 @@ def validate(data, catalog):
     require(all(isinstance(collection['titles'].get(f), str) for f in data['active_recipes']) and
             isinstance(collection['title_default_suffix'], str), '도감 완성 칭호(맛마다)')
     require(0 < data['griddle']['prep_ms'] <= 10000, '숙련된 붕어빵 틀 자동 준비 시간')
+    # 재료 타이쿤 A(2026-11-21): 재료·가격 초·레시피·통·한도·덤·특제·처음 재료. 앱 lib/pantry_rules.dart와 같은 검사.
+    pantry = data['ingredients']
+    recipes = data['active_recipes']
+    basic, premium, prepared = pantry['basic'], pantry['premium']['items'], pantry['prepared']
+    require(pantry['rate_taps_per_second'] >= 1 and re.fullmatch(r'[1-9][0-9]*', pantry['min_price_buns']) and
+            pantry['portions_per_tub'] >= 1 and pantry['expiry_ms'] >= 1, '재료 기준(R 탭 수·최저 가격·1통 인분·상하는 시간)')
+    for key in ('buy_steps', 'batch_tubs'):
+        require(all(b > a for a, b in zip(pantry[key], pantry[key][1:])) and pantry[key][0] >= 1, f'재료 {key} 오름차순')
+    limits = pantry['stock_limit_tubs']
+    require(limits[0]['from_level'] == 1 and all(b['from_level'] > a['from_level'] and b['tubs'] >= a['tubs']
+            for a, b in zip(limits, limits[1:])) and all(r['tubs'] >= 1 for r in limits), '재료 보관 한도(Lv.1부터 오름차순)')
+    require(all(pantry['consume'][k] >= 1 for k in ('taps_per_portion', 'auto_ms_per_portion', 'special_mold_portions',
+            'griddle_cell_portions')), '재료 쓰는 양')
+    require(sorted(pantry['filling_fallback_order']) == sorted(recipes), '대표 맛 바꾸는 순서(모든 맛 한 번씩)')
+    require(all(r['price_seconds'] >= 1 and r['max_stock'] >= 1 and r.get('requires_recipe', 'redbean') in recipes
+                for r in basic.values()), '기본 재료(가격 초·보관 수·필요 레시피)')
+    require(not set(basic) & set(premium) and all(r['prepared'] in prepared for r in premium.values()),
+            '특별한 재료(대상 준비물)')
+    require(pantry['premium']['pack_gold'] >= 1 and pantry['premium']['pack_count'] >= 1 and
+            pantry['premium']['unlock_level'] >= 1, '특별한 재료 묶음(황금·개수·레벨)')
+    require([k for k, r in prepared.items() if 'flavor' not in r] == ['batter'] and
+            all(r.get('flavor', k) == k for k, r in prepared.items() if k != 'batter') and set(recipes) <= set(prepared),
+            '준비물(반죽 하나 + 맛마다 속)')
+    for key, row in prepared.items():
+        require(row['minigame'] in ('stir', 'heat', 'whisk') and all(i in basic and n >= 1 for i, n in row['recipe'].items()) and
+                sum(1 for r in premium.values() if r['prepared'] == key) == 1, f'준비물 {key}(미니게임·레시피·특별한 재료 하나)')
+    initial = {'batter'} | {k for k, r in recipes.items() if r['initial']}
+    for group in (pantry['starting_stock']['tubs'], pantry['starting_stock']['recipe_sets'], pantry['rescue_pack']['recipe_sets']):
+        require(set(group) <= initial and all(n >= 1 for n in group.values()), '처음 재료·꾸러미(반죽과 처음 맛만)')
+    require(max(pantry['starting_stock']['tubs'].values()) <= limits[0]['tubs'], '처음 재료 ≤ 보관 한도')
+    # 재료 타이쿤 D(2026-11-21): 재료 준비 미니게임 3종. 앱 lib/prep_minigames.dart PrepGameConfig와 같은 검사.
+    games = data['prep_minigames']
+    require(set(games) == {'stir', 'heat', 'whisk'} and
+            all(6000 <= g['duration_ms'] <= 10000 for g in games.values()), '재료 준비 미니게임(3종, 6~10초)')
+    stir, heat, whisk = games['stir'], games['heat'], games['whisk']
+    require(stir['full_degrees'] >= 360 and 0 <= stir['dead_zone_permille'] < 500 and
+            0 < stir['green_min_permille'] < stir['green_max_permille'] < 1000, '반죽 젓기(바퀴·가운데·초록 칸)')
+    require(0 < heat['green_min_permille'] <= heat['start_permille'] <= heat['green_max_permille'] < 1000 and
+            heat['fall_permille_per_second'] >= 1 and heat['rise_permille_per_second'] >= 1 and
+            0 < heat['success_time_permille'] <= 1000, '불 조절(시작·내려감·올라감·초록 칸·성공 시간)')
+    require(0 < whisk['stroke_min_permille'] < 1000 and whisk['fill_per_stroke_permille'] >= 1 and
+            whisk['decay_permille_per_second'] >= 0, '휘젓기(한 번 거리·채움·줄어듦)')
+    require(all(r['minigame'] in games for r in prepared.values()), '준비물 미니게임이 설정에 있음')
     # 26번 8단계: 공유 카드(보상 없음). 정식 출시 뒤 store_line_mode만 live로 바꾼다.
     share = data['share']
     require(share['card_width'] == 1080 and share['card_height'] == 1350, '공유 카드 크기(1080×1350, 4:5)')

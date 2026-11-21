@@ -20,6 +20,7 @@ import 'pixel_sprites.dart';
 import '../menu_rules.dart';
 import '../economy.dart';
 import 'public_menus.dart';
+import 'pantry_shop.dart';
 import 'shop_panel.dart';
 import 'workshop_windows.dart';
 import 'workshop_counter.dart';
@@ -38,10 +39,16 @@ import '../local_test_purchases.dart';
 import 'owner_settings.dart';
 import 'notice_permission_hint.dart';
 import '../share_card.dart';
+// 재료 타이쿤 D: '재료 준비' 창.
+import '../workshop_pantry_prep.dart';
+import 'pantry_window.dart';
 import 'share_card_view.dart';
 import 'workshop_collection.dart';
 import '../workshop_collection_rules.dart' show collectionRequired, collectionTitle;
 import 'workshop_records.dart';
+import '../pantry_home.dart';
+import '../pantry_rules.dart' show PantryShortage;
+import 'pantry_home.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -72,6 +79,40 @@ class _WorkshopPageState extends State<WorkshopPage> {
       if(mounted) showCenterToast(context,news.join('\n'));
     });
   }
+  // ---- 재료 타이쿤 E: 홈 재료 표시·안내 (lib/ui/pantry_home.dart) ----
+  /// Gift, rescue and thrown-away notices, one short centre notice.
+  void _showPantryNews() {
+    if(c.pantryNews.isEmpty) return;
+    final news=c.takePantryNews();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if(mounted) showCenterToast(context,news.join('\n'));
+    });
+  }
+  /// The run-out noticed (in business, production stopped) and whether its
+  /// bubble still shows: once per run-out, then only the red stock line.
+  bool _pantryOutNoted=false,_pantryBubble=false;
+  Timer? _pantryBubbleTimer;
+  static const pantryBubbleTime=Duration(seconds:6);
+  void _watchPantryOut(PantryShortage out) {
+    if(out==PantryShortage.none){
+      _pantryOutNoted=false;_pantryBubble=false;_pantryBubbleTimer?.cancel();
+      return;
+    }
+    if(_pantryOutNoted) return;
+    _pantryOutNoted=true;_pantryBubble=true;
+    // `ingredient_out` is recorded by the controller when a tap or auto
+    // production finds nothing (4차 병합 3: one place, once a day).
+    _pantryBubbleTimer?.cancel();
+    _pantryBubbleTimer=Timer(pantryBubbleTime,(){if(mounted)setState(()=>_pantryBubble=false);});
+  }
+  /// The stock line or the bubble: 묶음 D's '재료 준비' window during
+  /// 영업 준비, else why not ([_lockFor] 'pantry'; 4차 병합 3).
+  void _openPantry() {
+    if(_pantryBubble) setState(()=>_pantryBubble=false);
+    _open('pantry');
+  }
+  @override
+  void dispose(){_pantryBubbleTimer?.cancel();super.dispose();}
   /// The welcome-back card, once per report, after the frame that noticed it.
   void _showAwayReport() {
     final report=c.awayReport;
@@ -165,7 +206,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
   Future<void> _tourList()=>_window('튜토리얼',(ctx)=>SingleChildScrollView(key:const Key('tour-list'),
     // Built eagerly: ten rows (the fairy's story last), every one exists for screen readers too.
     padding:const EdgeInsets.all(12),child:Column(children:[
-      for(final f in workshopIntroFeatures)Padding(padding:const EdgeInsets.only(bottom:8),child:CozyMenuRow(
+      // 4차 피드백 g15: 가게 꾸미기 only once a stove or decoration is sold.
+      for(final f in workshopIntroFeatures)if(featureAvailable(c.config,f))Padding(padding:const EdgeInsets.only(bottom:8),child:CozyMenuRow(
         key:Key('tour-replay-${f.name}'),icon:PixelIcon(featureIntro(f).fallbackIcon,size:28),iconSize:28,minHeight:52,
         title:featureName(f),subtitle:'소개와 짧은 안내 다시 보기',
         lock:featureReplayable(c.state,c.config,f) ? null : featureWaitText(c.state,c.config,f),
@@ -304,8 +346,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // Avatar items show once their art is ready for the vendor worn now
       // (PixelSprites.avatarArtReady); owners keep seeing what they bought.
       // Withdrawn items (26번 3차 H10) stay hidden even when owned.
-      // Stall items (backgrounds, lamps, day/night) need no vendor art.
-      listed:(d)=>avatar(d) && (d.slot.category==CosmeticCategory.stall || PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id)) ||
+      // Stall items (backgrounds, lamps, day/night) and the pastry's (4차
+      // g15: once patterns or toppings are sold) need no vendor art.
+      listed:(d)=>avatar(d) && (d.slot.category!=CosmeticCategory.avatar || PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id)) ||
         owned(d) && !avatarItemWithdrawn(_equipped(CosmeticSlot.character),d.id),
       forSale:avatar,cost:cost,total:total,
       // 4차 피드백 IC10: the real reason, not the phone's connection.
@@ -350,7 +393,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
   Future<void> _store({CosmeticSlot? slot}){
     c.usage.record(UsageEvent.shopOpen); // 사용 통계(26번 5단계), 하루 1번
     return _window('상점',(_)=>ShopPanel(controller:widget.accountController,access:_cosmetics,onOpen:_open,initialSlot:slot,
-      localTestGold:c.purchaseGateway is LocalTestPurchaseGateway));
+      localTestGold:c.purchaseGateway is LocalTestPurchaseGateway,
+      // 재료 타이쿤 C: the '재료' tab between 꾸미기 and 충전.
+      ingredients:(_)=>PantryShop(controller:c,account:widget.accountController)));
   }
   Future<void> _goldPacks() async {
     _enterWindow();
@@ -569,6 +614,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
     'shop' || 'skins' || 'skins:avatar' => c.featureLock(WorkshopFeature.wardrobe),
     'skins:stall' => c.featureLock(WorkshopFeature.wardrobe) ?? c.featureLock(WorkshopFeature.stallBackground),
     'achievements:collection' => c.featureLock(WorkshopFeature.collection),
+    // 재료 타이쿤 D·E: Lv.2(`pantry_prep`)부터, 영업 준비 중에만 (까닭을 띄움).
+    'pantry' => c.featureLock(WorkshopFeature.pantry) ?? c.pantryPrepLock,
     _ => null,
   };
   void _open(String destination) {
@@ -592,6 +639,10 @@ class _WorkshopPageState extends State<WorkshopPage> {
       case 'missions': unawaited(_window('레벨 미션',(_)=>_levelMissions()));
       case 'gold': unawaited(_goldPacks());
       case 'photo': _sharePhoto();
+      // 재료 타이쿤 D: '재료 준비' 창 (홈의 재료 표시·'재료 준비' 버튼, 묶음 E).
+      case 'pantry': unawaited(_window('재료 준비',(_)=>PantryWindow(controller:c,
+        reduceMotion:widget.accountController.state.settings.reduceMotion || MediaQuery.disableAnimationsOf(context),
+        vibration:widget.accountController.state.settings.vibration)));
     }
   }
   /// 생산 기록 (3차 피드백 H44·H45): icon + number tiles.
@@ -728,9 +779,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
     _showAwayReport();
     _showPromotion();
     _showCollectionNews();
+    _showPantryNews();
     _showFeatureIntro();
     _askNotifications();
     final s = c.state;
+    _watchPantryOut(c.pantryOut);
     final scene=s.customerScene;
     if(scene!=null) {
       final id=scene['id'] as String,npc=scene['npc'] as String;
@@ -770,6 +823,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
         status:c.error!=null ? '저장 확인 필요' : s.business.open ? '영업 중' : '영업 준비',
         statusKind:c.error!=null ? WorkshopStatusKind.error : s.business.open ? WorkshopStatusKind.open : WorkshopStatusKind.preparing,
         showRates:c.featureIsOpen(WorkshopFeature.skills),
+        // 재료 타이쿤 B: '초당 N개 멈춤' when auto production ran out of ingredients.
+        autoStopped:c.autoStopped,
         // 황금붕어빵력 beside 붕어빵력 (26번 3차 피드백 H30).
         gold:BigInt.from(widget.accountController.state.premium.gold)),
       // The menu is only in the bottom bar (H28); the special bungeoppang's
@@ -792,6 +847,10 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // workbench; the six-cell griddle slides aside while it is there.
       bench:(griddle)=>WorkshopMoldStage(controller:c,fishOnScreen:null,bench:griddle,
         lowStall:low,reduceMotion:reduceMotion,onSharePerfect:_sharePerfect,
+        // 재료 타이쿤 E: '재료 준비' beside '스페셜 붕어빵 제작 시작' (영업 준비).
+        prepAction:s.tutorialActive ? null : PantryPrepButton(onPressed:c.inputBusy ? null : _openPantry,
+          lock:c.featureLock(WorkshopFeature.pantry),
+          onLocked:()=>showCenterToast(context,c.featureLock(WorkshopFeature.pantry) ?? '')),
         vibration:widget.accountController.state.settings.vibration),
       griddleAside:s.session!=null,
       counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock),
@@ -801,6 +860,11 @@ class _WorkshopPageState extends State<WorkshopPage> {
         claimable:_rewardCounts()['daily']!+_rewardCounts()['event']!),
       // '영업 시작'·'영업 종료' small beside the '영업 중' sign (시안 확인 2차).
       statusAction:WorkshopBusinessButton(controller:c,onCloseBusiness:_closeBusiness),
+      // 재료 타이쿤 E: the batter and the chosen filling under the sign
+      // (after the first-run guide), the run-out bubble once under it.
+      statusBelow:s.tutorialActive ? null : (compact)=>PantryStockLine(controller:c,onTap:_openPantry,compact:compact,
+        bubble:_pantryBubble ? pantryOutTitle(c.pantryConfig,c.pantryOut,s.selectedFlavor) : null,
+        onBubbleTap:()=>setState(()=>_pantryBubble=false)),
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
       // The griddle art is empty; only cooking cells show a bungeoppang, and
       // none before opening (24번 4단계).

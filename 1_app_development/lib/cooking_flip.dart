@@ -70,6 +70,10 @@ class FlipCircle {
     if (_degrees.abs() >= targetDegrees) _done = true;
   }
 
+  /// The finger lifted but the swept angle stays (재료 준비 '반죽 젓기'
+  /// stirs in several strokes): the next point starts from itself.
+  void lift() => _last = null;
+
   /// Back to 0 degrees (the finger lifted early, or the stroke was dropped).
   void reset() {
     _degrees = 0;

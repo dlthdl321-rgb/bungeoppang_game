@@ -5,7 +5,25 @@ import 'development_rules.dart';
 /// The level-up payment of Lv.[level] as a purchase (4차 피드백 g9): only
 /// levels with `level_cost_gold` go through the server, once each.
 String levelProduct(int level) => 'level:$level';
+/// A special ingredient (재료 타이쿤 C): `ingredient:<id>` of
+/// `ingredients.premium.items`, bought in packs (`pack_count` each) for
+/// `pack_gold` 황금 per pack and no 붕어빵력. [owned] counts the packs
+/// bought so far (only grows; the pantry keeps what is left).
+String ingredientProduct(String id) => 'ingredient:$id';
+/// The packs of special ingredient one purchase may take: up to `max_stock`.
+int ingredientPackLimit(DevelopmentBalance config, String id) {
+  final premium = config.section('ingredients')['premium'] as Map<String, dynamic>;
+  final item = (premium['items'] as Map<String, dynamic>)[id];
+  if (item is! Map<String, dynamic>) throw const FormatException('모르는 특별한 재료');
+  return DevelopmentBalance.integer(item, 'max_stock') ~/ DevelopmentBalance.integer(premium, 'pack_count');
+}
 CompositeQuote quoteWorkshopProduct(DevelopmentBalance config,String id,{required int owned,required int quantity}) {
+  if (id.startsWith('ingredient:')) {
+    final item=id.substring(11),limit=ingredientPackLimit(config,item);
+    if (owned<0 || quantity<0 || quantity>limit) throw const FormatException('특별한 재료 구매 범위 오류');
+    final gold=DevelopmentBalance.integer(config.section('ingredients')['premium'] as Map<String,dynamic>,'pack_gold');
+    return CompositeQuote(config.revision,id,owned,quantity,BigInt.zero,BigInt.from(gold*quantity));
+  }
   if (id.startsWith('level:')) {
     final level=int.tryParse(id.substring(6));
     if (level==null || level<2 || level>50 || id!=levelProduct(level) || owned<0 || owned>1 || quantity<0 || quantity>1-owned) throw const FormatException('레벨업 비용 범위 오류');
@@ -22,7 +40,8 @@ CompositeQuote quoteWorkshopProduct(DevelopmentBalance config,String id,{require
     BigInt.from(DevelopmentBalance.integer(price,'gold'))*BigInt.from(quantity));
 }
 Map<String,dynamic> workshopProductRequirements(DevelopmentBalance config,String id) => id.startsWith('level:') ?
-  const {'unlock_total':'0'} : id.startsWith('cosmetic:') ?
+  const {'unlock_total':'0'} : id.startsWith('ingredient:') ? {'unlock_total':'0','unlock_level':
+    (config.section('ingredients')['premium'] as Map<String,dynamic>)['unlock_level']} : id.startsWith('cosmetic:') ?
   config.section('avatar_catalog')[id.substring(9)] as Map<String,dynamic> : config.skill(id);
 
 /// Embedded in the SAME durable snapshot as buns. No separate journal-only
@@ -48,7 +67,8 @@ class WorkshopPurchases {
     final q = intent.quote;
     if (q.revision != expected.revision || q.owned != expected.owned || q.buns != expected.buns || q.gold != expected.gold ||
         lifetime < DevelopmentBalance.decimal(workshopProductRequirements(config,q.skillId), 'unlock_total') ||
-        (q.skillId.startsWith('cosmetic:') && level < DevelopmentBalance.integer(workshopProductRequirements(config,q.skillId),'unlock_level')) || buns < q.buns) {
+        ((q.skillId.startsWith('cosmetic:') || q.skillId.startsWith('ingredient:')) &&
+          level < DevelopmentBalance.integer(workshopProductRequirements(config,q.skillId),'unlock_level')) || buns < q.buns) {
       throw const FormatException('구매 조건 또는 견적이 변경됐어요.');
     }
     return WorkshopPurchases._(intent.accountId, {...journals, intent.transactionId: intent}, owned);
@@ -119,7 +139,8 @@ class WorkshopPurchases {
     for (final e in (row['owned'] as Map<String, dynamic>).entries) {
       quoteWorkshopProduct(config,e.key,owned:0,quantity:0);
       final count = DevelopmentBalance.integer(row['owned'] as Map<String, dynamic>, e.key);
-      if (count <= 0 || (e.key.contains(':') && count!=1) || count != expected.remove(e.key)) throw const FormatException('상품 보유 근거 오류');
+      // A cosmetic or a level is bought once; special ingredients again and again.
+      if (count <= 0 || (e.key.contains(':') && !e.key.startsWith('ingredient:') && count!=1) || count != expected.remove(e.key)) throw const FormatException('상품 보유 근거 오류');
       owned[e.key] = count;
     }
     if (expected.isNotEmpty || unsettled > 1 || (journals.isNotEmpty && row['account'] == null)) throw const FormatException('구매 집계 불일치');

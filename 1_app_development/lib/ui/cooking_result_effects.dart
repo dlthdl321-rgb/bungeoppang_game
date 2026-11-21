@@ -51,6 +51,7 @@ class CookingResultView extends StatefulWidget {
   static Sfx sound(CookingGrade grade) => switch (grade) {
         CookingGrade.perfect => Sfx.resultPerfect,
         CookingGrade.good => Sfx.resultGood,
+        CookingGrade.fair => Sfx.resultFair,
         CookingGrade.near => Sfx.resultNear,
         CookingGrade.fail => Sfx.resultFail,
       };
@@ -59,6 +60,7 @@ class CookingResultView extends StatefulWidget {
   static (int, int, int) particles(CookingGrade grade, {bool burnt = false}) => switch (grade) {
         CookingGrade.perfect => (8, 3, 0),
         CookingGrade.good => (4, 2, 0),
+        CookingGrade.fair => (2, 1, 0),
         CookingGrade.near => (0, 1, 0),
         CookingGrade.fail => (0, 0, burnt ? 2 : 0),
       };
@@ -102,6 +104,7 @@ class _CookingResultViewState extends State<CookingResultView>
           HapticFeedback.heavyImpact();
         case CookingGrade.good:
           HapticFeedback.mediumImpact();
+        case CookingGrade.fair:
         case CookingGrade.near:
           HapticFeedback.lightImpact();
         case CookingGrade.fail:
@@ -134,6 +137,7 @@ class _CookingResultViewState extends State<CookingResultView>
             color: switch (grade) {
               CookingGrade.perfect => const Color(0xffffd36b),
               CookingGrade.good => Cozy.cream,
+              CookingGrade.fair => const Color(0xfff8ead8),
               CookingGrade.near => const Color(0xfff3dcc0),
               CookingGrade.fail => const Color(0xffe7d6c8),
             },
@@ -205,6 +209,7 @@ class _CookingResultViewState extends State<CookingResultView>
     final hop = switch (grade) {
       CookingGrade.perfect => .35,
       CookingGrade.good => .15,
+      CookingGrade.fair => .08,
       _ => 0.0,
     };
     final p = (t * CookingResultView.effectMs / CookingResultView.popMs).clamp(0.0, 1.0);

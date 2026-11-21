@@ -179,8 +179,8 @@ void main() {
       expect(adult.optional!.toJson().containsKey('guardianConsent'), isFalse);
     });
 
-    test('필수 동의 판은 만 14세 이상 확인이 들어간 2026-11-19, 연령대에 만 14세 미만이 없다', () {
-      expect(requiredConsentVersion, '2026-11-19');
+    test('필수 동의 판은 사용 통계 ingredient_out이 들어간 2026-11-21(4차 병합 3), 연령대에 만 14세 미만이 없다', () {
+      expect(requiredConsentVersion, '2026-11-21');
       expect(AgeBand.values.map((a) => a.id), isNot(contains('under14')));
       expect(AgeBand.values.map((a) => a.label).where((l) => l.contains('미만')), isEmpty);
       final json = const AccountProfileUpdate(name: '붕어빵', consentVersion: requiredConsentVersion, over14Confirmed: true,

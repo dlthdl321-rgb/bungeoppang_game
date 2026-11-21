@@ -320,13 +320,13 @@ void main() {
     expect(saved['schema'], workshopSchema);
     expect((saved['daily'] as Map)['stamps'], 1);
 
-    final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['schema'] = 9..remove('daily');
+    final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['schema'] = 9..remove('daily')..remove('pantry');
     final migrated = WorkshopState.fromJson(old, c.config);
     expect(migrated.daily.toJson(), WorkshopDaily.empty.toJson());
     expect(migrated.toJson()['schema'], workshopSchema);
     expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..['schema'] = 9, c.config), throwsFormatException,
         reason: '9에 새 필드');
-    expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..remove('daily'), c.config), throwsFormatException,
+    expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..remove('daily')..remove('pantry'), c.config), throwsFormatException,
         reason: '10에 기록 없음');
 
     Map<String, dynamic> broken(void Function(Map<String, dynamic> daily) change) {
@@ -355,7 +355,7 @@ void _widgets() {
     final shop = _Shop(DevelopmentBalance.fromJson(_raw()), at ?? DateTime.utc(2026, 11, 2, 3));
     await shop.start();
     // Feature cards already seen: they would cover the home.
-    await shop.c.command(() => shop.c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes',
+    await shop.c.command(() => shop.c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes',
         'specialOrders', 'fishCosmetics', 'freshness']));
     await tester.pumpWidget(GameApp(controller: account, workshop: shop.c));
     await tester.pump();

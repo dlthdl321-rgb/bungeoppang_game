@@ -97,7 +97,7 @@ void main() {
       }
       // 26번 3차 H42: 배경 테마 opens with the wardrobe.
       expect(opened[1], {WorkshopFeature.wardrobe, WorkshopFeature.stallBackground});
-      expect(opened[2]!.difference(opened[1]!), {WorkshopFeature.skills});
+      expect(opened[2]!.difference(opened[1]!), {WorkshopFeature.skills, WorkshopFeature.pantry}, reason: '재료 타이쿤 E: 재료 준비도 Lv.2');
       expect(opened[3]!.difference(opened[2]!), {WorkshopFeature.collection});
       expect(opened[4]!.difference(opened[3]!), {WorkshopFeature.recipes});
       expect(opened[5]!.difference(opened[4]!), {WorkshopFeature.specialOrders, WorkshopFeature.fishCosmetics});
@@ -173,6 +173,29 @@ void main() {
     });
   });
 
+  group('팔 것이 없는 꾸미기 소개 (4차 g15)', () {
+    test('화로·장식(틀·토핑)을 팔지 않으면 가게(붕어빵) 꾸미기 카드는 기다리고, 팔기 시작하면 뜬다', () async {
+      final c = await open();
+      addTearDown(c.dispose);
+      await c.skipTutorial();
+      expect(featureAvailable(c.config, WorkshopFeature.stallCosmetics), isFalse);
+      expect(featureAvailable(c.config, WorkshopFeature.fishCosmetics), isFalse);
+      expect(featureAvailable(c.config, WorkshopFeature.skills), isTrue);
+      await c.command(() => c.state.featureIntros.addAll(
+          [for (final f in workshopIntroFeatures) if (f != WorkshopFeature.stallCosmetics && f != WorkshopFeature.fishCosmetics) f.name]));
+      expect(await setLevel(c, 8, seen: false), isTrue);
+      expect(c.featureIsOpen(WorkshopFeature.stallCosmetics), isTrue);
+      expect(c.pendingIntro, isNull, reason: '팔 것이 없으면 카드 없음');
+      expect(c.state.featureIntros.contains('stallCosmetics'), isFalse, reason: '본 것으로 치지 않아 나중에 뜰 수 있음');
+      final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
+      (raw['avatar_catalog'] as Map<String, dynamic>)['copper'] =
+          {'label': '구리 화로', 'slot': 'stove', 'free': false, 'unlock_level': 8, 'unlock_total': '0'};
+      final selling = DevelopmentBalance.fromJson(raw);
+      expect(featureAvailable(selling, WorkshopFeature.stallCosmetics), isTrue);
+      expect(pendingFeatureIntro(c.state, selling), WorkshopFeature.stallCosmetics);
+    });
+  });
+
   group('소개 카드 저장 (schema 8)', () {
     test('한 번 본 카드는 저장되어 다시 열어도 안 뜬다', () async {
       final repository = MemoryRepository();
@@ -183,16 +206,18 @@ void main() {
       expect(await c.markIntroSeen(WorkshopFeature.wardrobe), isTrue);
       expect(c.pendingIntro, WorkshopFeature.skills);
       expect(await c.markIntroSeen(WorkshopFeature.skills), isTrue);
+      expect(c.pendingIntro, WorkshopFeature.pantry, reason: '재료 타이쿤 E: 스킬 다음');
+      expect(await c.markIntroSeen(WorkshopFeature.pantry), isTrue);
       expect(c.pendingIntro, WorkshopFeature.collection);
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue);
       expect(c.pendingIntro, isNull);
       expect(await c.markIntroSeen(WorkshopFeature.collection), isTrue, reason: '두 번 눌러도 그대로');
       expect(repository.saved!['schema'], workshopSchema);
-      expect(repository.saved!['featureIntros'], ['collection', 'skills', 'wardrobe']);
+      expect(repository.saved!['featureIntros'], ['collection', 'pantry', 'skills', 'wardrobe']);
       c.dispose();
       final again = await open(repository);
       addTearDown(again.dispose);
-      expect(again.state.featureIntros, {'skills', 'collection', 'wardrobe'});
+      expect(again.state.featureIntros, {'skills', 'pantry', 'collection', 'wardrobe'});
       expect(again.pendingIntro, isNull);
     });
 
@@ -202,17 +227,21 @@ void main() {
       await c.skipTutorial();
       expect(await setLevel(c, 12), isTrue);
       await award(c);
-      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily');
+      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily')..remove('pantry');
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.featureIntros, containsAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders',
           'fishCosmetics', 'stallCosmetics']));
+      // 재료 타이쿤 E: 재료 준비는 모두에게 새 기능이라 이전 저장도 카드 한 장.
+      expect(migrated.featureIntros, isNot(contains('pantry')));
+      expect(pendingFeatureIntro(migrated, config), WorkshopFeature.pantry);
+      migrated.featureIntros.add('pantry');
       expect(pendingFeatureIntro(migrated, config), isNull);
       expect(migrated.toJson()['schema'], workshopSchema);
       // A low-level old save still gets the cards still to come.
       final low = await open();
       addTearDown(low.dispose);
       await low.skipTutorial();
-      final lowOld = low.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily');
+      final lowOld = low.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily')..remove('pantry');
       final lowMigrated = WorkshopState.fromJson(lowOld, config)..level = 2;
       expect(pendingFeatureIntro(lowMigrated, config), WorkshopFeature.skills);
     });
@@ -240,7 +269,7 @@ void main() {
       expect(c.state.toJson()['featureIntros'], ['fairy', 'wardrobe']);
       expect(WorkshopState.fromJson(c.state.toJson(), config).featureIntros, {'fairy', 'wardrobe'});
       // An old save (schema 7) still meets the fairy once.
-      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily');
+      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily')..remove('pantry');
       expect(WorkshopState.fromJson(old, config).featureIntros, isNot(contains('fairy')));
       expect(featureIntro(WorkshopFeature.fairy).title, '붕어빵 요정을 만났어요');
     });
@@ -343,6 +372,13 @@ void main() {
       expect(find.text('스킬 안내 2/2'), findsOneWidget);
       expect(find.text('알겠어요'), findsOneWidget);
       await tester.tap(find.byKey(const Key('tour-next')));
+      await tester.pumpAndSettle();
+      // 재료 타이쿤 E: the 재료 준비 card comes right after the skills tour.
+      expect(find.byKey(const Key('feature-intro-pantry')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('feature-intro-ok')));
+      await tester.pumpAndSettle();
+      expect(find.text('재료 준비 안내 1/2'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('tour-skip')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('tutorial-card')), findsNothing);
       expect(find.byKey(const Key('menu-skills-locked')), findsNothing);
@@ -464,9 +500,13 @@ void main() {
       await tester.tap(find.byKey(const Key('settings-tours')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('tour-list')), findsOneWidget);
+      // 4차 g15: 붕어빵·가게 꾸미기 are left out while nothing is sold there.
       for (final f in workshopIntroFeatures) {
-        expect(find.byKey(Key('tour-replay-${f.name}')), findsOneWidget, reason: f.name);
+        expect(find.byKey(Key('tour-replay-${f.name}')), featureAvailable(c.config, f) ? findsOneWidget : findsNothing,
+            reason: f.name);
       }
+      expect(find.byKey(const Key('tour-replay-stallCosmetics')), findsNothing);
+      expect(find.byKey(const Key('tour-replay-fishCosmetics')), findsNothing);
       // 도감 waits for Lv.3: the row says so and a tap only tells why.
       await tester.ensureVisible(find.byKey(const Key('tour-replay-collection')));
       expect(find.descendant(of: find.byKey(const Key('tour-replay-collection')), matching: find.text('Lv.3 달성하면 열려요')),

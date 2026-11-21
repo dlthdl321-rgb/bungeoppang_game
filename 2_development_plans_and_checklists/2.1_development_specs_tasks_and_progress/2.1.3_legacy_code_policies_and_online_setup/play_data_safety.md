@@ -7,7 +7,7 @@
 | 항목 | 결과 | 근거 |
 | --- | --- | --- |
 | 광고 SDK | 없음 | `pubspec.lock`, Android Gradle 설정 |
-| 분석 SDK (26번 5단계) | **Firebase Analytics(`firebase_analytics` 12.6.1)만**. 이벤트 7종(첫 굽기·첫 판매·안내 끝·Lv.3/5/10·상점 열기·충전 화면·결제 완료 상품 ID) + 자동 수집(first_open·session_start·앱 버전·기기 종류 등) + Firebase 앱 인스턴스 ID + 선택 동의한 성별·연령대(사용자 속성). 이름·이메일·계정 ID·광고 ID·SSAID 안 보냄, `setUserId` 안 씀. 보관 14개월. 설정 '사용 통계 보내기'로 끔. **첫 실행 필수 동의 전에는 수집 꺼짐**(매니페스트 기본 false, 동의 뒤 `setAnalyticsCollectionEnabled(true)`) | `test/no_tracking_sdk_test.dart`(허용 목록·매니페스트), `test/usage_stats_test.dart`, `test/owner_first_run_test.dart` |
+| 분석 SDK (26번 5단계) | **Firebase Analytics(`firebase_analytics` 12.6.1)만**. 이벤트 11종(첫 굽기·첫 판매·안내 끝·Lv.3/5/10·상점 열기·충전 화면·결제 완료 상품 ID·오늘의 주문서 납품·행사 첫 접속·공유 카드·재료가 떨어져 생산 멈춤 `ingredient_out`; 4차 병합 3에서 목록을 지금 코드에 맞춤) + 자동 수집(first_open·session_start·앱 버전·기기 종류 등) + Firebase 앱 인스턴스 ID + 선택 동의한 성별·연령대(사용자 속성). 이름·이메일·계정 ID·광고 ID·SSAID 안 보냄, `setUserId` 안 씀. 보관 14개월. 설정 '사용 통계 보내기'로 끔. **첫 실행 필수 동의 전에는 수집 꺼짐**(매니페스트 기본 false, 동의 뒤 `setAnalyticsCollectionEnabled(true)`) | `test/no_tracking_sdk_test.dart`(허용 목록·매니페스트), `test/usage_stats_test.dart`, `test/owner_first_run_test.dart` |
 | 오류 수집 SDK | 없음. Crashlytics·Sentry 금지 | `test/no_tracking_sdk_test.dart` |
 | 인앱결제 | Google Play 결제(`in_app_purchase`) | 황금 붕어빵 5개 소비성 상품 |
 | Firebase | Auth(카카오 로그인으로 만든 커스텀 토큰), Cloud Functions만 | Firestore는 서버(Functions)만 접근. 앱 직접 접근 차단(`firebase/firestore.rules`). 순위표도 서버에 저장 |

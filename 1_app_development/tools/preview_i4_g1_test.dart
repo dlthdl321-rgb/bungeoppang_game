@@ -64,7 +64,7 @@ void main() {
           c.state.tutorial = 'done';
           c.state.level = 4;
           c.state.claimedLevels..clear()..addAll([2, 3, 4]);
-          c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
+          c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
         });
         // Eight sales: the 슈크림 레시피 mission is ready (Lv.4, 판매 8).
         for (var i = 0; i < 8; i++) {

@@ -68,7 +68,7 @@ void main() {
       c.state.tutorial = tutorial;
       c.state.level = level;
       c.state.claimedLevels..clear()..addAll([for (var l = 2; l <= level; l++) l]);
-      c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders',
+      c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes', 'specialOrders',
         'fishCosmetics', 'freshness', 'stallCosmetics'].where(workshopIntroIds.contains));
       if (buns != null) {
         c.state.lifetime = buns * BigInt.two;

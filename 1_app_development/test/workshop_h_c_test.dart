@@ -46,12 +46,13 @@ void main() {
     again.dispose();
   });
 
-  test('H24 → 4차 IC9: 등급별 별 수(5개 만점, 주문 품질 별처럼 최소 1개)', () {
+  test('H24 → 4차 IC9 → 4차 g15: 등급별 별 수(5개 만점, 완벽 5·잘 구움 4·보통 3·아깝다 2·실패 0)', () {
     expect(cookingStarsMax, 5);
     expect(cookingStars(CookingGrade.perfect), 5);
     expect(cookingStars(CookingGrade.good), 4);
+    expect(cookingStars(CookingGrade.fair), 3);
     expect(cookingStars(CookingGrade.near), 2);
-    expect(cookingStars(CookingGrade.fail), 1);
+    expect(cookingStars(CookingGrade.fail), 0);
   });
 
   Future<WorkshopController> mount(WidgetTester tester) async {
@@ -89,6 +90,8 @@ void main() {
     await c.command(() {
       c.state.recipes.add('custard');
       c.state.flavorMasteries['custard'] = FlavorMasteryProgress(flavor: 'custard', difficulty: c.difficulty('custard'));
+      // 재료 타이쿤 B: the new recipe's gift filling (the mold takes a portion).
+      c.state.pantry.grantRecipeGift(c.pantryConfig, 'custard', c.now().millisecondsSinceEpoch);
     });
     await tester.pump();
     await tester.tap(find.byKey(const Key('workshop-mold-action')));

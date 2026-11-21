@@ -60,8 +60,9 @@ const comboBonus = ComboBonus(enabled: false, threshold: 20, permille: 1100);
 /// how many of [cookingStarsMax] stars each bake grade
 /// (cooking_result_rules.dart `cookingGrade`) shows on the result — out of
 /// five like the order quality stars (ordinary_sale `stars_min`~`stars_max`,
-/// 1~5), and at least one like them. Presentation only: grades, mastery and
-/// prices are unchanged.
+/// 1~5). Five grades 5·4·3·2·0 (4차 피드백 g15, 사용자 결정 2026-11-21:
+/// 완벽 5 · 잘 구움 4 · 보통 3 · 아깝다 2 · 실패 0 — a failed bake shows five
+/// empty stars). Presentation only: grades, mastery and prices are unchanged.
 const cookingStarsMax = ratingStarsMax;
 
 /// The one star scale of the game (IC9): every star rating — the bake
@@ -70,8 +71,9 @@ const cookingStarsMax = ratingStarsMax;
 const ratingStarsMax = 5;
 const cookingStarsPerfect = 5;
 const cookingStarsGood = 4;
+const cookingStarsFair = 3;
 const cookingStarsNear = 2;
-const cookingStarsFail = 1;
+const cookingStarsFail = 0;
 
 // 원 그려 뒤집기(4차 피드백 IC5, 2026-11-20 사용자 결정): the closed mold
 // turns over its axle as the finger draws circles round it — the turn

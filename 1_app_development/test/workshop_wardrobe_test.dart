@@ -82,7 +82,7 @@ void main() {
       final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>
         ..['schema'] = 8
         ..['avatarEquipment'] = {'outfit': 'padding', 'top': 'tee'}
-        ..remove('daily');
+        ..remove('daily')..remove('pantry');
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.avatarEquipment['top'], 'padding');
       expect(migrated.avatarEquipment['outfit'], 'noapron');
@@ -352,10 +352,12 @@ void main() {
       expect(c.ownsAvatar('boy'), isFalse);
     });
 
-    testWidgets('360x800에서 탭 다섯 개가 모두 보이고 버튼 셋이 한 줄에 (H16)', (tester) async {
+    testWidgets('360x800에서 탭이 모두 보이고 버튼 셋이 한 줄에 (H16)', (tester) async {
       await _open(tester, const Size(360, 800));
       await _tap(tester, 'menu-skins');
-      for (final t in WardrobeTab.values) {
+      // 4차 g15: the 붕어빵 tab is hidden while no pattern or topping is sold.
+      expect(find.byKey(const Key('cosmetic-category-bungeoppang')), findsNothing);
+      for (final t in WardrobeTab.values.where((t) => t != WardrobeTab.bungeoppang)) {
         final r = tester.getRect(find.byKey(Key('cosmetic-category-${t.name}')));
         expect(r.left, greaterThanOrEqualTo(0), reason: t.name);
         expect(r.right, lessThanOrEqualTo(360), reason: t.name);
@@ -499,11 +501,13 @@ void main() {
 
   group('배경 탭 (F33·S45-Q6, 4차 피드백 g10 ID5·ID8)', () {
     // 26번 3차 H42: 배경·밤낮 from Lv.1. 4차 g10(ID8): the tab is '배경'
-    // with 풍경·등불·밤낮 from Lv.1; 화로·장식 still from Lv.8.
-    testWidgets('Lv.7 배경 탭은 풍경·등불·밤낮, Lv.8부터 화로·장식, 미리보기는 가게 전체 카드', (tester) async {
+    // with 풍경·등불·밤낮 from Lv.1. 4차 g15: 화로·장식 (and the 붕어빵 tab's
+    // 틀·토핑) are hidden while nothing is sold there — they come back by
+    // themselves once the catalog sells one (then locked until Lv.8).
+    testWidgets('배경 탭은 풍경·등불·밤낮, 파는 것이 없는 화로·장식 칸과 붕어빵 탭은 숨김, 미리보기는 가게 전체 카드 (4차 g15)', (tester) async {
       await _open(tester, const Size(390, 844), level: 7);
       await _tap(tester, 'menu-skins');
-      expect(find.byKey(const Key('cosmetic-category-bungeoppang')), findsOneWidget);
+      expect(find.byKey(const Key('cosmetic-category-bungeoppang')), findsNothing);
       expect(find.text('배경'), findsOneWidget);
       expect(find.text('가게'), findsNothing);
       await _tap(tester, 'cosmetic-category-stall');
@@ -511,17 +515,11 @@ void main() {
         expect(find.descendant(of: find.byKey(Key('cosmetic-slot-$slot')), matching: find.text(label)), findsOneWidget,
             reason: slot);
       }
-      // 4차 g5: 화로·장식 are listed locked (stripe + corner padlock), not
-      // hidden; a tap says when it opens.
       for (final slot in ['stove', 'decoration']) {
-        expect(find.byKey(Key('cosmetic-slot-$slot-locked')), findsOneWidget, reason: slot);
+        expect(find.byKey(Key('cosmetic-slot-$slot')), findsNothing, reason: slot);
+        expect(find.byKey(Key('cosmetic-slot-$slot-locked')), findsNothing, reason: slot);
       }
       expect(find.byKey(const Key('cosmetic-slot-lamp-locked')), findsNothing);
-      await tester.tap(find.byKey(const Key('cosmetic-slot-stove')));
-      await tester.pump();
-      expect(find.textContaining('Lv.8 달성하면 열려요'), findsOneWidget);
-      CenterToast.hide();
-      await tester.pumpAndSettle();
       // ID5: the whole stall as a home-shaped card, no vendor.
       final box = tester.getRect(find.byKey(const Key('preview-stall')));
       final scene = tester.getRect(find.byKey(const Key('preview-stall-scene')));
@@ -538,8 +536,34 @@ void main() {
         expect(find.byKey(Key('preview-$id')), findsOneWidget, reason: id);
       }
       await tester.pumpWidget(const SizedBox());
-      // Before Lv.5 the 붕어빵 tab is listed locked too.
-      await _open(tester, const Size(390, 844), level: 4);
+      await _open(tester, const Size(390, 844), level: 8);
+      await _tap(tester, 'menu-skins');
+      await _tap(tester, 'cosmetic-category-stall');
+      expect(find.byKey(const Key('cosmetic-slot-stove')), findsNothing, reason: 'Lv.8이어도 파는 화로가 없으면 숨김');
+      expect(find.byKey(const Key('cosmetic-slot-decoration')), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+      // Once the shop sells a stove (and a topping), their slots show again
+      // without other changes: locked before Lv.8 (붕어빵 tab before Lv.5).
+      void sell(Map<String, dynamic> raw) {
+        final prices = raw['cosmetic_purchase'] as Map<String, dynamic>;
+        (raw['avatar_catalog'] as Map<String, dynamic>)
+          ..['copper'] = {'label': '구리 화로', 'slot': 'stove', 'free': false, 'unlock_level': 8, 'unlock_total': '0'}
+          ..['sugar'] = {'label': '슈가파우더', 'slot': 'topping', 'free': false, 'unlock_level': 5, 'unlock_total': '0'};
+        prices['sugar'] ??= prices['copper'];
+      }
+      await _open(tester, const Size(390, 844), level: 7, edit: sell);
+      await _tap(tester, 'menu-skins');
+      expect(find.byKey(const Key('cosmetic-category-bungeoppang')), findsOneWidget);
+      await _tap(tester, 'cosmetic-category-stall');
+      expect(find.byKey(const Key('cosmetic-slot-stove-locked')), findsOneWidget);
+      expect(find.byKey(const Key('cosmetic-slot-decoration')), findsNothing, reason: '파는 장식은 아직 없음');
+      await tester.tap(find.byKey(const Key('cosmetic-slot-stove')));
+      await tester.pump();
+      expect(find.textContaining('Lv.8 달성하면 열려요'), findsOneWidget);
+      CenterToast.hide();
+      await tester.pumpAndSettle();
+      await tester.pumpWidget(const SizedBox());
+      await _open(tester, const Size(390, 844), level: 4, edit: sell);
       await _tap(tester, 'menu-skins');
       expect(find.byKey(const Key('cosmetic-category-bungeoppang-locked')), findsOneWidget);
       await tester.tap(find.byKey(const Key('cosmetic-category-bungeoppang')));
@@ -547,13 +571,12 @@ void main() {
       expect(find.text('붕어빵: Lv.5 달성하면 열려요'), findsOneWidget);
       CenterToast.hide();
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('cosmetic-slot-pattern')), findsNothing, reason: '탭은 그대로');
       await tester.pumpWidget(const SizedBox());
-      await _open(tester, const Size(390, 844), level: 8);
+      await _open(tester, const Size(390, 844), level: 8, edit: sell);
       await _tap(tester, 'menu-skins');
       await _tap(tester, 'cosmetic-category-stall');
-      expect(find.byKey(const Key('cosmetic-slot-stove')), findsOneWidget);
-      expect(find.byKey(const Key('cosmetic-slot-decoration')), findsOneWidget);
+      await _tap(tester, 'cosmetic-slot-stove');
+      expect(find.byKey(const Key('preview-copper')), findsOneWidget);
     });
 
     // 4차 g10(ID9): 기기 시간 따라 is free and worn; 낮·밤 고정 are sold
@@ -690,7 +713,7 @@ class _Server extends Gateway {
 
 /// The Workshop home after the guide at [level], signed in with [gold].
 Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size size,
-    {int level = 8, int gold = 0, bool fonts = false, BigInt? buns}) async {
+    {int level = 8, int gold = 0, bool fonts = false, BigInt? buns, void Function(Map<String, dynamic> config)? edit}) async {
   final online = FakeOnlineBackend(products: const {}, prices: const {})
     ..signedIn = true
     ..gold = gold;
@@ -707,8 +730,9 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
       await load('MaterialIcons', 'build/unit_test_assets/fonts/MaterialIcons-Regular.otf');
     });
   }
-  final config = DevelopmentBalance.fromJson(
-      jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
+  final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
+  edit?.call(raw);
+  final config = DevelopmentBalance.fromJson(raw);
   final c = WorkshopController(config, MemoryRepository(),
       purchaseGateway: _Server(), now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);
   await c.initialize();
@@ -716,7 +740,7 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
     c.state.tutorial = 'done';
     c.state.level = level;
     c.state.claimedLevels.addAll([for (var n = 2; n <= level; n++) n]);
-    c.state.featureIntros.addAll(['skills', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
+    c.state.featureIntros.addAll(['skills', 'pantry', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'stallCosmetics']);
     c.state.buns = buns ?? BigInt.from(20000);
     // Never less than what is in hand (a save check).
     c.state.lifetime = c.state.buns > BigInt.from(20000) ? c.state.buns : BigInt.from(20000);

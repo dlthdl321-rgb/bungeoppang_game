@@ -142,9 +142,13 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
     ]);
   }
 
-  static String _pendingLabel(String id) {
+  String _premiumLabel(String id) => widget.controller.pantryConfig.premium[id]?.label ?? id;
+
+  String _pendingLabel(String id) {
     if (id.startsWith('cosmetic:')) return '구매 확인 대기: ${id.substring(9)}';
     if (id.startsWith('level:')) return '레벨업 확인 대기: Lv.${id.substring(6)} 황금붕어빵력';
+    // 재료 타이쿤 C: a special ingredient waits like a cosmetic.
+    if (id.startsWith('ingredient:')) return '구매 확인 대기: ${_premiumLabel(id.substring(11))}';
     final skill = upgrades.where((u) => u.id == id);
     return '레벨업 확인 대기: ${skill.isEmpty ? id : skill.first.name}';
   }
@@ -403,14 +407,24 @@ class _KindTab extends StatelessWidget {
 /// step), and a tap on a neighbour picks it. 4차 피드백 g13 brought the
 /// scroll back after ID1 had turned it into three fixed cells with a moving
 /// band ("전처럼 스크롤 하듯이"); the box keeps one size for every step, so
-/// at ×1 or 최대 one end of the drum is simply empty. Steps ×1 · ×10 · 최대
-/// (4차 g13, user decision: '최대' replaced ×100). Keys
+/// at ×1 or MAX one end of the drum is simply empty. Steps ×1 · ×10 · MAX
+/// (4차 g13, user decision: '최대' replaced ×100; 4차 g15: shown 'MAX'). Keys
 /// `step-<skill>-1`, `step-<skill>-10`, `step-<skill>-max`.
+///
+/// 재료 타이쿤 C: the shop's '재료' tab uses the same wheel with its own
+/// [steps], [labelOf] and [spokenOf] (`ingredients.buy_steps`, ×1 · ×10 · MAX) and
+/// [semanticLabel]; keys `step-<id>-<step>`.
 class SkillStepWheel extends StatefulWidget {
   final String skillId;
   final int value;
   final ValueChanged<int> onChanged;
-  const SkillStepWheel({super.key, required this.skillId, required this.value, required this.onChanged});
+  final List<int> steps;
+  final String Function(int step) labelOf;
+  /// What a screen reader says for a step ('최대' for the 'MAX' step, 4차 g15).
+  final String Function(int step) spokenOf;
+  final String semanticLabel;
+  const SkillStepWheel({super.key, required this.skillId, required this.value, required this.onChanged,
+      this.steps = skillLevelUpSteps, this.labelOf = skillLevelUpLabel, this.spokenOf = skillLevelUpSpoken, this.semanticLabel = '한 번에 올릴 레벨'});
 
   static const rowHeight = 14.0, width = 40.0;
 
@@ -426,20 +440,21 @@ class _SkillStepWheelState extends State<SkillStepWheel> {
   double _drag = 0;
   bool _dragging = false;
 
-  int get _index => skillLevelUpSteps.indexOf(widget.value);
+  List<int> get _steps => widget.steps;
+  int get _index => _steps.indexOf(widget.value);
 
   /// The step position under the band, in rows: [_index] at rest.
   double get _position {
-    final last = skillLevelUpSteps.length - 1.0;
+    final last = _steps.length - 1.0;
     return (_index - _drag / SkillStepWheel.rowHeight)
         .clamp(-SkillStepWheel.overscroll, last + SkillStepWheel.overscroll)
         .toDouble();
   }
 
-  int get _centered => _position.round().clamp(0, skillLevelUpSteps.length - 1);
+  int get _centered => _position.round().clamp(0, _steps.length - 1);
 
   void _pick(int i) {
-    if (i >= 0 && i < skillLevelUpSteps.length && i != _index) widget.onChanged(skillLevelUpSteps[i]);
+    if (i >= 0 && i < _steps.length && i != _index) widget.onChanged(_steps[i]);
   }
 
   void _end(DragEndDetails d) {
@@ -451,7 +466,7 @@ class _SkillStepWheelState extends State<SkillStepWheel> {
       _dragging = false;
       _drag = 0;
     });
-    _pick(target.clamp(0, skillLevelUpSteps.length - 1));
+    _pick(target.clamp(0, _steps.length - 1));
   }
 
   @override
@@ -459,11 +474,11 @@ class _SkillStepWheelState extends State<SkillStepWheel> {
     final index = _index, h = SkillStepWheel.rowHeight, centered = _centered;
     final still = _dragging || (MediaQuery.maybeDisableAnimationsOf(context) ?? false);
     return Semantics(
-      label: '한 번에 올릴 레벨',
-      value: skillLevelUpLabel(widget.value),
-      increasedValue: index + 1 < skillLevelUpSteps.length ? skillLevelUpLabel(skillLevelUpSteps[index + 1]) : null,
-      decreasedValue: index > 0 ? skillLevelUpLabel(skillLevelUpSteps[index - 1]) : null,
-      onIncrease: index + 1 < skillLevelUpSteps.length ? () => _pick(index + 1) : null,
+      label: widget.semanticLabel,
+      value: widget.spokenOf(widget.value),
+      increasedValue: index + 1 < _steps.length ? widget.spokenOf(_steps[index + 1]) : null,
+      decreasedValue: index > 0 ? widget.spokenOf(_steps[index - 1]) : null,
+      onIncrease: index + 1 < _steps.length ? () => _pick(index + 1) : null,
       onDecrease: index > 0 ? () => _pick(index - 1) : null,
       child: GestureDetector(
         onVerticalDragStart: (_) => setState(() => _dragging = true),
@@ -489,15 +504,15 @@ class _SkillStepWheelState extends State<SkillStepWheel> {
                 right: 0,
                 top: h * (1 - _position),
                 child: Column(children: [
-                  for (final (i, step) in skillLevelUpSteps.indexed)
+                  for (final (i, step) in _steps.indexed)
                     GestureDetector(
-                      key: Key('step-${widget.skillId}-${step == skillLevelUpMax ? 'max' : step}'),
+                      key: Key('step-${widget.skillId}-${identical(_steps, skillLevelUpSteps) && step == skillLevelUpMax ? 'max' : step}'),
                       behavior: HitTestBehavior.opaque,
                       onTap: () => _pick(i),
                       child: SizedBox(
                         height: h,
                         child: Center(
-                          child: Text(skillLevelUpLabel(step),
+                          child: Text(widget.labelOf(step),
                               style: TextStyle(
                                   fontSize: i == centered ? 12 : 9.5,
                                   height: 1,

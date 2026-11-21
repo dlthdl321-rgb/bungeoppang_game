@@ -64,6 +64,10 @@ class WorkshopMoldStage extends StatefulWidget {
 
   /// '자랑하기' on a perfect result (26번 8단계 공유 카드); null hides it.
   final void Function(ResultLook look)? onSharePerfect;
+
+  /// 재료 타이쿤 E: '재료 준비' (PantryPrepButton) left of '스페셜 붕어빵
+  /// 제작 시작' on the workbench before opening; null leaves it out.
+  final Widget? prepAction;
   const WorkshopMoldStage(
       {super.key,
       required this.controller,
@@ -75,6 +79,7 @@ class WorkshopMoldStage extends StatefulWidget {
       this.lowStall = false,
       this.fairyStill = false,
       this.onSharePerfect,
+      this.prepAction,
       this.reduceMotion = false,
       this.vibration = false});
 
@@ -387,7 +392,14 @@ class _WorkshopMoldStageState extends State<WorkshopMoldStage> {
                   center: Offset(griddle.center.dx, griddle.top + griddle.height * WorkshopHomeLayout.benchPillAt),
                   width: griddle.width,
                   height: 48),
-              child: action('스페셜 붕어빵 제작 시작', () => _startPractice(context))),
+              child: widget.prepAction == null
+                  ? action('스페셜 붕어빵 제작 시작', () => _startPractice(context))
+                  // 재료 타이쿤 E: '재료 준비' left of it, both shrinking together.
+                  : Center(child: FittedBox(fit: BoxFit.scaleDown, child: Row(mainAxisSize: MainAxisSize.min, children: [
+                      widget.prepAction!,
+                      const SizedBox(width: 8),
+                      action('스페셜 붕어빵 제작 시작', () => _startPractice(context)),
+                    ])))),
       ]);
     });
   }

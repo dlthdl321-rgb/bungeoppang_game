@@ -72,7 +72,7 @@ void main() {
       c.state.tutorial = tutorial;
       c.state.level = 5;
       c.state.claimedLevels..clear()..addAll([for (var i = 2; i <= 5; i++) i]);
-      c.state.featureIntros.addAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
+      c.state.featureIntros.addAll(['skills', 'pantry', 'griddle', 'collection', 'recipes', 'specialOrders', 'fishCosmetics', 'freshness']);
       var m = c.state.flavorMasteries['redbean']!;
       for (final (v, n) in const [(0, 2), (1, 3), (2, 5), (3, 3), (4, 2)]) {
         for (var i = 0; i < n; i++) {

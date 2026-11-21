@@ -45,9 +45,12 @@ class BusinessProgress {
 
   /// Foreground economy follows monotonic elapsed time; a changed wall clock
   /// may advance the calendar cursor but cannot fabricate active production.
-  BusinessSettlement settleActive(DateTime now,{required BigInt bunsPerSecond,required int elapsedMs}) {
-    if(elapsedMs<0 || bunsPerSecond.isNegative) throw const FormatException('전경 생산 시간 오류');
-    final total=fractional+(open ? bunsPerSecond*BigInt.from(elapsedMs)*BigInt.from(1000):BigInt.zero);
+  /// [permilleMs] (재료 타이쿤 B): the production time as ms × permille when
+  /// not all of [elapsedMs] produced at ×1 — the stretches the ingredients
+  /// covered, 특제 ones weighted by their bonus. Null: [elapsedMs] × 1000.
+  BusinessSettlement settleActive(DateTime now,{required BigInt bunsPerSecond,required int elapsedMs,int? permilleMs}) {
+    if(elapsedMs<0 || bunsPerSecond.isNegative || (permilleMs ?? 0)<0) throw const FormatException('전경 생산 시간 오류');
+    final total=fractional+(open ? bunsPerSecond*BigInt.from(permilleMs ?? elapsedMs*1000):BigInt.zero);
     final scale=BigInt.from(1000000);
     return BusinessSettlement(BusinessProgress._(open,businessIndex,acceptedDay,observed(now),total%scale),total~/scale);
   }

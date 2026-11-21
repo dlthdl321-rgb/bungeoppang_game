@@ -474,7 +474,7 @@ Firestore 보는 법: Firebase 콘솔 → `Firestore Database` → `데이터` �
 
 26번 5단계부터 앱이 Firebase Analytics로 **이름·계정과 연결하지 않은 사용 기록**을 보낸다(첫 실행 필수 동의를 마친 뒤부터, 로그인과 상관없이 기본 켬, 설정 > '사용 통계 보내기'로 끔). 앱 쪽 준비는 끝났고, 콘솔에서 아래만 하면 된다. **서버 배포나 새 키는 필요 없다**(3장 `online.json`의 Firebase 값 4개를 그대로 쓴다).
 
-보내는 이벤트: `first_bake`(첫 굽기), `first_sale`(첫 판매), `tutorial_done`(안내 끝, `result`=done/skipped), `level_reached`(`level`=3·5·10), `shop_open`(상점, 하루 1번), `pay_view`(황금 충전 화면, 하루 1번), `pay_done`(결제 완료, `product_id`만), `special_order_done`(오늘의 주문서 납품, `event`=행사 ID 또는 none, 26번 7단계), `event_join`(겨울 행사 기간 첫 접속, `event`=행사 ID), `share`(공유 카드를 공유 창으로 보냄, 하루 1번, `moment`=perfect·story·collection·shop, 26번 8단계). 직접 보내는 이벤트는 이것으로 10개(상한). 첫 실행 `first_open`과 재방문 `session_start`는 Analytics가 스스로 모은다.
+보내는 이벤트: `first_bake`(첫 굽기), `first_sale`(첫 판매), `tutorial_done`(안내 끝, `result`=done/skipped), `level_reached`(`level`=3·5·10), `shop_open`(상점, 하루 1번), `pay_view`(황금 충전 화면, 하루 1번), `pay_done`(결제 완료, `product_id`만), `special_order_done`(오늘의 주문서 납품, `event`=행사 ID 또는 none, 26번 7단계), `event_join`(겨울 행사 기간 첫 접속, `event`=행사 ID), `share`(공유 카드를 공유 창으로 보냄, 하루 1번, `moment`=perfect·story·collection·shop, 26번 8단계), `ingredient_out`(반죽·속이 떨어져 생산이 멈춤, 하루 1번, `what`=batter·filling, 재료 타이쿤 B). 직접 보내는 이벤트는 이것으로 11개(상한, 재료 타이쿤 B에서 10 → 11). 첫 실행 `first_open`과 재방문 `session_start`는 Analytics가 스스로 모은다.
 
 **17-1. Google Analytics 켜기(계정 연결)**
 1. <https://console.firebase.google.com> → 프로젝트 → 왼쪽 위 톱니바퀴 → `프로젝트 설정` → 위쪽 `통합` 탭.
@@ -562,5 +562,7 @@ Firestore 보는 법: Firebase 콘솔 → `Firestore Database` → `데이터` �
 | 꾸미기 목록 (4-4·4-5·4-7단계) | '앞치마 없음'·상의로 옮긴 옷·새 하의의 구매가 거절될 수 있다 |
 | 희귀 황금 3배 (5-1단계) | 서버 추첨이 옛 확률(지금의 1/3)로 돈다 |
 | 만 14세 이상 확인·재동의 (법률 확인 반영) | 새 앱의 동의 판 `2026-11-19`를 옛 서버가 모르는 판으로 보고 사장님 이름·선택 정보 저장(`accountProfileSet`)을 거절한다(게임은 되고, 서버를 배포하면 다음 시작에 다시 보냄) |
+| 사용 통계 `ingredient_out`·재동의 (4차 병합 3) | 동의 판이 `2026-11-21`로 바뀌어 위와 같이 옛 서버가 사장님 이름·선택 정보 저장을 거절한다. 서버 배포와 함께 **공개 웹 주소의 개인정보처리방침도 새 판(시행일 2026-11-21)으로 다시 올린다**(16장 끝 3번과 같은 방법: `privacy_policy.md` 내용을 웹 페이지에 붙여 넣고 저장 → 브라우저로 그 주소를 열어 첫 줄 시행일이 2026-11-21인지 확인) |
+| 특제 재료 판매 덤·특별한 재료 구매 (재료 타이쿤·4차 병합 3) | 특별한 재료(`ingredient:<id>`) 구매가 '스킬 식별자 오류'로 거절되고, 특제로 만든 붕어빵을 팔아 늘어난 붕어빵력이 서버 한도에 걸릴 수 있다 |
 
 나중에 서버만 바뀌는 업데이트가 또 생기면 18-2만 다시 하고, 앱도 바뀌면 18-2 → 18-3 순서를 지킨다.

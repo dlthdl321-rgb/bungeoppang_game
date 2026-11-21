@@ -42,10 +42,13 @@ class NightHomeHeaderData {
   /// What the next level-up takes ('레벨업할 때 붕어빵력 3만이 쓰여요', 4차
   /// 피드백 g9): the Lv emblem's long-press tooltip, null for none.
   final String? levelHint;
+  /// 재료 타이쿤 B: auto production stopped for lack of batter or filling —
+  /// '멈춤' beside the per-second number.
+  final bool autoStopped;
   const NightHomeHeaderData({required this.level, required this.progressPermille,
     required this.buns, required this.lifetime, required this.autoRate,
     required this.tapRate, required this.status, this.claimable = 0, this.showRates = true,
-    this.statusKind = WorkshopStatusKind.open, this.gold, this.levelHint});
+    this.statusKind = WorkshopStatusKind.open, this.gold, this.levelHint, this.autoStopped = false});
 }
 
 class NightHome extends StatelessWidget {
@@ -89,6 +92,18 @@ class NightHome extends StatelessWidget {
   /// 확인 2차: '영업 시작'·'이어서 영업'·'영업 종료' moved up there from the
   /// floating counter button). Null leaves the sign alone.
   final Widget? statusAction;
+
+  /// A small line just under the business-state sign, centred on it (재료
+  /// 타이쿤 E: the pantry stock and its out-of-ingredients bubble). It
+  /// floats over the stage, so the HUD and the stage keep their places.
+  /// On a short screen ([compactStatusHeight], guests stand high and the
+  /// line would cover a face) it is built with compact true and hangs
+  /// under the HUD's top-left slot instead, left edges lined up.
+  final Widget Function(bool compact)? statusBelow;
+
+  /// Below this height the [statusBelow] line goes compact (360x640: yes,
+  /// 360x800 and up: no).
+  static const compactStatusHeight = 720.0;
 
   /// The HUD's top-left round slot. The old clicker home keeps the menu
   /// button there; the Workshop home has its menu only in the bottom bar
@@ -135,6 +150,7 @@ class NightHome extends StatelessWidget {
       this.counter,
       this.counterSlip,
       this.statusAction,
+      this.statusBelow,
       this.hudLeading,
       this.lowStall = false,
       this.guests,
@@ -161,6 +177,8 @@ class NightHome extends StatelessWidget {
     // The '오늘' slip follows the HUD's settings button wherever the HUD
     // lays it out (text size, scrolling stage).
     final settingsLink = LayerLink();
+    // The pantry line follows the business sign the same way (재료 타이쿤 E).
+    final statusLink = LayerLink(), leadingLink = LayerLink();
     return Scaffold(
       backgroundColor: Cozy.woodDark,
       body: RepaintBoundary(
@@ -323,7 +341,7 @@ class NightHome extends StatelessWidget {
                     ? SingleChildScrollView(
                         key: const Key('home-scroll'),
                         child: Column(children: [
-                          header ?? _hud(settingsLink),
+                          header ?? _hud(settingsLink, statusLink, leadingLink),
                           SizedBox(
                               height: centerBuilder != null
                                   ? 460
@@ -333,7 +351,7 @@ class NightHome extends StatelessWidget {
                               child: stage),
                         ]))
                     : Column(children: [
-                        header ?? _hud(settingsLink),
+                        header ?? _hud(settingsLink, statusLink, leadingLink),
                         Expanded(child: stage),
                       ])),
             if (low && guests != null && towelTop != null)
@@ -373,6 +391,27 @@ class NightHome extends StatelessWidget {
                     followerAnchor: Alignment.topRight,
                     offset: const Offset(0, WorkshopHomeLayout.slipGap),
                     child: counterSlip!)),
+            if (statusBelow != null && header == null && headerData != null)
+              if (box.maxHeight < compactStatusHeight) Positioned(
+                  left: 0,
+                  top: 0,
+                  child: CompositedTransformFollower(
+                      link: leadingLink,
+                      showWhenUnlinked: false,
+                      targetAnchor: Alignment.bottomLeft,
+                      followerAnchor: Alignment.topLeft,
+                      offset: const Offset(0, WorkshopHomeLayout.statusBelowGap + 4),
+                      child: statusBelow!(true)))
+              else Positioned(
+                  left: 0,
+                  top: 0,
+                  child: CompositedTransformFollower(
+                      link: statusLink,
+                      showWhenUnlinked: false,
+                      targetAnchor: Alignment.bottomCenter,
+                      followerAnchor: Alignment.topCenter,
+                      offset: const Offset(0, WorkshopHomeLayout.statusBelowGap),
+                      child: statusBelow!(false))),
             if (vendor == null) Positioned(
                 right: side + 8,
                 width: cookW,
@@ -392,7 +431,7 @@ class NightHome extends StatelessWidget {
     );
   }
 
-  Widget _hud(LayerLink settingsLink) {
+  Widget _hud(LayerLink settingsLink, LayerLink statusLink, LayerLink leadingLink) {
     final s = controller.state;
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
@@ -410,7 +449,8 @@ class NightHome extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _rate(const Key('auto-rate'), Icons.timer_outlined, '초당',
-                          headerData?.autoRate ?? controller.currentAutoRate),
+                          headerData?.autoRate ?? controller.currentAutoRate,
+                          stopped: headerData?.autoStopped ?? false),
                       const SizedBox(height: 4),
                       _rate(const Key('tap-rate'), Icons.touch_app_outlined,
                           '클릭당', headerData?.tapRate ?? controller.currentTapRate),
@@ -432,14 +472,17 @@ class NightHome extends StatelessWidget {
                     icon: const PixelIcon('menu', size: 28),
                     onPressed: () => onOpen('menu')))
           else
-            SizedBox(width: 48, child: hudLeading),
+            CompositedTransformTarget(link: leadingLink, child: SizedBox(width: 48, child: hudLeading)),
           Expanded(
               child: Column(children: [
             if (headerData != null)
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                Flexible(child: WorkshopStatusBadge(text: headerData!.status, kind: headerData!.statusKind)),
-                if (statusAction != null) statusAction!,
-              ]),
+              CompositedTransformTarget(
+                link: statusLink,
+                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                  Flexible(child: WorkshopStatusBadge(text: headerData!.status, kind: headerData!.statusKind)),
+                  if (statusAction != null) statusAction!,
+                ]),
+              ),
             if (headerData == null && s.prestige.stars > 0)
               _note(const Key('home-prestige'),
                   '명성 별 ${s.prestige.stars} · 생산 +${(prestigePermille(s) - 1000) ~/ 10}%'),
@@ -664,7 +707,7 @@ class NightHome extends StatelessWidget {
     );
   }
 
-  Widget _rate(Key key, IconData icon, String label, BigInt value) => CozyPanel(
+  Widget _rate(Key key, IconData icon, String label, BigInt value, {bool stopped = false}) => CozyPanel(
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
         child: Row(children: [
           Icon(icon, size: 16, color: Cozy.wood),
@@ -673,7 +716,10 @@ class NightHome extends StatelessWidget {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Text('$label ${compactNumber(value)}개',
+              child: Text.rich(
+                  TextSpan(text: '$label ${compactNumber(value)}개', children: [
+                    if (stopped) const TextSpan(text: ' 멈춤', style: TextStyle(color: Color(0xFFC0392B))),
+                  ]),
                   key: key,
                   style: const TextStyle(
                       fontSize: 13, fontWeight: FontWeight.w800)),

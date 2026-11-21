@@ -50,6 +50,7 @@ void main() {
     final expected = {
       CookingGrade.perfect: (Sfx.resultPerfect, ['HapticFeedbackType.heavyImpact']),
       CookingGrade.good: (Sfx.resultGood, ['HapticFeedbackType.mediumImpact']),
+      CookingGrade.fair: (Sfx.resultFair, ['HapticFeedbackType.lightImpact']),
       CookingGrade.near: (Sfx.resultNear, ['HapticFeedbackType.lightImpact']),
       CookingGrade.fail: (Sfx.resultFail, <String>[]),
     };

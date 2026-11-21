@@ -164,6 +164,9 @@ class WorkshopHomeLayout {
   /// Before opening '스페셜 붕어빵 제작 시작' sits on the closed griddle,
   /// this share down its box (on the plate).
   static const benchPillAt = .66;
+  /// 재료 타이쿤 E: the gap between the business sign and the pantry line
+  /// under it (NightHome.statusBelow).
+  static const statusBelowGap = 3.0;
 
   /// The bake's title and its buttons (keep / throw away / show off /
   /// cancel) stand over the mold picture, [moldButtonGap] apart; on the
