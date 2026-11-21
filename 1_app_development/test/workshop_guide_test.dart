@@ -238,7 +238,7 @@ void main() {
     test('schema 5 이하 저장은 안내를 끝낸 것으로 올리고, 판매 뒤 진행 중 안내는 거절한다', () async {
       final c = WorkshopController(load(), MemoryRepository(), now: () => DateTime.utc(2026, 10, 18));
       await c.initialize();
-      final old = c.state.toJson()..['schema'] = 5..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily');
+      final old = c.state.toJson()..['schema'] = 5..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry');
       final migrated = WorkshopState.fromJson(old, c.config);
       expect(migrated.tutorial, 'done');
       expect(migrated.toJson()['schema'], workshopSchema);

@@ -29,13 +29,17 @@ import 'workshop_feature_unlocks.dart';
 import 'workshop_daily.dart';
 import 'workshop_collection_rules.dart';
 import 'usage_stats.dart';
+import 'pantry_rules.dart';
 import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, hairHatClash, hairUnderHatText, hatOverHairText, movedToTop, removedCosmetics, retiredCosmetics;
 
 part 'workshop_storage.dart';
 
 /// The shop save format written now. Schema 11 (4차 피드백 g7, 2026-11-21)
-/// adds no field: it marks saves made with the rebalanced economy.
-const workshopSchema = 11;
+/// adds no field: it marks saves made with the rebalanced economy. Schema 12
+/// (재료 타이쿤 A, 2026-11-21) adds the pantry (`pantry`, [PantryState]).
+const workshopSchema = 12;
+/// Saves below this schema have no pantry: they get the starting stock once.
+const pantrySchema = 12;
 /// Saves below this schema were played with the old economy (skill prices
 /// and effects many times larger) and start again once, before launch.
 const economyResetSchema = 11;
@@ -110,6 +114,10 @@ class WorkshopState {
   /// indexes (saved as `collectionClaims` in schema 10). A save from before
   /// the rule counts the cells complete then as already paid.
   final Map<String, Set<int>> collectionClaims = {};
+  /// 재료 타이쿤 (schema 12): ingredients, tubs of batter and fillings made,
+  /// the portions taken out for taps and auto production ([PantryState]).
+  /// A new shop and a save from before it start with `starting_stock`.
+  PantryState pantry = PantryState();
   /// One flavor's 도감 page in numbers (4차 피드백 g6).
   CollectionProgress collection(DevelopmentBalance config, String flavor) =>
       collectionProgress(config, flavor, flavorMasteries[flavor]);
@@ -200,6 +208,7 @@ class WorkshopState {
     namedClock = ArrivalClock(seed: arrivalSeed(runId, 2));
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
+    pantry = PantryState.starting(PantryConfig.of(config), now.millisecondsSinceEpoch);
   }
   Map<String, dynamic> toJson() => {'schema': workshopSchema, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
     'featureIntros': featureIntros.toList()..sort(), 'daily': daily.toJson(),
@@ -211,6 +220,7 @@ class WorkshopState {
     'recipeMissions': recipeMissions.toList()..sort(),
     'masteryAwards': {for (final e in masteryAwards.entries) e.key: Map<String, dynamic>.from(e.value)},
     'collectionClaims': {for (final e in collectionClaims.entries) e.key: e.value.toList()..sort()},
+    'pantry': pantry.toJson(),
     'relationships':relationships.toJson(), 'customerScene':customerScene==null ? null : jsonDecode(jsonEncode(customerScene)),
     'tasteObservations': {for (final e in tasteObservations.entries) e.key:
       {for (final f in e.value.entries) f.key: f.value.toList()..sort()}},
@@ -312,6 +322,15 @@ class WorkshopState {
         if (cells.any((v) => counts[v as int] == 0)) throw const FormatException('찾지 않은 도감 칸의 보상');
         state.collectionClaims[e.key] = cells.cast<int>().toSet();
       }
+    }
+    // 재료 타이쿤 (schema 12): the pantry. A save from before it keeps the
+    // starting stock WorkshopState.initial gave (re-dated on opening the app,
+    // WorkshopController.initialize). Fillings only of owned recipes.
+    if ((row['schema'] as int) >= pantrySchema) {
+      state.pantry = PantryState.fromJson(row['pantry'], PantryConfig.of(config));
+      if (!state.recipes.containsAll(state.pantry.heldFlavors)) throw const FormatException('얻지 않은 맛의 속이 있어요.');
+    } else if (row.containsKey('pantry')) {
+      throw const FormatException('구형 저장에 재료 기록이 있어요.');
     }
     // The flavor a cooking cell bakes must be owned; whether it may start
     // is the griddle's rule ([griddleFlavors]), checked when it starts, so a
@@ -841,6 +860,11 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     // (pre-launch, once). The server progress is reset by hand at deploy.
     final reset = saved != null && (saved['schema'] as int) < economyResetSchema;
     if (reset) state = WorkshopState.economyReset(state, now(), config, _id());
+    // 재료 타이쿤: a save from before the pantry gets the starting stock once,
+    // made now (not at the last settlement, which may be over a day ago).
+    if (saved != null && !reset && (saved['schema'] as int) < pantrySchema) {
+      state.pantry = PantryState.starting(PantryConfig.of(config), now().millisecondsSinceEpoch);
+    }
     // 26번 3차 피드백 H20: the painted cells are not saved (G2), so a bake
     // reopened between the first batter and the lid would show the whole
     // step picture — batter that seems poured before the player came in.
@@ -2012,6 +2036,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// The income rate daily rewards are based on (4차 피드백 g7): taps at
   /// `rate_taps_per_second` plus auto production, per second.
   BigInt get dailyRate => dailyIncomeRate(config, tapRate: tapRate, autoRate: autoRate);
+  /// 재료 타이쿤 설정 (`ingredients`, [PantryConfig]).
+  PantryConfig get pantryConfig => PantryConfig.of(config);
+  /// R for ingredient prices: tap power × `ingredients.rate_taps_per_second` + auto/s.
+  BigInt get pantryRate => pantryConfig.incomeRate(tapRate: tapRate, autoRate: autoRate);
   /// The buns the order pays now: `reward_seconds` of [dailyRate], at least `min_buns`.
   BigInt get dailyOrderReward => dailyBuns(dailyRate, DevelopmentBalance.integer(_orderRules, 'reward_seconds'),
       DevelopmentBalance.decimal(_orderRules, 'min_buns'));
