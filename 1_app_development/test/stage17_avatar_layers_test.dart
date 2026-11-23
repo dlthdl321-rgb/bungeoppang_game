@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/ui/avatar_painter.dart';
 import 'package:todays_bungeoppang/ui/boost_effects.dart' show lookFromServer;
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/public_menus.dart';
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 // Stage 17: the vendor as separate layers (lib/avatar_rig_config.dart),
 // eye and mouth frames over the drawn face, and their motions.
@@ -293,7 +293,7 @@ void main() {
 
     testWidgets('잠긴 아이템도 눌러서 미리 볼 수 있고, 숨긴 아이템은 목록에 없다',
         (tester) async {
-      final c = await mountGame(tester, const Size(390, 844));
+      final c = await setUpAccount(tester, const Size(390, 844));
       final access = CosmeticMenuAccess(
           equipped: c.state.equippedCosmetic,
           owned: (d) => d.free,
@@ -325,6 +325,7 @@ void main() {
           .painter! as AvatarPainter;
       expect(painter.look.hat, 'chefhat');
       await tester.pumpWidget(const SizedBox.shrink());
+      c.dispose(); // No GameApp owns this controller here (28번 C2).
     });
   });
 

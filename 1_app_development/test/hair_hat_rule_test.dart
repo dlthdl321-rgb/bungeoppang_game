@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/public_menus.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 import 'package:todays_bungeoppang/development_purchase_journal.dart';
 import 'workshop_controller_test.dart' show Gateway;
 
@@ -93,7 +93,7 @@ void main() {
     });
 
     testWidgets('꾸미기: 함께 쓸 수 없는 것을 고르면 안내하고 입어 보는 것은 그대로', (tester) async {
-      final game = await mountGame(tester, const Size(390, 844));
+      final game = await setUpAccount(tester, const Size(390, 844));
       final worn = <CosmeticSlot, String>{for (final s in CosmeticSlot.values) s: defaultCosmetics[s]!}
         ..[CosmeticSlot.hair] = 'ponytail';
       final applied = <String>[];
@@ -138,10 +138,11 @@ void main() {
       expect(worn[CosmeticSlot.hair], 'curly');
       expect(worn[CosmeticSlot.hat], 'beanie');
       await tester.pump(const Duration(seconds: 3));
+      game.dispose(); // No GameApp owns this controller here (28번 C2).
     });
 
     testWidgets('모두 적용: 모자를 먼저 벗어야 묶은 머리를 할 수 있으면 모자부터', (tester) async {
-      final game = await mountGame(tester, const Size(390, 844));
+      final game = await setUpAccount(tester, const Size(390, 844));
       final worn = <CosmeticSlot, String>{for (final s in CosmeticSlot.values) s: defaultCosmetics[s]!}
         ..[CosmeticSlot.hat] = 'santa';
       final applied = <String>[];
@@ -173,6 +174,7 @@ void main() {
       await _tap(tester, 'wardrobe-apply-all');
       expect(applied, ['ballcap', 'ponytail']);
       await tester.pump(const Duration(seconds: 3));
+      game.dispose(); // No GameApp owns this controller here (28번 C2).
     });
   });
 

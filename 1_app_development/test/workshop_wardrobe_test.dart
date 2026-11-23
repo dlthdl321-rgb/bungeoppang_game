@@ -22,7 +22,7 @@ import 'package:todays_bungeoppang/ui/workshop_wardrobe.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_purchases.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 import 'workshop_controller_test.dart' show Gateway;
 
 /// 26번 4-5단계: the wardrobe (wear what is owned) and the shop's avatar tab
@@ -406,7 +406,7 @@ void main() {
     });
 
     testWidgets('일부를 적용하지 못하면 이름을 말하고 그 칸은 입어 보는 중으로 남는다', (tester) async {
-      final game = await mountGame(tester, const Size(390, 844));
+      final game = await setUpAccount(tester, const Size(390, 844));
       final worn = <CosmeticSlot, String>{for (final s in CosmeticSlot.values) s: defaultCosmetics[s]!};
       final access = CosmeticMenuAccess(
           equipped: (s) => worn[s]!,
@@ -430,12 +430,13 @@ void main() {
       expect(find.byKey(const Key('wardrobe-message')), findsOneWidget);
       expect(find.textContaining('털 비니'), findsWidgets);
       expect(find.text('모두 적용'), findsOneWidget);
+      game.dispose(); // No GameApp owns this controller here (28번 C2).
     });
   });
 
   group('타일 상태 (F28·F29)', () {
     testWidgets('입는 중·보유·살 수 있음·모자람·잠김을 모양으로 구분, 가격은 한 줄', (tester) async {
-      final game = await mountGame(tester, const Size(390, 844));
+      final game = await setUpAccount(tester, const Size(390, 844));
       WardrobePrice price(CosmeticDefinition d) =>
           WardrobePrice(BigInt.from(1000), BigInt.two, missingBuns: d.id == 'earmuffs', missingGold: d.id == 'earmuffs');
       final access = CosmeticMenuAccess(
@@ -475,6 +476,7 @@ void main() {
       await tester.pump();
       expect(inTile('bandana', 'tile-worn'), findsOneWidget);
       expect(inTile('nohat', 'tile-state-owned'), findsOneWidget);
+      game.dispose(); // No GameApp owns this controller here (28번 C2).
     });
   });
 
@@ -720,7 +722,7 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
   final online = FakeOnlineBackend(products: const {}, prices: const {})
     ..signedIn = true
     ..gold = gold;
-  final game = await mountGame(tester, size, reduced: true, online: online);
+  final game = await setUpAccount(tester, size, reduced: true, online: online);
   if (fonts) {
     await tester.runAsync(() async {
       Future<void> load(String family, String path) async {

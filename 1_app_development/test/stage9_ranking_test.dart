@@ -12,10 +12,21 @@ import 'controller_test.dart' show FakeTime;
 import 'level_missions_widget_test.dart' show tapVisible;
 import 'online_backend_test.dart' show backend;
 import 'stage8_widget_test.dart' show expectNoPrototypeText;
-import 'widget_test.dart' show CountingRepository, mountGame;
+import 'package:todays_bungeoppang/ui/friends_panel.dart';
+import 'widget_test.dart' show CountingRepository, setUpAccount;
 
 // Stage 16: Kakao login and the game's own online ranking (the server side
 // is tested in firebase/functions/test/ranking.test.ts).
+
+/// The ranking and friends panels are kept (the server side still works) but
+/// only the old clicker home opened them, so these tests show each panel by
+/// itself instead of going through that home's menu (28번 C2). Like that
+/// home's sub-window, it rebuilds whenever the controller changes.
+Future<void> showPanel(WidgetTester tester, GameController c, Widget Function() panel) async {
+  await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: AnimatedBuilder(animation: c, builder: (_, __) => panel()))));
+  await tester.pumpAndSettle();
+}
 
 class FakeRanking implements RankingService {
   bool configured, authenticated;
@@ -232,7 +243,7 @@ void main() {
     for (final scale in [1.0, 1.5, 2.0]) {
       testWidgets('온라인 랭킹 화면 ${size.width}/$scale', (tester) async {
         final online = rankedBackend();
-        final c = await mountGame(tester, size,
+        final c = await setUpAccount(tester, size,
             textScale: scale,
             developerTools: false,
             online: online,
@@ -240,9 +251,7 @@ void main() {
         c.state.lifetime = rankingScoreMax + BigInt.one;
         c.state.records.bestAutoRate = BigInt.from(5);
         c.tick();
-        await tester.pump();
-        await tapVisible(tester, const Key('menu-menu'));
-        await tapVisible(tester, const Key('menu-ranking'));
+        await showPanel(tester, c, () => RankingPanel(controller: c));
         expectNoPrototypeText(tester, 'ranking');
         expect(find.byKey(const Key('ranking-list')), findsNothing);
         await tapVisible(tester, const Key('online-sign-in'));
@@ -270,16 +279,16 @@ void main() {
         expect(online.signOuts, 1);
         expect(tester.takeException(), isNull);
         await tester.pumpWidget(const SizedBox.shrink());
+        c.dispose();
       });
     }
   }
 
   testWidgets('로그인을 취소하면 안내 없이 로그인 버튼이 그대로 있다', (tester) async {
     final online = rankedBackend()..signInResult = SignInResult.canceled;
-    await mountGame(tester, const Size(390, 844),
+    final c = await setUpAccount(tester, const Size(390, 844),
         online: online, ranking: ServerRankingService(online));
-    await tapVisible(tester, const Key('menu-menu'));
-    await tapVisible(tester, const Key('menu-ranking'));
+    await showPanel(tester, c, () => RankingPanel(controller: c));
     await tapVisible(tester, const Key('online-sign-in'));
     expect(online.signIns, 1);
     expect(find.byKey(const Key('online-sign-in-error')), findsNothing);
@@ -288,33 +297,31 @@ void main() {
     await tapVisible(tester, const Key('online-sign-in'));
     expect(find.text('로그인하지 못했어요. 잠시 후 다시 해 주세요'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
+    c.dispose();
   });
 
   testWidgets('키가 없는 빌드는 랭킹과 친구가 연결 불가로 표시', (tester) async {
-    await mountGame(tester, const Size(390, 844));
-    await tapVisible(tester, const Key('menu-menu'));
-    await tapVisible(tester, const Key('menu-ranking'));
+    final c = await setUpAccount(tester, const Size(390, 844));
+    await showPanel(tester, c, () => RankingPanel(controller: c));
     expect(find.byKey(const Key('ranking-unavailable')), findsOneWidget);
     expect(find.byKey(const Key('online-sign-in')), findsNothing);
-    await tester.tap(find.byTooltip('닫기'));
-    await tester.pumpAndSettle();
-    await tapVisible(tester, const Key('menu-menu'));
-    await tapVisible(tester, const Key('menu-friends'));
+    await showPanel(tester, c, () => FriendsPanel(controller: c));
     expect(find.byKey(const Key('friends-offline')), findsOneWidget);
     expect(find.byKey(const Key('online-sign-in')), findsNothing);
     await tester.pumpWidget(const SizedBox.shrink());
+    c.dispose();
   });
 
   testWidgets('친구 화면을 열어도 로그인 화면이 저절로 뜨지 않는다', (tester) async {
     final online = rankedBackend();
-    await mountGame(tester, const Size(390, 844),
+    final c = await setUpAccount(tester, const Size(390, 844),
         online: online, ranking: ServerRankingService(online));
-    await tapVisible(tester, const Key('menu-menu'));
-    await tapVisible(tester, const Key('menu-friends'));
+    await showPanel(tester, c, () => FriendsPanel(controller: c));
     expect(online.signIns, 0);
     expect(find.byKey(const Key('online-sign-in')), findsOneWidget);
     await tapVisible(tester, const Key('online-sign-in'));
     expect(find.text('내 아이디  BBFAKECODE'), findsOneWidget);
     await tester.pumpWidget(const SizedBox.shrink());
+    c.dispose();
   });
 }
