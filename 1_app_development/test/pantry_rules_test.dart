@@ -380,8 +380,8 @@ void main() {
       addTearDown(shop.dispose);
       await shop.initialize();
       final saved = repository.stored!;
-      expect(saved['schema'], 12);
-      expect(workshopSchema, 12);
+      expect(saved['schema'], workshopSchema);
+      expect(pantrySchema, 12, reason: '재료는 schema 12부터 저장');
       final pantry = PantryState.fromJson(saved['pantry'], c);
       expect(pantry.usable(c, 'batter', start.millisecondsSinceEpoch), 300);
       expect(pantry.lots.first.madeAtMs, pantryKeepMs, reason: '처음 재료는 상하지 않음 (묶음 B)');
@@ -395,7 +395,7 @@ void main() {
       await shop.initialize();
       await shop.command(() { shop.state.buns = BigInt.from(77); shop.state.lifetime = BigInt.from(77); });
       final old = jsonDecode(jsonEncode(repository.stored)) as Map<String, dynamic>
-        ..['schema'] = 11..remove('pantry');
+        ..['schema'] = 11..remove('pantry')..remove('pendingSales');
       expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(repository.stored!)..['schema'] = 11, config),
           throwsFormatException, reason: '11에 재료 기록');
       expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(repository.stored!)..remove('pantry'), config),
@@ -410,7 +410,7 @@ void main() {
       final pantry = reopened.state.pantry;
       expect(pantry.usable(c, 'batter', later.millisecondsSinceEpoch), 300, reason: '처음 재료는 상하지 않음');
       expect(pantry.gifts, {'start'});
-      expect(reopenedRepository.stored!['schema'], 12);
+      expect(reopenedRepository.stored!['schema'], workshopSchema);
     });
 
     test('schema 10 이하는 경제 초기화 새 가게로, 처음 재료를 받는다', () async {
@@ -419,7 +419,7 @@ void main() {
       addTearDown(shop.dispose);
       await shop.initialize();
       final old = jsonDecode(jsonEncode(repository.stored)) as Map<String, dynamic>
-        ..['schema'] = 10..remove('pantry');
+        ..['schema'] = 10..remove('pantry')..remove('pendingSales');
       final reopened = WorkshopController(config, Repository()..stored = old, now: () => start, random: Random(7));
       addTearDown(reopened.dispose);
       await reopened.initialize();

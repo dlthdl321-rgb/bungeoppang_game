@@ -33,7 +33,7 @@
 | | [WorkshopController](../../../1_app_development/lib/workshop_controller.dart) | [GameController](../../../1_app_development/lib/game_controller.dart) |
 | --- | --- | --- |
 | 지금 역할 | **실제 게임**: 굽기·판매·손님·재고·재료·레벨업·미션·도감·매일 보상·꾸미기 착용·구매 요청 | **계정·온라인 기반**: 온라인 연결, 랭킹, 친구·초대, 황금(유료 재화) 잔액·Play 결제, 사용 통계, 소리 설정 등 예전 계정 저장 |
-| 저장 | `WorkshopState` → [workshop_storage.dart](../../../1_app_development/lib/workshop_storage.dart) (`part`), schema **12**, SQLite `user_version` 4 | `GameState` → [models.dart](../../../1_app_development/lib/models.dart)·[repository.dart](../../../1_app_development/lib/repository.dart), `formatVersion` **14** |
+| 저장 | `WorkshopState` → [workshop_storage.dart](../../../1_app_development/lib/workshop_storage.dart) (`part`), schema **13**, SQLite `user_version` 4 | `GameState` → [models.dart](../../../1_app_development/lib/models.dart)·[repository.dart](../../../1_app_development/lib/repository.dart), `formatVersion` **14** |
 | 붙은 파일 | `part` 6개: `workshop_storage.dart`(저장), `workshop_controller_level_up.dart`(레벨업), `_commands.dart`(배경·미션·아바타·보상·광고·구매), `_collection.dart`(도감), `_daily.dart`(오늘의 주문서·출석), `_pantry.dart`(재료). 규칙 파일 `workshop_*.dart`, `development_*.dart`, `pantry_*.dart`, `cooking_*.dart` | `part` 6개: invite·boost·online·premium·menu·ranking `_controller.dart` |
 | 둘의 연결 | 시험용 빌드 구매는 `LocalTestPurchaseGateway`가 GameController의 황금을 읽고 씀(main.dart) | [owner_account.dart](../../../1_app_development/lib/owner_account.dart)가 둘 다 받음 |
 
@@ -64,11 +64,11 @@ WorkshopController의 part 파일(`workshop_controller_*.dart`)은 `extension ..
 
 ## 4. 저장 호환을 지키는 규칙
 
-- 저장 필드를 바꾸면 schema(가게 12, 계정 14)를 올리고 옛 버전 읽기를 유지한다. 순서는 MASTER 14장 "저장되는 상태를 건드리는 기능"의 10번까지 그대로 따른다.
+- 저장 필드를 바꾸면 schema(가게 13, 계정 14)를 올리고 옛 버전 읽기를 유지한다. 순서는 MASTER 14장 "저장되는 상태를 건드리는 기능"의 10번까지 그대로 따른다.
 - 가게 schema를 올리면 `workshop_storage.dart`의 구매 보호 schema 목록도 함께 올린다.
 - 옛 저장 데이터의 값을 지어내지 않는다. 잘못된 값은 `FormatException`으로 거절한다.
 - `test/fixtures/v1_save.json`과 저장 테스트의 기대값은 낮추거나 지우지 않는다.
-- 저장 형식은 `test/save_format_test.dart`가 고정한다(가게 schema 12·계정 formatVersion 14의 키·값 종류, 견본 저장 읽기). 형식을 일부러 바꿨을 때만 schema/formatVersion·옛 저장 이전을 고친 뒤 `UPDATE_SAVE_FORMAT=1 flutter test test/save_format_test.dart`로 견본을 다시 쓴다.
+- 저장 형식은 `test/save_format_test.dart`가 고정한다(가게 schema 13·계정 formatVersion 14의 키·값 종류, 견본 저장 읽기, 직전 가게 형식 schema 12 견본 읽기). 형식을 일부러 바꿨을 때만 schema/formatVersion·옛 저장 이전을 고친 뒤 `UPDATE_SAVE_FORMAT=1 flutter test test/save_format_test.dart`로 견본을 다시 쓴다.
 - **유료 황금 구매 기록 보호**(`workshop_storage.dart`의 `purchase_guard` 표·구매 보호 schema 목록, 가게 저장의 `purchases`)는 옛 schema 이전 코드라도 지우지 않는다. 결제 복구가 여기에 기대고 있다.
 
 ### 출시 시점 저장 규칙 (2026-11-24)

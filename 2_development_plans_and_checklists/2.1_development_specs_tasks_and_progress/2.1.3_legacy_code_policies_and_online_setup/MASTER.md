@@ -136,8 +136,9 @@
 | 항목 | 값 |
 | --- | --- |
 | DB | sqflite `todays_bungeoppang_workshop.db`, `user_version` 4 |
-| JSON 저장 형식 | `schema` 12(`workshopSchema`). 1~11을 읽고 12로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 12만 받음, 보호 범위 2~12 `_guardedSchema`) |
+| JSON 저장 형식 | `schema` 13(`workshopSchema`, 2026-11-24). 1~12를 읽고 13으로 저장 (`user_version` 4 그대로, 생산 저널·구매 보호 기록 형식 변경 없음. 구매 보호 저장 검사는 schema 12만 받음, 보호 범위 2~12 `_guardedSchema`) |
 | schema 12 (2026-11-21, 재료 타이쿤 A, DEC-TBD-tA-1~5) | 재료 `pantry`(`PantryState`, `lib/pantry_rules.dart`, 43장): `basic`(기본 재료 id → 개수, 0은 키 없음)·`premium`(특별한 재료 id → 개수)·`lots`(만든 통 `{kind: batter/맛, premium, madeAtMs: UTC ms, portions ≥ 1}`, 만든 순, 같은 kind·premium·madeAtMs는 하나)·`ledger`(kind → `[만든·받은 인분, 쓴 인분, 버린 인분]`, 만든 − 쓴 − 버린 = 통의 합이 아니면 거절)·`tapCredit`(꺼낸 1인분으로 남은 탭 0~9)·`tapPortion`·`autoCreditMs`(남은 자동 시간)·`autoPortion`(꺼낸 1인분 `{flavor, batterPremium, fillingPremium, batterMadeAtMs, fillingMadeAtMs}`, 남은 양이 0이면 null)·`gifts`(`start`, `recipe:<맛>`)·`rescueDay`(KST 날짜)·`rescueCount`. 11개 키가 정확히 있어야 하고 모르는 id·음수·얻지 않은 맛의 속이면 거절. 보관 한도·최대 개수처럼 설정에서 오는 한도는 검사하지 않음(설정을 바꿔도 저장이 깨지지 않게), 남은 탭 수·자동 시간이 바뀐 설정보다 크면 줄여 읽음. **11 이하 저장**: `pantry`가 있으면 거절, 없으면 처음 재료(반죽 3통 + 팥소 3통 + 1통씩 만들 재료)(통은 상하지 않음)를 받고, 이미 얻은 슈크림·초코 레시피의 선물(그 속 1통 + 1통 재료, `gifts`에 `recipe:<맛>`)도 함께 받음(재료 타이쿤 E, 45장; `WorkshopController.initialize`, 마지막 정산 시각이 아님 — 하루 넘게 비운 저장도 받자마자 버려지지 않게). 10 이하는 경제 초기화 새 가게(처음 재료 포함). **묶음 B(생산 연결)**: 처음 재료의 통은 `madeAtMs` 0(`pantryKeepMs`) = 상하지 않음, 상하는 통을 먼저 씀(E의 `pantryKeepMadeAtMs`·'맨 먼저 씀'은 4차 병합 3에서 이것 하나로 합침). 최상위 `selectedPremium`(맛 고르기의 '특제 <맛>', 없으면 false)·`sessionPortion`(스페셜 틀이 제작 시작 때 꺼낸 1인분 `PortionUse`, 결과 전 취소면 돌려받음; 세션 맛과 다르면 거절, 세션이 없으면 읽을 때 버림(쓴 것으로 봄), 세션만 있고 이것이 없을 수도 있음). 12 미만 저장에 이 둘이 있으면 읽지 않음 |
+| schema 13 (2026-11-24, 28번 10절) | 판매의 황금 심사 대기(`pendingGold['sale:<id>']`)는 판매 증거(`sales[<id>]`)와 같은 문자열이라 저장에 두 번 쓰지 않는다: 저장의 `pendingGold`에는 `sale:` 항목이 없고 `pendingSales`(판매 ID 목록, 정렬)만 쓴다. 불러올 때 `sales`에서 채워 메모리 상태는 예전과 같다. 목록에 없는 판매·판매 기록에 없는 ID·`pendingGold`와 겹치는 ID는 거부. schema 12 이하는 예전처럼 `pendingGold`에 값이 있고 `pendingSales`가 있으면 거부. 효과: 판매 40건 저장 55,190 → 31,308바이트, Lv.50 시뮬레이션 저장의 38%였던 중복 제거 |
 | schema 11 (2026-11-21, 4차 피드백 g7 경제 재조정) | 필드 추가 없음. **10 이하 저장은 앱을 처음 열 때 한 번 처음부터 다시 시작**(`economyResetSchema`, `WorkshopController.initialize` → `WorkshopState.economyReset`): 출시 전 예전 경제(스킬 값·효과가 수십~수천 배)로 쌓인 붕어빵력·스킬 레벨·꾸미기·레벨을 버림. 남기는 것은 첫 실행에서 고른 사장님(`avatarGrants`의 사장님 하나, 입은 사장님)과 끝낸 첫 실행 안내(`done`/`skipped`)뿐, 저장 순번은 이어서(구매 보호 기록이 다음 저장을 받도록). 진행 ID(`grid.runId`)는 새로 만듦. 알림 줄 '게임 밸런스가 바뀌어 가게를 처음부터 다시 시작해요.'(`economyResetNotice`). 복귀 안내 없음. 서버 쪽 진행·랭킹은 배포 때 손으로 초기화(40장) |
 | schema 5 (2026-11-09) | 대기 손님 주문의 `deliveries`(부분 판매 기록). schema 4 이하에 있으면 거절 |
 | 결과 등급 (26번 4단계) | 저장 변경 없음: 등급은 화면에서 계산하고, 주문 손님 반응 연결은 메모리에만 둠 |
@@ -1274,7 +1275,7 @@
 | 에뮬레이터 | `tools/run_android_emulator.ps1` |
 
 **한글 경로 문제:** 셰이더 도구와 Kotlin 데몬이 한글 경로에서 실패합니다.
-1. `subst B: "<프로젝트 경로>"`로 영문 드라이브를 만들고 `B:`에서 실행합니다.
+1. `subst B: "<프로젝트 경로>"`로 영문 드라이브를 만들고 `B:`에서 실행합니다. **여러 세션이 함께 작업할 때:** 먼저 `subst`로 쓰이는 글자를 확인하고, 이미 쓰는 글자는 건드리지 말고 다른 빈 글자(예: `Q:`)를 쓴다. 끝나면 **자기가 연결한 글자만** `subst <글자> /D`로 해제한다(2026-11-24, 다른 세션의 B:를 해제해 버린 일이 있었음).
 2. 릴리스·debug APK 빌드는 추가로 `GRADLE_USER_HOME=D:\DevMoved\GradleCache`, `PUB_CACHE=C:\PubCacheBungeoppang`을 지정합니다(2026-11-17 debug APK도 이것 없이는 Gradle 데몬·`jni` CMake가 한글 사용자 폴더에서 실패). 빌드 뒤 기본 캐시로 `flutter pub get`을 다시 실행해 테스트 환경을 되돌립니다.
    `C:\GradleCache`는 `D:\DevMoved\GradleCache`로 가는 정션이다. 정션 경로를 Gradle 홈으로 쓰면 `*.gradle.kts`를 고친 뒤 다시 컴파일할 때 `Unresolved reference 'println'`·`'orEmpty'`처럼 Kotlin 표준 함수를 전부 못 찾고 실패한다(스크립트를 안 고치면 예전 컴파일 결과를 재사용해서 성공하므로 늦게 드러남). 2026-11-17 23번 6단계에서 확인, 실제 경로로 바꾸면 통과.
 3. `processDebugResources`가 `Unable to delete directory … .ap_`(다른 프로세스가 사용 중)로 실패하면 방금 만든 파일의 일시적 잠금입니다. 코드를 고치지 말고 같은 명령을 다시 실행합니다(2026-11-03 재실행으로 통과).

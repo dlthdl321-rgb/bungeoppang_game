@@ -323,7 +323,7 @@ void main() {
     expect(saved['schema'], workshopSchema);
     expect((saved['daily'] as Map)['stamps'], 1);
 
-    final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['schema'] = 9..remove('daily')..remove('pantry');
+    final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>..['schema'] = 9..remove('daily')..remove('pantry')..remove('pendingSales');
     final migrated = WorkshopState.fromJson(old, c.config);
     expect(migrated.daily.toJson(), WorkshopDaily.empty.toJson());
     expect(migrated.toJson()['schema'], workshopSchema);

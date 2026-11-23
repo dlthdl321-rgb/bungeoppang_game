@@ -44,7 +44,10 @@ part 'workshop_controller_pantry.dart';
 /// The shop save format written now. Schema 11 (4차 피드백 g7, 2026-11-21)
 /// adds no field: it marks saves made with the rebalanced economy. Schema 12
 /// (재료 타이쿤 A, 2026-11-21) adds the pantry (`pantry`, [PantryState]).
-const workshopSchema = 12;
+/// Schema 13 (28번 10절, 2026-11-24) stops writing each sale's evidence twice:
+/// `pendingGold` keeps no `sale:` entries on disk, `pendingSales` lists their
+/// sale IDs and loading fills them from `sales` (the same strings, in memory).
+const workshopSchema = 13;
 /// Saves below this schema have no pantry: they get the starting stock once.
 const pantrySchema = 12;
 /// Saves below this schema were played with the old economy (skill prices
@@ -252,7 +255,13 @@ class WorkshopState {
     'inventory': inventory.toJson(), 'grid': grid.toJson(),
     'flavorMasteries': {for (final e in flavorMasteries.entries) e.key: e.value.toJson()},
     'session': session?.toJson(), 'customers': customers.map((c) => c.toJson()).toList(),
-    'sales': Map<String, String>.from(sales), 'pendingGold': Map<String, String>.from(pendingGold),
+    'sales': Map<String, String>.from(sales),
+    // Schema 13: a sale's pending gold is the same string as its evidence in
+    // `sales`, so only its ID is written (`pendingSales`); loading refills it.
+    'pendingGold': {for (final e in pendingGold.entries)
+      if (!(e.key.startsWith('sale:') && sales[e.key.substring(5)] == e.value)) e.key: e.value},
+    'pendingSales': [for (final e in pendingGold.entries)
+      if (e.key.startsWith('sale:') && sales[e.key.substring(5)] == e.value) e.key.substring(5)]..sort(),
     'claimedLevels': claimedLevels.toList()..sort()};
   factory WorkshopState.fromJson(Map<String, dynamic> row, DevelopmentBalance config) {
     Map<String, dynamic> object(String key) {
@@ -483,7 +492,19 @@ class WorkshopState {
     } else if (row.containsKey('daily')) {
       throw const FormatException('구형 저장에 매일 기록이 있어요.');
     }
-    for (final e in object('pendingGold').entries) {
+    final pendingRaw = <String, dynamic>{...object('pendingGold')};
+    if ((row['schema'] as int) >= 13) {
+      if (row['pendingSales'] is! List) throw const FormatException('판매 황금 심사 목록 형식 오류');
+      for (final id in row['pendingSales'] as List) {
+        if (id is! String || !state.sales.containsKey(id) || pendingRaw.containsKey('sale:$id')) {
+          throw const FormatException('판매 황금 심사 목록 오류');
+        }
+        pendingRaw['sale:$id'] = state.sales[id];
+      }
+    } else if (row.containsKey('pendingSales')) {
+      throw const FormatException('구형 저장에 판매 황금 심사 목록이 있어요.');
+    }
+    for (final e in pendingRaw.entries) {
       if (e.value is! String) throw const FormatException('황금 심사 형식 오류');
       final payload = jsonDecode(e.value as String);
       if (payload is! Map<String, dynamic>) throw const FormatException('황금 심사 증거 오류');

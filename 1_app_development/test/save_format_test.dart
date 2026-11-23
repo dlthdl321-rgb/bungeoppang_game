@@ -33,6 +33,17 @@ void main() {
         reason: '견본 가게 저장을 읽어 다시 쓰면 내용이 달라집니다(옛 저장 읽기가 깨졌을 수 있음).');
   });
 
+  // 직전 가게 저장 형식의 견본은 지우지 않고 계속 읽는다(MASTER_INDEX 4절 "출시 시점 저장 규칙").
+  for (final old in [12]) {
+    test('옛 가게 저장 견본(schema $old)도 읽고 지금 형식으로 다시 쓴다', () {
+      final saved = readFixture(File('test/fixtures/save_format/workshop_schema$old.json'));
+      final sample = saved['sample'] as Map<String, dynamic>;
+      expect(sample['schema'], old);
+      final restored = WorkshopState.fromJson(sample, config);
+      expect(restored.toJson()['schema'], workshopSchema);
+    });
+  }
+
   test('계정 저장(formatVersion ${GameState.formatVersion}): 형식이 견본과 같고 견본 저장을 그대로 다시 쓴다', () {
     final fixture = File('test/fixtures/save_format/account_format${GameState.formatVersion}.json');
     final made = normalize(GameState.initial(DateTime.utc(2026, 11, 23)).toJson());
