@@ -24,6 +24,8 @@ Flutter 기반 붕어빵 게임 저장소입니다. 폴더명은 제품 이름�
 | 새로 필요한 그림 | [필요한 그림 목록](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/25_필요한그림프롬프트.md) (임시 그림·생성 프롬프트) |
 | 흥행 개선(처음 5분·결제 구조·손맛·측정·재방문·공유·광고) | [26번 흥행 개선 단계별 프롬프트](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/26_흥행개선단계별프롬프트.md) |
 | 홍보 자료(짧은 영상 대본·화면 녹화·스토어 문구 초안·스크린샷) | [27번 홍보 자료 준비](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/27_홍보자료준비.md) |
+| 코드 구조 개선 기록(안정화·예전 클리커 정리·테스트 체계·남은 일) | [28번 구조 개선 계획과 결과](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/28_구조개선계획과결과.md), 작업 시작 색인은 [MASTER_INDEX](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/MASTER_INDEX.md) |
+| 친구 초대(정식 출시용 설계, 구현 전) | [29번 친구 초대 설계](2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/29_친구초대설계.md) |
 | 이미지 생성 작업 기록 | [작업 기록](4_image_generation_results_and_backups/README.md) |
 | 완성 시안·출시 이미지 | [게임 완성 시안](3_original_images_and_visual_references/3.5_completed_game_mockups/) (스플래시·아이콘은 `1_app_development/assets/images/app/`) |
 | 과거 버전 확인 | [ZIP·APK 보관](6_previous_builds_and_project_archives/README.md) |
