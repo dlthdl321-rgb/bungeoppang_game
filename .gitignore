@@ -84,3 +84,6 @@ key.properties
 # 26번 녹화 피드백 그림 생성본: 다른 세션이 생성 중이라 통째로는 커밋하지 않는다.
 # 단계에서 실제 앱에 적용한 원본만 `git add -f`로 보관한다(26번 S0-Q1).
 /4_image_generation_results_and_backups/26_feedback_generated/
+
+# Codex 대화 첨부 사진(개인 자료, 커밋하지 않음)
+/.codex-attachments/

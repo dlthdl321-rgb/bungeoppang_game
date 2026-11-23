@@ -1,0 +1,81 @@
+# MASTER 색인 — 작업별로 읽을 곳
+
+[MASTER.md](MASTER.md)는 약 440KB라 한 번에 다 읽을 수 없다. 작업을 시작할 때는 **이 색인에서 관련 장을 고른 뒤 그 장만** 읽는다. 장 찾기: `grep -n "^## " MASTER.md`로 장 제목과 줄 위치를 확인하고, 그 줄부터 다음 `## `까지만 읽는다. (줄 번호는 자주 바뀌므로 이 색인에는 적지 않는다.)
+
+코드와 문서가 다르면 코드가 기준이다. 이 색인은 2026-11-23 `dev/stabilization`(1da6311) 코드에서 직접 확인했다.
+
+## 1. 작업 → 읽을 MASTER 장
+
+| 하려는 작업 | MASTER.md에서 읽을 장 | 함께 볼 문서 |
+| --- | --- | --- |
+| 무엇이든 처음 | 1장 개발 원칙 (짧음, 금지 SDK·BigInt·키 커밋 금지) | 이 색인 2~5절 |
+| 저장 형식·필드 추가 | 3장 저장과 시간, 14장 "저장되는 상태를 건드리는 기능" | 이 색인 4절 |
+| 밸런스·가격·레벨업 조건 | 5장 "레벨업 조건", 40장 경제 재조정, 43장 재료 타이쿤 | [14_개발용임시수치설정.md](../14_개발용임시수치설정.md) (생성 문서) |
+| 홈 화면·배치 | 10장 "Workshop 홈", 41·42장 | 24번·26번 문서의 해당 단계만 |
+| 굽기(큰 틀·6구) | 10장, 27장, 37장, 42장 | 24번 문서 |
+| 손님·판매·대사 | 24장, 30장, 39장 | 21·22번 문서 |
+| 재료 타이쿤 | 43·44·45장 | — |
+| 꾸미기·아바타 | 7장, 33장, 38장 | 25번 문서(그림 주문)는 그림 작업일 때만 |
+| 매일 보상·공유 | 34·35장 | — |
+| 로그인·온라인·결제·서버 | 8·9장, 23장, 29장, 31장 | [online_setup.md](online_setup.md) |
+| 소리 | 12장 | — |
+| 빌드·실행·테스트 | 13장 | 이 색인 5절 |
+| 법률·개인정보 | 36장, 32장 | [privacy_policy.md](privacy_policy.md), [play_data_safety.md](play_data_safety.md) |
+
+1~16장 중 클리커/코인·구형 레벨·환생 설명(4~6장 일부)은 **구형 프로토타입 기록**이다. 새 게임 규칙의 근거로 쓰지 않는다. 17~22장과 "직원" 장은 과거 작업 기록이므로 필요할 때만 본다.
+
+대형 기획 문서(25번 약 430KB, 26번 약 420KB, CHECKLIST 약 150KB)도 통째로 읽지 않는다. 단계 번호나 그림 번호로 `grep`해서 해당 부분만 읽는다.
+
+## 2. 두 컨트롤러의 역할
+
+둘 다 `ChangeNotifier`이고 [main.dart](../../../1_app_development/lib/main.dart)에서 **둘 다** 만들어 [GameApp](../../../1_app_development/lib/ui/game_app.dart)에 넘긴다. (MASTER 2장의 "유일한 ChangeNotifier"라는 설명은 예전 기준이다.)
+
+| | [WorkshopController](../../../1_app_development/lib/workshop_controller.dart) | [GameController](../../../1_app_development/lib/game_controller.dart) |
+| --- | --- | --- |
+| 지금 역할 | **실제 게임**: 굽기·판매·손님·재고·재료·레벨업·미션·도감·매일 보상·꾸미기 착용·구매 요청 | **계정·온라인 기반**: 온라인 연결, 랭킹, 친구·초대, 황금(유료 재화) 잔액·Play 결제, 사용 통계, 소리 설정 등 예전 계정 저장 |
+| 저장 | `WorkshopState` → [workshop_storage.dart](../../../1_app_development/lib/workshop_storage.dart) (`part`), schema **12**, SQLite `user_version` 4 | `GameState` → [models.dart](../../../1_app_development/lib/models.dart)·[repository.dart](../../../1_app_development/lib/repository.dart), `formatVersion` **14** |
+| 붙은 파일 | `part 'workshop_storage.dart'` + 규칙 파일 `workshop_*.dart`, `development_*.dart`, `pantry_*.dart`, `cooking_*.dart` | `part` 6개: invite·boost·online·premium·menu·ranking `_controller.dart` |
+| 둘의 연결 | 시험용 빌드 구매는 `LocalTestPurchaseGateway`가 GameController의 황금을 읽고 씀(main.dart) | [owner_account.dart](../../../1_app_development/lib/owner_account.dart)가 둘 다 받음 |
+
+예전 클리커 코드(`economy*.dart`, `prestige_*`, `support_*`, `weekly_config.dart`, `achievement_config.dart`, `ui/night_home.dart`)는 남아 있고 테스트도 있다. **지우거나 바꾸기 전에 승인을 받는다.**
+
+## 3. 기능 → 코드 → 보호 테스트
+
+| 기능 | 주요 코드 (`1_app_development/lib/`) | 지키는 테스트 (`1_app_development/test/`) |
+| --- | --- | --- |
+| 홈 화면 | `ui/workshop_page.dart`, `ui/workshop_home_layout.dart`, `ui/pixel_sprites.dart` | `workshop_home_layout`, `workshop_home_golden`, `step02_home`, `workshop_touch_area` |
+| 스페셜 큰 틀 굽기 | `cooking_session/paint/flip/input.dart`, `cooking_result_rules.dart`, `ui/workshop_mold_stage.dart`, `ui/piping_bag_control.dart`, `ui/flip_circle_control.dart` | `cooking_*`, `flip_circle_control`, `workshop_bench_mold`, `workshop_two_molds` |
+| 6구 생산 | `development_griddle.dart`, `development_business.dart`, `development_rules.dart` | `step02_cooking_production`, `development_production`, `workshop_two_molds` |
+| 손님·주문·판매 | `workshop_customers.dart`, `workshop_customer_*.dart`, `workshop_arrivals.dart`, `development_orders.dart`, `development_sale_quality.dart`, `development_inventory.dart`, `ui/workshop_counter.dart`, `ui/workshop_guests.dart` | `workshop_customers`, `workshop_arrivals`, `partial_sale`, `customer_*`, `workshop_counter` |
+| 재료 타이쿤 | `pantry_rules.dart`, `pantry_home.dart`, `prep_minigames.dart`, `ui/pantry_*.dart`, `ui/prep_minigames.dart` | `pantry_*`, `prep_minigames` |
+| 레벨업·미션·해금 | `workshop_missions.dart`, `workshop_feature_unlocks.dart` | `workshop_missions`, `workshop_feature_unlock`, `workshop_progression_simulation` |
+| 매일 보상·도감 | `workshop_daily.dart`, `workshop_collection_rules.dart` | `workshop_daily`, `workshop_collection` |
+| 구매·서버 요청 | `workshop_purchases.dart`, `workshop_online.dart`, `development_purchase_journal.dart`, `local_test_purchases.dart` | `workshop_purchases`, `workshop_online`, `local_test_purchases`, `development_purchase_journal` |
+| 꾸미기·아바타 | `cosmetic_config.dart`, `avatar_*.dart`, `ui/workshop_wardrobe.dart` | `workshop_wardrobe`, `avatar_*`, `hair_hat_rule` |
+| 첫 실행·로그인 | `owner_account.dart`, `owner_profile.dart`, `ui/first_run.dart` | `owner_first_run`, `first_run_golden` |
+| 저장 | `workshop_storage.dart`, `models.dart`, `repository.dart`, `save_quarantine.dart` | `workshop_storage`, `serialization`, `stage7_regression`(`fixtures/v1_save.json`), `economy_persistence` |
+| 설정 생성물 | `config/*.json` → `tools/development_balance.py`, `tools/customer_content.py` | `generated_config_sync` (생성물·서버 복사본 일치) |
+| 소리 | `game_audio.dart`, `music_config.dart` | `audio_*`, `step05_audio`, `independent_music` |
+| 금지 SDK·키 | `pubspec.yaml`, `android/` | `no_tracking_sdk`, `online_setup` |
+
+## 4. 저장 호환을 지키는 규칙
+
+- 저장 필드를 바꾸면 schema(가게 12, 계정 14)를 올리고 옛 버전 읽기를 유지한다. 순서는 MASTER 14장 "저장되는 상태를 건드리는 기능"의 10번까지 그대로 따른다.
+- 가게 schema를 올리면 `workshop_storage.dart`의 구매 보호 schema 목록도 함께 올린다.
+- 옛 저장 데이터의 값을 지어내지 않는다. 잘못된 값은 `FormatException`으로 거절한다.
+- `test/fixtures/v1_save.json`과 저장 테스트의 기대값은 낮추거나 지우지 않는다.
+
+## 5. 실행·테스트 명령
+
+Flutter는 PATH에 없다. 전체 경로를 쓴다: `D:\DevMoved\flutter-sdk\bin\flutter.bat` (Git Bash에서는 `/d/DevMoved/flutter-sdk/bin/flutter.bat`). 명령은 `1_app_development/`에서 실행한다.
+
+| 목적 | 명령 | 걸리는 시간 |
+| --- | --- | --- |
+| 고친 기능만 빠르게 | `flutter.bat test test/<파일>_test.dart` (3절 표의 테스트) | 수십 초 |
+| 전체 | `flutter.bat test` | 약 33분(2026-11-23 측정: 1,117개 통과·7개 건너뜀. 가장 긴 것은 `workshop_progression_simulation`) |
+| 정적 분석 | `flutter.bat analyze` | — |
+| 설정 생성물 확인 | `python tools/development_balance.py --check`, `python tools/customer_content.py --check` (콘솔이 cp1252면 `PYTHONIOENCODING=utf-8`) | 수 초 |
+| 서버 | `firebase/functions/`에서 `npm test` (Node 22) | — |
+
+- **기준 이미지(`test/goldens/`, 62장)는 의도한 화면 변경일 때만, 사용자 확인 뒤에** `--update-goldens`로 다시 만든다. 테스트를 통과시키려고 기준 이미지나 허용치를 바꾸지 않는다.
+- 한글 경로 때문에 빌드가 실패하면 MASTER 13장 "한글 경로 문제"를 따른다.
