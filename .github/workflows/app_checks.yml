@@ -27,8 +27,15 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          # 문서 폴더(약 5MB)도 받는다: 개인정보처리방침·14번 수치 문서를 읽는 테스트가 있다.
           sparse-checkout: |
             1_app_development
+            2_development_plans_and_checklists
+      # 손님 알림의 '밤 알림 끄기'는 기기 현지 시각으로 판단한다. 개발 PC·사용자와 같은
+      # 한국 시간으로 맞춘다(실행기 기본은 UTC라 낮 도착이 밤으로 계산됨).
+      - name: 시간대를 한국 시간으로
+        run: tzutil /s "Korea Standard Time"
+        working-directory: .
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: 3.47.5
@@ -63,8 +70,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          # 서버 테스트가 앱의 공통 설정(config/development_balance.json)도 읽는다.
           sparse-checkout: |
             1_app_development/firebase/functions
+            1_app_development/config
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
