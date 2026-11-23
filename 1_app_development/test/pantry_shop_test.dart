@@ -16,7 +16,7 @@ import 'package:todays_bungeoppang/ui/workshop_skill_shop.dart' show SkillStepWh
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_purchases.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 import 'workshop_controller_test.dart' show Gateway;
 
 // 재료 타이쿤 C: the shop's '재료' tab. Basic ingredients are bought on this
@@ -275,7 +275,7 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
   final online = FakeOnlineBackend(products: const {}, prices: const {})
     ..signedIn = true
     ..gold = gold;
-  final game = await mountGame(tester, size, reduced: true, online: online);
+  final game = await setUpAccount(tester, size, reduced: true, online: online);
   final c = WorkshopController(_config(), MemoryRepository(),
       purchaseGateway: _Server(), now: () => DateTime.utc(2026, 11, 21), monotonicMs: () => 0);
   await c.initialize();

@@ -13,7 +13,7 @@ import 'package:todays_bungeoppang/workshop_arrivals.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_customers.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 26번 5-1단계: 실제 시간 손님(일반 30초~5분 DEC-106·네임드 30분~3시간), 자리 상한,
 /// 자정 영업일 넘김, 기다림은 켠 순간부터, 저장 schema 7, 기기 안 알림.
@@ -354,7 +354,7 @@ void main() {
     });
 
     testWidgets('앱을 내리면(paused) 예약하고 켜면 모두 취소, inactive·안내 중에는 예약 없음', (tester) async {
-      final account = await mountGame(tester, const Size(390, 844), reduced: true);
+      final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
       final notifier = FakeNotifier();
       final c = WorkshopController(config, MemoryRepository(), now: () => start, random: Random(5), monotonicMs: () => 0);
       await c.initialize();
@@ -397,7 +397,7 @@ void main() {
     // 'accept' + allowed / 'accept' + refused / '나중에' (DEC-105).
     Future<(GameController, FakeNotifier)> promptAfterFirstSale(WidgetTester tester, {required bool grant}) async {
       // GameApp disposes both controllers when it goes away: a fresh pair each round.
-      final account = await mountGame(tester, const Size(390, 844), reduced: true);
+      final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
       expect(account.state.settings.notificationPromptDone, isFalse);
       final notifier = FakeNotifier(grant: grant);
       final c = WorkshopController(config, MemoryRepository(), now: () => start, random: Random(5), monotonicMs: () => 0);

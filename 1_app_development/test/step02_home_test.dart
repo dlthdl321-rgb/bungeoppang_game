@@ -16,7 +16,7 @@ import 'package:todays_bungeoppang/ui/night_home.dart';
 import 'package:todays_bungeoppang/ui/bake_target.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// Rubs across the mold paint control in a few rows and lifts (24번 5단계).
 Future<void> paintMold(WidgetTester tester) async {
@@ -49,7 +49,7 @@ Future<void> drawFlipCircle(WidgetTester tester) async {
 void main() {
   for(final size in [const Size(390,844),const Size(360,640)]) {
     testWidgets('original stall hosts real Workshop commands at $size', (tester) async {
-      final account=await mountGame(tester,size,reduced:true);
+      final account=await setUpAccount(tester,size,reduced:true);
       final config=DevelopmentBalance.fromJson(jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String,dynamic>);
       final c=WorkshopController(config,MemoryRepository(),now:()=>DateTime.utc(2026,10,18));
       await c.initialize();

@@ -16,7 +16,7 @@ import 'package:todays_bungeoppang/ui/workshop_guide.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_tutorial.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 4단계: 첫 실행 안내, 복귀 안내, 저장 손상 대처.
 void main() {
@@ -54,7 +54,7 @@ void main() {
   group('첫 실행 안내', () {
     for (final size in [const Size(360, 640), const Size(390, 844)]) {
       testWidgets('새 설치 → 굽기 → 보관 → 영업 시작 → 첫 판매로 안내가 끝난다 $size', (tester) async {
-        final account = await mountGame(tester, size, reduced: true);
+        final account = await setUpAccount(tester, size, reduced: true);
         final repository = MemoryRepository();
         final c = WorkshopController(load(), repository, now: () => DateTime.utc(2026, 10, 18));
         await c.initialize();
@@ -144,7 +144,7 @@ void main() {
     }
 
     testWidgets('건너뛰기는 저장되고 다시 열어도 안내가 나오지 않는다', (tester) async {
-      final account = await mountGame(tester, const Size(360, 800), textScale: 1.5, reduced: true);
+      final account = await setUpAccount(tester, const Size(360, 800), textScale: 1.5, reduced: true);
       final repository = MemoryRepository();
       final c = WorkshopController(load(), repository, now: () => DateTime.utc(2026, 10, 18));
       await c.initialize();
@@ -307,7 +307,7 @@ void main() {
 
     testWidgets('홈은 복귀 보고를 한 번 띄우고 닫으면 지운다', (tester) async {
       var now = DateTime.utc(2026, 10, 18, 12);
-      final account = await mountGame(tester, const Size(360, 800), reduced: true);
+      final account = await setUpAccount(tester, const Size(360, 800), reduced: true);
       final c = WorkshopController(load(), MemoryRepository(), now: () => now);
       await c.initialize();
       await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));

@@ -15,7 +15,7 @@ import 'package:todays_bungeoppang/workshop_pantry_prep.dart' show pantryPrepClo
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'usage_stats_test.dart' show RecordingSink;
 import 'workshop_controller_test.dart' show Repository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 재료 타이쿤 E — 홈 재료 표시·'재료 준비' 버튼·떨어짐 말풍선·24시간 안내,
 /// 처음 재료(상하지 않음)·레시피 선물·빈털터리 꾸러미, Lv.2 소개 카드와 안내.
@@ -218,7 +218,7 @@ void main() {
 
   group('홈 화면', () {
     Future<WorkshopController> mount(WidgetTester tester, {int level = 2, UsageStats? usage}) async {
-      final account = await mountGame(tester, const Size(390, 844), reduced: true);
+      final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
       final c = await open(usage: usage);
       await grown(c, level, seen: workshopIntroIds);
       await tester.pumpWidget(GameApp(controller: account, workshop: c));
@@ -310,7 +310,7 @@ void main() {
     });
 
     testWidgets('Lv.2 소개 카드 뒤 두 단계 안내가 재료 표시와 재료 준비를 가리킨다', (tester) async {
-      final account = await mountGame(tester, const Size(390, 844), reduced: true);
+      final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
       final c = await open();
       await grown(c, 2, seen: workshopIntroIds.difference({'pantry'}));
       await tester.pumpWidget(GameApp(controller: account, workshop: c));

@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'step02_home_test.dart' show drawFlipCircle, paintMold;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 24번 7단계 통합 흐름: 새 설치 → 튜토리얼 → 영업 준비 중 스페셜 붕어빵
 /// 제작(색칠·원 그리기) → 보관 → 영업 시작 → 숙련된 붕어빵 수확·판매 →
@@ -26,7 +26,7 @@ void main() {
   final manual = config.section('manual_cooking');
 
   testWidgets('새 설치부터 주문 제작 뒤 클리커 복귀까지 한 흐름', (tester) async {
-    final account = await mountGame(tester, const Size(390, 844), reduced: true);
+    final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
     var mono = 0;
     var clock = DateTime.utc(2026, 10, 18);
     final c = WorkshopController(config, MemoryRepository(),

@@ -10,7 +10,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_tutorial.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 24번 3단계: 영업 상태별 두 틀 규칙(DEC-035~037).
 void main() {
@@ -137,7 +137,7 @@ void main() {
 
   group('화면', () {
     Future<WorkshopController> mount(WidgetTester tester) async {
-      final account = await mountGame(tester, const Size(390, 844), reduced: true);
+      final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
       final (c, _) = await make();
       await tester.pumpWidget(GameApp(controller: account, workshop: c));
       await tester.pump();
@@ -200,7 +200,7 @@ void main() {
       await tester.pump();
       expect(c.state.taps, taps + 1);
       expect(c.state.buns, buns + c.tapRate);
-      // Reduced motion (mountGame reduced): a still gain, no crumbs.
+      // Reduced motion (setUpAccount reduced): a still gain, no crumbs.
       expect(key('clicker-static-gain'), findsOneWidget);
 
       // A new order no longer brings the mold back for a while.

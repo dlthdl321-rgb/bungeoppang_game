@@ -9,7 +9,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/workshop_home_layout.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 4차 피드백 g11 (사용자 결정 2026-11-21 '손님 누르면 6구가 옆으로 밀려나고 그
 /// 자리에'): 스페셜 붕어빵 틀은 손님 위 공중이 아니라 아래 작업대의 6구 자리에서
@@ -20,7 +20,7 @@ void main() {
       jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>));
 
   Future<WorkshopController> mount(WidgetTester tester, Size size, {bool reduced = true}) async {
-    final account = await mountGame(tester, size, reduced: reduced);
+    final account = await setUpAccount(tester, size, reduced: reduced);
     final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);
     await c.initialize();
     await c.command(() => c.state..tutorial = 'done'..featureIntros.addAll(['fairy', 'griddle']));

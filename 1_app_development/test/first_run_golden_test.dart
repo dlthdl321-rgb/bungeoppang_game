@@ -12,7 +12,7 @@ import 'dart:convert';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 26번 2-1단계: the first-run screens (login with the consents, owner name,
 /// 여자/남자 사장님, optional info) with the app's own fonts.
@@ -66,7 +66,7 @@ void main() {
   for (final size in const [Size(390, 844), Size(360, 800)]) {
     final tag = '${size.width.toInt()}x${size.height.toInt()}';
     testWidgets('첫 영업 이야기 골든 $tag', (tester) async {
-      final account = await mountGame(tester, size, reduced: true);
+      final account = await setUpAccount(tester, size, reduced: true);
       account.ownerName = '소이';
       final config = DevelopmentBalance.fromJson(
           jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);

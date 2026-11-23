@@ -17,7 +17,7 @@ import 'package:todays_bungeoppang/ui/workshop_page.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'online_backend_test.dart' show backend;
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 // 26번 2-1단계: first-run login (Kakao or Google, required), owner name,
 // 여자/남자 사장님, optional gender and age band, and the account settings
@@ -58,7 +58,7 @@ Future<FirstRun> mountFirstRun(WidgetTester tester,
     bool startOnline = true}) async {
   internet = startOnline;
   final net = online ?? backend();
-  final game = await mountGame(tester, size, reduced: true, online: net);
+  final game = await setUpAccount(tester, size, reduced: true, online: net);
   final config = DevelopmentBalance.fromJson(
       jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
   final shop = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 11, 18), monotonicMs: () => 0);

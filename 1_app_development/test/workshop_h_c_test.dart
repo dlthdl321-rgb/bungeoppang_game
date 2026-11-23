@@ -14,7 +14,7 @@ import 'package:todays_bungeoppang/ui/flavor_picker.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 26번 3차 녹화 피드백 C 묶음(홈·굽기 H17~H30): 다시 켤 때 반죽부터,
 /// 품질 별, 가운데 알림, 맛 고르기, 메뉴 한 곳, 결과 버튼.
@@ -56,7 +56,7 @@ void main() {
   });
 
   Future<WorkshopController> mount(WidgetTester tester) async {
-    final account = await mountGame(tester, const Size(390, 844), reduced: true);
+    final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
     final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18),
         monotonicMs: () => 0);
     await c.initialize();

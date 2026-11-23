@@ -15,7 +15,7 @@ import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/workshop_home_layout.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 3단계: "가게 관리" 시트 없이 홈에서 손님 → 주문 → 재고 → 판매.
 /// 26번 4-1단계: 손님은 매대 앞에 서고, 저장 점검(checkpoint) 중에도 버튼이
@@ -24,7 +24,7 @@ import 'widget_test.dart' show mountGame;
 /// 영업 종료는 영업 중 내내 위쪽 간판 옆, 손님 대사는 그 손님 말풍선(IA5).
 void main() {
   Future<WorkshopController> mount(WidgetTester tester, Size size) async {
-    final account = await mountGame(tester, size, reduced: true);
+    final account = await setUpAccount(tester, size, reduced: true);
     final config = DevelopmentBalance.fromJson(
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
     // A still monotonic clock keeps the wait rings off the real stopwatch.
@@ -187,7 +187,7 @@ void main() {
 
   // 26번 4-1단계 F1: 저장 점검(checkpoint_ms마다 빈 저장) 동안 버튼이 꺼지지 않는다.
   testWidgets('저장 점검 중에도 주문 제작·판매·손님·클리커가 살아 있고 안내 대사가 남는다', (tester) async {
-    final account = await mountGame(tester, const Size(390, 844), reduced: true);
+    final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
     final config = DevelopmentBalance.fromJson(
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
     var mono = 0;
@@ -292,7 +292,7 @@ void main() {
   });
 
   testWidgets('긴 이름 네임드 손님도 카운터 글이 잘리지 않는다(글자 1.3배)', (tester) async {
-    final account = await mountGame(tester, const Size(360, 640), reduced: true, textScale: 1.3);
+    final account = await setUpAccount(tester, const Size(360, 640), reduced: true, textScale: 1.3);
     final config = DevelopmentBalance.fromJson(
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
     final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);

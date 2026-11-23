@@ -34,7 +34,9 @@ class CountingRepository extends MemoryGameRepository {
   }
 }
 
-Future<GameController> mountGame(WidgetTester tester, Size size,
+/// The account controller and the test screen (size, text scale, insets)
+/// without showing any home. Workshop tests show their own page on top.
+Future<GameController> setUpAccount(WidgetTester tester, Size size,
     {double textScale = 1,
     bool reduced = false,
     FixedTime? clock,
@@ -73,6 +75,22 @@ Future<GameController> mountGame(WidgetTester tester, Size size,
   final c = GameController(repo, time,
       developerTools: developerTools, ranking: ranking, online: online);
   await c.initialize();
+  return c;
+}
+
+/// [setUpAccount] and the old clicker home ([GameHome]).
+Future<GameController> mountGame(WidgetTester tester, Size size,
+    {double textScale = 1,
+    bool reduced = false,
+    FixedTime? clock,
+    CountingRepository? repository,
+    bool maxLevel = false,
+    bool? developerTools,
+    RankingService ranking = const NoRankingService(),
+    OnlineBackend online = const NoOnlineBackend()}) async {
+  final c = await setUpAccount(tester, size,
+      textScale: textScale, reduced: reduced, clock: clock, repository: repository,
+      maxLevel: maxLevel, developerTools: developerTools, ranking: ranking, online: online);
   await tester.pumpWidget(GameApp(controller: c));
   await tester.pump();
   return c;

@@ -8,11 +8,11 @@ import 'package:todays_bungeoppang/ui/cozy_style.dart';
 import 'package:todays_bungeoppang/ui/workshop_windows.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 void main(){
   for(final scale in [1.0,1.5])testWidgets('restored menu routes and appearance authority at text scale $scale',(tester)async{
-    final account=await mountGame(tester,const Size(360,800),textScale:scale,reduced:true);
+    final account=await setUpAccount(tester,const Size(360,800),textScale:scale,reduced:true);
     final config=DevelopmentBalance.fromJson(jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String,dynamic>);
     final c=WorkshopController(config,MemoryRepository());await c.initialize();
     await tester.pumpWidget(GameApp(controller:account,workshop:c));await tester.pump();

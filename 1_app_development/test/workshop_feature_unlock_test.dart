@@ -15,7 +15,7 @@ import 'package:todays_bungeoppang/workshop_feature_unlocks.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'package:todays_bungeoppang/ui/center_toast.dart';
 import 'workshop_controller_test.dart' show Gateway;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 26번 2단계: 처음 5분 단순화 (DEC-043 A. 하나씩 열기). 레벨·숙련별 잠금,
 /// 잠금 글, 소개 카드 한 번, 기존 저장 호환, 첫 판매 칭찬.
@@ -296,7 +296,7 @@ void main() {
 
   group('화면', () {
     Future<WorkshopController> mount(WidgetTester tester, {Size size = const Size(390, 844)}) async {
-      final account = await mountGame(tester, size, reduced: true);
+      final account = await setUpAccount(tester, size, reduced: true);
       final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 10, 18));
       await c.initialize();
       await tester.pumpWidget(GameApp(controller: account, workshop: c));
@@ -542,7 +542,7 @@ void main() {
     });
 
     testWidgets('첫 판매 칭찬: 말풍선·큰 별·반짝 2초 뒤 사라지고 저장하지 않는다', (tester) async {
-      final account = await mountGame(tester, const Size(390, 844));
+      final account = await setUpAccount(tester, const Size(390, 844));
       final repository = MemoryRepository();
       final c = WorkshopController(config, repository, now: () => DateTime.utc(2026, 10, 18));
       await c.initialize();

@@ -20,7 +20,7 @@ import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/development_purchase_journal.dart';
 import 'package:todays_bungeoppang/workshop_purchases.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 import 'workshop_controller_test.dart' show Gateway;
 
 /// 26번 4-3단계: the skill window as a level-up list (F12~F19).
@@ -408,7 +408,7 @@ Future<(WorkshopController, GameController)> _open(WidgetTester tester, Size siz
   final online = FakeOnlineBackend(products: const {}, prices: const {})
     ..signedIn = account.isNotEmpty
     ..gold = gold;
-  final game = await mountGame(tester, size, reduced: true, online: online);
+  final game = await setUpAccount(tester, size, reduced: true, online: online);
   if (fonts) await _loadFonts(tester);
   final config = DevelopmentBalance.fromJson(
       jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);

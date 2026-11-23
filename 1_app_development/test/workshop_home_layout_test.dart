@@ -16,7 +16,7 @@ import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/workshop_arrivals.dart';
 import 'package:todays_bungeoppang/ui/workshop_home_layout.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 24번 4단계: 숙련된 붕어빵 틀 폭, 판매 카운터 높이(행주 윗변), 빈 굽는 판.
 /// 26번 4-1단계: 매대 앞 손님 자리, 낮춘 클리커, 가운데 카운터 버튼.
@@ -26,7 +26,7 @@ void main() {
       jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>));
 
   Future<WorkshopController> mount(WidgetTester tester, Size size) async {
-    final account = await mountGame(tester, size, reduced: true);
+    final account = await setUpAccount(tester, size, reduced: true);
     final c = WorkshopController(config, MemoryRepository(),
         now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => 0);
     await c.initialize();

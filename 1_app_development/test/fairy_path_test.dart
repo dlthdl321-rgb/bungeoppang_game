@@ -8,7 +8,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/workshop_fairy.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 4차 피드백 g12: 붕어빵 요정의 넓은 헤엄(위아래·대각선·곡선, 가끔 화면
 /// 밖으로 나갔다가 다른 곳에서 다시 들어옴)과, 그동안에도 탭이 그대로
@@ -125,7 +125,7 @@ void main() {
 
     testWidgets('헤엄 중에도, 화면 밖에 다녀온 뒤에도 탭이 세어짐', (tester) async {
       const size = Size(390, 844);
-      final account = await mountGame(tester, size);
+      final account = await setUpAccount(tester, size);
       final config = DevelopmentBalance.fromJson(
           jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
       var mono = 0;

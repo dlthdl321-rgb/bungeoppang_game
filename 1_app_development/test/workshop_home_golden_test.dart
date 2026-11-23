@@ -21,7 +21,7 @@ import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/ui/workshop_home_layout.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 5단계: 실제 진입 화면(WorkshopPage 홈)을 지키는 골든.
 ///
@@ -43,7 +43,7 @@ void main() {
       });
 
   Future<WorkshopController> mount(WidgetTester tester, Size size) async {
-    final account = await mountGame(tester, size, reduced: true);
+    final account = await setUpAccount(tester, size, reduced: true);
     await loadFonts(tester);
     final config = DevelopmentBalance.fromJson(
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
@@ -156,7 +156,7 @@ void main() {
   });
 
   // 26번 4단계: 결과 등급별 화면(큰 글씨·칭찬/이유·익힘 색·넘침 방울·윤기).
-  // Reduced motion (mountGame): the still picture, no effect particles.
+  // Reduced motion (setUpAccount): the still picture, no effect particles.
   for (final (name, first, second, bakeMs) in const [
     ('perfect', PaintAmount(980, 1100), PaintAmount(970, 1120), 15000),
     ('good', PaintAmount(920, 1250), PaintAmount(940, 1200), 18000),

@@ -18,7 +18,7 @@ import 'package:todays_bungeoppang/ui/prep_minigames.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_pantry_prep.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 
 /// 재료 타이쿤 D — '재료 준비' 창과 미니게임 화면: 탭(얻은 레시피만), 보관 막대·버리는 시각,
 /// 필요한 재료(모자라면 빨강), 모자란 재료 한 번에 사기, 만들기 → 미니게임 3종 성공(덤)·실패(덤 없음),
@@ -423,7 +423,7 @@ void main() {
 
   group('들어가는 곳', () {
     pantryTest('영업 중이면 창 대신 까닭, 영업 준비 중이면 창', (tester) async {
-      final account = await mountGame(tester, const Size(390, 844), reduced: true);
+      final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
       // Lv.2: 재료 준비 opens with `pantry_prep` (묶음 E, 4차 병합 3).
       final c = await controller(setup: (c) => c..state.level = 2 ..state.claimedLevels.add(2));
       await tester.pumpWidget(GameApp(controller: account, workshop: c));

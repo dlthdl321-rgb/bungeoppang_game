@@ -7,7 +7,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
-import 'widget_test.dart' show mountGame;
+import 'widget_test.dart' show setUpAccount;
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/usage_stats.dart';
@@ -354,7 +354,7 @@ void main() {
 
 void _widgets() {
   Future<(WorkshopController, _Shop)> mount(WidgetTester tester, {DateTime? at}) async {
-    final account = await mountGame(tester, const Size(390, 844), reduced: true);
+    final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
     final shop = _Shop(DevelopmentBalance.fromJson(_raw()), at ?? DateTime.utc(2026, 11, 2, 3));
     await shop.start();
     // Feature cards already seen: they would cover the home.
