@@ -34,10 +34,14 @@
 | --- | --- | --- |
 | 지금 역할 | **실제 게임**: 굽기·판매·손님·재고·재료·레벨업·미션·도감·매일 보상·꾸미기 착용·구매 요청 | **계정·온라인 기반**: 온라인 연결, 랭킹, 친구·초대, 황금(유료 재화) 잔액·Play 결제, 사용 통계, 소리 설정 등 예전 계정 저장 |
 | 저장 | `WorkshopState` → [workshop_storage.dart](../../../1_app_development/lib/workshop_storage.dart) (`part`), schema **12**, SQLite `user_version` 4 | `GameState` → [models.dart](../../../1_app_development/lib/models.dart)·[repository.dart](../../../1_app_development/lib/repository.dart), `formatVersion` **14** |
-| 붙은 파일 | `part 'workshop_storage.dart'` + 규칙 파일 `workshop_*.dart`, `development_*.dart`, `pantry_*.dart`, `cooking_*.dart` | `part` 6개: invite·boost·online·premium·menu·ranking `_controller.dart` |
+| 붙은 파일 | `part` 6개: `workshop_storage.dart`(저장), `workshop_controller_level_up.dart`(레벨업), `_commands.dart`(배경·미션·아바타·보상·광고·구매), `_collection.dart`(도감), `_daily.dart`(오늘의 주문서·출석), `_pantry.dart`(재료). 규칙 파일 `workshop_*.dart`, `development_*.dart`, `pantry_*.dart`, `cooking_*.dart` | `part` 6개: invite·boost·online·premium·menu·ranking `_controller.dart` |
 | 둘의 연결 | 시험용 빌드 구매는 `LocalTestPurchaseGateway`가 GameController의 황금을 읽고 씀(main.dart) | [owner_account.dart](../../../1_app_development/lib/owner_account.dart)가 둘 다 받음 |
 
-예전 클리커 코드(`economy*.dart`, `prestige_*`, `support_*`, `weekly_config.dart`, `achievement_config.dart`, `ui/night_home.dart`)는 남아 있고 테스트도 있다. **지우거나 바꾸기 전에 승인을 받는다.**
+WorkshopController의 part 파일(`workshop_controller_*.dart`)은 `extension ... on WorkshopController`다. 필드·static·`@override`는 extension에 둘 수 없으므로 본체에 둔다. extension 안에서 static은 `WorkshopController.이름`으로 부르고, 화면 갱신은 `notifyListeners()` 대신 본체의 `_notifyChanged()`를 부른다.
+
+**새 화면이 예전 화면 위에 올라가 있다.** 실제 홈 [ui/workshop_page.dart](../../../1_app_development/lib/ui/workshop_page.dart)는 예전 클리커 홈 위젯 `NightHome`([ui/night_home.dart](../../../1_app_development/lib/ui/night_home.dart))으로 화면을 그리고, 상점 `ShopPanel`·메뉴 `MenuPanel`도 예전 쪽 GameController를 받는다(설정·황금 잔액·착용 꾸미기를 GameController에서 읽음). 그래서 `night_home.dart`·`shop_panel.dart`·`public_menus.dart`를 고치면 **새 게임 홈도 바뀐다.** 이 파일들을 고친 뒤에는 `golden` 태그 테스트(`workshop_home_golden` 등)를 꼭 돌린다.
+
+예전 클리커 코드(`economy*.dart`, `prestige_*`, `support_*`, `weekly_config.dart`, `achievement_config.dart`)는 남아 있고 테스트도 있다. 위처럼 새 화면이 쓰는 부분이 섞여 있으므로 **지우거나 바꾸기 전에 승인을 받는다.**
 
 ## 3. 기능 → 코드 → 보호 테스트
 
@@ -72,6 +76,8 @@ Flutter는 PATH에 없다. 전체 경로를 쓴다: `D:\DevMoved\flutter-sdk\bin
 | 목적 | 명령 | 걸리는 시간 |
 | --- | --- | --- |
 | 고친 기능만 빠르게 | `flutter.bat test test/<파일>_test.dart` (3절 표의 테스트) | 수십 초 |
+| 느린 것 빼고 전부 | `flutter.bat test --exclude-tags slow` (태그는 `dart_test.yaml`) | 약 12분(2026-11-23 측정: 1,084개) |
+| 기준 이미지 테스트만 | `flutter.bat test --tags golden` | — |
 | 전체 | `flutter.bat test` | 약 33분(2026-11-23 측정: 1,117개 통과·7개 건너뜀. 가장 긴 것은 `workshop_progression_simulation`) |
 | 정적 분석 | `flutter.bat analyze` | — |
 | 설정 생성물 확인 | `python tools/development_balance.py --check`, `python tools/customer_content.py --check` (콘솔이 cp1252면 `PYTHONIOENCODING=utf-8`) | 수 초 |

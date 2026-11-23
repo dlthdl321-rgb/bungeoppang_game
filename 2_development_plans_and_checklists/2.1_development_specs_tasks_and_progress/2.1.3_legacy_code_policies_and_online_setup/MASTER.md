@@ -68,7 +68,8 @@
 | `lib/*_config.dart` | 조정 가능한 값(밸런스·보상·가격·표) |
 | `lib/*_rules.dart` | 상태를 받아 계산만 하는 순수 함수 |
 | `lib/*_state.dart`, `lib/models.dart` | 저장되는 상태와 JSON 변환·이전 |
-| `lib/game_controller.dart` + `*_controller.dart` | 유일한 `ChangeNotifier`. 다른 controller 파일은 `part`로 붙은 확장 메서드 |
+| `lib/game_controller.dart` + `*_controller.dart` | 계정·온라인·결제 쪽 `ChangeNotifier`. 다른 controller 파일은 `part`로 붙은 확장 메서드 |
+| `lib/workshop_controller.dart` + `workshop_storage.dart`·`workshop_controller_*.dart` | 실제 게임 쪽 `ChangeNotifier`(2026-11-23 기준 두 컨트롤러가 함께 동작). 역할 구분은 [MASTER_INDEX.md](MASTER_INDEX.md) 2절 |
 | `lib/ui/` | 화면 |
 | `firebase/functions/src/` | 서버 함수(TypeScript) |
 | `test/` | 테스트와 골든 |
