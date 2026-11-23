@@ -20,9 +20,7 @@ import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'controller_test.dart' show FakeTime;
 import 'level_missions_test.dart' show setRate;
-import 'test_support.dart' show tapVisible;
 import 'stage8_progress_test.dart' show asVersion, plainJson, progressed;
-import 'test_support.dart' show mountGame;
 
 final now = DateTime.utc(2026, 10, 5, 3);
 final firstRunLifetime = BigInt.parse('2000000000000000000'); // ~2e18.
@@ -294,54 +292,6 @@ void main() {
     });
   });
 
-  for (final size in const [Size(360, 800), Size(390, 844), Size(412, 915)]) {
-    for (final scale in [1.0, 1.5, 2.0]) {
-      testWidgets('새 노점 카드·확인·새 꾸미기 ${size.width}/$scale overflow 없음',
-          (tester) async {
-        final c = await mountGame(tester, size,
-            textScale: scale, maxLevel: true, developerTools: false);
-        c.state.lifetime = firstRunLifetime;
-        for (var l = 2; l <= 10; l++) {
-          c.state.levelRewards[l] = LevelRewardRecord(
-              level: l,
-              seasonId: c.state.missions.seasonId,
-              source: 'claim',
-              amount: BigInt.from(3),
-              claimedAtUtc: now);
-        }
-        c.state.support
-            .transact('test:fund', BigInt.from(200), 'test', c.gameNow);
-        c.tick();
-        await tester.pump();
-        await tapVisible(tester, const Key('menu-skins'));
-        for (final slot in CosmeticSlot.values.where((s) => s.shown)) {
-          await tapVisible(
-              tester, Key('cosmetic-category-${slot.tab.name}'));
-          await tapVisible(tester, Key('cosmetic-slot-${slot.name}'));
-          final last = cosmeticDefinitions.lastWhere((d) => d.slot == slot);
-          await tapVisible(tester, Key('preview-${last.id}'));
-          expect(tester.takeException(), isNull, reason: last.id);
-        }
-        await tester.tap(find.byTooltip('닫기'));
-        await tester.pumpAndSettle();
-        await tapVisible(tester, const Key('level-mission-entry'));
-        expect(find.byKey(const Key('prestige-card')), findsOneWidget);
-        await tapVisible(tester, const Key('prestige-open'));
-        expect(tester.takeException(), isNull);
-        await tapVisible(tester, const Key('confirm-support'));
-        await tester.pumpAndSettle();
-        expect(c.state.level, 1);
-        expect(c.state.prestige.stars, 5);
-        while (find.byTooltip('닫기').evaluate().isNotEmpty) {
-          await tester.tap(find.byTooltip('닫기').last);
-          await tester.pumpAndSettle();
-        }
-        expect(find.byKey(const Key('home-prestige')), findsOneWidget);
-        expect(tester.takeException(), isNull);
-        await tester.pumpWidget(const SizedBox.shrink());
-      });
-    }
-  }
 }
 
 /// Settles [ms] of active production from [from] on a detached state copy.

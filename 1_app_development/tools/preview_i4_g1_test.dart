@@ -14,7 +14,7 @@ import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 Future<void> settle(WidgetTester tester, [int frames = 15]) async {
   for (var i = 0; i < frames; i++) {
@@ -53,7 +53,7 @@ void main() {
     final w = size.width.toInt();
     testWidgets('g1 미리보기 $w', (tester) async {
       await fonts(tester);
-      final account = await mountGame(tester, size);
+      final account = await setUpAccount(tester, size);
       final config = DevelopmentBalance.fromJson(
           jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
       final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 11, 19, 3), monotonicMs: () => 0);

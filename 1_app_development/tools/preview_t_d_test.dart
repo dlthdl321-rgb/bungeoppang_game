@@ -19,7 +19,7 @@ import 'package:todays_bungeoppang/ui/prep_minigames.dart';
 import 'package:todays_bungeoppang/ui/weather_layer.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 void main() {
   Future<void> fonts(WidgetTester tester) => tester.runAsync(() async {
@@ -52,7 +52,7 @@ void main() {
   Future<WorkshopController> window(WidgetTester tester, Size size, {void Function(WorkshopController c)? setup}) async {
     WeatherLayer.animate = false;
     WorkshopStatusBadge.animate = false;
-    final account = await mountGame(tester, size, reduced: true);
+    final account = await setUpAccount(tester, size, reduced: true);
     await fonts(tester);
     await tester.runAsync(PrepArt.load);
     final config = DevelopmentBalance.fromJson(

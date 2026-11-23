@@ -22,7 +22,7 @@ import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/ui/weather_layer.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 const tag = String.fromEnvironment('PREVIEW_TAG', defaultValue: 'after');
 
@@ -61,7 +61,7 @@ void main() {
   Future<WorkshopController> home(WidgetTester tester, Size size, {bool reduced = true, bool open = true, String tutorial = 'done'}) async {
     WeatherLayer.animate = false;
     WorkshopStatusBadge.animate = false;
-    final account = await mountGame(tester, size, reduced: reduced);
+    final account = await setUpAccount(tester, size, reduced: reduced);
     await fonts(tester);
     final config = DevelopmentBalance.fromJson(
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);

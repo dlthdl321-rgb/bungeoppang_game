@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 class OriginalGriddlePreview extends CustomPainter {
   final double enlargement;
@@ -39,7 +39,7 @@ void main() {
       await (FontLoader('MaterialIcons')..addFont(Future.value(icons))).load();
     });
     tester.view.physicalSize = const Size(390, 844);
-    await mountGame(tester, const Size(390, 844), reduced: true);
+    await setUpAccount(tester, const Size(390, 844), reduced: true);
     final griddle = tester.renderObject<RenderCustomPaint>(find.byKey(const Key('griddle')));
     final bottom = griddle.localToGlobal(Offset(0, griddle.size.height)).dy;
     for (final factor in [1.0, 1.15]) {

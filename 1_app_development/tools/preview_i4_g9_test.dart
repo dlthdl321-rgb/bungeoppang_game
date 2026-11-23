@@ -14,7 +14,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_feature_unlocks.dart' show workshopIntroIds;
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 Future<void> settle(WidgetTester tester) async {
   for (var i = 0; i < 15; i++) {
@@ -92,7 +92,7 @@ void main() {
     ]) {
       testWidgets('g9 미리보기 $label $w', (tester) async {
         await fonts(tester);
-        final account = await mountGame(tester, size, reduced: true);
+        final account = await setUpAccount(tester, size, reduced: true);
         final c = await controller(level: level, taps: taps, pieces: pieces, buns: buns, gold: gold);
         await tester.pumpWidget(GameApp(controller: account, workshop: c));
         await settle(tester);

@@ -16,9 +16,7 @@ import 'package:todays_bungeoppang/ui/cook_cut.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'controller_test.dart' show FakeTime;
-import 'test_support.dart' show tapVisible;
 import 'stage8_progress_test.dart' show now, plainJson, progressed;
-import 'test_support.dart' show mountGame;
 
 Iterable<CosmeticDefinition> inSlot(CosmeticSlot slot) =>
     cosmeticDefinitions.where((d) => d.slot == slot);
@@ -385,60 +383,6 @@ void main() {
           }
         }
       }
-    });
-  });
-
-  group('홈·꾸미기 화면', () {
-    CookCutPainter cookCut(WidgetTester tester) => tester
-        .widget<CustomPaint>(find.byKey(const Key('cook-cut')))
-        .painter! as CookCutPainter;
-    double lift(WidgetTester tester) => cookCut(tester).lift;
-
-    testWidgets('붕어빵을 탭하면 사장님이 집게를 들고, 모션 감소면 가만히 있다',
-        (tester) async {
-      for (final reduced in [false, true]) {
-        await mountGame(tester, const Size(390, 844), reduced: reduced);
-        expect(lift(tester), 0);
-        await tester.tap(find.byKey(const Key('fish-button')));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: CookCut.liftMs ~/ 2));
-        expect(lift(tester), reduced ? 0 : greaterThan(.5), reason: '$reduced');
-        await tester.pump(const Duration(milliseconds: CookCut.liftMs));
-        expect(lift(tester), 0);
-        await tester.pumpWidget(const SizedBox.shrink());
-      }
-    });
-
-    testWidgets('탭마다 미리보기 대상이 다르고, 적용은 홈에 반영된다', (tester) async {
-      final c = await mountGame(tester, const Size(390, 844));
-      setLevel(c.state, 2, c.clock.utcNow);
-      c.state.support
-          .transact('test:fund', BigInt.from(10), 'test', c.gameNow);
-      c.tick();
-      await tester.pump();
-      await tapVisible(tester, const Key('menu-skins'));
-      // Opens on 헤어, like the concept art.
-      expect(find.byKey(const Key('preview-avatar')), findsOneWidget);
-      await tapVisible(tester, const Key('cosmetic-category-bungeoppang'));
-      expect(find.byKey(const Key('preview-bungeoppang')), findsOneWidget);
-      expect(find.byKey(const Key('cosmetic-slot-hat')), findsNothing);
-      await tapVisible(tester, const Key('cosmetic-category-hair'));
-      expect(find.byKey(const Key('preview-avatar')), findsOneWidget);
-      expect(find.byKey(const Key('cosmetic-slot-fish')), findsNothing);
-      await tapVisible(tester, const Key('cosmetic-slot-hat'));
-      await tapVisible(tester, const Key('preview-beanie'));
-      expect(find.text('미리보기 · 미장착'), findsOneWidget);
-      expect(c.state.equippedCosmetic(CosmeticSlot.hat), 'nohat');
-      await tapVisible(tester, const Key('buy-cosmetic-beanie'));
-      await tapVisible(tester, const Key('confirm-support'));
-      expect(c.state.equippedCosmetic(CosmeticSlot.hat), 'beanie');
-      await tapVisible(tester, const Key('cosmetic-category-stall'));
-      expect(find.byKey(const Key('preview-stall')), findsOneWidget);
-      await tester.tap(find.byTooltip('닫기'));
-      await tester.pumpAndSettle();
-      expect(cookCut(tester).look.hat, 'beanie');
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox.shrink());
     });
   });
 }

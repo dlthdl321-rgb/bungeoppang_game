@@ -17,7 +17,7 @@ import 'package:todays_bungeoppang/ui/workshop_wardrobe.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_feature_unlocks.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 import '../test/workshop_controller_test.dart' show Gateway;
 
 const tag = String.fromEnvironment('PREVIEW_TAG', defaultValue: 'after');
@@ -53,7 +53,7 @@ void main() {
       {required int level, bool business = true, BigInt? buns}) async {
     WeatherLayer.animate = false;
     final online = FakeOnlineBackend(products: const {}, prices: const {})..signedIn = true;
-    final account = await mountGame(tester, size, reduced: true, online: online);
+    final account = await setUpAccount(tester, size, reduced: true, online: online);
     await fonts(tester);
     final config = DevelopmentBalance.fromJson(
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
@@ -116,7 +116,7 @@ void main() {
 
   // The 가게 preview painter alone with each decoration and lamp colour.
   testWidgets('가게 미리보기 장식별', (tester) async {
-    await mountGame(tester, const Size(700, 640), reduced: true);
+    await setUpAccount(tester, const Size(700, 640), reduced: true);
     const looks = [('none', 'amberlamp', 'clear', false), ('lantern', 'roselamp', 'autumn', false),
       ('bunting', 'mintlamp', 'cherry', false), ('snowman', 'lilaclamp', 'snow', false),
       ('paperlanterns', 'amberlamp', 'clear', true), ('starlights', 'roselamp', 'night', true)];

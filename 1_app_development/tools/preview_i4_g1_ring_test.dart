@@ -15,7 +15,7 @@ import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 void main() {
   const tag = String.fromEnvironment('PREVIEW_TAG', defaultValue: 'after');
@@ -51,7 +51,7 @@ void main() {
     for (final (name, lifetime, taps, sale) in [('0', 0, 0, false), ('45', 100, 10, false), ('95', 100, 26, true)]) {
       testWidgets('고리 $name $w', (tester) async {
         await fonts(tester);
-        final account = await mountGame(tester, size, reduced: true);
+        final account = await setUpAccount(tester, size, reduced: true);
         final config = DevelopmentBalance.fromJson(
             jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
         final c = WorkshopController(config, MemoryRepository(), now: () => DateTime.utc(2026, 11, 19, 3), monotonicMs: () => 0);

@@ -17,7 +17,7 @@ import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_feature_unlocks.dart';
 import 'package:todays_bungeoppang/pantry_rules.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 const tag = String.fromEnvironment('PREVIEW_TAG', defaultValue: 'after');
 
@@ -64,7 +64,7 @@ void main() {
       {int level = 2, bool open = false, Set<String>? seen, void Function(WorkshopController c)? edit, double textScale = 1}) async {
     WeatherLayer.animate = false;
     WorkshopStatusBadge.animate = false;
-    final account = await mountGame(tester, size, reduced: true, textScale: textScale);
+    final account = await setUpAccount(tester, size, reduced: true, textScale: textScale);
     await fonts(tester);
     final config = DevelopmentBalance.fromJson(
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);

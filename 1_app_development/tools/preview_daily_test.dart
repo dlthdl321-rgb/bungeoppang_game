@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 void main() {
   Future<void> fonts(WidgetTester tester) => tester.runAsync(() async {
@@ -44,7 +44,7 @@ void main() {
   for (final (name, at) in [('christmas', DateTime.utc(2026, 12, 24, 3)), ('plain', DateTime.utc(2026, 11, 2, 3))]) {
     testWidgets('오늘 쪽지 미리보기 $name', (tester) async {
       await fonts(tester);
-      final account = await mountGame(tester, const Size(390, 844), reduced: true);
+      final account = await setUpAccount(tester, const Size(390, 844), reduced: true);
       final config = DevelopmentBalance.fromJson(
           jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
       final c = WorkshopController(config, MemoryRepository(), now: () => at, monotonicMs: () => 0);

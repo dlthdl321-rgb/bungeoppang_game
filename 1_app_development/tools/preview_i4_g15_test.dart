@@ -20,7 +20,7 @@ import 'package:todays_bungeoppang/ui/weather_layer.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_feature_unlocks.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 import 'package:todays_bungeoppang/development_purchase_journal.dart';
 import 'package:todays_bungeoppang/workshop_purchases.dart';
 
@@ -80,7 +80,7 @@ void main() {
     final online = FakeOnlineBackend(products: const {}, prices: const {})
       ..signedIn = true
       ..gold = 40;
-    final account = await mountGame(tester, size, reduced: true, online: online);
+    final account = await setUpAccount(tester, size, reduced: true, online: online);
     tester.view.devicePixelRatio = _dpr;
     await fonts(tester);
     final config = DevelopmentBalance.fromJson(
@@ -142,7 +142,7 @@ void main() {
   }
 
   testWidgets('결과 등급 띠 다섯 개 390', (tester) async {
-    await mountGame(tester, const Size(390, 844), reduced: true);
+    await setUpAccount(tester, const Size(390, 844), reduced: true);
     tester.view.devicePixelRatio = _dpr;
     await fonts(tester);
     const lines = {

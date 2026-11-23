@@ -14,7 +14,7 @@ import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 Future<void> settle(WidgetTester tester) async {
   for (var i = 0; i < 15; i++) {
@@ -106,7 +106,7 @@ void main() {
     for (final scene in ['partial', 'collected', 'griddle']) {
       testWidgets('g6 미리보기 $scene $w', (tester) async {
         await fonts(tester);
-        final account = await mountGame(tester, size, reduced: true);
+        final account = await setUpAccount(tester, size, reduced: true);
         final c = await controller(scene);
         await tester.pumpWidget(GameApp(controller: account, workshop: c));
         await settle(tester);

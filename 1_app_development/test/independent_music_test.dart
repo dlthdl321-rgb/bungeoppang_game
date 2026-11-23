@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/game_audio.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
@@ -7,7 +6,6 @@ import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/music_config.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'controller_test.dart' show FakeTime;
-import 'test_support.dart' show mountApp;
 
 class PolicyAudio extends SoundPolicy {
   final moods = <String>[];
@@ -82,17 +80,6 @@ void main() {
     expect(validMusicSelection('warm_stall'), isFalse);
   });
 
-  testWidgets('26번 4-6단계: 설정 화면에 배경음 선택 드롭다운이 없다', (tester) async {
-    final c = await mountApp(tester, const Size(390, 844),
-        setUp: (s) => s.settings.musicSelection = 'rain');
-    await tester.tap(find.byTooltip('설정'));
-    await tester.pumpAndSettle();
-    expect(find.byKey(const Key('setting-music')), findsOneWidget);
-    expect(find.byKey(const Key('setting-music-selection')), findsNothing);
-    expect(find.text('배경음 선택'), findsNothing);
-    expect(c.state.settings.musicSelection, 'rain');
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
 
   test('명시 음악은 배경 변경과 pause/resume 후에도 유지된다', () {
     final audio = PolicyAudio();

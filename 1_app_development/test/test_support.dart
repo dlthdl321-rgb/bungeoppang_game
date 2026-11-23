@@ -11,7 +11,6 @@ import 'package:todays_bungeoppang/online_ranking.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/time_service.dart';
-import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 
 class FixedTime implements TimeService {
@@ -80,35 +79,6 @@ Future<GameController> setUpAccount(WidgetTester tester, Size size,
   return c;
 }
 
-/// [setUpAccount] and the old clicker home ([GameHome]).
-Future<GameController> mountGame(WidgetTester tester, Size size,
-    {double textScale = 1,
-    bool reduced = false,
-    FixedTime? clock,
-    CountingRepository? repository,
-    bool maxLevel = false,
-    bool? developerTools,
-    RankingService ranking = const NoRankingService(),
-    OnlineBackend online = const NoOnlineBackend()}) async {
-  final c = await setUpAccount(tester, size,
-      textScale: textScale, reduced: reduced, clock: clock, repository: repository,
-      maxLevel: maxLevel, developerTools: developerTools, ranking: ranking, online: online);
-  await tester.pumpWidget(GameApp(controller: c));
-  await tester.pump();
-  return c;
-}
-
-/// Opens the menu from the HUD and taps its [key] entry.
-Future<void> openFromMenu(WidgetTester tester, Key key) async {
-  await tester.ensureVisible(find.byKey(const Key('menu-menu')));
-  await tester.tap(find.byKey(const Key('menu-menu')));
-  await tester.pumpAndSettle();
-  await tester.ensureVisible(find.byKey(key));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(key));
-  await tester.pumpAndSettle();
-}
-
 Future<void> tapVisible(WidgetTester tester, Key key) async {
   final finder = find.byKey(key);
   await tester.ensureVisible(finder);
@@ -158,33 +128,4 @@ class FakeAudio extends SoundPolicy {
       musicStates.add(playing);
   @override
   Future<void> dispose() async {}
-}
-
-Future<GameController> mountApp(WidgetTester tester, Size size,
-    {double textScale = 1,
-    bool reduced = false,
-    FakeAudio? audio,
-    CountingRepository? repository,
-    FixedTime? clock,
-    void Function(GameState)? setUp}) async {
-  await tester.binding.setSurfaceSize(size);
-  tester.view.devicePixelRatio = 1;
-  tester.platformDispatcher.textScaleFactorTestValue = textScale;
-  addTearDown(() async {
-    tester.platformDispatcher.clearTextScaleFactorTestValue();
-    tester.view.resetDevicePixelRatio();
-    await tester.binding.setSurfaceSize(null);
-  });
-  final time = clock ?? FixedTime();
-  final repo = repository ?? CountingRepository();
-  repo.current = GameState.initial(time.utcNow)
-    ..tutorialDone = true
-    ..settings.vibration = false
-    ..settings.reduceMotion = reduced;
-  setUp?.call(repo.current!);
-  final c = GameController(repo, time);
-  await c.initialize();
-  await tester.pumpWidget(GameApp(controller: c, audio: audio ?? FakeAudio()));
-  await tester.pump();
-  return c;
 }

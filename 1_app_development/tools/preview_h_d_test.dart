@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/test_support.dart' show mountGame;
+import '../test/test_support.dart' show setUpAccount;
 
 /// Fixed frames instead of pumpAndSettle: the home keeps small looping
 /// animations (since the C bundle), so it never fully settles.
@@ -80,7 +80,7 @@ void main() {
     for (final (label, level, rich) in [('lv1', 1, false), ('lv5', 5, true)]) {
       testWidgets('D 묶음 미리보기 $label $w', (tester) async {
         await fonts(tester);
-        final account = await mountGame(tester, size, reduced: true);
+        final account = await setUpAccount(tester, size, reduced: true);
         final c = await controller(level: level, rich: rich);
         await tester.pumpWidget(GameApp(controller: account, workshop: c));
         await tester.pump();
