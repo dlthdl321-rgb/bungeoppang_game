@@ -76,9 +76,9 @@ Flutter는 PATH에 없다. 전체 경로를 쓴다: `D:\DevMoved\flutter-sdk\bin
 | 목적 | 명령 | 걸리는 시간 |
 | --- | --- | --- |
 | 고친 기능만 빠르게 | `flutter.bat test test/<파일>_test.dart` (3절 표의 테스트) | 수십 초 |
-| 느린 것 빼고 전부 | `flutter.bat test --exclude-tags slow` (태그는 `dart_test.yaml`) | 약 12분(2026-11-23 측정: 1,084개) |
+| 느린 것 빼고 전부 | `flutter.bat test --exclude-tags slow` (태그는 `dart_test.yaml`) | 약 6분(2026-11-24 측정: 970개) |
 | 기준 이미지 테스트만 | `flutter.bat test --tags golden` | — |
-| 전체 | `flutter.bat test` | 약 33분(2026-11-23 측정: 1,117개 통과·7개 건너뜀. 가장 긴 것은 `workshop_progression_simulation`) |
+| 전체 | `flutter.bat test` | 약 20분(2026-11-24 측정: 997개 통과·7개 건너뜀. 가장 긴 것은 `workshop_progression_simulation` 약 15분) |
 | 정적 분석 | `flutter.bat analyze` | — |
 | 설정 생성물 확인 | `python tools/development_balance.py --check`, `python tools/customer_content.py --check` (콘솔이 cp1252면 `PYTHONIOENCODING=utf-8`) | 수 초 |
 | 서버 | `firebase/functions/`에서 `npm test` (Node 22) | — |

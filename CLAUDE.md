@@ -11,7 +11,7 @@
 ## 실행
 
 - Flutter는 PATH에 없다: `D:\DevMoved\flutter-sdk\bin\flutter.bat` (Git Bash: `/d/DevMoved/flutter-sdk/bin/flutter.bat`).
-- 고친 기능의 테스트만 먼저 돌린다(MASTER_INDEX.md 3절의 기능별 테스트). 전체 `flutter test`는 약 33분 걸리므로(2026-11-23 측정, 1,117개) 마무리 확인 때 한 번 돌린다.
+- 고친 기능의 테스트만 먼저 돌린다(MASTER_INDEX.md 3절의 기능별 테스트). 느린 것을 뺀 `flutter test --exclude-tags slow`는 약 6분, 전체 `flutter test`는 약 20분 걸리므로(2026-11-24 측정, 970개·997개) 전체는 마무리 확인 때 한 번 돌린다.
 - Python 도구가 한글 출력에서 실패하면 `PYTHONIOENCODING=utf-8`을 붙인다.
 
 ## 지킬 것
