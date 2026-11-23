@@ -16,7 +16,9 @@
 
 ## 지킬 것
 
-- 기준 이미지(`1_app_development/test/goldens/`)는 의도한 화면 변경이고 사용자가 확인했을 때만 다시 만든다. 테스트 기대값·허용치를 낮추지 않는다.
+- 기준 이미지(`1_app_development/test/goldens/`)는 의도한 화면 변경이고 사용자가 확인했을 때만 다시 만든다. 다시 만들기 전에 실패한 테스트가 남긴 비교 이미지(`test/failures/*_maskedDiff.png`·`*_testImage.png`)를 직접 열어 보고, 바뀐 화면과 바뀐 이유를 사용자에게 보여 준다. 고치려던 화면 말고 다른 화면의 기준 이미지가 바뀌면 다시 만들지 말고 원인을 먼저 찾는다. 테스트 기대값·허용치를 낮추지 않는다.
+- 자주 바뀌는 화면·중심 파일(`lib/ui/workshop_page.dart`, `lib/ui/night_home.dart`, `lib/ui/shop_panel.dart`, `lib/ui/public_menus.dart`, `lib/workshop_controller*.dart`, `lib/ui/pixel_sprites.dart`)은 **한 번에 한 작업(세션·브랜치)만** 고친다. 여러 작업을 나눠 돌릴 때는 이 파일들을 어느 작업이 맡는지 먼저 정하고, 맡지 않은 작업은 건드리지 않는다.
+- 새 기능은 계산을 `*_rules.dart` 같은 순수 함수와 그 테스트로 먼저 만들고, 컨트롤러는 그것을 부르기만 한다.
 - 저장 형식은 옛 버전 읽기를 유지한다(MASTER_INDEX.md 4절).
 - 예전 클리커 코드(GameController 쪽)는 계정·온라인·결제를 아직 맡고 있다. 지우거나 옮기기 전에 승인을 받는다.
 - `4_image_generation_results_and_backups/26_feedback_generated/`는 다른 세션이 쓰는 폴더라 커밋하지 않는다(.gitignore).
