@@ -34,7 +34,7 @@ void main() {
   });
 
   // 직전 가게 저장 형식의 견본은 지우지 않고 계속 읽는다(MASTER_INDEX 4절 "출시 시점 저장 규칙").
-  for (final old in [12]) {
+  for (final old in [12, 13]) {
     test('옛 가게 저장 견본(schema $old)도 읽고 지금 형식으로 다시 쓴다', () {
       final saved = readFixture(File('test/fixtures/save_format/workshop_schema$old.json'));
       final sample = saved['sample'] as Map<String, dynamic>;

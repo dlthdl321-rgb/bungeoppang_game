@@ -28,6 +28,7 @@ import 'workshop_arrivals.dart';
 import 'workshop_feature_unlocks.dart';
 import 'workshop_daily.dart';
 import 'workshop_collection_rules.dart';
+import 'workshop_sale_archive.dart';
 import 'usage_stats.dart';
 import 'pantry_rules.dart';
 import 'online_texts.dart';
@@ -47,7 +48,10 @@ part 'workshop_controller_pantry.dart';
 /// Schema 13 (28번 10절, 2026-11-24) stops writing each sale's evidence twice:
 /// `pendingGold` keeps no `sale:` entries on disk, `pendingSales` lists their
 /// sale IDs and loading fills them from `sales` (the same strings, in memory).
-const workshopSchema = 13;
+/// Schema 14 (30번 2-A, 2026-11-24) adds `archivedSales`·`archivedSalesBuns`:
+/// settled sales to anonymous guests leave `sales`/`pendingGold`/`rewardReceipts`
+/// for these two totals ([pickSettledAnonymousSales]).
+const workshopSchema = 14;
 /// Saves below this schema have no pantry: they get the starting stock once.
 const pantrySchema = 12;
 /// Saves below this schema were played with the old economy (skill prices
@@ -208,6 +212,10 @@ class WorkshopState {
   WorkshopRelationships relationships = WorkshopRelationships.empty();
   Map<String,dynamic>? customerScene;
   final Map<String, String> sales = {}, pendingGold = {};
+  /// Settled sales to anonymous guests moved out of [sales] (30번 2-A): how
+  /// many and what they paid (ordinary + 특제). Saved from schema 14.
+  int archivedSales = 0;
+  BigInt archivedSalesBuns = BigInt.zero;
   final Set<int> claimedLevels = {};
   /// A fresh shop in place of a save from before the economy rebalance
   /// ([economyResetSchema], 4차 피드백 g7, pre-launch): every number starts
@@ -262,6 +270,7 @@ class WorkshopState {
       if (!(e.key.startsWith('sale:') && sales[e.key.substring(5)] == e.value)) e.key: e.value},
     'pendingSales': [for (final e in pendingGold.entries)
       if (e.key.startsWith('sale:') && sales[e.key.substring(5)] == e.value) e.key.substring(5)]..sort(),
+    'archivedSales': archivedSales, 'archivedSalesBuns': '$archivedSalesBuns',
     'claimedLevels': claimedLevels.toList()..sort()};
   factory WorkshopState.fromJson(Map<String, dynamic> row, DevelopmentBalance config) {
     Map<String, dynamic> object(String key) {
@@ -419,7 +428,13 @@ class WorkshopState {
       state.tutorial = row['tutorial'] as String;
       if (state.tutorialActive && state.completedSales > 0) throw const FormatException('판매 뒤 안내 진행 상태 오류');
     }
-    var salesBuns = BigInt.zero;
+    if ((row['schema'] as int) >= 14) {
+      state.archivedSales = DevelopmentBalance.integer(row, 'archivedSales');
+      state.archivedSalesBuns = DevelopmentBalance.decimal(row, 'archivedSalesBuns');
+    } else if (row.containsKey('archivedSales') || row.containsKey('archivedSalesBuns')) {
+      throw const FormatException('구형 저장에 판매 보관 합계가 있어요.');
+    }
+    var salesBuns = state.archivedSalesBuns;
     final consumed = <String, BigInt>{};
     void sold(Map<String, dynamic> product) {
       final id = product['batch'] as String;
@@ -547,7 +562,7 @@ class WorkshopState {
     for (final n in row['claimedLevels'] as List) {
       if (n is! int || n < 2 || n > state.level || !state.claimedLevels.add(n)) throw const FormatException('승급 수령 기록 오류');
     }
-    if (state.sales.length != state.completedSales || state.claimedLevels.length != state.level - 1) {
+    if (state.sales.length + state.archivedSales != state.completedSales || state.claimedLevels.length != state.level - 1) {
       throw const FormatException('판매/승급 원장 불일치');
     }
     // 4차 피드백 g9: pieces sold. A save from before them counts its sale
@@ -878,6 +893,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   int _lastMono = 0, _checkpoint = 0;
   /// [_mono] at the last successful save ([checkpointSafetyMs]).
   int _lastSaveMono = 0;
+  /// The business day and receipt count the last saved command checked for
+  /// settled sales ([_archiveSettledSales]); -1 before the first.
+  int _archiveCheckedDay = -1, _archiveCheckedReceipts = -1;
   /// Monotonic times of clicker taps counted in the last second (DEC-036).
   final List<int> _clickerTaps = [];
   /// 사용 통계(26번 5단계): saved commands report first bake/sale, the end
@@ -978,6 +996,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final newsBefore = collectionNews.length;
     final pantryNewsBefore = pantryNews.length;
     var saved = false;
+    (int, int)? archiveMark;
     try {
       // 4차 병합: g6 collection rewards settle first, so their buns count
       // toward g1's automatic promotion in the same command.
@@ -985,6 +1004,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         _expirePantry(); // 재료 타이쿤 E: 24시간 지난 통을 먼저 버림
         mutate(); _observeDaily(); _settleCollection(); _promote();
         _rescuePantry(); // 재료 타이쿤 E: 빈털터리 방지 꾸러미
+        archiveMark = _archiveSettledSales(); // 30번 2-A
       } on FormatException catch (e) {
         state = WorkshopState.fromJson(before, config); notice = e.message;
         collectionNews.length = newsBefore; pantryNews.length = pantryNewsBefore; return false;
@@ -997,6 +1017,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       }
       await repository.save(next, before['sequence'] as int);
       _lastSaveMono = _mono;
+      if (archiveMark case (final day, final receipts)) { _archiveCheckedDay = day; _archiveCheckedReceipts = receipts; }
       if (state.level > levelBefore) promotedTo = state.level;
       return saved = true;
     } catch (e) {
@@ -1101,6 +1122,23 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// Something the per-command hooks would change now ([command]: [_promote],
   /// [_observeDaily], [_settleCollection], [_expirePantry], [_rescuePantry]).
   bool get _checkpointDue => canLevelUp || _dailyDue || _collectionDue || _pantryDue;
+  /// 30번 2-A: moves settled sales to anonymous guests into the archive
+  /// totals. Runs only when the business day or the number of server
+  /// receipts changed since the last saved check; returns that check's marks.
+  (int, int)? _archiveSettledSales() {
+    final day = state.business.businessIndex;
+    if (day == _archiveCheckedDay && state.rewardReceipts.length == _archiveCheckedReceipts) return null;
+    final pick = pickSettledAnonymousSales(sales: state.sales, rewardReceipts: state.rewardReceipts,
+        liveBatches: state.inventory.batches.keys.toSet(), businessIndex: day, named: customerCatalog.contains);
+    for (final id in pick.ids) {
+      state.sales.remove(id);
+      state.pendingGold.remove('sale:$id');
+      state.rewardReceipts.remove('sale:$id');
+    }
+    state.archivedSales += pick.ids.length;
+    state.archivedSalesBuns += pick.buns;
+    return (day, state.rewardReceipts.length);
+  }
   Future<void> _saveCheckpoint() async {
     if (busy || disposed || error != null) return;
     _savingCheckpoint = true;

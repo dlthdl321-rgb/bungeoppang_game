@@ -135,7 +135,7 @@ void main() {
         c.state.claimedLevels.addAll([2, 3, 4]);
       });
       expect(await c.claimRecipeFromMission('custard'), isTrue);
-      final old = jsonDecode(jsonEncode(repository.stored)) as Map<String, dynamic>..['schema'] = 11..remove('pantry')..remove('pendingSales');
+      final old = jsonDecode(jsonEncode(repository.stored)) as Map<String, dynamic>..['schema'] = 11..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
       c.dispose();
       final reopened = WorkshopController(recipeConfig, Repository()..stored = old, now: () => clock);
       addTearDown(reopened.dispose);

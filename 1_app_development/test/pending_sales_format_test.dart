@@ -36,7 +36,7 @@ void main() {
   Map<String, dynamic> asSchema12(WorkshopController c) => c.state.toJson()
     ..['schema'] = 12
     ..['pendingGold'] = Map<String, String>.from(c.state.pendingGold)
-    ..remove('pendingSales');
+    ..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
 
   int bytes(Map<String, dynamic> json) => utf8.encode(jsonEncode(json)).length;
 
