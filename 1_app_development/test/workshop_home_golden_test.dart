@@ -1,3 +1,6 @@
+@Tags(['golden'])
+library;
+
 import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:io';
