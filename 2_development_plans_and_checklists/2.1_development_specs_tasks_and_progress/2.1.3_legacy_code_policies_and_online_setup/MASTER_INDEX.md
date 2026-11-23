@@ -68,6 +68,14 @@ WorkshopController의 part 파일(`workshop_controller_*.dart`)은 `extension ..
 - 가게 schema를 올리면 `workshop_storage.dart`의 구매 보호 schema 목록도 함께 올린다.
 - 옛 저장 데이터의 값을 지어내지 않는다. 잘못된 값은 `FormatException`으로 거절한다.
 - `test/fixtures/v1_save.json`과 저장 테스트의 기대값은 낮추거나 지우지 않는다.
+- 저장 형식은 `test/save_format_test.dart`가 고정한다(가게 schema 12·계정 formatVersion 14의 키·값 종류, 견본 저장 읽기). 형식을 일부러 바꿨을 때만 schema/formatVersion·옛 저장 이전을 고친 뒤 `UPDATE_SAVE_FORMAT=1 flutter test test/save_format_test.dart`로 견본을 다시 쓴다.
+- **유료 황금 구매 기록 보호**(`workshop_storage.dart`의 `purchase_guard` 표·구매 보호 schema 목록, 가게 저장의 `purchases`)는 옛 schema 이전 코드라도 지우지 않는다. 결제 복구가 여기에 기대고 있다.
+
+### 출시 시점 저장 규칙 (2026-11-24)
+
+- **출시 전(지금):** 실제 사용자 저장이 없으므로 형식을 바꿀 수 있다. 바꾸면 위 순서대로 schema를 올리고 `save_format_test` 견본을 다시 쓴다. 내부 테스트 기기의 저장도 읽혀야 하므로 옛 버전 읽기는 유지한다.
+- **출시 빌드를 만들 때:** 그때의 가게 schema·계정 formatVersion을 "출시 형식"으로 이 절에 적고, 그 견본(`test/fixtures/save_format/`)을 지우지 않는다.
+- **출시 후:** 필드를 지우거나 이름을 바꾸지 않는다(새 필드 추가만). 형식을 바꿀 때마다 직전 출시 형식의 견본 저장을 읽는 테스트를 하나씩 더한다. 저장을 다시 시작하게 만드는 초기화(`economyResetSchema` 같은 것)는 출시 후에 쓰지 않는다.
 
 ## 5. 실행·테스트 명령
 
@@ -85,3 +93,22 @@ Flutter는 PATH에 없다. 전체 경로를 쓴다: `D:\DevMoved\flutter-sdk\bin
 
 - **기준 이미지(`test/goldens/`, 62장)는 의도한 화면 변경일 때만, 사용자 확인 뒤에** `--update-goldens`로 다시 만든다. 테스트를 통과시키려고 기준 이미지나 허용치를 바꾸지 않는다.
 - 한글 경로 때문에 빌드가 실패하면 MASTER 13장 "한글 경로 문제"를 따른다.
+
+## 6. 새 기능 추가 틀 (2026-11-24)
+
+새 기능은 아래 순서로 만든다. 지금 구조(새 홈 하나, 컨트롤러는 part 파일, 계산은 규칙 파일)가 다시 엉키지 않게 하려는 것이다.
+
+| 순서 | 할 일 | 위치 | 예시(재료 타이쿤) |
+| --- | --- | --- | --- |
+| 1 | 설정값을 밸런스 설정에 넣는다. 서버도 쓰면 생성 도구로 서버 복사본을 다시 만든다 | `config/development_balance.json` → `python tools/development_balance.py` | `ingredients` 구역 |
+| 2 | 계산만 하는 순수 함수와 그 테스트를 먼저 만든다(위젯·컨트롤러·저장 없이) | `lib/<기능>_rules.dart`, `test/<기능>_rules_test.dart` | `pantry_rules.dart`, `pantry_rules_test.dart` |
+| 3 | 저장할 상태가 있으면 `WorkshopState`에 필드를 더하고 4절 순서를 따른다 | `workshop_controller.dart`, `workshop_storage.dart`, `save_format_test` 견본 | `pantry`(schema 12) |
+| 4 | 명령은 컨트롤러 part 파일의 extension에 둔다. 규칙 함수를 부르기만 한다. 화면 갱신은 `_notifyChanged()` | `lib/workshop_controller_<기능>.dart` | `workshop_controller_pantry.dart` |
+| 5 | 화면은 별도 위젯 파일로 만들고 `workshop_page.dart`에는 연결 한두 줄만 더한다 | `lib/ui/<기능>_*.dart` | `ui/pantry_window.dart`, `ui/pantry_shop.dart` |
+| 6 | 화면 테스트는 `setUpAccount` + 새 홈(`GameApp(controller:, workshop:)`)으로 쓴다. 기준 이미지가 필요하면 `golden` 태그 | `test/<기능>_*_test.dart` | `pantry_window_test.dart` |
+| 7 | 이 색인의 3절(기능 → 코드 → 테스트)과 MASTER 해당 장을 고친다 | 이 파일, `MASTER.md` | 43~45장 |
+
+- 계정 쪽(GameController)에 새 상태를 넣지 않는다. 계정 쪽은 로그인·온라인·결제·설정·꾸미기 보유만 맡는다.
+- 유료 화폐(황금)를 주거나 쓰는 기능은 서버 함수와 서버 테스트(`firebase/functions/test/`)를 함께 만든다.
+- 자주 바뀌는 파일(CLAUDE.md "지킬 것" 목록)은 한 번에 한 작업만 고친다.
+
