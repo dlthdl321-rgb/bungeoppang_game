@@ -15,6 +15,18 @@ extension WorkshopCollection on WorkshopController {
   /// ([WorkshopState.collectionClaims]) and asks the server for a collected
   /// flavor's gold once (`pendingGold['collection:<flavor>']`, pending until
   /// verified like level gold). The title needs nothing saved.
+  /// What [_settleCollection] would pay now (the checkpoint's test, 28번 8절).
+  bool get _collectionDue {
+    for (final flavor in state.recipes) {
+      final progress = state.collection(config, flavor);
+      final paid = state.collectionClaims[flavor] ?? const <int>{};
+      for (var i = 0; i < 5; i++) {
+        if (progress.complete(i) && !paid.contains(i)) return true;
+      }
+      if (progress.collected && !state.pendingGold.containsKey('collection:$flavor')) return true;
+    }
+    return false;
+  }
   void _settleCollection() {
     for (final flavor in state.recipes.toList()..sort()) {
       final progress = state.collection(config, flavor);

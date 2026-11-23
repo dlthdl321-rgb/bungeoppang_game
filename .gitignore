@@ -87,3 +87,6 @@ key.properties
 
 # Codex 대화 첨부 사진(개인 자료, 커밋하지 않음)
 /.codex-attachments/
+
+# Claude Code 이 PC 전용 설정(권한 등), 커밋하지 않음
+/.claude/settings.local.json

@@ -70,6 +70,14 @@ extension WorkshopDailyReturn on WorkshopController {
   /// orders are open) and the seasonal event the player is in. Runs after
   /// every command and on coming back; pays nothing. Returns whether a new
   /// order came. However many days passed, one order for today.
+  /// What [_observeDaily] would change now (the checkpoint's test, 28번 8절).
+  bool get _dailyDue {
+    if (state.tutorialActive) return false;
+    final day = today, daily = state.daily;
+    final event = activeSeasonalEvent(config, day);
+    return daily.day != day || (event != null && !daily.events.contains(event.id)) ||
+        (daily.order?.day != day && featureOpen(state, config, WorkshopFeature.specialOrders));
+  }
   bool _observeDaily() {
     if (state.tutorialActive) return false;
     final day = today;

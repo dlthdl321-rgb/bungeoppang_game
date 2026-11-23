@@ -155,6 +155,14 @@ extension WorkshopPantry on WorkshopController {
   /// Every command first throws away tubs made `expiry_ms` ago (the
   /// starting stock never goes bad) and says so — the one place expiry
   /// happens (4차 병합 3: B·D no longer call `expire` themselves).
+  /// What [_expirePantry] or [_rescuePantry] would change now (the
+  /// checkpoint's test, 28번 8절).
+  bool get _pantryDue {
+    if (state.pantry.lots.any((l) => l.expired(pantryConfig, _nowMs))) return true;
+    if (state.tutorialActive) return false;
+    return state.pantry.rescueAvailable(pantryConfig, businessDayKst(now()), _nowMs, state.recipes,
+        state.purchases.available(state.buns), pantryRate);
+  }
   void _expirePantry() {
     final notice = expiredNotice(pantryConfig, state.pantry.expire(pantryConfig, _nowMs));
     if (notice != null) pantryNews.add(notice);

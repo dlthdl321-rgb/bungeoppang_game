@@ -898,7 +898,7 @@
 | `flip_dead_zone_permille` | 150 | 틀 중심에서 틀 그림 폭의 15% 안쪽 움직임 무시 |
 | `filling_inputs` | 4 | 옛 속 방향 순서 길이(저장 토큰 호환용, 화면에 안 보임) |
 | `batter_input_passes` | 2 | 반죽 두 번 구조 기록용(코드에서 읽지 않음, G6에서 유지) |
-| `checkpoint_ms` | 1000 | 제작 중 저장 간격. 이 주기 저장 중에는 `busy`가 켜져도 화면은 `inputBusy`(= `busy && !_savingCheckpoint`)로 판단해 버튼·손님·6구 칸·클리커가 깜빡이지 않음. 저장 중 들어온 명령은 저장이 끝난 뒤 실행되고, 안내 문구(`notice`)는 사용자 명령에서만 지움(주기·수명 저장은 `keepNotice`). 26번 4-1단계 F1 |
+| `checkpoint_ms` | 1000 | 체크포인트 확인 간격(2026-11-24 28번 8절부터: 매초 승급·새 날·24시간 지난 통·구조 꾸러미·도감 칸이 생겼는지 확인해 생겼을 때만 저장, 아니면 마지막 저장 뒤 `checkpointSafetyMs` 60초마다 안전 저장. 명령과 앱 전환은 그대로 즉시 저장). 이 주기 저장 중에는 `busy`가 켜져도 화면은 `inputBusy`(= `busy && !_savingCheckpoint`)로 판단해 버튼·손님·6구 칸·클리커가 깜빡이지 않음. 저장 중 들어온 명령은 저장이 끝난 뒤 실행되고, 안내 문구(`notice`)는 사용자 명령에서만 지움(주기·수명 저장은 `keepNotice`). 26번 4-1단계 F1 |
 | `products_per_completed_result`, `minimum_cooling_ms` | 1, 0 | 결과 1개당 재고 수, 식힘 시간 |
 
 삭제(24번 5단계): `mastery_difficulties[*].batter_target_ms`·`batter_tolerance_permille`, `manual_cooking.filling_capacity_ms`·`touch_batter_tick_ms`·`tilt_sampling_ms`·`tilt_activation_degrees`·`tilt_dead_zone_degrees`. `tools/development_balance.py`가 다시 생기지 않게 검사하고, 서버 생성본(`firebase/functions/src/generated/development_balance.json`)과 14번 문서를 같은 도구로 다시 만듭니다. 서버 코드는 제작 값을 읽지 않으며 `metadata.revision`은 `development-provisional-3` 그대로입니다(G8).
@@ -2088,7 +2088,7 @@ GameApp은 앱 전경과 WorkshopController.adPaused를 함께 확인하여 광�
 | '재료 준비' 버튼 | 영업 준비 중 작업대 '스페셜 붕어빵 제작 시작' 왼쪽(같은 크림색 알약, 그릇 아이콘 `btn_prep` 28, 키 `pantry-prep`). 두 버튼은 한 줄로 함께 줄어듦(`FittedBox`). Lv.2 전에는 공통 잠금(자물쇠만), 영업 중·제작 중에는 없음 | `PantryPrepButton`, `WorkshopMoldStage.prepAction` |
 | 떨어짐 말풍선 | 영업 중 생산이 멈추면(반죽이 없거나 얻은 속이 모두 없음, `WorkshopController.pantryOut`) 재료 표시 아래에 위를 가리키는 크림색 말풍선 한 번(키 `pantry-out-bubble`): '반죽이 떨어졌어요'/'팥소가 떨어졌어요'(빨강) + '영업을 마치고 ‘재료 준비’에서 만들어요'. 누르거나 6초 지나면 닫힘. 재료가 다시 생길 때까지는 다시 뜨지 않고 빨간 표시만 남음 | `PantryOutBubble`, `WorkshopPage._watchPantryOut` |
 | 사용 통계 | `ingredient_out`(`what`: batter/filling, 하루 1번, 32장)은 4차 병합 3부터 화면이 아니라 컨트롤러가 탭·자동 생산이 실제로 재료를 못 찾을 때 남김(B와 하나로) | `WorkshopController._ingredientsOut` |
-| 24시간 안내 | 모든 명령(1초마다의 체크포인트 저장 포함)이 먼저 `PantryState.expire`를 불러 24시간 지난 통을 버리고 '만든 지 24시간이 지난 반죽 1통을 버렸어요.'를 가운데 알림으로. 명령이 실패하면 버림과 알림도 되돌림 | `WorkshopController._expirePantry`·`pantryNews` |
+| 24시간 안내 | 모든 명령(24시간 지난 통이 있으면 1초 안에 체크포인트 저장이 돌아 처리, 28번 8절)이 먼저 `PantryState.expire`를 불러 24시간 지난 통을 버리고 '만든 지 24시간이 지난 반죽 1통을 버렸어요.'를 가운데 알림으로. 명령이 실패하면 버림과 알림도 되돌림 | `WorkshopController._expirePantry`·`pantryNews` |
 | 처음 재료 | 새 가게와 schema 11 이하 저장(한 번): 반죽 3통 + 팥소 3통(**상하지 않음**, `madeAtMs` 0) + 1통씩 만들 재료 | `PantryState.starting` |
 | 레시피 선물 | 슈크림·초코 레시피를 받을 때(`claimRecipeFromMission`) 그 속 1통 + 1통 더 만들 재료(맛마다 한 번), 알림 '슈크림 레시피 선물로 슈크림 1통과 1통 더 만들 재료를 받았어요.'. schema 11 이하 저장은 이미 얻은 레시피 몫도 처음 열 때 받음 | `grantRecipeGift`, `recipeGiftNotice` |
 | 빈털터리 꾸러미 | 모든 명령 뒤: 안내가 끝났고 반죽이나 얻은 속이 모두 없으며 가진 재료로 1통도 못 만들고 쓸 수 있는 붕어빵력(`purchases.available`)으로 모자란 재료를 못 사면, 무료 기본 재료 꾸러미(반죽·팥소 1통씩 만들 재료)를 **저절로** 주고 알림 '재료도 붕어빵력도 모자라 기본 재료 꾸러미를 드렸어요. 영업 준비 때 ‘재료 준비’에서 만들어요. (오늘 1/3)'. 한국 날짜로 하루 3번 | `_rescuePantry`, `rescueNotice` |

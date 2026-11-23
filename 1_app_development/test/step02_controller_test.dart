@@ -40,8 +40,9 @@ void main() {
         jsonDecode(File('config/development_balance.json').readAsStringSync())
             as Map<String, dynamic>);
     repository = MemoryRepository();
+    // safetySaveMs 0: a checkpoint save each check, as these tests hold them open (28번 8절).
     controller = WorkshopController(config, repository,
-        now: () => DateTime.utc(2026, 10, 18), random: Random(2));
+        now: () => DateTime.utc(2026, 10, 18), random: Random(2), safetySaveMs: 0);
     await controller.initialize();
   });
   tearDown(() => controller.dispose());

@@ -52,6 +52,12 @@ const pantrySchema = 12;
 const economyResetSchema = 11;
 /// Shown once after such a reset (the notice line).
 const economyResetNotice = '게임 밸런스가 바뀌어 가게를 처음부터 다시 시작해요.';
+/// 28번 8절(2026-11-24): the checkpoint every `manual_cooking.checkpoint_ms`
+/// still looks each second for a level-up, a new KST day, an expired tub, a
+/// rescue pack or a 도감 cell, and saves at once when one is due. Otherwise
+/// it saves only once this long after the last save (commands and leaving
+/// the app save anyway), instead of a full save every second.
+const checkpointSafetyMs = 60000;
 const workshopTutorialStates = {'cook', 'sell', 'done', 'skipped'};
 /// Avatar slots whose items a shop can have without buying ([WorkshopState.avatarGrants]).
 const avatarGrantSlots = {'character', 'skin'};
@@ -849,6 +855,8 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   final int Function()? _monotonicMs;
   int get _mono => _monotonicMs?.call() ?? _clock.elapsedMilliseconds;
   int _lastMono = 0, _checkpoint = 0;
+  /// [_mono] at the last successful save ([checkpointSafetyMs]).
+  int _lastSaveMono = 0;
   /// Monotonic times of clicker taps counted in the last second (DEC-036).
   final List<int> _clickerTaps = [];
   /// 사용 통계(26번 5단계): saved commands report first bake/sale, the end
@@ -859,8 +867,11 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       sales: state.completedSales, level: state.level, tutorial: state.tutorial,
       orderDone: state.daily.order?.done == true ? state.daily.order!.day : null,
       orderEvent: state.daily.order?.event, events: state.daily.events);
+  /// The checkpoint's save interval when nothing is due ([checkpointSafetyMs]).
+  /// Tests of what happens during a checkpoint save pass 0 (a save each check).
+  final int safetySaveMs;
   WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway,
-      int Function()? monotonicMs, UsageStats? usage})
+      int Function()? monotonicMs, UsageStats? usage, this.safetySaveMs = checkpointSafetyMs})
       : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure(), _monotonicMs = monotonicMs,
         usage = usage ?? UsageStats.none {
     onlineGateway?.source = this;
@@ -964,6 +975,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         await (repository as WorkshopProductionJournal).stageProduction(next, before['sequence'] as int);
       }
       await repository.save(next, before['sequence'] as int);
+      _lastSaveMono = _mono;
       if (state.level > levelBefore) promotedTo = state.level;
       return saved = true;
     } catch (e) {
@@ -1060,10 +1072,14 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       unawaited(welcomeCustomer(named: state.relationships.met.isEmpty));
     }
     if (_checkpoint >= DevelopmentBalance.integer(config.section('manual_cooking'), 'checkpoint_ms')) {
-      _checkpoint = 0; unawaited(_saveCheckpoint());
+      _checkpoint = 0;
+      if (_checkpointDue || _mono - _lastSaveMono >= safetySaveMs) unawaited(_saveCheckpoint());
     }
     if (!disposed) notifyListeners();
   }
+  /// Something the per-command hooks would change now ([command]: [_promote],
+  /// [_observeDaily], [_settleCollection], [_expirePantry], [_rescuePantry]).
+  bool get _checkpointDue => canLevelUp || _dailyDue || _collectionDue || _pantryDue;
   Future<void> _saveCheckpoint() async {
     if (busy || disposed || error != null) return;
     _savingCheckpoint = true;

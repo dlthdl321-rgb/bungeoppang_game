@@ -192,7 +192,8 @@ void main() {
         jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);
     var mono = 0;
     final repo = MemoryRepository();
-    final c = WorkshopController(config, repo, now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => mono);
+    // safetySaveMs 0: a checkpoint save each check, as this test holds them open (28번 8절).
+    final c = WorkshopController(config, repo, now: () => DateTime.utc(2026, 10, 18), monotonicMs: () => mono, safetySaveMs: 0);
     await c.initialize();
     await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
     await c.openBusiness();
