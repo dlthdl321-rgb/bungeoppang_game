@@ -24,7 +24,7 @@ import 'package:todays_bungeoppang/usage_stats.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'usage_stats_test.dart' show RecordingSink;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 DevelopmentBalance _config() => DevelopmentBalance.fromJson(
     jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>);

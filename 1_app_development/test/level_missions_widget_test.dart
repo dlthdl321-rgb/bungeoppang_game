@@ -1,19 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'test_support.dart';
 import 'package:todays_bungeoppang/mission_config.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
-import 'widget_test.dart' show mountGame, CountingRepository;
 import 'level_missions_test.dart' show setRate;
 import 'controller_test.dart' show catchPlacedGoldenChance;
-
-Future<void> tapVisible(WidgetTester tester, Key key) async {
-  final finder = find.byKey(key);
-  await tester.ensureVisible(finder);
-  await tester.pumpAndSettle();
-  expect(finder.hitTestable(), findsOneWidget);
-  await tester.tap(finder);
-  await tester.pumpAndSettle();
-}
 
 void main() {
   for (final size in [

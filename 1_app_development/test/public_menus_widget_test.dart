@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/economy.dart';
-import 'widget_test.dart' show mountGame;
-import 'level_missions_widget_test.dart' show tapVisible;
+import 'test_support.dart' show mountGame;
+import 'test_support.dart' show tapVisible;
 
 void main() {
   for (final size in [

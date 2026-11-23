@@ -20,7 +20,7 @@ import 'package:todays_bungeoppang/ui/weather_layer.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_feature_unlocks.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/widget_test.dart' show mountGame;
+import '../test/test_support.dart' show mountGame;
 import 'package:todays_bungeoppang/development_purchase_journal.dart';
 import 'package:todays_bungeoppang/workshop_purchases.dart';
 

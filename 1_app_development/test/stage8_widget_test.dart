@@ -1,40 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'test_support.dart';
 import 'package:todays_bungeoppang/achievement_config.dart';
 import 'package:todays_bungeoppang/invite_config.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/missions.dart';
-import 'widget_test.dart' show mountGame;
-import 'level_missions_widget_test.dart' show tapVisible;
 import 'level_missions_test.dart' show setRate;
-
-// Prototype wording that must not reach players in a release build.
-const _prototypeWords = ['모의', '실제 지급', '예시', '가상', '추정', 'estimated'];
-
-void expectNoPrototypeText(WidgetTester tester, String where) {
-  final texts = <String>[
-    for (final t in tester.widgetList<Text>(find.byType(Text)))
-      t.data ?? t.textSpan?.toPlainText() ?? '',
-    for (final t
-        in tester.widgetList<SelectableText>(find.byType(SelectableText)))
-      t.data ?? '',
-  ];
-  for (final text in texts) {
-    for (final word in _prototypeWords) {
-      expect(text.contains(word), isFalse, reason: '$where: "$text"');
-    }
-  }
-}
-
-Future<void> closeSheets(WidgetTester tester) async {
-  while (find.byTooltip('닫기').evaluate().isNotEmpty) {
-    await tester.tap(find.byTooltip('닫기').last);
-    await tester.pumpAndSettle();
-  }
-}
-
-const sizes = [Size(360, 800), Size(390, 844), Size(412, 915)];
 
 void main() {
   for (final size in sizes) {

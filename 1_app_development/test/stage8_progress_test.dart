@@ -20,7 +20,7 @@ import 'package:todays_bungeoppang/support_config.dart';
 import 'package:todays_bungeoppang/support_state.dart';
 import 'controller_test.dart' show FakeTime;
 import 'level_missions_test.dart' show setRate;
-import 'widget_test.dart' show CountingRepository;
+import 'test_support.dart' show CountingRepository;
 
 final now = DateTime.utc(2026, 10, 5, 3); // Monday 12:00 KST.
 

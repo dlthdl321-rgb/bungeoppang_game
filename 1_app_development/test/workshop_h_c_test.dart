@@ -14,7 +14,7 @@ import 'package:todays_bungeoppang/ui/flavor_picker.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 26번 3차 녹화 피드백 C 묶음(홈·굽기 H17~H30): 다시 켤 때 반죽부터,
 /// 품질 별, 가운데 알림, 맛 고르기, 메뉴 한 곳, 결과 버튼.

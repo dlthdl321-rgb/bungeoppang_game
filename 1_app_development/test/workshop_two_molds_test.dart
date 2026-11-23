@@ -10,7 +10,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_tutorial.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 24번 3단계: 영업 상태별 두 틀 규칙(DEC-035~037).
 void main() {

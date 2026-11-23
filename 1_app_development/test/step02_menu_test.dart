@@ -8,7 +8,7 @@ import 'package:todays_bungeoppang/ui/cozy_style.dart';
 import 'package:todays_bungeoppang/ui/workshop_windows.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 void main(){
   for(final scale in [1.0,1.5])testWidgets('restored menu routes and appearance authority at text scale $scale',(tester)async{

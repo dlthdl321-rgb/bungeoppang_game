@@ -19,7 +19,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/widget_test.dart' show mountGame;
+import '../test/test_support.dart' show mountGame;
 import '../test/workshop_controller_test.dart' show Gateway;
 
 Future<void> _fonts(WidgetTester tester) => tester.runAsync(() async {

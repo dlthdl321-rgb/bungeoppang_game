@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/public_menus.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 import 'package:todays_bungeoppang/development_purchase_journal.dart';
 import 'workshop_controller_test.dart' show Gateway;
 

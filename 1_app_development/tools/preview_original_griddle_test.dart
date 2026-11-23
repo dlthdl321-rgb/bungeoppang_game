@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
-import '../test/widget_test.dart' show mountGame;
+import '../test/test_support.dart' show mountGame;
 
 class OriginalGriddlePreview extends CustomPainter {
   final double enlargement;

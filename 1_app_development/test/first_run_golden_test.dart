@@ -12,7 +12,7 @@ import 'dart:convert';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 26번 2-1단계: the first-run screens (login with the consents, owner name,
 /// 여자/남자 사장님, optional info) with the app's own fonts.

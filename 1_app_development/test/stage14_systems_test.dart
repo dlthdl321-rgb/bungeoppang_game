@@ -4,9 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/weather_layer.dart';
-import 'level_missions_widget_test.dart' show tapVisible;
-import 'stage8_widget_test.dart' show closeSheets, sizes;
-import 'widget_test.dart' show CountingRepository, mountGame;
+import 'test_support.dart' show tapVisible;
+import 'test_support.dart' show closeSheets, sizes;
+import 'test_support.dart' show CountingRepository, mountGame;
 
 Iterable<CosmeticDefinition> inSlot(CosmeticSlot slot) =>
     cosmeticDefinitions.where((d) => d.slot == slot);

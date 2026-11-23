@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/economy.dart';
-import 'widget_test.dart' show mountGame;
+import 'test_support.dart' show mountGame;
 
 void main() {
   for (final size in [

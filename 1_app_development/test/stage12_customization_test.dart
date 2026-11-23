@@ -16,9 +16,9 @@ import 'package:todays_bungeoppang/ui/cook_cut.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'controller_test.dart' show FakeTime;
-import 'level_missions_widget_test.dart' show tapVisible;
+import 'test_support.dart' show tapVisible;
 import 'stage8_progress_test.dart' show now, plainJson, progressed;
-import 'widget_test.dart' show mountGame;
+import 'test_support.dart' show mountGame;
 
 Iterable<CosmeticDefinition> inSlot(CosmeticSlot slot) =>
     cosmeticDefinitions.where((d) => d.slot == slot);

@@ -17,7 +17,7 @@ import 'package:todays_bungeoppang/ui/cozy_style.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/weather_layer.dart';
-import '../test/widget_test.dart' show FixedTime;
+import '../test/test_support.dart' show FixedTime;
 
 Future<void> capture(WidgetTester tester, String name) async {
   final boundary = tester

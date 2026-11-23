@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'step02_home_test.dart' show drawFlipCircle, paintMold;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 24번 7단계 통합 흐름: 새 설치 → 튜토리얼 → 영업 준비 중 스페셜 붕어빵
 /// 제작(색칠·원 그리기) → 보관 → 영업 시작 → 숙련된 붕어빵 수확·판매 →

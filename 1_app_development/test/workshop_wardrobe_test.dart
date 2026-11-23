@@ -22,7 +22,7 @@ import 'package:todays_bungeoppang/ui/workshop_wardrobe.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_purchases.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 import 'workshop_controller_test.dart' show Gateway;
 
 /// 26번 4-5단계: the wardrobe (wear what is owned) and the shop's avatar tab

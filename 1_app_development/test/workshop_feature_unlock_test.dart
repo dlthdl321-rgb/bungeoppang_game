@@ -15,7 +15,7 @@ import 'package:todays_bungeoppang/workshop_feature_unlocks.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'package:todays_bungeoppang/ui/center_toast.dart';
 import 'workshop_controller_test.dart' show Gateway;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 26번 2단계: 처음 5분 단순화 (DEC-043 A. 하나씩 열기). 레벨·숙련별 잠금,
 /// 잠금 글, 소개 카드 한 번, 기존 저장 호환, 첫 판매 칭찬.

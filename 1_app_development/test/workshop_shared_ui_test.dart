@@ -9,7 +9,7 @@ import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show CountingRepository, setUpAccount;
+import 'test_support.dart' show CountingRepository, setUpAccount;
 
 /// 28번 C2: 예전 클리커 홈에서만 검사하던 것 중 **새 게임도 쓰는 화면**의 검사를
 /// 실제 앱 경로(새 홈 = GameApp + WorkshopController)로 옮겼다.

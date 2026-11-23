@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/game_audio.dart';
 import 'package:todays_bungeoppang/ui/cooking_result_effects.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
-import 'stage10_feedback_test.dart' show FakeAudio;
+import 'test_support.dart' show FakeAudio;
 import 'step02_controller_test.dart' show MemoryRepository;
 
 /// 26번 4단계: 결과 등급 연출 — 소리·진동은 결과마다 한 번, 설정을 따르고,

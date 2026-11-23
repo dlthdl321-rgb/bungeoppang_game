@@ -3,7 +3,7 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'widget_test.dart' show mountGame;
+import 'test_support.dart' show mountGame;
 
 void main() {
   // Flutter's bundled test font keeps these layout/artwork baselines portable.

@@ -8,8 +8,8 @@ import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/fish_painter.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
-import 'widget_test.dart' show FixedTime, mountGame;
-import 'level_missions_widget_test.dart' show tapVisible;
+import 'test_support.dart' show FixedTime, mountGame;
+import 'test_support.dart' show tapVisible;
 
 /// Snapshot number [corruptSequence] fails to decode, like a damaged row.
 class CorruptRepository extends MemoryGameRepository {

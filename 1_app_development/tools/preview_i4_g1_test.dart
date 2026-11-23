@@ -14,7 +14,7 @@ import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/widget_test.dart' show mountGame;
+import '../test/test_support.dart' show mountGame;
 
 Future<void> settle(WidgetTester tester, [int frames = 15]) async {
   for (var i = 0; i < frames; i++) {

@@ -13,7 +13,7 @@ import 'package:todays_bungeoppang/workshop_arrivals.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_customers.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 26번 5-1단계: 실제 시간 손님(일반 30초~5분 DEC-106·네임드 30분~3시간), 자리 상한,
 /// 자정 영업일 넘김, 기다림은 켠 순간부터, 저장 schema 7, 기기 안 알림.

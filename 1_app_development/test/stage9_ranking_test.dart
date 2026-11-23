@@ -9,11 +9,11 @@ import 'package:todays_bungeoppang/ranking_config.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/ranking_panel.dart';
 import 'controller_test.dart' show FakeTime;
-import 'level_missions_widget_test.dart' show tapVisible;
+import 'test_support.dart' show tapVisible;
 import 'online_backend_test.dart' show backend;
-import 'stage8_widget_test.dart' show expectNoPrototypeText;
+import 'test_support.dart' show expectNoPrototypeText;
 import 'package:todays_bungeoppang/ui/friends_panel.dart';
-import 'widget_test.dart' show CountingRepository, setUpAccount;
+import 'test_support.dart' show CountingRepository, setUpAccount;
 
 // Stage 16: Kakao login and the game's own online ranking (the server side
 // is tested in firebase/functions/test/ranking.test.ts).

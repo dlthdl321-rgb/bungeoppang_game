@@ -12,7 +12,7 @@ import 'package:todays_bungeoppang/ui/avatar_painter.dart';
 import 'package:todays_bungeoppang/ui/boost_effects.dart' show lookFromServer;
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/public_menus.dart';
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 // Stage 17: the vendor as separate layers (lib/avatar_rig_config.dart),
 // eye and mouth frames over the drawn face, and their motions.

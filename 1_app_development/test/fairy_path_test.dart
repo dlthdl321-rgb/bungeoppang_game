@@ -8,7 +8,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/workshop_fairy.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 4차 피드백 g12: 붕어빵 요정의 넓은 헤엄(위아래·대각선·곡선, 가끔 화면
 /// 밖으로 나갔다가 다른 곳에서 다시 들어옴)과, 그동안에도 탭이 그대로

@@ -20,9 +20,9 @@ import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'controller_test.dart' show FakeTime;
 import 'level_missions_test.dart' show setRate;
-import 'level_missions_widget_test.dart' show tapVisible;
+import 'test_support.dart' show tapVisible;
 import 'stage8_progress_test.dart' show asVersion, plainJson, progressed;
-import 'widget_test.dart' show mountGame;
+import 'test_support.dart' show mountGame;
 
 final now = DateTime.utc(2026, 10, 5, 3);
 final firstRunLifetime = BigInt.parse('2000000000000000000'); // ~2e18.

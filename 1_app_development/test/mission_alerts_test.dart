@@ -3,8 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/mission_alerts.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/music_config.dart';
-import 'level_missions_widget_test.dart' show tapVisible;
-import 'widget_test.dart' show mountGame;
+import 'test_support.dart' show tapVisible;
+import 'test_support.dart' show mountGame;
 
 void main() {
   test('달성했지만 안 받은 일일 미션만 받을 보상으로 센다', () {

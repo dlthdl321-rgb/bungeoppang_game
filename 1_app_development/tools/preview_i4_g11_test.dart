@@ -22,7 +22,7 @@ import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/ui/weather_layer.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/widget_test.dart' show mountGame;
+import '../test/test_support.dart' show mountGame;
 
 const tag = String.fromEnvironment('PREVIEW_TAG', defaultValue: 'after');
 

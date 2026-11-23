@@ -16,7 +16,7 @@ import 'package:todays_bungeoppang/ui/night_home.dart';
 import 'package:todays_bungeoppang/ui/bake_target.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// Rubs across the mold paint control in a few rows and lifts (24번 5단계).
 Future<void> paintMold(WidgetTester tester) async {

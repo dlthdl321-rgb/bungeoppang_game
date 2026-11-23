@@ -13,7 +13,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/workshop_fairy.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 4차 피드백 IA3 붕어빵 요정 미리보기: 헤엄·숨기·나오기·톡 반짝이를
 /// 시간별 정지 화면으로 그린다. 보통 테스트에서는 건너뛰고,

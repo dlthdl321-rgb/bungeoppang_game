@@ -15,7 +15,7 @@ import 'package:todays_bungeoppang/workshop_pantry_prep.dart' show pantryPrepClo
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'usage_stats_test.dart' show RecordingSink;
 import 'workshop_controller_test.dart' show Repository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 재료 타이쿤 E — 홈 재료 표시·'재료 준비' 버튼·떨어짐 말풍선·24시간 안내,
 /// 처음 재료(상하지 않음)·레시피 선물·빈털터리 꾸러미, Lv.2 소개 카드와 안내.

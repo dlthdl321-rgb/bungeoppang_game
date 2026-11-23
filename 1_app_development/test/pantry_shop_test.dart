@@ -16,7 +16,7 @@ import 'package:todays_bungeoppang/ui/workshop_skill_shop.dart' show SkillStepWh
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_purchases.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 import 'workshop_controller_test.dart' show Gateway;
 
 // 재료 타이쿤 C: the shop's '재료' tab. Basic ingredients are bought on this

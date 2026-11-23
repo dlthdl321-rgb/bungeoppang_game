@@ -21,7 +21,7 @@ import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/ui/workshop_home_layout.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 5단계: 실제 진입 화면(WorkshopPage 홈)을 지키는 골든.
 ///

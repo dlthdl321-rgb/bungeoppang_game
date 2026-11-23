@@ -15,7 +15,7 @@ import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/workshop_home_layout.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 3단계: "가게 관리" 시트 없이 홈에서 손님 → 주문 → 재고 → 판매.
 /// 26번 4-1단계: 손님은 매대 앞에 서고, 저장 점검(checkpoint) 중에도 버튼이

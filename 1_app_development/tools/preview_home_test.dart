@@ -11,7 +11,7 @@ import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
-import '../test/widget_test.dart' show FixedTime;
+import '../test/test_support.dart' show FixedTime;
 
 void main() {
   testWidgets('한글 홈 미리보기 생성', (tester) async {

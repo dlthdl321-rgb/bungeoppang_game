@@ -19,7 +19,7 @@ import 'package:todays_bungeoppang/ui/prep_minigames.dart';
 import 'package:todays_bungeoppang/ui/weather_layer.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/widget_test.dart' show mountGame;
+import '../test/test_support.dart' show mountGame;
 
 void main() {
   Future<void> fonts(WidgetTester tester) => tester.runAsync(() async {

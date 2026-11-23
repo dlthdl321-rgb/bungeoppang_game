@@ -15,7 +15,7 @@ import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import '../test/step02_controller_test.dart' show MemoryRepository;
-import '../test/widget_test.dart' show mountGame;
+import '../test/test_support.dart' show mountGame;
 
 void main() {
   const tag = String.fromEnvironment('PREVIEW_TAG', defaultValue: 'after');

@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/mission_config.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/invite_models.dart';
-import 'widget_test.dart' show mountGame, FixedTime;
-import 'level_missions_widget_test.dart' show tapVisible;
+import 'test_support.dart' show mountGame, FixedTime;
+import 'test_support.dart' show tapVisible;
 
 void main() {
   for (final size in [

@@ -16,7 +16,7 @@ import 'package:todays_bungeoppang/ui/workshop_guide.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_tutorial.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 4단계: 첫 실행 안내, 복귀 안내, 저장 손상 대처.
 void main() {

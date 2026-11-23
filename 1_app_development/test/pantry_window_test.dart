@@ -18,7 +18,7 @@ import 'package:todays_bungeoppang/ui/prep_minigames.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'package:todays_bungeoppang/workshop_pantry_prep.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 재료 타이쿤 D — '재료 준비' 창과 미니게임 화면: 탭(얻은 레시피만), 보관 막대·버리는 시각,
 /// 필요한 재료(모자라면 빨강), 모자란 재료 한 번에 사기, 만들기 → 미니게임 3종 성공(덤)·실패(덤 없음),

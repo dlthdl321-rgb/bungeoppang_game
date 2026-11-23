@@ -11,7 +11,7 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show setUpAccount;
+import 'test_support.dart' show setUpAccount;
 
 /// 4차 피드백 IC3 '터치가 잘 안 됨': 주문 굽기 중 손님 머리 탭 영역이 틀 위를 덮어
 /// 반죽·뒤집기 터치의 약 3분의 1을 가져가던 것. 이제 틀(가장자리 여백 포함) 어디를

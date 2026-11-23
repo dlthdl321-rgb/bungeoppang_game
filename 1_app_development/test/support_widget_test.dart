@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/support_config.dart';
-import 'widget_test.dart' show mountGame, FixedTime;
+import 'test_support.dart' show mountGame, FixedTime;
 import 'controller_test.dart' show catchPlacedGoldenChance;
-import 'level_missions_widget_test.dart' show tapVisible;
+import 'test_support.dart' show tapVisible;
 import 'support_system_test.dart' show fund, completeDaily;
 
 void main() {

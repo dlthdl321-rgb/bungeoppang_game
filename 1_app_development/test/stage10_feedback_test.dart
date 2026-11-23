@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'test_support.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/feedback_config.dart';
 import 'package:todays_bungeoppang/game_audio.dart';
@@ -9,58 +10,11 @@ import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/game_events.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
-import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/tap_effects.dart';
 import 'controller_test.dart' show FakeTime, catchPlacedGoldenChance;
-import 'level_missions_widget_test.dart' show tapVisible;
 import 'stage8_progress_test.dart' show asVersion, progressed, plainJson;
-import 'widget_test.dart' show CountingRepository, FixedTime;
-
-class FakeAudio extends SoundPolicy {
-  final sounds = <Sfx>[];
-  final musicStates = <bool>[];
-  bool get musicPlaying => musicStates.isNotEmpty && musicStates.last;
-  @override
-  Future<void> init() async {}
-  @override
-  void output(Sfx sfx, double volume) => sounds.add(sfx);
-  @override
-  void musicOutput({required bool playing, required double volume}) =>
-      musicStates.add(playing);
-  @override
-  Future<void> dispose() async {}
-}
 
 const sizes = [Size(360, 800), Size(390, 844), Size(412, 915)];
-
-Future<GameController> mountApp(WidgetTester tester, Size size,
-    {double textScale = 1,
-    bool reduced = false,
-    FakeAudio? audio,
-    CountingRepository? repository,
-    FixedTime? clock,
-    void Function(GameState)? setUp}) async {
-  await tester.binding.setSurfaceSize(size);
-  tester.view.devicePixelRatio = 1;
-  tester.platformDispatcher.textScaleFactorTestValue = textScale;
-  addTearDown(() async {
-    tester.platformDispatcher.clearTextScaleFactorTestValue();
-    tester.view.resetDevicePixelRatio();
-    await tester.binding.setSurfaceSize(null);
-  });
-  final time = clock ?? FixedTime();
-  final repo = repository ?? CountingRepository();
-  repo.current = GameState.initial(time.utcNow)
-    ..tutorialDone = true
-    ..settings.vibration = false
-    ..settings.reduceMotion = reduced;
-  setUp?.call(repo.current!);
-  final c = GameController(repo, time);
-  await c.initialize();
-  await tester.pumpWidget(GameApp(controller: c, audio: audio ?? FakeAudio()));
-  await tester.pump();
-  return c;
-}
 
 void main() {
   group('저장 v8: 소리 설정', () {
