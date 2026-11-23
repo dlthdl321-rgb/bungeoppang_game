@@ -39,9 +39,9 @@
 
 WorkshopController의 part 파일(`workshop_controller_*.dart`)은 `extension ... on WorkshopController`다. 필드·static·`@override`는 extension에 둘 수 없으므로 본체에 둔다. extension 안에서 static은 `WorkshopController.이름`으로 부르고, 화면 갱신은 `notifyListeners()` 대신 본체의 `_notifyChanged()`를 부른다.
 
-**새 화면이 예전 화면 위에 올라가 있다.** 실제 홈 [ui/workshop_page.dart](../../../1_app_development/lib/ui/workshop_page.dart)는 예전 클리커 홈 위젯 `NightHome`([ui/night_home.dart](../../../1_app_development/lib/ui/night_home.dart))으로 화면을 그리고, 상점 `ShopPanel`·메뉴 `MenuPanel`도 예전 쪽 GameController를 받는다(설정·황금 잔액·착용 꾸미기를 GameController에서 읽음). 그래서 `night_home.dart`·`shop_panel.dart`·`public_menus.dart`를 고치면 **새 게임 홈도 바뀐다.** 이 파일들을 고친 뒤에는 `golden` 태그 테스트(`workshop_home_golden` 등)를 꼭 돌린다.
+**홈 화면 구성 (2026-11-23 28번 C3 이후).** 실제 홈 [ui/workshop_page.dart](../../../1_app_development/lib/ui/workshop_page.dart)는 `NightHome`([ui/night_home.dart](../../../1_app_development/lib/ui/night_home.dart))으로 장면을 그린다. 예전 클리커 홈(`GameHome`)과 `NightHome`의 예전 분기는 지웠으므로 `NightHome`은 새 홈 전용이며 만드는 곳도 `workshop_page.dart` 한 곳이다. 상점 `ShopPanel`·메뉴 `MenuPanel`·꾸미기 `WardrobePanel`·설정 `SoundSettings`는 계정 쪽 GameController(설정·황금 잔액·착용 꾸미기)를 받는다. 이 파일들을 고친 뒤에는 `golden` 태그 테스트를 꼭 돌린다.
 
-예전 클리커 코드(`economy*.dart`, `prestige_*`, `support_*`, `weekly_config.dart`, `achievement_config.dart`)는 남아 있고 테스트도 있다. 위처럼 새 화면이 쓰는 부분이 섞여 있으므로 **지우거나 바꾸기 전에 승인을 받는다.**
+예전 클리커의 **로직**(`economy*.dart`, `prestige_*`, `support_*`, `weekly_config.dart`, `achievement_config.dart`)과 GameController는 남아 있고 테스트도 있다. 계정·온라인·결제·저장 형식과 얽혀 있으므로 **지우거나 바꾸기 전에 승인을 받는다.** 랭킹·친구·초대 패널은 지금 새 화면에 연결이 없지만 보존한다(`stage9_ranking_test`가 직접 띄워 검사).
 
 ## 3. 기능 → 코드 → 보호 테스트
 

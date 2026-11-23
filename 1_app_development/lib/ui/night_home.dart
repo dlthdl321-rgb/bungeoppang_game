@@ -1,17 +1,9 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../achievement_config.dart';
 import '../cosmetic_config.dart';
 import '../economy.dart';
 import '../game_controller.dart';
-import '../home_presentation.dart';
-import '../mission_alerts.dart';
-import '../missions.dart';
-import '../prestige_rules.dart';
 import 'center_toast.dart';
-import 'bake_target.dart';
-import 'boost_effects.dart';
-import 'cook_cut.dart';
 import 'count_badge.dart';
 import 'cozy_style.dart';
 import 'lock_overlay.dart';
@@ -55,16 +47,17 @@ class NightHome extends StatelessWidget {
   final GameController controller;
   final void Function(String destination) onOpen;
 
-  /// Workshop supplies authoritative content while retaining the original stall.
-  final Widget? header, griddleContent, vendor;
-  final NightHomeHeaderData? headerData;
+  /// Workshop supplies authoritative content while retaining the original stall
+  /// (28번 C3-3: the old clicker home that left these empty is gone).
+  final Widget griddleContent, vendor;
+  final NightHomeHeaderData headerData;
   /// Workshop's own centre stage. [cleanCounter] tells whether the
   /// background shows without its baked mold, so the stage draws the mold.
   /// [counterTop] is the sale counter's top on screen (null when the
   /// background has no measured towel), so the stage keeps clear of it.
   /// [cutTop] is the higher of the counter's and the cooking cut's tops
   /// (26번 3차 피드백 H18): the 붕어빵 요정 hides above it.
-  final Widget Function(Rect? fishOnScreen, bool cleanCounter, double? counterTop, double? cutTop)?
+  final Widget Function(Rect? fishOnScreen, bool cleanCounter, double? counterTop, double? cutTop)
       centerBuilder;
 
   /// The lower workbench (4차 피드백 g11): a layer from the top under the
@@ -72,7 +65,7 @@ class NightHome extends StatelessWidget {
   /// cut and the counter. [griddle] is the griddle's box in it. The
   /// special bungeoppang mold works there while [griddleAside] has slid the
   /// griddle off to the side.
-  final Widget Function(Rect griddle)? bench;
+  final Widget Function(Rect griddle) bench;
 
   /// The six-cell griddle (its lid, picture and cells) slides to the left
   /// off the screen, so the special mold takes its place on the workbench
@@ -81,17 +74,17 @@ class NightHome extends StatelessWidget {
   final bool griddleAside;
   /// Workshop's sale counter: left of the cooking cut, its top on the red
   /// check towel of the background (DEC-038).
-  final Widget? counter;
+  final Widget counter;
 
   /// A small slip just under the HUD's settings button, right edges lined
   /// up (26번 7단계: the '오늘' slip for 오늘의 주문서·출석; moved there from
   /// above the cooking cut by the 2nd mockup check, 2026-11-19).
-  final Widget? counterSlip;
+  final Widget counterSlip;
 
   /// A small button beside the business-state sign in the HUD (26번 시안
   /// 확인 2차: '영업 시작'·'이어서 영업'·'영업 종료' moved up there from the
   /// floating counter button). Null leaves the sign alone.
-  final Widget? statusAction;
+  final Widget statusAction;
 
   /// A small line just under the business-state sign, centred on it (재료
   /// 타이쿤 E: the pantry stock and its out-of-ingredients bubble). It
@@ -109,7 +102,7 @@ class NightHome extends StatelessWidget {
   /// button there; the Workshop home has its menu only in the bottom bar
   /// (26번 3차 피드백 H28) and puts the special bungeoppang's flavor here
   /// (H26, WorkshopFlavorButton). Null leaves the slot empty.
-  final Widget? hudLeading;
+  final Widget hudLeading;
 
   /// The stall lowered to the towel with guests behind it (26번 4-1단계,
   /// [WorkshopHomeLayout.active]): the lowered background, and [guests]
@@ -119,7 +112,7 @@ class NightHome extends StatelessWidget {
   /// targets (taps true) over it. [clicker] is the lowered clicker's place
   /// in the same coordinates (null without a baked-fish place), so the tap
   /// targets keep off it.
-  final Widget Function(Rect? clicker, bool taps)? guests;
+  final Widget Function(Rect? clicker, bool taps) guests;
 
   /// Null draws the stove art as it is. Otherwise the empty griddle with a
   /// bungeoppang only in these cavities (Workshop: the cooking cells; empty
@@ -140,20 +133,19 @@ class NightHome extends StatelessWidget {
       {super.key,
       required this.controller,
       required this.onOpen,
-      this.headerData,
-    this.header,
-      this.griddleContent,
-      this.vendor,
-      this.centerBuilder,
-      this.bench,
+      required this.headerData,
+      required this.griddleContent,
+      required this.vendor,
+      required this.centerBuilder,
+      required this.bench,
       this.griddleAside = false,
-      this.counter,
-      this.counterSlip,
-      this.statusAction,
+      required this.counter,
+      required this.counterSlip,
+      required this.statusAction,
       this.statusBelow,
-      this.hudLeading,
+      required this.hudLeading,
       this.lowStall = false,
-      this.guests,
+      required this.guests,
       this.griddleFilled,
       this.griddleOpen,
       this.equipped,
@@ -186,40 +178,33 @@ class NightHome extends StatelessWidget {
         child: LayoutBuilder(builder: (context, box) {
           final w = math.min(box.maxWidth, maxWidth);
           final side = (box.maxWidth - w) / 2;
-          final workshop = centerBuilder != null;
           final stove = PixelSprites.cosmetic(
               CosmeticSlot.stove, e(CosmeticSlot.stove));
           // Workshop: the griddle art spans the screen less 8 at each side
           // (DEC-038); its box has the art's own shape, so the art fills it.
-          final griddleW = workshop ? w - 16 : w * .94;
-          final griddleH = workshop
-              ? griddleW * (stove?.height ?? 40) / (stove?.width ?? 80)
-              : griddleW * 40 / 88;
+          final griddleW = w - 16;
+          final griddleH = griddleW * (stove?.height ?? 40) / (stove?.width ?? 80);
           final cookW = w * WorkshopHomeLayout.cookCutShare, cookH = w * .27;
           final navBottom = navHeight + padding.bottom;
           final griddleBottom = navBottom - 10;
           final cookBottom = griddleBottom + griddleH * .7;
           // Space under the bungeoppang: the griddle and part of the cooking cut.
-          final reserved = centerBuilder == null ? cookBottom + cookH * .35 : griddleBottom + griddleH * .85;
+          final reserved = griddleBottom + griddleH * .85;
           final fishArea = box.maxHeight - padding.top - reserved;
           final scroll = largeText || fishArea < 360;
           // Large text scrolls the stage, so the fish keeps its own place.
           final night = isNightTime(e(CosmeticSlot.time), sceneClock());
-          final low = lowStall && centerBuilder != null;
-          final cleanCounter = centerBuilder != null &&
-              (low || PixelSprites.hasCleanBackground(e(CosmeticSlot.background), night));
+          final low = lowStall;
+          final cleanCounter =
+              low || PixelSprites.hasCleanBackground(e(CosmeticSlot.background), night);
           // The sale counter's top sits on the background's towel (DEC-038).
-          final towelTop = counter == null
-              ? null
-              : NightStallPainter.towelTopOnScreen(
+          final towelTop = NightStallPainter.towelTopOnScreen(
                   box.biggest, e(CosmeticSlot.background), night,
                   clean: cleanCounter, low: low);
           // Without a measured towel the counter sits above the griddle's
           // first row.
           final counterBottom = griddleBottom + griddleH * .66;
-          final fishRect = scroll && centerBuilder == null
-              ? null
-              : NightStallPainter.bakedFishOnScreen(
+          final fishRect = NightStallPainter.bakedFishOnScreen(
                   box.biggest, e(CosmeticSlot.background));
           // The lowered clicker (WorkshopMoldStage, S4-1-Q5) in the guest
           // layer's coordinates.
@@ -232,9 +217,7 @@ class NightHome extends StatelessWidget {
           // The cooking cut's top on screen (H18).
           final cookTop = box.maxHeight - cookBottom - cookH;
           final cutTop = towelTop == null || scroll ? null : math.min(towelTop, cookTop);
-          final stage = centerBuilder != null
-              ? centerBuilder!(fishRect, cleanCounter, towelTop, cutTop)
-              : _stage(reduce, fishRect);
+          final stage = centerBuilder(fishRect, cleanCounter, towelTop, cutTop);
           // 4차 피드백 g11: the griddle slides aside for the special mold.
           Widget aside(Widget child) => TweenAnimationBuilder<double>(
               tween: Tween(end: griddleAside ? 1 : 0),
@@ -269,24 +252,15 @@ class NightHome extends StatelessWidget {
                     child: CustomPaint(
                         painter:
                             StallFramePainter(lamp: e(CosmeticSlot.lamp))))),
-            if (centerBuilder == null)
-              Positioned(
-                  left: side,
-                  width: w,
-                  top: padding.top,
-                  bottom: griddleBottom,
-                  child: IgnorePointer(
-                      child: GuestArrivalLayer(
-                          controller: controller, reduceMotion: reduce))),
             // Guests stand on the street, their feet hidden behind the
             // counter: under the HUD, the stage and the counter.
-            if (low && guests != null && towelTop != null)
+            if (low && towelTop != null)
               Positioned(
                   left: side,
                   width: w,
                   top: padding.top,
                   height: math.max(0.0, towelTop - padding.top),
-                  child: guests!(clicker, false)),
+                  child: guests(clicker, false)),
             // The open lid stands above the griddle box: over the guests,
             // under the stage and the counter (26번 4-2단계 F8).
             if (griddleOpen == true && stove != null)
@@ -315,10 +289,8 @@ class NightHome extends StatelessWidget {
                 width: griddleW,
                 bottom: griddleBottom,
                 height: griddleH,
-                child: aside(griddleContent ??
-                    GoldenGriddleLayer(
-                        controller: controller, reduceMotion: reduce))),
-            if (vendor != null) Positioned(
+                child: aside(griddleContent)),
+            Positioned(
                 right: side + 8, width: cookW, bottom: cookBottom, height: cookH,
                 // 4차 g11 (사용자 답): the special mold never overlaps the
                 // cooking cut, so the cut slides out to the right (fading)
@@ -341,47 +313,40 @@ class NightHome extends StatelessWidget {
                     ? SingleChildScrollView(
                         key: const Key('home-scroll'),
                         child: Column(children: [
-                          header ?? _hud(settingsLink, statusLink, leadingLink),
-                          SizedBox(
-                              height: centerBuilder != null
-                                  ? 460
-                                  : largeText
-                                      ? 300
-                                      : 260,
-                              child: stage),
+                          _hud(settingsLink, statusLink, leadingLink),
+                          SizedBox(height: 460, child: stage),
                         ]))
                     : Column(children: [
-                        header ?? _hud(settingsLink, statusLink, leadingLink),
+                        _hud(settingsLink, statusLink, leadingLink),
                         Expanded(child: stage),
                       ])),
-            if (low && guests != null && towelTop != null)
+            if (low && towelTop != null)
               Positioned(
                   left: side,
                   width: w,
                   top: padding.top,
                   height: math.max(0.0, towelTop - padding.top),
-                  child: guests!(clicker, true)),
-            if (counter != null) Positioned(
+                  child: guests(clicker, true)),
+            Positioned(
                 left: side + 8,
-                width: w - 16 - (vendor == null ? 0 : cookW + 8),
+                width: w - 16 - (cookW + 8),
                 top: towelTop,
                 // A background without a measured towel: just above the
                 // griddle's first row of cells, as before.
                 bottom: towelTop == null ? counterBottom : null,
-                child: counter!),
+                child: counter),
             // The workbench over the griddle, the cooking cut and the
             // counter, under the '오늘' slip and the menu bar (g11).
-            if (bench != null)
-              Positioned(
+            Positioned(
                   left: side,
                   width: w,
                   top: padding.top,
                   height: math.max(0.0, navTop - padding.top),
-                  child: bench!(Rect.fromLTWH((w - griddleW) / 2,
+                  child: bench(Rect.fromLTWH((w - griddleW) / 2,
                       box.maxHeight - griddleBottom - griddleH - padding.top, griddleW, griddleH))),
             // Under the settings button, over the stage and the guests' tap
             // targets (2nd mockup check).
-            if (counterSlip != null && header == null) Positioned(
+            Positioned(
                 left: 0,
                 top: 0,
                 child: CompositedTransformFollower(
@@ -390,8 +355,8 @@ class NightHome extends StatelessWidget {
                     targetAnchor: Alignment.bottomRight,
                     followerAnchor: Alignment.topRight,
                     offset: const Offset(0, WorkshopHomeLayout.slipGap),
-                    child: counterSlip!)),
-            if (statusBelow != null && header == null && headerData != null)
+                    child: counterSlip)),
+            if (statusBelow != null)
               if (box.maxHeight < compactStatusHeight) Positioned(
                   left: 0,
                   top: 0,
@@ -412,17 +377,6 @@ class NightHome extends StatelessWidget {
                       followerAnchor: Alignment.topCenter,
                       offset: const Offset(0, WorkshopHomeLayout.statusBelowGap),
                       child: statusBelow!(false))),
-            if (vendor == null) Positioned(
-                right: side + 8,
-                width: cookW,
-                bottom: cookBottom,
-                height: cookH,
-                child: vendor ??
-                    CookCut(
-                        equipped: e,
-                        taps: state.records.lifetimeTaps,
-                        reduceMotion: reduce,
-                        greeting: controller.guestArrivals.isNotEmpty)),
             Positioned(
                 left: side, width: w, bottom: 0, child: _nav(padding.bottom)),
           ]);
@@ -432,7 +386,6 @@ class NightHome extends StatelessWidget {
   }
 
   Widget _hud(LayerLink settingsLink, LayerLink statusLink, LayerLink leadingLink) {
-    final s = controller.state;
     return Padding(
       padding: const EdgeInsets.fromLTRB(10, 14, 10, 0),
       child: Column(children: [
@@ -441,7 +394,7 @@ class NightHome extends StatelessWidget {
             _levelBadge(),
             const SizedBox(width: 6),
             Expanded(flex: 44, child: _balance()),
-            if (headerData?.showRates ?? true) ...[
+            if (headerData.showRates) ...[
             const SizedBox(width: 6),
             Expanded(
                 flex: 30,
@@ -449,49 +402,28 @@ class NightHome extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       _rate(const Key('auto-rate'), Icons.timer_outlined, '초당',
-                          headerData?.autoRate ?? controller.currentAutoRate,
-                          stopped: headerData?.autoStopped ?? false),
+                          headerData.autoRate,
+                          stopped: headerData.autoStopped),
                       const SizedBox(height: 4),
                       _rate(const Key('tap-rate'), Icons.touch_app_outlined,
-                          '클릭당', headerData?.tapRate ?? controller.currentTapRate),
+                          '클릭당', headerData.tapRate),
                     ])),
             ],
           ]),
         ),
         const SizedBox(height: 6),
         Row(children: [
-          // Claimable mission rewards wait in the menu. The Workshop home
-          // has its menu only in the bottom bar (H28).
-          if (centerBuilder == null)
-            CountBadge(
-                count: headerData?.claimable ?? claimableCount(s),
-                badgeKey: const Key('menu-badge'),
-                child: CozyRoundButton(
-                    key: const Key('menu-menu'),
-                    tooltip: '메뉴',
-                    icon: const PixelIcon('menu', size: 28),
-                    onPressed: () => onOpen('menu')))
-          else
-            CompositedTransformTarget(link: leadingLink, child: SizedBox(width: 48, child: hudLeading)),
+          // The menu is only in the bottom bar (H28); the flavor takes this slot.
+          CompositedTransformTarget(link: leadingLink, child: SizedBox(width: 48, child: hudLeading)),
           Expanded(
               child: Column(children: [
-            if (headerData != null)
-              CompositedTransformTarget(
-                link: statusLink,
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                  Flexible(child: WorkshopStatusBadge(text: headerData!.status, kind: headerData!.statusKind)),
-                  if (statusAction != null) statusAction!,
-                ]),
-              ),
-            if (headerData == null && s.prestige.stars > 0)
-              _note(const Key('home-prestige'),
-                  '명성 별 ${s.prestige.stars} · 생산 +${(prestigePermille(s) - 1000) ~/ 10}%'),
-            if (headerData == null) if (s.achievements.equippedTitle case final title?)
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                const PixelIcon('title', size: 16),
-                const SizedBox(width: 3),
-                Flexible(child: _note(const Key('home-title'), '칭호 · $title')),
+            CompositedTransformTarget(
+              link: statusLink,
+              child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Flexible(child: WorkshopStatusBadge(text: headerData.status, kind: headerData.statusKind)),
+                statusAction,
               ]),
+            ),
           ])),
           CompositedTransformTarget(
             link: settingsLink,
@@ -506,27 +438,15 @@ class NightHome extends StatelessWidget {
     );
   }
 
-  Widget _note(Key key, String text) => Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
-      child: Text(text,
-          key: key,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-              color: cream,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              shadows: [Shadow(color: Colors.black, blurRadius: 3)])));
-
   /// The level as a round emblem (26번 3차 피드백 H29 '레벨 표시가 낡아
   /// 보임'): a cream disc with 'Lv' and the number, the level-mission
   /// progress as a honey ring around it.
   static const levelSize = 62.0;
   Widget _levelBadge() {
     final s = controller.state;
-    final next = activeLevelMission(s);
-    final progress = headerData?.progressPermille ?? levelProgressPermille(s);
-    final level = headerData?.level ?? s.level, hint = headerData?.levelHint;
-    final top = headerData == null ? next == null : level >= 50;
+    final progress = headerData.progressPermille;
+    final level = headerData.level, hint = headerData.levelHint;
+    final top = level >= 50;
     // A '레시피 받기' waiting shows on the emblem too, not only on the
     // menu button (4차 피드백 IA1).
     final badge = Semantics(
@@ -600,7 +520,7 @@ class NightHome extends StatelessWidget {
     );
     // 4차 피드백 g9: the ring's tooltip says what the next level-up takes.
     return CountBadge(
-      count: headerData?.claimable ?? 0,
+      count: headerData.claimable,
       badgeKey: const Key('level-badge'),
       child: hint == null ? badge : Tooltip(key: const Key('level-hint'), message: hint, child: badge),
     );
@@ -613,8 +533,8 @@ class NightHome extends StatelessWidget {
   /// (on one line when the card is wide, under it when the rates take the
   /// room) (26번 3차 피드백 H29·H30). A tap on the gold opens the gold packs.
   Widget _balance() {
-    final gold = headerData?.gold;
-    final buns = headerData?.buns ?? controller.state.buns;
+    final gold = headerData.gold;
+    final buns = headerData.buns;
     Widget bunRow(double icon, double font) => Semantics(
           label: '보유 붕어빵력 ${exactNumber(buns)}개',
           onTap: () => onOpen('balance'),
@@ -685,14 +605,14 @@ class NightHome extends StatelessWidget {
             FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                  '누적 ${compactNumber(headerData?.lifetime ?? controller.state.lifetime)}개',
+                  '누적 ${compactNumber(headerData.lifetime)}개',
                   key: const Key('lifetime-value'),
                   style: const TextStyle(fontSize: 10, color: Cozy.inkSoft)),
             ),
           ]);
         }
         // Wide (no rates column): both on one line, gold at the right.
-        if (!(headerData?.showRates ?? true)) {
+        if (!headerData.showRates) {
           return Row(children: [
             Expanded(child: bunRow(42, 28)),
             Container(width: 1, height: 30, color: Cozy.tan, margin: const EdgeInsets.symmetric(horizontal: 8)),
@@ -727,28 +647,6 @@ class NightHome extends StatelessWidget {
           ),
         ]),
       );
-
-  Widget _stage(bool reduce, Rect? fishOnScreen) => Column(children: [
-        BoostBadge(controller: controller),
-        Expanded(
-            child: Stack(children: [
-          Positioned.fill(
-              child: BakeTarget(
-                  controller: controller,
-                  reduceMotion: reduce,
-                  fishOnScreen: fishOnScreen)),
-          // The combo floats above the bungeoppang in the round Jua font.
-          if (controller.currentCombo >= comboDisplayMinimum)
-            Positioned(
-                left: 0,
-                right: 0,
-                top: 8,
-                child: IgnorePointer(
-                    child: Center(
-                        child: _ComboLabel(
-                            combo: controller.currentCombo, reduce: reduce)))),
-        ])),
-      ]);
 
   /// The bottom menu's icon size and label size before any shrinking
   /// (26번 4-2단계 F10): the icon above its label. Every button uses the
@@ -794,9 +692,7 @@ class NightHome extends StatelessWidget {
 
   Widget _nav(double bottomInset) {
     // The Workshop home's only menu button carries the reward count (H28).
-    final claimable = centerBuilder == null
-        ? claimableCount(controller.state)
-        : headerData?.claimable ?? 0;
+    final claimable = headerData.claimable;
     return Padding(
       key: const Key('home-nav'),
       padding: EdgeInsets.fromLTRB(8, 0, 8, 6 + bottomInset),
@@ -893,53 +789,6 @@ class _NavButton extends StatelessWidget {
           ),
         ),
       );
-}
-
-/// Combo counter: colour steps at 20/50 and a short pop per new tap.
-class _ComboLabel extends StatelessWidget {
-  final int combo;
-  final bool reduce;
-  const _ComboLabel({required this.combo, required this.reduce});
-  @override
-  Widget build(BuildContext context) {
-    final color = combo >= 50
-        ? const Color(0xffffc94d)
-        : combo >= 20
-            ? const Color(0xffff9f6b)
-            : NightHome.cream;
-    // A chocolate outline all round, like the concept's chunky labels.
-    const outline = [
-      Shadow(color: Cozy.woodDark, offset: Offset(2, 0)),
-      Shadow(color: Cozy.woodDark, offset: Offset(-2, 0)),
-      Shadow(color: Cozy.woodDark, offset: Offset(0, 2)),
-      Shadow(color: Cozy.woodDark, offset: Offset(0, -2)),
-      Shadow(color: Cozy.woodDark, offset: Offset(2, 3)),
-    ];
-    final label = Row(mainAxisSize: MainAxisSize.min, children: [
-      PixelIcon('combo', size: combo >= 20 ? 34 : 28),
-      const SizedBox(width: 4),
-      Text('$combo 콤보!',
-          key: const Key('combo-label'),
-          style: TextStyle(
-              fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,
-              color: color,
-              fontSize: combo >= 50
-                  ? 40
-                  : combo >= 20
-                      ? 34
-                      : 28,
-              shadows: outline)),
-    ]);
-    if (reduce) return label;
-    return TweenAnimationBuilder<double>(
-        key: ValueKey(combo),
-        tween: Tween(begin: 1.3, end: 1),
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.easeOut,
-        builder: (_, scale, child) =>
-            Transform.scale(scale: scale, child: child),
-        child: label);
-  }
 }
 
 /// The level emblem's ring: a dark rim with the level-mission progress in
