@@ -395,7 +395,7 @@ void main() {
       await shop.initialize();
       await shop.command(() { shop.state.buns = BigInt.from(77); shop.state.lifetime = BigInt.from(77); });
       final old = jsonDecode(jsonEncode(repository.stored)) as Map<String, dynamic>
-        ..['schema'] = 11..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
+        ..['schema'] = 11..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(repository.stored!)..['schema'] = 11, config),
           throwsFormatException, reason: '11에 재료 기록');
       expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(repository.stored!)..remove('pantry'), config),
@@ -419,7 +419,7 @@ void main() {
       addTearDown(shop.dispose);
       await shop.initialize();
       final old = jsonDecode(jsonEncode(repository.stored)) as Map<String, dynamic>
-        ..['schema'] = 10..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
+        ..['schema'] = 10..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       final reopened = WorkshopController(config, Repository()..stored = old, now: () => start, random: Random(7));
       addTearDown(reopened.dispose);
       await reopened.initialize();

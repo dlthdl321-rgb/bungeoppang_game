@@ -111,9 +111,80 @@ void main() {
     if (out != null) File(out).writeAsStringSync('archive 40 anonymous sales: before=$before after=$after\n', mode: FileMode.append);
   });
 
-  test('단골 손님(이름 있는 손님) 판매는 고르지 않는다', () {
-    final pick = pickSettledAnonymousSales(sales: const {}, rewardReceipts: const {}, liveBatches: const {},
-        businessIndex: 5, named: (_) => true);
+  /// Sells to the named neighbor [npc]: stock for each line, then the sale.
+  Future<String> sellNamed(String npc) async {
+    expect(await c.welcomeCustomer(visitor: npc), isTrue, reason: c.notice);
+    final order = c.state.customers.lastWhere((o) => o.customerId == npc);
+    await c.command(() {
+      for (final (i, line) in order.lines.indexed) {
+        c.state.inventory = c.state.inventory.recordResult(ProductBatch(id: 'n_${order.id}_$i', flavor: line.flavor,
+            variant: line.variant ?? 2, quantity: line.quantity, madeOnBusinessIndex: c.state.business.businessIndex), keep: true);
+      }
+    });
+    expect(await c.sellToCustomer(order.id), isTrue, reason: c.notice);
+    // A story or choice scene may open after the sale; close it for the test.
+    await c.command(() => c.state.customerScene = null);
+    return order.id;
+  }
+
+  String facts(String npc) {
+    final f = c.choiceFactsForTest(npc, CustomerOrder(id: 'probe', customerId: npc, remainingMs: 1000,
+        lines: [CustomerOrderLine(flavor: 'redbean', quantity: 1)]));
+    // Only what the sales give: a new day may bring another visit (the clock).
+    return [f.redbeanTwoSuccessDays, f.largeOrderSuccessDays, f.receivedFlavorCount,
+      f.workSuccessDays, f.custardSuccesses, f.newFlavorFirstServed].join(',');
+  }
+
+  test('30번 2-B: 단골 판매도 요약으로 옮기고, 선택 이벤트 조건은 그대로', () async {
+    final named = <String>[];
+    for (final npc in ['npc_yunha', 'npc_taeo', 'npc_makrye']) { named.add(await sellNamed(npc)); }
+    await sell('anon');
+    expect(await c.syncRewards(), isTrue, reason: c.notice);
+    final before = {for (final npc in ['npc_yunha', 'npc_taeo', 'npc_makrye']) npc: facts(npc)};
+    final bytesBefore = utf8.encode(jsonEncode(c.state.toJson())).length;
+    expect(c.state.inventory.dispositions.keys, containsAll(['p_anon', 'n_${named.first}_0']), reason: '심사 전엔 생산 근거 유지');
+    await nextDay();
+    expect(c.state.sales, isEmpty);
+    expect(c.state.archivedNamedSales, named.toSet());
+    expect(c.state.archivedSales, 4);
+    expect(c.state.inventory.dispositions, isEmpty, reason: '다 쓴 생산 결과 지문은 지움');
+    for (final npc in before.keys) { expect(facts(npc), before[npc], reason: npc); }
+    final out = Platform.environment['SAVE_MEASURE'];
+    if (out != null) {
+      File(out).writeAsStringSync('archive 3 named + 1 anonymous sales: before=$bytesBefore '
+          'after=${utf8.encode(jsonEncode(c.state.toJson())).length}\n', mode: FileMode.append);
+    }
+    // The relationship record of each sale stays.
+    final actions = c.state.relationships.toJson()['actions'] as Map;
+    for (final id in named) { expect(actions, contains('sale:$id')); }
+    // Reloaded from the save: same facts, same archive.
+    final saved = jsonDecode(jsonEncode(repository.stored)) as Map<String, dynamic>;
+    final back = WorkshopState.fromJson(saved, config);
+    expect(back.archivedNamedSales, named.toSet());
+    expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..['archivedNamedSales'] = [...named, 'ghost'], config),
+        throwsFormatException, reason: '관계 기록 없는 보관 ID');
+    expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..['archivedNamedSales'] = named.skip(1).toList(), config),
+        throwsFormatException, reason: '관계 판매의 원장이 사라짐');
+    expect(() => WorkshopState.fromJson(Map<String, dynamic>.from(saved)..['schema'] = 14, config),
+        throwsFormatException, reason: '옛 저장에 새 필드');
+  });
+
+  test('pickSettledSales: keep이 참이면 남기고, 단골 판매는 따로 알려 준다', () {
+    final pick = pickSettledSales(sales: const {}, rewardReceipts: const {}, liveBatches: const {},
+        businessIndex: 5, named: (_) => true, keep: (_, __) => true);
     expect(pick.ids, isEmpty);
+    expect(pick.namedIds, isEmpty);
+  });
+
+  test('keepNeededResults: 재고·준비 제품·남은 판매·화면의 결과만 지문을 남긴다', () {
+    var inventory = InventoryProgress.empty();
+    for (final id in ['live', 'sold', 'spent', 'screen']) {
+      inventory = inventory.recordResult(ProductBatch(id: id, flavor: 'redbean', variant: 2, quantity: 1, madeOnBusinessIndex: 1),
+          keep: id == 'live');
+    }
+    final sale = jsonEncode({'fingerprint': 'f', 'evidence': {'products': [{'batch': 'sold'}]}});
+    final kept = keepNeededResults(inventory, salesEvidence: [sale], waiting: const [], sessionId: 'screen');
+    expect(kept.dispositions.keys.toSet(), {'live', 'sold', 'screen'});
+    expect(identical(keepNeededResults(kept, salesEvidence: [sale], waiting: const [], sessionId: 'screen'), kept), isTrue);
   });
 }

@@ -131,7 +131,7 @@ void main() {
     test('Workshop schema$schema preserves supported state and adopts latest recovery on save', () async {
       final old={...first,'schema':schema,'buns':'17','lifetime':'17'};
       old.remove('relationships'); old.remove('customerScene'); old.remove('tutorial');
-      old.remove('regularClock'); old.remove('namedClock'); old.remove('lastNamedVisitor'); old.remove('featureIntros'); old.remove('daily'); old.remove('pantry'); old.remove('pendingSales'); old.remove('archivedSales'); old.remove('archivedSalesBuns');
+      old.remove('regularClock'); old.remove('namedClock'); old.remove('lastNamedVisitor'); old.remove('featureIntros'); old.remove('daily'); old.remove('pantry'); old.remove('pendingSales'); old.remove('archivedSales'); old.remove('archivedSalesBuns'); old.remove('archivedNamedSales');
       if (schema<3) {
         for (final key in ['rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime']) { old.remove(key); }
       }

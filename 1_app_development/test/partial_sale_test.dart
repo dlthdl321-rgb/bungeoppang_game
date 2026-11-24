@@ -186,10 +186,10 @@ void main() {
     test('schema4 저장은 최신 schema로 읽고, schema4에 납품 기록이 있으면 거절한다', () async {
       await controller.command(() => controller.state.customers.add(order()));
       await stock('first');
-      final schema4 = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
+      final schema4 = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       expect(WorkshopState.fromJson(schema4, config).toJson()['schema'], workshopSchema);
       expect(await controller.sellToCustomer('order'), isTrue);
-      final forged = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
+      final forged = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       expect(() => WorkshopState.fromJson(forged, config), throwsFormatException);
     });
 

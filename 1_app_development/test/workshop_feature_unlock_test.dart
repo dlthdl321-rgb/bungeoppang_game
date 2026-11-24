@@ -227,7 +227,7 @@ void main() {
       await c.skipTutorial();
       expect(await setLevel(c, 12), isTrue);
       await award(c);
-      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
+      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.featureIntros, containsAll(['skills', 'griddle', 'collection', 'recipes', 'specialOrders',
           'fishCosmetics', 'stallCosmetics']));
@@ -241,7 +241,7 @@ void main() {
       final low = await open();
       addTearDown(low.dispose);
       await low.skipTutorial();
-      final lowOld = low.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
+      final lowOld = low.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       final lowMigrated = WorkshopState.fromJson(lowOld, config)..level = 2;
       expect(pendingFeatureIntro(lowMigrated, config), WorkshopFeature.skills);
     });
@@ -269,7 +269,7 @@ void main() {
       expect(c.state.toJson()['featureIntros'], ['fairy', 'wardrobe']);
       expect(WorkshopState.fromJson(c.state.toJson(), config).featureIntros, {'fairy', 'wardrobe'});
       // An old save (schema 7) still meets the fairy once.
-      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
+      final old = c.state.toJson()..['schema'] = 7..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       expect(WorkshopState.fromJson(old, config).featureIntros, isNot(contains('fairy')));
       expect(featureIntro(WorkshopFeature.fairy).title, '붕어빵 요정을 만났어요');
     });

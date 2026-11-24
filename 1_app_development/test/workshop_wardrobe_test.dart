@@ -85,7 +85,7 @@ void main() {
       final old = jsonDecode(jsonEncode(saved)) as Map<String, dynamic>
         ..['schema'] = 8
         ..['avatarEquipment'] = {'outfit': 'padding', 'top': 'tee'}
-        ..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns');
+        ..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.avatarEquipment['top'], 'padding');
       expect(migrated.avatarEquipment['outfit'], 'noapron');

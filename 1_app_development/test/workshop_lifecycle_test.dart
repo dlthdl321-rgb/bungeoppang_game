@@ -68,10 +68,13 @@ void main() {
     expect(c.state.inventory.bindings, isEmpty);
     await c.reloadAfterError(); await c.openBusiness();
     expect(c.state.inventory.bindings['prepared'], 1);
+    expect(c.state.inventory.dispositions, contains('prepared'));
     for (var day=0;day<5;day++) { at=at.add(const Duration(days:1)); await c.openBusiness(); }
     expect(c.state.inventory.batches, isEmpty);
-    expect(c.state.inventory.bindings['prepared'], 1);
-    expect(c.state.inventory.dispositions, contains('prepared'));
+    // 30번 2-B (2026-11-24): an expired product no sale used leaves no
+    // fingerprint behind; its ID never comes back (a session ID is random).
+    expect(c.state.inventory.bindings, isEmpty);
+    expect(c.state.inventory.dispositions, isNot(contains('prepared')));
   });
   test('background and process restart preserve open business and freeze cooking/customer timers', () async {
     await c.openBusiness(); await c.welcomeCustomer();

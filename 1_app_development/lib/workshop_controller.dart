@@ -50,8 +50,12 @@ part 'workshop_controller_pantry.dart';
 /// sale IDs and loading fills them from `sales` (the same strings, in memory).
 /// Schema 14 (30번 2-A, 2026-11-24) adds `archivedSales`·`archivedSalesBuns`:
 /// settled sales to anonymous guests leave `sales`/`pendingGold`/`rewardReceipts`
-/// for these two totals ([pickSettledAnonymousSales]).
-const workshopSchema = 14;
+/// for these two totals ([pickSettledSales]).
+/// Schema 15 (30번 2-B, 2026-11-24) adds `archivedNamedSales`: settled sales
+/// to named neighbors leave too (counted in the same totals); their IDs stay
+/// so the relationship record of each sale still has its sale. Spent
+/// production results drop their fingerprints ([keepNeededResults]).
+const workshopSchema = 15;
 /// Saves below this schema have no pantry: they get the starting stock once.
 const pantrySchema = 12;
 /// Saves below this schema were played with the old economy (skill prices
@@ -216,6 +220,10 @@ class WorkshopState {
   /// many and what they paid (ordinary + 특제). Saved from schema 14.
   int archivedSales = 0;
   BigInt archivedSalesBuns = BigInt.zero;
+  /// The part of [archivedSales] sold to named neighbors (30번 2-B, schema
+  /// 15). Each keeps its relationship record; the visit's `context.lines`
+  /// says what was ordered ([WorkshopController] reads it back from there).
+  final Set<String> archivedNamedSales = {};
   final Set<int> claimedLevels = {};
   /// A fresh shop in place of a save from before the economy rebalance
   /// ([economyResetSchema], 4차 피드백 g7, pre-launch): every number starts
@@ -271,6 +279,7 @@ class WorkshopState {
     'pendingSales': [for (final e in pendingGold.entries)
       if (e.key.startsWith('sale:') && sales[e.key.substring(5)] == e.value) e.key.substring(5)]..sort(),
     'archivedSales': archivedSales, 'archivedSalesBuns': '$archivedSalesBuns',
+    'archivedNamedSales': archivedNamedSales.toList()..sort(),
     'claimedLevels': claimedLevels.toList()..sort()};
   factory WorkshopState.fromJson(Map<String, dynamic> row, DevelopmentBalance config) {
     Map<String, dynamic> object(String key) {
@@ -434,6 +443,13 @@ class WorkshopState {
     } else if (row.containsKey('archivedSales') || row.containsKey('archivedSalesBuns')) {
       throw const FormatException('구형 저장에 판매 보관 합계가 있어요.');
     }
+    if ((row['schema'] as int) >= 15) {
+      final named = row['archivedNamedSales'];
+      if (named is! List || named.any((id) => id is! String || id.isEmpty || !state.archivedNamedSales.add(id)) ||
+          named.length > state.archivedSales) throw const FormatException('단골 판매 보관 목록 오류');
+    } else if (row.containsKey('archivedNamedSales')) {
+      throw const FormatException('구형 저장에 단골 판매 보관 목록이 있어요.');
+    }
     var salesBuns = state.archivedSalesBuns;
     final consumed = <String, BigInt>{};
     void sold(Map<String, dynamic> product) {
@@ -481,10 +497,23 @@ class WorkshopState {
       }
       for (final entry in (relation['actions'] as Map<String,dynamic>).entries.where((e) => e.key.startsWith('sale:'))) {
         final id = entry.key.substring(5), saved = state.sales[id];
-        if (saved == null) throw const FormatException('관계 판매 원장 누락');
+        if (saved == null) {
+          // 30번 2-B: an archived sale reads its order from the visit.
+          final visit = visits[(entry.value as Map)['visit']] as Map;
+          if (!state.archivedNamedSales.contains(id) || (visit['context'] as Map?)?['lines'] is! List) {
+            throw const FormatException('관계 판매 원장 누락');
+          }
+          continue;
+        }
         final evidence = validateStoredCustomerSale(id,saved), order = evidence['order'] as Map;
         final action = entry.value as Map, visit = visits[action['visit']] as Map;
         if (order['customerId'] != visit['npc'] || action['day'] != evidence['businessIndex'] || (visit['context'] is Map && jsonEncode((visit['context'] as Map)['lines'])!=jsonEncode(order['lines']))) throw const FormatException('관계 판매 근거 불일치');
+      }
+    }
+    if (state.archivedNamedSales.isNotEmpty) {
+      final actions = state.relationships.toJson()['actions'] as Map;
+      if (state.archivedNamedSales.any((id) => state.sales.containsKey(id) || !actions.containsKey('sale:$id'))) {
+        throw const FormatException('단골 판매 보관 근거 오류');
       }
     }
     if (salesBuns > state.lifetime) throw const FormatException('판매 대금 누적 근거 불일치');
@@ -1122,14 +1151,23 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   /// Something the per-command hooks would change now ([command]: [_promote],
   /// [_observeDaily], [_settleCollection], [_expirePantry], [_rescuePantry]).
   bool get _checkpointDue => canLevelUp || _dailyDue || _collectionDue || _pantryDue;
-  /// 30번 2-A: moves settled sales to anonymous guests into the archive
-  /// totals. Runs only when the business day or the number of server
+  /// 30번 2-A·2-B: moves settled sales into the archive totals and drops
+  /// spent production results. Runs only when the business day or the number of server
   /// receipts changed since the last saved check; returns that check's marks.
   (int, int)? _archiveSettledSales() {
     final day = state.business.businessIndex;
     if (day == _archiveCheckedDay && state.rewardReceipts.length == _archiveCheckedReceipts) return null;
-    final pick = pickSettledAnonymousSales(sales: state.sales, rewardReceipts: state.rewardReceipts,
-        liveBatches: state.inventory.batches.keys.toSet(), businessIndex: day, named: customerCatalog.contains);
+    final journal = state.relationships.toJson(), actions = journal['actions'] as Map, visits = journal['visits'] as Map;
+    // 30번 2-B: a named neighbor's sale goes only when its visit keeps the
+    // order as placed (older visits have no context to read it back from).
+    bool keep(String id, Map<String, dynamic> evidence) {
+      if (!customerCatalog.contains((evidence['order'] as Map)['customerId'] as String)) return false;
+      final action = actions['sale:$id'], visit = action is Map ? visits[action['visit']] : null;
+      final context = visit is Map ? visit['context'] : null, lines = context is Map ? context['lines'] : null;
+      return lines == null || jsonEncode(lines) != jsonEncode((evidence['order'] as Map)['lines']);
+    }
+    final pick = pickSettledSales(sales: state.sales, rewardReceipts: state.rewardReceipts,
+        liveBatches: state.inventory.batches.keys.toSet(), businessIndex: day, named: customerCatalog.contains, keep: keep);
     for (final id in pick.ids) {
       state.sales.remove(id);
       state.pendingGold.remove('sale:$id');
@@ -1137,6 +1175,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     }
     state.archivedSales += pick.ids.length;
     state.archivedSalesBuns += pick.buns;
+    state.archivedNamedSales.addAll(pick.namedIds);
+    state.inventory = keepNeededResults(state.inventory, salesEvidence: state.sales.values,
+        waiting: state.customers, sessionId: state.session?.id);
     return (day, state.rewardReceipts.length);
   }
   Future<void> _saveCheckpoint() async {
@@ -1492,6 +1533,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
             served.addAll(previous.lines.map((line) => line.flavor));
           }
         }
+        for (final sale in _archivedNamedSales(named)) {
+          served.addAll(sale.lines.map((line) => line['flavor'] as String));
+        }
       }
       final flavor = preferredCustomerFlavor(named, config, owned: state.recipes,
           previouslyServed: served, firstCustomer: state.relationships.met.isEmpty);
@@ -1508,6 +1552,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       for(final sale in state.sales.entries) {
         final e=validateStoredCustomerSale(sale.key,sale.value),o=e['order'] as Map,ls=o['lines'] as List;
         if(o['customerId']==named && ls.length==1 && (ls.single as Map)['flavor']=='redbean' && (ls.single as Map)['quantity']==DevelopmentBalance.integer(config.section('customer_choice_conditions')['npc_yunha'] as Map<String,dynamic>,'baseline_quantity')) days.add(e['businessIndex'] as int);
+      }
+      for(final sale in _archivedNamedSales(named)) {
+        final ls=sale.lines;
+        if(ls.length==1 && ls.single['flavor']=='redbean' && ls.single['quantity']==DevelopmentBalance.integer(config.section('customer_choice_conditions')['npc_yunha'] as Map<String,dynamic>,'baseline_quantity')) days.add(sale.day);
       }
       final rules=config.section('customer_choice_conditions')[named] as Map<String,dynamic>;
       candidate=own+1>=DevelopmentBalance.integer(rules,'min_visits') && days.length>=DevelopmentBalance.integer(rules,'redbean_two_success_days');
@@ -1725,6 +1773,19 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     state.relationships=state.relationships.observeVisit(saleId,'photoShown');
     _afterNamedSale(CustomerOrder.fromJson(evidence['order'] as Map<String,dynamic>));
   });
+  /// 30번 2-B: [npc]'s archived sales, read back from their relationship
+  /// records (the sale's business day and the visit's order lines).
+  Iterable<({int day, List<Map> lines})> _archivedNamedSales(String npc) sync* {
+    if (state.archivedNamedSales.isEmpty) return;
+    final journal=state.relationships.toJson(), visits=journal['visits'] as Map, actions=journal['actions'] as Map;
+    for (final id in state.archivedNamedSales) {
+      final action=actions['sale:$id'] as Map, visit=visits[action['visit']] as Map;
+      if (visit['npc']!=npc) continue;
+      yield (day: action['day'] as int, lines: ((visit['context'] as Map)['lines'] as List).cast<Map>());
+    }
+  }
+  @visibleForTesting
+  CustomerEventFacts choiceFactsForTest(String npc, CustomerOrder current) => _choiceFacts(npc, current);
   CustomerEventFacts _choiceFacts(String npc, CustomerOrder current) {
     final journal=state.relationships.toJson(), visits=journal['visits'] as Map;
     final own=visits.entries.where((e)=>(e.value as Map)['npc']==npc).toList();
@@ -1735,10 +1796,16 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final action=entry.value as Map, visit=visits[action['visit']] as Map;
       if(visit['npc']!=npc) continue;
       final raw=state.sales[entry.key.substring(5)];
-      if(raw==null) continue;
-      final evidence=validateStoredCustomerSale(entry.key.substring(5),raw),order=evidence['order'] as Map;
-      succeeded.add(evidence);final at=action['day'] as int;successDays.add(at);
-      final lines=(order['lines'] as List).cast<Map>();
+      final List<Map> lines;
+      if(raw!=null) {
+        final evidence=validateStoredCustomerSale(entry.key.substring(5),raw),order=evidence['order'] as Map;
+        succeeded.add(evidence);lines=(order['lines'] as List).cast<Map>();
+      } else if(state.archivedNamedSales.contains(entry.key.substring(5))) {
+        // 30번 2-B: an archived sale (a past day's) reads its order from the visit.
+        lines=((visit['context'] as Map)['lines'] as List).cast<Map>();
+        succeeded.add({'order':{'id':entry.key.substring(5),'lines':lines}});
+      } else { continue; }
+      final at=action['day'] as int;successDays.add(at);
       final quantity=lines.fold<int>(0,(sum,l)=>sum+(l['quantity'] as int));
       for(final line in lines) {received.add(line['flavor'] as String);}
       if(lines.length==1 && lines.single['flavor']=='redbean' && quantity==DevelopmentBalance.integer(config.section('customer_choice_conditions')['npc_yunha'] as Map<String,dynamic>,'baseline_quantity')) redbeanDays.add(at);

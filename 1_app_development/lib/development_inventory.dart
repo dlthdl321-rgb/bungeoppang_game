@@ -37,8 +37,11 @@ class ProductBatch {
 /// +100% each would be 3000; the config's `bonus_permille` is 500 now).
 const maxProductBonusPermille = 3000;
 
-/// Result disposition stays even when its batch is consumed/expired, preventing
-/// the same result being reopened and turned into a new product or fresh batch.
+/// A result's disposition (fingerprint) rejects the same result ID with other
+/// contents and backs the load check of every sale still in the ledger. Since
+/// 30번 2-B (2026-11-24) a spent result's fingerprint goes once nothing needs
+/// it ([retain], [keepNeededResults]): its ID never comes back (a cooking
+/// session ID is random, a griddle cell's cycle only grows).
 class InventoryProgress {
   final Map<String, ProductBatch> batches;
   final Map<String, String> dispositions;
@@ -105,6 +108,15 @@ class InventoryProgress {
       else { next[entry.key] = old.copyWith(quantity: remaining); }
     }
     return InventoryProgress._(next, dispositions, prepared: prepared, bindings: bindings);
+  }
+  /// 30번 2-B: only the results in [ids] keep their fingerprint (and a
+  /// prepared product's business day). Live stock and prepared products
+  /// always stay ([keepNeededResults] decides the rest).
+  InventoryProgress retain(Set<String> ids) {
+    bool kept(String id) => ids.contains(id) || batches.containsKey(id) || prepared.containsKey(id);
+    if (dispositions.keys.every(kept)) return this;
+    return InventoryProgress._(batches, {for (final e in dispositions.entries) if (kept(e.key)) e.key: e.value},
+        prepared: prepared, bindings: {for (final e in bindings.entries) if (kept(e.key)) e.key: e.value});
   }
   Map<String, dynamic> toJson() => {'schema': 1,
     'batches': {for (final e in batches.entries) e.key: e.value.toJson()},
