@@ -11,7 +11,6 @@ import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
-import 'package:todays_bungeoppang/support_config.dart';
 import 'package:todays_bungeoppang/ui/currency_amount.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/lock_overlay.dart';
@@ -78,7 +77,6 @@ void main() {
     });
 
     test('일일 미션 문구는 스킬 레벨업 횟수', () {
-      expect(dailyDefinitions.firstWhere((d) => d.id == 'purchases').title, '스킬 레벨업 횟수');
       // The Workshop mission list reads its labels from the config.
       final missions = config.section('mission_targets');
       expect(((missions['daily'] as Map)['purchases'] as Map)['label'], '스킬 레벨업 횟수');

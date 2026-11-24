@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todays_bungeoppang/balance.dart';
-import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/premium_config.dart';
 
 const catalogPath = 'firebase/functions/src/catalog.json';
@@ -28,22 +26,5 @@ void main() {
           greaterThanOrEqualTo(a.gold / a.referencePriceKrw),
           reason: b.id);
     }
-  });
-
-  test('코인 가격이 있는 꾸미기는 황금 붕어빵으로도 살 수 있다', () {
-    for (final d in cosmeticDefinitions) {
-      expect(cosmeticGoldPrice(d) != null, d.cost > BigInt.zero, reason: d.id);
-    }
-    expect(boughtBoostGold, greaterThan(0));
-  });
-
-  test('처음부터 열린 스킬은 먼저 해금 가격이 없고, 뒤 스킬일수록 비싸다', () {
-    for (final u in upgrades) {
-      final price = skillUnlockGoldPrice(u);
-      expect(price == null, u.unlockTotal <= BigInt.zero, reason: u.id);
-    }
-    expect(skillUnlockGoldPrice(upgrades.firstWhere((u) => u.id == 'tap_16')),
-        greaterThan(
-            skillUnlockGoldPrice(upgrades.firstWhere((u) => u.id == 'tap_4'))!));
   });
 }

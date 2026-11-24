@@ -4,32 +4,6 @@ import 'menu_state.dart';
 import 'cosmetic_config.dart';
 import 'premium_state.dart';
 
-enum UpgradeKind { tap, auto }
-
-class UpgradeDefinition {
-  final String id, name;
-  final UpgradeKind kind;
-  final BigInt baseCost, effect, unlockTotal;
-  final int ratioNumerator, ratioDenominator;
-  UpgradeDefinition(this.id, this.name, this.kind, int baseCost, int effect,
-      this.ratioNumerator, this.ratioDenominator, int unlockTotal)
-      : baseCost = BigInt.from(baseCost),
-        effect = BigInt.from(effect),
-        unlockTotal = BigInt.from(unlockTotal);
-  UpgradeDefinition.decimal(
-      this.id,
-      this.name,
-      this.kind,
-      String baseCost,
-      String effect,
-      this.ratioNumerator,
-      this.ratioDenominator,
-      String unlockTotal)
-      : baseCost = BigInt.parse(baseCost),
-        effect = BigInt.parse(effect),
-        unlockTotal = BigInt.parse(unlockTotal);
-}
-
 /// Flavours sold before stage 14; saves that wore one get redbean back.
 const _removedFlavours = {'custard', 'cocoa', 'sweetpotato', 'matcha', 'strawberry'};
 

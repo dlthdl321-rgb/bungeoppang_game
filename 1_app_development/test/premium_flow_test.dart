@@ -6,29 +6,17 @@ import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/invite_reward_rules.dart';
 import 'package:todays_bungeoppang/ranking_config.dart';
 import 'package:todays_bungeoppang/online_texts.dart';
-import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/billing_service.dart';
-import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/premium_config.dart';
 import 'package:todays_bungeoppang/repository.dart';
-import 'package:todays_bungeoppang/support_config.dart';
 import 'fake_time.dart' show FakeTime;
 
 FakeOnlineBackend fakeBackend(FakeTime t) => FakeOnlineBackend(products: {
       for (final p in goldProducts) p.id: p.gold
-    }, prices: {
-      PremiumKind.cosmetic: {
-        for (final d in cosmeticDefinitions)
-          if (cosmeticGoldPrice(d) case final price?) d.id: price
-      },
-      PremiumKind.skill: {
-        for (final u in upgrades)
-          if (skillUnlockGoldPrice(u) case final price?) u.id: price
-      },
-      PremiumKind.boost: {BoostKind.bought.name: boughtBoostGold},
+    }, prices: const {
     }, now: () => t.now);
 
 Future<
