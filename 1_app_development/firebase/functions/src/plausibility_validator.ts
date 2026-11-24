@@ -76,6 +76,19 @@ export class PlausibilityValidator {
       daily: PlausibilityValidator.dailyLimits(object(root.daily_return)),
       collection: PlausibilityValidator.collectionLimits(root),
       premium: PlausibilityValidator.premiumLimits(root, base),
+      friend: PlausibilityValidator.friendLimits(root),
+    };
+  }
+  /** DEC-154 친구 가게 방문: each KST day at most `daily_limit` visits give
+   * up to `invite_duration_ms` each of `multiplier_permille` production
+   * (taps and auto). The extra that adds is allowed on top. A config without
+   * `friend_visits` allows none. */
+  private static friendLimits(root: Row) {
+    if (root.friend_visits === undefined) return { seconds: 0n, extraPermille: 0n };
+    const f = object(root.friend_visits);
+    return {
+      seconds: BigInt(natural(f.daily_limit)) * BigInt(Math.ceil(natural(f.invite_duration_ms) / 1000)),
+      extraPermille: BigInt(Math.max(0, natural(f.multiplier_permille) - 1000)),
     };
   }
   /** 재료 타이쿤 (4차 병합 3 사용자 결정): the 특제 bonus is paid **only on
@@ -184,7 +197,10 @@ export class PlausibilityValidator {
     const collection = cells * (l.collection.seconds * rates.auto + l.collection.minimum);
     const saleBuns = BigInt(sales) * l.saleBuns;
     const made = BigInt(taps) * rates.tap + seconds * rates.auto + saleBuns;
-    const bound = prev.lifetime + made + this.premiumExtra(saleBuns, rates) + rewards + daily + collection + l.slackBuns;
+    // DEC-154: friends' visits double taps and auto for a while each day.
+    const boostSeconds = days * l.friend.seconds < seconds ? days * l.friend.seconds : seconds;
+    const friend = boostSeconds * (rates.tap * l.tapsPerSecond + rates.auto) * l.friend.extraPermille / 1000n;
+    const bound = prev.lifetime + made + this.premiumExtra(saleBuns, rates) + rewards + daily + collection + friend + l.slackBuns;
     if (next.lifetime > bound) fail("붕어빵력 증가가 서버 시간 한도를 넘었습니다.");
     return { ...next, atMs: Math.max(now, prev.atMs), saleEvidence: prev.saleEvidence + saleEvidence };
   }

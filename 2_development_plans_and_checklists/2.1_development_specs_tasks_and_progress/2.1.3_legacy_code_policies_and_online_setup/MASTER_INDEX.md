@@ -68,7 +68,7 @@ WorkshopController의 part 파일(`workshop_controller_*.dart`)은 `extension ..
 - 가게 schema를 올리면 `workshop_storage.dart`의 구매 보호 schema 목록도 함께 올린다.
 - 옛 저장 데이터의 값을 지어내지 않는다. 잘못된 값은 `FormatException`으로 거절한다.
 - `test/fixtures/v1_save.json`과 저장 테스트의 기대값은 낮추거나 지우지 않는다.
-- 저장 형식은 `test/save_format_test.dart`가 고정한다(가게 schema 15·계정 formatVersion 14의 키·값 종류, 견본 저장 읽기, 옛 가게 형식 schema 12·13·14 견본 읽기). 형식을 일부러 바꿨을 때만 schema/formatVersion·옛 저장 이전을 고친 뒤 `UPDATE_SAVE_FORMAT=1 flutter test test/save_format_test.dart`로 견본을 다시 쓴다.
+- 저장 형식은 `test/save_format_test.dart`가 고정한다(가게 schema 16·계정 formatVersion 14의 키·값 종류, 견본 저장 읽기, 옛 가게 형식 schema 12~15 견본 읽기). 형식을 일부러 바꿨을 때만 schema/formatVersion·옛 저장 이전을 고친 뒤 `UPDATE_SAVE_FORMAT=1 flutter test test/save_format_test.dart`로 견본을 다시 쓴다.
 - **유료 황금 구매 기록 보호**(`workshop_storage.dart`의 `purchase_guard` 표·구매 보호 schema 목록, 가게 저장의 `purchases`)는 옛 schema 이전 코드라도 지우지 않는다. 결제 복구가 여기에 기대고 있다.
 
 ### 출시 시점 저장 규칙 (2026-11-24)

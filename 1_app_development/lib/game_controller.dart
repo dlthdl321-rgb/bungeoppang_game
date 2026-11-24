@@ -98,6 +98,11 @@ class GameController extends ChangeNotifier {
   /// invitation's goal level ([InviteRewardRules.goalReached]); set by the
   /// app's wiring. Null: never report.
   bool Function()? inviteGoalReached;
+  /// DEC-154: friends' visits go to the NEW game (its production boost),
+  /// set by the app's wiring: the visits it has seen, and where to hand new
+  /// ones. Null: the old clicker boost (old screens and their tests).
+  Set<String> Function()? seenFriendVisits;
+  Future<void> Function(List<ServerVisit> visits)? onFriendVisits;
   int _inviteRetryAtMs = 0;
   /// The owner name (사장님 이름) friends and rankings show, and how the
   /// player logs in; both set by OwnerAccount (26번 2-1단계).

@@ -2300,6 +2300,12 @@
     "inviter_lifetime_limit": 20,
     "menu_unlock_level": 3
   },
+  "friend_visits": {
+    "multiplier_permille": 2000,
+    "visit_duration_ms": 300000,
+    "invite_duration_ms": 600000,
+    "daily_limit": 3
+  },
   "daily_return": {
     "rate_taps_per_second": 2,
     "special_order": {

@@ -27,6 +27,13 @@ function daily(goal:"taps"|"production",value:string,extra:Record<string,unknown
     progress:{[goal]:value},...extra};
 }
 const gold=(store:MemoryStore)=>Number(store.docs.get("users/a")!.gold);
+// DEC-154: the friend-visit boost allowed over [elapsedMs] (tap power 2
+// after one tap_1, no auto): capped by daily_limit × invite time per day.
+function friendExtra(elapsedMs:number,days=2n,tapPower=2n,auto=0n) {
+  const f=config.friend_visits,seconds=BigInt(Math.ceil(elapsedMs/1000));
+  const cap=days*BigInt(f.daily_limit)*BigInt(Math.ceil(f.invite_duration_ms/1000));
+  return (seconds<cap?seconds:cap)*(tapPower*BigInt(config.server_validation.max_taps_per_second)+auto)*BigInt(f.multiplier_permille-1000)/1000n;
+}
 
 test("첫 진행 등록에 환영 황금을 계정당 한 번만 서버 지갑에 지급한다",async()=>{
   const {store,service}=setup();
@@ -227,7 +234,7 @@ test("도감 칸 완성 붕어빵력은 지난 시간만큼의 칸 수까지만 
   const cell=BigInt(config.collection_rewards.cell_min_buns),per=config.collection_rewards.server_min_ms_per_cell;
   // Two cells' time: three cells (two + one) of minimum buns fit, a fourth does not.
   clock.now+=2*per;
-  const base=40n+BigInt(config.server_validation.slack_buns)+2n*daily;
+  const base=40n+BigInt(config.server_validation.slack_buns)+2n*daily+friendExtra(2*per);
   const fits=(base+3n*cell).toString();
   assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot(fits,fits,40)})).status,"reserved");
   const {service:other,clock:otherClock}=setup();await other.claim("a",{progress});
@@ -292,4 +299,30 @@ test("산 특별한 재료가 있으면 판매 대금의 특제 덤만큼만 붕
   // With very few special ingredients the stock caps the extra instead.
   const one=await highest(1,3);
   assert.ok(one>plain && one<=special);
+});
+
+test("친구 방문 부스트(DEC-154): 하루 한도 시간만큼의 2배 몫까지만 붕어빵력 증가 한도에 더한다",async()=>{
+  const {service,clock}=setup();await service.claim("a",{progress});
+  await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+  const second={...context,intent:intent("transaction_0002",1)};
+  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns);
+  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds));
+  const daily=seconds*2n*BigInt(d.rate_taps_per_second)+minimum;
+  // An hour with no taps: the boost's share of tap time is allowed (capped by
+  // the day's visits), nothing more.
+  const hour=60*60*1000, cell=BigInt(config.collection_rewards.cell_min_buns);
+  const cells=BigInt(Math.min(Math.floor(hour/config.collection_rewards.server_min_ms_per_cell)+1,Object.keys(config.active_recipes).length*5));
+  const base=40n+BigInt(config.server_validation.slack_buns)+2n*daily+cells*cell;
+  const extra=friendExtra(hour);
+  assert.ok(extra>0n);
+  clock.now+=hour;
+  const fits=(base+extra).toString();
+  assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot(fits,fits,40)})).status,"reserved");
+  const {service:other,clock:otherClock}=setup();await other.claim("a",{progress});
+  await other.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await other.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+  otherClock.now+=hour;
+  const tooMuch=(base+extra+1n).toString();
+  await assert.rejects(other.purchase("a","reserve",{...second,snapshot:snapshot(tooMuch,tooMuch,40)}));
 });

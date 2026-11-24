@@ -29,6 +29,7 @@ import 'workshop_feature_unlocks.dart';
 import 'workshop_daily.dart';
 import 'workshop_collection_rules.dart';
 import 'workshop_sale_archive.dart';
+import 'workshop_friend_visits.dart';
 import 'usage_stats.dart';
 import 'pantry_rules.dart';
 import 'online_texts.dart';
@@ -41,6 +42,7 @@ part 'workshop_controller_commands.dart';
 part 'workshop_controller_collection.dart';
 part 'workshop_controller_daily.dart';
 part 'workshop_controller_pantry.dart';
+part 'workshop_controller_friends.dart';
 
 /// The shop save format written now. Schema 11 (4차 피드백 g7, 2026-11-21)
 /// adds no field: it marks saves made with the rebalanced economy. Schema 12
@@ -55,7 +57,9 @@ part 'workshop_controller_pantry.dart';
 /// to named neighbors leave too (counted in the same totals); their IDs stay
 /// so the relationship record of each sale still has its sale. Spent
 /// production results drop their fingerprints ([keepNeededResults]).
-const workshopSchema = 15;
+/// Schema 16 (DEC-154, 2026-11-25) adds `friendBoost` ([FriendBoost]): the
+/// production boost friends' visits give and the visits already seen.
+const workshopSchema = 16;
 /// Saves below this schema have no pantry: they get the starting stock once.
 const pantrySchema = 12;
 /// Saves below this schema were played with the old economy (skill prices
@@ -224,6 +228,8 @@ class WorkshopState {
   /// 15). Each keeps its relationship record; the visit's `context.lines`
   /// says what was ordered ([WorkshopController] reads it back from there).
   final Set<String> archivedNamedSales = {};
+  /// 친구 가게 방문 (DEC-154): the boost and the visits seen. Schema 16.
+  FriendBoost friendBoost = const FriendBoost();
   final Set<int> claimedLevels = {};
   /// A fresh shop in place of a save from before the economy rebalance
   /// ([economyResetSchema], 4차 피드백 g7, pre-launch): every number starts
@@ -280,6 +286,7 @@ class WorkshopState {
       if (e.key.startsWith('sale:') && sales[e.key.substring(5)] == e.value) e.key.substring(5)]..sort(),
     'archivedSales': archivedSales, 'archivedSalesBuns': '$archivedSalesBuns',
     'archivedNamedSales': archivedNamedSales.toList()..sort(),
+    'friendBoost': friendBoost.toJson(),
     'claimedLevels': claimedLevels.toList()..sort()};
   factory WorkshopState.fromJson(Map<String, dynamic> row, DevelopmentBalance config) {
     Map<String, dynamic> object(String key) {
@@ -442,6 +449,11 @@ class WorkshopState {
       state.archivedSalesBuns = DevelopmentBalance.decimal(row, 'archivedSalesBuns');
     } else if (row.containsKey('archivedSales') || row.containsKey('archivedSalesBuns')) {
       throw const FormatException('구형 저장에 판매 보관 합계가 있어요.');
+    }
+    if ((row['schema'] as int) >= 16) {
+      state.friendBoost = FriendBoost.fromJson(row['friendBoost'], FriendVisitRules.fromConfig(config));
+    } else if (row.containsKey('friendBoost')) {
+      throw const FormatException('구형 저장에 친구 방문 기록이 있어요.');
     }
     if ((row['schema'] as int) >= 15) {
       final named = row['archivedNamedSales'];
@@ -1109,7 +1121,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (foreground && !busy && error == null) {
       final elapsed = storyPaused ? 0 : at - _lastMono;
       final settlement = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:elapsed,
-          permilleMs:_runAutoPantry(elapsed));
+          permilleMs:_friendBoostedPermilleMs(_runAutoPantry(elapsed), elapsed));
       state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
       state.missions=state.missions.observe(now(),production:settlement.buns,autoPeak:autoRate);
       _advanceMemory(at - _lastMono);
@@ -1236,7 +1248,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       return null;
     }
     _outNoticed = false;
-    final gain = tapRate;
+    final gain = _friendBoosted(tapRate);
     state.buns += gain; state.lifetime += gain; state.taps++;
     state.missions=state.missions.observe(now(),taps:1,production:gain,autoPeak:autoRate);
     notifyListeners();

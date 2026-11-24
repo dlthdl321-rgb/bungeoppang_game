@@ -258,6 +258,11 @@ def validate(data, catalog):
             2 <= invite['target_level'] <= data['fixed_requirements']['max_level'] and
             1 <= invite['inviter_daily_limit'] <= invite['inviter_lifetime_limit'] <= 1000 and
             1 <= invite['menu_unlock_level'] <= data['fixed_requirements']['max_level'], '친구 초대 보상 범위')
+    # DEC-154 친구 가게 방문: a short production boost, a few a day.
+    visits = data['friend_visits']
+    require(1000 < visits['multiplier_permille'] <= 5000 and
+            60000 <= visits['visit_duration_ms'] <= visits['invite_duration_ms'] <= 3600000 and
+            1 <= visits['daily_limit'] <= 10, '친구 방문 부스트 범위')
     # 26번 7단계: 매일 돌아올 이유. 행사 날짜는 이 설정에만 둔다(코드에 날짜 없음).
     daily = data['daily_return']
     # 4차 피드백 g7: 보상 기준 R = 탭 힘 × rate_taps_per_second + 자동/초(앱·서버 같은 식).

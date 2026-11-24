@@ -281,7 +281,7 @@ void main() {
       expect(saved['schema'], workshopSchema);
       final old = Map<String, dynamic>.from(saved)
         ..['schema'] = 6
-        ..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
+        ..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales')..remove('friendBoost');
       final migrated = WorkshopState.fromJson(old, config);
       expect(migrated.regularClock.nextAt, isNull);
       expect(migrated.namedClock.nextAt, isNull);

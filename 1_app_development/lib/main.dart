@@ -26,6 +26,7 @@ import 'workshop_online.dart';
 import 'customer_notifier.dart';
 import 'local_test_purchases.dart';
 import 'invite_reward_rules.dart';
+import 'workshop_friend_visits.dart';
 import 'ui/connection_notice.dart';
 import 'ui/game_app.dart';
 import 'ui/pixel_sprites.dart';
@@ -102,6 +103,10 @@ Future<void> _start(OnlineBackend online, UsageStats usage, {int attempts = 0}) 
     // 29번 친구 초대: the invitation's goal is the new game's level.
     final inviteRules = InviteRewardRules.fromConfig(config), shop = workshop;
     controller.inviteGoalReached = () => inviteRules.goalReached(shop.state.level);
+    // DEC-154: friends' visits boost the new game's production.
+    controller.seenFriendVisits = () => shop.seenFriendVisits;
+    controller.onFriendVisits = (visits) => shop.applyFriendVisits([
+          for (final v in visits) FriendVisitArrival(id: v.id, name: v.name, invite: v.invite)]);
     // 26번 2-1단계: login, owner name and character before the game.
     final owner = OwnerAccount(
         repository: owners,

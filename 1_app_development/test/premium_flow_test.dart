@@ -158,6 +158,27 @@ void main() {
     fresh.dispose();
   });
 
+  // DEC-154: with the new game wired (main.dart), visits go there and the
+  // old clicker boost is untouched.
+  test('새 게임이 연결되면 친구 방문은 새 게임으로 가고, 본 방문은 서버에 다시 묻지 않는다', () async {
+    final t = FakeTime();
+    final (c, b, _, _) = await start(t);
+    final seen = <String>{'visit_old'};
+    final handed = <String>[];
+    c.seenFriendVisits = () => seen;
+    c.onFriendVisits = (visits) async { handed.addAll(visits.map((v) => v.id)); seen.addAll(visits.map((v) => v.id)); };
+    await b.signIn();
+    b.inbox.addAll([
+      const ServerVisit(id: 'visit_old', name: '옛', invite: false),
+      const ServerVisit(id: 'visit_a', name: '앨리스', invite: false),
+    ]);
+    await c.syncOnline();
+    expect(handed, ['visit_a']);
+    expect(c.guestArrivals, isEmpty);
+    expect(c.activeBoost, isNull, reason: '예전 클리커 부스트는 쓰지 않음');
+    c.dispose();
+  });
+
   test('친구 방문과 초대 손님은 한 번씩만 부스트가 되고 손님 줄에 선다', () async {
     final t = FakeTime();
     final (c, b, _, _) = await start(t);

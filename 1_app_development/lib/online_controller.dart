@@ -84,8 +84,10 @@ extension OnlineCommands on GameController {
         if (!_levelOneReported) _inviteRetryAtMs = nowMs + inviteGoalRetryMs;
       }
       await _syncWallet();
-      final visits = await online.fetchVisits(state.support.appliedVisits);
-      if (visits.isNotEmpty && !_disposed) {
+      final visits = await online.fetchVisits(seenFriendVisits?.call() ?? state.support.appliedVisits);
+      if (onFriendVisits case final hand? when visits.isNotEmpty && !_disposed) {
+        await hand(visits);
+      } else if (visits.isNotEmpty && !_disposed) {
         await applyGuestVisits([
           for (final v in visits)
             GuestVisit(
