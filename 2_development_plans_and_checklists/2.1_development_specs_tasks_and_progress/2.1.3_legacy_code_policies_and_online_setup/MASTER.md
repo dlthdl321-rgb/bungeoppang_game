@@ -547,6 +547,8 @@
 
 ### 맨 바탕 아바타 v2 (26번 4-7단계)
 
+> **2026-11-25 꺼짐 — 기준 아바타는 이전 아바타(v1)로 확정.** 사용자: "이전 버전으로 하라고 한 것"(42번 바탕은 얼굴·머리·몸 비율이 v1과 달라 쓰지 않음). `avatarV2Enabled = false`. v1 그림의 떠 있는 선·얼룩은 25번 66번(v1 정리 — 맨 바탕·속옷 바탕·아이템 레이어를 v1 디자인 그대로 새로 그림)으로 고침. 아래 v2 설명은 보관된 방식의 기록. 전수 검사 도구 `tools/preview_avatar_items_native_test.dart`(`--dart-define=AVATAR_V1=true`, 아이템마다 280×520 원래 크기 → `build/avatar_items_native_v1/`).
+
 파일: 규칙 `lib/avatar_v2.dart`, 생성 `lib/avatar_v2_atlas.dart`(직접 고치지 않음), 도구 `tools/avatar_v2.py`·`tools/avatar_v2.json`, 그림 `assets/images/avatar_v2/<girl·boy>/`(25번 문서 23~31번)
 
 - **방식:** 머리·옷 없는 맨 바탕(민소매 이너·속바지·맨발, 피부톤마다 `base@skin1~3.png` 한 장씩) 위에 모든 아이템(기본 흰 티·반바지·단화·긴 생머리·기본 앞치마 포함)을 '입은 모습' 레이어로 얹습니다. `_cut`·`@skin` 복사본을 쓰지 않습니다.

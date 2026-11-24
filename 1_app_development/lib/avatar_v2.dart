@@ -141,8 +141,10 @@ Set<String> get avatarV2Shipped => debugAvatarV2Files ?? avatarV2Files;
 /// 전(v1)이 더 낫다 — 얼굴·몸은 그대로 두고 머리·옷만 바꿔야"); 26번 3차 AV
 /// (2026-11-20, DEC-145·147) turns it on again: the base is now the 42번
 /// bare base (the v1 face and body) and every item the 43~49번 picture drawn
-/// worn on it (and 41번 황금 뒤집개), checked tile by tile.
-const avatarV2Enabled = true;
+/// worn on it (and 41번 황금 뒤집개), checked tile by tile. 2026-11-25 off
+/// again for good: the vendor is the v1 one (사용자 "이전 버전으로"; the
+/// 42번 base's face and hair differ), cleaned up by 25번 66번.
+const avatarV2Enabled = false;
 
 /// Whether the front vendor is drawn from the v2 art.
 bool get avatarV2On => debugAvatarV2Override ?? (avatarV2Enabled && avatarV2Ready);
