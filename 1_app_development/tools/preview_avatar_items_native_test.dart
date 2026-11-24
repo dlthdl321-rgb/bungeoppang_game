@@ -18,6 +18,7 @@ void main() {
   test('아이템별 원래 크기 그림', () async {
     await PixelSprites.load();
     const v1 = bool.fromEnvironment('AVATAR_V1');
+    // ignore: invalid_use_of_visible_for_testing_member
     if (v1) debugAvatarV2Override = false;
     for (final c in ['girl', 'boy']) {
       String Function(CosmeticSlot) look(Map<CosmeticSlot, String> worn) =>
