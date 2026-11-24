@@ -18,6 +18,7 @@ import 'customer_story_panel.dart';
 import 'game_app.dart' show SoundSettings;
 import 'pixel_sprites.dart';
 import '../economy.dart';
+import '../premium_config.dart' show goldProducts, goldName;
 import 'public_menus.dart';
 import 'pantry_shop.dart';
 import 'shop_panel.dart';
@@ -412,10 +413,26 @@ class _WorkshopPageState extends State<WorkshopPage> {
     _enterWindow();
     try {
       final account = widget.accountController;
-      // A test build (4차 피드백 IC10 후속): free test gold, no Play.
+      // A test build (4차 피드백 IC10 후속): no Play. 5차 피드백 9: the '+'
+      // still opens the charge sheet (as in the store build); test gold
+      // only from its own button there, never on the '+' itself.
       if (c.purchaseGateway is LocalTestPurchaseGateway) {
-        final ok = await account.setLocalTestGold(account.state.premium.gold + 10);
-        if (mounted && ok) showCenterToast(context, '${OnlineTexts.testGoldDone} (실제 결제 아님)');
+        await showModalBottomSheet<void>(context: context, builder: (sheet) => SafeArea(child: ListView(
+          key: const Key('gold-charge-sheet'), shrinkWrap: true, children: [
+            const ListTile(title: Text('황금붕어빵력 충전'), subtitle: Text(OnlineTexts.testGoldNote)),
+            Padding(padding: const EdgeInsets.fromLTRB(16, 4, 16, 12), child: FilledButton(
+              key: const Key('gold-charge-test-add'),
+              onPressed: () async {
+                Navigator.pop(sheet);
+                final ok = await account.setLocalTestGold(account.state.premium.gold + 10);
+                if (mounted && ok) showCenterToast(context, '${OnlineTexts.testGoldDone} (실제 결제 아님)');
+              },
+              child: const Text(OnlineTexts.testGoldButton))),
+            for (final pack in goldProducts) ListTile(
+              title: Text('$goldName ${pack.gold}개'),
+              subtitle: Text('${exactNumber(BigInt.from(pack.referencePriceKrw))}원 (시험용 빌드에서는 결제하지 않아요)'),
+              trailing: const FilledButton(onPressed: null, child: Text('구매'))),
+          ])));
         return;
       }
       final message = await account.signInOnline();
