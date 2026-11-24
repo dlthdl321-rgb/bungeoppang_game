@@ -9,7 +9,7 @@ import 'package:todays_bungeoppang/avatar_v2.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/ui/avatar_face.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
-import 'package:todays_bungeoppang/ui/boost_effects.dart' show lookFromServer;
+import 'package:todays_bungeoppang/ui/server_look.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'package:todays_bungeoppang/ui/public_menus.dart';
 import 'test_support.dart' show setUpAccount;

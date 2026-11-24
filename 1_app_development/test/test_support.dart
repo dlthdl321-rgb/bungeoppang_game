@@ -43,7 +43,6 @@ Future<GameController> setUpAccount(WidgetTester tester, Size size,
     FixedTime? clock,
     CountingRepository? repository,
     bool maxLevel = false,
-    bool? developerTools,
     RankingService ranking = const NoRankingService(),
     OnlineBackend online = const NoOnlineBackend()}) async {
   // Decoding needs real async; the app does this in main() before runApp.
@@ -73,8 +72,7 @@ Future<GameController> setUpAccount(WidgetTester tester, Size size,
   repo.current!.settings
     ..vibration = false
     ..reduceMotion = reduced;
-  final c = GameController(repo, time,
-      developerTools: developerTools, ranking: ranking, online: online);
+  final c = GameController(repo, time, ranking: ranking, online: online);
   await c.initialize();
   return c;
 }

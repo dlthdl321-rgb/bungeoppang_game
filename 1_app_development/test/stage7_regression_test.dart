@@ -1,14 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/support_config.dart';
-import 'controller_test.dart' show FakeTime;
+import 'fake_time.dart' show FakeTime;
 
 /// Holds the next save open until [gate] completes, so a command can be
 /// issued while a commit is in flight.
@@ -138,14 +137,14 @@ void main() {
       repo = GatedRepository();
       c = GameController(repo, clock);
       await c.initialize();
-      c.state.buns = BigInt.from(1000);
     });
     tearDown(() => c.dispose());
 
     test('commit 도중 updateSettings는 저장소에 반영된다', () async {
       repo.gate = Completer<void>();
       final gate = repo.gate!;
-      final buy = c.buyUpgrade(upgrades.first, 1);
+      // 32번 2단계: a test-gold save stands in for the old skill purchase.
+      final buy = c.setLocalTestGold(50);
       expect(c.busy, isTrue);
       final settings = c.updateSettings(vibration: false);
       gate.complete();
@@ -159,45 +158,14 @@ void main() {
         ..gate = Completer<void>()
         ..failNextSave = true;
       final gate = repo.gate!;
-      final buy = c.buyUpgrade(upgrades.first, 1);
+      final buy = c.setLocalTestGold(50);
       final settings = c.updateSettings(reduceMotion: true);
       gate.complete();
       expect(await buy, isFalse);
       await settings;
       expect(c.state.settings.reduceMotion, isTrue);
       expect((await repo.load())!.settings.reduceMotion, isTrue);
-      expect(c.state.buns, BigInt.from(1000));
-    });
-    test('commit 도중 finishTutorial은 저장소에 반영되고 롤백되지 않는다', () async {
-      repo
-        ..gate = Completer<void>()
-        ..failNextSave = true;
-      final gate = repo.gate!;
-      final buy = c.buyUpgrade(upgrades.first, 1);
-      final tutorial = c.finishTutorial();
-      gate.complete();
-      await buy;
-      await tutorial;
-      expect(c.state.tutorialDone, isTrue);
-      expect((await repo.load())!.tutorialDone, isTrue);
-    });
-  });
-
-  group('e. 붕어빵 외형 구매도 누적 생산 해금 조건을 검사', () {
-    const locked = CosmeticDefinition(
-        'matcha', '말차 붕어빵', CosmeticSlot.fish, '1', 1, '1000000');
-    test('누적 생산이 부족하면 코인을 쓰지 않고 거부', () async {
-      final clock = FakeTime(), repo = MemoryGameRepository();
-      final c = GameController(repo, clock,
-          cosmetics: [...cosmeticDefinitions, locked]);
-      await c.initialize();
-      c.state.support
-          .transact('test:fund', BigInt.from(100), 'test', clock.now);
-      expect(await c.buyOrEquipCosmetic('matcha'), isFalse);
-      expect(c.state.support.coins, BigInt.from(100));
-      expect(c.state.ownedSkins.contains('matcha'), isFalse);
-      expect(c.state.equippedSkin, 'redbean');
-      c.dispose();
+      expect(c.state.premium.gold, 0, reason: '실패한 저장은 되돌림');
     });
   });
 

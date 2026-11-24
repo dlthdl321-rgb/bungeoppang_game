@@ -5,7 +5,7 @@ import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/music_config.dart';
 import 'package:todays_bungeoppang/repository.dart';
-import 'controller_test.dart' show FakeTime;
+import 'fake_time.dart' show FakeTime;
 
 class PolicyAudio extends SoundPolicy {
   final moods = <String>[];

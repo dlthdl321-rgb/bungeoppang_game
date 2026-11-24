@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
-import '../economy.dart';
 import '../game_controller.dart';
-import '../menu_rules.dart';
-import '../online_backend.dart';
 import 'cozy_style.dart';
 import 'gold_widgets.dart';
 import 'pixel_sprites.dart';
@@ -16,11 +13,11 @@ import 'support_panels.dart';
 /// and 충전) only when [ShopPanel.ingredients] is given.
 enum ShopTab { gear, cosmetics, ingredients, theme, gold }
 
-/// The concept art's shop (3.5_completed_game_mockups/상점): tabs 장비 / 꾸미기 / 테마 and item
-/// cards (picture, name, price, 구매). Buying a cosmetic also wears it.
+/// The Workshop shop (32번 2단계: the old clicker's 장비·테마 coin shop is gone):
+/// 꾸미기 (the wardrobe with avatar items for sale), 재료 and 충전.
 class ShopPanel extends StatefulWidget {
   final GameController controller;
-  final CosmeticMenuAccess? access;
+  final CosmeticMenuAccess access;
 
   /// Opens another sheet (the item and coin details).
   final void Function(String destination) onOpen;
@@ -33,16 +30,15 @@ class ShopPanel extends StatefulWidget {
   /// The '재료' tab's content (재료 타이쿤 C, lib/ui/pantry_shop.dart); the
   /// Workshop passes it, the old clicker has no such tab.
   final WidgetBuilder? ingredients;
-  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access,this.initialSlot,
+  const ShopPanel({super.key, required this.controller, required this.onOpen,required this.access,this.initialSlot,
     this.localTestGold=false,this.ingredients});
   @override
   State<ShopPanel> createState() => _ShopPanelState();
 }
 
 class _ShopPanelState extends State<ShopPanel> {
-  /// The workshop opens on 꾸미기, where gold buys avatar items (26번 3단계);
-  /// the old clicker keeps 장비 first.
-  late ShopTab tab = widget.access == null ? ShopTab.gear : ShopTab.cosmetics;
+  /// The workshop opens on 꾸미기, where gold buys avatar items (26번 3단계).
+  ShopTab tab = ShopTab.cosmetics;
   GameController get c => widget.controller;
 
   static String _label(ShopTab t) => switch (t) {
@@ -53,28 +49,8 @@ class _ShopPanelState extends State<ShopPanel> {
         ShopTab.gold => '충전',
       };
 
-  /// 장비: the griddle and tongs; 테마: backgrounds and decorations;
-  /// 꾸미기: everything else the vendor and the pastry wear.
-  static ShopTab _tabOf(CosmeticSlot slot) => switch (slot) {
-        CosmeticSlot.stove || CosmeticSlot.tool => ShopTab.gear,
-        CosmeticSlot.background ||
-        CosmeticSlot.decoration ||
-        CosmeticSlot.lamp =>
-          ShopTab.theme,
-        _ => ShopTab.cosmetics,
-      };
-
-  Iterable<CosmeticDefinition> _catalog(ShopTab t) =>
-      cosmeticDefinitions
-          .where((d) => d.collectible && d.slot.shown && _tabOf(d.slot) == t &&
-              (widget.access?.listed(d) ?? true));
-
-  /// Tabs with something in them; a tab with nothing for sale is left out.
   /// The Workshop sells avatar items only, all in 꾸미기 (26번 4-5단계).
-  List<ShopTab> get _tabs => widget.access != null ? [ShopTab.cosmetics, if (widget.ingredients != null) ShopTab.ingredients, ShopTab.gold] : [
-        for (final t in ShopTab.values)
-          if (t == ShopTab.gold || (t != ShopTab.ingredients && _catalog(t).isNotEmpty)) t
-      ];
+  List<ShopTab> get _tabs => [ShopTab.cosmetics, if (widget.ingredients != null) ShopTab.ingredients, ShopTab.gold];
 
   Widget _tabChips(List<ShopTab> tabs, ShopTab tab) => Wrap(spacing: 6, runSpacing: 4, children: [
         for (final t in tabs)
@@ -123,7 +99,7 @@ class _ShopPanelState extends State<ShopPanel> {
               : tab == ShopTab.gold
               ? SingleChildScrollView(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  child: GoldChargeTab(controller: c, legacyBoost: false, localTestGold: widget.localTestGold))
+                  child: GoldChargeTab(controller: c, localTestGold: widget.localTestGold))
               : WardrobePanel(
                   key: const Key('shop-wardrobe'),
                   controller: c,
@@ -134,115 +110,5 @@ class _ShopPanelState extends State<ShopPanel> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (widget.access case final access?) {
-      return _workshop(context, access);
-    }
-    final tabs = _tabs;
-    final tab = tabs.contains(this.tab) ? this.tab : tabs.first;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Wrap(spacing: 6, runSpacing: 4, children: [
-          for (final t in tabs)
-            ChoiceChip(
-                key: Key('shop-tab-${t.name}'),
-                avatar: PixelIcon(switch (t) {
-                  ShopTab.gear => 'tab_gear',
-                  ShopTab.cosmetics => 'tab_outfit',
-                  ShopTab.ingredients => 'tab_ingredients',
-                  ShopTab.theme => 'theme',
-                  ShopTab.gold => 'coin',
-                }, size: 18),
-                label: Text(_label(t)),
-                selected: t == tab,
-                selectedColor: Cozy.orange,
-                onSelected: (_) => setState(() => this.tab = t)),
-        ]),
-        const SizedBox(height: 8),
-        saveError(c),
-        if (tab == ShopTab.gold)
-          GoldChargeTab(controller: c, legacyBoost: widget.access == null)
-        else
-        LayoutBuilder(builder: (context, box) {
-          const gap = 8.0;
-          final w = (box.maxWidth - gap) / 2;
-          return Wrap(spacing: gap, runSpacing: gap, children: [
-            for (final d in _catalog(tab))
-              SizedBox(width: w, child: _cosmeticCard(context, d)),
-          ]);
-        }),
-        if (tab == ShopTab.gear && widget.access==null) ...[
-          const SizedBox(height: 8),
-          OutlinedButton(
-              key: const Key('support-entry'),
-              onPressed: () => widget.onOpen('support'),
-              child: const Text('코인 · 부스트 보기')),
-        ],
-      ]));
-  }
-
-  Widget _cosmeticCard(BuildContext context, CosmeticDefinition d) {
-    final access=widget.access;
-    if(access!=null) return Column(children:[
-      SizedBox(height:80,child:CosmeticThumb(d,access.equipped)),
-      AccessCosmeticAction(access:access,item:d),
-    ]);
-    final s = c.state.support;
-    final owned = c.state.ownsCosmetic(d);
-    final unlocked = cosmeticUnlocked(c.state, d);
-    return CozyPanel(
-      padding: const EdgeInsets.all(8),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        SizedBox(
-            height: 64,
-            child: Opacity(
-                opacity: unlocked ? 1 : .45,
-                child: CosmeticThumb(d, c.state.equippedCosmetic))),
-        const SizedBox(height: 4),
-        Text(d.name,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900)),
-        Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          PixelIcon(owned ? 'check' : unlocked ? 'coin' : 'lock', size: 16),
-          const SizedBox(width: 3),
-          Flexible(
-              child: Text('${cosmeticSlotLabel(d.slot)} · ${d.cost} 코인',
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(color: Cozy.inkSoft, fontSize: 12))),
-        ]),
-        const SizedBox(height: 4),
-        FilledButton(
-            key: Key('shop-buy-${d.id}'),
-            style: FilledButton.styleFrom(
-                backgroundColor: Cozy.orange, foregroundColor: Cozy.ink),
-            onPressed: !c.busy && !owned && unlocked && s.coins >= d.cost
-                ? () async {
-                    if (await confirmAction(
-                        context,
-                        '${d.name} 구매',
-                        '가격 ${d.cost} 코인\n코인 ${exactNumber(s.coins)} → ${exactNumber(s.coins - d.cost)}\n영구 보유 · 바로 장착',
-                        '구매')) {
-                      await c.buyOrEquipCosmetic(d.id);
-                    }
-                  }
-                : null,
-            child: FittedBox(
-                child: Text(owned
-                    ? '보유 중'
-                    : unlocked
-                        ? '구매'
-                        : 'Lv.${d.unlockLevel} 해금'))),
-        if (!owned)
-          GoldPriceButton(
-              controller: c,
-              kind: PremiumKind.cosmetic,
-              itemId: d.id,
-              title: '${d.name} 구매',
-              effect: unlocked ? '영구 보유' : '영구 보유 · 레벨 잠금 없이 바로'),
-      ]),
-    );
-  }
+  Widget build(BuildContext context) => _workshop(context, widget.access);
 }

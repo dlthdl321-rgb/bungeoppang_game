@@ -1,78 +1,23 @@
 import 'package:flutter/material.dart';
 import '../billing_service.dart';
 import '../game_controller.dart';
-import '../online_backend.dart';
 import '../online_texts.dart';
 import '../premium_config.dart';
-import '../support_config.dart';
 import '../usage_stats.dart';
 import '../economy.dart' show exactNumber;
 import 'center_toast.dart';
 import 'cozy_style.dart';
 import 'pixel_sprites.dart';
-import 'support_panels.dart' show confirmAction;
-
-/// Asks, spends gold on [itemId] through the server and reports the result.
-Future<void> buyWithGold(BuildContext context, GameController c,
-    PremiumKind kind, String itemId, String title, String effect) async {
-  final price = c.goldPrice(kind, itemId);
-  if (price == null) return;
-  final gold = c.state.premium.gold;
-  if (!await confirmAction(
-      context,
-      title,
-      '$goldName $price개\n보유 $gold → ${gold - price}개\n$effect',
-      '구매')) {
-    return;
-  }
-  final error = await c.spendGold(kind, itemId);
-  if (context.mounted) {
-    showCenterToast(context, error ?? '$title 완료');
-  }
-}
-
-/// A small '황금 N' button for anything also sold for gold.
-class GoldPriceButton extends StatelessWidget {
-  final GameController controller;
-  final PremiumKind kind;
-  final String itemId, title, effect;
-  const GoldPriceButton(
-      {super.key,
-      required this.controller,
-      required this.kind,
-      required this.itemId,
-      required this.title,
-      required this.effect});
-
-  @override
-  Widget build(BuildContext context) {
-    final price = controller.goldPrice(kind, itemId);
-    if (price == null) return const SizedBox.shrink();
-    return OutlinedButton(
-        key: Key('gold-${kind.name}-$itemId'),
-        style: OutlinedButton.styleFrom(
-            foregroundColor: Cozy.wood,
-            side: const BorderSide(color: Cozy.orangeDeep)),
-        onPressed: controller.busy || !controller.online.configured
-            ? null
-            : () => buyWithGold(context, controller, kind, itemId, title, effect),
-        child: FittedBox(child: Text('황금 $price')));
-  }
-}
 
 /// The shop's 충전 tab: balance, the packs with Google Play prices, the
-/// 10-minute boost for gold and the legally required purchase notes.
+/// and the legally required purchase notes.
 class GoldChargeTab extends StatefulWidget {
   final GameController controller;
-
-  /// The old clicker's bought boost. The workshop has no such boost, so its
-  /// shop leaves the row (and the note about spent boosts) out.
-  final bool legacyBoost;
 
   /// A build without the online settings (4차 피드백 IC10 후속): a free
   /// '시험용 황금 +10' button, clearly test-only, instead of the login note.
   final bool localTestGold;
-  const GoldChargeTab({super.key, required this.controller, this.legacyBoost = true, this.localTestGold = false});
+  const GoldChargeTab({super.key, required this.controller, this.localTestGold = false});
   @override
   State<GoldChargeTab> createState() => _GoldChargeTabState();
 }
@@ -91,7 +36,6 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
   @override
   Widget build(BuildContext context) {
     final c = widget.controller;
-    final boost = boostOf(BoostKind.bought);
     // 26번 3차 피드백 H31: a gold balance card, then one clean card per
     // pack (its picture, the amount large, the Play price as a honey pill)
     // instead of beige boxes with '황금붕어빵력 N개' and a pale button.
@@ -139,8 +83,7 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
         const Padding(
             padding: EdgeInsets.only(top: 8),
             child: CozyNotice('로그인하면 충전할 수 있어요', key: Key('gold-offline'))),
-      if (!widget.legacyBoost)
-        const Padding(
+      const Padding(
             padding: EdgeInsets.fromLTRB(4, 8, 4, 0),
             child: Text('$goldName 쓰는 곳: 꾸미기(옷·모자·머리·도구)와 높은 단계 스킬. '
                 '낮은 단계 스킬은 붕어빵력만으로 레벨업해요.',
@@ -177,30 +120,12 @@ class _GoldChargeTabState extends State<GoldChargeTab> {
                 ),
             ]);
           }),
-      if (widget.legacyBoost) CozyPanel(
-        padding: const EdgeInsets.all(10),
-        child: Row(children: [
-          Expanded(
-              child: Text(
-                  '${boost.name} · 생산 ${boost.multiplierPermille ~/ 1000}배 ${boost.durationSeconds ~/ 60}분',
-                  style: const TextStyle(fontWeight: FontWeight.w800))),
-          GoldPriceButton(
-              controller: c,
-              kind: PremiumKind.boost,
-              itemId: BoostKind.bought.name,
-              title: boost.name,
-              effect:
-                  '${boost.durationSeconds ~/ 60}분 동안 클릭·자동 생산 ${boost.multiplierPermille ~/ 1000}배'),
-        ]),
-      ),
       const SizedBox(height: 8),
       Text(
           '· 결제는 Google Play로 처리돼요. 구매 후 사용하지 않은 $goldName은 '
           '구매일로부터 7일 안에 청약철회를 요청할 수 있어요.\n'
           '· 미성년자는 법정대리인의 동의 없이 결제하면 취소될 수 있어요.\n'
-          '${widget.legacyBoost ? '· $goldName은 로그인한 카카오 계정에 보관되고, 다시 설치해도 꾸미기와 '
-              '스킬 해금은 돌아와요. 이미 쓴 부스트는 돌아오지 않아요.'
-              : '· $goldName 잔액은 로그인한 카카오 계정에 보관돼요.'}',
+          '· $goldName 잔액은 로그인한 카카오 계정에 보관돼요.',
           key: const Key('gold-terms'),
           style: const TextStyle(color: Cozy.caption, fontSize: 11, height: 1.4)),
     ]);

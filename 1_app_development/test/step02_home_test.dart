@@ -13,7 +13,6 @@ import 'package:todays_bungeoppang/ui/flip_circle_control.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/piping_bag_control.dart';
 import 'package:todays_bungeoppang/ui/night_home.dart';
-import 'package:todays_bungeoppang/ui/bake_target.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
 import 'test_support.dart' show setUpAccount;
@@ -58,7 +57,6 @@ void main() {
       // 26번 3차 H6: a new install opens with the welcome story; end it first.
       await tester.tap(find.byKey(const Key('story-skip')));await tester.pump();await tester.pump();
       expect(find.byType(NightHome),findsOneWidget);
-      expect(find.byType(BakeTarget),findsNothing);
       // 26번 3차 피드백 H28: the menu is only in the bottom bar; the flavor sits top-left.
       expect(find.byKey(const Key('menu-menu')),findsNothing);
       expect(find.byKey(const Key('menu-menubar')),findsOneWidget);

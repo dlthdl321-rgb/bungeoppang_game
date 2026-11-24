@@ -17,7 +17,6 @@ import 'owner_repository.dart';
 import 'play_billing_service.dart';
 import 'repository.dart';
 import 'save_quarantine.dart';
-import 'server_invite_repository.dart';
 import 'time_service.dart';
 import 'usage_stats.dart';
 import 'development_balance_asset.dart';
@@ -76,8 +75,6 @@ Future<void> _start(OnlineBackend online, UsageStats usage, {int attempts = 0}) 
       online: online,
       billing:
           online.configured ? PlayBillingService() : const NoBillingService(),
-      invitationRepository:
-          online.configured ? ServerInvitationRepository(online) : null,
       usage: usage);
   final audio = AudioplayersAudio();
   await PixelSprites.load();

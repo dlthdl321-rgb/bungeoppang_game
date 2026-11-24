@@ -9,14 +9,13 @@ import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/billing_service.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
-import 'package:todays_bungeoppang/economy.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/premium_config.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/support_config.dart';
-import 'controller_test.dart' show FakeTime;
+import 'fake_time.dart' show FakeTime;
 import 'stage12_customization_test.dart' show setLevel;
 
 FakeOnlineBackend fakeBackend(FakeTime t) => FakeOnlineBackend(products: {
@@ -86,79 +85,6 @@ void main() {
     c.dispose();
   });
 
-  test('황금 붕어빵으로 잠긴 꾸미기를 사면 레벨과 상관없이 보유한다', () async {
-    final t = FakeTime();
-    final (c, b, _, _) = await start(t);
-    await b.signIn();
-    b.gold = 500;
-    c.state.premium.gold = 500;
-    final locked = cosmeticDefinitions.firstWhere(
-        (d) => d.unlockLevel > c.state.level && cosmeticGoldPrice(d) != null);
-    expect(await c.spendGold(PremiumKind.cosmetic, locked.id), isNull);
-    expect(c.state.ownsCosmetic(locked), isTrue);
-    expect(c.state.premium.gold, 500 - cosmeticGoldPrice(locked)!);
-    expect(await c.spendGold(PremiumKind.cosmetic, locked.id), '이미 가지고 있어요');
-    c.dispose();
-  });
-
-  test('스킬 먼저 해금: 누적 생산 전에도 붕어빵으로 살 수 있다', () async {
-    final t = FakeTime();
-    final (c, b, _, _) = await start(t);
-    await b.signIn();
-    final skill = upgrades.firstWhere((u) => u.unlockTotal > BigInt.zero);
-    expect(quoteUpgrade(c.state, skill, PurchaseMode.one).unlocked, isFalse);
-    expect(await c.spendGold(PremiumKind.skill, skill.id), contains('부족'));
-    b.gold = 500;
-    c.state.premium.gold = 500;
-    expect(await c.spendGold(PremiumKind.skill, skill.id), isNull);
-    expect(quoteUpgrade(c.state, skill, PurchaseMode.one).unlocked, isTrue);
-    c.state.buns = skill.baseCost;
-    expect(await c.buyUpgrade(skill, 1), isTrue);
-    c.dispose();
-  });
-
-  test('황금 부스트를 사면 10분 동안 3배가 된다', () async {
-    final t = FakeTime();
-    final (c, b, _, _) = await start(t);
-    await b.signIn();
-    b.gold = 100;
-    c.state.premium.gold = 100;
-    final before = c.currentTapRate;
-    expect(await c.spendGold(PremiumKind.boost, BoostKind.bought.name), isNull);
-    expect(c.currentTapRate, before * BigInt.from(3));
-    expect(c.activeBoost?.kind, BoostKind.bought);
-    c.dispose();
-  });
-
-  test('다시 설치하면 꾸미기·스킬 해금은 돌아오고 이미 쓴 부스트는 돌아오지 않는다', () async {
-    final t = FakeTime();
-    final backend = fakeBackend(t);
-    final (c, b, _, _) = await start(t, backend: backend);
-    await b.signIn();
-    b.gold = 500;
-    c.state.premium.gold = 500;
-    final skill = upgrades.firstWhere((u) => u.unlockTotal > BigInt.zero);
-    final beanie = cosmeticDefinitions.firstWhere((d) => d.id == 'beanie');
-    await c.spendGold(PremiumKind.skill, skill.id);
-    await c.spendGold(PremiumKind.cosmetic, beanie.id);
-    await c.spendGold(PremiumKind.boost, BoostKind.bought.name);
-    c.dispose();
-
-    // Fresh save, same account.
-    final (fresh, _, _, _) = await start(FakeTime(), backend: backend);
-    await fresh.syncOnline();
-    expect(fresh.state.premium.skillUnlocks, {skill.id});
-    expect(fresh.state.ownsCosmetic(beanie), isTrue);
-    expect(fresh.activeBoost, isNull);
-    expect(fresh.state.premium.gold, backend.gold);
-    // A purchase made later on another device is applied once.
-    await backend.spend(
-        'other-device-1', PremiumKind.boost, BoostKind.bought.name);
-    await fresh.syncOnline();
-    expect(fresh.activeBoost?.kind, BoostKind.bought);
-    fresh.dispose();
-  });
-
   // DEC-154: with the new game wired (main.dart), visits go there and the
   // old clicker boost is untouched.
   test('새 게임이 연결되면 친구 방문은 새 게임으로 가고, 본 방문은 서버에 다시 묻지 않는다', () async {
@@ -175,29 +101,6 @@ void main() {
     ]);
     await c.syncOnline();
     expect(handed, ['visit_a']);
-    expect(c.guestArrivals, isEmpty);
-    expect(c.activeBoost, isNull, reason: '예전 클리커 부스트는 쓰지 않음');
-    c.dispose();
-  });
-
-  test('친구 방문과 초대 손님은 한 번씩만 부스트가 되고 손님 줄에 선다', () async {
-    final t = FakeTime();
-    final (c, b, _, _) = await start(t);
-    await b.signIn(); // background sync never opens the Kakao login
-    b.inbox.addAll([
-      const ServerVisit(id: 'visit_a', name: '앨리스', invite: false),
-      const ServerVisit(
-          id: 'invite_b', name: '밥', invite: true, look: {'hat': 'beanie'}),
-    ]);
-    await c.syncOnline();
-    expect(c.guestArrivals.map((g) => g.name), ['앨리스', '밥']);
-    expect(c.activeBoost?.kind, BoostKind.invite); // strongest wins
-    expect(c.state.support.appliedVisits, {'visit_a', 'invite_b'});
-    c.guestShown(c.guestArrivals.first);
-    await c.syncOnline();
-    expect(c.guestArrivals.map((g) => g.name), ['밥']);
-    expect(b.name, '테스터');
-    expect(b.look['hat'], c.state.equippedCosmetic(CosmeticSlot.hat));
     c.dispose();
   });
 
@@ -271,8 +174,6 @@ void main() {
     final c = GameController(MemoryGameRepository(), t);
     await c.initialize();
     expect(await c.addFriend('BBAAAAAAAA'), OnlineTexts.notSetUp);
-    expect(await c.spendGold(PremiumKind.boost, BoostKind.bought.name),
-        OnlineTexts.notSetUp);
     expect(await c.buyGoldPack('gold_60'), OnlineTexts.notSetUp);
     expect(await c.goldPacks(), isEmpty);
     await c.syncOnline(); // no-op, no throw

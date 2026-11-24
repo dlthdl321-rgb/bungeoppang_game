@@ -1,8 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/billing_service.dart';
-import 'package:todays_bungeoppang/invite_models.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
-import 'package:todays_bungeoppang/server_invite_repository.dart';
 
 FakeOnlineBackend backend() => FakeOnlineBackend(products: {
       'gold_60': 60
@@ -21,8 +19,7 @@ void main() {
     expect(off.configured, isFalse);
     expect(await off.signIn(), SignInResult.failed);
     expect(off.syncWallet(), failsWith(OnlineFailure.unavailable));
-    expect(const ServerInvitationRepository(off).register(),
-        failsWith(OnlineFailure.unavailable));
+    expect(off.inviteRegister(), failsWith(OnlineFailure.unavailable));
     expect(await const NoBillingService().available(), isFalse);
   });
 
@@ -53,33 +50,9 @@ void main() {
     expect((await b.syncWallet()).grants.length, 2);
   });
 
-  test('서버 초대 저장소는 필요하면 로그인하고 서버 출처로 표시한다', () async {
-    final b = backend();
-    final repo = ServerInvitationRepository(b);
-    expect(repo.origin, InviteOrigin.server);
-    final profile = await repo.register();
-    expect(b.signedIn, isTrue);
-    expect(profile.origin, InviteOrigin.server);
-    final ticket = await repo.createTicket(
-        profile, 'mission-1', DateTime.utc(2026, 10, 6));
-    expect(ticket.missionToken, 'mission-1');
-    expect(ticket.url, startsWith('https://'));
-    b.inviteEvents.add(InviteEvent(
-        eventId: 'e1',
-        ticketId: ticket.id,
-        visitId: 'v1',
-        playerId: 'p1',
-        kind: InviteEventKind.clicked,
-        atUtc: DateTime.utc(2026, 10, 6),
-        origin: InviteOrigin.server));
-    expect(await repo.fetchEvents(profile, {}), hasLength(1));
-    expect(await repo.fetchEvents(profile, {'e1'}), isEmpty);
-  });
-
   test('로그인을 취소하면 초대는 로그인 필요로 끝난다', () async {
     final b = backend()..signInResult = SignInResult.canceled;
-    expect(ServerInvitationRepository(b).register(),
-        failsWith(OnlineFailure.signedOut));
+    expect(b.inviteRegister(), failsWith(OnlineFailure.signedOut));
   });
 
   test('결제는 구매 결과를 스트림으로 알린다', () async {

@@ -3,15 +3,12 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'test_support.dart';
-import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/feedback_config.dart';
 import 'package:todays_bungeoppang/game_audio.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
-import 'package:todays_bungeoppang/game_events.dart';
 import 'package:todays_bungeoppang/models.dart';
-import 'package:todays_bungeoppang/repository.dart';
-import 'controller_test.dart' show FakeTime, catchPlacedGoldenChance;
-import 'stage8_progress_test.dart' show asVersion, progressed, plainJson;
+import 'fake_time.dart' show FakeTime;
+import 'old_save_helpers.dart' show asVersion, progressed, plainJson;
 
 const sizes = [Size(360, 800), Size(390, 844), Size(412, 915)];
 
@@ -104,66 +101,6 @@ void main() {
       expect((await repo.load())!.settings.music, isFalse);
       expect(c.state.settings.musicVolume, 100);
       c.dispose();
-    });
-  });
-
-  group('콤보 경제 보너스', () {
-    Future<List<BigInt>> gains(ComboBonus rule, {bool direct = true}) async {
-      final clock = FakeTime();
-      final c =
-          GameController(MemoryGameRepository(), clock, comboBonusRule: rule);
-      await c.initialize();
-      final result = [for (var i = 0; i < 5; i++) c.tap(direct: direct)];
-      c.dispose();
-      return result;
-    }
-
-    test('기본값은 꺼져 있어 콤보가 생산을 바꾸지 않는다', () async {
-      expect(comboBonus.enabled, isFalse);
-      expect(await gains(comboBonus), List.filled(5, BigInt.one));
-    });
-    test('켜면 기준 콤보부터 직접 탭에만 적용', () async {
-      const rule = ComboBonus(enabled: true, threshold: 3, permille: 2000);
-      expect(await gains(rule),
-          [BigInt.one, BigInt.one, BigInt.two, BigInt.two, BigInt.two]);
-      expect(await gains(rule, direct: false), List.filled(5, BigInt.one));
-    });
-  });
-
-  group('연출 이벤트', () {
-    late FakeTime clock;
-    late MemoryGameRepository repo;
-    late GameController c;
-    late List<GameEvent> events;
-    setUp(() async {
-      clock = FakeTime();
-      repo = MemoryGameRepository();
-      c = GameController(repo, clock);
-      await c.initialize();
-      events = [];
-      c.events.listen(events.add);
-    });
-    tearDown(() => c.dispose());
-
-    test('레벨업·업적·부스트·구매는 성공했을 때만 알린다', () async {
-      c.state.tutorialDone = true;
-      c.state.lifetime = BigInt.from(10);
-      repo.failNextSave = true;
-      expect(await c.claimLevelUp(2), isFalse);
-      expect(await c.claimLevelUp(2), isTrue);
-      expect(await c.claimAchievement('bake-1'), isTrue);
-      expect(await catchPlacedGoldenChance(c), isTrue);
-      c.state.buns = BigInt.from(1000);
-      expect(await c.buyUpgrade(upgrades.first, 1), isTrue);
-      await pumpEventQueue();
-      expect(events.map((e) => e.kind), [
-        GameEventKind.levelUp,
-        GameEventKind.achievement,
-        GameEventKind.boostStarted,
-        GameEventKind.purchase,
-      ]);
-      expect(events.first.amount, BigInt.from(3));
-      expect(events[2].amount, BigInt.one); // 황금 찬스: 1분 동안
     });
   });
 

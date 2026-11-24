@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
-import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/online_ranking.dart';
 import 'package:todays_bungeoppang/ranking_config.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/ranking_panel.dart';
-import 'controller_test.dart' show FakeTime;
+import 'fake_time.dart' show FakeTime;
 import 'test_support.dart' show tapVisible;
 import 'online_backend_test.dart' show backend;
 import 'test_support.dart' show expectNoPrototypeText;
@@ -66,23 +65,6 @@ FakeOnlineBackend rankedBackend() {
 }
 
 void main() {
-  group('점수 변환', () {
-    test('64비트 상한을 넘는 값은 상한으로 고정', () {
-      final s = GameState.initial(now)..lifetime = rankingScoreMax + BigInt.one;
-      s.records
-        ..bestAutoRate = BigInt.from(123)
-        ..todayBestCombo = 7;
-      expect(rankingScores(s), {
-        rankingBestAutoRate: 123,
-        rankingLifetime: rankingScoreMax.toInt(),
-        rankingBestCombo: 7,
-      });
-      expect(lifetimeExceedsRanking(s), isTrue);
-      s.lifetime = rankingScoreMax;
-      expect(lifetimeExceedsRanking(s), isFalse);
-    });
-  });
-
   group('제출 시점', () {
     late FakeTime clock;
     late CountingRepository repo;
@@ -98,53 +80,22 @@ void main() {
     });
     tearDown(() => c.dispose());
 
-    test('탭마다 보내지 않고 5분 간격, 바뀐 점수만 보낸다', () async {
-      c.tick();
-      expect(ranking.submissions.length, 1); // First authenticated tick.
+    // 32번 2단계: the app sends no scores (the server reads its own record
+    // of the new game, DEC-153); it only loads the boards.
+    test('점수를 보내지 않고 순위만 불러오며, 저장 파일은 건드리지 않는다', () async {
       final saves = repo.saves;
-      for (var i = 0; i < 300; i++) {
-        c.tap();
-        clock.advance(100);
-      }
-      expect(ranking.submissions.length, 1);
       clock.advance(rankingSubmitIntervalMs);
       c.tick();
-      expect(ranking.submissions.length, 2);
-      expect(ranking.submissions.last[rankingBestCombo],
-          c.state.records.bestCombo);
-      clock.advance(rankingSubmitIntervalMs);
-      c.tick();
-      expect(ranking.submissions.length, 2); // Nothing improved.
-      expect(repo.saves, saves); // Ranking never writes the save file.
+      expect((await c.loadRanking(rankingWorkshopPieces))!.board, rankingWorkshopPieces);
+      expect(ranking.submissions, isEmpty);
+      expect(ranking.loaded, [rankingWorkshopPieces]);
+      expect(repo.saves, saves);
     });
 
-    test('레벨업·앱 나가기·순위 열기에서는 바로 보내되 서버 최소 간격은 지킨다', () async {
-      c.tick();
-      final base = ranking.submissions.length;
-      c.state.tutorialDone = true;
-      c.state.lifetime = BigInt.from(10);
-      expect(await c.claimLevelUp(2), isTrue);
-      expect(ranking.submissions.length, base); // Under a minute: held back.
-      clock.advance(rankingSubmitMinGapMs);
-      c.state.lifetime = BigInt.from(11);
-      await c.leaveActive();
-      expect(ranking.submissions.length, base + 1);
-      await c.resume();
-      clock.advance(rankingSubmitMinGapMs);
-      c.tap();
-      expect((await c.loadRanking(rankingBestCombo))!.board, rankingBestCombo);
-      expect(ranking.submissions.length, base + 2);
-      expect(ranking.loaded, [rankingBestCombo]);
-    });
-
-    test('로그인하지 않았거나 준비되지 않았으면 보내지도 불러오지도 않는다', () async {
+    test('로그인하지 않았거나 준비되지 않았으면 불러오지 않는다', () async {
       ranking.authenticated = false;
       await c.refreshRanking();
-      c.tap();
-      clock.advance(rankingSubmitIntervalMs);
-      c.tick();
-      expect(await c.loadRanking(rankingLifetime), isNull);
-      expect(ranking.submissions, isEmpty);
+      expect(await c.loadRanking(rankingWorkshopLifetime), isNull);
       expect(ranking.loaded, isEmpty);
     });
   });
@@ -164,20 +115,17 @@ void main() {
 
     tearDown(() => c.dispose());
 
-    test('성공하면 프로필을 보내고 바로 내 기록을 올린다', () async {
+    test('성공하면 프로필을 보내고 순위를 불러올 수 있다', () async {
       await start();
       expect(c.rankingStatus.configured, isTrue);
       expect(c.rankingStatus.authenticated, isFalse);
-      c.tap();
       expect(await c.signInOnline(), isNull);
       expect(online.signedIn, isTrue);
       expect(c.rankingStatus.authenticated, isTrue);
       expect(online.name, '테스터'); // the Kakao nickname
-      expect(online.rankingSubmissions.single[rankingLifetime], 1);
-      final board = (await c.loadRanking(rankingLifetime))!;
-      expect(board.entries.map((e) => (e.rank, e.name)),
-          [(1, '붕어왕'), (2, '테스터'), (3, '팥순이')]);
-      expect(board.me, (rank: 2, score: BigInt.one));
+      expect(online.rankingSubmissions, isEmpty, reason: '예전 점수는 보내지 않음');
+      final board = (await c.loadRanking(rankingWorkshopPieces))!;
+      expect(board.entries.map((e) => (e.rank, e.name)), [(1, '붕어왕'), (2, '팥순이')]);
     });
 
     test('사용자가 취소하면 메시지 없이 그대로 로그아웃 상태', () async {
@@ -206,9 +154,7 @@ void main() {
       await c.refreshRanking();
       expect(c.rankingStatus.configured, isFalse);
       expect(await c.signInOnline(), OnlineTexts.notSetUp);
-      expect(await c.loadRanking(rankingBestAutoRate), isNull);
-      c.tap();
-      expect(c.state.lifetime, BigInt.one);
+      expect(await c.loadRanking(rankingWorkshopPieces), isNull);
     });
 
     test('배경 동기화는 카카오 로그인 화면을 열지 않는다', () async {
@@ -226,16 +172,15 @@ void main() {
       expect(online.signIns, 0);
     });
 
-    test('로그아웃하면 카카오와 Firebase 모두에서 나가고, 다시 로그인하면 기록을 새로 보낸다', () async {
+    test('로그아웃하면 카카오와 Firebase 모두에서 나가고, 다시 로그인할 수 있다', () async {
       await start();
       await c.signInOnline();
       await c.signOutOnline();
       expect(online.signOuts, 1);
       expect(online.signedIn, isFalse);
       expect(c.rankingStatus.authenticated, isFalse);
-      clock.advance(rankingSubmitMinGapMs);
       await c.signInOnline();
-      expect(online.rankingSubmissions.length, 2);
+      expect(c.rankingStatus.authenticated, isTrue);
     });
   });
 
@@ -245,7 +190,6 @@ void main() {
         final online = rankedBackend();
         final c = await setUpAccount(tester, size,
             textScale: scale,
-            developerTools: false,
             online: online,
             ranking: ServerRankingService(online));
         // 32번 1단계: the new game's boards (DEC-153); my score is the

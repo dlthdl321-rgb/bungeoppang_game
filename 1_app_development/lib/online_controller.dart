@@ -29,7 +29,6 @@ extension OnlineCommands on GameController {
       if (result == SignInResult.success && !_disposed) {
         await syncOnline();
         await refreshRanking();
-        submitRankingIfDue(force: true);
       }
       return null;
     } finally {
@@ -44,7 +43,6 @@ extension OnlineCommands on GameController {
     await online.signOut();
     _levelOneReported = false;
     _inviteRetryAtMs = 0;
-    _lastRankingScores = null;
     await refreshRanking();
   }
 
@@ -63,8 +61,8 @@ extension OnlineCommands on GameController {
             slot.name: state.equippedCosmetic(slot)
       };
 
-  /// When signed in: sends my look, reports Lv.1 for an invitation I
-  /// accepted, and turns waiting visits into boosts. Safe to call often;
+  /// When signed in: sends my look, reports the invitation goal, refreshes
+  /// the wallet and the ranking, and hands visits to the new game. Safe to call often;
   /// never opens the Kakao login.
   Future<void> syncOnline() async {
     if (!online.configured || _onlineSyncing || _disposed) return;
@@ -88,18 +86,10 @@ extension OnlineCommands on GameController {
       if (workshopRankingLaunched) {
         try { await online.rankingWorkshopSubmit(); } on OnlineException { /* next sync retries */ }
       }
-      final visits = await online.fetchVisits(seenFriendVisits?.call() ?? state.support.appliedVisits);
-      if (onFriendVisits case final hand? when visits.isNotEmpty && !_disposed) {
-        await hand(visits);
-      } else if (visits.isNotEmpty && !_disposed) {
-        await applyGuestVisits([
-          for (final v in visits)
-            GuestVisit(
-                id: v.id,
-                name: v.name,
-                kind: v.invite ? BoostKind.invite : BoostKind.visit,
-                look: v.look)
-        ]);
+      // DEC-154: visits go to the new game; without it they stay on the server.
+      if (onFriendVisits case final hand? when !_disposed) {
+        final visits = await online.fetchVisits(seenFriendVisits?.call() ?? const {});
+        if (visits.isNotEmpty && !_disposed) await hand(visits);
       }
     } on OnlineException {
       // Offline or not set up: try again on the next sync.

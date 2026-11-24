@@ -16,7 +16,7 @@ import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/gold_widgets.dart';
 import 'package:todays_bungeoppang/usage_stats.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
-import 'controller_test.dart' show FakeTime;
+import 'fake_time.dart' show FakeTime;
 import 'step02_controller_test.dart' show MemoryRepository;
 
 /// A fake recorder: keeps what would have gone to Firebase Analytics.
@@ -286,11 +286,11 @@ void main() {
       final c = GameController(MemoryGameRepository(), FakeTime(), usage: UsageStats(sink))
         ..state = GameState.initial(DateTime.utc(2026, 11, 18));
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
-          child: GoldChargeTab(controller: c, legacyBoost: false)))));
+          child: GoldChargeTab(controller: c)))));
       await tester.pump();
       await tester.pumpWidget(const SizedBox());
       await tester.pumpWidget(MaterialApp(home: Scaffold(body: SingleChildScrollView(
-          child: GoldChargeTab(controller: c, legacyBoost: false)))));
+          child: GoldChargeTab(controller: c)))));
       await tester.pump();
       expect(sink.names, ['pay_view']);
       c.dispose();

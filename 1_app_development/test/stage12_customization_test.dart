@@ -1,22 +1,19 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:todays_bungeoppang/achievement_config.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
-import 'package:todays_bungeoppang/game_events.dart';
 import 'package:todays_bungeoppang/menu_state.dart';
 import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/models.dart';
-import 'package:todays_bungeoppang/progress_rules.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
 import 'package:todays_bungeoppang/ui/fish_painter.dart';
 import 'package:todays_bungeoppang/ui/cook_cut.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
-import 'controller_test.dart' show FakeTime;
-import 'stage8_progress_test.dart' show now, plainJson, progressed;
+import 'fake_time.dart' show FakeTime;
+import 'old_save_helpers.dart' show now, plainJson, progressed;
 
 Iterable<CosmeticDefinition> inSlot(CosmeticSlot slot) =>
     cosmeticDefinitions.where((d) => d.slot == slot);
@@ -76,6 +73,10 @@ Map<String, dynamic> asV9(GameState s) {
 void setLevel(GameState s, int level, DateTime at) => s
   ..level = level
   ..missions = MissionState.forLevel(level, at);
+
+/// Collectible cosmetics [s] owns (was progress_rules.dart, 32번).
+int cosmeticsOwnedCount(GameState s) =>
+    cosmeticDefinitions.where((d) => d.collectible && s.ownsCosmetic(d)).length;
 
 void main() {
   group('카탈로그', () {
@@ -146,10 +147,12 @@ void main() {
     test('수집 대상은 73종(붕어빵 7, 사장님 45, 가게 21), 캐릭터·피부톤은 제외', () {
       // 26번 4-7단계: 하의 6종 추가(v2 그림 전에는 꾸미기 창에서 숨김).
       // 26번 3차 AV3: 낮게 묶은 머리 추가(그림 전에는 숨김).
-      expect(collectibleCosmeticCount, 73);
-      expect(collectibleCount(CosmeticCategory.bungeoppang), 7); // No flavours.
-      expect(collectibleCount(CosmeticCategory.avatar), 45);
-      expect(collectibleCount(CosmeticCategory.stall), 21); // + 등불 3
+      int collectible([CosmeticCategory? c]) => cosmeticDefinitions
+          .where((d) => d.collectible && (c == null || d.slot.category == c)).length;
+      expect(collectible(), 73);
+      expect(collectible(CosmeticCategory.bungeoppang), 7); // No flavours.
+      expect(collectible(CosmeticCategory.avatar), 45);
+      expect(collectible(CosmeticCategory.stall), 21); // + 등불 3
       expect(
           cosmeticDefinitions.fold(BigInt.zero, (a, d) => a + d.cost),
           BigInt.from(550)); // + 하의 6종 5+5+6+7+8+9, 낮게 묶은 머리 5 (AV3)
@@ -283,69 +286,13 @@ void main() {
     });
     tearDown(() => c.dispose());
 
-    var funds = 0; // Ledger IDs are single-use.
-    void fund(int coins) => c.state.support.transact(
-        'test:fund${funds++}', BigInt.from(coins), 'test', c.gameNow);
-
-    test('레벨 미달·코인 부족이면 실패하고, 구매는 원장에 cosmetic:<id>로 남는다', () async {
-      fund(2);
-      expect(await c.buyOrEquipCosmetic('beanie'), isFalse); // Lv.2 item
-      setLevel(c.state, 2, now);
-      expect(await c.buyOrEquipCosmetic('beanie'), isFalse); // 3 coins
-      fund(1);
-      expect(await c.buyOrEquipCosmetic('beanie'), isTrue);
-      expect(c.state.support.coins, BigInt.zero);
-      expect(c.state.support.ledger, contains('cosmetic:beanie'));
-      expect(c.state.equippedCosmetic(CosmeticSlot.hat), 'beanie');
-      // Back to the free default and again: no second charge.
-      expect(await c.buyOrEquipCosmetic('nohat'), isTrue);
-      expect(await c.buyOrEquipCosmetic('beanie'), isTrue);
-      expect(c.state.support.coins, BigInt.zero);
-    });
-
     test('피부톤은 1만 있고(26번 3차 AV3) 수집 수에 들어가지 않는다', () async {
       final before = c.state.support.ledger.length;
       expect(await c.buyOrEquipCosmetic('skin1'), isTrue);
       expect(c.state.equippedCosmetic(CosmeticSlot.skin), 'skin1');
       expect(c.state.support.ledger.length, before);
-      expect(cosmeticsOwnedCount(c.state), 0);
     });
 
-    test('분류별 업적은 해당 분류만 센다', () async {
-      AchievementDefinition def(String id) =>
-          achievementDefinitions.firstWhere((d) => d.id == id);
-      fund(200);
-      setLevel(c.state, 10, now);
-      for (final id in ['beanie', 'earmuffs', 'ponytail', 'padding']) {
-        expect(await c.buyOrEquipCosmetic(id), isTrue);
-      }
-      expect(await c.buyOrEquipCosmetic('sugar'), isTrue);
-      expect(await c.buyOrEquipCosmetic('dusk'), isFalse); // needs production
-      expect(achievementProgress(c.state, def('avatar-5')), BigInt.from(4));
-      expect(achievementProgress(c.state, def('fish-5')), BigInt.one);
-      expect(achievementMet(c.state, def('avatar-5')), isFalse);
-      expect(await c.buyOrEquipCosmetic('goldtongs'), isTrue);
-      expect(achievementMet(c.state, def('avatar-5')), isTrue);
-      expect(await c.claimAchievement('avatar-5'), isTrue);
-      expect(achievementTarget(def('cosmetics-all')), BigInt.from(73));
-    });
-
-    test('레벨업 알림은 새로 열린 꾸미기를 분류별 한 줄로 알린다', () async {
-      final events = <GameEvent>[];
-      c.events.listen(events.add);
-      c.state
-        ..tutorialDone = true
-        ..lifetime = BigInt.from(10);
-      c.tick();
-      expect(await c.claimLevelUp(2), isTrue);
-      await pumpEventQueue();
-      expect(events.last.kind, GameEventKind.levelUp);
-      expect(events.last.details, [
-        '새 붕어빵 꾸미기 · 하트 비늘, 슈가파우더',
-        '새 사장님 꾸미기 · 묶은 머리, 털 비니, 크림 긴팔 외 6개',
-        '새 가게 꾸미기 · 보랏빛 해질녘, 종이 등불, 무쇠 화로 외 2개',
-      ]);
-    });
   });
 
   group('그리기', () {
