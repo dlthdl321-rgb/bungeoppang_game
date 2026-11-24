@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
+import 'package:todays_bungeoppang/invite_reward_rules.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
@@ -136,6 +137,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(repo.saves, saves + 1);
     expect(account.state.settings.musicVolume, lessThan(volume));
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  // 29번 친구 초대 (DEC-150): '친구' is in the new home's menu only once
+  // invites launch, from Lv.3, with the new game's goal and gold.
+  testWidgets('새 홈 메뉴 친구: 가출시엔 없고, 출시 스위치를 켜면 Lv.3부터 열리며 황금 보상을 안내한다', (tester) async {
+    Future<void> openMenu() async {
+      await tester.tap(find.byKey(const Key('menu-menubar')));
+      await tester.pumpAndSettle();
+    }
+    await home(tester, const Size(390, 844), level: 5);
+    await openMenu();
+    expect(find.byKey(const Key('menu-friends')), findsNothing, reason: '가출시(DEC-029)');
+    await tester.pumpWidget(const SizedBox.shrink());
+    debugInviteLaunchedOverride = true;
+    addTearDown(() => debugInviteLaunchedOverride = null);
+    await home(tester, const Size(390, 844), level: 2);
+    await openMenu();
+    await tester.ensureVisible(find.byKey(const Key('menu-friends')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(find.byKey(const Key('menu-lock-friends'))).data, 'Lv.3 달성하면 열려요');
+    await tester.pumpWidget(const SizedBox.shrink());
+    await home(tester, const Size(390, 844), level: 3);
+    await openMenu();
+    await tap(tester, 'menu-friends');
+    expect(find.byKey(const Key('my-online-id')), findsOneWidget);
+    expect(find.textContaining('친구는 황금 3개'), findsOneWidget);
+    expect(find.textContaining('Lv.5이 되면 나도 황금 5개'), findsOneWidget);
+    expect(find.textContaining('하루 3명, 모두 20명까지'), findsOneWidget);
+    expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 

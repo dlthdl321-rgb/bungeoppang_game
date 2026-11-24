@@ -35,6 +35,12 @@ export async function claimDevelopmentProgress(store: Store, uid: string, progre
     return active;
   });
 }
+/** The account's active progress, or undefined before the first claim
+ * (29번 친구 초대: the invited player's level is read from its checkpoint). */
+export async function readDevelopmentProgress(tx: Tx, uid: string): Promise<ActiveProgress | undefined> {
+  const value = await tx.get(path(uid));
+  return value ? decode(value) : undefined;
+}
 /** Call inside the SAME transaction as reserving/committing a composite
  * purchase. A prior standalone check is vulnerable to transfer races. */
 export async function requireDevelopmentProgress(tx: Tx, uid: string,

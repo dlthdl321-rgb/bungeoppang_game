@@ -41,7 +41,7 @@ WorkshopController의 part 파일(`workshop_controller_*.dart`)은 `extension ..
 
 **홈 화면 구성 (2026-11-23 28번 C3 이후).** 실제 홈 [ui/workshop_page.dart](../../../1_app_development/lib/ui/workshop_page.dart)는 `NightHome`([ui/night_home.dart](../../../1_app_development/lib/ui/night_home.dart))으로 장면을 그린다. 예전 클리커 홈(`GameHome`)과 `NightHome`의 예전 분기는 지웠으므로 `NightHome`은 새 홈 전용이며 만드는 곳도 `workshop_page.dart` 한 곳이다. 상점 `ShopPanel`·메뉴 `MenuPanel`·꾸미기 `WardrobePanel`·설정 `SoundSettings`는 계정 쪽 GameController(설정·황금 잔액·착용 꾸미기)를 받는다. 이 파일들을 고친 뒤에는 `golden` 태그 테스트를 꼭 돌린다.
 
-예전 클리커의 **로직**(`economy*.dart`, `prestige_*`, `support_*`, `weekly_config.dart`, `achievement_config.dart`)과 GameController는 남아 있고 테스트도 있다. 계정·온라인·결제·저장 형식과 얽혀 있으므로 **지우거나 바꾸기 전에 승인을 받는다.** 랭킹·친구·초대 패널은 지금 새 화면에 연결이 없지만 보존한다(`stage9_ranking_test`가 직접 띄워 검사).
+예전 클리커의 **로직**(`economy*.dart`, `prestige_*`, `support_*`, `weekly_config.dart`, `achievement_config.dart`)과 GameController는 남아 있고 테스트도 있다. 계정·온라인·결제·저장 형식과 얽혀 있으므로 **지우거나 바꾸기 전에 승인을 받는다.** 랭킹·친구·초대 패널은 지금 새 화면에 연결이 없지만 보존한다(`stage9_ranking_test`가 직접 띄워 검사). 친구 초대(29번)는 새 홈 메뉴 '친구'로 연결돼 있고 출시 스위치 `inviteLaunched`(`lib/invite_reward_rules.dart`)로 연다 — 규칙 `invite_reward_rules.dart`·서버 `functions/src/invites.ts`, 테스트 `premium_flow_test`·`workshop_shared_ui_test`·`functions/test/invites.test.ts`.
 
 ## 3. 기능 → 코드 → 보호 테스트
 

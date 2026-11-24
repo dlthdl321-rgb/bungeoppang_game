@@ -19,6 +19,7 @@ import 'invite_repository.dart';
 import 'mock_invite_repository.dart';
 import 'invite_config.dart';
 import 'invite_rules.dart';
+import 'invite_reward_rules.dart';
 import 'achievement_config.dart';
 import 'cosmetic_config.dart';
 import 'menu_rules.dart';
@@ -93,6 +94,11 @@ class GameController extends ChangeNotifier {
   /// Firebase backend (online_controller.dart): friends, visits, invites.
   final OnlineBackend online;
   bool _onlineSyncing = false, _levelOneReported = false, _signingIn = false;
+  /// 29번 친구 초대: whether the NEW game (WorkshopController) reached the
+  /// invitation's goal level ([InviteRewardRules.goalReached]); set by the
+  /// app's wiring. Null: never report.
+  bool Function()? inviteGoalReached;
+  int _inviteRetryAtMs = 0;
   /// The owner name (사장님 이름) friends and rankings show, and how the
   /// player logs in; both set by OwnerAccount (26번 2-1단계).
   String? ownerName;

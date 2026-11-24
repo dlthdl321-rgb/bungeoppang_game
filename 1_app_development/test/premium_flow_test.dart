@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:todays_bungeoppang/development_balance.dart';
+import 'package:todays_bungeoppang/invite_reward_rules.dart';
 import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/billing_service.dart';
@@ -174,17 +179,38 @@ void main() {
     c.dispose();
   });
 
-  test('Lv.2가 되면 초대 Lv.1 달성을 한 번만 알린다', () async {
+  // 29번 (2026-11-24): the goal is the NEW game's level (it was the old
+  // clicker's Lv.2, which no longer rises).
+  test('새 게임이 초대 목표 레벨이 되면 한 번만 알리고, 서버가 "아직"이면 30분 뒤 다시', () async {
     final t = FakeTime();
     final (c, b, _, _) = await start(t);
+    var reached = false;
+    c.inviteGoalReached = () => reached;
     await b.signIn();
     await c.syncOnline();
     expect(b.levelOneReports, 0);
     setLevel(c.state, 2, t.now);
     await c.syncOnline();
+    expect(b.levelOneReports, 0, reason: '예전 레벨은 목표가 아님');
+    reached = true;
+    b.inviteNotYet = true;
     await c.syncOnline();
-    expect(b.levelOneReports, 1);
+    await c.syncOnline();
+    expect(b.levelOneReports, 1, reason: '"아직"이면 바로 다시 묻지 않음');
+    b.inviteNotYet = false;
+    t.advance(inviteGoalRetryMs);
+    await c.syncOnline();
+    await c.syncOnline();
+    expect(b.levelOneReports, 2);
     c.dispose();
+  });
+
+  test('초대 보상 규칙은 공통 밸런스의 invite_rewards를 읽는다 (DEC-151)', () {
+    final rules = InviteRewardRules.fromConfig(DevelopmentBalance.fromJson(
+        jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>));
+    expect([rules.inviterGold, rules.inviteeGold, rules.targetLevel, rules.dailyLimit, rules.lifetimeLimit], [5, 3, 5, 3, 20]);
+    expect(rules.goalReached(4), isFalse);
+    expect(rules.goalReached(5), isTrue);
   });
 
   test('친구 추가·방문·초대 아이디 입력은 실패 이유를 알려 준다', () async {

@@ -49,6 +49,8 @@ import 'workshop_records.dart';
 import '../pantry_home.dart';
 import '../pantry_rules.dart' show PantryShortage;
 import 'pantry_home.dart';
+import '../invite_reward_rules.dart';
+import 'friends_panel.dart';
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -65,6 +67,8 @@ class WorkshopPage extends StatefulWidget {
 }
 class _WorkshopPageState extends State<WorkshopPage> {
   WorkshopController get c => widget.controller;
+  /// 29번 친구 초대: amounts, goal level and the '친구' menu level.
+  late final _inviteRules = InviteRewardRules.fromConfig(c.config);
   int _windowCount=0;
   final _homeKey=GlobalKey();
   /// Story chapters already told in this run (26번 3차 H6, not saved).
@@ -593,8 +597,9 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // 일일 미션·주간 도전 live in the '오늘' window (H36). Rows that open
       // later (도감 Lv.3, 배경 테마 after the guide) are listed locked with
       // their condition; a tap says why (H32 → 4차 g5).
-      hidden:const {'ranking','friends','share','daily','event'},
-      locks:{for(final d in const ['achievements:collection','skins:stall'])
+      // 29번: '친구'(초대) opens at the official launch (DEC-150).
+      hidden:{'ranking',if(!invitesLaunched)'friends','share','daily','event'},
+      locks:{for(final d in const ['achievements:collection','skins:stall','friends'])
         if(_lockFor(d) case final lock?)d:lock},
       onOpen:(destination){Navigator.pop(ctx);_open(destination);})),
     Padding(padding:const EdgeInsets.all(8),child:Column(children:[
@@ -616,6 +621,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     'achievements:collection' => c.featureLock(WorkshopFeature.collection),
     // 재료 타이쿤 D·E: Lv.2(`pantry_prep`)부터, 영업 준비 중에만 (까닭을 띄움).
     'pantry' => c.featureLock(WorkshopFeature.pantry) ?? c.pantryPrepLock,
+    'friends' => c.state.level < _inviteRules.menuLevel ? 'Lv.${_inviteRules.menuLevel} 달성하면 열려요' : null,
     _ => null,
   };
   void _open(String destination) {
@@ -638,6 +644,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
       case 'daily': case 'event': unawaited(_daily());
       case 'missions': unawaited(_window('레벨 미션',(_)=>_levelMissions()));
       case 'gold': unawaited(_goldPacks());
+      case 'friends': unawaited(_window('친구',(_)=>FriendsPanel(controller:widget.accountController,
+        showRewardDetails:false,inviteGuide:_inviteRules.guide,inviteGoalLevel:_inviteRules.targetLevel)));
       case 'photo': _sharePhoto();
       // 재료 타이쿤 D: '재료 준비' 창 (홈의 재료 표시·'재료 준비' 버튼, 묶음 E).
       case 'pantry': unawaited(_window('재료 준비',(_)=>PantryWindow(controller:c,

@@ -771,6 +771,8 @@
 
 **2026-11-24 DEC-150·151:** 지금 코드의 초대 보상(코인)과 레벨 조건(계정 쪽 예전 레벨)은 예전 클리커 기준이며 새 게임에서는 동작하지 않는다(가출시는 숨김, DEC-029). 정식 출시 전에 새 게임 레벨 기준·황금 소량 보상(서버 지급·검증)으로 다시 설계한다. 랭킹은 미정(DEC-152).
 
+**2026-11-24 구현(29번 7절):** 수치는 `config/development_balance.json` `invite_rewards`(초대한 사람 5·받은 사람 3·목표 Lv.5·하루 3명·평생 20명·메뉴 Lv.3). 서버 `functions/src/invites.ts`가 수락 때 받은 사람(새 계정만)에게, 목표 도달 때 초대한 사람에게 황금을 지갑에 넣는다(원장 `inviteGold`). 목표 레벨은 서버가 가진 초대받은 사람의 진행 확인 기록(`workshopPlausibility`의 `level`)으로 판단하고 앱 신고값은 믿지 않는다. 하루 한도를 넘으면 기록하지 않고 다음 날 다시(앱이 30분 뒤 재요청), 평생 한도를 넘으면 기록만. 링크 없이 아이디만 입력해도 수락되도록 서버가 초대권을 한 번 만든다. 앱은 새 게임 레벨(`InviteRewardRules.goalReached`)로 신고하고(`GameController.inviteGoalReached`, `main.dart`에서 연결), 새 홈 메뉴 '친구'(Lv.3부터, `FriendsPanel` + 보상 안내)는 출시 스위치 `inviteLaunched`(`lib/invite_reward_rules.dart`, 지금 false)를 켜야 보인다. 예전 클리커의 코인 보상 코드는 예전 미션 테스트와 묶여 있어 남김(새 화면에서 안 보임, 예전 코드 정리 때 제거).
+
 ---
 
 ## 10. 화면 배치

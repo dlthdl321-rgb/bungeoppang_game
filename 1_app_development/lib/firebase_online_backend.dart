@@ -386,7 +386,7 @@ class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
   }
 
   @override
-  Future<void> inviteReachedLevelOne() => _call('inviteLevelOne');
+  Future<bool> inviteReachedLevelOne() async => (await _call('inviteLevelOne'))['retry'] != true;
 
   @override
   Future<List<InviteEvent>> inviteFetchEvents(Set<String> committed) async => [

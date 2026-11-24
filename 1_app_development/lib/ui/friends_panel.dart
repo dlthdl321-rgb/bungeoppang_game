@@ -14,7 +14,12 @@ import 'ranking_panel.dart' show OnlineAccountBar;
 class FriendsPanel extends StatefulWidget {
   final GameController controller;
   final bool showRewardDetails;
-  const FriendsPanel({super.key, required this.controller,this.showRewardDetails=true});
+  /// The new home (29번): how invitations pay, and the level the invited
+  /// friend aims for. Null in the old screens.
+  final String? inviteGuide;
+  final int? inviteGoalLevel;
+  const FriendsPanel({super.key, required this.controller,this.showRewardDetails=true,
+    this.inviteGuide,this.inviteGoalLevel});
   @override
   State<FriendsPanel> createState() => _FriendsPanelState();
 }
@@ -153,6 +158,8 @@ class _FriendsPanelState extends State<FriendsPanel> {
         const Divider(height: 28),
         if(widget.showRewardDetails) Text('초대받았나요? 친구 아이디를 입력하고 Lv.1을 달성하면, 그 친구가 손님으로 와서 '
             '${invite.durationSeconds ~/ 60}분 동안 생산 ${invite.multiplierPermille ~/ 1000}배'),
+        if (widget.inviteGuide case final guide?)
+          Text(guide, key: const Key('invite-guide'), style: const TextStyle(fontSize: 13)),
         const SizedBox(height: 6),
         _field(
             key: 'invite-accept',
@@ -161,7 +168,9 @@ class _FriendsPanelState extends State<FriendsPanel> {
             button: '입력',
             enabled: online && !_working,
             onPressed: () => _run(
-                () => c.acceptInvite(_invite.text), '초대를 받았어요. Lv.1을 달성해 보세요')),
+                () => c.acceptInvite(_invite.text), widget.inviteGoalLevel == null
+                    ? '초대를 받았어요. Lv.1을 달성해 보세요'
+                    : '초대를 받았어요. 가게를 Lv.${widget.inviteGoalLevel}까지 키워 보세요')),
       ]),
     );
   }

@@ -198,7 +198,9 @@ abstract class OnlineBackend {
 
   /// The invited player's side: accept [code] once. True if counted as new.
   Future<bool> inviteAccept(String code, {String? ticketId});
-  Future<void> inviteReachedLevelOne();
+  /// The invited player reached the goal (29번). False: the server said
+  /// "not yet" (ask again later); true: done or nothing to report.
+  Future<bool> inviteReachedLevelOne();
   Future<List<InviteEvent>> inviteFetchEvents(Set<String> committed);
 
   /// Sends my best scores (ranking_config.dart board names); the server
@@ -259,7 +261,7 @@ class NoOnlineBackend implements OnlineBackend {
   @override
   Future<bool> inviteAccept(String code, {String? ticketId}) async => _off();
   @override
-  Future<void> inviteReachedLevelOne() async => _off();
+  Future<bool> inviteReachedLevelOne() async => _off();
   @override
   Future<List<InviteEvent>> inviteFetchEvents(Set<String> committed) async =>
       _off();
@@ -307,6 +309,8 @@ class FakeOnlineBackend implements OnlineBackend {
   final visited = <String>{};
   final inbox = <ServerVisit>[];
   int levelOneReports = 0;
+  /// The server answers "not yet" to the invitation goal (29번).
+  bool inviteNotYet = false;
   @override
   String? displayName = '테스터';
 
@@ -525,9 +529,10 @@ class FakeOnlineBackend implements OnlineBackend {
   }
 
   @override
-  Future<void> inviteReachedLevelOne() async {
+  Future<bool> inviteReachedLevelOne() async {
     _check();
     levelOneReports++;
+    return !inviteNotYet;
   }
 
   @override

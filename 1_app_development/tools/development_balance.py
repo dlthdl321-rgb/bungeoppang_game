@@ -252,6 +252,12 @@ def validate(data, catalog):
             all(re.fullmatch(r'0|[1-9][0-9]*', check[k]) for k in ('slack_buns', 'first_checkpoint_max_lifetime')),
             '서버 타당성 검증 한도')
     require(0 <= data['welcome_reward']['gold'] <= 1000, '환영 황금 범위')
+    # 29번 친구 초대 (DEC-151): server-paid gold, bounded by the limits.
+    invite = data['invite_rewards']
+    require(1 <= invite['inviter_gold'] <= 100 and 0 <= invite['invitee_gold'] <= 100 and
+            2 <= invite['target_level'] <= data['fixed_requirements']['max_level'] and
+            1 <= invite['inviter_daily_limit'] <= invite['inviter_lifetime_limit'] <= 1000 and
+            1 <= invite['menu_unlock_level'] <= data['fixed_requirements']['max_level'], '친구 초대 보상 범위')
     # 26번 7단계: 매일 돌아올 이유. 행사 날짜는 이 설정에만 둔다(코드에 날짜 없음).
     daily = data['daily_return']
     # 4차 피드백 g7: 보상 기준 R = 탭 힘 × rate_taps_per_second + 자동/초(앱·서버 같은 식).

@@ -44,6 +44,13 @@ function kstWeek(ms: number): string {
   return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate() - weekday)).toISOString().slice(0, 10);
 }
 
+/** Where the last server-checked progress of [progress] is kept. Its
+ * `level` is a level the server accepted against server time (29번 친구
+ * 초대 reads it for the invited player's goal). */
+export function plausibilityCheckpointPath(account: string, progress: string): string {
+  return `users/${account}/workshopPlausibility/${progress}`;
+}
+
 /** Server-side plausibility validation (2026-11-03 user decision for the
  * closed test). The server cannot replay local cooking, so it bounds each
  * reported snapshot by server time and the server-owned skill rates, keeps a
@@ -138,7 +145,7 @@ export class PlausibilityValidator {
     }
     return { tap, auto, skills, premium };
   }
-  private checkpointPath(account: string, progress: string) { return `users/${account}/workshopPlausibility/${progress}`; }
+  private checkpointPath(account: string, progress: string) { return plausibilityCheckpointPath(account, progress); }
   private decodeCheckpoint(row: Doc | undefined): Checkpoint | undefined {
     if (!row) return undefined;
     return { ...parseSnapshot(row), atMs: natural(row.atMs), saleEvidence: natural(row.saleEvidence) };

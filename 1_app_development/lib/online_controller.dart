@@ -43,6 +43,7 @@ extension OnlineCommands on GameController {
     if (!online.configured) return;
     await online.signOut();
     _levelOneReported = false;
+    _inviteRetryAtMs = 0;
     _lastRankingScores = null;
     await refreshRanking();
   }
@@ -74,11 +75,13 @@ extension OnlineCommands on GameController {
       // The owner name from the first-run screen (26번 2-1단계), else the
       // login nickname.
       await online.setProfile(onlineLook, ownerName ?? online.displayName ?? '친구');
-      // The server ignores this unless I accepted an invitation and have
-      // not reported yet, so one call per session is enough.
-      if (state.level >= 2 && !_levelOneReported) {
-        await online.inviteReachedLevelOne();
-        _levelOneReported = true;
+      // 29번: once the new game reaches the goal level. The server ignores
+      // this unless I accepted an invitation, and checks its own record of
+      // my level; "not yet" asks again after [inviteGoalRetryMs].
+      final nowMs = clock.monotonicMilliseconds;
+      if (!_levelOneReported && nowMs >= _inviteRetryAtMs && (inviteGoalReached?.call() ?? false)) {
+        _levelOneReported = await online.inviteReachedLevelOne();
+        if (!_levelOneReported) _inviteRetryAtMs = nowMs + inviteGoalRetryMs;
       }
       await _syncWallet();
       final visits = await online.fetchVisits(state.support.appliedVisits);

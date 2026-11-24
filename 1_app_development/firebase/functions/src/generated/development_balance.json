@@ -2292,6 +2292,14 @@
   "welcome_reward": {
     "gold": 10
   },
+  "invite_rewards": {
+    "inviter_gold": 5,
+    "invitee_gold": 3,
+    "target_level": 5,
+    "inviter_daily_limit": 3,
+    "inviter_lifetime_limit": 20,
+    "menu_unlock_level": 3
+  },
   "daily_return": {
     "rate_taps_per_second": 2,
     "special_order": {

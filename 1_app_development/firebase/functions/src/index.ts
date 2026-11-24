@@ -150,11 +150,14 @@ export const inviteRegister = onCall(options, (req) =>
 export const inviteCreateTicket = onCall(options, (req) =>
   handle(() => invites.createTicket(store, catalog.packageName, signedIn(req), req.data ?? {}, Date.now())));
 
+// 29번 친구 초대 보상 (DEC-151): amounts and limits from the shared balance.
+const inviteRewardRules = invites.inviteRewards(developmentBalance);
+
 export const inviteAccept = onCall(options, (req) =>
-  handle(() => invites.accept(store, signedIn(req), req.data ?? {}, Date.now())));
+  handle(() => invites.accept(store, signedIn(req), req.data ?? {}, Date.now(), inviteRewardRules)));
 
 export const inviteLevelOne = onCall(options, (req) =>
-  handle(() => invites.reachedLevelOne(store, signedIn(req), Date.now())));
+  handle(() => invites.reachedLevelOne(store, signedIn(req), Date.now(), inviteRewardRules)));
 
 export const inviteFetchEvents = onCall(options, (req) =>
   handle(async () => ({ events: await invites.fetchEvents(store, signedIn(req), req.data ?? {}) })));
