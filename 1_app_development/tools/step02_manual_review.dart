@@ -1,4 +1,4 @@
-// Debug-only entry point for physical touch/tilt and lifecycle observation.
+// Debug-only entry point for physical painting touch and lifecycle observation.
 // It runs the actual app and never seeds or edits gameplay state.
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -59,8 +59,8 @@ class _ReviewObserver with WidgetsBindingObserver {
     final state = controller.state;
     final session = state.session;
     return 'phase=${session?.phase.name} token=${session?.token} '
-        'phaseMs=${state.phaseMs} first=${session?.firstBatterMs} '
-        'second=${session?.secondBatterMs} paused=${controller.gameplayPaused} '
+        'phaseMs=${state.phaseMs} first=${session?.firstBatter} '
+        'filling=${session?.filling} second=${session?.secondBatter} paused=${controller.gameplayPaused} '
         'cells=${state.grid.cells.map((cell) => '${cell.cooking}:${cell.cycle}:${cell.elapsedMs}').join(',')}';
   }
 

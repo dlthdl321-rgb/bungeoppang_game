@@ -10,6 +10,15 @@ npm test
 
 Node.js 22를 사용합니다. `npm test`는 TypeScript 빌드와 서버 단위 테스트를 실행합니다. 함수 소스는 `functions/src`, 테스트는 `functions/test`, Firestore 규칙과 인덱스는 이 폴더에 있습니다.
 
+## 운영 배포 (23번 7단계)
+
+운영 Firebase 프로젝트 만들기부터 배포·App Check·카카오·Play 결제 권한·테스트 구매까지는 [온라인 운영 설정](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/online_setup.md)을 따릅니다. 요약:
+
+- 서버 설정은 `functions/.env`(커밋 금지). `make_server_env.ps1`이 카카오 앱 ID를 묻고 판매 추첨 키를 만들어 씁니다. 견본은 `functions/.env.example`.
+- 모든 callable은 App Check를 강제합니다(`functions/src/callable_options.ts`). `.env`의 `APP_CHECK_ENFORCED=false`일 때만 꺼집니다.
+- 배포는 저장소 안 도구로: `firebase_local.cmd login` → `firebase_local.cmd use --add` → `firebase_local.cmd deploy --only "functions,firestore"`(B: 드라이브에서).
+- 에뮬레이터 검사(`run_emulator_checks.ps1`)는 실행 동안만 `functions/.env.local`을 만들어 운영 `.env` 값을 테스트 값으로 덮습니다. `.env.local`이 이미 있으면 멈춥니다.
+
 실제 배포에는 별도 Firebase·카카오·Play 설정이 필요합니다. [보존한 온라인 설정 문서](../../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/README.md)를 확인하세요. 문서 정리는 실제 서비스 배포를 뜻하지 않습니다.
 
 ## 개발 중인 내부 계약

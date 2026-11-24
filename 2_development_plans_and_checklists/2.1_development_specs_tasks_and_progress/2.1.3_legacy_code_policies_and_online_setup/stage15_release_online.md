@@ -2,6 +2,8 @@
 
 작성: 2026-10-06. 14단계(시안 적용)와 같은 작업 폴더에서 병행 중이다.
 
+> **2026-11-17: 아래 "직접 하셔야 하는 설정"은 [온라인 운영 설정](online_setup.md)(23번 7단계)이 대신한다.** 특히 서비스 계정은 `@appspot`이 아니라 2세대 함수의 Compute Engine 기본 계정이고, 키는 `--dart-define-from-file=dart_defines/online.json`으로 넣으며, 서버는 App Check를 강제한다.
+>
 > **2026-10-07: 로그인과 랭킹은 16단계에서 카카오 로그인과 자체 랭킹으로 바뀌었다.** 아래의 로그인·랭킹 설명과 설정 절차는 [16단계 기록](stage16_kakao_login_ranking.md)이 대신한다. 결제·지갑·친구·초대는 그대로다.
 
 ## 결정 기록
@@ -91,7 +93,7 @@
    - 앱 콘텐츠 → 데이터 삭제: 계정 삭제 요청 방법(이메일)을 입력한다.
    - 결제 프로필(판매자 계정)을 만든다.
 2. **Firebase**
-   - 프로젝트를 만들고 Android 앱(`com.todaybungeoppang.todays_bungeoppang`, SHA-1 등록)을 추가한다. Android 앱 설정 값(API 키, 앱 ID, 발신자 ID, 프로젝트 ID)을 확인한다(4번에서 사용).
+   - 프로젝트를 만들고 Android 앱(`com.todaybungeoppang.app`, SHA-1 등록 — 2026-11-17 옛 이름 `com.todaybungeoppang.todays_bungeoppang`에서 변경)을 추가한다. Android 앱 설정 값(API 키, 앱 ID, 발신자 ID, 프로젝트 ID)을 확인한다(4번에서 사용).
    - 로그인 설정(카카오 앱 ID, 커스텀 토큰 권한)은 [16단계 기록](stage16_kakao_login_ranking.md)의 콘솔 작업을 따른다.
    - Firestore를 서울 리전(`asia-northeast3`)으로 만든다.
    - Blaze 요금제로 바꾼다. Functions와 외부 API 호출에 필요하다.

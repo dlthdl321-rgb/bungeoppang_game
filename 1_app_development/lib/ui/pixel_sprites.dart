@@ -1,7 +1,9 @@
 import 'dart:ui' as ui;
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import '../avatar_atlas.dart';
 import '../avatar_rig_config.dart';
+import '../avatar_v2.dart';
 import '../cosmetic_config.dart';
 
 /// Pixel-art images in assets/images, drawn by tools/draw_pixel_assets.py
@@ -14,6 +16,12 @@ class PixelSprites {
   PixelSprites._();
 
   static const iconNames = [
+    // The bottom menu's icons cut to fill 96x96 (26번 4-2단계 F10,
+    // tools/fit_nav_icons.py).
+    'nav_menu',
+    'nav_skill',
+    'nav_skins',
+    'nav_shop',
     'shop',
     'skins',
     'records',
@@ -26,6 +34,12 @@ class PixelSprites {
     'butter',
     // Extra art (이미지/이미지 raw, 이미지생성프롬프트_통합 부록 S3, E1, E2).
     'bun',
+    // 황금붕어빵력 (25번 18번, 26번 4-3단계; lib/ui/currency_amount.dart).
+    'gold_bun',
+    // The '오늘' window's attendance stamp and order slip (25번 38번, 26번 3차
+    // H40; tools/apply_25_art.py --only today).
+    'stamp',
+    'order',
     'coin',
     'title',
     'prestige',
@@ -56,27 +70,112 @@ class PixelSprites {
     'volume',
     'save',
     'menu',
+    // The wardrobe's day/night tiles (25번 16번, 26번 4-5단계).
+    'time_scenetime',
+    'time_day',
+    'time_night',
+    'time_clock',
+    // 재료 타이쿤 (25번 62번; tools/apply_25_art.py --only ingredients):
+    // 기본 재료 7, 특별한 재료 4, 반죽·속 통 4, 상점 '재료' 탭, '재료 준비'.
+    'ing_flour',
+    'ing_milk',
+    'ing_egg',
+    'ing_sugar',
+    'ing_salt',
+    'ing_redbean',
+    'ing_cocoa',
+    'prem_butter',
+    'prem_redbean',
+    'prem_vanilla',
+    'prem_chocolate',
+    'tub_batter',
+    'tub_redbean',
+    'tub_custard',
+    'tub_cocoa',
+    'tab_ingredients',
+    'btn_prep',
   ];
 
+  /// 재료 타이쿤: each ingredient id of the `ingredients` config (basic and
+  /// special) and its icon in assets/images/icons (25번 62번).
+  static const ingredientIcons = {
+    'flour': 'ing_flour',
+    'milk': 'ing_milk',
+    'egg': 'ing_egg',
+    'sugar': 'ing_sugar',
+    'salt': 'ing_salt',
+    'adzuki': 'ing_redbean',
+    'cocoa_powder': 'ing_cocoa',
+    'cultured_butter': 'prem_butter',
+    'fresh_adzuki': 'prem_redbean',
+    'vanilla_bean': 'prem_vanilla',
+    'fine_chocolate': 'prem_chocolate',
+  };
+
   /// Effects in assets/images/fx: a tiny bungeoppang for tap particles
-  /// (12x9), a 4-point sparkle (7x7), two fairy frames (24x24, 160 ms each)
-  /// and a golden butter shine over the 96x72 centre bungeoppang.
+  /// (12x9), three twinkle frames with no outline (32x32, 25번 12번 →
+  /// 26번 4단계 F11, ui/sparkle_art.dart), two fairy frames (24x24, 160 ms
+  /// each) and a golden butter shine over the 96x72 centre bungeoppang.
   static const fxNames = [
     'minifish',
-    'sparkle',
+    'sparkle_1',
+    'sparkle_2',
+    'sparkle_3',
     'fairy_up',
     'fairy_down',
     'butter_glow',
+    // Special bungeoppang making (25번 필요한 그림 4·5번, tools/apply_25_art.py):
+    // a 32x48 spilled drip per paste (top centre on the fish's edge) and the
+    // 512x512 flip guide ring and its full honey ring (centre 256, radius 236).
+    'overflow_batter',
+    'overflow_redbean',
+    'overflow_custard',
+    'overflow_cocoa',
+    'flip_ring',
+    'flip_ring_fill',
   ];
 
+  /// Piping bags in assets/images/cook (128x192, 25번 필요한 그림 2번):
+  /// `piping_bag_<paste>` and the squeezing `piping_bag_<paste>_squeeze`,
+  /// paste = batter or a flavor. The paste under the nozzle touches
+  /// [pipingBagTip], where the finger is.
+  static const pipingPastes = ['batter', 'redbean', 'custard', 'cocoa'];
+  static const pipingBagTip = Offset(64, 188);
+
   /// Screen art in assets/images/ui: the wardrobe preview's stall interior
-  /// (120x72), the offline reward bag (64x48) and the small fish beside
-  /// panel titles (16x12).
-  static const uiNames = ['wardrobe_bg', 'offline', 'title_fish'];
+  /// (120x72), the offline reward bag (64x48) and the fish beside window
+  /// titles (96x72, 25번 35번 redraw, tools/apply_25_art.py --only title),
+  /// the big padlock of locked things
+  /// (128x128, 25번 13번, lib/ui/lock_overlay.dart), the skill window's
+  /// 'LEVEL UP' button, and the feature introduction cards' pictures
+  /// (160x120, 25번 22번; until drawn the card shows an icon).
+  static const uiNames = ['wardrobe_bg', 'offline', 'title_fish', 'lock_badge',
+    // The wardrobe preview's room without the counter (1440x864, 25번 11번,
+    // 26번 4-5단계); wardrobe_bg stays for the cooking scene.
+    'wardrobe_room',
+    // The skill window's 'LEVEL UP' word button, lit and dark (108x72, drawn
+    // 54x36; 25번 33번 by tools/apply_25_art.py --only levelup).
+    'levelup', 'levelup_off',
+    'intro_skills', 'intro_griddle', 'intro_collection', 'intro_recipes', 'intro_special_orders',
+    'intro_fish_cosmetics', 'intro_freshness', 'intro_stall_cosmetics',
+    // The 붕어빵 요정's story card (4차 IA3); until drawn the 'bun' icon.
+    'intro_fairy',
+    // 재료 타이쿤 E: '재료 준비' card, not drawn yet (btn_prep icon until then).
+    'intro_pantry',
+    // The shop's gold packs, smallest to largest (25번 40번, 26번 3차 H31;
+    // until drawn ui/gold_widgets.dart heaps the gold icon instead).
+    'gold_pack_1', 'gold_pack_2', 'gold_pack_3', 'gold_pack_4', 'gold_pack_5',
+    // The first-run screens' winter stall illustration (25번 37번, 26번 3차
+    // H2); until drawn they use the lowered snow background.
+    'first_run'];
 
   /// Weekly challenge banners in assets/images/event (160x48), one per
   /// season of weekly_config.dart.
   static const seasonBanners = ['spring', 'summer', 'autumn', 'winter'];
+
+  /// The wardrobe's lamp tiles: the whole post lamp (64x96,
+  /// `stall/lamp_<colour>.png`, 25번 16번).
+  static const lampTileColours = ['amber', 'rose', 'mint', 'lilac'];
 
   /// Coloured glass for the stall post lamps (`stall/postlamp_<colour>.png`,
   /// the same 9x14 as stall/postlamp.png).
@@ -103,11 +202,38 @@ class PixelSprites {
     'closed',
   ];
 
+  /// The special mold's hanging axle (25번 36번, same 1200x880 canvas as the
+  /// mold): rods and posts behind it, brass pins in front (MoldAxlePainter).
+  static const moldAxleNames = ['axle_back', 'axle_front'];
+
   static final _images = <String, ui.Image>{};
   static Future<void>? _loading;
   static final _paint = Paint()
     ..filterQuality = FilterQuality.none
     ..isAntiAlias = false;
+
+  /// Drawing a picture smaller than its own pixels on the screen
+  /// (4차 피드백 g15: 72px icons at 30~34 dp on a 2x phone): nearest
+  /// sampling would drop whole rows and columns, so outlines broke up; a
+  /// smoothed (mipmapped) downscale keeps every line. At or above its own
+  /// size a picture stays nearest-sampled, crisp (icons: see [drawPart]).
+  static final _downscalePaint = Paint()
+    ..filterQuality = FilterQuality.medium
+    ..isAntiAlias = false;
+
+  /// The screen's pixels per logical pixel, for [draw]'s choice of
+  /// sampling (1 when unknown).
+  static double get _pixelRatio {
+    final views = WidgetsBinding.instance.platformDispatcher.views;
+    return views.isEmpty ? 1 : views.first.devicePixelRatio;
+  }
+
+  /// Icons whose art fills less of its square than its neighbours', drawn
+  /// zoomed about the centre so they look the same size (4차 피드백 g15):
+  /// `bun.png` fills only 47×36 of 72 while `gold_bun.png` fills 62×48, so
+  /// the 붕어빵력 icon is drawn 62/47 larger in the same box (no pixels
+  /// edited). Remove the entry once 25번 63번's redrawn `bun.png` is in.
+  static const iconZoom = {'bun': 62 / 47};
 
   /// Null for blank items, for patterns (baked into the fish images, see
   /// [fish]) and for the character and hair, whose art depends on each
@@ -176,10 +302,18 @@ class PixelSprites {
   static Iterable<CosmeticDefinition> _slot(CosmeticSlot slot) =>
       cosmeticDefinitions.where((d) => d.slot == slot);
 
+  /// Stall decorations only the winter events hang (25번 32번,
+  /// `daily_return.seasonal_events[].decoration`): not for sale, so no
+  /// [CosmeticDefinition]; `deco/<id>.png` like the others.
+  static const eventDecorations = ['event_first_snow', 'event_christmas', 'event_seollal'];
+
   static Iterable<String> get _paths sync* {
     for (final d in cosmeticDefinitions) {
       final path = _cosmeticPath(d);
       if (path != null) yield path;
+    }
+    for (final id in eventDecorations) {
+      yield 'assets/images/deco/$id.png';
     }
     for (final flavor in _slot(CosmeticSlot.fish)) {
       for (final pattern in _slot(CosmeticSlot.pattern)) {
@@ -187,14 +321,24 @@ class PixelSprites {
       }
     }
     for (final character in _slot(CosmeticSlot.character)) {
-      yield _avatarPath(character.id, 'base');
+      // Every picture also in each skin's recoloured copy, when made.
+      Iterable<String> skinned(String path) sync* {
+        for (final skin in _slot(CosmeticSlot.skin)) {
+          yield 'assets/images/${rigSkinPicture(path, skin.id)}';
+        }
+      }
+
+      yield* skinned('avatar/${character.id}/base.png');
       for (final d in cosmeticDefinitions) {
         if (d.slot.category == CosmeticCategory.avatar &&
             !blankCosmetics.contains(d.id)) {
-          yield _avatarPath(character.id, '${d.slot.name}_${d.id}');
-          // An item's back and front halves (rigItemHalves), when drawn.
+          final main = avatarPartPath(character.id, d.slot, d.id);
+          yield* skinned(main);
+          // The worn item's mask (rigCutPicture) and its back and front
+          // halves (rigItemHalves), when drawn.
+          yield 'assets/images/${rigCutPicture(main)}';
           for (final half in rigItemHalves.keys) {
-            yield _avatarPath(character.id, '${d.slot.name}_${d.id}_$half');
+            yield* skinned(main.replaceFirst('.png', '_$half.png'));
           }
         }
       }
@@ -203,11 +347,15 @@ class PixelSprites {
       for (final view in const ['front', 'side']) {
         for (final channel in rigChannels) {
           for (final frame in channel.frames) {
-            yield 'assets/images/'
-                '${rigFeaturePicture(character.id, view, channel.id, frame)}';
+            yield* skinned(
+                rigFeaturePicture(character.id, view, channel.id, frame));
           }
         }
       }
+    }
+    // 26번 4-7단계: the v2 vendor's pictures (tools/avatar_v2.py).
+    for (final f in avatarV2Shipped) {
+      yield 'assets/images/$f';
     }
     yield* skillIds.map(_skillPath);
     yield 'assets/images/stall/counter.png';
@@ -218,8 +366,23 @@ class PixelSprites {
     for (final name in iconNames) {
       yield 'assets/images/icons/$name.png';
     }
+    // Optional (not in iconNames: 192x192, not 72x72): the connection
+    // notice's fainted bungeoppang (25번 59번); missing until drawn.
+    yield 'assets/images/icons/conn_fainted.png';
     for (final colour in postlampColors) {
       yield _stallPartPath('postlamp_$colour');
+    }
+    for (final colour in lampTileColours) {
+      yield _stallPartPath('lamp_$colour');
+    }
+    yield _cosmeticIconPath('none');
+    for (final d in cosmeticDefinitions) {
+      if (d.slot.category == CosmeticCategory.avatar) {
+        yield _cosmeticIconPath(d.id);
+        for (final c in _slot(CosmeticSlot.character)) {
+          yield _cosmeticIconPath(d.id, c.id);
+        }
+      }
     }
     yield* fxNames.map((n) => 'assets/images/fx/$n.png');
     yield* uiNames.map((n) => 'assets/images/ui/$n.png');
@@ -229,7 +392,29 @@ class PixelSprites {
       yield _cleanPath(bg.id);
       yield _cleanPath('${bg.id}_night');
     }
+    yield* lowStallBackgrounds.map(_lowPath);
+    for (final id in guestArt) {
+      for (final mood in guestMoods) {
+        yield 'assets/images/customer/${id}_$mood.png';
+        // Loaded only once shipped (the asset list filters misses).
+        yield 'assets/images/customer_full/${id}_$mood.png';
+      }
+    }
     yield* moldNames.map((n) => 'assets/images/mold/$n.png');
+    yield* moldAxleNames.map((n) => 'assets/images/mold/$n.png');
+    for (final stove in _slot(CosmeticSlot.stove)) {
+      yield _emptyStovePath(stove.id);
+      yield _stoveFishPath(stove.id);
+      yield _closedStovePath(stove.id);
+      yield _openStovePath(stove.id);
+    }
+    for (final flavor in fillingTextureFlavors) {
+      yield _fillingTexturePath(flavor);
+    }
+    for (final paste in pipingPastes) {
+      yield 'assets/images/cook/piping_bag_$paste.png';
+      yield 'assets/images/cook/piping_bag_${paste}_squeeze.png';
+    }
     for (final c in cookCharacters) {
       for (var i = 1; i <= cookFrameCount; i++) {
         yield 'assets/images/cook/${c}_$i.png';
@@ -272,19 +457,51 @@ class PixelSprites {
   // Every background has its own picture now (3.3_additional_character_and_background_images, stage 2).
   static const artStandIns = <String, String>{};
 
-  /// Stage 14 items still waiting for their art (오늘의붕어빵_이미지교체
-  /// 프롬프트 B4, B8, B9). Until then they draw a stand-in ([artStandIns])
-  /// or nothing. Remove an id when its file is added, and add the new
-  /// avatar folders (top, bottom, shoes, accessory) to pubspec.yaml.
-  static const artPending = {
-    // Vendor items the concept sheets do not have (the base figure's own
-    // hair, tee, shorts and flats are the defaults).
-    'short', 'ponytail', 'curly', 'skin2', 'skin3', 'stripe', 'chefcoat',
-    'earmuffs', 'chefhat', 'santa', 'goldtongs', 'redbandana', 'blackcap',
-    // The sheets draw these laid flat, not worn.
-    'widepants', 'brownpants', 'apron', 'darkapron', 'creamapron',
-    'waistapron',
-  };
+  /// Avatar slots whose items must be made from a picture of the vendor
+  /// wearing them ([avatarWornLayers]): flat hats sit badly on the head
+  /// (26번 녹화 피드백 F23), so an item without its worn picture (25번 문서
+  /// 17번) is hidden in the wardrobe until it has one.
+  static const avatarWornOnlySlots = {CosmeticSlot.hat, CosmeticSlot.hair};
+
+  /// Whether [character] can show item [id] of avatar [slot]: what the
+  /// base already wears (defaults, `blankCosmetics`), a skin tone with its
+  /// recoloured base, or an item with its own art (worn art for
+  /// [avatarWornOnlySlots]). Reads the generated [avatarArtFiles], so art
+  /// added with tools/avatar_layers.py shows up without code changes.
+  static bool avatarArtReady(String character, CosmeticSlot slot, String id) {
+    // 26번 4-7단계: with the v2 vendor on, what v2 drew (the new bottoms
+    // too); while it is off, items only v2 draws stay hidden.
+    // 26번 3차 H8·H10: withdrawn items stay out (cosmetic_config.dart).
+    if (slot != CosmeticSlot.character && avatarItemWithdrawn(character, id)) {
+      return false;
+    }
+    if (avatarV2On) {
+      final files = avatarV2Shipped;
+      if (slot == CosmeticSlot.character) {
+        return files.contains(avatarV2Base(id, defaultCosmetics[CosmeticSlot.skin]!));
+      }
+      if (blankCosmetics.contains(id)) return true;
+      if (slot == CosmeticSlot.skin) {
+        return files.contains(avatarV2Base(character, id));
+      }
+      return files.contains(avatarV2Item(character, slot, id));
+    }
+    if (slot == CosmeticSlot.character) {
+      return avatarArtFiles.contains('avatar/$id/base.png');
+    }
+    if (!avatarArtFiles.contains('avatar/$character/base.png')) return false;
+    if (blankCosmetics.contains(id) || defaultCosmetics[slot] == id) {
+      return true;
+    }
+    if (slot == CosmeticSlot.skin) {
+      return avatarArtFiles
+          .contains(rigSkinPicture('avatar/$character/base.png', id));
+    }
+    final path = avatarPartPath(character, slot, id);
+    return avatarWornOnlySlots.contains(slot)
+        ? avatarWornLayers.contains(path)
+        : avatarArtFiles.contains(path);
+  }
 
   static ui.Image? cosmetic(CosmeticSlot slot, String id) {
     for (final d in cosmeticDefinitions) {
@@ -294,6 +511,9 @@ class PixelSprites {
         if (image != null || !artStandIns.containsKey(id)) return image;
         return cosmetic(slot, artStandIns[id]!);
       }
+    }
+    if (slot == CosmeticSlot.decoration && eventDecorations.contains(id)) {
+      return _images['assets/images/deco/$id.png'];
     }
     return null;
   }
@@ -315,6 +535,17 @@ class PixelSprites {
   /// Any loaded picture by its path under assets/images (one decoded copy
   /// per file, shared by every painter), or null when it is not shipped.
   static ui.Image? byPath(String path) => _images['assets/images/$path'];
+
+  /// Tests only: puts [image] at [path] (under assets/images), or removes
+  /// it when null, e.g. to draw made-up v2 vendor art.
+  @visibleForTesting
+  static void debugPut(String path, ui.Image? image) {
+    if (image == null) {
+      _images.remove('assets/images/$path');
+    } else {
+      _images['assets/images/$path'] = image;
+    }
+  }
 
   /// Icon of an upgrade skill (`tap_1`..`auto_16`).
   static ui.Image? skill(String id) => _images[_skillPath(id)];
@@ -365,6 +596,58 @@ class PixelSprites {
 
   static String _cleanPath(String id) => 'assets/images/bg_clean/$id.png';
 
+  /// The backgrounds with the stall lowered to the towel and no baked mold
+  /// (assets/images/bg_low, 25번 20번, tools/apply_26_home_art.py): every
+  /// day and night picture of [sceneBackground].
+  static const lowStallBackgrounds = ['autumn', 'autumn_night', 'cherry',
+    'cherry_night', 'clear', 'clear_night', 'dusk', 'forest', 'night', 'rain',
+    'rain_night', 'seaside', 'snow', 'snowday'];
+
+  static String _lowPath(String id) => 'assets/images/bg_low/$id.png';
+
+  /// Whether every lowered background loaded: the new home layout waits for
+  /// all of them (26번 4-1단계, S4-1-Q4).
+  static bool get lowStallReady =>
+      lowStallBackgrounds.every((id) => _images.containsKey(_lowPath(id)));
+
+  /// The lowered picture for [background] by day or at [night], like
+  /// [sceneBackground]: a missing night picture is the day one darkened.
+  static (ui.Image?, bool) lowStallBackground(String background, bool? night) {
+    ui.Image? low(String id) => _images[_lowPath(id)];
+    if (night == null) return (low(background), false);
+    final dayId = dayBackground(background);
+    if (!night) return (low(dayId), false);
+    final own = low(nightBackground(background));
+    return own != null ? (own, false) : (low(dayId), true);
+  }
+
+  /// Guest art ids (assets/images/customer, 25번 6번): the eight named
+  /// guests and four walk-in looks.
+  static const guestArt = ['npc_yunha', 'npc_doyun', 'npc_makrye',
+    'npc_seojin', 'npc_taeo', 'npc_eunchae', 'npc_minjae', 'npc_sua',
+    'walkin_1', 'walkin_2', 'walkin_3', 'walkin_4'];
+  static const guestMoods = ['normal', 'happy', 'sad'];
+
+  /// A standing guest (256x320, body cut at the bottom): [mood] is one of
+  /// [guestMoods]; falls back to the normal face, null when not drawn.
+  static ui.Image? guest(String id, String mood) =>
+      _images['assets/images/customer/${id}_$mood.png'] ??
+      _images['assets/images/customer/${id}_normal.png'];
+
+  /// A full-body guest (4차 피드백 IA4, 25번 주문 대기):
+  /// `assets/images/customer_full/<id>_<mood>.png`. Null until drawn; the
+  /// guest layer then uses the bust above. When the art arrives, add
+  /// `assets/images/customer_full/` to pubspec.yaml and set
+  /// [guestWaistShare] to the drawn waist.
+  static ui.Image? guestFull(String id, String mood) =>
+      _images['assets/images/customer_full/${id}_$mood.png'] ??
+      _images['assets/images/customer_full/${id}_normal.png'];
+
+  /// Where a full-body guest's waist is, from the picture's top (share of
+  /// its height): it goes on the counter's top (IA4). A placeholder until
+  /// the art is drawn.
+  static const guestWaistShare = .55;
+
   /// Whether the picture [sceneBackground] shows has a copy without the
   /// baked mold and bungeoppang, so the stage can draw its own.
   static bool hasCleanBackground(String background, bool? night) {
@@ -378,11 +661,95 @@ class PixelSprites {
     return _images.containsKey(_cleanPath(own != null ? id : dayId));
   }
 
+  /// [stove] without its six baked bungeoppang, at the same size and cavity
+  /// positions (assets/images/stove_empty): drawn art fitted onto the stove
+  /// by tools/apply_25_art.py (25번 필요한 그림 1번). Null when that stove
+  /// has none.
+  static ui.Image? emptyStove(String stove) => _images[_emptyStovePath(stove)];
+
+  static String _emptyStovePath(String id) =>
+      'assets/images/stove_empty/$id.png';
+
+  /// Only the six baked bungeoppang of [stove], the rest transparent, at
+  /// the stove's size (assets/images/stove_fish, tools/apply_25_art.py).
+  /// GriddlePainter lays a cooking cell's fish over [emptyStove] from it.
+  static ui.Image? stoveFish(String stove) => _images[_stoveFishPath(stove)];
+
+  static String _stoveFishPath(String id) => 'assets/images/stove_fish/$id.png';
+
+  /// [stove] closed and cold: the lid over the plate, no flames (26번
+  /// 4-2단계 F8, assets/images/stove_closed, 941x470 like the stove,
+  /// tools/apply_26_stoves.py). Null when that stove has none.
+  static ui.Image? closedStove(String stove) => _images[_closedStovePath(stove)];
+
+  static String _closedStovePath(String id) =>
+      'assets/images/stove_closed/$id.png';
+
+  /// [stove] open with the flames on (assets/images/stove_open, 941x700):
+  /// the bottom 941x470 is [emptyStove] itself and the lid stands in the
+  /// [openStoveLidRoom] rows above it. Null when that stove has none.
+  static ui.Image? openStove(String stove) => _images[_openStovePath(stove)];
+
+  static String _openStovePath(String id) => 'assets/images/stove_open/$id.png';
+
+  /// Rows of [openStove] above the plate (the open lid), in picture pixels.
+  static const openStoveLidRoom = 230;
+
+  /// Filling textures (`assets/images/mold/paint_<flavor>.png`, 256x256
+  /// seamless tiles, 25번 필요한 그림 3번, tools/apply_25_art.py). The
+  /// painted filling falls back to a flat color (fillingPasteColors) when
+  /// one is missing.
+  static const fillingTextureFlavors = ['redbean', 'custard', 'cocoa'];
+
+  static String _fillingTexturePath(String flavor) =>
+      'assets/images/mold/paint_$flavor.png';
+
+  static ui.Image? fillingTexture(String flavor) =>
+      _images[_fillingTexturePath(flavor)];
+
+  /// The piping bag for [paste] ([pipingPastes]), squeezing or not.
+  static ui.Image? pipingBag(String paste, {bool squeeze = false}) =>
+      _images['assets/images/cook/piping_bag_$paste${squeeze ? '_squeeze' : ''}.png'];
+
+  /// The asset path of an image loaded by [load], or null (for example to
+  /// tell which background picture [sceneBackground] picked).
+  static String? pathOf(ui.Image? image) {
+    if (image == null) return null;
+    for (final e in _images.entries) {
+      if (identical(e.value, image)) return e.key;
+    }
+    return null;
+  }
+
   /// One of [moldNames].
   static ui.Image? mold(String name) => _images['assets/images/mold/$name.png'];
 
   /// One of [fxNames].
   static ui.Image? fx(String name) => _images['assets/images/fx/$name.png'];
+
+  static String _cosmeticIconPath(String id, [String? character]) =>
+      'assets/images/cosmetic_icons/${character == null ? '' : '$character/'}$id.png';
+
+  /// The wardrobe tile icon of avatar item [id] (64x64; 26번 4-5단계, G5):
+  /// [character]'s own when it has one (`cosmetic_icons/<character>/<id>.png`,
+  /// 26번 3차 AV3d: the boy's worn-layer icons), else the shared one (the
+  /// girl's); the 'none' hanger for the take-off items (and the tool
+  /// default, drawn as no tool since 26번 3차 H8), null when not drawn.
+  static ui.Image? cosmeticIcon(String id, {String? character}) {
+    final name =
+        const {'nohat', 'noapron', 'noacc', 'tongs'}.contains(id) ? 'none' : id;
+    return (character == null ? null : _images[_cosmeticIconPath(name, character)]) ??
+        _images[_cosmeticIconPath(name)];
+  }
+
+  /// The wardrobe tile picture of a stall item when it has its own (lamps:
+  /// the whole post lamp; day/night: an icon), else null.
+  static ui.Image? stallTile(CosmeticDefinition d) => switch (d.slot) {
+        CosmeticSlot.lamp => _images[_stallPartPath(
+            'lamp_${d.id == defaultCosmetics[CosmeticSlot.lamp] ? 'amber' : d.id.substring(0, d.id.length - 'lamp'.length)}')],
+        CosmeticSlot.time => icon('time_${d.id == 'night_time' ? 'night' : d.id}'),
+        _ => null,
+      };
 
   /// One of [uiNames].
   static ui.Image? screenArt(String name) =>
@@ -399,13 +766,24 @@ class PixelSprites {
       stallPart('postlamp');
 
   /// Draws [image] stretched into [dst]; does nothing if it is not loaded.
+  /// Smoothed when it lands smaller than its own pixels on the screen
+  /// ([_downscalePaint]), nearest-sampled otherwise.
   static void draw(Canvas canvas, ui.Image? image, Rect dst) {
     if (image == null) return;
-    canvas.drawImageRect(
-        image,
-        Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-        dst,
-        _paint);
+    drawPart(canvas, image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), dst);
+  }
+
+  /// Draws the [src] part of [image] into [dst], sampled like [draw]. With
+  /// [icon] a picture enlarged by a fraction (72px at 34dp on a 3x phone =
+  /// ×1.42) is smoothed too: nearest sampling would make some pixel rows
+  /// one screen pixel and others two, so thin outlines looked broken
+  /// (4차 피드백 g15). Only whole-number enlargements stay nearest. Scenes
+  /// and backgrounds keep nearest sampling when enlarged.
+  static void drawPart(Canvas canvas, ui.Image image, Rect src, Rect dst, {bool icon = false}) {
+    final ratio = _pixelRatio, sx = dst.width * ratio / src.width, sy = dst.height * ratio / src.height;
+    bool whole(double s) => (s - s.roundToDouble()).abs() < .05;
+    final smooth = sx < .99 || sy < .99 || icon && !(whole(sx) && whole(sy));
+    canvas.drawImageRect(image, src, dst, smooth ? _downscalePaint : _paint);
   }
 
   /// Draws [image] at its native pixel size with its top-left at [at].
@@ -423,8 +801,9 @@ class PixelIcon extends StatelessWidget {
   const PixelIcon(this.name, {super.key, this.size = 24});
 
   @override
-  Widget build(BuildContext context) =>
-      PixelImage(PixelSprites.icon(name), size: size);
+  Widget build(BuildContext context) => SizedBox.square(
+      dimension: size,
+      child: CustomPaint(painter: _IconPainter(PixelSprites.icon(name), zoom: PixelSprites.iconZoom[name] ?? 1)));
 }
 
 /// Any loaded sprite as a square widget (skill and item icons).
@@ -436,6 +815,26 @@ class PixelImage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => SizedBox.square(
       dimension: size, child: CustomPaint(painter: _IconPainter(image)));
+}
+
+/// The fish beside a window title (`ui/title_fish.png`, 25번 35번), facing
+/// right or [flip]ped to face left. Takes no room at all while the picture
+/// is not in the app (시안 확인 2차: the old one was taken out until the
+/// redraw arrives), so the title stays centred.
+class TitleFish extends StatelessWidget {
+  final double width, height;
+  final bool flip;
+  const TitleFish({super.key, required this.width, required this.height, this.flip = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final art = PixelSprites.screenArt('title_fish');
+    if (art == null) return const SizedBox.shrink();
+    final fish = PixelArt(art, width: width, height: height);
+    return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6),
+        child: flip ? Transform.flip(flipX: true, child: fish) : fish);
+  }
 }
 
 /// Any loaded sprite fitted into [width] x [height], centred, keeping its
@@ -474,12 +873,20 @@ class _FitPainter extends CustomPainter {
 
 class _IconPainter extends CustomPainter {
   final ui.Image? image;
-  const _IconPainter(this.image);
+  /// >1 draws the middle 1/[zoom] of the picture over the whole box
+  /// ([PixelSprites.iconZoom]).
+  final double zoom;
+  const _IconPainter(this.image, {this.zoom = 1});
 
   @override
-  void paint(Canvas canvas, Size size) =>
-      PixelSprites.draw(canvas, image, Offset.zero & size);
+  void paint(Canvas canvas, Size size) {
+    final image = this.image;
+    if (image == null) return;
+    final w = image.width.toDouble(), h = image.height.toDouble();
+    PixelSprites.drawPart(canvas, image, Rect.fromCenter(center: Offset(w / 2, h / 2), width: w / zoom, height: h / zoom),
+        Offset.zero & size, icon: true);
+  }
 
   @override
-  bool shouldRepaint(covariant _IconPainter old) => image != old.image;
+  bool shouldRepaint(covariant _IconPainter old) => image != old.image || zoom != old.zoom;
 }

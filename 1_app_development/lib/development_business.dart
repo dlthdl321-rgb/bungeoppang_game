@@ -45,9 +45,12 @@ class BusinessProgress {
 
   /// Foreground economy follows monotonic elapsed time; a changed wall clock
   /// may advance the calendar cursor but cannot fabricate active production.
-  BusinessSettlement settleActive(DateTime now,{required BigInt bunsPerSecond,required int elapsedMs}) {
-    if(elapsedMs<0 || bunsPerSecond.isNegative) throw const FormatException('전경 생산 시간 오류');
-    final total=fractional+(open ? bunsPerSecond*BigInt.from(elapsedMs)*BigInt.from(1000):BigInt.zero);
+  /// [permilleMs] (재료 타이쿤 B): the production time as ms × permille when
+  /// not all of [elapsedMs] produced at ×1 — the stretches the ingredients
+  /// covered, 특제 ones weighted by their bonus. Null: [elapsedMs] × 1000.
+  BusinessSettlement settleActive(DateTime now,{required BigInt bunsPerSecond,required int elapsedMs,int? permilleMs}) {
+    if(elapsedMs<0 || bunsPerSecond.isNegative || (permilleMs ?? 0)<0) throw const FormatException('전경 생산 시간 오류');
+    final total=fractional+(open ? bunsPerSecond*BigInt.from(permilleMs ?? elapsedMs*1000):BigInt.zero);
     final scale=BigInt.from(1000000);
     return BusinessSettlement(BusinessProgress._(open,businessIndex,acceptedDay,observed(now),total%scale),total~/scale);
   }
@@ -63,6 +66,17 @@ class BusinessProgress {
     }
     final increment = acceptedDay == day ? 0 : 1;
     return BusinessProgress._(true, businessIndex + increment, day, at, fractional);
+  }
+  /// 26번 5-1단계: an open business turns over to the KST day of its settled
+  /// time by itself after midnight, without pressing '영업 시작' again.
+  /// However many midnights passed, the business day advances once
+  /// (S5-1-Q3, like [beginOrContinue]). The caller settles first.
+  BusinessProgress nextDay() {
+    final day = businessDayKst(settledUtc);
+    if (!open || acceptedDay == null || day.compareTo(acceptedDay!) <= 0) {
+      throw const FormatException('영업일 넘김 오류');
+    }
+    return BusinessProgress._(true, businessIndex + 1, day, settledUtc, fractional);
   }
   BusinessProgress close(DateTime now) {
     if (observed(now) != settledUtc) throw const FormatException('영업 종료 전 생산 정산 필요');

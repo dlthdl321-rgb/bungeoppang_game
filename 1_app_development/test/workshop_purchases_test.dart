@@ -18,10 +18,10 @@ void main() {
     book = WorkshopPurchases.empty().prepare(config, intent, buns: BigInt.from(100), lifetime: BigInt.from(100));
   });
   test('예약·차감·확정·상품 지급은 같은 거래로 각1회이며 환생 누적은 차감하지 않는다', () {
-    expect(book.available(BigInt.from(100)), BigInt.from(85));
+    expect(book.available(BigInt.from(100)), BigInt.from(80));
     book = book.response(intent.transactionId, response('reserved'));
     var change = book.debit(intent.transactionId, BigInt.from(100));
-    expect(change.buns, BigInt.from(85));
+    expect(change.buns, BigInt.from(80));
     expect(change.purchases.debit(intent.transactionId, change.buns).buns, change.buns);
     book = change.purchases.response(intent.transactionId, response('committed'));
     change = book.settle(intent.transactionId, change.buns);
@@ -47,7 +47,7 @@ void main() {
   });
   test('응답 유실은 취소/환불로 해석하지 않고 미정산 거래를 유지한다', () {
     final unchanged = book.response(intent.transactionId, {'account':'account','transaction':intent.transactionId,'status':'unknown'});
-    expect(unchanged.available(BigInt.from(100)), BigInt.from(85));
+    expect(unchanged.available(BigInt.from(100)), BigInt.from(80));
     final another = PurchaseJournal.start('account', 'transaction_0002', intent.quote);
     expect(() => unchanged.prepare(config, another, buns: BigInt.from(100), lifetime: BigInt.from(100)), throwsFormatException);
     expect(() => book.response(intent.transactionId, {...response('reserved'), 'account':'other'}), throwsFormatException);
@@ -68,25 +68,28 @@ void main() {
     final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String,dynamic>;
     raw['skill_purchase']['entries']['tap_1']['buns'] = '999';
     final changed = DevelopmentBalance.fromJson(raw);
-    expect(WorkshopPurchases.fromJson(book.toJson(), changed).journals[intent.transactionId]!.quote.buns, BigInt.from(15));
+    expect(WorkshopPurchases.fromJson(book.toJson(), changed).journals[intent.transactionId]!.quote.buns, BigInt.from(20));
   });
   test('유료 아바타도 두 재화 견적·레벨·1회 보유 계약을 사용한다', () {
     final quote=quoteWorkshopProduct(config,'cosmetic:short',owned:0,quantity:1);
     final cosmetic=PurchaseJournal.start('account','cosmetic_0001',quote);
-    var wardrobe=WorkshopPurchases.empty().prepare(config,cosmetic,buns:BigInt.from(2000),lifetime:BigInt.from(2000),level:50);
+    var wardrobe=WorkshopPurchases.empty().prepare(config,cosmetic,buns:BigInt.from(2000000),lifetime:BigInt.from(2000000),level:50);
     final receipt={...cosmetic.toJson(),'status':'reserved'};
     wardrobe=wardrobe.response(cosmetic.transactionId,receipt);
-    final debit=wardrobe.debit(cosmetic.transactionId,BigInt.from(2000));
+    final debit=wardrobe.debit(cosmetic.transactionId,BigInt.from(2000000));
     wardrobe=debit.purchases.response(cosmetic.transactionId,{...receipt,'status':'committed','receiptId':'cosmetic-receipt','grantId':'cosmetic-grant'})
       .settle(cosmetic.transactionId,debit.buns).purchases;
     expect(wardrobe.owned['cosmetic:short'],1);
     expect(WorkshopPurchases.fromJson(wardrobe.toJson(),config).owned,wardrobe.owned);
     expect(()=>quoteWorkshopProduct(config,'cosmetic:short',owned:1,quantity:1),throwsFormatException);
-    expect(()=>quoteWorkshopProduct(config,'cosmetic:boy',owned:0,quantity:1),throwsFormatException);
+    expect(()=>quoteWorkshopProduct(config,'cosmetic:skin1',owned:0,quantity:1),throwsFormatException);
   });
-  test('신규 아바타 구매로 배경/붕어빵 꾸미기 범위를 몰래 열지 않는다', () {
-    expect(()=>quoteWorkshopProduct(config,'cosmetic:forest',owned:0,quantity:1),throwsFormatException);
+  // 26번 3차 H42: backgrounds are sold through the catalog on purpose now;
+  // the bungeoppang and other stall items stay out.
+  test('신규 꾸미기 구매는 카탈로그에 넣은 배경까지만, 붕어빵·화로 꾸미기 범위를 몰래 열지 않는다', () {
+    expect(quoteWorkshopProduct(config,'cosmetic:forest',owned:0,quantity:1).gold, BigInt.from(16));
     expect(()=>quoteWorkshopProduct(config,'cosmetic:choco',owned:0,quantity:1),throwsFormatException);
+    expect(()=>quoteWorkshopProduct(config,'cosmetic:copper',owned:0,quantity:1),throwsFormatException);
   });
 
 }

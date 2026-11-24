@@ -99,10 +99,15 @@ void main() {
   });
   test('아바타 기본 무료 착용은 저장되고 보유하지 않은 유료 착용은 막는다',() async {
     final c=WorkshopController(config,Repository());addTearDown(c.dispose);await c.initialize();
-    expect(await c.equipAvatar('boy'),isTrue);expect(c.state.avatarEquipment['character'],'boy');
-    expect(await c.equipAvatar('short'),isFalse);expect(c.error,isNull);
+    // 3차 피드백 H11: the other character is bought; the first-run choice is kept.
+    expect(await c.equipAvatar('boy'),isFalse);expect(c.error,isNull);
+    expect(await c.chooseStarterCharacter('boy'),isTrue);expect(c.state.avatarEquipment['character'],'boy');
+    // 26번 3차 G: the boy's own default hair (short) comes with him; other
+    // paid hair is still bought.
+    expect(await c.equipAvatar('short'),isTrue);
+    expect(await c.equipAvatar('ponytail'),isFalse);expect(c.error,isNull);
     final restored=WorkshopState.fromJson(c.state.toJson(),config);expect(restored.avatarEquipment['character'],'boy');
-    final damaged=c.state.toJson();damaged['avatarEquipment']={'hair':'short'};
+    final damaged=c.state.toJson();damaged['avatarEquipment']={'hair':'ponytail'};
     expect(()=>WorkshopState.fromJson(damaged,config),throwsFormatException);
   });
   test('시청 완료 callback은 로컬 지급이 아니고 광고 중 게임만 멈춘다',() async {
@@ -123,12 +128,27 @@ void main() {
     expect(c.state.adAttempts.length,1);
   });
 
-  test('기본 배경의 무료 시간 선택은 독립 저장하고 유료 배경을 지급하지 않는다',() async {
+  // 4차 피드백 g10(ID9): the device's clock is the free default; a fixed
+  // day or night must be bought first (bought: workshop_wardrobe_test).
+  test('밤낮은 기기 시간이 무료 기본이고, 사지 않은 낮·밤 고정은 고를 수 없다',() async {
     final c=WorkshopController(config,Repository());addTearDown(c.dispose);await c.initialize();
-    expect(await c.setBackgroundTime('night_time'),isTrue);
-    expect(WorkshopState.fromJson(c.state.toJson(),config).sceneTime,'night_time');
+    expect(c.state.sceneTime,'clock');
+    for (final time in ['night_time','day','scenetime','forest']) {
+      expect(await c.setBackgroundTime(time),isFalse,reason:time);
+      expect(c.state.sceneTime,'clock',reason:time);
+    }
+    expect(c.error,isNull);
+    expect(await c.setBackgroundTime('clock'),isTrue);
     expect(c.state.purchases.owned,isEmpty);
-    expect(await c.setBackgroundTime('forest'),isFalse);
+  });
+  test('예전 저장의 배경 그대로와 사지 않은 낮·밤 고정은 기기 시간으로 읽는다',() async {
+    final c=WorkshopController(config,Repository());addTearDown(c.dispose);await c.initialize();
+    for (final saved in ['scenetime','day','night_time','clock']) {
+      final row=c.state.toJson()..['sceneTime']=saved;
+      expect(WorkshopState.fromJson(row,config).sceneTime,'clock',reason:saved);
+    }
+    final broken=c.state.toJson()..['sceneTime']='noon';
+    expect(()=>WorkshopState.fromJson(broken,config),throwsFormatException);
   });
   test('서버 타당성 검증용 진행 스냅샷을 보상 제출과 함께 보낸다',() async {
     final transport=_Recording();
@@ -141,7 +161,7 @@ void main() {
     });
     expect(await c.syncRewards(),isTrue,reason:c.notice);
     expect(transport.sent['workshopRewardSubmit']!['snapshot'],
-      {'buns':'40','lifetimeBuns':'40','level':2,'taps':40,'sales':0});
+      {'buns':'40','lifetimeBuns':'40','level':2,'taps':40,'sales':0,'pieces':0});
   });
   test('서버가 거절한 예약은 원래 구매 의도를 보낸 취소 확인으로 무과금 정리된다',() async {
     final transport=_Recording(),gateway=WorkshopOnline(transport);

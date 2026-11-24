@@ -1,0 +1,389 @@
+{
+  "shape": {
+    "schema": "int",
+    "sequence": "int",
+    "level": "int",
+    "tutorial": "string",
+    "featureIntros": [],
+    "daily": {
+      "day": "null",
+      "order": "null",
+      "stamps": "int",
+      "stampDay": "null",
+      "events": []
+    },
+    "regularClock": {
+      "nextAt": "null",
+      "seed": "int",
+      "draws": "int"
+    },
+    "namedClock": {
+      "nextAt": "null",
+      "seed": "int",
+      "draws": "int"
+    },
+    "lastNamedVisitor": "null",
+    "taps": "int",
+    "completedSales": "int",
+    "phaseMs": "int",
+    "levelStartTaps": "int",
+    "levelStartSales": "int",
+    "arrivalMs": "int",
+    "soldPieces": "int",
+    "levelStartPieces": "int",
+    "selectedFlavor": "string",
+    "sceneTime": "string",
+    "recipes": [
+      "string"
+    ],
+    "recipeMissions": [],
+    "masteryAwards": {},
+    "collectionClaims": {},
+    "pantry": {
+      "basic": {
+        "flour": "int",
+        "milk": "int",
+        "egg": "int",
+        "sugar": "int",
+        "salt": "int",
+        "adzuki": "int"
+      },
+      "premium": {},
+      "lots": [
+        {
+          "kind": "string",
+          "premium": "bool",
+          "madeAtMs": "int",
+          "portions": "int"
+        }
+      ],
+      "ledger": {
+        "batter": [
+          "int"
+        ],
+        "redbean": [
+          "int"
+        ]
+      },
+      "tapCredit": "int",
+      "tapPortion": "null",
+      "autoCreditMs": "int",
+      "autoPortion": "null",
+      "gifts": [
+        "string"
+      ],
+      "rescueDay": "null",
+      "rescueCount": "int"
+    },
+    "selectedPremium": "bool",
+    "sessionPortion": "null",
+    "relationships": {
+      "schema": "int",
+      "day": "int",
+      "visits": {},
+      "affinity": {},
+      "earned": {},
+      "storyDays": {},
+      "followupDays": {},
+      "actions": {},
+      "awards": {},
+      "stories": [],
+      "recent": {},
+      "seenDialogue": [],
+      "rolls": {},
+      "lastChoiceDay": "int",
+      "choices": {},
+      "offered": {},
+      "deferred": {},
+      "followups": {},
+      "active": "null"
+    },
+    "customerScene": "null",
+    "tasteObservations": {},
+    "buns": "string",
+    "lifetime": "string",
+    "purchases": {
+      "schema": "int",
+      "account": "null",
+      "journals": {},
+      "owned": {}
+    },
+    "rewardAccount": "null",
+    "rewardReceipts": {},
+    "adAttempts": {},
+    "avatarEquipment": {},
+    "avatarGrants": [
+      "string"
+    ],
+    "missions": {
+      "schema": "int",
+      "observedUtc": "string",
+      "daily": {},
+      "weekly": {},
+      "playDays": {},
+      "claims": {}
+    },
+    "business": {
+      "schema": "int",
+      "open": "bool",
+      "businessIndex": "int",
+      "acceptedDay": "null",
+      "settledUtc": "string",
+      "fractional": "string"
+    },
+    "inventory": {
+      "schema": "int",
+      "batches": {},
+      "dispositions": {},
+      "prepared": {},
+      "bindings": {}
+    },
+    "grid": {
+      "schema": "int",
+      "runId": "string",
+      "cells": [
+        {
+          "cycle": "int",
+          "elapsedMs": "int",
+          "idleMs": "int",
+          "flavor": "null",
+          "difficulty": "null"
+        }
+      ]
+    },
+    "flavorMasteries": {
+      "redbean": {
+        "schema": "int",
+        "flavor": "string",
+        "difficulty": "int",
+        "practices": "int",
+        "techniquePasses": "int",
+        "discovered": [],
+        "practiceDiscovered": [],
+        "results": {}
+      }
+    },
+    "session": "null",
+    "customers": [],
+    "sales": {},
+    "pendingGold": {},
+    "pendingSales": [],
+    "claimedLevels": []
+  },
+  "sample": {
+    "schema": 13,
+    "sequence": 0,
+    "level": 1,
+    "tutorial": "cook",
+    "featureIntros": [],
+    "daily": {
+      "day": null,
+      "order": null,
+      "stamps": 0,
+      "stampDay": null,
+      "events": []
+    },
+    "regularClock": {
+      "nextAt": null,
+      "seed": 1461808719,
+      "draws": 0
+    },
+    "namedClock": {
+      "nextAt": null,
+      "seed": 1330287158,
+      "draws": 0
+    },
+    "lastNamedVisitor": null,
+    "taps": 0,
+    "completedSales": 0,
+    "phaseMs": 0,
+    "levelStartTaps": 0,
+    "levelStartSales": 0,
+    "arrivalMs": 0,
+    "soldPieces": 0,
+    "levelStartPieces": 0,
+    "selectedFlavor": "redbean",
+    "sceneTime": "clock",
+    "recipes": [
+      "redbean"
+    ],
+    "recipeMissions": [],
+    "masteryAwards": {},
+    "collectionClaims": {},
+    "pantry": {
+      "basic": {
+        "flour": 2,
+        "milk": 1,
+        "egg": 1,
+        "sugar": 2,
+        "salt": 2,
+        "adzuki": 2
+      },
+      "premium": {},
+      "lots": [
+        {
+          "kind": "batter",
+          "premium": false,
+          "madeAtMs": 0,
+          "portions": 300
+        },
+        {
+          "kind": "redbean",
+          "premium": false,
+          "madeAtMs": 0,
+          "portions": 300
+        }
+      ],
+      "ledger": {
+        "batter": [
+          300,
+          0,
+          0
+        ],
+        "redbean": [
+          300,
+          0,
+          0
+        ]
+      },
+      "tapCredit": 0,
+      "tapPortion": null,
+      "autoCreditMs": 0,
+      "autoPortion": null,
+      "gifts": [
+        "start"
+      ],
+      "rescueDay": null,
+      "rescueCount": 0
+    },
+    "selectedPremium": false,
+    "sessionPortion": null,
+    "relationships": {
+      "schema": 1,
+      "day": 0,
+      "visits": {},
+      "affinity": {},
+      "earned": {},
+      "storyDays": {},
+      "followupDays": {},
+      "actions": {},
+      "awards": {},
+      "stories": [],
+      "recent": {},
+      "seenDialogue": [],
+      "rolls": {},
+      "lastChoiceDay": 0,
+      "choices": {},
+      "offered": {},
+      "deferred": {},
+      "followups": {},
+      "active": null
+    },
+    "customerScene": null,
+    "tasteObservations": {},
+    "buns": "0",
+    "lifetime": "0",
+    "purchases": {
+      "schema": 1,
+      "account": null,
+      "journals": {},
+      "owned": {}
+    },
+    "rewardAccount": null,
+    "rewardReceipts": {},
+    "adAttempts": {},
+    "avatarEquipment": {},
+    "avatarGrants": [
+      "girl"
+    ],
+    "missions": {
+      "schema": 1,
+      "observedUtc": "2026-11-23T00:00:00.000Z",
+      "daily": {},
+      "weekly": {},
+      "playDays": {},
+      "claims": {}
+    },
+    "business": {
+      "schema": 1,
+      "open": false,
+      "businessIndex": 0,
+      "acceptedDay": null,
+      "settledUtc": "2026-11-23T00:00:00.000Z",
+      "fractional": "0"
+    },
+    "inventory": {
+      "schema": 1,
+      "batches": {},
+      "dispositions": {},
+      "prepared": {},
+      "bindings": {}
+    },
+    "grid": {
+      "schema": 1,
+      "runId": "save-format",
+      "cells": [
+        {
+          "cycle": 0,
+          "elapsedMs": 0,
+          "idleMs": 1000,
+          "flavor": null,
+          "difficulty": null
+        },
+        {
+          "cycle": 0,
+          "elapsedMs": 0,
+          "idleMs": 1000,
+          "flavor": null,
+          "difficulty": null
+        },
+        {
+          "cycle": 0,
+          "elapsedMs": 0,
+          "idleMs": 1000,
+          "flavor": null,
+          "difficulty": null
+        },
+        {
+          "cycle": 0,
+          "elapsedMs": 0,
+          "idleMs": 1000,
+          "flavor": null,
+          "difficulty": null
+        },
+        {
+          "cycle": 0,
+          "elapsedMs": 0,
+          "idleMs": 1000,
+          "flavor": null,
+          "difficulty": null
+        },
+        {
+          "cycle": 0,
+          "elapsedMs": 0,
+          "idleMs": 1000,
+          "flavor": null,
+          "difficulty": null
+        }
+      ]
+    },
+    "flavorMasteries": {
+      "redbean": {
+        "schema": 1,
+        "flavor": "redbean",
+        "difficulty": 0,
+        "practices": 0,
+        "techniquePasses": 0,
+        "discovered": [],
+        "practiceDiscovered": [],
+        "results": {}
+      }
+    },
+    "session": null,
+    "customers": [],
+    "sales": {},
+    "pendingGold": {},
+    "pendingSales": [],
+    "claimedLevels": []
+  }
+}

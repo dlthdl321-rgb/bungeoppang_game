@@ -1,0 +1,386 @@
+{
+  "date": "2026-11-17",
+  "method": "built-in imagegen",
+  "sessions": "one independent agent session per image",
+  "status": "generated candidates; not integrated into game",
+  "images": [
+    {
+      "file": "cook/piping_bag_batter.png",
+      "prompt": "cook/piping_bag_batter.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        128,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "????? ?? ? ?? ?? ?? ??"
+    },
+    {
+      "file": "cook/piping_bag_batter_squeeze.png",
+      "prompt": "cook/piping_bag_batter_squeeze.prompt.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        128,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "????? ?? ? ?? ?? ?? ??"
+    },
+    {
+      "file": "cook/piping_bag_cocoa.png",
+      "prompt": "cook/piping_bag_cocoa.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        128,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "????? ?? ? ?? ?? ?? ??"
+    },
+    {
+      "file": "cook/piping_bag_cocoa_squeeze.png",
+      "prompt": "cook/piping_bag_cocoa_squeeze.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        128,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "????? ?? ? ?? ?? ?? ??"
+    },
+    {
+      "file": "cook/piping_bag_custard.png",
+      "prompt": "cook/piping_bag_custard.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        128,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "????? ?? ? ?? ?? ?? ??"
+    },
+    {
+      "file": "cook/piping_bag_custard_squeeze.png",
+      "prompt": "cook/piping_bag_custard_squeeze.prompt.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        128,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "????? ?? ? ?? ?? ?? ??"
+    },
+    {
+      "file": "cook/piping_bag_redbean.png",
+      "prompt": "cook/piping_bag_redbean.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        128,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "????? ?? ? ?? ?? ?? ??"
+    },
+    {
+      "file": "cook/piping_bag_redbean_squeeze.png",
+      "prompt": "cook/piping_bag_redbean_squeeze.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        128,
+        192
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "????? ?? ? ?? ?? ?? ??"
+    },
+    {
+      "file": "fx/flip_ring.png",
+      "prompt": "fx/flip_ring.prompt.txt",
+      "actual": [
+        1254,
+        1254
+      ],
+      "required": [
+        512,
+        512
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "?? ?????/?? ?? ?? ??"
+    },
+    {
+      "file": "fx/flip_ring_fill.png",
+      "prompt": "fx/flip_ring_fill.prompt.txt",
+      "actual": [
+        1254,
+        1254
+      ],
+      "required": [
+        512,
+        512
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "?? ?????/?? ?? ?? ??"
+    },
+    {
+      "file": "fx/overflow_batter.png",
+      "prompt": "fx/overflow_batter.prompt.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        32,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "? ???? ?? ? ?? ?? ??"
+    },
+    {
+      "file": "fx/overflow_cocoa.png",
+      "prompt": "fx/overflow_cocoa.prompt.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        32,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "? ???? ?? ? ?? ?? ??"
+    },
+    {
+      "file": "fx/overflow_custard.png",
+      "prompt": "fx/overflow_custard.prompt.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        32,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        254
+      ],
+      "note": "? ???? ?? ? ?? ?? ??"
+    },
+    {
+      "file": "fx/overflow_redbean.png",
+      "prompt": "fx/overflow_redbean.txt",
+      "actual": [
+        1024,
+        1536
+      ],
+      "required": [
+        32,
+        48
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "? ???? ?? ? ?? ?? ??"
+    },
+    {
+      "file": "mold/paint_cocoa.png",
+      "prompt": "mold/paint_cocoa.prompt.txt",
+      "actual": [
+        1464,
+        1074
+      ],
+      "required": [
+        1200,
+        880
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "? ????? ? ?? ?? ??"
+    },
+    {
+      "file": "mold/paint_custard.png",
+      "prompt": "mold/paint_custard.prompt.txt",
+      "actual": [
+        1464,
+        1074
+      ],
+      "required": [
+        1200,
+        880
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "? ????? ? ?? ?? ??"
+    },
+    {
+      "file": "mold/paint_redbean.png",
+      "prompt": "mold/paint_redbean.prompt.txt",
+      "actual": [
+        1464,
+        1074
+      ],
+      "required": [
+        1200,
+        880
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "? ????? ? ?? ?? ??"
+    },
+    {
+      "file": "stove_empty/castiron.png",
+      "prompt": "stove_empty/castiron.prompt.txt",
+      "actual": [
+        1774,
+        886
+      ],
+      "required": [
+        941,
+        470
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "??? ?? ?? ?? ???"
+    },
+    {
+      "file": "stove_empty/copper.png",
+      "prompt": "stove_empty/copper.txt",
+      "actual": [
+        1774,
+        886
+      ],
+      "required": [
+        941,
+        470
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "??? ?? ?? ?? ???"
+    },
+    {
+      "file": "stove_empty/golden.png",
+      "prompt": "stove_empty/golden.txt",
+      "actual": [
+        1774,
+        886
+      ],
+      "required": [
+        941,
+        470
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "??? ?? ?? ?? ???"
+    },
+    {
+      "file": "stove_empty/iron.png",
+      "prompt": "stove_empty/iron.prompt.txt",
+      "actual": [
+        1774,
+        886
+      ],
+      "required": [
+        941,
+        470
+      ],
+      "mode": "RGBA",
+      "alpha": [
+        0,
+        255
+      ],
+      "note": "??? ?? ?? ?? ???"
+    }
+  ]
+}

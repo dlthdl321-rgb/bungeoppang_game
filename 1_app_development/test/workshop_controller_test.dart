@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cooking_input.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
+import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
@@ -54,8 +55,8 @@ class Gateway implements WorkshopPurchaseGateway {
 CookingSession cookingFixture() {
   var s = CookingSession.start(id: 'practice-result', flavor: 'redbean', practice: true,
       fillingSequence: [CookingDirection.left]);
-  s = s.pour(s.token, 2500); s = s.fill(s.token, CookingDirection.left);
-  s = s.pour(s.token, 2500); s = s.close(s.token); return s.flip(s.token);
+  s = s.pour(s.token, PaintAmount.even); s = s.fill(s.token, CookingDirection.left);
+  s = s.pour(s.token, PaintAmount.even); s = s.close(s.token); return s.flip(s.token);
 }
 void main() {
   late DevelopmentBalance config;
@@ -65,15 +66,15 @@ void main() {
   setUp(() async {
     final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
     raw['ordinary_sale']['base_buns_by_difficulty'] = ['20','40','60'];
-    (raw['level_progression'][1] as Map).addAll(<String, dynamic>{'season_total_buns':'10', 'additional_taps':2,
-      'additional_sales':0, 'buns_reward':'3', 'gold_reward':1});
+    (raw['level_progression'][1] as Map).addAll(<String, dynamic>{'level_cost_buns':'10', 'additional_taps':2,
+      'additional_sold_pieces':1, 'buns_reward':'3', 'gold_reward':1});
     config = DevelopmentBalance.fromJson(raw);
     repository = Repository();
     controller = WorkshopController(config, repository, now: () => now, random: Random(7));
     await controller.initialize();
   });
   tearDown(() => controller.dispose());
-  test('신규 게임은 팥 미숙련·6구 미투입·재화0이며 코인 필드가 없다', () {
+  test('신규 게임은 팥 미숙련·숙련된 붕어빵 미투입·재화0이며 코인 필드가 없다', () {
     expect(controller.state.buns, BigInt.zero);
     expect(controller.state.mastery.complete(config), isFalse);
     expect(controller.state.grid.cookingSourceIds, isEmpty);
@@ -133,17 +134,107 @@ void main() {
     expect(controller.error, isNull);
     expect(controller.notice, isNotNull);
   });
-  test('승급은 수동1회이며 황금은 로컬 지급 대신 심사 대기로 저장한다', () async {
-    for (var i = 0; i < 10; i++) { controller.tap(); }
-    expect(controller.state.level, 1);
+  test('승급은 이번 레벨 판매 개수·탭을 채우고 붕어빵력을 내며, 황금 보상은 심사 대기로 저장한다 (4차 g9)', () async {
+    for (var i = 0; i < 9; i++) { controller.tap(); }
+    expect(controller.levelGoalsMet, isFalse, reason: '이번 레벨 판매 0개');
+    expect(await controller.command(() => controller.state.soldPieces = 1), isTrue);
+    expect(controller.levelGoalsMet, isTrue);
+    expect(controller.canLevelUp, isFalse, reason: '붕어빵력 9 < 비용 10');
+    expect(controller.levelWaitReason, '붕어빵력이 1 모자라요.');
+    expect(controller.levelProgressPermille, (1000 + 1000 + 900) ~/ 3);
+    expect(controller.levelCostNote, '레벨업할 때 붕어빵력 10이 쓰여요');
+    expect([for (final r in controller.levelRequirements) r.label],
+        ['이번 레벨에 판 붕어빵', '이번 레벨 탭', '레벨업 비용 붕어빵력']);
+    controller.tap();
     expect(controller.canLevelUp, isTrue);
-    expect(await controller.levelUp(), isTrue);
+    expect(controller.levelProgressPermille, 1000);
+    expect(controller.state.level, 1, reason: '탭만으로는 오르지 않고 다음 명령에서 오름');
+    expect(await controller.command(() {}), isTrue);
     expect(controller.state.level, 2);
-    expect(controller.state.buns, BigInt.from(13));
+    expect(controller.promotedTo, 2);
+    expect(controller.state.buns, BigInt.from(3), reason: '10 내고 보상 3');
+    expect(controller.state.lifetime, BigInt.from(13), reason: '낸 값은 누적에서 빼지 않음');
     expect(controller.state.pendingGold.containsKey('level:2'), isTrue);
     expect(controller.state.levelStartTaps, 10);
-    expect(await controller.levelUp(), isFalse);
+    expect(controller.state.levelStartPieces, 1);
+    expect(controller.levelPiecesSold, 0);
+    expect(controller.canLevelUp, isFalse);
+    controller.dismissPromotion();
+    expect(await controller.command(() {}), isTrue);
+    expect(controller.state.level, 2);
+    expect(controller.promotedTo, isNull);
     expect(controller.state.claimedLevels, {2});
+  });
+  test('판매 개수는 다 판 주문의 개수로 세고, 개수 없는 옛 저장은 판매 기록에서 다시 센다 (4차 g9)', () async {
+    await controller.openBusiness();
+    await controller.command(() {
+      controller.state.inventory = controller.state.inventory.recordResult(ProductBatch(id: 'b1', flavor: 'redbean', variant: 2,
+        quantity: 3, madeOnBusinessIndex: controller.state.business.businessIndex), keep: true);
+      controller.state.customers.insert(0, CustomerOrder(id: 'o1', remainingMs: 60000, lines: [CustomerOrderLine(flavor: 'redbean', quantity: 3)]));
+    });
+    expect(await controller.sellToCustomer('o1'), isTrue, reason: controller.notice);
+    expect(controller.state.soldPieces, 3);
+    final old = controller.state.toJson()..remove('soldPieces')..remove('levelStartPieces');
+    final loaded = WorkshopState.fromJson(old, config);
+    expect(loaded.soldPieces, 3);
+    expect(loaded.levelStartPieces, 0);
+    expect(() => WorkshopState.fromJson({...controller.state.toJson(), 'levelStartPieces': 4}, config), throwsFormatException);
+  });
+  test('황금이 드는 레벨(level:N)은 서버 구매로 두 재화를 낸 뒤에만 오른다 (4차 g9)', () async {
+    final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
+    (raw['level_progression'][1] as Map).addAll(<String, dynamic>{'level_cost_buns':'5', 'additional_taps':0,
+      'additional_sold_pieces':1, 'level_cost_gold':20});
+    final goldConfig = DevelopmentBalance.fromJson(raw), gateway = Gateway();
+    final c = WorkshopController(goldConfig, Repository(), now: () => now, random: Random(7), purchaseGateway: gateway);
+    addTearDown(c.dispose); await c.initialize();
+    for (var i = 0; i < 8; i++) { c.tap(); }
+    await c.command(() => c.state.soldPieces = 1);
+    expect(c.levelCostNote, '레벨업할 때 붕어빵력 5, 황금붕어빵력 20개가 쓰여요');
+    expect(c.levelRequirements.length, 4);
+    c.goldBalance = 19;
+    expect(c.canLevelUp, isFalse);
+    expect(c.levelGoldDue, isFalse);
+    expect(c.levelWaitReason, '황금붕어빵력이 1 모자라요.');
+    c.goldBalance = 20;
+    expect(c.levelGoldDue, isTrue);
+    expect(await c.command(() {}), isTrue);
+    expect(c.state.level, 1, reason: '황금을 내기 전');
+    expect(await c.payLevelGold(), isTrue, reason: c.notice);
+    expect(c.state.purchases.owned['level:2'], 1);
+    // The purchase took 붕어빵력 5; the automatic 승급 (4차 g1) raises the
+    // level by the next command at the latest, without taking it twice.
+    await c.command(() {});
+    expect(c.state.level, 2);
+    expect(c.state.buns, BigInt.from(3) + DevelopmentBalance.decimal(goldConfig.rows('level_progression')[1], 'buns_reward'),
+        reason: '8 - 5 + 레벨 보상, 두 번 빼지 않음');
+    final reloaded = WorkshopState.fromJson(c.state.toJson(), goldConfig);
+    expect(reloaded.purchases.owned['level:2'], 1);
+  });
+  test('저장에 실패하면 자동 승급도 되돌리고, 레벨마다 판매가 새로 필요해 한 번에 여러 레벨을 오르지 않는다 (4차 IA1·g9)', () async {
+    final raw = jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String, dynamic>;
+    for (final i in [1, 2]) {
+      (raw['level_progression'][i] as Map).addAll(<String, dynamic>{'level_cost_buns':'5', 'additional_taps':i == 1 ? 2 : 0,
+        'additional_sold_pieces':1, 'level_cost_gold':0, 'buns_reward':'3', 'gold_reward':1});
+    }
+    final chained = DevelopmentBalance.fromJson(raw), repo = Repository();
+    final c = WorkshopController(chained, repo, now: () => now, random: Random(7));
+    await c.initialize();
+    try {
+      for (var i = 0; i < 10; i++) { c.tap(); }
+      repo.fail = true;
+      expect(await c.command(() => c.state.soldPieces = 2), isFalse);
+      expect(c.state.level, 1);
+      expect(c.promotedTo, isNull);
+      await c.reloadAfterError();
+      while (c.state.taps < 10) { c.tap(); }
+      expect(await c.command(() => c.state.soldPieces = 2), isTrue);
+      expect(c.state.level, 2, reason: '앞 레벨에 판 2개는 다음 레벨로 넘어가지 않음');
+      expect(c.promotedTo, 2);
+      expect(c.state.pendingGold.keys, contains('level:2'));
+      expect(await c.command(() => c.state.soldPieces = 3), isTrue);
+      expect(c.state.level, 3);
+      expect(c.state.claimedLevels, {2, 3});
+    } finally { c.dispose(); }
   });
   test('손님이 취소·퇴장해도 명시 주문 관찰은 남고 도감 보상은 없다', () async {
     await controller.openBusiness();
@@ -162,12 +253,12 @@ void main() {
     final gateway = Gateway()..loseCommit = true;
     expect(await controller.purchaseSkill(gateway, 'tap_1'), isFalse);
     final transaction = controller.state.purchases.journals.keys.single;
-    expect(controller.state.buns, BigInt.from(85));
+    expect(controller.state.buns, BigInt.from(80));
     expect(controller.state.purchases.owned, isEmpty);
     expect(await controller.recoverPurchase(gateway, transaction), isTrue);
     expect(controller.state.purchases.owned, {'tap_1':1});
     expect(await controller.recoverPurchase(gateway, transaction), isTrue);
-    expect(controller.state.buns, BigInt.from(85));
+    expect(controller.state.buns, BigInt.from(80));
     expect(gateway.commits, 1); expect(gateway.reservations, 1);
   });
   test('서버 성공 후 영수증 저장 실패는 재읽기 전 새 상품/구매를 허용하지 않는다', () async {
@@ -179,8 +270,17 @@ void main() {
     await controller.reloadAfterError();
     final transaction = controller.state.purchases.journals.keys.single;
     expect(await controller.recoverPurchase(gateway, transaction), isTrue);
-    expect(controller.state.buns, BigInt.from(85));
+    expect(controller.state.buns, BigInt.from(80));
     expect(controller.tapRate, BigInt.from(2));
+  });
+  test('로그인 전 레벨업은 미정산 거래 없이 로그인 안내만 남긴다 (26번 3단계)', () async {
+    await controller.command(() { controller.state.buns = BigInt.from(100); controller.state.lifetime = BigInt.from(100); });
+    final gateway = Gateway()..authenticatedAccount = '';
+    expect(await controller.purchaseSkill(gateway, 'tap_1'), isFalse);
+    expect(controller.notice, '카카오 로그인 후 레벨업할 수 있어요.');
+    expect(controller.state.purchases.journals, isEmpty);
+    expect(gateway.reservations, 0);
+    expect(controller.state.buns, BigInt.from(100));
   });
   test('구매 계정을 바꿔도 기존 지갑의 미정산 거래를 다른 계정으로 이전하지 않는다', () async {
     await controller.command(() { controller.state.buns = BigInt.from(100); controller.state.lifetime = BigInt.from(100); });
@@ -214,18 +314,64 @@ void main() {
     final buns = controller.state.buns;
     controller.tap();
     expect(controller.state.buns, buns);
-    expect(await controller.startPractice(), isFalse);
+    // In business the mold makes orders only (24번 3단계).
+    final order = controller.state.customers.single, flavor = order.lines.first.flavor;
+    expect(await controller.startOrderProduction(order.id, flavor), isFalse);
     expect(controller.state.customers.single.toJson(), customer);
     controller.setAdPaused(false);
-    expect(await controller.startPractice(), isTrue);
+    expect(await controller.startOrderProduction(order.id, flavor), isTrue);
   });
   test('schema1은 구매 없는 schema4로 읽되 신규 구매 누락은 초기화하지 않는다', () {
     final legacy = controller.state.toJson();
     legacy['schema'] = 1;
-    for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime','relationships','customerScene','tutorial']) { legacy.remove(key); }
-    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], 6);
+    for(final key in ['purchases','rewardAccount','rewardReceipts','adAttempts','avatarEquipment','missions','sceneTime','relationships','customerScene','tutorial','regularClock','namedClock','lastNamedVisitor','featureIntros','daily','pantry','pendingSales','archivedSales','archivedSalesBuns','archivedNamedSales']) { legacy.remove(key); }
+    expect(WorkshopState.fromJson(legacy, config).toJson()['schema'], workshopSchema);
     final corrupted = controller.state.toJson()..remove('purchases');
     expect(() => WorkshopState.fromJson(corrupted, config), throwsFormatException);
+  });
+  // 4차 피드백 g7 (사용자 결정 2026-11-21): 예전 경제의 저장은 출시 전에 한 번 처음부터.
+  test('경제 재조정 전(schema 10) 저장은 처음 열 때 한 번 새 가게로, 고른 사장님·끝낸 안내만 남긴다', () async {
+    expect(await controller.command(() {
+      controller.state.buns = BigInt.parse('900000000'); controller.state.lifetime = BigInt.parse('900000000');
+      controller.state.tutorial = 'done';
+    }), isTrue, reason: controller.error);
+    expect(await controller.chooseStarterCharacter('boy'), isTrue);
+    final old = controller.state.toJson()..['schema'] = 10..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
+    final oldRun = controller.state.grid.runId, oldSequence = old['sequence'] as int;
+    final stored = Repository()..stored = old;
+    final reopened = WorkshopController(config, stored, now: () => now, random: Random(8));
+    addTearDown(reopened.dispose);
+    await reopened.initialize();
+    final s = reopened.state;
+    expect(s.level, 1);
+    expect(s.buns, BigInt.zero);
+    expect(s.lifetime, BigInt.zero);
+    expect(s.purchases.owned, isEmpty);
+    expect(s.avatarGrants, {'boy'});
+    expect(s.avatarEquipment['character'], 'boy');
+    expect(s.tutorial, 'done');
+    expect(s.grid.runId, isNot(oldRun));
+    expect(s.sequence, oldSequence + 1);
+    expect(reopened.notice, economyResetNotice);
+    expect(reopened.awayReport, isNull);
+    expect(stored.stored!['schema'], workshopSchema);
+    // Once: the saved schema 11 shop is not reset again.
+    await reopened.command(() { reopened.state.buns = BigInt.from(5); reopened.state.lifetime = BigInt.from(5); });
+    final again = WorkshopController(config, stored, now: () => now, random: Random(9));
+    addTearDown(again.dispose);
+    await again.initialize();
+    expect(again.state.buns, BigInt.from(5));
+    expect(again.state.grid.runId, s.grid.runId);
+    expect(again.notice, isNull);
+  });
+  test('경제 재조정 초기화: 안내 중이던 저장은 안내부터, 사장님을 고르지 않았으면 여자 사장님', () {
+    final old = WorkshopState.fromJson(controller.state.toJson(), config);
+    expect(old.tutorialActive, isTrue);
+    final fresh = WorkshopState.economyReset(old, now, config, 'resetrun0000000000000001');
+    expect(fresh.tutorial, 'cook');
+    expect(fresh.avatarGrants, {'girl'});
+    expect(fresh.avatarEquipment.containsKey('character'), isFalse);
+    expect(WorkshopState.fromJson(fresh.toJson(), config).toJson(), fresh.toJson());
   });
   test('판매 원장과 심사 증거가 달라지면 손상 저장을 거부한다', () async {
     await controller.openBusiness();
@@ -273,7 +419,7 @@ void main() {
     expect(() => WorkshopState.fromJson(saved,config),throwsFormatException);
   });
 
-  test('첫 도윤은 팥 주문이며 네임드 하루2명 뒤에는 무기명 손님이 온다', () async {
+  test('첫 도윤은 팥 주문, 소개 하루 2명 뒤에는 직전 손님을 뺀 네임드, 일반 손님은 무기명 (5-1단계)', () async {
     await controller.openBusiness();
     expect(await controller.welcomeCustomer(),isTrue);
     final first=controller.state.customers.single;
@@ -283,6 +429,10 @@ void main() {
     expect(controller.state.customers.single.customerId,'npc_yunha');
     await controller.command(()=>controller.state.customers.clear());
     await controller.welcomeCustomer();
+    expect(controller.state.customers.single.customerId,'npc_doyun',reason:'하루 1회 제한 없음, 직전 윤하는 뺌');
+    expect(controller.state.lastNamedVisitor,'npc_doyun');
+    await controller.command(()=>controller.state.customers.clear());
+    await controller.welcomeCustomer(named:false);
     final anonymous=controller.state.customers.single.customerId;
     expect(anonymous,startsWith('anonymous_'));
     expect(controller.state.tasteObservations.containsKey(anonymous),isFalse);
@@ -309,10 +459,10 @@ void main() {
     expect(restored.sales.length,1);
   });
   test('schema3 보상·구매를 유지하여 최신 schema로 읽고 관계 누락은 새 기본값으로 덮지 않는다', () {
-    final old=controller.state.toJson()..remove('relationships')..remove('customerScene')..remove('tutorial');old['schema']=3;
+    final old=controller.state.toJson()..remove('relationships')..remove('customerScene')..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');old['schema']=3;
     final restored=WorkshopState.fromJson(old,config);
     expect(restored.purchases.toJson(),controller.state.purchases.toJson());
-    expect(restored.toJson()['schema'],6);
+    expect(restored.toJson()['schema'], workshopSchema);
     final bad=controller.state.toJson()..remove('relationships');
     expect(()=>WorkshopState.fromJson(bad,config),throwsFormatException);
     old['relationships']={};expect(()=>WorkshopState.fromJson(old,config),throwsFormatException);

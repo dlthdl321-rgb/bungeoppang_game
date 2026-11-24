@@ -19,6 +19,7 @@ import 'invite_repository.dart';
 import 'mock_invite_repository.dart';
 import 'invite_config.dart';
 import 'invite_rules.dart';
+import 'invite_reward_rules.dart';
 import 'achievement_config.dart';
 import 'cosmetic_config.dart';
 import 'menu_rules.dart';
@@ -26,12 +27,14 @@ import 'progress_rules.dart';
 import 'weekly_config.dart';
 import 'billing_service.dart';
 import 'online_backend.dart';
+import 'online_texts.dart';
 import 'premium_config.dart';
 import 'online_ranking.dart';
 import 'feedback_config.dart';
 import 'game_events.dart';
 import 'prestige_rules.dart';
 import 'ranking_config.dart';
+import 'usage_stats.dart';
 
 part 'invite_controller.dart';
 part 'boost_controller.dart';
@@ -91,10 +94,22 @@ class GameController extends ChangeNotifier {
   /// Firebase backend (online_controller.dart): friends, visits, invites.
   final OnlineBackend online;
   bool _onlineSyncing = false, _levelOneReported = false, _signingIn = false;
+  /// 29번 친구 초대: whether the NEW game (WorkshopController) reached the
+  /// invitation's goal level ([InviteRewardRules.goalReached]); set by the
+  /// app's wiring. Null: never report.
+  bool Function()? inviteGoalReached;
+  int _inviteRetryAtMs = 0;
+  /// The owner name (사장님 이름) friends and rankings show, and how the
+  /// player logs in; both set by OwnerAccount (26번 2-1단계).
+  String? ownerName;
+  LoginProvider? preferredLogin;
   int? _lastOnlineSyncMs;
 
   /// Google Play Billing for 황금 붕어빵 packs (premium_controller.dart).
   final BillingService billing;
+
+  /// 사용 통계(26번 5단계). Follows the '사용 통계 보내기' setting.
+  final UsageStats usage;
   StreamSubscription<BillingPurchase>? _billingSub;
 
   /// Last wallet message for the shop ('충전 완료', ...), or null.
@@ -119,8 +134,10 @@ class GameController extends ChangeNotifier {
       bool? developerTools,
       math.Random? goldenRandom,
       this.online = const NoOnlineBackend(),
-      this.billing = const NoBillingService()})
-      : developerTools = developerTools ?? !kReleaseMode,
+      this.billing = const NoBillingService(),
+      UsageStats? usage})
+      : usage = usage ?? UsageStats.none,
+        developerTools = developerTools ?? !kReleaseMode,
         _goldenRandom = goldenRandom ?? math.Random(),
         invitationRepository =
             invitationRepository ?? MockInvitationRepository();
@@ -146,6 +163,7 @@ class GameController extends ChangeNotifier {
       rethrow;
     }
     _lastMono = clock.monotonicMilliseconds;
+    usage.setEnabled(state.settings.sendUsageStats);
     // Initialization is a transition from an inactive session. A real
     // stopwatch is usually non-zero after loading, so it cannot identify it.
     _away = true;
@@ -283,7 +301,9 @@ class GameController extends ChangeNotifier {
       // Cosmetics this level unlocks, one line per category.
       final unlocked = <CosmeticCategory, List<String>>{};
       for (final d in cosmetics) {
-        if (d.collectible && d.unlockLevel == target.level) {
+        // Withdrawn items (waiting for art, 26번 3차 AV3) are not news.
+        if (d.collectible && d.unlockLevel == target.level &&
+            !avatarItemWithdrawn(state.equippedCosmetic(CosmeticSlot.character), d.id)) {
           (unlocked[d.slot.category] ??= []).add(d.name);
         }
       }
@@ -582,7 +602,12 @@ class GameController extends ChangeNotifier {
       int? musicVolume,
       String? musicSelection,
       bool? cookingSound,
-      int? cookingVolume}) async {
+      int? cookingVolume,
+      bool? notifyRegularGuests,
+      bool? notifyNamedGuests,
+      bool? quietNightNotices,
+      bool? notificationPromptDone,
+      bool? sendUsageStats}) async {
     final previous = _settingsQueue;
     final done = Completer<void>();
     _settingsQueue = done.future;
@@ -605,8 +630,15 @@ class GameController extends ChangeNotifier {
       s.music = music ?? s.music;
       s.sfxVolume = (sfxVolume ?? s.sfxVolume).clamp(0, 100);
       s.musicVolume = (musicVolume ?? s.musicVolume).clamp(0, 100);
+      s.notifyRegularGuests = notifyRegularGuests ?? s.notifyRegularGuests;
+      s.notifyNamedGuests = notifyNamedGuests ?? s.notifyNamedGuests;
+      s.quietNightNotices = quietNightNotices ?? s.quietNightNotices;
+      s.notificationPromptDone = notificationPromptDone ?? s.notificationPromptDone;
+      s.sendUsageStats = sendUsageStats ?? s.sendUsageStats;
       // Restore the previous settings if this one-shot save fails.
       await _commit(before);
+      // The kept value, also when the save failed and restored the old one.
+      if (sendUsageStats != null) usage.setEnabled(state.settings.sendUsageStats);
     } finally {
       done.complete();
     }

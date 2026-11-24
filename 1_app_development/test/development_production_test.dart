@@ -60,11 +60,14 @@ void main() {
     ((damaged['batches'] as Map)['result-1'] as Map)['madeOnBusinessIndex'] = 6;
     expect(() => InventoryProgress.fromJson(damaged), throwsFormatException);
   });
-  test('6구는 보유/숙련 맛만 배정하고 꺼내기 전에는 제품을 만들지 않는다', () {
+  test('숙련된 붕어빵은 보유/숙련 맛만 배정하고 꺼내기 전에는 제품을 만들지 않는다', () {
     var grid = GriddleProgress.empty('run-1', config);
     expect(() => grid.start(0, config, ownedAndMastered: {}, choose: (ids) => 'redbean'), throwsFormatException);
     grid = grid.start(0, config, ownedAndMastered: {'redbean': 0}, choose: (ids) => ids.single);
     expect(grid.cookingSourceIds.length, 1);
+    // 4차 g6: batter and filling go in by themselves first; no take-out then.
+    expect(() => grid.harvest(0, config, businessIndex: 1), throwsFormatException);
+    grid = grid.advanceActive(GriddleProgress.prepMs(config));
     final harvest = grid.harvest(0, config, businessIndex: 1);
     expect(harvest.product!.variant, 0);
     expect(harvest.state.cookingSourceIds, isEmpty);

@@ -7,7 +7,7 @@
 
 ## 확인한 기존 구현과 보완
 
-기존 인증은 Firebase custom token의 provider=kakao 및 UID를 사용한다. 요청 account를 인증 UID로 대조하고, 진행 claim/epoch와 구매 pending 잠금으로 다른 진행의 변경을 차단한다. Firestore 클라이언트 read/write는 모두 거부한다. App Check는 현재 options.enforceAppCheck=false로 운영 보안 검토가 남는다. App Check만으로 생산/차감 증거를 대체할 수 없다.
+기존 인증은 Firebase custom token의 provider=kakao 및 UID를 사용한다. 요청 account를 인증 UID로 대조하고, 진행 claim/epoch와 구매 pending 잠금으로 다른 진행의 변경을 차단한다. Firestore 클라이언트 read/write는 모두 거부한다. App Check는 당시 options.enforceAppCheck=false였고, 2026-11-17 23번 7단계에서 모든 callable 강제(`callable_options.ts`)로 바뀌었다. App Check만으로 생산/차감 증거를 대체할 수 없다.
 
 서버 생성 설정의 revision·상품·실제 서버 보유 회차로 두 재화 가격을 재계산한다. 일반 재화는 신뢰된 보호 스냅샷의 현재 잔액, 해금은 누적·레벨, 황금은 서버 현재 지갑으로 검사한다. 황금 홀드/원장/잠금은 같은 트랜잭션, 확정은 보유 회차와 원장, 취소는 환불과 원장을 함께 기록한다. 새로운 지갑이나 클라이언트 황금 생성은 추가하지 않았다.
 

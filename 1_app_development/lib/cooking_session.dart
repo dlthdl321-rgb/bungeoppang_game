@@ -1,22 +1,36 @@
 import 'dart:convert';
 import 'cooking_input.dart';
+import 'cooking_paint.dart';
 import 'development_balance.dart';
 
 enum CookingPhase { firstBatter, filling, secondBatter, closing, flipping, cooking, result, canceled }
 
-/// Explicit command state shared by sensor and touch UI. Flavor entry, filling
-/// sequence and final technique policy are supplied by the caller, never guessed.
+/// Explicit command state for the special bungeoppang mold. Flavor entry,
+/// filling sequence and final technique policy are supplied by the caller,
+/// never guessed.
+///
+/// The three piping steps record painted area (24번 5단계, DEC-031·032) as
+/// permille pairs: `firstBatterCoverage/Amount`, `fillingCoverage/Amount`,
+/// `secondBatterCoverage/Amount`, and the spilled paste `<step>Spill` when
+/// there was any (4차 피드백 IC4, absent = 0). They are additive fields of schema 1 (G1):
+/// the old hold-time fields `firstBatterMs`, `secondBatterMs` and
+/// `fillingDurationMs` are still read from older saves, never written for a
+/// new step. A step is done when either kind of record is present.
 class CookingSession {
   final String id, flavor;
   final bool practice;
   final List<CookingDirection> fillingSequence;
   final CookingPhase phase;
   final int token, fillingIndex, wrongInputs;
-  final int? firstBatterMs, secondBatterMs, donenessElapsedMs;
-  final int? fillingDurationMs;
-  CookingSession._(this.id, this.flavor, this.practice, this.fillingSequence,
+  final int? donenessElapsedMs;
+
+  /// Legacy hold times (older saves only).
+  final int? firstBatterMs, secondBatterMs, fillingDurationMs;
+  final PaintAmount? firstBatter, filling, secondBatter;
+  const CookingSession._(this.id, this.flavor, this.practice, this.fillingSequence,
       this.phase, this.token, this.fillingIndex, this.wrongInputs,
-      this.firstBatterMs, this.secondBatterMs, this.donenessElapsedMs, [this.fillingDurationMs]);
+      {this.donenessElapsedMs, this.firstBatterMs, this.secondBatterMs,
+      this.fillingDurationMs, this.firstBatter, this.filling, this.secondBatter});
 
   factory CookingSession.start({required String id, required String flavor,
       required bool practice, required List<CookingDirection> fillingSequence}) {
@@ -24,22 +38,35 @@ class CookingSession {
       throw const FormatException('제작 진입 정보 오류');
     }
     return CookingSession._(id, flavor, practice, List.unmodifiable(fillingSequence),
-        CookingPhase.firstBatter, 0, 0, 0, null, null, null);
+        CookingPhase.firstBatter, 0, 0, 0);
   }
   bool get finished => phase == CookingPhase.result || phase == CookingPhase.canceled;
-  CookingSession _next(CookingPhase phase, {int? fillingIndex, int? wrongInputs,
-      int? firstBatterMs, int? secondBatterMs, int? donenessElapsedMs}) =>
-    CookingSession._(id, flavor, practice, fillingSequence, phase, token + 1,
-      fillingIndex ?? this.fillingIndex, wrongInputs ?? this.wrongInputs,
-      firstBatterMs ?? this.firstBatterMs, secondBatterMs ?? this.secondBatterMs,
-      donenessElapsedMs ?? this.donenessElapsedMs, fillingDurationMs);
+  bool get firstBatterDone => firstBatterMs != null || firstBatter != null;
+  bool get secondBatterDone => secondBatterMs != null || secondBatter != null;
+  bool get fillingSqueezed => fillingDurationMs != null || filling != null;
 
-  /// A stale release/direction event is ignored, rather than forwarded.
-  CookingSession pour(int eventToken, int durationMs) {
+  CookingSession _copy({CookingPhase? phase, int? token, int? fillingIndex, int? wrongInputs,
+      int? donenessElapsedMs, PaintAmount? firstBatter, PaintAmount? filling,
+      PaintAmount? secondBatter}) =>
+    CookingSession._(id, flavor, practice, fillingSequence, phase ?? this.phase,
+      token ?? this.token, fillingIndex ?? this.fillingIndex, wrongInputs ?? this.wrongInputs,
+      donenessElapsedMs: donenessElapsedMs ?? this.donenessElapsedMs,
+      firstBatterMs: firstBatterMs, secondBatterMs: secondBatterMs,
+      fillingDurationMs: fillingDurationMs,
+      firstBatter: firstBatter ?? this.firstBatter, filling: filling ?? this.filling,
+      secondBatter: secondBatter ?? this.secondBatter);
+  CookingSession _next(CookingPhase phase, {int? fillingIndex, int? wrongInputs,
+      int? donenessElapsedMs, PaintAmount? firstBatter, PaintAmount? secondBatter}) =>
+    _copy(phase: phase, token: token + 1, fillingIndex: fillingIndex, wrongInputs: wrongInputs,
+      donenessElapsedMs: donenessElapsedMs, firstBatter: firstBatter, secondBatter: secondBatter);
+
+  /// One brush stroke of batter. A stale event is ignored; an empty stroke
+  /// (nothing painted in the fish, G3) is never a step.
+  CookingSession pour(int eventToken, PaintAmount paint) {
     if (eventToken != token || finished) return this;
-    if (durationMs < 0) throw const FormatException('음수 반죽 시간');
-    if (phase == CookingPhase.firstBatter) return _next(CookingPhase.filling, firstBatterMs: durationMs);
-    if (phase == CookingPhase.secondBatter) return _next(CookingPhase.closing, secondBatterMs: durationMs);
+    if (!paint.valid) throw const FormatException('반죽 칠 양 오류');
+    if (phase == CookingPhase.firstBatter) return _next(CookingPhase.filling, firstBatter: paint);
+    if (phase == CookingPhase.secondBatter) return _next(CookingPhase.closing, secondBatter: paint);
     return this;
   }
   CookingSession fill(int eventToken, CookingDirection direction) {
@@ -51,18 +78,17 @@ class CookingSession {
     return _next(index == fillingSequence.length ? CookingPhase.secondBatter : phase,
         fillingIndex: index);
   }
-  /// Piping-bag hold. Retains the old sequence/token encoding for saved sessions,
-  /// but consumes the remaining legacy filling steps as one atomic action.
-  CookingSession squeezeFilling(int eventToken, int durationMs) {
+  /// Piping-bag stroke of filling. Retains the old sequence/token encoding for
+  /// saved sessions, but consumes the remaining legacy filling steps as one
+  /// atomic action.
+  CookingSession squeezeFilling(int eventToken, PaintAmount paint) {
     if(eventToken != token || phase != CookingPhase.filling) return this;
-    if(durationMs < 0) throw const FormatException('음수 속 넣기 시간');
+    if(!paint.valid) throw const FormatException('속 칠 양 오류');
     var next = this;
     while(next.phase == CookingPhase.filling) {
       next = next.fill(next.token, next.fillingSequence[next.fillingIndex]);
     }
-    return CookingSession._(next.id, next.flavor, next.practice, next.fillingSequence,
-      next.phase, next.token, next.fillingIndex, next.wrongInputs,
-      next.firstBatterMs, next.secondBatterMs, next.donenessElapsedMs, durationMs);
+    return next._copy(filling: paint);
   }
   CookingSession close(int eventToken) => eventToken == token && phase == CookingPhase.closing
       ? _next(CookingPhase.flipping) : this;
@@ -78,6 +104,12 @@ class CookingSession {
     'practice': practice, 'fillingSequence': fillingSequence.map((d) => d.name).toList(),
     'phase': phase.name, 'token': token, 'fillingIndex': fillingIndex, 'wrongInputs': wrongInputs,
     if(fillingDurationMs != null) 'fillingDurationMs': fillingDurationMs,
+    if(firstBatter != null) ...{'firstBatterCoverage': firstBatter!.coverage, 'firstBatterAmount': firstBatter!.amount,
+      if (firstBatter!.spill > 0) 'firstBatterSpill': firstBatter!.spill},
+    if(filling != null) ...{'fillingCoverage': filling!.coverage, 'fillingAmount': filling!.amount,
+      if (filling!.spill > 0) 'fillingSpill': filling!.spill},
+    if(secondBatter != null) ...{'secondBatterCoverage': secondBatter!.coverage, 'secondBatterAmount': secondBatter!.amount,
+      if (secondBatter!.spill > 0) 'secondBatterSpill': secondBatter!.spill},
       'firstBatterMs': firstBatterMs, 'secondBatterMs': secondBatterMs, 'donenessElapsedMs': donenessElapsedMs};
   factory CookingSession.fromJson(Map<String, dynamic> row) {
     final directions = row['fillingSequence'];
@@ -91,32 +123,50 @@ class CookingSession {
       practice: row['practice'] as bool, fillingSequence: directions.map((d) =>
           d == 'left' ? CookingDirection.left : CookingDirection.right).toList());
     int? amount(String key) => row[key] == null ? null : DevelopmentBalance.integer(row, key);
+    PaintAmount? paint(String stage) {
+      final coverage = amount('${stage}Coverage'), total = amount('${stage}Amount');
+      final spill = amount('${stage}Spill');
+      if (coverage == null && total == null && spill == null) return null;
+      final value = PaintAmount(coverage ?? 0, total ?? 0, spill ?? 0);
+      if (coverage == null || total == null || !value.valid) throw const FormatException('칠 양 기록 오류');
+      return value;
+    }
     final fillingMs = amount('fillingDurationMs');
+    final fillingPaint = paint('filling');
     final phase = CookingPhase.values.firstWhere((p) => p.name == row['phase']);
     final token = DevelopmentBalance.integer(row, 'token');
     final index = DevelopmentBalance.integer(row, 'fillingIndex');
     final wrong = DevelopmentBalance.integer(row, 'wrongInputs');
-    final first = amount('firstBatterMs'), second = amount('secondBatterMs'), elapsed = amount('donenessElapsedMs');
+    final firstMs = amount('firstBatterMs'), secondMs = amount('secondBatterMs'), elapsed = amount('donenessElapsedMs');
+    final firstPaint = paint('firstBatter'), secondPaint = paint('secondBatter');
+    if ((firstMs != null && firstPaint != null) || (secondMs != null && secondPaint != null) ||
+        (fillingMs != null && fillingPaint != null) ||
+        (firstMs != null && firstMs < 0) || (secondMs != null && secondMs < 0)) {
+      throw const FormatException('반죽 기록 중복');
+    }
+    final first = firstMs != null || firstPaint != null, second = secondMs != null || secondPaint != null;
     final count = initial.fillingSequence.length;
-    if(fillingMs != null && (fillingMs < 0 || index != count ||
+    if((fillingMs != null || fillingPaint != null) && ((fillingMs ?? 0) < 0 || index != count ||
       ![CookingPhase.secondBatter,CookingPhase.closing,CookingPhase.flipping,CookingPhase.cooking,CookingPhase.result,CookingPhase.canceled].contains(phase))) {
       throw const FormatException('속 넣기 양 기록 불일치');
     }
-    if (index > count || (first == null && (index != 0 || wrong != 0 || second != null)) ||
-        (second != null && index != count)) throw const FormatException('제작 진행 불일치');
+    if (index > count || (!first && (index != 0 || wrong != 0 || second)) ||
+        (second && index != count)) throw const FormatException('제작 진행 불일치');
     if (phase == CookingPhase.canceled) {
       if (elapsed != null || token < 1 || token > count + wrong + 5) throw const FormatException('취소 상태 오류');
     } else {
       final stage = phase.index;
       final expected = stage == 0 ? 0 : stage == 1 ? 1 + index + wrong : count + wrong + stage - 1;
-      if ((stage == 0 && (first != null || index != 0 || wrong != 0)) ||
-          (stage > 0 && first == null) || (stage == 1 && index >= count) ||
+      if ((stage == 0 && (first || index != 0 || wrong != 0)) ||
+          (stage > 0 && !first) || (stage == 1 && index >= count) ||
           (stage >= 2 && index != count) ||
-          ((stage >= 3) != (second != null)) || ((phase == CookingPhase.result) != (elapsed != null)) ||
+          ((stage >= 3) != second) || ((phase == CookingPhase.result) != (elapsed != null)) ||
           token != expected) throw const FormatException('제작 단계/순번 불일치');
     }
     return CookingSession._(initial.id, initial.flavor, initial.practice, initial.fillingSequence,
-        phase, token, index, wrong, first, second, elapsed, fillingMs);
+        phase, token, index, wrong, donenessElapsedMs: elapsed, firstBatterMs: firstMs,
+        secondBatterMs: secondMs, fillingDurationMs: fillingMs, firstBatter: firstPaint,
+        filling: fillingPaint, secondBatter: secondPaint);
   }
 
 }
@@ -126,10 +176,11 @@ class CookingSession {
 bool isCookingSuccessor(CookingSession previous, CookingSession next) {
   if (next.id != previous.id || next.token <= previous.token) return false;
   final encoded = jsonEncode(next.toJson());
+  const none = PaintAmount(0, 0);
   final candidates = <CookingSession Function()>[
-    () => previous.pour(previous.token, next.firstBatterMs ?? 0),
-    () => previous.pour(previous.token, next.secondBatterMs ?? 0),
-    () => previous.squeezeFilling(previous.token, next.fillingDurationMs ?? 0),
+    () => previous.pour(previous.token, next.firstBatter ?? none),
+    () => previous.pour(previous.token, next.secondBatter ?? none),
+    () => previous.squeezeFilling(previous.token, next.filling ?? none),
     () => previous.fill(previous.token, CookingDirection.left),
     () => previous.fill(previous.token, CookingDirection.right),
     () => previous.close(previous.token),

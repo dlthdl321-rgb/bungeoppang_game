@@ -22,6 +22,32 @@ void main() {
   const difficulties = {'redbean': 0};
 
   group('주문 규칙', () {
+    // 4차 병합 3 사용자 결정: 특제 반죽 또는 속으로 만든 붕어빵은 판매 대금 +50%,
+    // 둘 다면 +100% (탭·자동에는 없음).
+    test('특제로 만든 붕어빵은 판매 대금이 1.5배·2배, 증거와 저장에 특제 배율이 남는다', () {
+      BigInt paid(int bonus) {
+        final made = ProductBatch(id: 'b$bonus', flavor: 'redbean', variant: 2, quantity: 1, madeOnBusinessIndex: 1,
+            bonusPermille: bonus);
+        final stock = InventoryProgress.empty().recordResult(made, keep: true);
+        expect(InventoryProgress.fromJson(jsonDecode(jsonEncode(stock.toJson())) as Map<String, dynamic>)
+            .batches['b$bonus']!.bonusPermille, bonus);
+        final done = CustomerSalesProgress(inventory: stock, ordinaryBuns: BigInt.zero, lifetimeSalesBuns: BigInt.zero)
+            .sell(config, order(quantity: 1), selectedByLine: [{'b$bonus': 1}], businessIndex: 1,
+                flavorDifficulties: difficulties);
+        final evidence = validateStoredCustomerSale('order', done.sales['order']!);
+        final product = (evidence['products'] as List).single as Map<String, dynamic>;
+        expect(product['bonusPermille'], bonus == 1000 ? isNull : bonus);
+        expect(evidence.containsKey('premiumBuns'), bonus != 1000);
+        return done.ordinaryBuns;
+      }
+      final plain = paid(1000);
+      expect(paid(1500), plain * BigInt.from(3) ~/ BigInt.two);
+      expect(paid(2000), plain * BigInt.two);
+      expect(premiumSaleBuns(BigInt.from(41), 1500), BigInt.from(61));
+      expect(() => ProductBatch(id: 'x', flavor: 'redbean', variant: 2, quantity: 1, madeOnBusinessIndex: 1,
+          bonusPermille: 999), throwsFormatException);
+    });
+
     test('부분 납품은 대금만 즉시 받고 판매 원장을 만들지 않는다', () {
       final stock = InventoryProgress.empty().recordResult(batch('first', 1), keep: true);
       final start = CustomerSalesProgress(inventory: stock, ordinaryBuns: BigInt.zero, lifetimeSalesBuns: BigInt.zero);
@@ -160,10 +186,10 @@ void main() {
     test('schema4 저장은 최신 schema로 읽고, schema4에 납품 기록이 있으면 거절한다', () async {
       await controller.command(() => controller.state.customers.add(order()));
       await stock('first');
-      final schema4 = controller.state.toJson()..['schema'] = 4..remove('tutorial');
-      expect(WorkshopState.fromJson(schema4, config).toJson()['schema'], 6);
+      final schema4 = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
+      expect(WorkshopState.fromJson(schema4, config).toJson()['schema'], workshopSchema);
       expect(await controller.sellToCustomer('order'), isTrue);
-      final forged = controller.state.toJson()..['schema'] = 4..remove('tutorial');
+      final forged = controller.state.toJson()..['schema'] = 4..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       expect(() => WorkshopState.fromJson(forged, config), throwsFormatException);
     });
 

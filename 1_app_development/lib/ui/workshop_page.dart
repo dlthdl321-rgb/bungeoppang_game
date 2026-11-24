@@ -1,14 +1,15 @@
 import '../cooking_result_rules.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
-import '../cooking_input.dart';
-import '../cooking_sensor_input.dart';
-import '../cooking_tilt_source.dart';
 import '../development_balance.dart';
+import '../game_audio.dart';
 import '../game_controller.dart';
 import '../workshop_controller.dart';
 import '../cosmetic_config.dart';
 import '../workshop_purchases.dart';
+import 'center_toast.dart';
+import 'level_up_celebration.dart';
+import 'flavor_picker.dart';
 import 'night_home.dart';
 import 'workshop_mold_stage.dart';
 import 'cozy_style.dart';
@@ -19,33 +20,103 @@ import 'pixel_sprites.dart';
 import '../menu_rules.dart';
 import '../economy.dart';
 import 'public_menus.dart';
+import 'pantry_shop.dart';
 import 'shop_panel.dart';
 import 'workshop_windows.dart';
 import 'workshop_counter.dart';
+import 'workshop_daily_card.dart';
+import 'workshop_guests.dart';
+import 'workshop_home_layout.dart';
 import 'workshop_guide.dart';
 import '../workshop_tutorial.dart';
+import '../customer_notifier.dart';
+import '../workshop_feature_unlocks.dart';
+import '../usage_stats.dart';
+import '../owner_account.dart';
+import '../owner_texts.dart';
+import '../online_texts.dart';
+import '../local_test_purchases.dart';
+import 'owner_settings.dart';
+import 'notice_permission_hint.dart';
+import '../share_card.dart';
+// 재료 타이쿤 D: '재료 준비' 창.
+import '../workshop_pantry_prep.dart';
+import 'pantry_window.dart';
+import 'share_card_view.dart';
+import 'workshop_collection.dart';
+import '../workshop_collection_rules.dart' show collectionRequired, collectionTitle;
+import 'workshop_records.dart';
+import '../pantry_home.dart';
+import '../pantry_rules.dart' show PantryShortage;
+import 'pantry_home.dart';
+import '../invite_reward_rules.dart';
 import 'friends_panel.dart';
-import 'ranking_panel.dart';
-import 'progress_panels.dart' show SharePanel;
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
   final GameController accountController;
-  const WorkshopPage({super.key, required this.controller, required this.accountController});
+  /// Customer notifications (26번 5-1단계); null keeps the question card
+  /// and permission requests away (tests, platforms without notifications).
+  final CustomerNotifier? notifier;
+  /// The owner name and account settings (26번 2-1단계); null in tests of
+  /// the game screens.
+  final OwnerAccount? owner;
+  const WorkshopPage({super.key, required this.controller, required this.accountController, this.notifier, this.owner});
   @override
   State<WorkshopPage> createState() => _WorkshopPageState();
 }
-class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver {
+class _WorkshopPageState extends State<WorkshopPage> {
   WorkshopController get c => widget.controller;
-  StreamSubscription<CookingTiltSample>? _sensor;
-  late TiltDirectionGate _gate;
-  bool _sensorEnabled = false;
-  late CookingSensorInput _sensorInput;
-  int _sensorGeneration = 0;
-  final Stopwatch _sensorClock = Stopwatch()..start();
+  /// 29번 친구 초대: amounts, goal level and the '친구' menu level.
+  late final _inviteRules = InviteRewardRules.fromConfig(c.config);
   int _windowCount=0;
   final _homeKey=GlobalKey();
+  /// Story chapters already told in this run (26번 3차 H6, not saved).
+  final _storySeen=<WorkshopStoryChapter>{};
   bool _awayShowing=false;
+  /// 4차 피드백 g6: a 도감 cell or flavor just completed ('팥 · 부드러움 칸
+  /// 완성!'), as one short centre notice.
+  void _showCollectionNews() {
+    if(c.collectionNews.isEmpty) return;
+    final news=c.takeCollectionNews();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if(mounted) showCenterToast(context,news.join('\n'));
+    });
+  }
+  // ---- 재료 타이쿤 E: 홈 재료 표시·안내 (lib/ui/pantry_home.dart) ----
+  /// Gift, rescue and thrown-away notices, one short centre notice.
+  void _showPantryNews() {
+    if(c.pantryNews.isEmpty) return;
+    final news=c.takePantryNews();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if(mounted) showCenterToast(context,news.join('\n'));
+    });
+  }
+  /// The run-out noticed (in business, production stopped) and whether its
+  /// bubble still shows: once per run-out, then only the red stock line.
+  bool _pantryOutNoted=false,_pantryBubble=false;
+  Timer? _pantryBubbleTimer;
+  static const pantryBubbleTime=Duration(seconds:6);
+  void _watchPantryOut(PantryShortage out) {
+    if(out==PantryShortage.none){
+      _pantryOutNoted=false;_pantryBubble=false;_pantryBubbleTimer?.cancel();
+      return;
+    }
+    if(_pantryOutNoted) return;
+    _pantryOutNoted=true;_pantryBubble=true;
+    // `ingredient_out` is recorded by the controller when a tap or auto
+    // production finds nothing (4차 병합 3: one place, once a day).
+    _pantryBubbleTimer?.cancel();
+    _pantryBubbleTimer=Timer(pantryBubbleTime,(){if(mounted)setState(()=>_pantryBubble=false);});
+  }
+  /// The stock line or the bubble: 묶음 D's '재료 준비' window during
+  /// 영업 준비, else why not ([_lockFor] 'pantry'; 4차 병합 3).
+  void _openPantry() {
+    if(_pantryBubble) setState(()=>_pantryBubble=false);
+    _open('pantry');
+  }
+  @override
+  void dispose(){_pantryBubbleTimer?.cancel();super.dispose();}
   /// The welcome-back card, once per report, after the frame that noticed it.
   void _showAwayReport() {
     final report=c.awayReport;
@@ -63,69 +134,153 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       }
     });
   }
+  /// The automatic 승급's big celebration (4차 피드백 IA1, user decision):
+  /// the level-up sound and [LevelUpCelebration] over the whole screen,
+  /// once per saved level-up (the last level when several came at once).
+  void _showPromotion() {
+    final level=c.promotedTo;
+    if(level==null) return;
+    c.dismissPromotion();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if(!mounted) return;
+      GameAudioScope.of(context).play(Sfx.levelUp);
+      showLevelUpCelebration(context,level,
+        reduceMotion:widget.accountController.state.settings.reduceMotion || MediaQuery.disableAnimationsOf(context));
+    });
+  }
+  bool _introShowing=false;
+  /// A feature that just opened gets its one-screen card once (26번 2단계),
+  /// after the guide and never over another window, card, scene or a bake
+  /// in the big mold.
+  void _showFeatureIntro() {
+    final feature=c.pendingIntro;
+    if(feature==null || _introShowing || _tourFeature!=null || _noticeAsking || _windowCount>0 || _awayShowing ||
+        c.state.customerScene!=null || c.state.session!=null || c.salePraise!=null || c.busy || c.error!=null) {
+      return;
+    }
+    _introShowing=true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if(!mounted || c.pendingIntro!=feature){_introShowing=false;return;}
+      _enterWindow();
+      try {
+        await showDialog<void>(context:context,barrierDismissible:false,builder:(ctx)=>WorkshopFeatureIntroCard(
+          feature:feature,onDone:()=>Navigator.pop(ctx)));
+      } finally {
+        _leaveWindow();
+        // Seen once the card is closed: the short tour after it is not
+        // saved; it can be seen again from 설정 > 튜토리얼 다시 보기.
+        await c.markIntroSeen(feature);
+        _introShowing=false;
+        _startTour(feature);
+      }
+    });
+  }
+  /// The feature whose short tour runs on the home (4차 g5), and its step.
+  WorkshopFeature? _tourFeature;
+  int _tourStep=0;
+  void _startTour(WorkshopFeature feature){
+    if(!mounted || featureTour(feature).isEmpty)return;
+    setState((){_tourFeature=feature;_tourStep=0;});
+  }
+  void _nextTourStep(){
+    final f=_tourFeature;
+    if(f==null)return;
+    setState((){
+      if(_tourStep+1<featureTour(f).length){_tourStep++;}else{_tourFeature=null;}
+    });
+  }
+  void _endTour()=>setState(()=>_tourFeature=null);
+  /// 설정 > 튜토리얼 다시 보기 (4차 g5): an open feature's card, then its
+  /// tour, as when it opened.
+  Future<void> _replayFeature(WorkshopFeature feature) async {
+    if(_introShowing)return;
+    _introShowing=true;
+    _enterWindow();
+    try {
+      await showDialog<void>(context:context,barrierDismissible:false,builder:(ctx)=>WorkshopFeatureIntroCard(
+        feature:feature,onDone:()=>Navigator.pop(ctx)));
+    } finally {
+      _leaveWindow();
+      _introShowing=false;
+      _startTour(feature);
+    }
+  }
+  /// The list behind 설정 > 튜토리얼 다시 보기: every feature with a card,
+  /// open ones replayable, closed ones under the common lock with when.
+  Future<void> _tourList()=>_window('튜토리얼',(ctx)=>SingleChildScrollView(key:const Key('tour-list'),
+    // Built eagerly: ten rows (the fairy's story last), every one exists for screen readers too.
+    padding:const EdgeInsets.all(12),child:Column(children:[
+      // 4차 피드백 g15: 가게 꾸미기 only once a stove or decoration is sold.
+      for(final f in workshopIntroFeatures)if(featureAvailable(c.config,f))Padding(padding:const EdgeInsets.only(bottom:8),child:CozyMenuRow(
+        key:Key('tour-replay-${f.name}'),icon:PixelIcon(featureIntro(f).fallbackIcon,size:28),iconSize:28,minHeight:52,
+        title:featureName(f),subtitle:'소개와 짧은 안내 다시 보기',
+        lock:featureReplayable(c.state,c.config,f) ? null : featureWaitText(c.state,c.config,f),
+        onPressed:(){Navigator.pop(ctx);unawaited(_replayFeature(f));})),
+    ])));
+  bool _noticeAsking=false;
+  static const noticeDeniedText='휴대폰 설정에서 이 앱의 알림을 허용해야 받을 수 있어요.';
+  /// After the first-run guide, once: may we tell the player when guests
+  /// come while the app is off? Either answer is remembered (5-1단계).
+  void _askNotifications() {
+    final account=widget.accountController,s=c.state,notifier=widget.notifier;
+    if(notifier==null || _noticeAsking || _introShowing || _windowCount>0 || _awayShowing || s.tutorialActive || s.completedSales==0 ||
+        c.salePraise!=null ||
+        s.customerScene!=null || account.state.settings.notificationPromptDone) {
+      return;
+    }
+    _noticeAsking=true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if(!mounted){_noticeAsking=false;return;}
+      _enterWindow();
+      try {
+        final accept=await showDialog<bool>(context:context,barrierDismissible:false,builder:(ctx)=>AlertDialog(
+          key:const Key('notice-prompt'),
+          title:const Text('손님 알림'),
+          content:const Text('손님이 찾아오면 알려 드릴까요? 앱을 꺼 둬도 단골손님이 오면 알림으로 알려 드려요.'),
+          actions:[TextButton(key:const Key('notice-later'),onPressed:()=>Navigator.pop(ctx,false),child:const Text('나중에')),
+            FilledButton(key:const Key('notice-accept'),onPressed:()=>Navigator.pop(ctx,true),child:const Text('알림 받기'))]));
+        final granted=accept==true && await notifier.requestPermission();
+        // DEC-105: 'later' and a refused permission leave both switches
+        // as they are (named on, regular off by default). Settings show that
+        // the permission is missing (NoticePermissionHint); the app never
+        // asks again on its own.
+        await account.updateSettings(notificationPromptDone:true);
+        if(accept==true && !granted && mounted) {
+          showCenterToast(context,noticeDeniedText);
+        }
+      } finally {_leaveWindow();_noticeAsking=false;}
+    });
+  }
+  /// A notification switch: turning one on asks for the permission first.
+  Future<void> _setNotice({bool? regular,bool? named,bool? quiet}) async {
+    final account=widget.accountController,notifier=widget.notifier;
+    if((regular==true || named==true) && notifier!=null && !await notifier.requestPermission()) {
+      if(mounted) showCenterToast(context,noticeDeniedText);
+      return;
+    }
+    if(regular==true || named==true) _permissionChecks++;
+    await account.updateSettings(notifyRegularGuests:regular,notifyNamedGuests:named,quietNightNotices:quiet);
+  }
+  /// Bumped after a switch got the permission: the settings hint looks again.
+  int _permissionChecks=0;
   void _enterWindow(){_windowCount++;c.gridVisible=false;}
   void _leaveWindow(){_windowCount--;c.gridVisible=_windowCount==0;}
   Future<void> _window(String title,Widget Function(BuildContext) content) async {
     _enterWindow();
-    try {await showWorkshopWindow(context,controller:c,account:widget.accountController,title:title,content:content);}
+    try {await showWorkshopWindow(context,controller:c,account:widget.accountController,title:title,content:content,
+      onGold:()=>unawaited(_goldPacks()));}
     finally {_leaveWindow();}
   }
-  String? _sensorNotice;
-  String _sensorStatus = '현재 자세를 보정 중이에요';
-  @override
-  void initState() { super.initState(); _gate = TiltDirectionGate.fromBalance(c.config); _sensorInput = CookingSensorInput(_gate); WidgetsBinding.instance.addObserver(this); c.addListener(_cancelPausedInput); }
-  void _cancelPausedInput() {
-    if(!c.gameplayPaused) return;
-    _sensorInput.reset();
-  }
-  @override
-  void didUpdateWidget(covariant WorkshopPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if(oldWidget.controller!=widget.controller) {
-      oldWidget.controller.removeListener(_cancelPausedInput);c.addListener(_cancelPausedInput);
-      _gate=TiltDirectionGate.fromBalance(c.config);_sensorInput=CookingSensorInput(_gate);
-    }
-  }
-  Future<void> _setSensor(bool enabled) async {
-    final generation = ++_sensorGeneration;
-    final subscription = _sensor; _sensor = null;
-    _sensorInput.reset();
-    await subscription?.cancel();
-    if (!mounted || generation != _sensorGeneration) return;
-    setState(() { _sensorEnabled = enabled; _sensorNotice = null; _sensorStatus = '현재 자세를 보정 중이에요'; });
-    if (!enabled) return;
-    _sensor = CookingTiltSource().samples(c.config).listen((sample) {
-      if (!mounted || !_sensorEnabled || generation != _sensorGeneration) return;
-      if (!sample.available) {
-        _sensorInput.reset();
-        setState(() { _sensorEnabled = false; _sensorNotice = '큰 틀을 길게 눌러 반죽을 부어 주세요.'; }); return;
-      }
-      if(c.gameplayPaused) { _sensorInput.reset(); return; }
-      if(c.cookingInputBlocked) { _sensorInput.interrupt(); return; }
-      final session = c.state.session;
-      if (session == null || session.finished) { _sensorInput.reset(); return; }
-      final next = _sensorInput.sample(session, sample.angleMillidegrees!, _sensorClock.elapsedMilliseconds);
-      final status = _sensorInput.pouring ? '붓는 중 · 제자리로 돌아오면 멈춰요' :
-        _sensorInput.waitingNeutral ? '처음 자세로 돌아와 주세요' : '준비 · 좌우로 기울여 주세요';
-      if (_sensorStatus != status) {
-        assert(() { debugPrint('STEP02_SENSOR $status angle=${sample.angleMillidegrees}'); return true; }());
-        setState(() => _sensorStatus = status);
-      }
-      if (next != null) unawaited(c.cookingCommand(next));
-    });
-  }
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) unawaited(_setSensor(false));
-  }
-  @override
-  void dispose() { c.removeListener(_cancelPausedInput); _sensorGeneration++; _sensor?.cancel(); _sensorInput.reset(); _sensorClock.stop(); _gate.reset(); WidgetsBinding.instance.removeObserver(this); super.dispose(); }
+  /// '영업 종료' (always by the '영업 중' sign, 4차 사용자 결정): asks first
+  /// only when guests wait or a special bungeoppang is being made.
   Future<void> _closeBusiness() async {
+    final s=c.state;
+    if(s.customers.isEmpty && (s.session==null || s.session!.finished)) { await c.closeBusiness(); return; }
     _enterWindow();
     try {
       final confirmed = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
         title: const Text('오늘 영업을 끝낼까요?'),
-        content: const Text('대기 손님은 돌아가고 진행 중인 큰 틀 제작은 취소돼요. 보관한 재고와 숙련 기록은 남고, 6구는 멈춘 상태로 보관돼요.'),
+        content: const Text('대기 손님은 돌아가고 진행 중인 스페셜 붕어빵 제작은 취소돼요. 보관한 재고와 도감 기록은 남고, 숙련된 붕어빵 제작은 멈춘 상태로 보관돼요.'),
         actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('계속 영업')),
           FilledButton(onPressed: () => Navigator.pop(context, true), child: const Text('영업 종료'))]));
       if (confirmed == true) await c.closeBusiness();
@@ -137,64 +292,132 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
     final message=await account.signInOnline();
     if (!mounted) return;
     if (message!=null || !account.online.signedIn) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(message ?? '로그인 후 확인할 수 있어요.')));return;
+      showCenterToast(context,message ?? '로그인 후 확인할 수 있어요.');return;
     }
     await c.syncRewards();
     if (!mounted) return;
     await c.recoverAds();
     if (!mounted) return;
+    final before=account.state.premium.gold;
     final walletMessage=await account.refreshWorkshopWallet();
-    if (mounted && walletMessage!=null) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(walletMessage)));
+    if (!mounted) return;
+    final gained=account.state.premium.gold-before;
+    // Welcome gold (and other server gold) lands here: point it at 꾸미기.
+    final note=walletMessage ?? (gained>0 ? '황금붕어빵력 $gained개를 받았어요. 꾸미기에서 써 보세요.' : null);
+    if (note!=null) showCenterToast(context,note);
   }
   CosmeticMenuAccess get _cosmetics {
     final account=widget.accountController,catalog=c.config.section('avatar_catalog');
     bool avatar(CosmeticDefinition d)=>catalog[d.id] is Map<String,dynamic> && (catalog[d.id] as Map)['slot']==d.slot.name;
-    bool owned(CosmeticDefinition d)=>d.slot==CosmeticSlot.time || (avatar(d) ? c.ownsAvatar(d.id):account.state.ownsCosmetic(d));
-    bool unlocked(CosmeticDefinition d)=>d.slot==CosmeticSlot.time || (avatar(d) ? owned(d) || c.state.level>=DevelopmentBalance.integer(catalog[d.id] as Map<String,dynamic>,'unlock_level') &&
-      c.state.lifetime>=DevelopmentBalance.decimal(catalog[d.id] as Map<String,dynamic>,'unlock_total'):cosmeticUnlocked(account.state,d));
+    // 4차 피드백 g10(ID9): the device's clock is free; a fixed day or night
+    // is sold through the avatar catalog like the backgrounds and lamps.
+    bool owned(CosmeticDefinition d)=>avatar(d) ? c.ownsAvatar(d.id):d.slot==CosmeticSlot.time || account.state.ownsCosmetic(d);
+    bool unlocked(CosmeticDefinition d)=>avatar(d) ? owned(d) || c.state.level>=DevelopmentBalance.integer(catalog[d.id] as Map<String,dynamic>,'unlock_level') &&
+      c.state.lifetime>=DevelopmentBalance.decimal(catalog[d.id] as Map<String,dynamic>,'unlock_total'):d.slot==CosmeticSlot.time || cosmeticUnlocked(account.state,d);
     String price(CosmeticDefinition d){
       if(owned(d))return '보유 중';
-      if(!avatar(d))return '판매 준비 중';
+      if(!avatar(d))return '판매하지 않아요';
       final quote=quoteWorkshopProduct(c.config,'cosmetic:${d.id}',owned:0,quantity:1);
       return '붕어빵력 ${compactNumber(quote.buns)} + 황금붕어빵력 ${compactNumber(quote.gold)}';
     }
+    // The price as icons, the currency the player lacks in red (F28).
+    WardrobePrice? cost(CosmeticDefinition d){
+      if(!avatar(d) || owned(d))return null;
+      final q=quoteWorkshopProduct(c.config,'cosmetic:${d.id}',owned:0,quantity:1);
+      return WardrobePrice(q.buns,q.gold,missingBuns:c.state.purchases.available(c.state.buns)<q.buns,
+        missingGold:BigInt.from(account.state.premium.gold)<q.gold);
+    }
+    // Several items at once ('모두 사기', 3차 피드백 H15).
+    WardrobePrice? total(List<CosmeticDefinition> items){
+      if(items.isEmpty || items.any((d)=>!avatar(d) || owned(d)))return null;
+      var buns=BigInt.zero,gold=BigInt.zero;
+      for(final d in items){
+        final q=quoteWorkshopProduct(c.config,'cosmetic:${d.id}',owned:0,quantity:1);
+        buns+=q.buns;gold+=q.gold;
+      }
+      return WardrobePrice(buns,gold,missingBuns:c.state.purchases.available(c.state.buns)<buns,
+        missingGold:BigInt.from(account.state.premium.gold)<gold);
+    }
     bool canApply(CosmeticDefinition d){
-      if(c.busy || c.purchaseBusy || c.error!=null || account.busy || _equipped(d.slot)==d.id || !unlocked(d))return false;
+      if(c.inputBusy || c.purchaseBusy || c.error!=null || account.busy || _equipped(d.slot)==d.id || !unlocked(d))return false;
       if(owned(d))return true;
       if(!avatar(d) || c.purchaseGateway==null)return false;
       final q=quoteWorkshopProduct(c.config,'cosmetic:${d.id}',owned:0,quantity:1);
       return q.affordable(c.state.purchases.available(c.state.buns),BigInt.from(account.state.premium.gold));
     }
+    // Only the avatar catalog is for sale; other old cosmetics show once owned.
     return CosmeticMenuAccess(equipped:_equipped,owned:owned,unlocked:unlocked,canApply:canApply,price:price,
-      requirement:(d)=>avatar(d) ? '해금 Lv.${(catalog[d.id] as Map)['unlock_level']} · 누적 ${(catalog[d.id] as Map)['unlock_total']}' : '',
-      action:(d)=>_equipped(d.slot)==d.id ? '장착 중':!unlocked(d) ? '잠김':owned(d) ? '적용':!avatar(d) ? '준비 중':'구매하고 적용',
+      // Avatar items show once their art is ready for the vendor worn now
+      // (PixelSprites.avatarArtReady); owners keep seeing what they bought.
+      // Withdrawn items (26번 3차 H10) stay hidden even when owned.
+      // Stall items (backgrounds, lamps, day/night) and the pastry's (4차
+      // g15: once patterns or toppings are sold) need no vendor art.
+      listed:(d)=>avatar(d) && (d.slot.category!=CosmeticCategory.avatar || PixelSprites.avatarArtReady(_equipped(CosmeticSlot.character),d.slot,d.id)) ||
+        owned(d) && !avatarItemWithdrawn(_equipped(CosmeticSlot.character),d.id),
+      forSale:avatar,cost:cost,total:total,
+      // 4차 피드백 IC10: the real reason, not the phone's connection.
+      purchaseBlock:()=>c.purchaseGateway==null ? OnlineTexts.cosmeticNotSetUp
+        : c.purchaseGateway!.authenticatedAccount.isEmpty ? OnlineTexts.cosmeticSignIn : null,
+      // 26번 4-5단계(S45-Q2): only the level; the production total ('누적',
+      // 0 for every item) is not shown.
+      requirement:(d)=>avatar(d) ? 'Lv.${(catalog[d.id] as Map)['unlock_level']} 해금' : '',
+      // 붕어빵 꾸미기 from Lv.5, 가게 꾸미기 from Lv.8 (S45-Q6). 26번 3차
+      // H42: the 가게 tab opens with its 배경·시간 from Lv.1 (the backgrounds
+      // are sold in the shop again). 4차 피드백 g10(ID8): the tab is '배경'
+      // with 풍경·등불·밤낮 from Lv.1 (lamps are sold now too); stove and
+      // decoration still wait for Lv.8. 4차 g5: listed locked before, not hidden.
+      tabLock:(t)=>switch(t){
+        WardrobeTab.bungeoppang=>c.featureLock(WorkshopFeature.fishCosmetics),
+        WardrobeTab.stall=>c.featureLock(WorkshopFeature.stallBackground),
+        _=>null},
+      slotLock:(s)=>s.tab!=WardrobeTab.stall || s==CosmeticSlot.background || s==CosmeticSlot.lamp || s==CosmeticSlot.time ? null :
+        c.featureLock(WorkshopFeature.stallCosmetics),
+      action:(d)=>_equipped(d.slot)==d.id ? '장착 중':!unlocked(d) ? '잠김':owned(d) ? '적용':!avatar(d) ? '살 수 없음':'구매하고 적용',
       apply:(d) async {
         if(!canApply(d))return false;
-        if(d.slot==CosmeticSlot.time)return c.setBackgroundTime(d.id);
         if(avatar(d)){
           if(!owned(d)){
             final ok=await c.purchaseSkill(c.purchaseGateway!,'cosmetic:${d.id}');
             await account.refreshWorkshopWallet();if(!ok)return false;
           }
-          return c.equipAvatar(d.id);
+          // The day/night choice lives in sceneTime, not avatarEquipment.
+          return d.slot==CosmeticSlot.time ? c.setBackgroundTime(d.id) : c.equipAvatar(d.id);
         }
+        if(d.slot==CosmeticSlot.time)return c.setBackgroundTime(d.id);
         return account.buyOrEquipCosmetic(d.id);
       });
   }
-  Future<void> _wardrobe({WardrobeTab tab=WardrobeTab.hair})=>_window('꾸미기',(_)=>WardrobePanel(
-    controller:widget.accountController,access:_cosmetics,initialTab:tab));
-  Future<void> _store()=>_window('상점',(_)=>ShopPanel(controller:widget.accountController,
-    access:_cosmetics,onOpen:_open));
+  /// 꾸미기 wears what is owned; '상점에서 더 보기' opens the shop at that
+  /// slot (26번 4-5단계, S45-Q1 B).
+  Future<void> _wardrobe({WardrobeTab tab=WardrobeTab.hair,CosmeticSlot? slot})=>_window('꾸미기',(ctx)=>WardrobePanel(
+    controller:widget.accountController,access:_cosmetics,initialTab:tab,initialSlot:slot,
+    onMore:(slot){Navigator.pop(ctx);unawaited(_store(slot:slot));},
+    // 3차 피드백 H15: '모두 적용' wears and closes; no back button needed.
+    onClose:()=>Navigator.pop(ctx)));
+  Future<void> _store({CosmeticSlot? slot}){
+    c.usage.record(UsageEvent.shopOpen); // 사용 통계(26번 5단계), 하루 1번
+    return _window('상점',(_)=>ShopPanel(controller:widget.accountController,access:_cosmetics,onOpen:_open,initialSlot:slot,
+      localTestGold:c.purchaseGateway is LocalTestPurchaseGateway,
+      // 재료 타이쿤 C: the '재료' tab between 꾸미기 and 충전.
+      ingredients:(_)=>PantryShop(controller:c,account:widget.accountController)));
+  }
   Future<void> _goldPacks() async {
     _enterWindow();
     try {
       final account = widget.accountController;
+      // A test build (4차 피드백 IC10 후속): free test gold, no Play.
+      if (c.purchaseGateway is LocalTestPurchaseGateway) {
+        final ok = await account.setLocalTestGold(account.state.premium.gold + 10);
+        if (mounted && ok) showCenterToast(context, '${OnlineTexts.testGoldDone} (실제 결제 아님)');
+        return;
+      }
       final message = await account.signInOnline();
       if (!mounted) return;
       if (message != null || !account.online.signedIn) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message ?? '로그인 후 이용할 수 있어요.')));
+        showCenterToast(context, message ?? '로그인 후 이용할 수 있어요.');
         return;
       }
+      account.usage.record(UsageEvent.payView); // 사용 통계(26번 5단계), 하루 1번
       final packs = await account.goldPacks();
       if (!mounted) return;
       await showModalBottomSheet<void>(context: context, builder: (context) => SafeArea(child: ListView(
@@ -204,45 +427,80 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
           trailing: FilledButton(onPressed: () async {
             Navigator.pop(context);
             final error = await account.buyGoldPack(pack.id);
-            if (mounted && error != null) ScaffoldMessenger.of(this.context).showSnackBar(SnackBar(content: Text(error)));
+            if (mounted && error != null) showCenterToast(this.context, error);
           }, child: const Text('구매'))),
       ])));
     } finally { _leaveWindow(); }
   }
   Future<void> _audioSettings()=>_window('설정',(ctx){
     final account=widget.accountController,settings=account.state.settings;
+    final owner=widget.owner;
     return ListView(padding:const EdgeInsets.all(12),children:[
+      if(owner!=null)OwnerSettingsSection(owner:owner,closeWindow:()=>Navigator.pop(ctx),
+        notify:(m){if(mounted)showCenterToast(context,m);}),
+      // 26번 3차 H42: the background picture is chosen here again (it opens
+      // the wardrobe's 가게 tab at 배경, where owned ones are worn). 4차 g5:
+      // listed locked during the first-run guide, not hidden.
+      Padding(padding:const EdgeInsets.only(bottom:8),child:CozyMenuRow(
+        key:const Key('settings-background'),icon:const PixelIcon('theme',size:28),iconSize:28,minHeight:52,
+        title:'배경 바꾸기',subtitle:'지금: ${_backgroundName()}',lock:_lockFor('skins:stall'),
+        onPressed:(){Navigator.pop(ctx);_open('skins:stall');})),
+      // 4차 g5: every feature's card and short tour again.
+      Padding(padding:const EdgeInsets.only(bottom:8),child:CozyMenuRow(
+        key:const Key('settings-tours'),icon:const PixelIcon('mission',size:28),iconSize:28,minHeight:52,
+        title:'튜토리얼 다시 보기',subtitle:'열린 기능의 소개와 짧은 안내',
+        onPressed:(){Navigator.pop(ctx);unawaited(_tourList());})),
       SoundSettings(controller:account),
       CozySettingRow(icon:const PixelIcon('vibration',size:28),label:'진동',value:settings.vibration,
         onChanged:(v)=>account.updateSettings(vibration:v)),
       CozySettingRow(icon:const Icon(Icons.slow_motion_video),label:'모션 줄이기',value:settings.reduceMotion,
         onChanged:(v)=>account.updateSettings(reduceMotion:v)),
-      const Text('배경 시간'),
-      DropdownButton<String>(value:c.state.sceneTime,isExpanded:true,
-        items:[for(final item in cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.time))
+      // 26번 5-1단계: device-only notices when guests come while the app is off.
+      CozySettingRow(key:const Key('settings-notify-regular'),icon:const Icon(Icons.notifications_none),label:'일반 손님 알림',
+        subtitle:'앱을 꺼 둔 동안 손님이 오면 알려요',value:settings.notifyRegularGuests,onChanged:(v)=>_setNotice(regular:v)),
+      CozySettingRow(key:const Key('settings-notify-named'),icon:const Icon(Icons.notifications_active_outlined),label:'단골 손님 알림',
+        subtitle:'이름 있는 손님이 오면 알려요',value:settings.notifyNamedGuests,onChanged:(v)=>_setNotice(named:v)),
+      if(widget.notifier case final notifier? when settings.notifyNamedGuests || settings.notifyRegularGuests)
+        NoticePermissionHint(notifier:notifier,revision:_permissionChecks,
+          denied:(){if(mounted)showCenterToast(context,noticeDeniedText);}),
+      CozySettingRow(key:const Key('settings-quiet-night'),icon:const Icon(Icons.bedtime_outlined),label:'밤 알림 끄기 (밤 10시~아침 8시)',
+        value:settings.quietNightNotices,onChanged:(v)=>_setNotice(quiet:v)),
+      // 26번 5단계(DEC-046): on by default, no first-run notice; off stops
+      // Firebase Analytics collection (privacy_policy.md '사용 통계'). It
+      // starts only after the first-run consent (DEC-126).
+      CozySettingRow(key:const Key('settings-usage-stats'),icon:const Icon(Icons.insights_outlined),label:'사용 통계 보내기',
+        subtitle:'게임을 고치는 데 쓰는 사용 기록이에요(이름·계정과 연결하지 않아요)',value:settings.sendUsageStats,
+        onChanged:(v)=>account.updateSettings(sendUsageStats:v)),
+      // 4차 피드백 g10(ID9): only what this shop has — the device's clock
+      // and a fixed day or night once bought (sold in 꾸미기 > 배경 > 밤낮).
+      const Text('밤낮'),
+      DropdownButton<String>(key:const Key('settings-time'),value:c.state.sceneTime,isExpanded:true,
+        items:[for(final item in cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.time && _cosmetics.owned(d)))
           DropdownMenuItem(value:item.id,child:Text(item.name))],
-        onChanged:c.busy ? null : (value){if(value!=null)c.setBackgroundTime(value);}),
+        onChanged:c.inputBusy ? null : (value){if(value!=null)c.setBackgroundTime(value);}),
       if(account.error!=null)Text(account.error!),
       FilledButton.icon(key:const Key('settings-save'),onPressed:account.busy ? null : () async {
         await account.save();if(ctx.mounted)Navigator.pop(ctx);
       },icon:const PixelIcon('save',size:28),label:const Text('저장')),
     ]);
   });
-  Widget _mission(String scope,String id,{Map<String,dynamic>? rule}) {
-    final missions=c.state.missions,key=missions.claimKey(scope,id),claimed=missions.claims.containsKey(key);
-    final gold=DevelopmentBalance.integer(c.config.section('mission_gold_rewards'),rule?['reward_key'] as String? ?? 'daily_all');
-    final caption=rule==null ? '일일 미션 전체 완료' : rule['label'] as String;
-    final current=rule==null ? '' : '${missions.progress(scope,rule['metric'] as String)}/${rule['target']} · ';
-    return ListTile(title:Text(caption),subtitle:Text('$current황금붕어빵력 $gold · 서버 검증 후 지급'),
-      trailing:TextButton(onPressed:c.busy || claimed || !missions.complete(c.config,scope,id) ? null :
-        () async {
-          final ok=await c.claimMission(scope,id,expectedPeriod:scope=='daily' ? missions.day:missions.week);
-          // Already signed in: hand the claim to server verification right away.
-          if(ok && widget.accountController.online.signedIn && await c.syncRewards()) await widget.accountController.refreshWorkshopWallet();
-        },child:Text(claimed ? '신청 완료' : '보상 신청')));
+  /// The name of the background worn now ('맑은 날').
+  String _backgroundName() {
+    final id=_equipped(CosmeticSlot.background);
+    return cosmeticDefinitions.where((d)=>d.slot==CosmeticSlot.background && d.id==id).firstOrNull?.name ?? id;
   }
-  String _equipped(CosmeticSlot slot) => slot == CosmeticSlot.time ? c.state.sceneTime :
-    c.state.avatarEquipment[slot.name] ?? widget.accountController.state.equippedCosmetic(slot);
+  // Hair never picked is the character's own (26번 3차 G, avatarWorn). A
+  // hat that cannot go over the hair (an old account choice) is off (26번
+  // 3차 AV3, DEC-TBD-hAV3-3).
+  String _equipped(CosmeticSlot slot) {
+    if (slot == CosmeticSlot.time) return c.state.sceneTime;
+    final worn = c.state.avatarWorn(slot,widget.accountController.state.equippedCosmetic(slot));
+    return slot == CosmeticSlot.hat ? wearableHat(_equipped(CosmeticSlot.hair),worn) : worn;
+  }
+  /// What the home draws: during a seasonal event its decoration hangs on
+  /// the stall (26번 7단계, S7-Q3) without changing what is equipped.
+  String _homeEquipped(CosmeticSlot slot) =>
+    slot == CosmeticSlot.decoration && c.seasonalEvent != null ? c.seasonalEvent!.decoration : _equipped(slot);
   /// A small window over the stall; it closes itself when a story scene starts.
   Future<void> _popup(Key key,Widget child) async {
     _enterWindow();
@@ -257,22 +515,92 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
         popupContext=ctx;
         return Dialog(key:key,backgroundColor:Colors.transparent,insetPadding:const EdgeInsets.all(16),
           child:Stack(clipBehavior:Clip.none,children:[
-            CozyPanel(padding:const EdgeInsets.fromLTRB(16,14,16,14),child:SingleChildScrollView(child:child)),
-            Positioned(top:-10,right:-8,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
+            // 3차 피드백 H38: the close button sits inside the panel, off its
+            // border, and the content keeps clear of it.
+            CozyPanel(radius:20,padding:const EdgeInsets.fromLTRB(16,14,16,14),child:SingleChildScrollView(
+              child:Padding(padding:const EdgeInsets.only(top:CozyCloseButton.inset),child:child))),
+            Positioned(top:CozyCloseButton.edge,right:CozyCloseButton.edge,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
           ]));
       });
     } finally {c.removeListener(closeForScene);_leaveWindow();}
   }
   Future<void> _customerCard(String orderId)=>_popup(const Key('customer-card'),WorkshopCustomerCard(controller:c,orderId:orderId));
   Future<void> _stock()=>_popup(const Key('stock-card'),WorkshopStockList(controller:c));
+  /// 26번 7단계: the '오늘' slip's card. The seventh stamp's gold goes to
+  /// the server right away when signed in, like mission gold.
+  /// 3차 피드백 H36: the '오늘' window holds the attendance card, the order,
+  /// the daily missions and 주간 도전 (no menu rows for them any more).
+  Future<void> _daily()=>_window('오늘',(_)=>SingleChildScrollView(key:const Key('today-scroll'),
+    padding:const EdgeInsets.fromLTRB(12,4,12,14),
+    child:WorkshopDailyCard(key:const Key('daily-card'),controller:c,onClaimMission:_claimMission,onGoldClaim:() async {
+      if(widget.accountController.online.signedIn && await c.syncRewards()) await widget.accountController.refreshWorkshopWallet();
+    })));
+  /// '보상 받기' on a mission: a claim for server verification, handed over
+  /// right away when signed in.
+  Future<void> _claimMission(String scope,String goal) async {
+    final missions=c.state.missions;
+    final ok=await c.claimMission(scope,goal,expectedPeriod:scope=='daily' ? missions.day:missions.week);
+    if(ok && widget.accountController.online.signedIn && await c.syncRewards()) await widget.accountController.refreshWorkshopWallet();
+  }
+  /// 공유 카드(26번 8단계, DEC-048): the card, '공유하기' and nothing else
+  /// (no reward, no state change).
+  Future<void> _shareCard(ShareCardData data) async {
+    _enterWindow();
+    try {await showShareCardDialog(context,data:data,texts:ShareCardTexts.of(c.config),usage:c.usage);}
+    finally {_leaveWindow();}
+  }
+  /// What the stall and the vendor wear in a share card: the home's look.
+  Map<String,String> get _shareLook => {for(final slot in CosmeticSlot.values)slot.name:_homeEquipped(slot)};
+  void _sharePerfect(ResultLook look) {
+    final session=c.state.session;
+    if(session==null) return;
+    final reaction=c.resultReaction(look.grade);
+    final orderId=c.resultReactionOrderId;
+    final order=orderId==null ? null : c.state.customers.where((o)=>o.id==orderId).firstOrNull;
+    final split=reaction?.indexOf(': ') ?? -1;
+    unawaited(_shareCard(ShareCardData(moment:ShareMoment.perfect,title:'${c.flavorLabel(session.flavor)} 붕어빵',
+      speaker:split>0 ? reaction!.substring(0,split) : null,
+      line:split>0 ? reaction!.substring(split+2) : cookingGradeLine(c.config,session,look.grade,variant:look.variant),
+      guestArt:order==null ? null : c.guestArtId(order.customerId),variant:look.variant,shine:true,equipped:_shareLook)));
+  }
+  void _shareStory(String npc,String title,String? scene) {
+    // One spoken line of the scene ('수아: 저 이제 …'), not the owner's
+    // and not the '완료 처리' note; the guest's own name when there is none.
+    final spoken=[for(final row in (scene ?? '').split('\n'))
+      if(RegExp(r'^([^:#\s][^:]{0,15}): (.+)$').firstMatch(row.trim()) case final m?
+          when m.group(1)!='사장님' && m.group(1)!='완료 처리') (m.group(1)!,m.group(2)!)];
+    final name=c.customerShortName(npc);
+    unawaited(_shareCard(ShareCardData(moment:ShareMoment.story,title:title,
+      speaker:spoken.isEmpty ? null : spoken.first.$1,
+      line:spoken.isEmpty ? '$name의 이야기를 들었어요.' : spoken.first.$2,
+      guestArt:c.guestArtId(npc),equipped:_shareLook)));
+  }
+  void _shareCollection(String flavor)=>unawaited(_shareCard(ShareCardData(moment:ShareMoment.collection,
+    title:'${c.flavorLabel(flavor)} 붕어빵 도감',line:'다섯 가지 익힘을 모두 완성했어요.',
+    variant:3,equipped:_shareLook)));
+  void _sharePhoto()=>unawaited(_shareCard(ShareCardData(moment:ShareMoment.shop,title:'우리 가게',
+    line:c.seasonalEvent?.greeting ?? '따끈한 붕어빵 구워 놓고 기다릴게요!',equipped:_shareLook)));
   Map<String,int> _rewardCounts(){
     final m=c.state.missions;
     int ready(String scope)=>[...m.goals(c.config,scope).keys,if(scope=='daily')'all'].where((id)=>
       m.complete(c.config,scope,id) && !m.claims.containsKey(m.claimKey(scope,id))).length;
-    return {'daily':ready('daily'),'event':ready('weekly'),'missions':c.canLevelUp ? 1:0};
+    return {'daily':ready('daily'),'event':ready('weekly'),'missions':c.claimableRecipeCount};
   }
   Future<void> _menu()=>_window('메뉴',(ctx)=>Column(children:[
+    // 26번 2-1단계: where the owner name shows.
+    if(widget.owner?.profile.name case final name?)Padding(padding:const EdgeInsets.only(top:6),
+      child:Text(OwnerTexts.shopOf(name),key:const Key('menu-owner-name'),style:const TextStyle(fontSize:18,color:Cozy.wood))),
+    // 4차 피드백 g6: the titles of collected flavors, under the shop's name.
+    if(c.collectionTitles.isNotEmpty)Text('칭호 · ${c.collectionTitles.join(' · ')}',key:const Key('menu-owner-title'),
+      textAlign:TextAlign.center,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w700,color:Color(0xffa86a00))),
     Expanded(child:MenuPanel(controller:widget.accountController,legacyDescriptions:false,rewardCounts:_rewardCounts(),
+      // 일일 미션·주간 도전 live in the '오늘' window (H36). Rows that open
+      // later (도감 Lv.3, 배경 테마 after the guide) are listed locked with
+      // their condition; a tap says why (H32 → 4차 g5).
+      // 29번: '친구'(초대) opens at the official launch (DEC-150).
+      hidden:{'ranking',if(!invitesLaunched)'friends','share','daily','event'},
+      locks:{for(final d in const ['achievements:collection','skins:stall','friends'])
+        if(_lockFor(d) case final lock?)d:lock},
       onOpen:(destination){Navigator.pop(ctx);_open(destination);})),
     Padding(padding:const EdgeInsets.all(8),child:Column(children:[
       Text('황금붕어빵력 심사 대기 ${c.pendingRewardCount}건. 확정 잔액에는 아직 포함되지 않아요.',
@@ -281,119 +609,189 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
       Wrap(alignment:WrapAlignment.center,spacing:8,runSpacing:6,children:[
         CozyButton(key:const Key('menu-sync'),onPressed:c.rewardBusy || c.adBusy ? null : _syncOnline,label:'로그인·보상 확인',minHeight:40,fontSize:15),
         if(c.state.business.open)CozyButton(key:const Key('menu-close-business'),minHeight:40,fontSize:15,
-          onPressed:c.busy ? null : (){Navigator.pop(ctx);_closeBusiness();},label:'영업 종료'),
+          onPressed:c.inputBusy ? null : (){Navigator.pop(ctx);_closeBusiness();},label:'영업 종료'),
       ]),
     ])),
   ]));
+  /// Why [destination] is still closed (26번 2단계), or null.
+  String? _lockFor(String destination) => switch(destination) {
+    'skills' => c.featureLock(WorkshopFeature.skills),
+    'shop' || 'skins' || 'skins:avatar' => c.featureLock(WorkshopFeature.wardrobe),
+    'skins:stall' => c.featureLock(WorkshopFeature.wardrobe) ?? c.featureLock(WorkshopFeature.stallBackground),
+    'achievements:collection' => c.featureLock(WorkshopFeature.collection),
+    // 재료 타이쿤 D·E: Lv.2(`pantry_prep`)부터, 영업 준비 중에만 (까닭을 띄움).
+    'pantry' => c.featureLock(WorkshopFeature.pantry) ?? c.pantryPrepLock,
+    'friends' => c.state.level < _inviteRules.menuLevel ? 'Lv.${_inviteRules.menuLevel} 달성하면 열려요' : null,
+    _ => null,
+  };
   void _open(String destination) {
+    // A locked destination says why (4차 g5: 도감 too, it no longer opens
+    // dimmed before its level).
+    if(_lockFor(destination) case final reason?) {
+      showCenterToast(context,reason);
+      return;
+    }
     switch(destination) {
       case 'menu': unawaited(_menu());
       case 'skills': unawaited(_shop());
       case 'shop': unawaited(_store());
       case 'skins': case 'skins:avatar': unawaited(_wardrobe());
-      case 'skins:stall': unawaited(_wardrobe(tab:WardrobeTab.stall));
+      case 'skins:stall': unawaited(_wardrobe(tab:WardrobeTab.stall,slot:CosmeticSlot.background));
       case 'settings': unawaited(_audioSettings());
-      case 'ranking': unawaited(_window('온라인 랭킹',(_)=>RankingPanel(controller:widget.accountController)));
-      case 'friends': unawaited(_window('친구',(_)=>FriendsPanel(controller:widget.accountController,showRewardDetails:false)));
-      case 'share': unawaited(_window('게임 공유',(_)=>SharePanel(controller:widget.accountController)));
       case 'records': case 'balance': unawaited(_window('생산 기록',(_)=>_records()));
       case 'achievements:collection': unawaited(_window('도감',(_)=>_collection()));
       case 'achievements': unawaited(_window('업적',(_)=>_achievements()));
-      case 'daily': unawaited(_window('일일 미션',(_)=>_missions('daily')));
-      case 'event': unawaited(_window('주간 도전',(_)=>_missions('weekly')));
+      case 'daily': case 'event': unawaited(_daily());
       case 'missions': unawaited(_window('레벨 미션',(_)=>_levelMissions()));
       case 'gold': unawaited(_goldPacks());
+      case 'friends': unawaited(_window('친구',(_)=>FriendsPanel(controller:widget.accountController,
+        showRewardDetails:false,inviteGuide:_inviteRules.guide,inviteGoalLevel:_inviteRules.targetLevel)));
+      case 'photo': _sharePhoto();
+      // 재료 타이쿤 D: '재료 준비' 창 (홈의 재료 표시·'재료 준비' 버튼, 묶음 E).
+      case 'pantry': unawaited(_window('재료 준비',(_)=>PantryWindow(controller:c,
+        reduceMotion:widget.accountController.state.settings.reduceMotion || MediaQuery.disableAnimationsOf(context),
+        vibration:widget.accountController.state.settings.vibration)));
     }
   }
-  Widget _records()=>ListView(key:const Key('records-scroll'),padding:const EdgeInsets.all(16),children:[
-    const Text('이 기기 기록'),
-    for(final row in [('레벨','${c.state.level}'),('붕어빵력','${c.state.buns}'),('누적 생산','${c.state.lifetime}'),
-      ('누적 탭','${c.state.taps}'),('판매 횟수','${c.state.completedSales}'),('클릭당','${c.tapRate}'),('초당','${c.autoRate}'),
-      ('숙련한 맛','${c.state.masteryAwards.length}'),('실제 영업일','${c.state.business.businessIndex}')])
-        Padding(padding:const EdgeInsets.only(bottom:8),child:CozyPanel(child:Row(mainAxisAlignment:MainAxisAlignment.spaceBetween,children:[Text(row.$1),Text(row.$2)]))),
-  ]);
-  Widget _collection()=>ListView(padding:const EdgeInsets.all(16),children:[
-    if(c.state.level<DevelopmentBalance.integer(c.config.section('feature_unlock_levels'),'full_recipe_collection_ui'))
-      Text('맛 도감은 Lv.${c.config.section('feature_unlock_levels')['full_recipe_collection_ui']}부터 열려요.')
-    else for(final flavor in c.state.recipes) ...[
-      Text(c.flavorLabel(flavor),style:Theme.of(context).textTheme.titleLarge),
-      Wrap(spacing:6,children:[for(var i=0;i<5;i++)Chip(label:Text('${c.state.flavorMasteries[flavor]?.discovered.contains(i)==true || (flavor=='redbean' && i==2) ? '●':'○'} ${provisionalDonenessLabels[i]}'))]),
-      Text(c.state.masteryAwards.containsKey(flavor) ? '숙련 완료 · 6구 생산 가능':'연습 중'),
-    ],
-    for(final flavor in c.state.recipes)Builder(builder:(context){
-      final m=c.state.flavorMasteries[flavor]!,rule=c.config.mastery(c.difficulty(flavor));
-      return Text('${c.flavorLabel(flavor)} 연습 ${m.practices}/${rule['practice_required']}, 손기술 ${m.techniquePasses}/${rule['technique_passes_required']}, 연습 익힘 ${m.practiceDiscovered.length}/5',
-        key:Key('mastery-$flavor'));
-    }),
-    if(c.state.level>=DevelopmentBalance.integer(c.config.section('feature_unlock_levels'),'customer_collection_ui'))...[
-      if(c.state.tasteObservations.isNotEmpty || c.state.relationships.stories.isNotEmpty)const Divider(),
-      for(final story in c.state.relationships.stories)CozyButton(key:Key('replay-$story'),minHeight:40,fontSize:15,
-        onPressed:c.busy ? null : (){Navigator.pop(context);c.replayCustomerStory(story);},
-        label:'${c.customerCatalog.story(story)['event']} (다시 보기)'),
-      for(final customer in c.state.tasteObservations.entries)
-        if(c.customerCatalog.contains(customer.key))CustomerRecordCard(
-          catalog:c.customerCatalog,npcId:customer.key,met:c.state.relationships.met.contains(customer.key),
-          completedStories:c.state.relationships.stories,
-          stageLabel:const ['첫 만남','낯익은 손님','동네 단골','가까운 이웃'][c.state.relationships.stage(customer.key,c.config)],
-          observedPreferences:[for(final e in customer.value.entries)
-            '${c.flavorLabel(e.key)} ${e.value.map((v)=>provisionalDonenessLabels[v]).join('/')}'])
-        else ListTile(title:Text(c.customerName(customer.key)),
-          subtitle:Text(customer.value.entries.map((e)=>'${c.flavorLabel(e.key)} ${e.value.map((v)=>provisionalDonenessLabels[v]).join('/')}').join(', '))),
-    ],
-  ]);
-  Widget _achievements()=>ListView(padding:const EdgeInsets.all(16),children:[
-    for(final flavor in c.state.recipes)CozyPanel(child:ListTile(leading:const PixelIcon('achievements'),title:Text('${c.flavorLabel(flavor)} 숙련'),
-      subtitle:Text('연습 ${c.state.flavorMasteries[flavor]?.practices ?? 0}회 · 손기술 ${c.state.flavorMasteries[flavor]?.techniquePasses ?? 0}회'),
-      trailing:Text(c.state.masteryAwards.containsKey(flavor) ? '달성':'진행 중'))),
-  ]);
-  Widget _missions(String scope)=>ListView(padding:const EdgeInsets.all(16),children:[
-    Text(scope=='daily' ? '일일 ${c.state.missions.day}':'주간 ${c.state.missions.week}'),
-    for(final e in c.state.missions.goals(c.config,scope).entries)_mission(scope,e.key,rule:e.value as Map<String,dynamic>),
-    if(scope=='daily')_mission('daily','all'),
-  ]);
-  Widget _levelMissions()=>ListView(padding:const EdgeInsets.all(16),children:[
-    Text('Lv.${c.state.level}',style:Theme.of(context).textTheme.headlineMedium),
-    LinearProgressIndicator(value:_levelProgress()/1000),const SizedBox(height:12),
-    if(c.state.level<50)Text('다음 승급: 누적 ${c.config.rows('level_progression')[c.state.level]['season_total_buns']} · '
-      '추가 탭 ${c.state.taps-c.state.levelStartTaps}/${c.config.rows('level_progression')[c.state.level]['additional_taps']} · '
-      '추가 판매 ${c.state.completedSales-c.state.levelStartSales}/${c.config.rows('level_progression')[c.state.level]['additional_sales']}'),
-    if(c.state.level==50)const Text('최고 레벨에 도달했어요.'),
-    FilledButton(onPressed:c.busy || !c.canLevelUp ? null:c.levelUp,child:const Text('승급')),
-    for(final flavor in ['custard','cocoa'])
-      if(!c.state.recipes.contains(flavor))Builder(builder:(context){
-        final tier=DevelopmentBalance.integer(c.config.section('active_recipes')[flavor] as Map<String,dynamic>,'acquisition_tier');
-        final requirement=c.config.rows('additional_recipe_acquisition_tiers').firstWhere((r)=>r['tier']==tier);
-        final ready=c.state.level>=DevelopmentBalance.integer(requirement,'unlock_level') &&
-          c.state.completedSales>=DevelopmentBalance.integer(requirement,'mission_sales');
-        return ListTile(key:Key('recipe-mission-$flavor'),title:Text('${c.flavorLabel(flavor)} 레시피 미션'),
-          subtitle:Text('Lv.${requirement['unlock_level']}, 판매 ${c.state.completedSales}/${requirement['mission_sales']}회'),
-          trailing:FilledButton(onPressed:c.busy || !ready ? null : ()=>c.claimRecipeFromMission(flavor),child:const Text('받기')));
-      }),
-  ]);
-  int _levelProgress() {
-    final s=c.state;
-    if(s.level>=50)return 1000;
-    final row=c.config.rows('level_progression')[s.level];
-    final total=BigInt.parse('${row['season_total_buns']}');
-    int fraction(int current,int required)=>required<=0 ? 1000 : (current*1000~/required).clamp(0,1000);
-    final values=[total==BigInt.zero ? 1000 : (s.lifetime*BigInt.from(1000)~/total).toInt().clamp(0,1000),
-      fraction(s.taps-s.levelStartTaps,DevelopmentBalance.integer(row,'additional_taps')),
-      fraction(s.completedSales-s.levelStartSales,DevelopmentBalance.integer(row,'additional_sales'))];
-    return values.reduce((a,b)=>a<b ? a:b);
+  /// 생산 기록 (3차 피드백 H44·H45): icon + number tiles.
+  Widget _records()=>WorkshopRecordsView(tiles:WorkshopRecordsView.of(level:c.state.level,buns:c.state.buns,
+    lifetime:c.state.lifetime,taps:c.state.taps,sales:c.state.completedSales,tapRate:c.tapRate,autoRate:c.autoRate,
+    mastered:c.collectionTitles.length,businessDays:c.state.business.businessIndex));
+  CollectionFlavor _collectionFlavor(String flavor){
+    if(!c.state.recipes.contains(flavor)){
+      final tier=DevelopmentBalance.integer(c.config.section('active_recipes')[flavor] as Map<String,dynamic>,'acquisition_tier');
+      final need=c.config.rows('additional_recipe_acquisition_tiers').where((r)=>r['tier']==tier).firstOrNull;
+      return CollectionFlavor(id:flavor,label:c.flavorLabel(flavor),owned:false,found:const {},
+        required:collectionRequired(c.config,flavor),
+        howToGet:need==null ? null : 'Lv.${need['unlock_level']}에 판매 ${need['mission_sales']}번을 채우면 레벨 미션에서 얻어요.');
+    }
+    // 4차 피드백 g6: each cell counts its bakes to the number that completes it.
+    final progress=c.state.collection(c.config,flavor);
+    return CollectionFlavor(id:flavor,label:c.flavorLabel(flavor),owned:true,
+      found:{for(var i=0;i<provisionalDonenessLabels.length;i++)
+        if(progress.found(i) || (flavor=='redbean' && i==2))i},
+      counts:progress.counts,required:progress.required,
+      title:progress.collected ? collectionTitle(c.config,flavor) : null,
+      legacyMastered:c.state.masteryAwards.containsKey(flavor));
   }
-  Widget _sensorControl() => Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-    Switch(value:_sensorEnabled,onChanged:_setSensor),
-    Flexible(child:Text(_sensorEnabled ? _sensorStatus : _sensorNotice ?? '기울기로 반죽 붓기',
-      style:const TextStyle(color:Cozy.cream,fontSize:12,shadows:[Shadow(color:Cozy.woodDark,blurRadius:4)]))),
-    if(_sensorEnabled) IconButton(tooltip:'현재 자세로 다시 보정',onPressed:()=>_setSensor(true),
-      icon:const Icon(Icons.screen_rotation,color:Cozy.cream,size:20)),
+  /// 붕어빵 도감 (3차 피드백 H32): every flavor's five donenesses as
+  /// pictures, shown dimmed under its level note before it opens.
+  Widget _collection(){
+    final unlocks=c.config.section('feature_unlock_levels');
+    final open=c.state.level>=DevelopmentBalance.integer(unlocks,'full_recipe_collection_ui');
+    return WorkshopCollectionView(
+      flavors:[for(final flavor in c.config.section('active_recipes').keys)_collectionFlavor(flavor)],
+      lockText:open ? null : '도감은 Lv.${unlocks['full_recipe_collection_ui']}에 열려요. 익힘마다 정해진 횟수를 구워 칸을 채워 보세요.',
+      titles:c.collectionTitles,
+      onShare:_shareCollection,
+      extra:[
+        if(c.state.level>=DevelopmentBalance.integer(unlocks,'customer_collection_ui'))...[
+          if(c.state.tasteObservations.isNotEmpty || c.state.relationships.stories.isNotEmpty)const Divider(),
+          for(final story in c.state.relationships.stories)CozyButton(key:Key('replay-$story'),minHeight:40,fontSize:15,
+            onPressed:c.inputBusy ? null : (){Navigator.pop(context);c.replayCustomerStory(story);},
+            label:'${c.customerCatalog.story(story)['event']} (다시 보기)'),
+          for(final customer in c.state.tasteObservations.entries)
+            if(c.customerCatalog.contains(customer.key))CustomerRecordCard(
+              catalog:c.customerCatalog,npcId:customer.key,met:c.state.relationships.met.contains(customer.key),
+              completedStories:c.state.relationships.stories,
+              stageLabel:const ['첫 만남','낯익은 손님','동네 단골','가까운 이웃'][c.state.relationships.stage(customer.key,c.config)],
+              observedPreferences:[for(final e in customer.value.entries)
+                '${c.flavorLabel(e.key)} ${e.value.map((v)=>provisionalDonenessLabels[v]).join('/')}'])
+            else ListTile(title:Text(c.customerName(customer.key)),
+              subtitle:Text(customer.value.entries.map((e)=>'${c.flavorLabel(e.key)} ${e.value.map((v)=>provisionalDonenessLabels[v]).join('/')}').join(', '))),
+        ],
+      ]);
+  }
+  Widget _achievements()=>ListView(padding:const EdgeInsets.all(16),children:[
+    // 4차 피드백 g6: a flavor's achievement is its full 도감 (and its title).
+    for(final flavor in c.state.recipes)CozyPanel(child:ListTile(leading:const PixelIcon('achievements'),title:Text('${c.flavorLabel(flavor)} 도감 완성'),
+      subtitle:Text('완성 ${c.state.collection(c.config,flavor).completedCells}/5 · 칭호 「${collectionTitle(c.config,flavor)}」'),
+      trailing:Text(c.state.collection(c.config,flavor).collected ? '달성':'진행 중'))),
   ]);
+  /// 레벨 미션, in the same cards as the '오늘' window (3차 피드백: like
+  /// H34·H45, readable rows with bars instead of one long line).
+  Widget _levelMissions(){
+    final s=c.state,top=s.level>=50;
+    Widget bar(String label,BigInt current,BigInt target,{Key? key,String unit=''})=>Padding(key:key,padding:const EdgeInsets.only(top:8),
+      child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        Row(children:[Expanded(child:Text(label,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w700,color:Cozy.ink))),
+          Text('${compactNumber(current>target ? target:current)}/${compactNumber(target)}$unit',
+            style:const TextStyle(fontSize:12,fontWeight:FontWeight.w700,color:Cozy.inkSoft))]),
+        const SizedBox(height:3),
+        ClipRRect(borderRadius:BorderRadius.circular(4),child:LinearProgressIndicator(minHeight:7,
+          value:target==BigInt.zero ? 1 : ((current>target ? target:current)*BigInt.from(1000)~/target).toInt()/1000,
+          backgroundColor:const Color(0xfff3e4cf),color:current>=target ? const Color(0xff3f9b5a):Cozy.tangerine)),
+      ]));
+    // 4차 피드백 g9: this level's pieces sold and taps (0 again after each
+    // level-up) and the payment taken when the level is reached.
+    final rows=c.levelRequirements,wait=c.levelWaitReason;
+    return ListView(padding:const EdgeInsets.fromLTRB(12,4,12,14),children:[
+      TodaySection(icon:const PixelIcon('star',size:26),title:'Lv.${s.level}',
+        trailing:Text(top ? '최고 레벨' : '다음 Lv.${s.level+1}',style:const TextStyle(fontFamily:'Jua',fontFamilyFallback:Cozy.fontFallback,fontSize:14,color:Cozy.inkSoft)),
+        child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+          if(top)const Text('최고 레벨에 도달했어요.')
+          else ...[
+            for(var i=0;i<rows.length;i++)
+              bar(rows[i].label,rows[i].current,rows[i].target,key:Key('level-req-$i'),unit:i==0 ? '개':''),
+            const SizedBox(height:8),
+            Text(c.levelCostNote!,key:const Key('level-cost-note'),
+              style:const TextStyle(fontSize:13,fontWeight:FontWeight.w700,color:Cozy.inkSoft)),
+            if(wait!=null)Padding(padding:const EdgeInsets.only(top:2),child:Text(wait,key:const Key('level-wait'),
+              style:const TextStyle(fontSize:13,fontWeight:FontWeight.w700,color:Color(0xffc0392b)))),
+          ],
+          // 4차 피드백 IA1: no 승급 button, the level rises by itself.
+          if(!top)const Padding(padding:EdgeInsets.only(top:10),child:Text('조건을 모두 채우면 저절로 다음 레벨이 돼요.',
+            key:Key('level-auto-note'),textAlign:TextAlign.center,
+            style:TextStyle(fontSize:13,fontWeight:FontWeight.w700,color:Cozy.inkSoft))),
+        ])),
+      for(final flavor in ['custard','cocoa'])
+        if(!s.recipes.contains(flavor))Builder(builder:(context){
+          final requirement=c.recipeMissionRule(flavor)!;
+          final level=DevelopmentBalance.integer(requirement,'unlock_level');
+          final ready=c.canClaimRecipe(flavor);
+          return Padding(padding:const EdgeInsets.only(top:10),child:TodaySection(key:Key('recipe-mission-$flavor'),
+            icon:const PixelIcon('mission',size:26),title:'${c.flavorLabel(flavor)} 레시피 미션',
+            trailing:Text('Lv.$level부터',style:const TextStyle(fontFamily:'Jua',fontFamilyFallback:Cozy.fontFallback,fontSize:14,color:Cozy.inkSoft)),
+            child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+              bar('판매',BigInt.from(s.completedSales),BigInt.from(DevelopmentBalance.integer(requirement,'mission_sales'))),
+              const SizedBox(height:10),
+              CozyPrimaryButton(minHeight:36,fontSize:15,label:'레시피 받기',
+                onPressed:c.inputBusy || !ready ? null : ()=>c.claimRecipeFromMission(flavor)),
+            ])));
+        }),
+    ]);
+  }
   @override
   Widget build(BuildContext context) => AnimatedBuilder(animation:Listenable.merge([c,widget.accountController]),
     builder:(context,_)=>_content(context));
+  /// The gold level-up payment last started, as 'level:gold', so a failed
+  /// try waits for a change instead of repeating (4차 피드백 g9).
+  String? _levelGoldTried;
+  /// 4차 피드백 g9: at Lv.10·20·30·40·50 the level-up also takes 황금붕어빵력
+  /// from the server wallet. Once sales, taps and 붕어빵력 are ready and the
+  /// wallet has it, the payment starts by itself (승급 stays automatic).
+  void _payLevelGold() {
+    c.goldBalance=widget.accountController.state.premium.gold;
+    if(!c.levelGoldDue || c.inputBusy)return;
+    final key='${c.state.level}:${c.goldBalance}';
+    if(_levelGoldTried==key)return;
+    _levelGoldTried=key;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if(!mounted || !c.levelGoldDue)return;
+      await c.payLevelGold();
+      if(mounted) await widget.accountController.refreshWorkshopWallet();
+    });
+  }
   Widget _content(BuildContext context) {
+    _payLevelGold();
     _showAwayReport();
+    _showPromotion();
+    _showCollectionNews();
+    _showPantryNews();
+    _showFeatureIntro();
+    _askNotifications();
     final s = c.state;
+    _watchPantryOut(c.pantryOut);
     final scene=s.customerScene;
     if(scene!=null) {
       final id=scene['id'] as String,npc=scene['npc'] as String;
@@ -411,27 +809,99 @@ class _WorkshopPageState extends State<WorkshopPage> with WidgetsBindingObserver
             (definition['followups'] as Map<String,dynamic>)[scene['choice']] as String),
           if(['story','replay'].contains(scene['kind']) && definition['scene'] is String) Text(definition['scene'] as String),
           if(c.notice!=null) Text(c.notice!),if(c.error!=null) Text(c.error!),
-          FilledButton(onPressed:c.busy || c.error!=null ? null : c.finishCustomerScene,child:const Text('대화 마치기')),
+          FilledButton(onPressed:c.inputBusy || c.error!=null ? null : c.finishCustomerScene,child:const Text('대화 마치기')),
+          // 26번 8단계: a story's end can be shown off (no reward).
+          if(['story','replay'].contains(scene['kind']))TextButton.icon(key:const Key('story-share'),
+            onPressed:()=>_shareStory(npc,definition['event'] as String,definition['scene'] as String?),
+            icon:const Icon(Icons.ios_share),label:const Text('자랑하기')),
         ]);
       }
       return Scaffold(appBar:AppBar(title:const Text('이웃 이야기')),
         body:SafeArea(child:SingleChildScrollView(padding:const EdgeInsets.all(16),child:content)));
     }
     final step=workshopTutorialStep(s,ready:s.customers.isEmpty ? 0 : c.saleReadyCount(s.customers.first));
+    final reduceMotion=widget.accountController.state.settings.reduceMotion;
+    // The guests-at-the-stall layout once every lowered background is in
+    // (26번 4-1단계, S4-1-Q4); the old left line until then.
+    final low=WorkshopHomeLayout.active;
     final home=NightHome(key:_homeKey,controller:widget.accountController,onOpen:_open,
-      equipped:_equipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:_levelProgress(),
-        buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts().values.fold<int>(0,(a,b)=>a+b),
-        status:c.error!=null ? '저장 확인 필요' : '${s.business.open ? '영업 중' : '영업 준비'} · 주문 ${s.customers.length}'),
-      centerBuilder:(fish,clean)=>Stack(children:[
-        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,sensorControl:_sensorControl())),
-        // Below the flavor row, clear of the counter strip.
-        Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
+      equipped:_homeEquipped,headerData:NightHomeHeaderData(level:s.level,progressPermille:c.levelProgressPermille,levelHint:c.levelCostNote,
+        buns:s.buns,lifetime:s.lifetime,autoRate:c.autoRate,tapRate:c.tapRate,claimable:_rewardCounts()['missions']!,
+        // The guests show themselves now: no '· 주문 N' (F7).
+        status:c.error!=null ? '저장 확인 필요' : s.business.open ? '영업 중' : '영업 준비',
+        statusKind:c.error!=null ? WorkshopStatusKind.error : s.business.open ? WorkshopStatusKind.open : WorkshopStatusKind.preparing,
+        showRates:c.featureIsOpen(WorkshopFeature.skills),
+        // 재료 타이쿤 B: '초당 N개 멈춤' when auto production ran out of ingredients.
+        autoStopped:c.autoStopped,
+        // 황금붕어빵력 beside 붕어빵력 (26번 3차 피드백 H30).
+        gold:BigInt.from(widget.accountController.state.premium.gold)),
+      // The menu is only in the bottom bar (H28); the special bungeoppang's
+      // flavor takes the top-left slot (H26).
+      hudLeading:WorkshopFlavorButton(controller:c),
+      navLocks:{for(final id in const ['skills','skins','shop']) if(_lockFor(id) case final reason?) id:reason},
+      lowStall:low,
+      guests:(clicker,taps)=>WorkshopGuestLayer(controller:c,onOpenCustomer:_customerCard,taps:taps,clicker:clicker,
+        reduceMotion:reduceMotion || MediaQuery.disableAnimationsOf(context)),
+      centerBuilder:(fish,clean,counterTop,cutTop)=>Stack(children:[
+        Positioned.fill(child:WorkshopMoldStage(controller:c,fishOnScreen:fish,cleanCounter:clean,counterTop:counterTop,cutTop:cutTop,
+          lowStall:low,reduceMotion:reduceMotion,
+          // Its tour's ring stays on the fairy (4차 g12: it swims wide now).
+          fairyStill:_tourFeature==WorkshopFeature.fairy,
+          vibration:widget.accountController.state.settings.vibration)),
+        // The old layout: below the flavor row, clear of the counter strip.
+        if(!low)Positioned(left:2,top:48,bottom:56,width:64,child:WorkshopCustomerQueue(controller:c,onOpenCustomer:_customerCard)),
       ]),
-      counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock,onCloseBusiness:_closeBusiness),
+      // 4차 피드백 g11 (사용자 결정): the special mold works on the lower
+      // workbench; the six-cell griddle slides aside while it is there.
+      bench:(griddle)=>WorkshopMoldStage(controller:c,fishOnScreen:null,bench:griddle,
+        lowStall:low,reduceMotion:reduceMotion,onSharePerfect:_sharePerfect,
+        // 재료 타이쿤 E: '재료 준비' beside '스페셜 붕어빵 제작 시작' (영업 준비).
+        prepAction:s.tutorialActive ? null : PantryPrepButton(onPressed:c.inputBusy ? null : _openPantry,
+          lock:c.featureLock(WorkshopFeature.pantry),
+          onLocked:()=>showCenterToast(context,c.featureLock(WorkshopFeature.pantry) ?? '')),
+        vibration:widget.accountController.state.settings.vibration),
+      griddleAside:s.session!=null,
+      counter:WorkshopSaleCounter(controller:c,onOpenStock:_stock),
+      // The '오늘' slip (오늘의 주문서·출석, 26번 7단계) under the settings
+      // button (시안 확인 2차).
+      counterSlip:WorkshopDailyTicket(controller:c,onOpen:_daily,
+        claimable:_rewardCounts()['daily']!+_rewardCounts()['event']!),
+      // '영업 시작'·'영업 종료' small beside the '영업 중' sign (시안 확인 2차).
+      statusAction:WorkshopBusinessButton(controller:c,onCloseBusiness:_closeBusiness),
+      // 재료 타이쿤 E: the batter and the chosen filling under the sign
+      // (after the first-run guide), the run-out bubble once under it.
+      statusBelow:s.tutorialActive ? null : (compact)=>PantryStockLine(controller:c,onTap:_openPantry,compact:compact,
+        bubble:_pantryBubble ? pantryOutTitle(c.pantryConfig,c.pantryOut,s.selectedFlavor) : null,
+        onBubbleTap:()=>setState(()=>_pantryBubble=false)),
       griddleContent:WorkshopGriddleLayer(controller:c,stove:_equipped(CosmeticSlot.stove)),
+      // The griddle art is empty; only cooking cells show a bungeoppang, and
+      // none before opening (24번 4단계).
+      griddleFilled:workshopGriddleFilled(c),
+      // Closed and cold before opening and while locked; open with the
+      // flames on once it can be used (26번 4-2단계 F8).
+      griddleOpen:workshopGriddleOpen(c),
       vendor:CookCut(equipped:_equipped,taps:BigInt.from(s.taps),
-        reduceMotion:widget.accountController.state.settings.reduceMotion,greeting:s.customers.isNotEmpty));
-    return Stack(children:[home,if(step!=null)Positioned.fill(child:WorkshopTutorialOverlay(step:step,home:_homeKey,
-      onSkip:c.busy || c.error!=null ? null : c.skipTutorial))]);
+        reduceMotion:reduceMotion,greeting:s.customers.isNotEmpty));
+    final praise=c.salePraise;
+    // 26번 3차 H6: the story first, then the guide's card.
+    final chapter=workshopStoryChapter(s);
+    final story=chapter!=null && !_storySeen.contains(chapter) ? chapter : null;
+    return Stack(children:[home,if(story!=null)Positioned.fill(child:WorkshopStoryOverlay(key:ValueKey(story),
+      lines:workshopStoryLines(story,widget.accountController.ownerName),action:workshopStoryAction(story),
+      reduceMotion:reduceMotion || MediaQuery.disableAnimationsOf(context),
+      onDone:()=>setState(()=>_storySeen.add(story))))
+    else if(step!=null)Positioned.fill(child:WorkshopTutorialOverlay(step:step,home:_homeKey,
+      cardLeft:WorkshopHomeLayout.guideLeft(low),
+      onSkip:c.inputBusy || c.error!=null ? null : c.skipTutorial))
+    else if(_tourFeature case final f? when featureTour(f).isNotEmpty)Positioned.fill(child:WorkshopTutorialOverlay(
+      key:ValueKey('tour-${f.name}-$_tourStep'),
+      step:WorkshopTutorialStep(_tourStep+1,featureTour(f)[_tourStep].text,featureTour(f)[_tourStep].target),
+      home:_homeKey,cardLeft:WorkshopHomeLayout.guideLeft(low),
+      progress:'${featureName(f)} 안내 ${_tourStep+1}/${featureTour(f).length}',
+      nextLabel:_tourStep+1<featureTour(f).length ? '다음' : '알겠어요',
+      onNext:_nextTourStep,onSkip:_endTour)),
+      if(praise!=null)Positioned.fill(child:WorkshopSalePraiseBanner(key:ObjectKey(praise),praise:praise,
+        reduceMotion:widget.accountController.state.settings.reduceMotion || MediaQuery.disableAnimationsOf(context),
+        onDone:c.dismissSalePraise))]);
   }
 }

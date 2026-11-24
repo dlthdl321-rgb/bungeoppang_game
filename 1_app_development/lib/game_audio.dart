@@ -5,7 +5,7 @@ import 'models.dart';
 import 'music_config.dart';
 import 'development_audio_defaults.dart';
 
-enum Sfx { tap, purchase, reward, levelUp }
+enum Sfx { tap, purchase, reward, levelUp, resultPerfect, resultGood, resultFair, resultNear, resultFail }
 
 /// Sound port. Audio is optional: every failure is swallowed so the game
 /// never stops because a device cannot play sound.
@@ -149,12 +149,30 @@ abstract class SoundPolicy implements GameAudio {
   }
 }
 
+/// The one audio context of every player of the game: mixed with each
+/// other and with other apps (Android: no audio focus request, iOS:
+/// mixWithOthers), so no sound of the game stops another (4차 피드백:
+/// '굽기 소리가 배경음악을 끊음').
+AudioContext mixedAudioContext() =>
+    AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers).build();
+
+/// Seamless 16.4 s griddle loop, a recorded crepe sizzle (Freesound 117602,
+/// CC0) made with tools/make_seamless_loop.py.
+const cookingLoopAsset = 'audio/sizzle_loop.wav';
+
 class AudioplayersAudio extends SoundPolicy {
-  static const _files = {
+  /// Effect files (under assets/), made by tools/generate_sounds.py.
+  static const sfxFiles = {
     Sfx.tap: 'audio/tap.wav',
     Sfx.purchase: 'audio/purchase.wav',
     Sfx.reward: 'audio/reward.wav',
     Sfx.levelUp: 'audio/levelup.wav',
+    // 26번 4단계: bake result grades.
+    Sfx.resultPerfect: 'audio/result_perfect.wav',
+    Sfx.resultGood: 'audio/result_good.wav',
+    Sfx.resultFair: 'audio/result_fair.wav',
+    Sfx.resultNear: 'audio/result_near.wav',
+    Sfx.resultFail: 'audio/result_fail.wav',
   };
   final _pools = <Sfx, AudioPool>{};
   final _activeEffects = <StopFunction>{};
@@ -165,7 +183,9 @@ class AudioplayersAudio extends SoundPolicy {
   int _cookingRevision = 0;
   Future<void> _cookingWork = Future<void>.value();
   bool _ready = false, _disposed = false;
-  String? _loadedMood;
+  /// Loaded song. Every mood shares one song now, so a mood change must not
+  /// reload (and restart) it.
+  String? _loadedAsset;
   int _musicRevision = 0;
   Future<void> _musicWork = Future<void>.value();
   Future<void>? _initializing;
@@ -177,17 +197,25 @@ class AudioplayersAudio extends SoundPolicy {
     if (_disposed) return;
     try {
       // Mix with the player's own music instead of stealing audio focus.
-      await AudioPlayer.global.setAudioContext(
-          AudioContextConfig(focus: AudioContextConfigFocus.mixWithOthers)
-              .build());
-      for (final e in _files.entries) {
-        _pools[e.key] = await AudioPool.createFromAsset(
-            path: e.value, maxPlayers: e.key == Sfx.tap ? 4 : 2);
+      final context = mixedAudioContext();
+      await AudioPlayer.global.setAudioContext(context);
+      // 4차 피드백: the background music stopped as soon as the sizzle
+      // started. The music and sizzle players are made with this object,
+      // before the global context above, so on Android they kept the
+      // default AUDIOFOCUS_GAIN: the sizzle's focus request took the focus
+      // from the music player, which pauses on a focus loss. Every player
+      // gets the mixed context itself (no audio focus request), so the
+      // music, the sizzle and every effect play over each other.
+      await _music.setAudioContext(context);
+      await _cooking.setAudioContext(context);
+      for (final e in sfxFiles.entries) {
+        _pools[e.key] = await AudioPool.create(
+            source: AssetSource(e.value), maxPlayers: e.key == Sfx.tap ? 4 : 2, audioContext: context);
       }
       await _music.setReleaseMode(ReleaseMode.loop);
-      final initialMood = mood;
-      await _music.setSource(AssetSource(musicAsset(initialMood)));
-      _loadedMood = initialMood;
+      final initialAsset = musicAsset(mood);
+      await _music.setSource(AssetSource(initialAsset));
+      _loadedAsset = initialAsset;
       if (_disposed) return;
       _ready = true;
       _syncMusic();
@@ -239,10 +267,10 @@ class AudioplayersAudio extends SoundPolicy {
     final revision = ++_musicRevision;
     _musicWork = _musicWork.catchError((_) {}).then((_) async {
       if (_disposed || revision != _musicRevision) return;
-      if (_loadedMood != mood) {
-        final requested = mood;
-        await _music.setSource(AssetSource(musicAsset(requested)));
-        _loadedMood = requested;
+      final requested = musicAsset(mood);
+      if (_loadedAsset != requested) {
+        await _music.setSource(AssetSource(requested));
+        _loadedAsset = requested;
       }
       if (_disposed || revision != _musicRevision) return;
       await _music.setVolume(musicVolume / 100);
@@ -264,7 +292,7 @@ class AudioplayersAudio extends SoundPolicy {
       if (!playing && !_cookingLoaded) return;
       if (!_cookingLoaded) {
         await _cooking.setReleaseMode(ReleaseMode.loop);
-        await _cooking.setSource(AssetSource('audio/sizzle_loop.wav'));
+        await _cooking.setSource(AssetSource(cookingLoopAsset));
         _cookingLoaded = true;
       }
       if (_disposed || revision != _cookingRevision) return;

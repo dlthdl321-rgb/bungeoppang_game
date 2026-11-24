@@ -9,7 +9,7 @@ import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
 import 'controller_test.dart' show FakeTime;
-import 'stage10_feedback_test.dart' show FakeAudio;
+import 'test_support.dart' show FakeAudio;
 import 'workshop_controller_test.dart' show Repository;
 
 void main() {

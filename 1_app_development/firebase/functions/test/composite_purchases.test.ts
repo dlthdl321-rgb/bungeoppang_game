@@ -2,17 +2,20 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-const config = JSON.parse(readFileSync(resolve(__dirname, "../../../../config/development_balance.json"), "utf8"));
+import { withPaidTap1 } from "./paid_skill_fixture";
+const realConfig = JSON.parse(readFileSync(resolve(__dirname, "../../../../config/development_balance.json"), "utf8"));
+// 결제 흐름 검사용: tap_1만 황금 1(실제 설정은 DEC-041로 0).
+const config = withPaidTap1(realConfig);
 import { claimDevelopmentProgress } from "../src/active_progress";
 import { PurchaseContext, PurchaseEvidenceVerifier, purchaseFingerprint,
   reserveCompositePurchase, finishCompositePurchase, queryCompositePurchase } from "../src/composite_purchases";
-import { CompositeIntent } from "../src/development_contracts";
+import { CompositeIntent, validateDevelopmentCompositeQuote } from "../src/development_contracts";
 import { MemoryStore } from "../src/store";
 
 const ctx: PurchaseContext = { account: "a", progress: "progress_0001", epoch: 1 };
 function intent(id = "transaction_0001"): CompositeIntent {
   return { account: "a", transaction: id, revision: config.metadata.revision,
-    skill: "tap_1", owned: 0, quantity: 1, buns: "15", gold: "1" };
+    skill: "tap_1", owned: 0, quantity: 1, buns: "20", gold: "1" };
 }
 const verifier: PurchaseEvidenceVerifier = { verify: async (context, value, phase) => ({
   account: context.account, progress: context.progress, transaction: value.transaction,
@@ -69,4 +72,65 @@ test("알 수 없는 거래 조회는 환불/취소를 만들지 않고 동일 I
   assert.deepEqual(await queryCompositePurchase(store, ctx, intent().transaction),
     { account:"a", transaction:intent().transaction, status:"unknown" });
   assert.equal(store.docs.get("users/a")!.gold, 5);
+});
+
+// 26번 3단계(DEC-041): 실제 설정은 1~4단계 스킬이 황금 0, 5단계부터 그대로 유료.
+test("실제 설정: 1~4단계 스킬은 몇 번째든 황금 0, 5단계는 기존 황금 가격", () => {
+  const base = { account: "a", transaction: "transaction_0009", revision: realConfig.metadata.revision };
+  const free = { ...base, skill: "tap_1", owned: 10, quantity: 1, buns: "403", gold: "0" };
+  assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, free, "a", 10), free);
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig, { ...free, gold: "1" }, "a", 10));
+  const bundle = { ...base, skill: "tap_1", owned: 0, quantity: 12, buns: "2042", gold: "0" };
+  assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, bundle, "a", 0), bundle);
+  for (const id of ["tap_1", "tap_2", "tap_3", "tap_4", "auto_1", "auto_2", "auto_3", "auto_4"]) {
+    assert.equal(realConfig.skill_purchase.entries[id].gold, 0, id);
+  }
+  const paid = { ...base, skill: "tap_5", owned: 9, quantity: 2, buns: "1400013", gold: "5" };
+  assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, paid, "a", 9), paid);
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig, { ...paid, gold: "0" }, "a", 9));
+});
+test("실제 설정: 황금 0 스킬은 지갑을 건드리지 않고 예약·확정된다", async () => {
+  const store = await setup();
+  const value = { ...intent("transaction_0010"), gold: "0" };
+  const reserved = await reserveCompositePurchase(store, realConfig, verifier, ctx, value);
+  assert.equal(reserved.status, "reserved");
+  assert.equal(store.docs.get("users/a")!.gold, 5);
+  assert.equal((await finishCompositePurchase(store, verifier, ctx, value, "commit")).status, "committed");
+  assert.equal(store.docs.get("users/a")!.gold, 5);
+  assert.equal(store.docs.get("users/a/compositeSkills/tap_1")!.owned, 1);
+});
+
+// 4차 g13: the skill window's '최대' asks for any count the player can pay
+// for (not just 1·10·100). The server takes any 1 ≤ n ≤ cap − owned at the
+// price it recomputes, and refuses 0 or more than the levels left.
+test("실제 설정: '최대' 레벨업은 1·10·100이 아닌 개수도 받고, 0개·남은 레벨 초과는 거절", () => {
+  const purchase = realConfig.skill_purchase, row = purchase.entries.tap_1;
+  const price = (owned: number, quantity: number) => {
+    let num = BigInt(row.buns) * BigInt(row.ratio_numerator) ** BigInt(owned);
+    let den = BigInt(row.ratio_denominator) ** BigInt(owned);
+    let buns = 0n;
+    for (let n = 0; n < quantity; n++) {
+      buns += (num + den - 1n) / den;
+      num *= BigInt(row.ratio_numerator); den *= BigInt(row.ratio_denominator);
+    }
+    return buns.toString();
+  };
+  const base = { account: "a", transaction: "transaction_0011", revision: realConfig.metadata.revision,
+    skill: "tap_1", gold: "0" };
+  // 4차 g14: max level 100 (max_owned_per_skill).
+  assert.equal(purchase.max_owned_per_skill, 100);
+  for (const [owned, quantity] of [[5, 37], [0, 100], [94, 6], [12, 77]]) {
+    const value = { ...base, owned, quantity, buns: price(owned, quantity) };
+    assert.deepEqual(validateDevelopmentCompositeQuote(realConfig, value, "a", owned), value, `${owned}+${quantity}`);
+  }
+  const cap = purchase.max_owned_per_skill;
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
+    { ...base, owned: 95, quantity: 6, buns: price(95, 6) }, "a", 95));
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
+    { ...base, owned: cap, quantity: 1, buns: price(cap, 1) }, "a", cap));
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
+    { ...base, owned: 5, quantity: 0, buns: "0" }, "a", 5));
+  // A count with the wrong price is refused too.
+  assert.throws(() => validateDevelopmentCompositeQuote(realConfig,
+    { ...base, owned: 5, quantity: 37, buns: price(5, 36) }, "a", 5));
 });

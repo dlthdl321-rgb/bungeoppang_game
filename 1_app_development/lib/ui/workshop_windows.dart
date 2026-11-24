@@ -1,96 +1,77 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../balance.dart';
-import '../development_balance.dart';
-import '../development_rules.dart';
-import '../economy.dart';
 import '../game_controller.dart';
-import '../models.dart';
 import '../workshop_controller.dart';
 import 'cozy_style.dart';
+import 'currency_amount.dart';
+import 'night_home.dart' show NightHome;
 import 'pixel_sprites.dart';
 
+// 26번 4-3단계: the skill window moved to its own file.
+export 'workshop_skill_shop.dart' show WorkshopSkillShop, LevelUpButton, SkillStepWheel;
+
 /// The original wooden sub-window, with current authoritative balances.
+///
+/// It fills the screen below the status bar. A dark wooden strip at the
+/// bottom holds '돌아가기' and covers the home's bottom menu, so the menu never
+/// peeks out beside the button, and small screens get the most list space.
+///
+/// The balance row on top (26번 4-5단계, F31·S45-Q4) shows both currencies
+/// as icon and big number; the '+' beside the gold opens [onGold] (the gold
+/// packs). The cute fish of 25번 15번 flanks the title (F36·G13, 48x36,
+/// the left one mirrored).
 Future<void> showWorkshopWindow(BuildContext context,{required WorkshopController controller,
-  required GameController account,required String title,required Widget Function(BuildContext) content}) =>
+  required GameController account,required String title,required Widget Function(BuildContext) content,
+  VoidCallback? onGold}) =>
   showModalBottomSheet<void>(context:context,isScrollControlled:true,useSafeArea:true,
-    backgroundColor:Colors.transparent,builder:(ctx)=>SizedBox(height:MediaQuery.sizeOf(ctx).height*.92,
-      child:AnimatedBuilder(animation:Listenable.merge([controller,account]),builder:(context,_)=>Padding(
-        padding:EdgeInsets.fromLTRB(6,4,6,10+MediaQuery.viewPaddingOf(context).bottom),child:Column(children:[
+    backgroundColor:Colors.transparent,builder:(ctx)=>SizedBox(key:const Key('workshop-window'),
+      height:MediaQuery.sizeOf(ctx).height,
+      child:AnimatedBuilder(animation:Listenable.merge([controller,account]),builder:(context,_)=>Column(children:[
+        Expanded(child:Padding(padding:const EdgeInsets.fromLTRB(6,4,6,0),child:Column(children:[
           MediaQuery.withClampedTextScaling(maxScaleFactor:1.3,child:CozyPanel(radius:16,
-            child:Wrap(alignment:WrapAlignment.center,spacing:12,children:[
-              Text('붕어빵력 ${compactNumber(controller.state.buns)}'),
-              Text('황금붕어빵력 ${compactNumber(BigInt.from(account.state.premium.gold))}'),
+            padding:const EdgeInsets.symmetric(horizontal:12,vertical:4),
+            child:Wrap(key:const Key('workshop-balance'),alignment:WrapAlignment.center,crossAxisAlignment:WrapCrossAlignment.center,
+              spacing:18,runSpacing:2,children:[
+              // 4차 g14: a huge balance shrinks in its own width so 황금 stays on the same line.
+              ConstrainedBox(constraints:const BoxConstraints(maxWidth:200),
+                child:CurrencyAmount(Currency.buns,controller.state.buns,key:const Key('balance-buns'),size:30,fontSize:19)),
+              Row(mainAxisSize:MainAxisSize.min,children:[
+                CurrencyAmount(Currency.gold,BigInt.from(account.state.premium.gold),key:const Key('balance-gold'),size:30,fontSize:19),
+                if(onGold!=null)Padding(padding:const EdgeInsets.only(left:4),child:Material(color:Cozy.honey,
+                  shape:const CircleBorder(side:BorderSide(color:Cozy.wood,width:1.5)),
+                  child:InkWell(key:const Key('balance-gold-plus'),customBorder:const CircleBorder(),onTap:onGold,
+                    child:const Padding(padding:EdgeInsets.all(3),
+                      child:Icon(Icons.add_rounded,size:18,color:Cozy.ink,semanticLabel:'황금붕어빵력 충전'))))),
+              ]),
             ]))),
           const SizedBox(height:10),Expanded(child:Stack(clipBehavior:Clip.none,children:[
             Positioned.fill(child:CozyFrame(child:Column(children:[
-              Padding(padding:const EdgeInsets.fromLTRB(48,12,48,6),child:MediaQuery.withClampedTextScaling(
+              Padding(padding:const EdgeInsets.fromLTRB(52,10,52,4),child:MediaQuery.withClampedTextScaling(
                 maxScaleFactor:1.3,child:Row(mainAxisAlignment:MainAxisAlignment.center,children:[
-                  title=='설정' ? const PixelIcon('settings',size:30) : PixelArt(PixelSprites.screenArt('title_fish'),width:30,height:23),const SizedBox(width:8),
+                  // 25번 35번 redraw (ui/title_fish.png).
+                  title=='설정' ? const Padding(padding:EdgeInsets.only(right:6),child:PixelIcon('settings',size:30))
+                    : const TitleFish(key:Key('title-fish-left'),width:48,height:36,flip:true),
                   Flexible(child:Text(title,key:const Key('workshop-window-title'),textAlign:TextAlign.center,
-                    style:const TextStyle(fontFamily:'Jua',fontSize:28,color:Cozy.ink))),const SizedBox(width:8),
-                  title=='설정' ? const PixelIcon('settings',size:30) : PixelArt(PixelSprites.screenArt('title_fish'),width:30,height:23),
+                    style:const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback,fontSize:28,color:Cozy.ink))),
+                  title=='설정' ? const Padding(padding:EdgeInsets.only(left:6),child:PixelIcon('settings',size:30))
+                    : const TitleFish(width:48,height:36),
                 ]))),
-              if(controller.error!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:12),child:Text(controller.error!)),
-              if(controller.notice!=null)Padding(padding:const EdgeInsets.symmetric(horizontal:12),child:Text(controller.notice!)),
+              // H41: a tinted line per kind (warning, info) instead of plain text.
+              if(controller.error!=null)Padding(padding:const EdgeInsets.fromLTRB(12,0,12,6),
+                child:CozyNotice(controller.error!,key:const Key('workshop-window-error'),tone:CozyTone.warning)),
+              if(controller.notice!=null)Padding(padding:const EdgeInsets.fromLTRB(12,0,12,6),
+                child:CozyNotice(controller.notice!,key:const Key('workshop-window-notice'))),
               Expanded(child:content(ctx)),
             ]))),
-            Positioned(top:-8,right:-6,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
-          ])),const SizedBox(height:10),
-          MediaQuery.withClampedTextScaling(maxScaleFactor:1.3,child:CozyBackButton(onPressed:()=>Navigator.pop(ctx))),
-        ])))));
-
-class WorkshopSkillShop extends StatefulWidget {
-  final WorkshopController controller;final GameController account;
-  const WorkshopSkillShop({super.key,required this.controller,required this.account});
-  @override
-  State<WorkshopSkillShop> createState()=>_WorkshopSkillShopState();
-}
-class _WorkshopSkillShopState extends State<WorkshopSkillShop>{
-  UpgradeKind _kind=UpgradeKind.tap;PurchaseMode _mode=PurchaseMode.one;
-  @override
-  Widget build(BuildContext context){
-    final c=widget.controller,account=widget.account;
-    return Column(children:[
-      Wrap(spacing:8,children:[for(final kind in UpgradeKind.values)ChoiceChip(key:Key('kind-${kind.name}'),
-        avatar:PixelIcon(kind==UpgradeKind.tap ? 'tab_tap':'tab_auto',size:18),
-        label:Text(kind==UpgradeKind.tap ? '클릭 생산':'자동 생산'),selected:kind==_kind,onSelected:(_)=>setState(()=>_kind=kind))]),
-      Wrap(spacing:8,children:[for(final mode in [(PurchaseMode.one,'1개'),(PurchaseMode.ten,'10개'),(PurchaseMode.maximum,'최대')])
-        ChoiceChip(key:Key('quantity-${mode.$1.name}'),label:Text(mode.$2),selected:mode.$1==_mode,onSelected:(_)=>setState(()=>_mode=mode.$1))]),
-      Expanded(child:ListView(key:ValueKey('skills-${_kind.name}'),padding:const EdgeInsets.all(12),children:[
-        if(c.purchaseGateway==null) const Text('스킬 구매는 온라인 연결(카카오 로그인)이 있는 빌드에서만 할 수 있어요.'),
-        if(c.notice!=null)Text(c.notice!),if(c.error!=null)Text(c.error!),
-        for(final journal in c.state.purchases.journals.values.where((j)=>!j.settled)) CozyPanel(child:Column(children:[
-          Text('구매 확인 대기: ${journal.quote.skillId}'),Wrap(children:[
-            TextButton(onPressed:c.purchaseGateway==null || c.purchaseBusy || c.busy ? null : ()=>c.recoverPurchase(c.purchaseGateway!,journal.transactionId),child:const Text('복구')),
-            TextButton(onPressed:c.purchaseGateway==null || c.purchaseBusy || c.busy ? null : ()=>c.recoverPurchase(c.purchaseGateway!,journal.transactionId,cancel:true),child:const Text('취소 확인')),
-          ])])),
-        for(final skill in upgrades.where((u)=>u.kind==_kind)) Builder(builder:(context){
-          final id=skill.id,owned=c.state.purchases.owned[id] ?? 0;
-          final cap=DevelopmentBalance.integer(c.config.section('skill_purchase'),'max_owned_per_skill');
-          final quantity=math.min(cap-owned,_mode==PurchaseMode.ten ? 10:1);
-          final q=_mode==PurchaseMode.maximum ? maximumCompositeSkill(c.config,id,owned:owned,
-              availableBuns:c.state.purchases.available(c.state.buns),availableGold:BigInt.from(account.state.premium.gold))
-            : quoteCompositeSkill(c.config,id,owned:owned,quantity:quantity);
-          final rule=c.config.skill(id);
-          final unlocked=c.state.lifetime>=DevelopmentBalance.decimal(rule,'unlock_total');
-          final enabled=unlocked && q.quantity>0 && c.purchaseGateway!=null && !c.busy && !c.purchaseBusy && c.error==null &&
-            q.affordable(c.state.purchases.available(c.state.buns),BigInt.from(account.state.premium.gold));
-          return Card(key:Key('skill-$id'),child:Padding(padding:const EdgeInsets.all(14),child:Column(
-            crossAxisAlignment:CrossAxisAlignment.stretch,children:[
-              Row(children:[PixelImage(PixelSprites.skill(id),size:48),const SizedBox(width:12),Expanded(child:Text(skill.name))]),
-              Text('$owned/$cap · ${_kind==UpgradeKind.tap ? '클릭당':'초당'} ${compactNumber(_kind==UpgradeKind.tap ? c.tapRate:c.autoRate)}'),
-              Text('구매 후 ${_kind==UpgradeKind.tap ? '클릭당':'초당'} ${compactNumber((_kind==UpgradeKind.tap ? c.tapRate:c.autoRate)+DevelopmentBalance.decimal(rule,'effect')*BigInt.from(q.quantity))}',key:Key('after-$id')),
-              Text(unlocked ? owned>=cap ? '최대 강화':'붕어빵력과 황금붕어빵력이 모두 필요해요.':'누적 ${rule['unlock_total']} 해금'),
-              FilledButton(key:Key('buy-$id'),onPressed:!enabled ? null : () async {
-                await c.purchaseSkill(c.purchaseGateway!,id,quantity:q.quantity);await account.refreshWorkshopWallet();
-              },child:Text('${q.quantity}개 · 붕어빵력 ${compactNumber(q.buns)} + 황금 ${compactNumber(q.gold)}')),
-              TextButton(onPressed:()=>showDialog<void>(context:context,builder:(ctx)=>AlertDialog(title:Text(skill.name),
-                content:SelectableText('구매 수량 ${q.quantity}개\n붕어빵력 ${q.buns}\n황금붕어빵력 ${q.gold}'),
-                actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('확인'))])),child:const Text('자세히 보기')),
-            ])));
-        }),
-      ])),
-    ]);
-  }
-}
+            Positioned(top:CozyCloseButton.edge,right:CozyCloseButton.edge,child:CozyCloseButton(onPressed:()=>Navigator.pop(ctx))),
+          ])),
+        ]))),
+        // At least as tall as the home's bottom menu (NightHome.navHeight).
+        Container(key:const Key('workshop-window-base'),width:double.infinity,
+          constraints:const BoxConstraints(minHeight:NightHome.navHeight),
+          margin:const EdgeInsets.only(top:8),
+          padding:EdgeInsets.fromLTRB(16,8,16,10+MediaQuery.viewPaddingOf(context).bottom),
+          // H41: a quiet light strip with a hairline (it was dark wood).
+          decoration:const BoxDecoration(color:Cozy.creamDeep,border:Border(top:BorderSide(color:Cozy.line))),
+          child:Center(child:MediaQuery.withClampedTextScaling(maxScaleFactor:1.3,
+            child:CozyBackButton(onPressed:()=>Navigator.pop(ctx))))),
+      ]))));

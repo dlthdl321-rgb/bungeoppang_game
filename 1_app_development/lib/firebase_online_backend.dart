@@ -1,18 +1,20 @@
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:kakao_flutter_sdk_user/kakao_flutter_sdk_user.dart';
 import 'invite_models.dart';
 import 'online_backend.dart';
 import 'workshop_online.dart';
 
 // Firebase project settings, passed at build time so they stay out of the
-// repository (docs/stage15_release_online.md):
-//   flutter build appbundle --dart-define=FIREBASE_API_KEY=...
-//     --dart-define=FIREBASE_APP_ID=... --dart-define=FIREBASE_SENDER_ID=...
-//     --dart-define=FIREBASE_PROJECT_ID=...
-//     --dart-define=KAKAO_NATIVE_APP_KEY=...
+// repository. They live in dart_defines/online.json (gitignored; copy
+// dart_defines/online.example.json) and go in with
+//   flutter build appbundle --release --dart-define-from-file=dart_defines/online.json
+// (2.1.3_legacy_code_policies_and_online_setup/online_setup.md).
 // Without them the app runs with NoOnlineBackend (online features hidden).
 // The Kakao key also goes into the Android manifest (build.gradle.kts).
 const kakaoNativeAppKey = String.fromEnvironment('KAKAO_NATIVE_APP_KEY');
@@ -20,6 +22,15 @@ const _apiKey = String.fromEnvironment('FIREBASE_API_KEY');
 const _appId = String.fromEnvironment('FIREBASE_APP_ID');
 const _senderId = String.fromEnvironment('FIREBASE_SENDER_ID');
 const _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
+// Optional. A debug token registered in the Firebase console (App Check →
+// 앱 → 디버그 토큰 관리) so debug builds pass App Check without reading logcat.
+const _appCheckDebugToken = String.fromEnvironment('APP_CHECK_DEBUG_TOKEN');
+// 26번 2-1단계, optional: the Firebase project's "웹 클라이언트 ID"
+// (Firebase 콘솔 > Authentication > 로그인 방법 > Google > 웹 SDK 구성). Google
+// login hands Firebase an ID token issued for this client. Without it the
+// first-run screen offers Kakao only. Not a secret, but it lives with the
+// other project settings in dart_defines/online.json.
+const googleServerClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
 const firebaseConfigured = _apiKey != '' &&
     _appId != '' &&
     _senderId != '' &&
@@ -33,6 +44,7 @@ class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
   final FirebaseAuth _auth;
   final FirebaseFunctions _functions;
   String? _kakaoName;
+  bool _googleReady = false;
   FirebaseOnlineBackend._(this._auth, this._functions);
 
   /// The real backend when this build has a Firebase project and a Kakao
@@ -47,11 +59,35 @@ class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
               appId: _appId,
               messagingSenderId: _senderId,
               projectId: _projectId));
-      return FirebaseOnlineBackend._(FirebaseAuth.instanceFor(app: app),
+      await _activateAppCheck(app);
+      final auth = FirebaseAuth.instanceFor(app: app);
+      // The saved session comes back asynchronously; wait for it so the
+      // first-run gate does not ask a signed-in player to log in again. No
+      // network is needed (offline play after the first login).
+      try {
+        await auth.authStateChanges().first.timeout(const Duration(seconds: 3));
+      } catch (_) {}
+      return FirebaseOnlineBackend._(auth,
           FirebaseFunctions.instanceFor(app: app, region: functionsRegion));
     } catch (_) {
       return const NoOnlineBackend();
     }
+  }
+
+  /// The server refuses callables without an App Check token
+  /// (firebase/functions/src/callable_options.ts). Play builds prove
+  /// themselves with Play Integrity; debug builds use a debug token that has
+  /// to be registered in the Firebase console. A failure here does not stop
+  /// the game: calls are refused and the app shows its offline messages.
+  static Future<void> _activateAppCheck(FirebaseApp app) async {
+    try {
+      await FirebaseAppCheck.instanceFor(app: app).activate(
+          providerAndroid: kDebugMode
+              ? AndroidDebugProvider(
+                  debugToken:
+                      _appCheckDebugToken == '' ? null : _appCheckDebugToken)
+              : const AndroidPlayIntegrityProvider());
+    } catch (_) {}
   }
 
   @override
@@ -67,11 +103,30 @@ class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
   bool get signedIn => _auth.currentUser != null;
 
   @override
+  Set<LoginProvider> get loginProviders => {
+        LoginProvider.kakao,
+        if (googleServerClientId != '') LoginProvider.google,
+      };
+
+  @override
+  LoginProvider? get loginProvider {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    return user.providerData.any((p) => p.providerId == 'google.com')
+        ? LoginProvider.google
+        : LoginProvider.kakao;
+  }
+
+  @override
+  String? get accountId => _auth.currentUser?.uid;
+
+  @override
   String? get displayName => _auth.currentUser?.displayName ?? _kakaoName;
 
   @override
-  Future<SignInResult> signIn() async {
+  Future<SignInResult> signIn([LoginProvider provider = LoginProvider.kakao]) async {
     if (signedIn) return SignInResult.success;
+    if (provider == LoginProvider.google) return _googleSignIn();
     try {
       final kakao = await _kakaoLogin();
       if (kakao == null) return SignInResult.canceled;
@@ -84,12 +139,50 @@ class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
       _kakaoName = data['displayName'] as String?;
       await _auth.signInWithCustomToken(token);
       return signedIn ? SignInResult.success : SignInResult.failed;
-    } on FirebaseFunctionsException {
-      return SignInResult.failed;
-    } on FirebaseAuthException {
-      return SignInResult.failed;
+    } on FirebaseFunctionsException catch (e) {
+      return e.code == 'unavailable' || e.code == 'deadline-exceeded'
+          ? SignInResult.offline
+          : SignInResult.failed;
+    } on FirebaseAuthException catch (e) {
+      return _authFailure(e);
     } on KakaoException {
       return SignInResult.failed;
+    } on PlatformException {
+      return SignInResult.failed;
+    } on MissingPluginException {
+      return SignInResult.failed;
+    }
+  }
+
+  static SignInResult _authFailure(FirebaseAuthException e) =>
+      e.code == 'network-request-failed' ? SignInResult.offline : SignInResult.failed;
+
+  Future<void> _initGoogle() async {
+    if (_googleReady) return;
+    await GoogleSignIn.instance.initialize(serverClientId: googleServerClientId);
+    _googleReady = true;
+  }
+
+  /// The Google account picker (Credential Manager), then Firebase's Google
+  /// provider with the picked account's ID token. Firebase makes the uid.
+  Future<SignInResult> _googleSignIn() async {
+    if (googleServerClientId == '') return SignInResult.failed;
+    try {
+      await _initGoogle();
+      final account = await GoogleSignIn.instance.authenticate(scopeHint: const ['email']);
+      final idToken = account.authentication.idToken;
+      if (idToken == null) return SignInResult.failed;
+      await _auth.signInWithCredential(GoogleAuthProvider.credential(idToken: idToken));
+      return signedIn ? SignInResult.success : SignInResult.failed;
+    } on GoogleSignInException catch (e) {
+      return switch (e.code) {
+        GoogleSignInExceptionCode.canceled ||
+        GoogleSignInExceptionCode.interrupted =>
+          SignInResult.canceled,
+        _ => SignInResult.failed,
+      };
+    } on FirebaseAuthException catch (e) {
+      return _authFailure(e);
     } on PlatformException {
       return SignInResult.failed;
     } on MissingPluginException {
@@ -123,14 +216,37 @@ class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
       (e is KakaoClientException && e.reason == ClientErrorCause.cancelled);
 
   @override
-  Future<void> signOut() async {
+  Future<void> signOut() => _leave(disconnect: false);
+
+  /// Ends the Firebase session and the provider's. [disconnect] (account
+  /// deletion) also unlinks the app from the Kakao account or revokes the
+  /// Google grant, so the next login asks for consent again.
+  Future<void> _leave({required bool disconnect}) async {
+    final provider = loginProvider;
     _kakaoName = null;
     await _auth.signOut();
     try {
-      await UserApi.instance.logout();
+      if (provider == LoginProvider.google) {
+        await _initGoogle();
+        await (disconnect ? GoogleSignIn.instance.disconnect() : GoogleSignIn.instance.signOut());
+      } else if (disconnect) {
+        await UserApi.instance.unlink();
+      } else {
+        await UserApi.instance.logout();
+      }
     } catch (_) {
-      // Kakao clears its token even when the logout call fails.
+      // The provider clears its token even when the call fails.
     }
+  }
+
+  @override
+  Future<void> saveAccountProfile(AccountProfileUpdate update) =>
+      _call('accountProfileSet', update.toJson());
+
+  @override
+  Future<void> deleteAccount() async {
+    await _call('accountDelete');
+    await _leave(disconnect: true);
   }
 
   Future<Map<String, Object?>> _call(String name,
@@ -270,7 +386,7 @@ class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
   }
 
   @override
-  Future<void> inviteReachedLevelOne() => _call('inviteLevelOne');
+  Future<bool> inviteReachedLevelOne() async => (await _call('inviteLevelOne'))['retry'] != true;
 
   @override
   Future<List<InviteEvent>> inviteFetchEvents(Set<String> committed) async => [

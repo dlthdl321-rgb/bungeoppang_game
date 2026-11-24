@@ -8,29 +8,65 @@ import '../home_presentation.dart';
 import '../menu_rules.dart';
 import '../mission_alerts.dart';
 import '../weekly_config.dart';
-import '../avatar_rig_config.dart';
 import 'avatar_face.dart';
 import 'avatar_painter.dart';
+import 'center_toast.dart';
 import 'count_badge.dart';
 import 'cozy_style.dart';
 import 'fish_painter.dart';
-import 'night_stall_painter.dart';
+import 'lock_overlay.dart';
 import 'pixel_sprites.dart';
 import 'support_panels.dart';
 import 'weather_layer.dart';
+import 'workshop_wardrobe.dart';
+export 'workshop_wardrobe.dart' show WardrobeMode, WardrobePrice, WorkshopWardrobe;
 
 /// The concept art's wardrobe (3.5_completed_game_mockups/꾸미기): tabs 헤어 / 의상 / 소품 /
 /// 붕어빵 / 가게 (approved D3), a preview on top, a 3-column grid of items and
 /// an '적용' button for the picked one. Picking only previews; nothing is
-/// bought or equipped until '적용'.
+/// bought or equipped until '적용'. With [CosmeticMenuAccess] (the Workshop)
+/// the panel is [WorkshopWardrobe] (26번 4-5단계): 꾸미기 wears what is
+/// owned, several slots at once with '모두 적용(N)'; the shop's 꾸미기 tab
+/// sells avatar items and wears them as soon as they are bought.
 class CosmeticMenuAccess {
   final String Function(CosmeticSlot) equipped;
   final bool Function(CosmeticDefinition) owned, unlocked, canApply;
   final String Function(CosmeticDefinition) price, action;
   final Future<bool> Function(CosmeticDefinition) apply;
+  /// Why a locked item is locked ('Lv.5 해금'; 26번 4-5단계: no '누적').
   final String Function(CosmeticDefinition)? requirement;
+
+  /// Items this build shows at all; items nobody can buy yet stay out of
+  /// the wardrobe and the shop instead of reading '판매 준비 중'.
+  final bool Function(CosmeticDefinition) listed;
+
+  /// Items the shop sells (the avatar catalog); null: everything not owned.
+  final bool Function(CosmeticDefinition)? forSale;
+
+  /// An item's price as icons and numbers, with what the player lacks.
+  final WardrobePrice? Function(CosmeticDefinition)? cost;
+
+  /// Why a tab is still closed ('Lv.5 달성하면 열려요', 붕어빵 Lv.5; S45-Q6),
+  /// or null when open; null function: all open. A closed tab is still
+  /// listed, faded under the lock, and says why when tapped (4차 g5).
+  final String? Function(WardrobeTab)? tabLock;
+
+  /// Why a slot inside a tab is still closed (26번 3차 H42: the 가게 tab
+  /// shows 배경 and 시간 from Lv.1, the stove, decoration and lamp from
+  /// Lv.8), or null; listed locked like [tabLock].
+  final String? Function(CosmeticSlot)? slotLock;
+
+  /// What several items cost together, with what the player lacks for all
+  /// of them ('모두 사기', 3차 피드백 H15); null: not sold together.
+  final WardrobePrice? Function(List<CosmeticDefinition>)? total;
+
+  /// Why nothing can be bought right now (a build without the online
+  /// settings, or before the login; 4차 피드백 IC10), or null.
+  final String? Function()? purchaseBlock;
   const CosmeticMenuAccess({required this.equipped,required this.owned,required this.unlocked,
-    required this.canApply,required this.price,required this.action,required this.apply,this.requirement});
+    required this.canApply,required this.price,required this.action,required this.apply,this.requirement,
+    this.listed=_always,this.forSale,this.cost,this.tabLock,this.slotLock,this.total,this.purchaseBlock});
+  static bool _always(CosmeticDefinition _)=>true;
 }
 
 class AccessCosmeticAction extends StatelessWidget {
@@ -50,10 +86,18 @@ class WardrobePanel extends StatefulWidget {
   final GameController controller;
   final WardrobeTab initialTab;
   final CosmeticMenuAccess? access;
+  /// With [access]: wear what is owned, or the shop's avatar items.
+  final WardrobeMode mode;
+  final CosmeticSlot? initialSlot;
+  /// With [access] in [WardrobeMode.wear]: '상점에서 더 보기' for a slot.
+  final void Function(CosmeticSlot slot)? onMore;
+  /// With [access]: closes the window once everything tried on is worn.
+  final VoidCallback? onClose;
   const WardrobePanel(
       {super.key,
       required this.controller,
-      this.initialTab = WardrobeTab.hair,this.access});
+      this.initialTab = WardrobeTab.hair,this.access,this.mode=WardrobeMode.wear,
+      this.initialSlot,this.onMore,this.onClose});
   @override
   State<WardrobePanel> createState() => _WardrobePanelState();
 }
@@ -69,11 +113,32 @@ class _WardrobePanelState extends State<WardrobePanel> {
   GameController get c => widget.controller;
 
   /// What [s] shows: the picked item in its own slot, else what is worn.
-  String _shown(CosmeticSlot s) =>
-      s == slot && preview != null ? preview! : (widget.access?.equipped(s) ?? c.state.equippedCosmetic(s));
+  String _shown(CosmeticSlot s) {
+    if (s == slot && preview != null) return preview!;
+    final worn = widget.access?.equipped(s) ?? c.state.equippedCosmetic(s);
+    // Another character tried on: hair that is only the worn character's
+    // own default shows as the new one's (26번 3차 G).
+    if (s == CosmeticSlot.hair && slot == CosmeticSlot.character && preview != null &&
+        worn == defaultHairOf(_shownWorn(CosmeticSlot.character))) {
+      return defaultHairOf(preview!);
+    }
+    return worn;
+  }
+
+  String _shownWorn(CosmeticSlot s) => widget.access?.equipped(s) ?? c.state.equippedCosmetic(s);
 
   @override
   Widget build(BuildContext context) {
+    if (widget.access case final access?) {
+      return WorkshopWardrobe(
+          access: access,
+          mode: widget.mode,
+          initialTab: widget.initialTab,
+          initialSlot: widget.initialSlot,
+          onMore: widget.onMore,
+          onClose: widget.onClose,
+          animate: WeatherLayer.animate && !c.state.settings.reduceMotion);
+    }
     final picked = cosmeticDefinitions
         .firstWhere((d) => d.slot == slot && d.id == _shown(slot));
     return SingleChildScrollView(
@@ -108,7 +173,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
           Semantics(
               label: '${wardrobeTabLabel(tab)} 꾸미기 미리보기',
               child: SizedBox(
-                  height: 180,
+                  height: tab == WardrobeTab.stall ? 260 : 180,
                   child: ClipRRect(
                       borderRadius: BorderRadius.circular(16),
                       child: _preview()))),
@@ -131,7 +196,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
             const gap = 8.0;
             final w = (box.maxWidth - gap * 2) / 3;
             return Wrap(spacing: gap, runSpacing: gap, children: [
-              for (final d in cosmeticDefinitions.where((d) => d.slot == slot))
+              for (final d in cosmeticDefinitions.where((d) => d.slot == slot && (widget.access?.listed(d) ?? true)))
                 SizedBox(width: w, child: _tile(d, d.id == picked.id)),
             ]);
           }),
@@ -253,7 +318,7 @@ class _WardrobePanelState extends State<WardrobePanel> {
   }
 
   /// Each tab previews its own subject: the pastry up close, the vendor
-  /// alone, or the whole stall with vendor and pastry.
+  /// alone, or the whole stall without the vendor (4차 피드백 g10 ID5).
   Widget _preview() {
     final fish = CustomPaint(
         painter: FishPainter(
@@ -274,36 +339,39 @@ class _WardrobePanelState extends State<WardrobePanel> {
                 fit: BoxFit.cover,
                 child: PixelArt(PixelSprites.screenArt('wardrobe_bg'),
                     width: 120, height: 72)),
-            // Blinks by itself and talks when tapped; trying items on
-            // keeps whatever motion is playing.
+            // Blinks by itself; tapping no longer makes it talk (26번
+            // 4-5단계, G2). Trying items on keeps the blink going.
             Padding(
                 padding: const EdgeInsets.all(8),
                 child: AvatarFace(
                     animate: WeatherLayer.animate &&
                         !c.state.settings.reduceMotion,
-                    onTap: talkClip,
                     builder: (context, face) => CustomPaint(
                         key: const Key('preview-avatar-face'),
                         painter:
                             AvatarPainter(AvatarLook.of(_shown), face: face)))),
           ])),
+      // 4차 피드백 g10(ID5): the whole stall as the home shows it, without
+      // the vendor, as in the Workshop wardrobe.
       WardrobeTab.stall => CustomPaint(
           key: const Key('preview-stall'),
-          painter: NightStallPainter(
+          size: Size.infinite,
+          painter: StallPreviewPainter(
               background: _shown(CosmeticSlot.background),
-              night: isNightTime(_shown(CosmeticSlot.time), DateTime.now()),
+              night: isNightTime(_shown(CosmeticSlot.time), sceneClock()),
               stove: _shown(CosmeticSlot.stove),
               decoration: _shown(CosmeticSlot.decoration),
-              avatar: AvatarLook.of(_shown)),
-          // Post lamps live in the stall frame.
-          foregroundPainter: StallFramePainter(lamp: _shown(CosmeticSlot.lamp)),
-          child: Center(child: SizedBox(width: 120, height: 90, child: fish))),
+              lamp: _shown(CosmeticSlot.lamp),
+              lowStall: false)),
     };
   }
 }
 
-/// [item] on its own subject: the pastry or the vendor wearing it with
-/// everything else [equipped], or the stall part's own art.
+/// [item]'s tile picture: the pastry wearing it, the avatar item's own
+/// icon (26번 4-5단계, G5: `cosmetic_icons/<id>.png`, not a tiny dressed
+/// vendor; the vendor wearing it only while an icon is missing), or the
+/// stall part's own art (a background as its middle square, lamps and
+/// day/night as their tile pictures).
 class CosmeticThumb extends StatelessWidget {
   final CosmeticDefinition item;
   final String Function(CosmeticSlot) equipped;
@@ -319,21 +387,32 @@ class CosmeticThumb extends StatelessWidget {
               skin: shown(CosmeticSlot.fish),
               pattern: shown(CosmeticSlot.pattern),
               topping: shown(CosmeticSlot.topping))),
-      CosmeticCategory.avatar => CustomPaint(
-          size: Size.infinite, painter: AvatarPainter(AvatarLook.of(shown))),
+      CosmeticCategory.avatar => switch (PixelSprites.cosmeticIcon(item.id,
+            character: shown(CosmeticSlot.character))) {
+          final icon? => CustomPaint(
+              key: Key('icon-${item.id}'),
+              size: Size.infinite,
+              painter: _FitImagePainter(icon)),
+          null => CustomPaint(
+              size: Size.infinite, painter: AvatarPainter(AvatarLook.of(shown))),
+        },
+      _ when PixelSprites.stallTile(item) != null => CustomPaint(
+          size: Size.infinite,
+          painter: _FitImagePainter(PixelSprites.stallTile(item)!)),
       _ when item.slot == CosmeticSlot.time => Icon(
           switch (item.id) {
             'night_time' => Icons.nightlight_round,
             'clock' => Icons.schedule,
-            'scenetime' => Icons.landscape_rounded,
             _ => Icons.wb_sunny_rounded,
           },
           color: Cozy.woodLight,
           size: 36),
       CosmeticCategory.stall => switch (
             PixelSprites.cosmetic(item.slot, item.id)) {
-          final image? =>
-            CustomPaint(size: Size.infinite, painter: _FitImagePainter(image)),
+          final image? => CustomPaint(
+              size: Size.infinite,
+              painter: _FitImagePainter(image,
+                  cover: item.slot == CosmeticSlot.background)),
           null => const Icon(Icons.block, color: Cozy.inkSoft),
         },
     };
@@ -343,10 +422,24 @@ class CosmeticThumb extends StatelessWidget {
 /// One sprite fitted into the canvas, centred, pixels kept crisp.
 class _FitImagePainter extends CustomPainter {
   final ui.Image image;
-  const _FitImagePainter(this.image);
+  /// Fill the box with the picture's middle (a tall background as a
+  /// square thumbnail) instead of fitting all of it.
+  final bool cover;
+  const _FitImagePainter(this.image, {this.cover = false});
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (cover) {
+      final k = math.max(size.width / image.width, size.height / image.height);
+      final w = size.width / k, h = size.height / k;
+      final src = Rect.fromLTWH((image.width - w) / 2, (image.height - h) / 2, w, h);
+      canvas.save();
+      canvas.clipRRect(RRect.fromRectAndRadius(Offset.zero & size, const Radius.circular(8)));
+      // 4차 피드백 g15: smoothed when shrunk, like every sprite.
+      PixelSprites.drawPart(canvas, image, src, Offset.zero & size);
+      canvas.restore();
+      return;
+    }
     final scale =
         math.min(size.width / image.width, size.height / image.height);
     final w = image.width * scale, h = image.height * scale;
@@ -355,7 +448,8 @@ class _FitImagePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _FitImagePainter old) => image != old.image;
+  bool shouldRepaint(covariant _FitImagePainter old) =>
+      image != old.image || cover != old.cover;
 }
 
 /// The concept art's menu (서브UI 메뉴): 도감, 업적, 통계, 배경 테마, then
@@ -365,8 +459,22 @@ class MenuPanel extends StatelessWidget {
   final void Function(String destination) onOpen;
   final Map<String,int>? rewardCounts;
   final bool legacyDescriptions;
+
+  /// Destinations left out of this build's menu (the soft launch hides the
+  /// online ranking, friends and sharing: DEC-029).
+  final Set<String> hidden;
+
+  /// Destinations shown but not open yet, with the reason ('Lv.3 달성하면
+  /// 열려요'): the icon under the common lock (one stripe, the padlock art
+  /// in its corner), the reason in red under the title, no arrow, and a tap
+  /// says '도감: Lv.3 달성하면 열려요' in a center toast instead of opening
+  /// (3차 피드백 H32 → 4차 g5).
+  final Map<String,String> locks;
+
+  /// The padlock's side on a locked row's icon.
+  static const lockSize = 18.0;
   const MenuPanel({super.key, required this.controller, required this.onOpen,
-    this.rewardCounts,this.legacyDescriptions=true});
+    this.rewardCounts,this.legacyDescriptions=true,this.hidden=const {},this.locks=const {}});
 
   @override
   Widget build(BuildContext context) {
@@ -397,7 +505,8 @@ class MenuPanel extends StatelessWidget {
       ),
       (
         'records',
-        '통계',
+        // 3차 피드백 H44: '통계' → '생산 기록'.
+        '생산 기록',
         null,
         const PixelIcon('records', size: 32),
         const Key('menu-records')
@@ -451,6 +560,14 @@ class MenuPanel extends StatelessWidget {
         const PixelIcon('share', size: 32),
         const Key('menu-share')
       ),
+      // 26번 8단계 공유 카드(보상 없음): the stall as a picture to share.
+      (
+        'photo',
+        '가게 사진 찍기',
+        null,
+        const Icon(Icons.photo_camera_outlined, color: Cozy.orangeDeep, size: 32),
+        const Key('menu-photo')
+      ),
     ];
     // A short list: built eagerly (not lazily) so every entry exists even
     // when large text pushes it below the fold.
@@ -458,29 +575,46 @@ class MenuPanel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       child: Column(children: [
         for (final (dest, title, subtitle, icon, key) in rows)
-          Padding(
+          if (!hidden.contains(dest))
+          Builder(builder: (context) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
+            // H41: a white card with a hairline, not a wooden frame.
             child: Material(
-              color: Cozy.wood,
-              borderRadius: BorderRadius.circular(12),
+              color: Cozy.cream,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  side: const BorderSide(color: Cozy.line)),
+              shadowColor: Cozy.shadow,
+              elevation: 1,
               child: InkWell(
                 key: key,
-                borderRadius: BorderRadius.circular(12),
-                onTap: () => onOpen(dest),
+                borderRadius: BorderRadius.circular(14),
+                onTap: () {
+                  if (locks[dest] case final lock?) {
+                    showCenterToast(context, '$title: $lock');
+                  } else {
+                    onOpen(dest);
+                  }
+                },
                 child: Container(
-                  margin: const EdgeInsets.all(2),
                   constraints: const BoxConstraints(minHeight: 56),
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                      color: Cozy.cream,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Cozy.woodLight, width: 1.5)),
                   child: Row(children: [
                     CountBadge(
                         count: claimable[dest] ?? 0,
                         badgeKey: Key('badge-$dest'),
-                        child: icon),
+                        child: locks.containsKey(dest)
+                            ? SizedBox.square(
+                                dimension: 36,
+                                child: LockedOverlay(
+                                    key: Key('menu-locked-$dest'),
+                                    caption: '$title: ${locks[dest]}',
+                                    showCaption: false,
+                                    maxLock: lockSize,
+                                    lockAlignment: const Alignment(1, -1),
+                                    child: Center(child: icon)))
+                            : icon),
                     const SizedBox(width: 12),
                     Expanded(
                         child: Column(
@@ -491,7 +625,14 @@ class MenuPanel extends StatelessWidget {
                                   color: Cozy.ink,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w900)),
-                          if (subtitle != null)
+                          if (locks[dest] case final lock?)
+                            Text(lock,
+                                key: Key('menu-lock-$dest'),
+                                style: const TextStyle(
+                                    color: Cozy.brick,
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w800))
+                          else if (subtitle != null)
                             Text(subtitle,
                                 key: dest == 'event'
                                     ? const Key('event-countdown')
@@ -499,12 +640,13 @@ class MenuPanel extends StatelessWidget {
                                 style: const TextStyle(
                                     color: Cozy.inkSoft, fontSize: 12)),
                         ])),
-                    const Icon(Icons.chevron_right, color: Cozy.wood),
+                    if (!locks.containsKey(dest))
+                      const Icon(Icons.chevron_right_rounded, color: Cozy.caption),
                   ]),
                 ),
               ),
             ),
-          ),
+          )),
       ]),
     );
   }

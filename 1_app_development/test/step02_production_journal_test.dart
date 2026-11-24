@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:todays_bungeoppang/cooking_input.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
+import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
@@ -58,9 +59,9 @@ void main() {
         flavor: 'redbean',
         practice: true,
         fillingSequence: [CookingDirection.left]);
-    session = session.pour(session.token, 2500);
-    session = session.squeezeFilling(session.token,1450);
-    session = session.pour(session.token, 2500);
+    session = session.pour(session.token, PaintAmount.even);
+    session = session.squeezeFilling(session.token, const PaintAmount(720, 830));
+    session = session.pour(session.token, PaintAmount.even);
     session = session.close(session.token);
     session = session.flip(session.token);
     await controller.command(() {
@@ -79,7 +80,7 @@ void main() {
         now: () => clock.add(const Duration(hours: 1)));
     await controller.initialize();
     expect(controller.state.session!.phase, CookingPhase.result);
-    expect(controller.state.session!.fillingDurationMs,1450);
+    expect(controller.state.session!.filling,const PaintAmount(720, 830));
     expect(controller.state.session!.donenessElapsedMs,
         inInclusiveRange(15000, 15999));
     expect(controller.state.mastery.practices, 1);

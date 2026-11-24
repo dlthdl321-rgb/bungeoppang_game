@@ -3,3 +3,5 @@ lib/
 # Function settings such as KAKAO_APP_ID stay out of the repository.
 .env
 .env.*
+# The empty template (23번 7단계) is committed; the real .env is not.
+!.env.example

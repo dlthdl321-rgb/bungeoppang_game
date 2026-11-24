@@ -11,7 +11,7 @@ import 'support_config.dart';
 
 const premiumConfigVersion = 'premium-v1';
 const goldName = '황금붕어빵력';
-const androidPackageName = 'com.todaybungeoppang.todays_bungeoppang';
+const androidPackageName = 'com.todaybungeoppang.app';
 
 /// A Play Console in-app product (consumable). [referencePriceKrw] is only
 /// the planned price; the shop always shows Google Play's localized price.

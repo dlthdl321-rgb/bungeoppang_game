@@ -57,7 +57,7 @@ def validate(data, catalog):
     require(relationship['choice_chance_basis_points'] <= 10000 and
             relationship['delay_threshold_permille'] <= 1000, '손님 관계 비율 범위 오류')
     for key in ('affinity_cap', 'ordinary_daily_cap', 'choice_daily_cap', 'recent_dialogue_limit',
-                'return_gap_business_days', 'new_npcs_daily_limit', 'visits_per_npc_business_day',
+                'return_gap_business_days', 'new_npcs_daily_limit',
                 'choice_first_business_day', 'choice_gap_business_days', 'choice_skip_retry_business_days'):
         require(relationship[key] > 0, f'손님 관계 양수 설정: {key}')
     for key in ('sale_affinity', 'corrected_sale_affinity', 'automatic_dialogue_affinity'):
@@ -76,18 +76,36 @@ def validate(data, catalog):
         preference = data['customer_order_preferences'][npc_id]
         require(preference['flavor'] in data['active_recipes'] and preference['quantity'] > 0, '손님 주문 성향 오류')
     require(relationship['new_npcs_daily_limit'] == 2, '확정 신규 손님 일일 소개 한도 변경')
-    require(relationship['anonymous_visit_basis_points'] <= 10000 and relationship['holiday_visit_basis_points'] <= 10000 and relationship['own_portion_extra_quantity'] > 0, '손님 방문 비율/수량 오류')
+    require(relationship['holiday_visit_basis_points'] <= 10000 and relationship['own_portion_extra_quantity'] > 0, '손님 방문 비율/수량 오류')
+    # 26번 5-1단계: 실제 시간 손님 간격(일반·네임드)과 자리 수. 무기명 확률·하루 1회·줄 상한은 없앴다.
+    require('anonymous_visit_basis_points' not in relationship and 'visits_per_npc_business_day' not in relationship and
+            not any('max_queue' in row for row in data['level_progression']), '없앤 손님 방문 설정')
+    arrivals = data['customer_arrivals']
+    for kind in ('regular', 'named'):
+        require(0 < arrivals[f'{kind}_min_ms'] <= arrivals[f'{kind}_max_ms'] and arrivals[f'{kind}_slots'] > 0,
+                '손님 방문 간격/자리 오류')
+    notices = data['customer_notifications']
+    require(0 <= notices['quiet_start_minute'] < 1440 and 0 <= notices['quiet_end_minute'] < 1440 and
+            notices['regular_max_notices'] > 0 and notices['preview_horizon_ms'] > 0, '손님 알림 설정 오류')
     entries = data['skill_purchase']['entries']
     require(set(entries) == {f'{kind}_{i}' for kind in ('tap', 'auto') for i in range(1, 17)},
             '기존 32개 스킬 누락/가상 ID 추가')
-    require(set(data['cosmetic_purchase']) == set(catalog['spend']['cosmetic']), '꾸미기 가격 누락')
+    # 3차 피드백 H11·H12: the other character and skin tones 2·3 are sold
+    # for the Workshop only (the old gold catalog never sold them).
+    # 4차 피드백 g10(ID9): 낮 고정·밤 고정도 Workshop에서만 판다(예전 금화 목록에 없음).
+    sold_avatar_basics = {key for key, row in data['avatar_catalog'].items()
+                          if row['slot'] in ('character', 'skin', 'time') and not row['free']}
+    require(set(data['cosmetic_purchase']) == set(catalog['spend']['cosmetic']) | sold_avatar_basics,
+            '꾸미기 가격 누락')
     require(set(data['boost_purchase']) == set(catalog['spend']['boost']), '부스트 가격 누락')
     require(data['existing_iap_products'] == catalog['products'], '기존 IAP ID/수량 보존 위반')
     for group in (entries, data['cosmetic_purchase'], data['boost_purchase']):
         for key, price in group.items():
             require(isinstance(price['buns'], str) and re.fullmatch(r'[1-9][0-9]*', price['buns']),
                     f'{key}: 붕어빵력 비용은 양수 10진 문자열')
-            require(type(price['gold']) is int and price['gold'] > 0, f'{key}: 황금 비용 필요')
+            # DEC-041: skills may cost 0 gold; cosmetics and boosts always cost gold.
+            minimum = 0 if group is entries else 1
+            require(type(price['gold']) is int and price['gold'] >= minimum, f'{key}: 황금 비용 필요')
     expected_goals = {'daily': {'taps', 'production', 'purchases', 'auto'}, 'weekly': {'taps', 'days', 'purchases', 'dailyAll'}}
     require(data['mission_gold_rewards']['daily_all'] > 0, '전체 일일 보상')
     for scope, expected in expected_goals.items():
@@ -97,13 +115,29 @@ def validate(data, catalog):
             require(row['metric'] == key and re.fullmatch(r'[1-9][0-9]*', row['target']) and
                     data['mission_gold_rewards'][row['reward_key']] > 0, f'{scope}/{key}: 미션 목표/보상')
     avatar = data['avatar_catalog']
-    avatar_slots = {'character', 'skin', 'hair', 'top', 'bottom', 'shoes', 'outfit', 'hat', 'accessory', 'tool'}
+    # 26번 3차 H42: backgrounds are sold through the same catalog.
+    # 4차 피드백 g10(ID8·ID9): 등불 색과 낮·밤 고정도 같은 목록으로 판다.
+    # 4차 피드백 g15: 화로·장식·틀 무늬·토핑도 같은 목록으로 팔 수 있다(팔기 시작하면 꾸미기 칸이 저절로 보임).
+    avatar_slots = {'character', 'skin', 'hair', 'top', 'bottom', 'shoes', 'outfit', 'hat', 'accessory', 'tool', 'background',
+                    'lamp', 'time', 'stove', 'decoration', 'pattern', 'topping'}
     require(bool(avatar), '아바타 카탈로그 누락')
     for key, row in avatar.items():
         require(row['slot'] in avatar_slots and type(row['free']) is bool and
                 type(row['unlock_level']) is int and 1 <= row['unlock_level'] <= 50 and
                 isinstance(row['unlock_total'], str) and re.fullmatch(r'0|[1-9][0-9]*', row['unlock_total']) and
                 (row['free'] or key in data['cosmetic_purchase']), f'{key}: 아바타 보유/해금 카탈로그')
+    # 4차 피드백 g10(ID9, 사용자 결정 2026-11-21): 낮 고정·밤 고정은 특별 배경과 같은 값.
+    # 가장 비싼 배경보다 싸지 않게 지킨다(배경 가격을 올리면 이 두 값도 함께 올린다).
+    fixed_times = [key for key, row in avatar.items() if row['slot'] == 'time']
+    require(set(fixed_times) == {'day', 'night_time'} and all(not avatar[k]['free'] for k in fixed_times),
+            '낮 고정·밤 고정 판매 항목')
+    top_background = max((data['cosmetic_purchase'][k] for k, row in avatar.items()
+                          if row['slot'] == 'background' and not row['free']),
+                         key=lambda v: (int(v['buns']), v['gold']))
+    for key in fixed_times:
+        price = data['cosmetic_purchase'][key]
+        require(int(price['buns']) >= int(top_background['buns']) and price['gold'] >= top_background['gold'],
+                f'{key}: 낮·밤 고정은 특별 배경 가격 이상')
     for key, price in entries.items():
         require(isinstance(price['effect'], str) and re.fullmatch(r'[1-9][0-9]*', price['effect']) and
                 isinstance(price['unlock_total'], str) and re.fullmatch(r'0|[1-9][0-9]*', price['unlock_total']),
@@ -113,7 +147,7 @@ def validate(data, catalog):
     require(data['skill_purchase']['gold_step_purchase_count'] > 0, '황금 가격 회차 분모')
     for row in data['mastery_difficulties']:
         require(row['practice_required'] >= row['technique_passes_required'] > 0, '숙련량 관계')
-        require(row['doneness_target_ms'] > 0 and row['batter_target_ms'] > 0, '시간 기준 양수')
+        require(row['doneness_target_ms'] > 0, '시간 기준 양수')
         require(row['success_doneness_min_index'] == 1 and row['success_doneness_max_index'] == 3, '손기술 일반 판매 익힘')
     boundaries = data['doneness']['boundary_permille']
     require(len(boundaries) == 4 and all(a < b for a, b in zip([0] + boundaries, boundaries)),
@@ -121,8 +155,10 @@ def validate(data, catalog):
     require(data['doneness']['reference_scale'] == 1000, '익힘 천분율 단위')
     require(data['doneness']['reference_medium_stage_index'] == 2, '확정 미디엄 인덱스')
     require(len(data['griddle']['slot_speed_permille']) == 6 and
-            all(v > 0 for v in data['griddle']['slot_speed_permille']), '6구 속도 누락')
+            all(v > 0 for v in data['griddle']['slot_speed_permille']), '숙련된 붕어빵(6구) 속도 누락')
     sale = data['ordinary_sale']
+    # 4차 피드백 IC9: 별은 어디서나 5개 만점(앱 feedback_config.dart ratingStarsMax, 서버 1~5 검증과 같음).
+    require(sale['stars_min'] == 1 and sale['stars_max'] == 5, '별 범위 1~5')
     require(len(sale['freshness_price_permille_by_age']) == 5, '재고 나이0~4 가격 누락')
     probs = data['rare_gold_sale']['probability_basis_points_by_stars']
     require(len(probs) == 5 and 0 < probs[0] and probs[-1] < 10000 and
@@ -136,20 +172,62 @@ def validate(data, catalog):
             data['rewarded_ads']['reservation_soft_timeout_ms'] > 0, '광고 검증/예약 시간 관계')
     rows = data['level_progression']
     require([v['level'] for v in rows] == list(range(1, 51)), '레벨1~50 누락/중복')
-    totals = [int(v['season_total_buns']) for v in rows]
-    require(all(a < b for a, b in zip(totals, totals[1:])), '누적 목표 단조 증가')
+    # 4차 피드백 g9: 레벨마다 새로 세는 조건(이번 레벨 판매 개수·탭)과 레벨업 때 내는 값.
+    costs = [int(v['level_cost_buns']) for v in rows]
+    require(costs[0] == 0 and rows[0]['level_cost_gold'] == 0 and rows[0]['additional_sold_pieces'] == 0 and
+            all(c > 0 for c in costs[1:]) and all(a <= b for a, b in zip(costs[1:], costs[2:])),
+            '레벨업 붕어빵력 비용(Lv.2부터 0보다 크고 줄지 않음)')
+    require(all(type(v['level_cost_gold']) is int and v['level_cost_gold'] >= 0 and
+                type(v['additional_sold_pieces']) is int and type(v['additional_taps']) is int and
+                not any(k in v for k in ('season_total_buns', 'additional_sales')) for v in rows),
+            '레벨업 황금·판매 개수·탭 형식(옛 누적·판매 번 항목 없음)')
+    require(all(v['additional_sold_pieces'] >= 1 and v['additional_taps'] >= 0 for v in rows[1:]),
+            '레벨마다 판매 개수 1개 이상')
     for v in rows:
-        require(v['order_wait_ms'] > 0 and v['max_queue'] > 0 and
+        require(v['order_wait_ms'] > 0 and
                 v['order_quantity_limit'] >= v['order_flavor_limit'] >= 1, '주문 임시 표 관계')
     recipes = data['active_recipes']
     require(set(recipes) == {'redbean', 'custard', 'cocoa'} and
             [key for key, value in recipes.items() if value['initial']] == ['redbean'], '초기/추가 맛 계약')
     require(all(0 <= row['difficulty'] <= 2 and type(row['initial']) is bool for row in recipes.values()), '맛 난이도 ID/초기 여부')
     require(data['ordinary_sale']['customer_archetype_count'] > 0, '손님 원형 개수')
-    require(data['manual_cooking']['filling_capacity_ms'] > 0, '짤주머니 양 표시 기준')
-    require(data['manual_cooking']['checkpoint_ms'] > 0 and
-            data['manual_cooking']['filling_inputs'] > 0 and
-            data['manual_cooking']['tilt_sampling_ms'] > 0, '제작 입력/저장 간격')
+    manual = data['manual_cooking']
+    require(0 < manual['paint_brush_width_permille'] <= 1000 and
+            0 < manual['batter_min_coverage_permille'] <= 1000 and
+            manual['paint_overflow_amount_permille'] >= 1000, '짤주머니 색칠 기준(붓 굵기·덮은 면적·넘침)')
+    # 4차 피드백 IC6: 반죽 1·2차는 합으로 판정한다(흘린 양 포함, IC4).
+    require(1000 <= manual['batter_total_min_amount_permille'] <= 2000 <=
+            manual['batter_total_overflow_amount_permille'] <= 18000, '반죽 1·2차 합 판정 기준(부족·넘침)')
+    require(0 < manual['flip_turn_degrees'] <= 720 and 0 <= manual['flip_dead_zone_permille'] < 500 and
+            manual['flip_ms'] > 0, '원 그려 뒤집기 기준(필요 각도·중심 무시 반경·연출 시간)')
+    require(not any(k in manual for k in ('filling_capacity_ms', 'touch_batter_tick_ms', 'tilt_sampling_ms',
+                                          'tilt_activation_degrees', 'tilt_dead_zone_degrees')) and
+            not any(k in row for row in data['mastery_difficulties']
+                    for k in ('batter_target_ms', 'batter_tolerance_permille')), '삭제한 시간·센서 설정(24번 5단계)')
+    require(manual['checkpoint_ms'] > 0 and manual['filling_inputs'] > 0, '제작 입력/저장 간격')
+    # 26번 4단계: 결과 등급 '완벽'(보여 주기 전용, 판정·판매는 그대로). 성공 기준 안쪽이어야 한다.
+    grade = data['cooking_grade']
+    require(set(grade) == {'perfect_min_coverage_permille', 'perfect_max_total_amount_permille',
+                           'perfect_max_spill_permille', 'perfect_doneness_index', 'good_min_coverage_permille',
+                           'good_min_total_amount_permille', 'good_max_total_amount_permille', 'good_max_spill_permille'},
+            '결과 등급 설정 키')
+    require(manual['batter_min_coverage_permille'] <= grade['perfect_min_coverage_permille'] <= 1000 and
+            manual['batter_total_min_amount_permille'] <= grade['perfect_max_total_amount_permille'] <=
+            manual['batter_total_overflow_amount_permille'] and
+            0 <= grade['perfect_max_spill_permille'] <=
+            manual['batter_total_overflow_amount_permille'] - grade['perfect_max_total_amount_permille'],
+            '완벽 기준(덮은 면적·1·2차 합·흘림)은 성공 기준 안쪽')
+    # 4차 피드백 g15: '잘 구움'과 '보통'의 경계(보여 주기 전용). 성공 기준과 완벽 기준 사이.
+    require(manual['batter_min_coverage_permille'] <= grade['good_min_coverage_permille'] <=
+            grade['perfect_min_coverage_permille'] and
+            manual['batter_total_min_amount_permille'] <= grade['good_min_total_amount_permille'] <=
+            grade['perfect_max_total_amount_permille'] <= grade['good_max_total_amount_permille'] <=
+            manual['batter_total_overflow_amount_permille'] and
+            grade['perfect_max_spill_permille'] <= grade['good_max_spill_permille'] <=
+            manual['batter_total_overflow_amount_permille'] - grade['good_min_total_amount_permille'],
+            '잘 구움 기준(덮은 면적·1·2차 합·흘림)은 성공 기준과 완벽 기준 사이')
+    require(all(row['success_doneness_min_index'] <= grade['perfect_doneness_index'] <= row['success_doneness_max_index']
+                for row in data['mastery_difficulties']), '완벽 익힘은 성공 익힘 범위 안')
     sale = data['ordinary_sale']
     require(sale['customer_arrival_interval_ms'] > 0 and
             0 <= sale['special_order_basis_points'] <= 10000 and
@@ -165,11 +243,112 @@ def validate(data, catalog):
     require(all(1 <= level <= 50 for level in data['feature_unlock_levels'].values()), '기능 레벨 범위')
     for key in ('manual_practice', 'core_business', 'core_sales', 'mastery_progress', 'six_slot_access'):
         require(data['feature_unlock_levels'][key] == 1, '핵심 진행의 추가 성장 잠금 금지')
+    # 26번 2단계(DEC-043): 스킬 창은 처음 5분 안(Lv.2~5)에 연다.
+    require(2 <= data['feature_unlock_levels']['skill_shop'] <= 5, '스킬 창 해금 레벨(처음 5분)')
+    # 재료 타이쿤 E: '재료 준비' 소개는 처음 재료(반죽 3통)가 떨어지기 전(Lv.2~5)에.
+    require(2 <= data['feature_unlock_levels']['pantry_prep'] <= 5, '재료 준비 해금 레벨(처음 재료 안)')
     check = data['server_validation']
     require(check['max_taps_per_second'] > 0 and check['mission_claim_grace_days'] >= 1 and
             all(re.fullmatch(r'0|[1-9][0-9]*', check[k]) for k in ('slack_buns', 'first_checkpoint_max_lifetime')),
             '서버 타당성 검증 한도')
     require(0 <= data['welcome_reward']['gold'] <= 1000, '환영 황금 범위')
+    # 29번 친구 초대 (DEC-151): server-paid gold, bounded by the limits.
+    invite = data['invite_rewards']
+    require(1 <= invite['inviter_gold'] <= 100 and 0 <= invite['invitee_gold'] <= 100 and
+            2 <= invite['target_level'] <= data['fixed_requirements']['max_level'] and
+            1 <= invite['inviter_daily_limit'] <= invite['inviter_lifetime_limit'] <= 1000 and
+            1 <= invite['menu_unlock_level'] <= data['fixed_requirements']['max_level'], '친구 초대 보상 범위')
+    # 26번 7단계: 매일 돌아올 이유. 행사 날짜는 이 설정에만 둔다(코드에 날짜 없음).
+    daily = data['daily_return']
+    # 4차 피드백 g7: 보상 기준 R = 탭 힘 × rate_taps_per_second + 자동/초(앱·서버 같은 식).
+    require(type(daily['rate_taps_per_second']) is int and 1 <= daily['rate_taps_per_second'] <= 15,
+            '매일 보상 기준 탭 수(1~15/초)')
+    order = daily['special_order']
+    require(order['reward_seconds'] > 0 and re.fullmatch(r'[1-9][0-9]*', order['min_buns']) and
+            1 <= order['quantity_max'] <= 5 and 0 < order['affinity'] <= relationship['special_daily_cap'],
+            '오늘의 주문서 보상/수량')
+    require(daily['story_daily_limit'] >= 1, '이야기 하루 공개 수')
+    attendance = daily['attendance']
+    require(attendance['cycle_days'] == 7 and attendance['gold'] > 0 and attendance['buns_seconds'] > 0 and
+            attendance['substitute_seconds'] > 0 and
+            all(re.fullmatch(r'[1-9][0-9]*', attendance[k]) for k in ('min_buns', 'substitute_min_buns')),
+            '출석 보상(7일 주기, 7일째 황금)')
+    seen = set()
+    # 판매 장식 + 행사 전용 장식(25번 32번, PixelSprites.eventDecorations)
+    decorations = {'none', 'lantern', 'bunting', 'starlights', 'windchime', 'snowman', 'paperlanterns',
+                   'event_first_snow', 'event_christmas', 'event_seollal'}
+    for event in daily['seasonal_events']:
+        require(re.fullmatch(r'[a-z0-9_]+', event['id']) and event['id'] not in seen, '행사 ID')
+        seen.add(event['id'])
+        require(event['kind'] in ('first_snow', 'christmas', 'seollal') and event['decoration'] in decorations,
+                '행사 종류/장식')
+        for key in ('start', 'end'):
+            require(re.fullmatch(r'\d{4}-\d{2}-\d{2}', event[key]), '행사 날짜 형식(yyyy-mm-dd)')
+        require(event['start'] <= event['end'], '행사 기간 순서')
+        require(all(isinstance(event[k], str) for k in ('label', 'greeting', 'order_note')), '행사 문구')
+    # 4차 피드백 g6: 도감 칸마다 구운 횟수, 칸·맛 완성 보상, 6구 자동 준비 시간.
+    counts = data['collection_counts']
+    require(len(counts['required_by_difficulty']) == len(data['mastery_difficulties']) and
+            all(len(row) == 5 and all(n >= 1 for n in row) for row in counts['required_by_difficulty']),
+            '도감 칸 횟수(난이도별 다섯 익힘, 1 이상)')
+    require(all(flavor in data['active_recipes'] and len(row) == 5 and all(n >= 1 for n in row)
+                for flavor, row in counts['required_by_flavor'].items()), '도감 칸 횟수(맛별, 다섯 익힘, 1 이상)')
+    collection = data['collection_rewards']
+    require(collection['cell_buns_seconds'] > 0 and re.fullmatch(r'[1-9][0-9]*', collection['cell_min_buns']) and
+            0 < collection['flavor_gold'] <= 100 and collection['server_min_ms_per_cell'] > 0,
+            '도감 완성 보상(칸 붕어빵력·맛 황금)')
+    require(all(isinstance(collection['titles'].get(f), str) for f in data['active_recipes']) and
+            isinstance(collection['title_default_suffix'], str), '도감 완성 칭호(맛마다)')
+    require(0 < data['griddle']['prep_ms'] <= 10000, '숙련된 붕어빵 틀 자동 준비 시간')
+    # 재료 타이쿤 A(2026-11-21): 재료·가격 초·레시피·통·한도·덤·특제·처음 재료. 앱 lib/pantry_rules.dart와 같은 검사.
+    pantry = data['ingredients']
+    recipes = data['active_recipes']
+    basic, premium, prepared = pantry['basic'], pantry['premium']['items'], pantry['prepared']
+    require(pantry['rate_taps_per_second'] >= 1 and re.fullmatch(r'[1-9][0-9]*', pantry['min_price_buns']) and
+            pantry['portions_per_tub'] >= 1 and pantry['expiry_ms'] >= 1, '재료 기준(R 탭 수·최저 가격·1통 인분·상하는 시간)')
+    for key in ('buy_steps', 'batch_tubs'):
+        require(all(b > a for a, b in zip(pantry[key], pantry[key][1:])) and pantry[key][0] >= 1, f'재료 {key} 오름차순')
+    limits = pantry['stock_limit_tubs']
+    require(limits[0]['from_level'] == 1 and all(b['from_level'] > a['from_level'] and b['tubs'] >= a['tubs']
+            for a, b in zip(limits, limits[1:])) and all(r['tubs'] >= 1 for r in limits), '재료 보관 한도(Lv.1부터 오름차순)')
+    require(all(pantry['consume'][k] >= 1 for k in ('taps_per_portion', 'auto_ms_per_portion', 'special_mold_portions',
+            'griddle_cell_portions')), '재료 쓰는 양')
+    require(sorted(pantry['filling_fallback_order']) == sorted(recipes), '대표 맛 바꾸는 순서(모든 맛 한 번씩)')
+    require(all(r['price_seconds'] >= 1 and r['max_stock'] >= 1 and r.get('requires_recipe', 'redbean') in recipes
+                for r in basic.values()), '기본 재료(가격 초·보관 수·필요 레시피)')
+    require(not set(basic) & set(premium) and all(r['prepared'] in prepared for r in premium.values()),
+            '특별한 재료(대상 준비물)')
+    require(pantry['premium']['pack_gold'] >= 1 and pantry['premium']['pack_count'] >= 1 and
+            pantry['premium']['unlock_level'] >= 1, '특별한 재료 묶음(황금·개수·레벨)')
+    require([k for k, r in prepared.items() if 'flavor' not in r] == ['batter'] and
+            all(r.get('flavor', k) == k for k, r in prepared.items() if k != 'batter') and set(recipes) <= set(prepared),
+            '준비물(반죽 하나 + 맛마다 속)')
+    for key, row in prepared.items():
+        require(row['minigame'] in ('stir', 'heat', 'whisk') and all(i in basic and n >= 1 for i, n in row['recipe'].items()) and
+                sum(1 for r in premium.values() if r['prepared'] == key) == 1, f'준비물 {key}(미니게임·레시피·특별한 재료 하나)')
+    initial = {'batter'} | {k for k, r in recipes.items() if r['initial']}
+    for group in (pantry['starting_stock']['tubs'], pantry['starting_stock']['recipe_sets'], pantry['rescue_pack']['recipe_sets']):
+        require(set(group) <= initial and all(n >= 1 for n in group.values()), '처음 재료·꾸러미(반죽과 처음 맛만)')
+    require(max(pantry['starting_stock']['tubs'].values()) <= limits[0]['tubs'], '처음 재료 ≤ 보관 한도')
+    # 재료 타이쿤 D(2026-11-21): 재료 준비 미니게임 3종. 앱 lib/prep_minigames.dart PrepGameConfig와 같은 검사.
+    games = data['prep_minigames']
+    require(set(games) == {'stir', 'heat', 'whisk'} and
+            all(6000 <= g['duration_ms'] <= 10000 for g in games.values()), '재료 준비 미니게임(3종, 6~10초)')
+    stir, heat, whisk = games['stir'], games['heat'], games['whisk']
+    require(stir['full_degrees'] >= 360 and 0 <= stir['dead_zone_permille'] < 500 and
+            0 < stir['green_min_permille'] < stir['green_max_permille'] < 1000, '반죽 젓기(바퀴·가운데·초록 칸)')
+    require(0 < heat['green_min_permille'] <= heat['start_permille'] <= heat['green_max_permille'] < 1000 and
+            heat['fall_permille_per_second'] >= 1 and heat['rise_permille_per_second'] >= 1 and
+            0 < heat['success_time_permille'] <= 1000, '불 조절(시작·내려감·올라감·초록 칸·성공 시간)')
+    require(0 < whisk['stroke_min_permille'] < 1000 and whisk['fill_per_stroke_permille'] >= 1 and
+            whisk['decay_permille_per_second'] >= 0, '휘젓기(한 번 거리·채움·줄어듦)')
+    require(all(r['minigame'] in games for r in prepared.values()), '준비물 미니게임이 설정에 있음')
+    # 26번 8단계: 공유 카드(보상 없음). 정식 출시 뒤 store_line_mode만 live로 바꾼다.
+    share = data['share']
+    require(share['card_width'] == 1080 and share['card_height'] == 1350, '공유 카드 크기(1080×1350, 4:5)')
+    require(share['store_line_mode'] in ('soon', 'live'), '공유 카드 스토어 문구 방식(soon/live)')
+    require(share['store_url'] == 'https://play.google.com/store/apps/details?id=com.todaybungeoppang.app',
+            '공유 카드 스토어 주소(앱 ID)')
     return data
 
 
@@ -194,7 +373,7 @@ def render(data):
 - 원본: [development_balance.json](../../1_app_development/config/development_balance.json). 모든 조정은 이 파일에서 한다.
 - 검증·문서 갱신: 저장소 루트에서 `python 1_app_development/tools/development_balance.py`.
 - 재생성 확인: `python 1_app_development/tools/development_balance.py --check`.
-- 신규 main의 Workshop에는 영업·맛별 연습·재고/6구·손님 판매·승급·도감 소스를 연결했다. 실제 복합 결제·황금/광고 검증·친구 연동은 미완료다. 오디오 기본값만 생성 Dart 상수로 연결하며 공통 계산은 명시적 설정 로더를 사용한다. 전체 게임 흐름·서버 지갑 연동은 아니다. 기존 앱·서버 가격/IAP·의존성은 바꾸지 않았다.
+- 신규 main의 Workshop에는 영업·맛별 연습·재고/숙련된 붕어빵(6구)·손님 판매·승급·도감 소스를 연결했다. 실제 복합 결제·황금/광고 검증·친구 연동은 미완료다. 오디오 기본값만 생성 Dart 상수로 연결하며 공통 계산은 명시적 설정 로더를 사용한다. 전체 게임 흐름·서버 지갑 연동은 아니다. 기존 앱·서버 가격/IAP·의존성은 바꾸지 않았다.
 - 향후 해당 기능 구현 시 같은 원본을 읽고 클라이언트/서버 견적의 revision을 확인한다. 상수를 별도로 복사하지 않는다. 서버 구매가격은 서버 배포본이 권위이며 클라이언트가 보낸 가격을 신뢰하지 않는다.
 - `fixed_requirements`는 사용자 확정 조건이다. 일반 밸런스 조정과 구분하며 별도 승인 없이 바꾸지 않는다.
 - 수치 아닌 미결정은 마지막 목록에 남긴다. 이 값들이 해당 정책의 자동 승인이나 구현/실기기 검수를 대신하지 않는다.
@@ -203,9 +382,9 @@ def render(data):
 
 금액 buns/effect는 BigInt용 10진 문자열, gold/횟수/ms/각도는 정수다. permille은1000분율, basis_points는10000분율이다. 동일 결과의 재시도는 카운터/지급을 늘리지 않는다.
 
-스킬 n회차는 `ceil(base × (numerator/denominator)^n)`, 황금은 `base_gold + floor(n/gold_step_purchase_count) × gold_step_amount`. 묶음은 개별 올림 후 합산하고 최대 구매는 두 잔액을 함께 확인한다. 현재 스킬 기본 비용/효과를 임시 seed로 보존했고, 신규 황금 비용과 모든 꾸미기/부스트 두 비용은 각각 명시했다. 추가 레시피 표는 획득 순번용이며 가상의 새 맛/출시 콘텐츠 수를 확정하지 않는다.
+스킬 n회차는 `ceil(base × (numerator/denominator)^n)`, 황금은 `base_gold + floor(n/gold_step_purchase_count) × gold_step_amount`(단 base_gold가 0이면 몇 번째든 0, DEC-041). 묶음은 개별 올림 후 합산하고 최대 구매는 두 잔액을 함께 확인한다. 현재 스킬 기본 비용/효과를 임시 seed로 보존했고, 신규 황금 비용과 모든 꾸미기/부스트 두 비용은 각각 명시했다. 추가 레시피 표는 획득 순번용이며 가상의 새 맛/출시 콘텐츠 수를 확정하지 않는다.
 
-만족도는 사용자 답변으로 품질·신선도 기반, 일반 대금에 별점 재곱셈 없음으로 확정했다. 가중치·경계는 임시값이다. 미디엄은 인덱스2이며 손기술은 두 반죽·일반 판매 익힘 조건(짤주머니 속 양은 별도 기록)을 사용한다. 덜 익음 특별 주문 판매는 별개다. 신규 게임은 붕어빵력·황금붕어빵력 두 재화이며 구형 코인은 신규 개념이 아니다. 일반 대금은 붕어빵력/누적 합산·전량 판매, 미션 황금 서버 검증·수동 승급·명시 종료 정책도 후속 답변으로 확정했다. 추가 맛은 슈크림/초코만 확정하며 후속 미정/외부 조건은 마지막 목록을 따른다.
+만족도는 사용자 답변으로 품질·신선도 기반, 일반 대금에 별점 재곱셈 없음으로 확정했다. 가중치·경계는 임시값이다. 미디엄은 인덱스2이며 손기술은 두 반죽을 합한 칠한 양(4차 피드백 IC6: 1·2차 덧칠 포함 양의 합 `batter_total_min_amount_permille` 이상, 틀 밖에 흘린 양까지 더한 합 `batter_total_overflow_amount_permille` 이하, 두 번 중 넓은 쪽 덮은 면적 `batter_min_coverage_permille` 이상)과 일반 판매 익힘 조건을 사용한다(짤주머니 속은 양·넘침만 표시, 24번 5단계). 덜 익음 특별 주문 판매는 별개다. 신규 게임은 붕어빵력·황금붕어빵력 두 재화이며 구형 코인은 신규 개념이 아니다. 일반 대금은 붕어빵력/누적 합산·전량 판매, 미션 황금 서버 검증·수동 승급·명시 종료 정책도 후속 답변으로 확정했다. 추가 맛은 슈크림/초코만 확정하며 후속 미정/외부 조건은 마지막 목록을 따른다.
 
 광고 soft timeout은 대기 UI/재조회 시점이다. 시간 초과만으로 예약을 해제·환불·미당첨 확정하거나 늦은 콜백을 재지급하지 않는다. 검증 window와 보관일은 개발 비교용 목표일 뿐 업체 증거/법정 의무를 대체하지 않는다. 보관일을 개인정보/결제기록의 법정 기간보다 줄이는 근거로 사용하지 않는다. 제안 schema_next_version도 실제 포맷 이전 승인/구현이 아니다.
 
@@ -222,9 +401,12 @@ def render(data):
     for group in ('cosmetic_purchase', 'boost_purchase'):
         for key, v in data[group].items():
             text += f"| {group} | {key} | {v['buns']} | {v['gold']} |\n"
-    text += '\n## 4. Lv.1~50 임시 표\n\n| Lv | 시즌 누적 붕어빵력 | 구간 탭 | 구간 판매 | 주문 맛 상한 | 주문 수량 상한 | 대기 ms | 줄 상한 |\n| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n'
+    text += ('\n## 4. Lv.1~50 임시 표\n\n그 레벨이 되려면 이번 레벨에 판 붕어빵 개수와 탭(레벨이 오르면 0부터 다시 셈)을 채우고, '
+             '레벨업할 때 붕어빵력(과 Lv.10·20·30·40·50은 황금붕어빵력)을 냅니다(4차 피드백 g9).\n\n'
+             '| Lv | 이번 레벨 판매(개) | 이번 레벨 탭 | 내는 붕어빵력 | 내는 황금 | 주문 맛 상한 | 주문 수량 상한 | 대기 ms |\n'
+             '| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n')
     for v in data['level_progression']:
-        text += '| ' + ' | '.join(str(v[k]) for k in ('level', 'season_total_buns', 'additional_taps', 'additional_sales', 'order_flavor_limit', 'order_quantity_limit', 'order_wait_ms', 'max_queue')) + ' |\n'
+        text += '| ' + ' | '.join(str(v[k]) for k in ('level', 'additional_sold_pieces', 'additional_taps', 'level_cost_buns', 'level_cost_gold', 'order_flavor_limit', 'order_quantity_limit', 'order_wait_ms')) + ' |\n'
     text += '\n## 5. 나머지 설정 전체\n\n| 설정 경로 | 임시값/확정값 |\n| --- | --- |\n'
     excluded = {'metadata', 'cosmetic_purchase', 'unresolved_non_numeric_policies', 'avatar_catalog', 'mission_targets'}
     for key, val in data.items():

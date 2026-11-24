@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-18T03:00:28+09:00",
+  "updated_at": "2026-11-17T01:30:02+09:00",
   "planning_basis": {
     "status": "2026-10-14 최신 요구·전체 작업 재산정",
     "start_date": "2026-10-13",
@@ -788,13 +788,13 @@
         "P3-001"
       ],
       "status": "검토 중",
-      "implementation_evidence": "2026-10-16 후속: 활성 손님 주문 맛으로 주문 제작 진입 UI 추가. 연습 결과 보관/버리기와 주문 결과 자동 재고 저장을 구분. 상세: 19_구매원자저장과복구후속.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.",
+      "implementation_evidence": "2026-10-16 후속: 활성 손님 주문 맛으로 주문 제작 진입 UI 추가. 연습 결과 보관/버리기와 주문 결과 자동 재고 저장을 구분. 상세: 19_구매원자저장과복구후속.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.\n2026-11-17 24번: 영업 준비 중 연습만·영업 중 주문 제작만(startPractice 거부, openBusiness 제작 중 거부), 클리커 clickerTap. lib/workshop_controller.dart, lib/ui/workshop_mold_stage.dart, test/workshop_two_molds_test.dart",
       "deliverables": "제작 상태기계·입력 취소",
       "completion_criteria": "보유레시피로숙련전후진입·연습/주문맥락구분·단계순서·중복/늦은입력차단",
       "verification_method": "09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록",
-      "verification_result": "정적 구문 parser(Dart152/TypeScript24/Kotlin2)·상대 import·Python AST·공통 설정·문서 링크·원장/기존 이력 바이트 보존·반복 재생성 확인. 테스트27개 추가는 소스 작성만. 앱·컴파일/타입 검사·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.",
+      "verification_result": "정적 구문 parser(Dart152/TypeScript24/Kotlin2)·상대 import·Python AST·공통 설정·문서 링크·원장/기존 이력 바이트 보존·반복 재생성 확인. 테스트27개 추가는 소스 작성만. 앱·컴파일/타입 검사·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.\n2026-11-17 24번 7단계(Windows 호스트, Flutter 3.47.5): flutter analyze 오류 0·경고 0·정보 72; flutter test 전체 691 통과·실패 0·건너뜀 1(약 6분 30초); functions npm test 84 통과. 새 test/workshop_full_flow_test.dart(새 설치→안내→연습 색칠·원 뒤집기→보관→영업 시작→숙련된 붕어빵 수확·판매→클리커→손님 창 주문 제작→클리커 복귀) 통과. 실기기 검수 대기(24번 문서 7단계 확인표, 그림 적용 후 debug APK).",
       "block_reason": "연습/주문 진입 및 결과 저장 소스 반영. 선행 조건과 실제 입력/일시정지/저장/앱 검수가 남음.",
-      "updated_at": "2026-10-18T02:08:14+09:00",
+      "updated_at": "2026-11-17T01:29:58+09:00",
       "estimate_kind": "작성자 추정",
       "acceptance_ids": [
         "AC-REQ07-701"
@@ -819,13 +819,13 @@
         "P4-001"
       ],
       "status": "검토 중",
-      "implementation_evidence": "2026-10-16 후속: 동일 ID/토큰뿐 아니라 현재 세션에서 도출 가능한 단일 후속 이벤트만 수용해 맛/연습 맥락/과거 반죽 변경 차단. 상세: 19_구매원자저장과복구후속.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.",
+      "implementation_evidence": "2026-10-16 후속: 동일 ID/토큰뿐 아니라 현재 세션에서 도출 가능한 단일 후속 이벤트만 수용해 맛/연습 맥락/과거 반죽 변경 차단. 상세: 19_구매원자저장과복구후속.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.\n2026-11-17 24번 5단계: 반죽·속 길게 누르기와 기울기 센서를 드래그 색칠로 대체(센서 코드 삭제). lib/cooking_paint.dart, lib/ui/piping_bag_control.dart(MoldPaintControl), test/cooking_paint_test.dart·cooking_controls_test.dart",
       "deliverables": "붓기/목표선·대체 입력",
       "completion_criteria": "첫/최종선구분·취소/오류전환·단계포인터전파없음; 수치미정확정후경계검증",
       "verification_method": "09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록",
-      "verification_result": "정적 구문 parser(Dart152/TypeScript24/Kotlin2)·상대 import·Python AST·공통 설정·문서 링크·원장/기존 이력 바이트 보존·반복 재생성 확인. 테스트27개 추가는 소스 작성만. 앱·컴파일/타입 검사·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.",
+      "verification_result": "정적 구문 parser(Dart152/TypeScript24/Kotlin2)·상대 import·Python AST·공통 설정·문서 링크·원장/기존 이력 바이트 보존·반복 재생성 확인. 테스트27개 추가는 소스 작성만. 앱·컴파일/타입 검사·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.\n2026-11-17 24번 7단계(Windows 호스트, Flutter 3.47.5): flutter analyze 오류 0·경고 0·정보 72; flutter test 전체 691 통과·실패 0·건너뜀 1(약 6분 30초); functions npm test 84 통과. 새 test/workshop_full_flow_test.dart(새 설치→안내→연습 색칠·원 뒤집기→보관→영업 시작→숙련된 붕어빵 수확·판매→클리커→손님 창 주문 제작→클리커 복귀) 통과. 실기기 검수 대기(24번 문서 7단계 확인표, 그림 적용 후 debug APK).",
       "block_reason": "세션 후속 검증 소스 반영. 센서/터치/오디오/앱 복귀의 실제 Android 검수가 남음.",
-      "updated_at": "2026-10-18T02:08:24+09:00",
+      "updated_at": "2026-11-17T01:29:59+09:00",
       "estimate_kind": "작성자 추정",
       "acceptance_ids": [
         "AC-REQ07-701"
@@ -850,13 +850,13 @@
         "P4-001"
       ],
       "status": "검토 중",
-      "implementation_evidence": "2026-10-16: 방향 속 넣기·오입력 기록·두 반죽/닫기/뒤집기 순서·단계 지연/중립 재입력과 터치 대체 소스 연결. 숟가락/젓가락 연출·실기기 검수 미완료. 상세: 18_신규게임연결과사용자결정반영.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.",
+      "implementation_evidence": "2026-10-16: 방향 속 넣기·오입력 기록·두 반죽/닫기/뒤집기 순서·단계 지연/중립 재입력과 터치 대체 소스 연결. 숟가락/젓가락 연출·실기기 검수 미완료. 상세: 18_신규게임연결과사용자결정반영.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.\n2026-11-17 24번 5·6단계: 속 색칠, 뒤집기 버튼을 원 그리기(누적 320도)로 대체. lib/cooking_flip.dart, lib/ui/flip_circle_control.dart, test/cooking_flip_test.dart·flip_circle_control_test.dart",
       "deliverables": "방향 조작·틀 UI",
       "completion_criteria": "숟가락/젓가락·둘째반죽·닫기/뒤집기순서·터치대체·취소동등검증",
       "verification_method": "09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록",
-      "verification_result": "정적 문법 parser(Dart150/TypeScript20/Kotlin2)·상대 import·Python AST·설정/생성물·링크·원장/기존 이력 보존·재생성 일치 확인. 추가 테스트30개는 소스 작성만. 앱 실행·컴파일/타입 분석·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기는 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.",
+      "verification_result": "정적 문법 parser(Dart150/TypeScript20/Kotlin2)·상대 import·Python AST·설정/생성물·링크·원장/기존 이력 보존·재생성 일치 확인. 추가 테스트30개는 소스 작성만. 앱 실행·컴파일/타입 분석·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기는 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.\n2026-11-17 24번 7단계(Windows 호스트, Flutter 3.47.5): flutter analyze 오류 0·경고 0·정보 72; flutter test 전체 691 통과·실패 0·건너뜀 1(약 6분 30초); functions npm test 84 통과. 새 test/workshop_full_flow_test.dart(새 설치→안내→연습 색칠·원 뒤집기→보관→영업 시작→숙련된 붕어빵 수확·판매→클리커→손님 창 주문 제작→클리커 복귀) 통과. 실기기 검수 대기(24번 문서 7단계 확인표, 그림 적용 후 debug APK).",
       "block_reason": "선행 작업·남은 실제 서버/상품/운영 연결과 컴파일/실행·통합 검수가 미완료. 상세 미완료 경계는18번 문서 및 원장 근거 참조.",
-      "updated_at": "2026-10-18T02:08:32+09:00",
+      "updated_at": "2026-11-17T01:29:59+09:00",
       "estimate_kind": "작성자 추정",
       "acceptance_ids": [
         "AC-REQ07-701"
@@ -884,13 +884,13 @@
         "P3-002"
       ],
       "status": "검토 중",
-      "implementation_evidence": "2026-10-16 후속: 주문 결과 익힘 발견·재고를 함께 저장하되 연습량/손기술은 올리지 않음. 결과 닫기로 중복 제품을 생성하지 않음. 상세: 19_구매원자저장과복구후속.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.",
+      "implementation_evidence": "2026-10-16 후속: 주문 결과 익힘 발견·재고를 함께 저장하되 연습량/손기술은 올리지 않음. 결과 닫기로 중복 제품을 생성하지 않음. 상세: 19_구매원자저장과복구후속.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.\n2026-11-17 24번 5단계: 품질 판정 = 반죽 두 번 덮음 ≥90%·양 ≤130% + 익힘 범위. lib/cooking_result_rules.dart",
       "deliverables": "익힘 판정·결과 pending/확정",
       "completion_criteria": "5단계임시명칭/판정결정·연습/주문결과분리·고정재시도·숙련진행은확정조건만반영",
       "verification_method": "09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록",
-      "verification_result": "정적 구문 parser(Dart152/TypeScript24/Kotlin2)·상대 import·Python AST·공통 설정·문서 링크·원장/기존 이력 바이트 보존·반복 재생성 확인. 테스트27개 추가는 소스 작성만. 앱·컴파일/타입 검사·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.",
+      "verification_result": "정적 구문 parser(Dart152/TypeScript24/Kotlin2)·상대 import·Python AST·공통 설정·문서 링크·원장/기존 이력 바이트 보존·반복 재생성 확인. 테스트27개 추가는 소스 작성만. 앱·컴파일/타입 검사·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.\n2026-11-17 24번 7단계(Windows 호스트, Flutter 3.47.5): flutter analyze 오류 0·경고 0·정보 72; flutter test 전체 691 통과·실패 0·건너뜀 1(약 6분 30초); functions npm test 84 통과. 새 test/workshop_full_flow_test.dart(새 설치→안내→연습 색칠·원 뒤집기→보관→영업 시작→숙련된 붕어빵 수확·판매→클리커→손님 창 주문 제작→클리커 복귀) 통과. 실기기 검수 대기(24번 문서 7단계 확인표, 그림 적용 후 debug APK).",
       "block_reason": "주문/연습 결과 차이 소스 반영. 선행 조건과 실제 제작/숙련/재고 원자 저장 검수가 남음.",
-      "updated_at": "2026-10-18T02:08:39+09:00",
+      "updated_at": "2026-11-17T01:29:59+09:00",
       "estimate_kind": "작성자 추정",
       "acceptance_ids": [
         "AC-REQ07-706"
@@ -916,13 +916,13 @@
         "P4-001"
       ],
       "status": "검토 중",
-      "implementation_evidence": "2026-10-16: 신규 한국어 조작/방향·텍스트5단계·화면 읽기/취소 가능한 버튼·큰 틀/도감 UI 소스. 아트5종·작은 화면/큰글자/실기기 검수는 미완료. 상세: 18_신규게임연결과사용자결정반영.md\n2026-10-16 손님 첨부 문서 반영(코드 변경 없음): NPC 정적3표정/노란가방/호칭/선택지 접근성 아트 목표 인계. 상세: 21_손님캐릭터와관계시스템.md\n2026-10-16 손님 코드 후속: 정책3개 답변·무기명 추가를 적용. NPC8/대사144 카탈로그·공통수치·관계/선택 원장·schema4/SQLite4·판매 원자 관계·장면 정지/복귀·도감/선택 UI 연결. 전체 대사/동행·아트·실행 검수는 미완료. 상세: 22_손님콘텐츠구현과현재환경후속.md\n후속 정적 대조: 입장/주문/대기·70%지연/판매/이탈·단계별 친밀/이웃 대사 조건을 연결. 없는 기능/틀린 맛·수량은 비활성 또는 중립 대사, 최초 사연 재생은 중복 보상 없음. Dart159개 구문 확인이며 테스트는 미실행.",
+      "implementation_evidence": "2026-10-16: 신규 한국어 조작/방향·텍스트5단계·화면 읽기/취소 가능한 버튼·큰 틀/도감 UI 소스. 아트5종·작은 화면/큰글자/실기기 검수는 미완료. 상세: 18_신규게임연결과사용자결정반영.md\n2026-10-16 손님 첨부 문서 반영(코드 변경 없음): NPC 정적3표정/노란가방/호칭/선택지 접근성 아트 목표 인계. 상세: 21_손님캐릭터와관계시스템.md\n2026-10-16 손님 코드 후속: 정책3개 답변·무기명 추가를 적용. NPC8/대사144 카탈로그·공통수치·관계/선택 원장·schema4/SQLite4·판매 원자 관계·장면 정지/복귀·도감/선택 UI 연결. 전체 대사/동행·아트·실행 검수는 미완료. 상세: 22_손님콘텐츠구현과현재환경후속.md\n후속 정적 대조: 입장/주문/대기·70%지연/판매/이탈·단계별 친밀/이웃 대사 조건을 연결. 없는 기능/틀린 맛·수량은 비활성 또는 중립 대사, 최초 사연 재생은 중복 보상 없음. Dart159개 구문 확인이며 테스트는 미실행.\n2026-11-17 24번 2단계: 용어 스페셜 붕어빵·숙련된 붕어빵. 새 그림 5종은 25번 문서(그림 생성 완료, 게임 적용 대기)",
       "deliverables": "틀/도구/익힘별 표현·안내",
       "completion_criteria": "색/모양/이름구분·UI글자이미지분리·큰글자/터치대체·작은화면검수",
       "verification_method": "09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록",
-      "verification_result": "이번 손님 후속: Dart159개 구문/상대import·Python AST/JSON·공통설정/콘텐츠 생성물·문서 링크·원장/이력·render 정적 확인. 테스트21개 추가는 작성만. Dart 타입/컴파일·앱·Flutter/서버 테스트·빌드·실서비스·SQLite 이전/실패주입·실기기 미실행.",
+      "verification_result": "이번 손님 후속: Dart159개 구문/상대import·Python AST/JSON·공통설정/콘텐츠 생성물·문서 링크·원장/이력·render 정적 확인. 테스트21개 추가는 작성만. Dart 타입/컴파일·앱·Flutter/서버 테스트·빌드·실서비스·SQLite 이전/실패주입·실기기 미실행.\n2026-11-17 24번 7단계(Windows 호스트, Flutter 3.47.5): flutter analyze 오류 0·경고 0·정보 72; flutter test 전체 691 통과·실패 0·건너뜀 1(약 6분 30초); functions npm test 84 통과. 새 test/workshop_full_flow_test.dart(새 설치→안내→연습 색칠·원 뒤집기→보관→영업 시작→숙련된 붕어빵 수확·판매→클리커→손님 창 주문 제작→클리커 복귀) 통과. 실기기 검수 대기(24번 문서 7단계 확인표, 그림 적용 후 debug APK).",
       "block_reason": "손님/관계 소스 연결·정적 확인이며 전체 상황 대사/동행·아트·타입/실행 검수와 기존 작업별 선행 완료가 남음. 문서/테스트 소스 존재로 완료 처리하지 않음.",
-      "updated_at": "2026-10-16T18:03:05+09:00",
+      "updated_at": "2026-11-17T01:30:00+09:00",
       "estimate_kind": "작성자 추정",
       "acceptance_ids": [
         "AC-REQ06-704",
@@ -1025,13 +1025,13 @@
         "P4-004"
       ],
       "status": "검토 중",
-      "implementation_evidence": "2026-10-16: 보유 AND 숙련 맛만 무작위 후보·6칸 독립 회차/속도/활성 경과·재기동 상태 직렬화와 신규 UI 연결. 실제 랜덤/시간/기기 검수 미실행. 상세: 18_신규게임연결과사용자결정반영.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.",
+      "implementation_evidence": "2026-10-16: 보유 AND 숙련 맛만 무작위 후보·6칸 독립 회차/속도/활성 경과·재기동 상태 직렬화와 신규 UI 연결. 실제 랜덤/시간/기기 검수 미실행. 상세: 18_신규게임연결과사용자결정반영.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.\n2026-11-17 24번 3·4단계: 영업 준비 중 빈 굽는 판, 굽는 판 폭 = 화면 폭 − 16. lib/ui/workshop_mold_stage.dart(WorkshopGriddleLayer), test/workshop_home_layout_test.dart",
       "deliverables": "칸 상태/후보 규칙",
       "completion_criteria": "팥도보유AND숙련후후보·잠긴맛배제; 지정/주기/익힘/대기정책결정후구현",
       "verification_method": "09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록",
-      "verification_result": "정적 문법 parser(Dart150/TypeScript20/Kotlin2)·상대 import·Python AST·설정/생성물·링크·원장/기존 이력 보존·재생성 일치 확인. 추가 테스트30개는 소스 작성만. 앱 실행·컴파일/타입 분석·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기는 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.",
+      "verification_result": "정적 문법 parser(Dart150/TypeScript20/Kotlin2)·상대 import·Python AST·설정/생성물·링크·원장/기존 이력 보존·재생성 일치 확인. 추가 테스트30개는 소스 작성만. 앱 실행·컴파일/타입 분석·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기는 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.\n2026-11-17 24번 7단계(Windows 호스트, Flutter 3.47.5): flutter analyze 오류 0·경고 0·정보 72; flutter test 전체 691 통과·실패 0·건너뜀 1(약 6분 30초); functions npm test 84 통과. 새 test/workshop_full_flow_test.dart(새 설치→안내→연습 색칠·원 뒤집기→보관→영업 시작→숙련된 붕어빵 수확·판매→클리커→손님 창 주문 제작→클리커 복귀) 통과. 실기기 검수 대기(24번 문서 7단계 확인표, 그림 적용 후 debug APK).",
       "block_reason": "선행 작업·남은 실제 서버/상품/운영 연결과 컴파일/실행·통합 검수가 미완료. 상세 미완료 경계는18번 문서 및 원장 근거 참조.",
-      "updated_at": "2026-10-18T02:09:11+09:00",
+      "updated_at": "2026-11-17T01:30:00+09:00",
       "estimate_kind": "작성자 추정",
       "acceptance_ids": [
         "AC-REQ05-701",
@@ -1058,13 +1058,13 @@
         "P5-004"
       ],
       "status": "검토 중",
-      "implementation_evidence": "2026-10-16: 입력 전 제품0·직접 수확/탄 칸 폐기·ID/회차/신선도·제품/칸 집계 저장 연결. 중복·저장 장애 실기기/SQLite 검수 미실행. 상세: 18_신규게임연결과사용자결정반영.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.",
+      "implementation_evidence": "2026-10-16: 입력 전 제품0·직접 수확/탄 칸 폐기·ID/회차/신선도·제품/칸 집계 저장 연결. 중복·저장 장애 실기기/SQLite 검수 미실행. 상세: 18_신규게임연결과사용자결정반영.md\n2026-10-18 1차 통합: 직원2 인계 coordination/step-02.md 및 coordination/step-05.md. employee5/audio-integration에서 저장→제작→주문→서버 순서로 커밋 적용. 원본 main/다른 담당 미커밋 변경 유지. 실제 서비스 OFF.\n2026-11-17 24번 7단계: 실제 홈에서 칸 누르기 → 수확 → 판매를 통합 테스트로 확인. test/workshop_full_flow_test.dart",
       "deliverables": "수확 명령/고정 결과",
       "completion_criteria": "입력전재고0·자동/오프라인수확없음·회차1회·실패고정재시도·생산시점묶음",
       "verification_method": "09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록",
-      "verification_result": "정적 문법 parser(Dart150/TypeScript20/Kotlin2)·상대 import·Python AST·설정/생성물·링크·원장/기존 이력 보존·재생성 일치 확인. 추가 테스트30개는 소스 작성만. 앱 실행·컴파일/타입 분석·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기는 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.",
+      "verification_result": "정적 문법 parser(Dart150/TypeScript20/Kotlin2)·상대 import·Python AST·설정/생성물·링크·원장/기존 이력 보존·재생성 일치 확인. 추가 테스트30개는 소스 작성만. 앱 실행·컴파일/타입 분석·Flutter/서버 테스트·빌드·실제 SQLite/결제/광고/서비스·실기기는 미실행.\n2026-10-18 Windows Flutter3.47.5/Dart3.13.4: 오디오8개 통과, main/premium/audio/app/신규 오디오 테스트 대상 분석 No issues. Node24 npm test TypeScript 빌드·서버65개 통과. 전체 Flutter 최초 실행520통과/8실패/1건너뜀; 실패는 기존 자산 참조/스크롤 탐색이며 수정 후 재실행 결과는 step-05 최종 기록 참조. 전체 분석의 기존 warning8/info66은 별도이며 Android 빌드·실기기·실제 SSV/Firestore 검수 완료 아님.\n2026-11-17 24번 7단계(Windows 호스트, Flutter 3.47.5): flutter analyze 오류 0·경고 0·정보 72; flutter test 전체 691 통과·실패 0·건너뜀 1(약 6분 30초); functions npm test 84 통과. 새 test/workshop_full_flow_test.dart(새 설치→안내→연습 색칠·원 뒤집기→보관→영업 시작→숙련된 붕어빵 수확·판매→클리커→손님 창 주문 제작→클리커 복귀) 통과. 실기기 검수 대기(24번 문서 7단계 확인표, 그림 적용 후 debug APK).",
       "block_reason": "선행 작업·남은 실제 서버/상품/운영 연결과 컴파일/실행·통합 검수가 미완료. 상세 미완료 경계는18번 문서 및 원장 근거 참조.",
-      "updated_at": "2026-10-18T02:09:20+09:00",
+      "updated_at": "2026-11-17T01:30:01+09:00",
       "estimate_kind": "작성자 추정",
       "acceptance_ids": [
         "AC-REQ05-703",
@@ -1428,13 +1428,13 @@
         "P6-002"
       ],
       "status": "미착수",
-      "implementation_evidence": "기존 코드 기반만 확인. 최신 숙련·주문·영업·재고 명세에 맞춘 구현/검수 근거 없음",
+      "implementation_evidence": "기존 코드 기반만 확인. 최신 숙련·주문·영업·재고 명세에 맞춘 구현/검수 근거 없음\n2026-11-17 24번 7단계 실기기 확인표 작성(색칠 반응·손가락 가림·작은 화면 원 그리기·칸 누르기·매대/행주·새 그림). 실행은 대기",
       "deliverables": "기기/OS/재현/결과 증거",
       "completion_criteria": "센서/터치·청음·저사양/큰글자·영업종료/복귀·구매복원·공통문구/이미지분리; 실제Play충전/복합결제·만족도판매황금·50레벨기능잠금기기검수; Android광고로드/재생/중도종료·앱복귀/서버지급실패실기기증거",
       "verification_method": "09_통합검수기준.md의 연결 AC와 관련 순수규칙/위젯/저장/실기기 시나리오; 명령·환경·시각·결과·증거 기록",
-      "verification_result": "미실행",
+      "verification_result": "미실행\n2026-11-17 24번 7단계(Windows 호스트, Flutter 3.47.5): flutter analyze 오류 0·경고 0·정보 72; flutter test 전체 691 통과·실패 0·건너뜀 1(약 6분 30초); functions npm test 84 통과. 새 test/workshop_full_flow_test.dart(새 설치→안내→연습 색칠·원 뒤집기→보관→영업 시작→숙련된 붕어빵 수확·판매→클리커→손님 창 주문 제작→클리커 복귀) 통과. 실기기 검수 대기(24번 문서 7단계 확인표, 그림 적용 후 debug APK).",
       "block_reason": "",
-      "updated_at": "2026-10-14T20:48:56+09:00",
+      "updated_at": "2026-11-17T01:30:02+09:00",
       "estimate_kind": "작성자 추정",
       "acceptance_ids": [
         "AC-REQ01-701",
@@ -1800,7 +1800,7 @@
     "reviewed_at": "2026-10-16T18:03:05+09:00",
     "review_type": "기준 커밋과 이번 작업 트리의 코드·기획 정적 대조",
     "code_commit": "1ed26ba67ff632da7f6e81c2eb9e079310640cc9",
-    "execution_validation": "이번 손님 후속: Dart159개 구문/상대import·Python AST/JSON·공통설정/콘텐츠 생성물·문서 링크·원장/이력·render 정적 확인. 테스트21개 추가는 작성만. Dart 타입/컴파일·앱·Flutter/서버 테스트·빌드·실서비스·SQLite 이전/실패주입·실기기 미실행.",
+    "execution_validation": "이번 손님 후속: Dart159개 구문/상대import·Python AST/JSON·공통설정/콘텐츠 생성물·문서 링크·원장/이력·render 정적 확인. 테스트21개 추가는 작성만. Dart 타입/컴파일·앱·Flutter/서버 테스트·빌드·실서비스·SQLite 이전/실패주입·실기기 미실행. 2026-11-17 24번 제작 조작·화면·용어 변경(1~7단계): 호스트 실행 검수 완료 — analyze 오류 0·경고 0·정보 72, flutter test 691 통과·실패 0·건너뜀 1(약 6분 30초), functions 84 통과, 통합 흐름 test/workshop_full_flow_test.dart 통과. 실기기 검수 대기. 2026-11-19 26번 흥행 개선 2~8단계(2·2-1·3·4·4-1~4-6·5·5-1·7·8, 4-7은 구조만) 통합 브랜치 병합 뒤(웨이브 9 862908e) 호스트 실행 검수: analyze 오류 0·경고 0·정보 71, 웨이브 9 병합 때 flutter test 904 통과·5 건너뜀, functions npm test 103 통과. 26번 6단계: debug APK·profile APK 빌드 성공, profile 병합 매니페스트 권한 재확인(광고 ID 없음), 23번 6~9단계 문서 반영. 26번 6단계 후속(2026-11-19): 업로드 키 release APK(flutter build apk --release, 온라인 키 없이) 빌드 성공, aapt 권한 13개가 23번 6단계 '26번 반영 뒤 권한' 표와 같음(광고 ID·광고 서비스·정확한 알람 0건), no_tracking_sdk_test 7개 통과·건너뜀 0(release 병합 매니페스트 검사 실행). 26번 서버 변경 배포·운영 콘솔·온라인 키 넣은 release AAB·실기기 검수·비공개 테스트 업로드는 사용자 작업 대기.",
     "existing_code": [
       {
         "area": "현재 main 신규 Workshop",
@@ -1915,8 +1915,8 @@
         ]
       },
       {
-        "area": "큰 틀 제작·센서/터치·익힘 판정",
-        "finding": "신규 입력/직렬화/기울기/터치/순서·손기술·연습 UI/집계 저장 연결. 주문 전용 맥락/실기기/아트 검수 미완료",
+        "area": "스페셜 붕어빵(큰 틀) 제작·색칠/원 뒤집기·익힘 판정",
+        "finding": "24번: 짤주머니 드래그 색칠·원 그려 뒤집기·면적 판정으로 교체(기울기 센서 삭제), 영업 상태별 두 틀 규칙·클리커. 호스트 테스트·통합 흐름 실행 검수 완료. 실기기·새 그림 적용 검수 대기",
         "task_ids": [
           "P4-001",
           "P4-002",
@@ -1926,8 +1926,8 @@
         ]
       },
       {
-        "area": "독립 6구 생산·직접 수확",
-        "finding": "맛별 보유/숙련 후보·독립 속도/회차·직접 수확·탄 칸 폐기·입력/저장/UI 연결. 실제 회귀 검수 미실행",
+        "area": "숙련된 붕어빵(6구) 생산·직접 수확",
+        "finding": "맛별 숙련 후보·독립 속도/회차·직접 수확·탄 칸 폐기 연결. 24번: 영업 준비 중 빈 판·폭 = 화면 폭 − 16, 칸 굽기→수확→판매 통합 테스트 통과. 실기기 칸 누르기 검수 대기",
         "task_ids": [
           "P5-001",
           "P5-002"
@@ -2022,6 +2022,6 @@
       "document": "14_개발용임시수치설정.md",
       "status": "development-provisional-3: 기존 경제/미션/아바타에 손님 관계/방문/개별 사건/주문 성향 수치를 추가하고 문서/서버 생성물 동기화. 확정 신규소개2명 한도 유지. 체감/출시 검증 미완료."
     },
-    "followup_remaining": "22번: 없는 동행/날씨·외형 기능 및 아트 연동은 후속. 기존20번의 실제 서버 보호 증거/운영 설정·이전/배포, AdMob SDK/SSV/동의, 전체 실행/릴리즈 검수3조건도 남음. 현재 질문3개는 답변 완료."
+    "followup_remaining": "22번: 없는 동행/날씨·외형 기능 및 아트 연동은 후속. 기존20번의 실제 서버 보호 증거/운영 설정·이전/배포, AdMob SDK/SSV/동의, 전체 실행/릴리즈 검수3조건도 남음. 현재 질문3개는 답변 완료. 24번: 25번 그림 21장 게임 적용 → debug APK → 실기기 확인표 기록 → 진행 불가 문제 수정(7단계 할 일 4)."
   }
 }

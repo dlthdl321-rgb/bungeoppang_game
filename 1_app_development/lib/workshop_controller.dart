@@ -14,6 +14,7 @@ import 'development_inventory.dart';
 import 'development_orders.dart';
 import 'development_rules.dart';
 import 'development_purchase_journal.dart';
+import 'economy.dart' show compactNumber;
 import 'feedback_config.dart';
 import 'workshop_purchases.dart';
 import 'workshop_online.dart';
@@ -23,19 +24,76 @@ import 'workshop_customers.dart';
 import 'workshop_customer_events.dart';
 import 'workshop_customer_dialogue.dart';
 import 'workshop_customer_orders.dart';
+import 'workshop_arrivals.dart';
+import 'workshop_feature_unlocks.dart';
+import 'workshop_daily.dart';
+import 'workshop_collection_rules.dart';
+import 'workshop_sale_archive.dart';
+import 'usage_stats.dart';
+import 'pantry_rules.dart';
+import 'online_texts.dart';
+import 'pantry_home.dart';
+import 'cosmetic_config.dart' show CosmeticSlot, characterDefaultHair, defaultCosmetics, defaultHairOf, hairHatClash, hairUnderHatText, hatOverHairText, movedToTop, removedCosmetics, retiredCosmetics;
 
 part 'workshop_storage.dart';
+part 'workshop_controller_level_up.dart';
+part 'workshop_controller_commands.dart';
+part 'workshop_controller_collection.dart';
+part 'workshop_controller_daily.dart';
+part 'workshop_controller_pantry.dart';
 
+/// The shop save format written now. Schema 11 (4차 피드백 g7, 2026-11-21)
+/// adds no field: it marks saves made with the rebalanced economy. Schema 12
+/// (재료 타이쿤 A, 2026-11-21) adds the pantry (`pantry`, [PantryState]).
+/// Schema 13 (28번 10절, 2026-11-24) stops writing each sale's evidence twice:
+/// `pendingGold` keeps no `sale:` entries on disk, `pendingSales` lists their
+/// sale IDs and loading fills them from `sales` (the same strings, in memory).
+/// Schema 14 (30번 2-A, 2026-11-24) adds `archivedSales`·`archivedSalesBuns`:
+/// settled sales to anonymous guests leave `sales`/`pendingGold`/`rewardReceipts`
+/// for these two totals ([pickSettledSales]).
+/// Schema 15 (30번 2-B, 2026-11-24) adds `archivedNamedSales`: settled sales
+/// to named neighbors leave too (counted in the same totals); their IDs stay
+/// so the relationship record of each sale still has its sale. Spent
+/// production results drop their fingerprints ([keepNeededResults]).
+const workshopSchema = 15;
+/// Saves below this schema have no pantry: they get the starting stock once.
+const pantrySchema = 12;
+/// Saves below this schema were played with the old economy (skill prices
+/// and effects many times larger) and start again once, before launch.
+const economyResetSchema = 11;
+/// Shown once after such a reset (the notice line).
+const economyResetNotice = '게임 밸런스가 바뀌어 가게를 처음부터 다시 시작해요.';
+/// 28번 8절(2026-11-24): the checkpoint every `manual_cooking.checkpoint_ms`
+/// still looks each second for a level-up, a new KST day, an expired tub, a
+/// rescue pack or a 도감 cell, and saves at once when one is due. Otherwise
+/// it saves only once this long after the last save (commands and leaving
+/// the app save anyway), instead of a full save every second.
+const checkpointSafetyMs = 60000;
 const workshopTutorialStates = {'cook', 'sell', 'done', 'skipped'};
+/// Avatar slots whose items a shop can have without buying ([WorkshopState.avatarGrants]).
+const avatarGrantSlots = {'character', 'skin'};
 
 /// What happened while the app was away, for the welcome-back card. Sales
-/// and customer timers only run in the foreground, so only production is shown.
+/// and the customers' waits only run in the foreground; customers still come
+/// in real time (26번 5-1단계), so the card counts who arrived.
 class WorkshopAwayReport {
   final Duration away;
   final BigInt buns;
   final bool open;
   final int waiting;
-  const WorkshopAwayReport({required this.away, required this.buns, required this.open, required this.waiting});
+  /// Guests who arrived while the app was away.
+  final int arrivals;
+  /// 26번 7단계: a new 오늘의 주문서 came, today's stamp is still to take.
+  final bool newOrder, stampReady;
+  const WorkshopAwayReport({required this.away, required this.buns, required this.open, required this.waiting,
+      this.arrivals = 0, this.newOrder = false, this.stampReady = false});
+}
+
+/// One finished sale as the guest saw it: who, how many stars, what they said.
+class WorkshopSalePraise {
+  final String name, speech;
+  final int stars;
+  const WorkshopSalePraise(this.name, this.stars, this.speech);
 }
 
 /// Fresh-game local production aggregate. Gold remains in the authenticated
@@ -43,9 +101,29 @@ class WorkshopAwayReport {
 class WorkshopState {
   int sequence = 0, level = 1, taps = 0, completedSales = 0, phaseMs = 0,
       levelStartTaps = 0, levelStartSales = 0, arrivalMs = 0;
-  String selectedFlavor = 'redbean',sceneTime='scenetime';
+  /// Bungeoppang pieces handed over in finished sales, and that count when
+  /// the current level began (4차 피드백 g9: a level asks for pieces sold in
+  /// it). Saved as `soldPieces`·`levelStartPieces` (schema 11); a save
+  /// without them counts its sale ledger and credits it to this level.
+  int soldPieces = 0, levelStartPieces = 0;
+  String selectedFlavor = 'redbean',sceneTime='clock';
   /// First-run guide: `cook` → `sell` → `done`, or `skipped` (schema 6).
   String tutorial = 'cook';
+  /// Real-time customer clocks (schema 7, 26번 5-1단계): regular guests and
+  /// named neighbors. Stopped (nextAt null) while closed, during the guide,
+  /// or while their places are full.
+  ArrivalClock regularClock = const ArrivalClock(seed: 0), namedClock = const ArrivalClock(seed: 1);
+  /// The named neighbor who came last; the next named visit skips them.
+  String? lastNamedVisitor;
+  /// Feature introduction cards already shown (schema 8, 26번 2단계):
+  /// [WorkshopFeature] names from [workshopIntroIds].
+  final Set<String> featureIntros = {};
+  /// The first-run guide ended in this run of the app (not saved, 4차 g5):
+  /// only then does the 꾸미기·상점·오늘 card come, so a game loaded with the
+  /// guide long finished is not shown it again.
+  bool guideJustEnded = false;
+  /// 오늘의 주문서·출석·행사 (schema 10, 26번 7단계).
+  WorkshopDaily daily = WorkshopDaily.empty;
   final Set<String> recipes = {'redbean'};
   final Set<String> recipeMissions = {};
   final Map<String, Map<String, dynamic>> masteryAwards = {};
@@ -56,6 +134,30 @@ class WorkshopState {
     else { masteryAwards[selectedFlavor] = value; }
   }
   bool get mastered => masteryAward != null;
+  /// 도감 칸 완성 보상을 이미 받은 칸 (4차 피드백 g6): flavor → doneness
+  /// indexes (saved as `collectionClaims` in schema 10). A save from before
+  /// the rule counts the cells complete then as already paid.
+  final Map<String, Set<int>> collectionClaims = {};
+  /// 재료 타이쿤 (schema 12): ingredients, tubs of batter and fillings made,
+  /// the portions taken out for taps and auto production ([PantryState]).
+  /// A new shop and a save from before it start with `starting_stock`.
+  PantryState pantry = PantryState();
+  /// 재료 타이쿤 B: the player chose '특제 <맛>' in the flavor picker — taps
+  /// and auto production use 특제 반죽·속 first ([PantryState.takePortion]).
+  /// Saved as `selectedPremium` (schema 12; missing = false).
+  bool selectedPremium = false;
+  /// 재료 타이쿤 B: the portion the special bungeoppang in the mold took when
+  /// it started, given back if it is canceled before the result. Saved as
+  /// `sessionPortion` (schema 12; a session saved without one gives nothing back).
+  PortionUse? sessionPortion;
+  /// One flavor's 도감 page in numbers (4차 피드백 g6).
+  CollectionProgress collection(DevelopmentBalance config, String flavor) =>
+      collectionProgress(config, flavor, flavorMasteries[flavor]);
+  /// Flavors the six-cell griddle may bake (4차 피드백 g6, DEC-TBD-i4g6-2):
+  /// owned flavors whose 도감 is complete, and flavors mastered under the
+  /// old rule (`masteryAwards` of older saves, kept open).
+  Set<String> griddleFlavors(DevelopmentBalance config) => {
+    for (final f in recipes) if (collection(config, f).collected || masteryAwards.containsKey(f)) f};
   bool get tutorialActive => tutorial == 'cook' || tutorial == 'sell';
   BigInt buns = BigInt.zero, lifetime = BigInt.zero;
   WorkshopPurchases purchases = WorkshopPurchases.empty();
@@ -63,6 +165,44 @@ class WorkshopState {
   final Map<String,String> rewardReceipts = {};
   final Map<String,Map<String,dynamic>> adAttempts = {};
   final Map<String,String> avatarEquipment = {};
+  /// Avatar items this shop has without buying them (3차 피드백 H11·H12,
+  /// saved as `avatarGrants` in schema 10): the character chosen at the
+  /// first run, and for a save from before the rule the character and skin
+  /// tone it wore then. Other characters and skin tones are bought.
+  final Set<String> avatarGrants = {'girl'};
+  /// Whether this shop has avatar item [id] of [catalog] (avatar_catalog):
+  /// free, granted, bought, or (26번 3차 G) the own default hair of a
+  /// character it has ([characterDefaultHair]: the boy's short hair).
+  bool hasAvatar(Map<String,dynamic> catalog,String id) {
+    final entry=catalog[id];
+    if (entry is! Map<String,dynamic>) return false;
+    if (entry['free']==true || avatarGrants.contains(id) || purchases.owned['cosmetic:$id']==1) return true;
+    return entry['slot']==CosmeticSlot.hair.name &&
+      characterDefaultHair.entries.any((e)=>e.value==id && e.key!=id && hasAvatar(catalog,e.key));
+  }
+  /// The avatar item worn in [slot]: what was picked here, else [legacy]
+  /// (the account wardrobe's choice). Hair never picked is the character's
+  /// own default ([defaultHairOf], 26번 3차 G: a boy whose save still wears
+  /// the old shared default long hair wears his short hair; hair picked or
+  /// bought stays).
+  String avatarWorn(CosmeticSlot slot,String legacy) {
+    final picked=avatarEquipment[slot.name];
+    if (picked!=null) return picked;
+    if (slot==CosmeticSlot.hair && legacy==defaultCosmetics[CosmeticSlot.hair]) {
+      return defaultHairOf(avatarEquipment[CosmeticSlot.character.name] ?? defaultCosmetics[CosmeticSlot.character]!);
+    }
+    return legacy;
+  }
+  /// A new character worn: hair that was only the old character's own
+  /// default goes back to "never picked", so the new one's default shows
+  /// (26번 3차 G).
+  void _wearCharacter(String id) {
+    final before=avatarEquipment[CosmeticSlot.character.name] ?? defaultCosmetics[CosmeticSlot.character]!;
+    if (before!=id && avatarEquipment[CosmeticSlot.hair.name]==defaultHairOf(before)) {
+      avatarEquipment.remove(CosmeticSlot.hair.name);
+    }
+    avatarEquipment[CosmeticSlot.character.name]=id;
+  }
   late BusinessProgress business;
   late WorkshopMissions missions;
   InventoryProgress inventory = InventoryProgress.empty();
@@ -76,30 +216,70 @@ class WorkshopState {
   WorkshopRelationships relationships = WorkshopRelationships.empty();
   Map<String,dynamic>? customerScene;
   final Map<String, String> sales = {}, pendingGold = {};
+  /// Settled sales to anonymous guests moved out of [sales] (30번 2-A): how
+  /// many and what they paid (ordinary + 특제). Saved from schema 14.
+  int archivedSales = 0;
+  BigInt archivedSalesBuns = BigInt.zero;
+  /// The part of [archivedSales] sold to named neighbors (30번 2-B, schema
+  /// 15). Each keeps its relationship record; the visit's `context.lines`
+  /// says what was ordered ([WorkshopController] reads it back from there).
+  final Set<String> archivedNamedSales = {};
   final Set<int> claimedLevels = {};
+  /// A fresh shop in place of a save from before the economy rebalance
+  /// ([economyResetSchema], 4차 피드백 g7, pre-launch): every number starts
+  /// again. Only the first-run choices stay — the character picked at the
+  /// first run (the owner record will not ask again) and a finished guide.
+  /// The save sequence goes on so the store's guard accepts the next save.
+  factory WorkshopState.economyReset(WorkshopState old, DateTime now, DevelopmentBalance config, String runId) {
+    final catalog = config.section('avatar_catalog');
+    final character = old.avatarGrants.firstWhere(
+        (id) => (catalog[id] as Map?)?['slot'] == CosmeticSlot.character.name, orElse: () => 'girl');
+    final fresh = WorkshopState.initial(now, config, runId)
+      ..sequence = old.sequence
+      ..tutorial = old.tutorialActive ? 'cook' : old.tutorial;
+    fresh.avatarGrants..clear()..add(character);
+    if (character != defaultCosmetics[CosmeticSlot.character]) fresh._wearCharacter(character);
+    return fresh;
+  }
   WorkshopState.initial(DateTime now, DevelopmentBalance config, String runId) {
     missions=WorkshopMissions.initial(now);
     business = BusinessProgress.initial(now); grid = GriddleProgress.empty(runId, config);
+    regularClock = ArrivalClock(seed: arrivalSeed(runId, 1));
+    namedClock = ArrivalClock(seed: arrivalSeed(runId, 2));
     flavorMasteries['redbean'] = FlavorMasteryProgress(flavor: 'redbean',
       difficulty: DevelopmentBalance.integer(config.section('active_recipes')['redbean'] as Map<String, dynamic>, 'difficulty'));
+    pantry = PantryState.starting(PantryConfig.of(config), now.millisecondsSinceEpoch);
   }
-  Map<String, dynamic> toJson() => {'schema': 6, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
+  Map<String, dynamic> toJson() => {'schema': workshopSchema, 'sequence': sequence, 'level': level, 'tutorial': tutorial,
+    'featureIntros': featureIntros.toList()..sort(), 'daily': daily.toJson(),
+    'regularClock': regularClock.toJson(), 'namedClock': namedClock.toJson(), 'lastNamedVisitor': lastNamedVisitor,
     'taps': taps, 'completedSales': completedSales, 'phaseMs': phaseMs,
     'levelStartTaps': levelStartTaps, 'levelStartSales': levelStartSales, 'arrivalMs': arrivalMs,
+    'soldPieces': soldPieces, 'levelStartPieces': levelStartPieces,
     'selectedFlavor': selectedFlavor,'sceneTime':sceneTime, 'recipes': recipes.toList()..sort(),
     'recipeMissions': recipeMissions.toList()..sort(),
     'masteryAwards': {for (final e in masteryAwards.entries) e.key: Map<String, dynamic>.from(e.value)},
+    'collectionClaims': {for (final e in collectionClaims.entries) e.key: e.value.toList()..sort()},
+    'pantry': pantry.toJson(), 'selectedPremium': selectedPremium, 'sessionPortion': sessionPortion?.toJson(),
     'relationships':relationships.toJson(), 'customerScene':customerScene==null ? null : jsonDecode(jsonEncode(customerScene)),
     'tasteObservations': {for (final e in tasteObservations.entries) e.key:
       {for (final f in e.value.entries) f.key: f.value.toList()..sort()}},
     'buns': buns.toString(), 'lifetime': lifetime.toString(), 'purchases': purchases.toJson(),
     'rewardAccount':rewardAccount,'rewardReceipts':Map<String,String>.from(rewardReceipts),
     'adAttempts':{for(final e in adAttempts.entries) e.key:Map<String,dynamic>.from(e.value)},
-    'avatarEquipment':Map<String,String>.from(avatarEquipment),'missions':missions.toJson(), 'business': business.toJson(),
+    'avatarEquipment':Map<String,String>.from(avatarEquipment),'avatarGrants':avatarGrants.toList()..sort(),'missions':missions.toJson(), 'business': business.toJson(),
     'inventory': inventory.toJson(), 'grid': grid.toJson(),
     'flavorMasteries': {for (final e in flavorMasteries.entries) e.key: e.value.toJson()},
     'session': session?.toJson(), 'customers': customers.map((c) => c.toJson()).toList(),
-    'sales': Map<String, String>.from(sales), 'pendingGold': Map<String, String>.from(pendingGold),
+    'sales': Map<String, String>.from(sales),
+    // Schema 13: a sale's pending gold is the same string as its evidence in
+    // `sales`, so only its ID is written (`pendingSales`); loading refills it.
+    'pendingGold': {for (final e in pendingGold.entries)
+      if (!(e.key.startsWith('sale:') && sales[e.key.substring(5)] == e.value)) e.key: e.value},
+    'pendingSales': [for (final e in pendingGold.entries)
+      if (e.key.startsWith('sale:') && sales[e.key.substring(5)] == e.value) e.key.substring(5)]..sort(),
+    'archivedSales': archivedSales, 'archivedSalesBuns': '$archivedSalesBuns',
+    'archivedNamedSales': archivedNamedSales.toList()..sort(),
     'claimedLevels': claimedLevels.toList()..sort()};
   factory WorkshopState.fromJson(Map<String, dynamic> row, DevelopmentBalance config) {
     Map<String, dynamic> object(String key) {
@@ -107,7 +287,7 @@ class WorkshopState {
       if (value is! Map<String, dynamic>) throw FormatException('저장 항목 누락: $key');
       return value;
     }
-    if (row['schema'] is! int || ![1, 2, 3, 4, 5, 6].contains(row['schema'])) throw const FormatException('신규 게임 저장 버전 오류');
+    if (row['schema'] is! int || (row['schema'] as int) < 1 || (row['schema'] as int) > workshopSchema) throw const FormatException('신규 게임 저장 버전 오류');
     if ((row['schema'] as int) < 4 && (row.containsKey('relationships') || row.containsKey('customerScene'))) throw const FormatException('구형 관계 저장 충돌');
     final business = BusinessProgress.fromJson(object('business'));
     final grid = GriddleProgress.fromJson(object('grid'), config);
@@ -167,9 +347,51 @@ class WorkshopState {
           DevelopmentBalance.integer(award, 'techniqueRequired') == 0) throw const FormatException('숙련 확정 근거 오류');
       state.masteryAwards[e.key] = Map<String, dynamic>.from(award);
     }
+    // 4차 피드백 g6: what was paid for 도감 cells. Only cells already found
+    // (counts do not depend on the config, so a changed count never breaks
+    // a save). Without the key (a save from before the rule) the cells
+    // complete now count as paid: no lump of buns on loading.
+    final claims = row['collectionClaims'];
+    if (claims == null) {
+      for (final flavor in state.recipes) {
+        final progress = state.collection(config, flavor);
+        final done = {for (var i = 0; i < 5; i++) if (progress.complete(i)) i};
+        if (done.isNotEmpty) state.collectionClaims[flavor] = done;
+      }
+    } else {
+      if (claims is! Map<String, dynamic>) throw const FormatException('도감 보상 기록 형식 오류');
+      for (final e in claims.entries) {
+        final cells = e.value;
+        if (!state.recipes.contains(e.key) || cells is! List || cells.isEmpty ||
+            cells.any((v) => v is! int || v < 0 || v >= 5) || cells.toSet().length != cells.length) {
+          throw const FormatException('도감 보상 기록 오류');
+        }
+        final counts = collectionCounts(state.flavorMasteries[e.key]);
+        if (cells.any((v) => counts[v as int] == 0)) throw const FormatException('찾지 않은 도감 칸의 보상');
+        state.collectionClaims[e.key] = cells.cast<int>().toSet();
+      }
+    }
+    // 재료 타이쿤 (schema 12): the pantry. A save from before it keeps the
+    // starting stock WorkshopState.initial gave (re-dated on opening the app,
+    // WorkshopController.initialize). Fillings only of owned recipes.
+    if ((row['schema'] as int) >= pantrySchema) {
+      state.pantry = PantryState.fromJson(row['pantry'], PantryConfig.of(config));
+      if (!state.recipes.containsAll(state.pantry.heldFlavors)) throw const FormatException('얻지 않은 맛의 속이 있어요.');
+      // 재료 타이쿤 B: the 특제 choice and the special mold's portion.
+      final premium = row['selectedPremium'] ?? false;
+      if (premium is! bool) throw const FormatException('특제 선택 저장 오류');
+      state.selectedPremium = premium;
+      if (row['sessionPortion'] != null) state.sessionPortion = PortionUse.fromJson(row['sessionPortion'], PantryConfig.of(config));
+    } else if (row.containsKey('pantry')) {
+      // (`selectedPremium`·`sessionPortion` in an older schema are not read.)
+      throw const FormatException('구형 저장에 재료 기록이 있어요.');
+    }
+    // The flavor a cooking cell bakes must be owned; whether it may start
+    // is the griddle's rule ([griddleFlavors]), checked when it starts, so a
+    // changed collection count never breaks a save.
     for (final cell in state.grid.cells) {
-      if (cell.cooking && (!state.masteryAwards.containsKey(cell.flavor) || !state.recipes.contains(cell.flavor) ||
-          cell.difficulty != (catalog[cell.flavor] as Map)['difficulty'])) throw const FormatException('잠긴 맛의 6구 저장');
+      if (cell.cooking && (!state.recipes.contains(cell.flavor) ||
+          cell.difficulty != (catalog[cell.flavor] as Map)['difficulty'])) throw const FormatException('잠긴 맛의 숙련된 붕어빵 저장');
     }
     for (final flavor in row['recipeMissions'] as List) {
       if (flavor is! String || flavor == 'redbean' || !state.recipes.contains(flavor) || !state.recipeMissions.add(flavor)) throw const FormatException('레시피 미션 기록 오류');
@@ -188,7 +410,18 @@ class WorkshopState {
     if (row['session'] != null) {
       if (row['session'] is! Map<String, dynamic>) throw const FormatException('제작 세션 저장 오류');
       state.session = CookingSession.fromJson(row['session'] as Map<String, dynamic>);
-      if (state.session!.flavor != state.selectedFlavor || !state.recipes.contains(state.session!.flavor)) throw const FormatException('미확정 맛 진행');
+      // 4차 병합 3 사용자 결정: in business the flavor button may change the
+      // chosen flavor while a bake is in the mold, which keeps its own (and a
+      // finished one may stay after closing).
+      if ((!state.business.open && !state.session!.finished && state.session!.flavor != state.selectedFlavor) ||
+          !state.recipes.contains(state.session!.flavor)) throw const FormatException('미확정 맛 진행');
+    }
+    // The special mold's portion belongs to its session; without one it is
+    // simply used (nothing to give back).
+    final portion = state.sessionPortion;
+    if (portion != null && state.session == null) state.sessionPortion = null;
+    if (portion != null && state.session != null && portion.flavor != state.session!.flavor) {
+      throw const FormatException('스페셜 틀 재료 기록 오류');
     }
     if (row['customers'] is! List || row['claimedLevels'] is! List) throw const FormatException('진행 목록 오류');
     state.customers = [for (final c in row['customers'] as List)
@@ -204,7 +437,20 @@ class WorkshopState {
       state.tutorial = row['tutorial'] as String;
       if (state.tutorialActive && state.completedSales > 0) throw const FormatException('판매 뒤 안내 진행 상태 오류');
     }
-    var salesBuns = BigInt.zero;
+    if ((row['schema'] as int) >= 14) {
+      state.archivedSales = DevelopmentBalance.integer(row, 'archivedSales');
+      state.archivedSalesBuns = DevelopmentBalance.decimal(row, 'archivedSalesBuns');
+    } else if (row.containsKey('archivedSales') || row.containsKey('archivedSalesBuns')) {
+      throw const FormatException('구형 저장에 판매 보관 합계가 있어요.');
+    }
+    if ((row['schema'] as int) >= 15) {
+      final named = row['archivedNamedSales'];
+      if (named is! List || named.any((id) => id is! String || id.isEmpty || !state.archivedNamedSales.add(id)) ||
+          named.length > state.archivedSales) throw const FormatException('단골 판매 보관 목록 오류');
+    } else if (row.containsKey('archivedNamedSales')) {
+      throw const FormatException('구형 저장에 단골 판매 보관 목록이 있어요.');
+    }
+    var salesBuns = state.archivedSalesBuns;
     final consumed = <String, BigInt>{};
     void sold(Map<String, dynamic> product) {
       final id = product['batch'] as String;
@@ -214,7 +460,8 @@ class WorkshopState {
       final batch = ProductBatch.fromJson(original[1] as Map<String, dynamic>);
       if (original[0] != true || !state.recipes.contains(batch.flavor) || product['flavor'] != batch.flavor ||
           product['variant'] != batch.variant || product['madeOnBusinessIndex'] !=
-          (state.inventory.bindings[id] ?? batch.madeOnBusinessIndex)) throw const FormatException('생산/판매 제품 불일치');
+          (state.inventory.bindings[id] ?? batch.madeOnBusinessIndex) ||
+          (product['bonusPermille'] ?? 1000) != batch.bonusPermille) throw const FormatException('생산/판매 제품 불일치');
       consumed[id] = (consumed[id] ?? BigInt.zero) + BigInt.from(product['quantity'] as int);
       final remaining = state.inventory.batches[id]?.quantity ?? 0;
       if (consumed[id]! + BigInt.from(remaining) > BigInt.from(batch.quantity)) throw const FormatException('생산량보다 많은 재고/판매');
@@ -225,6 +472,8 @@ class WorkshopState {
       if ((evidence['businessIndex'] as int) > state.business.businessIndex) throw const FormatException('미래 영업일의 판매');
       for (final item in evidence['products'] as List) { sold(item as Map<String, dynamic>); }
       salesBuns += DevelopmentBalance.decimal(evidence, 'ordinaryBuns');
+      // 4차 병합 3: the 특제 bonus paid on top of it.
+      if (evidence.containsKey('premiumBuns')) salesBuns += DevelopmentBalance.decimal(evidence, 'premiumBuns');
       state.sales[e.key] = e.value as String;
     }
     // Partial deliveries of waiting customers: consumed stock, already paid.
@@ -248,14 +497,58 @@ class WorkshopState {
       }
       for (final entry in (relation['actions'] as Map<String,dynamic>).entries.where((e) => e.key.startsWith('sale:'))) {
         final id = entry.key.substring(5), saved = state.sales[id];
-        if (saved == null) throw const FormatException('관계 판매 원장 누락');
+        if (saved == null) {
+          // 30번 2-B: an archived sale reads its order from the visit.
+          final visit = visits[(entry.value as Map)['visit']] as Map;
+          if (!state.archivedNamedSales.contains(id) || (visit['context'] as Map?)?['lines'] is! List) {
+            throw const FormatException('관계 판매 원장 누락');
+          }
+          continue;
+        }
         final evidence = validateStoredCustomerSale(id,saved), order = evidence['order'] as Map;
         final action = entry.value as Map, visit = visits[action['visit']] as Map;
         if (order['customerId'] != visit['npc'] || action['day'] != evidence['businessIndex'] || (visit['context'] is Map && jsonEncode((visit['context'] as Map)['lines'])!=jsonEncode(order['lines']))) throw const FormatException('관계 판매 근거 불일치');
       }
     }
+    if (state.archivedNamedSales.isNotEmpty) {
+      final actions = state.relationships.toJson()['actions'] as Map;
+      if (state.archivedNamedSales.any((id) => state.sales.containsKey(id) || !actions.containsKey('sale:$id'))) {
+        throw const FormatException('단골 판매 보관 근거 오류');
+      }
+    }
     if (salesBuns > state.lifetime) throw const FormatException('판매 대금 누적 근거 불일치');
-    for (final e in object('pendingGold').entries) {
+    // Schema 10 (26번 7단계): today's order, the attendance card and the
+    // seasonal events seen. Older saves start empty.
+    if ((row['schema'] as int) >= 10) {
+      state.daily = WorkshopDaily.fromJson(row['daily'], config, today: businessDayKst(business.settledUtc));
+      final order = state.daily.order;
+      if (order != null) {
+        final action = (state.relationships.toJson()['actions'] as Map)['special:${order.day}'];
+        if (!state.recipes.contains(order.flavor) ||
+            (order.npc != null && !state.relationships.met.contains(order.npc)) ||
+            (order.businessIndex ?? 0) > business.businessIndex ||
+            (order.done && order.npc != null
+                ? action is! Map || action['npc'] != order.npc || action['day'] != order.businessIndex
+                : action != null)) {
+          throw const FormatException('오늘의 주문서 근거 오류');
+        }
+      }
+    } else if (row.containsKey('daily')) {
+      throw const FormatException('구형 저장에 매일 기록이 있어요.');
+    }
+    final pendingRaw = <String, dynamic>{...object('pendingGold')};
+    if ((row['schema'] as int) >= 13) {
+      if (row['pendingSales'] is! List) throw const FormatException('판매 황금 심사 목록 형식 오류');
+      for (final id in row['pendingSales'] as List) {
+        if (id is! String || !state.sales.containsKey(id) || pendingRaw.containsKey('sale:$id')) {
+          throw const FormatException('판매 황금 심사 목록 오류');
+        }
+        pendingRaw['sale:$id'] = state.sales[id];
+      }
+    } else if (row.containsKey('pendingSales')) {
+      throw const FormatException('구형 저장에 판매 황금 심사 목록이 있어요.');
+    }
+    for (final e in pendingRaw.entries) {
       if (e.value is! String) throw const FormatException('황금 심사 형식 오류');
       final payload = jsonDecode(e.value as String);
       if (payload is! Map<String, dynamic>) throw const FormatException('황금 심사 증거 오류');
@@ -268,6 +561,24 @@ class WorkshopState {
             (payload['revision'] as String).isEmpty) throw const FormatException('승급 황금 심사 근거 오류');
       } else if(e.key.startsWith('mission:')) {
         if(state.missions.claims[e.key.substring(8)]!=e.value) throw const FormatException('미션 황금 신청 원본 불일치');
+      } else if (e.key.startsWith('attendance:')) {
+        // 26번 7단계: the seventh stamp's gold, verified like a mission claim.
+        final day = e.key.substring(11), stamped = state.daily.stampDay;
+        if (payload.length != 5 || payload['scope'] != 'attendance' || payload['period'] != day ||
+            payload['goal'] != 'day7' || DevelopmentBalance.integer(payload, 'gold') == 0 ||
+            payload['revision'] is! String || (payload['revision'] as String).isEmpty ||
+            stamped == null || day.compareTo(stamped) > 0) {
+          throw const FormatException('출석 황금 신청 근거 오류');
+        }
+      } else if (e.key.startsWith('collection:')) {
+        // 4차 피드백 g6: a collected flavor's gold, verified like a mission claim.
+        final flavor = e.key.substring(11);
+        if (payload.length != 4 || payload['scope'] != 'collection' || payload['goal'] != flavor ||
+            !state.recipes.contains(flavor) || DevelopmentBalance.integer(payload, 'gold') == 0 ||
+            payload['revision'] is! String || (payload['revision'] as String).isEmpty ||
+            collectionCounts(state.flavorMasteries[flavor]).any((n) => n == 0)) {
+          throw const FormatException('도감 황금 신청 근거 오류');
+        }
       } else { throw const FormatException('알 수 없는 황금 심사 종류'); }
       state.pendingGold[e.key] = e.value as String;
     }
@@ -280,12 +591,32 @@ class WorkshopState {
     for (final n in row['claimedLevels'] as List) {
       if (n is! int || n < 2 || n > state.level || !state.claimedLevels.add(n)) throw const FormatException('승급 수령 기록 오류');
     }
-    if (state.sales.length != state.completedSales || state.claimedLevels.length != state.level - 1) {
+    if (state.sales.length + state.archivedSales != state.completedSales || state.claimedLevels.length != state.level - 1) {
       throw const FormatException('판매/승급 원장 불일치');
+    }
+    // 4차 피드백 g9: pieces sold. A save from before them counts its sale
+    // ledger (each finished sale keeps the order as placed) and credits all
+    // of it to the current level.
+    if (row.containsKey('soldPieces')) {
+      state..soldPieces = DevelopmentBalance.integer(row, 'soldPieces')
+        ..levelStartPieces = DevelopmentBalance.integer(row, 'levelStartPieces');
+    } else {
+      state.soldPieces = state.sales.values.fold(0, (n, encoded) {
+        final evidence = (jsonDecode(encoded) as Map<String, dynamic>)['evidence'];
+        if (evidence is! Map<String, dynamic> || evidence['order'] is! Map<String, dynamic>) throw const FormatException('판매 기록 형식 오류');
+        return n + CustomerOrder.fromJson(evidence['order'] as Map<String, dynamic>).lines.fold(0, (a, l) => a + l.quantity);
+      });
+    }
+    if (state.levelStartPieces > state.soldPieces || state.soldPieces < state.completedSales) {
+      throw const FormatException('판매 개수 기록 불일치');
     }
     if ((row['schema'] as int)>=3) {
       if(!['scenetime','day','night_time','clock'].contains(row['sceneTime'])) throw const FormatException('배경 시간 저장 오류');
-      state.sceneTime=row['sceneTime'] as String;
+      // 4차 피드백 g10(ID9): '배경 그대로' is gone and the device's clock is
+      // the default; a fixed day or night not bought (they were free before)
+      // follows the clock too. The schema stays 10.
+      final time=retiredCosmetics[row['sceneTime']] ?? row['sceneTime'] as String;
+      state.sceneTime=time=='clock' || state.hasAvatar(config.section('avatar_catalog'),time) ? time : 'clock';
       if (row['rewardAccount'] != null && (row['rewardAccount'] is! String || (row['rewardAccount'] as String).isEmpty)) throw const FormatException('보상 계정 형식 오류');
       state.rewardAccount=row['rewardAccount'] as String?;
       if (state.purchases.account != null && state.rewardAccount != null && state.purchases.account != state.rewardAccount) throw const FormatException('구매와 보상 계정 불일치');
@@ -304,13 +635,46 @@ class WorkshopState {
         if (e.value is! Map<String,dynamic> || state.rewardAccount==null) throw const FormatException('광고 기록 형식 오류');
         state.adAttempts[e.key]=validateWorkshopAd(e.value as Map<String,dynamic>,state.rewardAccount!,e.key);
       }
-      for (final e in object('avatarEquipment').entries) {
+      // 26번 3차 AV3: a removed item (skin tones 2·3) worn is its
+      // replacement; removed grants are dropped.
+      final worn=Map<String,dynamic>.of(object('avatarEquipment'))..updateAll((_,id)=>removedCosmetics[id] ?? id);
+      // Schema 9 (26번 4-5단계, G12): the chef coat and padded vest are
+      // tops now. An older save wearing one as its apron wears it as the
+      // top with no apron, so the vendor looks the same.
+      if ((row['schema'] as int)<9 && movedToTop.contains(worn[CosmeticSlot.outfit.name])) {
+        worn[CosmeticSlot.top.name]=worn[CosmeticSlot.outfit.name];
+        worn[CosmeticSlot.outfit.name]='noapron';
+      }
+      final catalog=config.section('avatar_catalog');
+      bool granted(Object? id)=>catalog[id] is Map<String,dynamic> && avatarGrantSlots.contains((catalog[id] as Map)['slot']);
+      final rawGrants=row['avatarGrants'];
+      final grants=rawGrants is List ? [for(final id in rawGrants) if(!removedCosmetics.containsKey(id)) id] : rawGrants;
+      if (grants!=null) {
+        // 3차 피드백 H11·H12: what this shop has without buying.
+        if (grants is! List || grants.any((id) => !granted(id)) || grants.toSet().length!=grants.length ||
+            grants.where((id) => (catalog[id] as Map)['slot']=='character').length!=1) throw const FormatException('아바타 기본 보유 저장 오류');
+        state.avatarGrants..clear()..addAll(grants.cast<String>());
+      } else {
+        // A save from before the rule keeps the character and skin tone it
+        // wears (girl when none was picked); the others are bought now.
+        final character=worn[CosmeticSlot.character.name];
+        if (granted(character) && (catalog[character] as Map)['slot']=='character') {
+          state.avatarGrants..clear()..add(character as String);
+        }
+        final skin=worn[CosmeticSlot.skin.name];
+        if (granted(skin) && (catalog[skin] as Map)['slot']=='skin') state.avatarGrants.add(skin as String);
+      }
+      for (final e in worn.entries) {
         if (e.value is! String) throw const FormatException('아바타 착용 형식 오류');
-        final item=config.section('avatar_catalog')[e.value];
+        final item=catalog[e.value];
         if (item is! Map<String,dynamic> || item['slot']!=e.key ||
-            (item['free']!=true && state.purchases.owned['cosmetic:${e.value}']!=1)) throw const FormatException('아바타 착용 보유 근거 오류');
+            !state.hasAvatar(catalog,e.value as String)) throw const FormatException('아바타 착용 보유 근거 오류');
         state.avatarEquipment[e.key]=e.value as String;
       }
+      // 26번 3차 AV3 (DEC-TBD-hAV3-3): a hat that cannot go over the hair
+      // saved with it comes off.
+      final hair=state.avatarEquipment[CosmeticSlot.hair.name],hat=state.avatarEquipment[CosmeticSlot.hat.name];
+      if (hair!=null && hat!=null && hairHatClash(hair,hat)) state.avatarEquipment[CosmeticSlot.hat.name]=defaultCosmetics[CosmeticSlot.hat]!;
     }
     if ((row['schema'] as int)>=4) {
       if(!row.containsKey('customerScene')) throw const FormatException('대화 복원 상태 누락');
@@ -334,10 +698,59 @@ class WorkshopState {
         state.customerScene=jsonDecode(jsonEncode(scene)) as Map<String,dynamic>;
       } else if(active!=null) { throw const FormatException('활성 대화 화면 누락'); }
     }
+    const arrivalKeys = ['regularClock', 'namedClock', 'lastNamedVisitor'];
+    if ((row['schema'] as int) >= 7) {
+      if (!arrivalKeys.every(row.containsKey)) throw const FormatException('손님 시계 저장 누락');
+      state.regularClock = ArrivalClock.fromJson(row['regularClock']);
+      state.namedClock = ArrivalClock.fromJson(row['namedClock']);
+      final last = row['lastNamedVisitor'];
+      if (last != null && (last is! String || !state.relationships.met.contains(last))) throw const FormatException('직전 네임드 손님 오류');
+      state.lastNamedVisitor = last as String?;
+      final rules = WorkshopArrivals.of(config), settled = business.settledUtc.millisecondsSinceEpoch;
+      for (final (clock, kind) in [(state.regularClock, ArrivalKind.regular), (state.namedClock, ArrivalKind.named)]) {
+        final next = clock.nextAt;
+        if (next != null && (!business.open || state.tutorialActive || next > settled + rules.maxInterval(kind))) {
+          throw const FormatException('손님 시계 상태 오류');
+        }
+      }
+    } else {
+      // Schema 6 and older: clocks start (stopped) from the run id and begin
+      // counting on the first settlement after loading; the last named
+      // neighbor is the latest visit in the relationship journal.
+      if (arrivalKeys.any(row.containsKey)) throw const FormatException('구형 저장에 손님 시계가 있어요.');
+      String? last; var lastDay = -1;
+      for (final visit in (state.relationships.toJson()['visits'] as Map).values) {
+        final day = (visit as Map)['day'] as int;
+        if (day >= lastDay) { lastDay = day; last = visit['npc'] as String; }
+      }
+      state.lastNamedVisitor = last;
+    }
+    // Schema 8 (26번 2단계): introduction cards already shown. Older saves
+    // count every feature already open as introduced, so a player past
+    // those levels sees no cards.
+    if ((row['schema'] as int) >= 8) {
+      final seen = row['featureIntros'];
+      if (seen is! List || seen.any((id) => id is! String || !workshopIntroIds.contains(id)) ||
+          seen.toSet().length != seen.length) {
+        throw const FormatException('기능 소개 저장 오류');
+      }
+      state.featureIntros.addAll(seen.cast<String>());
+    } else {
+      if (row.containsKey('featureIntros')) throw const FormatException('구형 저장에 기능 소개 기록이 있어요.');
+      state.featureIntros.addAll(openedIntroIds(state, config));
+    }
     return state;
   }
 }
 
+/// One requirement of the next level ([WorkshopController.levelRequirements]).
+typedef LevelRequirement = ({String label, BigInt current, BigInt target});
+/// '이' or '가' after a number written by [compactNumber], as it is read
+/// (200 이백이, 12 십이가, 3만 삼만이, 2조 이조가).
+String subjectParticle(String number) {
+  if (number.isEmpty) return '이';
+  return '2459조'.contains(number[number.length - 1]) ? '가' : '이';
+}
 class WorkshopController extends ChangeNotifier implements WorkshopProgressSource {
   final DevelopmentBalance config;
   final WorkshopRepository repository;
@@ -346,7 +759,49 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   final WorkshopPurchaseGateway? purchaseGateway;
   late WorkshopState state;
   final customerCatalog = WorkshopCustomerCatalog.bundled();
-  String customerName(String id) => id.startsWith('anonymous_') ? '지나가는 손님' : customerCatalog.displayName(id,state.relationships.stories);
+  /// A guest's full name: the nickname for named guests (the customer
+  /// window's title), '일반 손님' for walk-ins (26번 4-1단계 F3).
+  String customerName(String id) => id.startsWith('anonymous_') ? '일반 손님' : customerCatalog.displayName(id,state.relationships.stories);
+  /// The short name the stall and the counter show ('도윤', '막례 할머니';
+  /// S4-1-Q2), '일반 손님' for walk-ins.
+  String customerShortName(String id) => customerCatalog.contains(id)
+      ? customerCatalog.shortName(id,state.relationships.stories) : customerName(id);
+  /// Which guest picture stands at the stall (assets/images/customer): the
+  /// named guest's own, or one of four walk-in looks picked from the id.
+  String guestArtId(String id) {
+    if (customerCatalog.contains(id)) return id;
+    final sum = id.codeUnits.fold<int>(0, (a, b) => (a * 31 + b) & 0x3fffffff);
+    return 'walkin_${sum % 4 + 1}';
+  }
+  /// The guest who just left the stall (memory only): happy after a sale,
+  /// sad after running out of time. The guest layer shows them for a
+  /// moment ([departureAgeMs]).
+  ({String customerId, bool happy, int atMs})? guestDeparture;
+  int get departureAgeMs => guestDeparture == null ? 1 << 30 : _mono - guestDeparture!.atMs;
+  /// What each guest said last, by customer id, oldest first (memory only):
+  /// parting words after a sale or when time runs out, and the order
+  /// customer's words about a finished bake. The guest layer shows each as
+  /// a speech bubble by that guest (4차 피드백 IA5 '누가 말하는지'), not as
+  /// a line in the counter, for as long as the guest is there — until they
+  /// leave or say the next line (사용자 답 2026-11-21). [order] ties words
+  /// to one visit: a guest coming back later does not repeat them; a
+  /// leaving guest's words have the order that just ended.
+  final Map<String, ({String order, String text})> guestWords = {};
+  void _say(CustomerOrder order, String text) {
+    // Words of guests who are gone (not in line, not leaving) are dropped.
+    guestWords.removeWhere((id, _) => id != guestDeparture?.customerId &&
+        !state.customers.any((o) => o.customerId == id));
+    guestWords.remove(order.customerId);
+    guestWords[order.customerId] = (order: order.id, text: text);
+  }
+  /// The guest whose photo reaction waits for '반응 확인' ([photoReactionSale])
+  /// and what he says then: shown as his bubble at the front (IA5).
+  static const photoGuest = 'npc_taeo';
+  static const photoReactionWords = '와, 냄새 좋다.\n……아! 또 사진 전에 먹었네.';
+  /// The level-up step (×1·×10·최대, [skillLevelUpSteps]) each skill's own
+  /// wheel shows in the skill window, by skill id (26번 시안 확인 2차).
+  /// Memory only: kept while the app runs, not saved; ×1 when missing.
+  final Map<String, int> skillSteps = {};
   bool busy = false, foreground = true, disposed = false;
   bool _gridVisible = true;
   bool get gridVisible => _gridVisible;
@@ -375,9 +830,83 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final settlement = _settleAway();
     state.business = settlement.state;
     state.buns += settlement.buns; state.lifetime += settlement.buns;
+    // Guests kept coming while away (26번 5-1단계); their waits start now.
+    final arrivals = _syncArrivals();
+    final newOrder = _observeDaily();
     final away = state.business.settledUtc.difference(from);
     return away < welcomeBackAfter ? null
-        : WorkshopAwayReport(away: away, buns: settlement.buns, open: open, waiting: state.customers.length);
+        : WorkshopAwayReport(away: away, buns: settlement.buns, open: open, waiting: state.customers.length,
+            arrivals: arrivals, newOrder: newOrder, stampReady: attendanceReady);
+  }
+  WorkshopArrivals get arrivalRules => WorkshopArrivals.of(config);
+  int _waiting(ArrivalKind kind) => state.customers.where((c) =>
+      customerCatalog.contains(c.customerId) == (kind == ArrivalKind.named)).length;
+  /// The named neighbor a named-clock draw brings at [at], as the arrival
+  /// will choose: the business day turns over first after KST midnight.
+  String? _namedFor(ArrivalClock clock, int at) {
+    final business = state.business;
+    final turned = business.open && business.acceptedDay != null &&
+        businessDayKst(DateTime.fromMillisecondsSinceEpoch(at, isUtc: true)) != business.acceptedDay;
+    return state.relationships.selectNamedVisitor(business.businessIndex + (turned ? 1 : 0), clock.pick, config,
+        customerCatalog, alreadyQueued: state.customers.map((c) => c.customerId).toSet(),
+        lastVisitor: state.lastNamedVisitor);
+  }
+  /// Applies every arrival and KST midnight due by the settled business time
+  /// (26번 5-1단계). Waits are counted only in the foreground, so a guest who
+  /// came while the app was off waits the full `order_wait_ms` from now on.
+  /// Nothing happens during a story scene or an ad; due events follow after.
+  /// Returns how many guests arrived.
+  int _syncArrivals() {
+    if (_adPaused || storyPaused) return 0;
+    final business = state.business;
+    if (!business.open) {
+      state.regularClock = state.regularClock.withNext(null);
+      state.namedClock = state.namedClock.withNext(null);
+      return 0;
+    }
+    final rules = arrivalRules, until = business.settledUtc.millisecondsSinceEpoch;
+    if (!state.tutorialActive) {
+      state.regularClock = rules.resume(state.regularClock, ArrivalKind.regular, waiting: _waiting(ArrivalKind.regular), at: until);
+      state.namedClock = rules.resume(state.namedClock, ArrivalKind.named, waiting: _waiting(ArrivalKind.named), at: until);
+    }
+    var arrived = 0;
+    for (var guard = 0; guard < 100; guard++) {
+      final event = rules.next(regular: state.regularClock, named: state.namedClock,
+          open: state.business.open, acceptedDay: state.business.acceptedDay, until: until);
+      if (event == null) break;
+      switch (event.kind) {
+        case ArrivalKind.newDay:
+          _startBusinessDay(next: true);
+        case ArrivalKind.regular:
+          _spawnCustomer(null);
+          arrived++;
+          state.regularClock = rules.arrived(state.regularClock, ArrivalKind.regular,
+              waiting: _waiting(ArrivalKind.regular), at: event.at);
+        case ArrivalKind.named:
+          final npc = _namedFor(state.namedClock, event.at);
+          if (npc != null) { _spawnCustomer(npc); arrived++; }
+          state.namedClock = rules.arrived(state.namedClock, ArrivalKind.named,
+              waiting: _waiting(ArrivalKind.named), at: event.at);
+      }
+      if (storyPaused) break;
+    }
+    return arrived;
+  }
+  /// The guests the clocks would bring within [horizon] while the app is
+  /// away, for the customer notifications. None while closed, during the
+  /// guide or a story scene.
+  List<PlannedArrival> upcomingArrivals(Duration horizon) {
+    if (!state.business.open || state.tutorialActive || storyPaused) return const [];
+    return arrivalRules.preview(regular: state.regularClock, named: state.namedClock,
+        regularWaiting: _waiting(ArrivalKind.regular), namedWaiting: _waiting(ArrivalKind.named),
+        from: state.business.settledUtc.millisecondsSinceEpoch, horizonMs: horizon.inMilliseconds, nameAt: _namedFor);
+  }
+  /// What opening the business does at the start of a business day; at KST
+  /// midnight ([next]) an open business turns over by itself (DEC-054).
+  void _startBusinessDay({bool next = false}) {
+    state.business = next ? state.business.nextDay() : state.business.beginOrContinue(state.business.settledUtc);
+    state.inventory = state.inventory.expire(config, state.business.businessIndex).acceptPrepared(state.business.businessIndex);
+    state.missions=state.missions.observe(now(),businessStarted:true,autoPeak:autoRate);
   }
   void dismissAwayReport() { awayReport = null; if (!disposed) notifyListeners(); }
   BigInt get tapRate => state.purchases.rate(config, 'tap');
@@ -386,22 +915,49 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   int _lifecycleGeneration = 0;
   Timer? _timer;
   final Stopwatch _clock = Stopwatch();
+  /// Monotonic milliseconds for the phase clock, active settlement and the
+  /// clicker tap limit. Tests may pass a fake to keep pictures deterministic.
+  final int Function()? _monotonicMs;
+  int get _mono => _monotonicMs?.call() ?? _clock.elapsedMilliseconds;
   int _lastMono = 0, _checkpoint = 0;
-  WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway})
-      : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure() {
+  /// [_mono] at the last successful save ([checkpointSafetyMs]).
+  int _lastSaveMono = 0;
+  /// The business day and receipt count the last saved command checked for
+  /// settled sales ([_archiveSettledSales]); -1 before the first.
+  int _archiveCheckedDay = -1, _archiveCheckedReceipts = -1;
+  /// Monotonic times of clicker taps counted in the last second (DEC-036).
+  final List<int> _clickerTaps = [];
+  /// 사용 통계(26번 5단계): saved commands report first bake/sale, the end
+  /// of the guide and Lv.3·5·10 after the save, never inside it.
+  final UsageStats usage;
+  UsageProgress get _usageProgress => UsageProgress(
+      bakes: state.flavorMasteries.values.fold(0, (n, m) => n + m.results.length),
+      sales: state.completedSales, level: state.level, tutorial: state.tutorial,
+      orderDone: state.daily.order?.done == true ? state.daily.order!.day : null,
+      orderEvent: state.daily.order?.event, events: state.daily.events);
+  /// The checkpoint's save interval when nothing is due ([checkpointSafetyMs]).
+  /// Tests of what happens during a checkpoint save pass 0 (a save each check).
+  final int safetySaveMs;
+  WorkshopController(this.config, this.repository, {DateTime Function()? now, Random? random, this.purchaseGateway,
+      int Function()? monotonicMs, UsageStats? usage, this.safetySaveMs = checkpointSafetyMs})
+      : now = now ?? (() => DateTime.now().toUtc()), random = random ?? Random.secure(), _monotonicMs = monotonicMs,
+        usage = usage ?? UsageStats.none {
     onlineGateway?.source = this;
   }
   @override
   Map<String,dynamic> progressSnapshot() => {'buns':state.buns.toString(),'lifetimeBuns':state.lifetime.toString(),
-    'level':state.level,'taps':state.taps,'sales':state.completedSales};
+    'level':state.level,'taps':state.taps,'sales':state.completedSales,'pieces':state.soldPieces};
   @override
   PurchaseJournal? purchaseJournal(String transaction) => state.purchases.journals[transaction];
   // Retained through reloadAfterError; storage integration can persist these
   // frozen attempts alongside its command journal for process-death recovery.
   bool _savingCheckpoint = false;
-  bool get cookingInputBlocked => gameplayPaused || error != null || (busy && !_savingCheckpoint);
+  bool get cookingInputBlocked => gameplayPaused || error != null || inputBusy;
+  /// Busy with a command the player started, not the periodic checkpoint
+  /// save: buttons and the clicker stay usable while it runs (26번 4-1 F1).
+  bool get inputBusy => busy && !_savingCheckpoint;
   int get activePhaseElapsedMs => state.phaseMs +
-      (gameplayPaused || state.session == null || state.session!.finished ? 0 : _clock.elapsedMilliseconds - _lastMono);
+      (gameplayPaused || state.session == null || state.session!.finished ? 0 : _mono - _lastMono);
   CookingSession? _pendingCookingResult;
   final Map<String, GriddleHarvest> _pendingHarvests = {};
   CookingSession? get pendingCookingResolution => _pendingCookingResult;
@@ -414,24 +970,74 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
   Future<void> initialize() async {
     final saved = await _loadDurable();
     state = saved == null ? WorkshopState.initial(now(), config, _id()) : WorkshopState.fromJson(saved, config);
+    // 4차 피드백 g7: a save from before the economy rebalance starts again
+    // (pre-launch, once). The server progress is reset by hand at deploy.
+    final reset = saved != null && (saved['schema'] as int) < economyResetSchema;
+    if (reset) state = WorkshopState.economyReset(state, now(), config, _id());
+    // 재료 타이쿤: a save from before the pantry gets the starting stock once,
+    // made now (not at the last settlement, which may be over a day ago).
+    if (saved != null && !reset && (saved['schema'] as int) < pantrySchema) {
+      state.pantry = PantryState.starting(PantryConfig.of(config), now().millisecondsSinceEpoch);
+      // 재료 타이쿤 E: recipes obtained before the pantry get their gift too,
+      // so a 슈크림 or 초코 chosen in the flavor button is not out at once.
+      for (final flavor in state.recipes.toList()..sort()) {
+        if (flavor != 'redbean') state.pantry.grantRecipeGift(pantryConfig, flavor, now().millisecondsSinceEpoch);
+      }
+    }
+    // 26번 3차 피드백 H20: the painted cells are not saved (G2), so a bake
+    // reopened between the first batter and the lid would show the whole
+    // step picture — batter that seems poured before the player came in.
+    // It starts again from pouring the batter (nothing was used up). Only
+    // here, on opening the app: WorkshopState.fromJson also rolls back
+    // failed commands and must keep the session as it was.
+    final open = state.session;
+    if (open != null && const [CookingPhase.filling, CookingPhase.secondBatter, CookingPhase.closing].contains(open.phase)) {
+      state.session = CookingSession.start(id: open.id, flavor: open.flavor, practice: open.practice,
+          fillingSequence: open.fillingSequence);
+      state.phaseMs = 0;
+    }
     // Only server-committed grants reconstructed from the durable purchase
     // ledger can produce skill effects; legacy local purchases are not used.
-    final report = saved == null ? null : _settleAwayInto();
+    final report = saved == null || reset ? null : _settleAwayInto();
     error = null;
-    if (!await command(() {})) throw StateError('신규 진행 저장 실패');
+    if (reset) notice = economyResetNotice;
+    if (!await command(() {}, keepNotice: true)) throw StateError('신규 진행 저장 실패');
     awayReport = report;
     _clock.start(); _timer = Timer.periodic(const Duration(milliseconds: 100), (_) => _tick());
   }
-  Future<bool> command(void Function() mutate, {bool production = false}) async {
+  /// Runs [mutate] and saves. A command that comes in while the periodic
+  /// checkpoint save runs waits for it instead of being dropped (26번 4-1 F1).
+  /// The notice is cleared before the active time is settled, so a notice
+  /// set by that settlement survives; [keepNotice] (checkpoint, lifecycle
+  /// and recovery saves) leaves it alone. (A guest's timeout words are
+  /// [guestWords], which no command clears.)
+  Future<bool> command(void Function() mutate, {bool production = false, bool keepNotice = false}) async {
+    while (busy && _savingCheckpoint && !disposed && _commandIdle != null) {
+      await _commandIdle!.future;
+    }
     if (busy || disposed || error != null) return false;
+    if (!keepNotice) notice = null;
     _flushActive();
     busy = true; _commandIdle = Completer<void>();
     final before = state.toJson();
+    final progressBefore = _usageProgress;
+    final levelBefore = state.level;
+    final newsBefore = collectionNews.length;
+    final pantryNewsBefore = pantryNews.length;
+    var saved = false;
+    (int, int)? archiveMark;
     try {
-      try { mutate(); } on FormatException catch (e) {
-        state = WorkshopState.fromJson(before, config); notice = e.message; return false;
+      // 4차 병합: g6 collection rewards settle first, so their buns count
+      // toward g1's automatic promotion in the same command.
+      try {
+        _expirePantry(); // 재료 타이쿤 E: 24시간 지난 통을 먼저 버림
+        mutate(); _observeDaily(); _settleCollection(); _promote();
+        _rescuePantry(); // 재료 타이쿤 E: 빈털터리 방지 꾸러미
+        archiveMark = _archiveSettledSales(); // 30번 2-A
+      } on FormatException catch (e) {
+        state = WorkshopState.fromJson(before, config); notice = e.message;
+        collectionNews.length = newsBefore; pantryNews.length = pantryNewsBefore; return false;
       }
-      notice = null;
       state.sequence++;
       final next = state.toJson();
       WorkshopState.fromJson(next, config); // Never persist an inconsistent aggregate.
@@ -439,12 +1045,20 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         await (repository as WorkshopProductionJournal).stageProduction(next, before['sequence'] as int);
       }
       await repository.save(next, before['sequence'] as int);
-      return true;
+      _lastSaveMono = _mono;
+      if (archiveMark case (final day, final receipts)) { _archiveCheckedDay = day; _archiveCheckedReceipts = receipts; }
+      if (state.level > levelBefore) promotedTo = state.level;
+      return saved = true;
     } catch (e) {
       state = WorkshopState.fromJson(before, config);
+      collectionNews.length = newsBefore; pantryNews.length = pantryNewsBefore;
       error = '저장 또는 명령 확인이 필요해요: $e';
       return false;
-    } finally { busy = false; _commandIdle?.complete(); _commandIdle = null; if (!disposed) notifyListeners(); }
+    } finally {
+      busy = false; _commandIdle?.complete(); _commandIdle = null; if (!disposed) notifyListeners();
+      // Only after the save: never part of the command or its transaction.
+      if (saved) usage.observeProgress(progressBefore, _usageProgress);
+    }
   }
   Future<void> reloadAfterError() async {
     if (busy || disposed) return;
@@ -463,14 +1077,14 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       _pendingHarvests.removeWhere((id, _) => !state.grid.cookingSourceIds.contains(id));
       final settlement = _settleAway();
       state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
-      error = null; _lastMono = _clock.elapsedMilliseconds;
+      error = null; _lastMono = _mono;
     } catch (e) {
       error = '저장 복구 확인이 필요해요: $e';
       rethrow;
     } finally {
       busy = false; _commandIdle?.complete(); _commandIdle = null;
     }
-    await command(() {});
+    await command(() {}, keepNotice: true);
   }
   void _advanceMemory(int ms) {
     if (ms <= 0) return;
@@ -480,7 +1094,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final advanced=state.customers.map((c)=>c.advanceActive(ms)).toList();
       for(final order in advanced.where((c)=>c.remainingMs==0)) {
         final speech=selectCustomerSpeech(customerCatalog,'timeout',_dialogueFacts(order));
-        if(speech!=null) notice='${customerName(order.customerId)}: ${speech['text']}';
+        // The words show by the leaving guest (IA5), not in the counter.
+        guestDeparture=(customerId:order.customerId,happy:false,atMs:_mono);
+        if(speech!=null) _say(order,speech['text']!);
       }
       state.customers=advanced.where((c)=>c.remainingMs>0).toList();
       if (state.session == null && gridVisible) state.grid = state.grid.advanceActive(ms);
@@ -489,34 +1105,85 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     _checkpoint += ms;
   }
   void _flushActive() {
-    final at = _clock.elapsedMilliseconds;
+    final at = _mono;
     if (foreground && !busy && error == null) {
-      final settlement = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:storyPaused ? 0 : at-_lastMono);
+      final elapsed = storyPaused ? 0 : at - _lastMono;
+      final settlement = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:elapsed,
+          permilleMs:_runAutoPantry(elapsed));
       state.business = settlement.state; state.buns += settlement.buns; state.lifetime += settlement.buns;
       state.missions=state.missions.observe(now(),production:settlement.buns,autoPeak:autoRate);
       _advanceMemory(at - _lastMono);
+      _syncArrivalsSafely();
     }
     _lastMono = at;
+  }
+  /// Outside a command a failed arrival must not leave half a guest behind.
+  void _syncArrivalsSafely() {
+    if (!state.business.open || _adPaused || storyPaused) return;
+    final rules = arrivalRules, until = state.business.settledUtc.millisecondsSinceEpoch;
+    bool idle(ArrivalClock clock, ArrivalKind kind) => clock.nextAt == null && _waiting(kind) < rules.slots(kind);
+    final due = rules.next(regular: state.regularClock, named: state.namedClock, open: true,
+            acceptedDay: state.business.acceptedDay, until: until) != null ||
+        (!state.tutorialActive && (idle(state.regularClock, ArrivalKind.regular) || idle(state.namedClock, ArrivalKind.named)));
+    if (!due) return;
+    final before = state.toJson();
+    try { _syncArrivals(); }
+    on FormatException catch (e) { state = WorkshopState.fromJson(before, config); notice = e.message; }
   }
   void _tick() {
     if (busy) return;
     _flushActive();
     if (!foreground || error != null || disposed) return;
-    final row = config.rows('level_progression')[state.level - 1];
-    if (!_adPaused && !storyPaused && state.business.permitsProducts(now()) &&
-        state.arrivalMs >= DevelopmentBalance.integer(config.section('ordinary_sale'), 'customer_arrival_interval_ms') &&
-        state.customers.length < DevelopmentBalance.integer(row, 'max_queue')) {
-      unawaited(welcomeCustomer());
+    // During the first-run guide a guest comes when needed (the old way):
+    // 도윤 right away, then one more `customer_arrival_interval_ms` after the
+    // line empties. Afterwards the real-time clocks bring everyone.
+    if (state.tutorialActive && !_adPaused && !storyPaused && state.business.permitsProducts(now()) &&
+        state.customers.isEmpty && (state.relationships.met.isEmpty ||
+        state.arrivalMs >= DevelopmentBalance.integer(config.section('ordinary_sale'), 'customer_arrival_interval_ms'))) {
+      unawaited(welcomeCustomer(named: state.relationships.met.isEmpty));
     }
     if (_checkpoint >= DevelopmentBalance.integer(config.section('manual_cooking'), 'checkpoint_ms')) {
-      _checkpoint = 0; unawaited(_saveCheckpoint());
+      _checkpoint = 0;
+      if (_checkpointDue || _mono - _lastSaveMono >= safetySaveMs) unawaited(_saveCheckpoint());
     }
     if (!disposed) notifyListeners();
+  }
+  /// Something the per-command hooks would change now ([command]: [_promote],
+  /// [_observeDaily], [_settleCollection], [_expirePantry], [_rescuePantry]).
+  bool get _checkpointDue => canLevelUp || _dailyDue || _collectionDue || _pantryDue;
+  /// 30번 2-A·2-B: moves settled sales into the archive totals and drops
+  /// spent production results. Runs only when the business day or the number of server
+  /// receipts changed since the last saved check; returns that check's marks.
+  (int, int)? _archiveSettledSales() {
+    final day = state.business.businessIndex;
+    if (day == _archiveCheckedDay && state.rewardReceipts.length == _archiveCheckedReceipts) return null;
+    final journal = state.relationships.toJson(), actions = journal['actions'] as Map, visits = journal['visits'] as Map;
+    // 30번 2-B: a named neighbor's sale goes only when its visit keeps the
+    // order as placed (older visits have no context to read it back from).
+    bool keep(String id, Map<String, dynamic> evidence) {
+      if (!customerCatalog.contains((evidence['order'] as Map)['customerId'] as String)) return false;
+      final action = actions['sale:$id'], visit = action is Map ? visits[action['visit']] : null;
+      final context = visit is Map ? visit['context'] : null, lines = context is Map ? context['lines'] : null;
+      return lines == null || jsonEncode(lines) != jsonEncode((evidence['order'] as Map)['lines']);
+    }
+    final pick = pickSettledSales(sales: state.sales, rewardReceipts: state.rewardReceipts,
+        liveBatches: state.inventory.batches.keys.toSet(), businessIndex: day, named: customerCatalog.contains, keep: keep);
+    for (final id in pick.ids) {
+      state.sales.remove(id);
+      state.pendingGold.remove('sale:$id');
+      state.rewardReceipts.remove('sale:$id');
+    }
+    state.archivedSales += pick.ids.length;
+    state.archivedSalesBuns += pick.buns;
+    state.archivedNamedSales.addAll(pick.namedIds);
+    state.inventory = keepNeededResults(state.inventory, salesEvidence: state.sales.values,
+        waiting: state.customers, sessionId: state.session?.id);
+    return (day, state.rewardReceipts.length);
   }
   Future<void> _saveCheckpoint() async {
     if (busy || disposed || error != null) return;
     _savingCheckpoint = true;
-    try { await command(() {}); }
+    try { await command(() {}, keepNotice: true); }
     finally { _savingCheckpoint = false; if (!disposed) notifyListeners(); }
   }
   Future<void> setForeground(bool value) async {
@@ -525,76 +1192,185 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (!value && !busy) _flushActive();
     // Remain paused while waiting for an in-flight durable command. Resume
     // MUST settle the away interval before foreground command flushing.
-    foreground = false; _lastMono = _clock.elapsedMilliseconds;
+    foreground = false; _lastMono = _mono;
     await _commandIdle?.future;
     if (disposed || generation != _lifecycleGeneration) return;
     if (value) {
       WorkshopAwayReport? report;
       if (await command(() { report = _settleAwayInto(); }) && report != null) awayReport = report;
       if (disposed || generation != _lifecycleGeneration) return;
-      foreground = true; _lastMono = _clock.elapsedMilliseconds;
+      foreground = true; _lastMono = _mono;
       notifyListeners();
-    } else { await command(() {}); }
+    } else { await command(() {}, keepNotice: true); }
   }
   Future<bool> openBusiness() => command(() {
     if(storyPaused) throw const FormatException('대화를 먼저 마쳐 주세요.');
+    // DEC-035: a special bungeoppang in the mold must be finished first.
+    if(state.session != null) throw const FormatException('스페셜 붕어빵을 다 만든 뒤 영업을 시작해요.');
     state.business = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
-    state.business = state.business.beginOrContinue(state.business.settledUtc);
-    state.inventory = state.inventory.expire(config, state.business.businessIndex).acceptPrepared(state.business.businessIndex);
-    state.missions=state.missions.observe(now(),businessStarted:true,autoPeak:autoRate);
+    _startBusinessDay();
+    _syncArrivals(); // The clocks count from opening.
   });
   Future<bool> closeBusiness() => command(() {
     if(storyPaused) throw const FormatException('대화를 먼저 마쳐 주세요.');
     final settled = state.business.settleActive(now(), bunsPerSecond:autoRate,elapsedMs:0).state;
     state.business = settled.close(settled.settledUtc);
-    state.customers.clear(); state.arrivalMs = 0;
-    if (state.session?.finished != true) { state.session = null; state.phaseMs = 0; }
+    state.customers.clear(); state.arrivalMs = 0; guestWords.clear();
+    _syncArrivals(); // Closed: both clocks stop.
+    if (state.session?.finished != true) { _refundSession(); state.session = null; state.phaseMs = 0; }
   });
-  void tap() {
-    if (busy || !foreground || disposed || error != null) return;
+  /// One tap: 붕어빵력 + [tapRate] and the tap counted (4차 병합 3: no 특제
+  /// bonus on taps — only customer sales pay it). 재료 타이쿤 B: every
+  /// `taps_per_portion` taps use one portion; with the ingredients out the
+  /// tap counts nothing and says '재료를 준비하세요' once. Returns the
+  /// 붕어빵력 earned, or null.
+  BigInt? tap() {
+    if (inputBusy || !foreground || disposed || error != null || state.session != null) return null;
     _flushActive();
-    if (gameplayPaused) return;
-    state.buns += tapRate; state.lifetime += tapRate; state.taps++;
-    state.missions=state.missions.observe(now(),taps:1,production:tapRate,autoPeak:autoRate);
+    if (gameplayPaused) return null;
+    final choice = _productionChoice();
+    final use = state.pantry.tap(pantryConfig, choice?.$1 ?? state.selectedFlavor, _nowMs, premium: choice?.$2 ?? false);
+    if (use == null) {
+      _ingredientsOut();
+      notifyListeners();
+      return null;
+    }
+    _outNoticed = false;
+    final gain = tapRate;
+    state.buns += gain; state.lifetime += gain; state.taps++;
+    state.missions=state.missions.observe(now(),taps:1,production:gain,autoPeak:autoRate);
     notifyListeners();
+    return gain;
+  }
+  /// The big bungeoppang clicker while open (DEC-036): the [tap] path, only
+  /// in business with no special bungeoppang in the mold, and at most
+  /// `server_validation.max_taps_per_second` counted taps in any second.
+  /// Returns the buns earned, or null when the tap only shows its effect.
+  BigInt? clickerTap() {
+    if (inputBusy || !foreground || disposed || error != null || gameplayPaused) return null;
+    if (state.session != null || !state.business.permitsProducts(now())) return null;
+    final at = _mono;
+    _clickerTaps.removeWhere((t) => at - t >= 1000);
+    if (_clickerTaps.length >= DevelopmentBalance.integer(config.section('server_validation'), 'max_taps_per_second')) return null;
+    final gain = tap();
+    if (gain == null) return null;
+    _clickerTaps.add(at);
+    return gain;
   }
   int difficulty(String flavor) => DevelopmentBalance.integer(config.section('active_recipes')[flavor] as Map<String, dynamic>, 'difficulty');
   String flavorLabel(String flavor) => (config.section('active_recipes')[flavor] as Map)['label'] as String;
-  Future<bool> selectFlavor(String flavor) => command(() {
-    if (state.session != null || !state.recipes.contains(flavor)) throw const FormatException('레시피 선택 불가');
+  /// Chooses the flavor in the picker; [premium] is '특제 <맛>' (재료 타이쿤 B),
+  /// only while that 특제 filling is in stock ([premiumFlavors]). 4차 병합 3
+  /// 사용자 결정: also in business, even with a bake in the mold (which keeps
+  /// its flavor and the portion it took); production uses the new choice
+  /// from then on.
+  Future<bool> selectFlavor(String flavor, {bool premium = false}) => command(() {
+    if ((state.session != null && !state.business.open) || !state.recipes.contains(flavor)) {
+      throw const FormatException('레시피 선택 불가');
+    }
+    if (premium && !premiumFlavors.contains(flavor)) {
+      final label = pantryConfig.kind(flavor).premiumLabel;
+      throw FormatException('$label${_subjectParticle(label)} 없어요. $pantryEmptyText');
+    }
     state.selectedFlavor = flavor;
+    state.selectedPremium = premium;
   });
-  Future<bool> claimRecipeFromMission(String flavor) => command(() {
-    final catalog = config.section('active_recipes');
-    final row = catalog[flavor];
-    if (row is! Map<String, dynamic> || flavor == 'redbean' || state.recipes.contains(flavor)) throw const FormatException('이미 보유했거나 없는 레시피예요.');
+  /// The recipe mission rule (unlock level, sales) of [flavor], or null for
+  /// 팥 and unknown flavors.
+  Map<String, dynamic>? recipeMissionRule(String flavor) {
+    final row = config.section('active_recipes')[flavor];
+    if (row is! Map<String, dynamic> || flavor == 'redbean') return null;
     final tier = DevelopmentBalance.integer(row, 'acquisition_tier');
-    final rule = config.rows('additional_recipe_acquisition_tiers').firstWhere((r) => r['tier'] == tier);
-    if (state.level < DevelopmentBalance.integer(rule, 'unlock_level') || state.completedSales < DevelopmentBalance.integer(rule, 'mission_sales')) throw const FormatException('레시피 미션 조건을 확인해 주세요.');
+    return config.rows('additional_recipe_acquisition_tiers').where((r) => r['tier'] == tier).firstOrNull;
+  }
+  /// Whether '레시피 받기' of [flavor] can be pressed now.
+  bool canClaimRecipe(String flavor) {
+    final rule = recipeMissionRule(flavor);
+    return rule != null && !state.recipes.contains(flavor) &&
+        state.level >= DevelopmentBalance.integer(rule, 'unlock_level') &&
+        state.completedSales >= DevelopmentBalance.integer(rule, 'mission_sales');
+  }
+  /// How many '레시피 받기' wait in the 레벨 미션 window (4차 피드백 IA1:
+  /// the only thing there to press now that 승급 is automatic).
+  int get claimableRecipeCount =>
+      config.section('active_recipes').keys.where(canClaimRecipe).length;
+  Future<bool> claimRecipeFromMission(String flavor) => command(() {
+    if (recipeMissionRule(flavor) == null || state.recipes.contains(flavor)) throw const FormatException('이미 보유했거나 없는 레시피예요.');
+    if (!canClaimRecipe(flavor)) throw const FormatException('레시피 미션 조건을 확인해 주세요.');
     state.recipes.add(flavor); state.recipeMissions.add(flavor);
     state.flavorMasteries[flavor] = FlavorMasteryProgress(flavor: flavor, difficulty: difficulty(flavor));
+    // 재료 타이쿤 E: the new filling's gift (once per flavor).
+    if (state.pantry.grantRecipeGift(pantryConfig, flavor, now().millisecondsSinceEpoch)) {
+      pantryNews.add(recipeGiftNotice(pantryConfig, flavor));
+    }
   });
   void _startCooking(String flavor, {required bool practice}) {
     if (gameplayPaused || state.session != null || !state.recipes.contains(flavor) ||
         (state.business.open && state.business.needsContinuation(now()))) throw const FormatException('이전 결과/영업일을 먼저 확인해 주세요.');
     final count = DevelopmentBalance.integer(config.section('manual_cooking'), 'filling_inputs');
-    state.selectedFlavor = flavor;
+    // 재료 타이쿤 B: the mold takes one portion now, given back if canceled
+    // before the result. 4차 병합 3: 특제 first when the player chose
+    // '특제 <this flavor>' (its product's sale pays the bonus), else the
+    // plain filling only.
+    final premium = state.selectedPremium && flavor == state.selectedFlavor && premiumFlavors.contains(flavor);
+    final use = state.pantry.takePortion(pantryConfig, flavor, _nowMs, premium: premium);
+    if (use == null) throw FormatException(missingFillingText(pantryConfig, flavor, _nowMs, state.pantry));
+    state.sessionPortion = use;
+    // Before opening the bake's flavor is the chosen one; in business an
+    // order's bake leaves the player's choice for production alone.
+    if (!state.business.open) {
+      if (flavor != state.selectedFlavor) state.selectedPremium = false;
+      state.selectedFlavor = flavor;
+    }
     state.session = CookingSession.start(id: _id(), flavor: flavor, practice: practice,
       fillingSequence: List.generate(count, (i) => i.isEven ? CookingDirection.left : CookingDirection.right));
     state.phaseMs = 0;
   }
-  Future<bool> startPractice() => command(() => _startCooking(state.selectedFlavor, practice: true));
+  /// Practice only before opening (DEC-035); in business the mold makes orders.
+  Future<bool> startPractice() => command(() {
+    if (state.business.open) throw const FormatException('연습 제작은 영업 준비 중에만 할 수 있어요.');
+    _startCooking(state.selectedFlavor, practice: true);
+  });
   Future<bool> startOrderProduction(String orderId, String flavor) => command(() {
     if (!state.business.permitsProducts(now()) || !state.customers.any((c) => c.id == orderId &&
         c.remainingMs > 0 && c.lines.any((l) => l.flavor == flavor))) throw const FormatException('진행 중인 손님 주문을 확인해 주세요.');
     _startCooking(flavor, practice: false);
+    _orderProductionFor = (state.session!.id, orderId);
   });
+
+  /// The order an order production was started for (26번 4단계), memory
+  /// only: not saved, so after a restart the result has no reaction.
+  (String, String)? _orderProductionFor;
+
+  /// The order whose customer gives [resultReaction] (the guest layer puts
+  /// the words in a bubble over them), or null.
+  String? get resultReactionOrderId => _orderProductionFor?.$2;
+
+  /// The order customer's words about the finished bake's [grade] while the
+  /// result shows: '도윤: 와, 이건 …'. Null for practice, after a restart,
+  /// or when the customer has already left.
+  String? resultReaction(CookingGrade grade) {
+    final session = state.session, link = _orderProductionFor;
+    if (session == null || session.practice || session.phase != CookingPhase.result ||
+        link == null || link.$1 != session.id) {
+      return null;
+    }
+    final found = state.customers.where((o) => o.id == link.$2);
+    if (found.isEmpty) return null;
+    final order = found.single;
+    final speech = selectCustomerSpeech(customerCatalog, cookingGradeEvent(grade), _dialogueFacts(order));
+    final name = customerShortName(order.customerId);
+    return speech == null ? null : '$name: ${speech['text']}';
+  }
   void _recordCookingProduct(CookingSession session, {required bool keep}) {
     final result = evaluateCookingResult(config, session, difficulty: difficulty(session.flavor));
     final active = state.business.permitsProducts(now());
+    // 4차 병합 3: the portion's 특제 bonus goes with the product to the sale.
+    final use = state.sessionPortion;
     final batch = ProductBatch(id: session.id, flavor: session.flavor, variant: result.variant,
       quantity: DevelopmentBalance.integer(config.section('manual_cooking'), 'products_per_completed_result'),
-      madeOnBusinessIndex: active ? state.business.businessIndex : 0);
+      madeOnBusinessIndex: active ? state.business.businessIndex : 0,
+      bonusPermille: use == null || use.flavor != session.flavor ? 1000 : state.pantry.bonusPermille(pantryConfig, use));
     state.inventory = active ? state.inventory.recordResult(batch, keep: keep) : state.inventory.recordPreparedResult(batch, keep: keep);
   }
   Future<bool> cookingCommand(CookingSession next) async {
@@ -616,15 +1392,17 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       _pendingCookingResult = next;
     }
     state.session = next; state.phaseMs = 0;
+    if (next.phase == CookingPhase.canceled) _refundSession();
+    // (A result keeps `sessionPortion` until it is stored: its 특제 bonus
+    // goes with the product, 4차 병합 3.)
     if (next.phase == CookingPhase.result) {
-      state.mastery = state.mastery.record(evaluateCookingResult(config, next, difficulty: difficulty(next.flavor)));
+      // The bake's own flavor: in business the chosen one may differ (4차 병합 3).
+      state.mastery = state.flavorMasteries[next.flavor]!.record(
+          evaluateCookingResult(config, next, difficulty: difficulty(next.flavor)));
       if (!next.practice) _recordCookingProduct(next, keep: true);
-      if (!state.mastered && state.mastery.complete(config)) {
-        final rule = config.mastery(difficulty(next.flavor));
-        state.masteryAward = {'revision': config.revision, 'resultId': next.id,
-          'practiceRequired': DevelopmentBalance.integer(rule, 'practice_required'),
-          'techniqueRequired': DevelopmentBalance.integer(rule, 'technique_passes_required')};
-      }
+      // 4차 피드백 g6 (DEC-TBD-i4g6-2): the six-cell griddle opens by the
+      // 도감 ([WorkshopState.griddleFlavors]), no longer by a mastery award.
+      // Awards of older saves stay as they were.
     }
     if (next.phase == CookingPhase.canceled) state.session = null;
   }, production: next.phase == CookingPhase.result).then((saved) {
@@ -639,24 +1417,65 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (session == null || session.phase != CookingPhase.result) throw const FormatException('확정할 제작 결과 없음');
     if (session.practice) { _recordCookingProduct(session, keep: keep); }
     else if (!state.inventory.dispositions.containsKey(session.id)) { throw const FormatException('주문 제작 저장을 확인해 주세요.'); }
-    state.session = null;
+    // The order customer's words about the bake stay by them after the
+    // result closes, until they leave or say the next line (IA5).
+    final link = session.practice ? null : _orderProductionFor;
+    if (link case (final id, final orderId) when id == session.id) {
+      for (final order in state.customers.where((o) => o.id == orderId)) {
+        final speech = selectCustomerSpeech(customerCatalog,
+            cookingGradeEvent(cookingGrade(config, session, difficulty: difficulty(session.flavor))), _dialogueFacts(order));
+        if (speech != null) _say(order, speech['text']!);
+      }
+    }
+    state.session = null; state.sessionPortion = null;
     if (state.tutorial == 'cook' && (keep || !session.practice)) state.tutorial = 'sell';
   }, production: true);
+  /// The first feature introduction card still to show (26번 2단계).
+  WorkshopFeature? get pendingIntro => pendingFeatureIntro(state, config);
+  bool featureIsOpen(WorkshopFeature feature) => featureOpen(state, config, feature);
+  String? featureLock(WorkshopFeature feature) => featureLockReason(state, config, feature);
+  /// '알겠어요' on an introduction card: never shown again.
+  /// Waits for a command in flight, so the card is not shown again.
+  Future<bool> markIntroSeen(WorkshopFeature feature) async {
+    if (!workshopIntroIds.contains(feature.name)) return false;
+    while (busy && !disposed) {
+      await (_commandIdle?.future ?? Future<void>.delayed(const Duration(milliseconds: 20)));
+    }
+    if (state.featureIntros.contains(feature.name)) return true;
+    return command(() => state.featureIntros.add(feature.name));
+  }
   Future<bool> skipTutorial() => command(() {
     if (!state.tutorialActive) throw const FormatException('진행 중인 안내가 없어요.');
     state.tutorial = 'skipped';
+    state.guideJustEnded = true;
+    _syncArrivals(); // Open already: the real-time clocks start now.
   });
   Future<bool> startCell(int index) => command(() {
-    if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
-    state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in state.recipes) if (state.masteryAwards.containsKey(f)) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
+    if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업 중, 스페셜 붕어빵을 만들지 않을 때만 쓸 수 있어요.');
+    // 재료 타이쿤 B: only flavors with filling left, one portion per cell.
+    // 4차 병합 3: a cell of the chosen '특제 <맛>' uses 특제 first and its
+    // product's sale pays the bonus; other flavors use their plain filling.
+    final pantry = state.pantry, c = pantryConfig, at = _nowMs, mastered = state.griddleFlavors(config);
+    final premiumFlavor = state.selectedPremium && premiumFlavors.contains(state.selectedFlavor) ? state.selectedFlavor : null;
+    final ready = pantry.griddleFlavors(c, mastered, at, premiumFlavor: premiumFlavor);
+    if (mastered.isNotEmpty && ready.isEmpty) {
+      throw FormatException(mastered.length == 1 || pantry.usable(c, c.batterKind, at) < 1
+          ? missingFillingText(c, mastered.first, at, pantry) : '속이 없어요. $pantryEmptyText');
+    }
+    state.grid = state.grid.start(index, config, ownedAndMastered: {for (final f in ready) f: difficulty(f)}, choose: (values) => values[random.nextInt(values.length)]);
+    final flavor = state.grid.cells[index].flavor!;
+    final use = pantry.takePortion(c, flavor, at, premium: flavor == premiumFlavor);
+    if (use == null) throw const FormatException(pantryEmptyText);
+    final bonus = pantry.bonusPermille(c, use);
+    if (bonus != 1000) state.grid = state.grid.withBonus(index, bonus);
   });
   Future<bool> harvestCell(int index, {int? expectedCycle}) async {
     String? frozenId;
     final saved = await command(() {
-    if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업/큰 틀 상태 확인');
-    if (index < 0 || index >= state.grid.cells.length) throw const FormatException('6구 칸 오류');
+    if (gameplayPaused || !state.business.permitsProducts(now()) || state.session != null) throw const FormatException('영업 중, 스페셜 붕어빵을 만들지 않을 때만 쓸 수 있어요.');
+    if (index < 0 || index >= state.grid.cells.length) throw const FormatException('숙련된 붕어빵 틀 칸 오류');
     final cell = state.grid.cells[index];
-    if (expectedCycle != null && cell.cycle != expectedCycle) throw const FormatException('지난 6구 수확 입력');
+    if (expectedCycle != null && cell.cycle != expectedCycle) throw const FormatException('지난 숙련된 붕어빵 수확 입력');
     final id = 'griddle:${state.grid.runId}:$index:${cell.cycle}';
     frozenId = id;
     final result = _pendingHarvests.putIfAbsent(id, () =>
@@ -667,10 +1486,24 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if (saved) _pendingHarvests.remove(frozenId);
     return saved;
   }
-  Future<bool> welcomeCustomer() => command(() {
+  /// Brings a guest now: the first-run guide's guests and tests. A named
+  /// neighbor by the selection rule unless [named] is false; [visitor] names
+  /// one for tests. After the guide the real-time clocks call
+  /// [_spawnCustomer] instead and there is no button for this (S5-1-Q2).
+  Future<bool> welcomeCustomer({bool named = true, String? visitor}) => command(() {
     if (gameplayPaused || !state.business.permitsProducts(now())) throw const FormatException('영업을 시작해 주세요.');
+    final rules = arrivalRules;
+    if (state.customers.length >= rules.regularSlots + rules.namedSlots) throw const FormatException('손님 대기열이 가득 찼어요.');
+    if (visitor != null && (!customerCatalog.contains(visitor) || state.customers.any((c) => c.customerId == visitor))) {
+      throw const FormatException('손님 지정 오류');
+    }
+    _spawnCustomer(visitor ?? (named ? state.relationships.selectNamedVisitor(state.business.businessIndex,
+        random.nextInt(1 << 30), config, customerCatalog,
+        alreadyQueued: state.customers.map((c) => c.customerId).toSet(), lastVisitor: state.lastNamedVisitor) : null));
+  });
+  /// Adds one waiting guest: the [named] neighbor, or an anonymous guest when null.
+  void _spawnCustomer(String? named) {
     final rule = config.rows('level_progression')[state.level - 1];
-    if (state.customers.length >= DevelopmentBalance.integer(rule, 'max_queue')) throw const FormatException('손님 대기열이 가득 찼어요.');
     final sale = config.section('ordinary_sale');
     final special = state.level >= DevelopmentBalance.integer(sale, 'special_order_unlock_level') &&
         random.nextInt(10000) < DevelopmentBalance.integer(sale, 'special_order_basis_points');
@@ -683,8 +1516,6 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final total = kinds + random.nextInt(DevelopmentBalance.integer(rule, 'order_quantity_limit') - kinds + 1);
     final quantities = List<int>.filled(kinds, 1);
     for (var i = kinds; i < total; i++) { quantities[random.nextInt(kinds)]++; }
-    final named = state.relationships.selectNamedVisitor(state.business.businessIndex,
-      random.nextInt(10000), random.nextInt(1 << 30), config, customerCatalog,alreadyQueued:state.customers.map((c) => c.customerId).toSet());
     final customerId = named ?? 'anonymous_${_id()}';
     final pending = state.relationships.toJson()['followups'] as Map;
     final pendingChoice = named == null ? null : pending['choice_${named.substring(4)}_01'] as String?;
@@ -701,6 +1532,9 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
           if (previous.customerId == named) {
             served.addAll(previous.lines.map((line) => line.flavor));
           }
+        }
+        for (final sale in _archivedNamedSales(named)) {
+          served.addAll(sale.lines.map((line) => line['flavor'] as String));
         }
       }
       final flavor = preferredCustomerFlavor(named, config, owned: state.recipes,
@@ -719,6 +1553,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         final e=validateStoredCustomerSale(sale.key,sale.value),o=e['order'] as Map,ls=o['lines'] as List;
         if(o['customerId']==named && ls.length==1 && (ls.single as Map)['flavor']=='redbean' && (ls.single as Map)['quantity']==DevelopmentBalance.integer(config.section('customer_choice_conditions')['npc_yunha'] as Map<String,dynamic>,'baseline_quantity')) days.add(e['businessIndex'] as int);
       }
+      for(final sale in _archivedNamedSales(named)) {
+        final ls=sale.lines;
+        if(ls.length==1 && ls.single['flavor']=='redbean' && ls.single['quantity']==DevelopmentBalance.integer(config.section('customer_choice_conditions')['npc_yunha'] as Map<String,dynamic>,'baseline_quantity')) days.add(sale.day);
+      }
       final rules=config.section('customer_choice_conditions')[named] as Map<String,dynamic>;
       candidate=own+1>=DevelopmentBalance.integer(rules,'min_visits') && days.length>=DevelopmentBalance.integer(rules,'redbean_two_success_days');
       if(candidate) lines=[CustomerOrderLine(flavor:'redbean',quantity:DevelopmentBalance.integer(rules,'candidate_redbean_quantity'),variant:variant,special:special)];
@@ -731,6 +1569,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       remainingMs:DevelopmentBalance.integer(rule,'order_wait_ms'),lines:lines);
     state.customers.add(order);
     if (named != null) {
+      state.lastNamedVisitor = named;
       state.relationships = state.relationships.visit(order.id,named,state.business.businessIndex,customerCatalog,context:{
         'lines':lines.map((l)=>l.toJson()).toList(),'initialWaitMs':order.remainingMs,'working':named=='npc_eunchae' && (pendingChoice!=null || !state.relationships.stories.contains('story_eunchae_01') || random.nextInt(10000)>=DevelopmentBalance.integer(config.section('customer_relationships'),'holiday_visit_basis_points')),
         'cameraPresent':named=='npc_taeo' && (pendingChoice=='c' || newFlavorForTaeo || !state.relationships.stories.contains('story_taeo_01')),
@@ -745,9 +1584,10 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         if (line.variant != null) variants.add(line.variant!);
       }
       final followup=_matchingFollowup(order);
-      if(followup!=null) state.customerScene=followup;
+      // 이야기 하루 한 조각: a follow-up waits for a day with room.
+      if(followup!=null && _storyRoomToday) state.customerScene=followup;
     }
-  });
+  }
 
   /// How many products the sale button would hand over to [order] now.
   int saleReadyCount(CustomerOrder order) {
@@ -806,9 +1646,19 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       state.relationships = state.relationships.successfulSale(order.id,order.id,state.business.businessIndex,config);
     }
     state.completedSales++; state.customers.removeAt(index);
+    state.soldPieces += order.lines.fold(0, (n, line) => n + line.quantity);
+    guestDeparture = (customerId: order.customerId, happy: true, atMs: _mono);
     // The guide's first sale stays free of story, follow-up and choice scenes.
-    if (state.tutorialActive) { state.tutorial = 'done'; }
-    else if(customerCatalog.contains(order.customerId)) { _afterNamedSale(order); }
+    // It gets the big praise (26번 2단계, S2-Q4): the guest's words, the
+    // stars and a short sparkle, not saved.
+    if (state.tutorialActive) { state.tutorial = 'done'; state.guideJustEnded = true; salePraise = _lastSale(); }
+    else {
+      // The thanks show by the leaving guest (IA5); the guide's first sale
+      // has them in its big praise instead.
+      if (_lastSale()?.speech case final words?) _say(order, words);
+      if(customerCatalog.contains(order.customerId)) _afterNamedSale(order);
+    }
+    _syncArrivals(); // A freed place (or the guide's end) starts a stopped clock.
   });
   Map<String,dynamic>? _matchingFollowup(CustomerOrder order) {
     // Existing relationship scenes precede optional choice follow-ups, even
@@ -866,12 +1716,27 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     if(initial is! int || initial<=0 || (initial-order.remainingMs)*1000<initial*DevelopmentBalance.integer(config.section('customer_relationships'),'delay_threshold_permille')) return null;
     return selectCustomerSpeech(customerCatalog,'delayed',_dialogueFacts(order))?['text'];
   }
-  String? get lastSaleFeedback {
+  WorkshopSalePraise? _lastSale() {
     if(state.sales.isEmpty) return null;
     final sale=state.sales.entries.last,evidence=validateStoredCustomerSale(sale.key,sale.value);
     final order=CustomerOrder.fromJson(evidence['order'] as Map<String,dynamic>);
     final speech=selectCustomerSpeech(customerCatalog,'success',_dialogueFacts(order));
-    return '${customerName(order.customerId)} · 별 ${evidence['stars']} · ${speech?['text'] ?? '감사합니다. 잘 먹을게요.'}';
+    return WorkshopSalePraise(customerShortName(order.customerId),DevelopmentBalance.integer(evidence,'stars'),
+      speech?['text'] ?? '감사합니다. 잘 먹을게요.');
+  }
+  String? get lastSaleFeedback {
+    final sale=_lastSale();
+    // The guest's words are a bubble by them (IA5), not part of this line;
+    // stars are out of five everywhere (IC9).
+    return sale==null ? null : '판매 완료 · ${sale.name} · 별 ${sale.stars}/$ratingStarsMax';
+  }
+  /// The first-run guide's first sale, shown big for a moment over the
+  /// stall (26번 2단계). Never saved: a restart simply skips it.
+  WorkshopSalePraise? salePraise;
+  void dismissSalePraise() {
+    if (salePraise == null) return;
+    salePraise = null;
+    if (!disposed) notifyListeners();
   }
   String customerConversation(CustomerOrder order)=>_neighborSpeech(order)['text']!;
   String? customerWaitingAction(CustomerOrder order) {
@@ -908,6 +1773,19 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     state.relationships=state.relationships.observeVisit(saleId,'photoShown');
     _afterNamedSale(CustomerOrder.fromJson(evidence['order'] as Map<String,dynamic>));
   });
+  /// 30번 2-B: [npc]'s archived sales, read back from their relationship
+  /// records (the sale's business day and the visit's order lines).
+  Iterable<({int day, List<Map> lines})> _archivedNamedSales(String npc) sync* {
+    if (state.archivedNamedSales.isEmpty) return;
+    final journal=state.relationships.toJson(), visits=journal['visits'] as Map, actions=journal['actions'] as Map;
+    for (final id in state.archivedNamedSales) {
+      final action=actions['sale:$id'] as Map, visit=visits[action['visit']] as Map;
+      if (visit['npc']!=npc) continue;
+      yield (day: action['day'] as int, lines: ((visit['context'] as Map)['lines'] as List).cast<Map>());
+    }
+  }
+  @visibleForTesting
+  CustomerEventFacts choiceFactsForTest(String npc, CustomerOrder current) => _choiceFacts(npc, current);
   CustomerEventFacts _choiceFacts(String npc, CustomerOrder current) {
     final journal=state.relationships.toJson(), visits=journal['visits'] as Map;
     final own=visits.entries.where((e)=>(e.value as Map)['npc']==npc).toList();
@@ -918,10 +1796,16 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       final action=entry.value as Map, visit=visits[action['visit']] as Map;
       if(visit['npc']!=npc) continue;
       final raw=state.sales[entry.key.substring(5)];
-      if(raw==null) continue;
-      final evidence=validateStoredCustomerSale(entry.key.substring(5),raw),order=evidence['order'] as Map;
-      succeeded.add(evidence);final at=action['day'] as int;successDays.add(at);
-      final lines=(order['lines'] as List).cast<Map>();
+      final List<Map> lines;
+      if(raw!=null) {
+        final evidence=validateStoredCustomerSale(entry.key.substring(5),raw),order=evidence['order'] as Map;
+        succeeded.add(evidence);lines=(order['lines'] as List).cast<Map>();
+      } else if(state.archivedNamedSales.contains(entry.key.substring(5))) {
+        // 30번 2-B: an archived sale (a past day's) reads its order from the visit.
+        lines=((visit['context'] as Map)['lines'] as List).cast<Map>();
+        succeeded.add({'order':{'id':entry.key.substring(5),'lines':lines}});
+      } else { continue; }
+      final at=action['day'] as int;successDays.add(at);
       final quantity=lines.fold<int>(0,(sum,l)=>sum+(l['quantity'] as int));
       for(final line in lines) {received.add(line['flavor'] as String);}
       if(lines.length==1 && lines.single['flavor']=='redbean' && quantity==DevelopmentBalance.integer(config.section('customer_choice_conditions')['npc_yunha'] as Map<String,dynamic>,'baseline_quantity')) redbeanDays.add(at);
@@ -964,22 +1848,42 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     return !state.relationships.stories.contains(story) && eligibleCustomerStory(npc,storyFacts,config)
         ? story : null;
   }
+  /// 이야기 하루 한 조각 (26번 7단계): story scenes, follow-ups and choice
+  /// events opened on this business day, together.
+  int get storiesOpenedToday {
+    final journal = state.relationships.toJson(), day = state.business.businessIndex;
+    final scene = state.customerScene;
+    return (journal['storyDays'] as Map).values.where((d) => d == day).length +
+        (journal['followupDays'] as Map).values.where((d) => d == day).length +
+        (journal['lastChoiceDay'] == day ? 1 : 0) +
+        // A story or follow-up on screen counts once it shows.
+        (scene != null && (scene['kind'] == 'story' || scene['kind'] == 'followup') ? 1 : 0);
+  }
+  bool get _storyRoomToday =>
+      storiesOpenedToday < DevelopmentBalance.integer(config.section('daily_return'), 'story_daily_limit');
+  /// A story ready for [npc] waits for tomorrow: say so, gently.
+  void _storyTomorrow(String npc) {
+    final name = customerShortName(npc);
+    notice = '내일 $name${_subjectParticle(name)} 이야기를 이어 갈 것 같아요.';
+  }
   void _afterNamedSale(CustomerOrder order) {
-    final npc=order.customerId, facts=_choiceFacts(npc,order),journal=state.relationships.toJson();
+    final npc=order.customerId, facts=_choiceFacts(npc,order);
     final story = _readyCustomerStory(npc);
     if (story != null) {
+      if (!_storyRoomToday) { _storyTomorrow(npc); return; }
       state.customerScene={'kind':'story','id':story,'npc':npc};return;
     }
     final followup = _matchingFollowup(order);
     if (followup != null) {
+      if (!_storyRoomToday) { _storyTomorrow(npc); return; }
       state.customerScene = followup; return;
     }
     final event='choice_${npc.substring(4)}_01';
     final candidateMatches=npc!='npc_yunha' || (order.lines.length==1 && order.lines.single.flavor=='redbean' &&
       order.lines.single.quantity==DevelopmentBalance.integer(config.section('customer_choice_conditions')[npc] as Map<String,dynamic>,'candidate_redbean_quantity'));
     if(!eligibleCustomerChoice(facts,config,candidateOrderMatches:candidateMatches)) return;
-    state.relationships=state.relationships.rollChoice(state.business.businessIndex,[event],random.nextInt(10000),config,customerCatalog,tutorial:state.tutorialActive,anotherStoryToday:
-      (journal['storyDays'] as Map).values.contains(state.business.businessIndex) || (journal['followupDays'] as Map).values.contains(state.business.businessIndex));
+    state.relationships=state.relationships.rollChoice(state.business.businessIndex,[event],random.nextInt(10000),config,customerCatalog,tutorial:state.tutorialActive,
+      anotherStoryToday:!_storyRoomToday);
     if(state.relationships.active!=null) {
       final orderIds=['a','b','c']..shuffle(random);
       state.customerScene={'kind':'choice','id':event,'npc':npc,'order':orderIds};
@@ -1008,204 +1912,45 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     }
     state.customerScene=null;
   });
-  bool get canLevelUp {
-    if (state.level >= 50) return false;
-    final rule = config.rows('level_progression')[state.level];
-    return state.lifetime >= DevelopmentBalance.decimal(rule, 'season_total_buns') &&
-      state.taps - state.levelStartTaps >= DevelopmentBalance.integer(rule, 'additional_taps') &&
-      state.completedSales - state.levelStartSales >= DevelopmentBalance.integer(rule, 'additional_sales');
+  /// The server wallet's 황금붕어빵력 as last shown (the page keeps it up to
+  /// date from the account); only for the window and [levelGoldDue].
+  int goldBalance = 0;
+  /// The level the last saved command reached by itself, for the home's
+  /// short celebration (4차 피드백 IA1); null once shown.
+  int? promotedTo;
+  /// A cosmetic or a special ingredient is bought ('구매'), a skill or a
+  /// level's gold is a level-up ('레벨업').
+  static bool _buysGoods(String product) => product.startsWith('cosmetic:') || product.startsWith('ingredient:');
+  // ---- 4차 피드백 g6: 도감 칸 채우기 (lib/workshop_collection_rules.dart) ----
+  /// What the last command completed in the 도감, for a short centre notice
+  /// ('팥 · 부드러움 칸 완성!'). Memory only; the page takes it.
+  final List<String> collectionNews = [];
+  /// '재료를 준비하세요' was said for this outage (memory only).
+  bool _outNoticed = false;
+  /// Whether [step] of the shop's wheel is its biggest one, shown '최대': a
+  /// step of `buy_steps` no smaller than [limit] (`max_stock`, 99, so ×100
+  /// could never be bought whole).
+  static bool pantryMaxStep(int step, int limit) => step >= limit;
+  static String _topicOf(String word) {
+    final last = word.codeUnitAt(word.length - 1);
+    return last >= 0xac00 && last <= 0xd7a3 && (last - 0xac00) % 28 != 0 ? '은' : '는';
   }
-  Future<bool> levelUp() => command(() {
-    if (!canLevelUp) throw const FormatException('승급 조건을 확인해 주세요.');
-    final next = state.level + 1, rule = config.rows('level_progression')[state.level];
-    if (!state.claimedLevels.add(next)) throw const FormatException('중복 승급');
-    state.level = next; state.levelStartTaps = state.taps; state.levelStartSales = state.completedSales;
-    final buns = DevelopmentBalance.decimal(rule, 'buns_reward'); state.buns += buns; state.lifetime += buns;
-    final gold = DevelopmentBalance.integer(rule, 'gold_reward');
-    if (gold > 0) state.pendingGold['level:$next'] = jsonEncode({'level': next, 'gold': gold, 'revision': config.revision});
-  });
-  Future<bool> setBackgroundTime(String time)=>command(() {
-    if(!['scenetime','day','night_time','clock'].contains(time)) throw const FormatException('배경 시간 선택 오류');
-    state.sceneTime=time;
-  });
-  Future<bool> claimMission(String scope,String goal,{String? expectedPeriod})=>command(() {
-    state.missions=state.missions.observe(now(),autoPeak:autoRate);
-    if(expectedPeriod!=null && expectedPeriod!=(scope=='daily' ? state.missions.day:state.missions.week)) throw const FormatException('미션 기간이 바뀌었어요. 다시 확인해 주세요.');
-    state.missions=state.missions.claim(config,scope,goal);
-    final key=state.missions.claimKey(scope,goal);
-    state.pendingGold['mission:$key']=state.missions.claims[key]!;
-  });
-  bool ownsAvatar(String id) {
-    final entry=config.section('avatar_catalog')[id];
-    return entry is Map<String,dynamic> && (entry['free']==true || state.purchases.owned['cosmetic:$id']==1);
-  }
-  Future<bool> equipAvatar(String id) => command(() {
-    final entry=config.section('avatar_catalog')[id];
-    if (entry is! Map<String,dynamic> || !ownsAvatar(id)) throw const FormatException('보유한 아바타 아이템을 골라 주세요.');
-    state.avatarEquipment[entry['slot'] as String]=id;
-  });
-  Future<bool> _bindRewardAccount(WorkshopOnline gateway,String account) async => command(() {
-    if (gateway.authenticatedAccount!=account || account.isEmpty ||
-        (state.rewardAccount!=null && state.rewardAccount!=account) ||
-        (state.purchases.account!=null && state.purchases.account!=account)) throw const FormatException('원래 진행 계정으로 확인해 주세요.');
-    state.rewardAccount=account;
-  });
-  Future<bool> syncRewards() async {
-    final gateway=onlineGateway;
-    if (gateway==null || _rewardBusy || disposed || error!=null) return false;
-    _rewardBusy=true;
-    try {
-      final account=gateway.authenticatedAccount;
-      await gateway.requireActiveProgress(state.grid.runId);
-      if (!await _bindRewardAccount(gateway,account)) return false;
-      var count=0;
-      for (final key in state.pendingGold.keys.toList()..sort()) {
-        final old=state.rewardReceipts[key];
-        if (old!=null && (jsonDecode(old) as Map)['outcome']!='pending') continue;
-        if (++count>DevelopmentBalance.integer(config.section('pending_reward_sync'),'batch_size')) break;
-        final sale=key.startsWith('sale:'),claim=sale ? key.substring(5) : '${state.grid.runId}:$key';
-        final payload=jsonDecode(state.pendingGold[key]!) as Map<String,dynamic>;
-        final result=await gateway.reward(claim,sale ? 'sale':'mission',payload);
-        if (!await command(() {
-          if (gateway.authenticatedAccount!=account) throw const FormatException('계정이 변경됐어요.');
-          final checked=validateWorkshopRewardReceipt(result,account:account,progress:state.grid.runId,
-            claim:claim,kind:sale ? 'sale':'mission',payload:payload);
-          final oldRaw=state.rewardReceipts[key];
-          if (oldRaw!=null && (jsonDecode(oldRaw) as Map)['outcome']!='pending' && oldRaw!=jsonEncode(checked)) throw const FormatException('확정 보상 수신 충돌');
-          state.rewardReceipts[key]=jsonEncode(checked);
-        })) return false;
-      }
-      return true;
-    } catch (e) { notice='보상 확인 대기를 유지했어요: $e';return false;
-    } finally { _rewardBusy=false;if(!disposed) notifyListeners(); }
-  }
-  Future<bool> showRewardedAd(WorkshopAdDriver driver) async {
-    final gateway=onlineGateway;
-    if (gateway==null || !driver.ready || _adBusy || disposed || error!=null || gameplayPaused) return false;
-    _adBusy=true;
-    try {
-      final account=gateway.authenticatedAccount;
-      await gateway.requireActiveProgress(state.grid.runId);
-      if (!await _bindRewardAccount(gateway,account)) return false;
-      final id=_id();
-      // Persist the ID before reserving a server slot. A failed response is
-      // recovered by the same ID and never replayed through the SDK.
-      if (!await command(() => state.adAttempts[id]={'account':account,'attempt':id,'status':'unknown'})) return false;
-      final approval=validateWorkshopAd(await gateway.startAd(id),account,id);
-      if (gateway.authenticatedAccount!=account || approval['status']!='reserved' || approval['customData'] is! String) return false;
-      if (!await command(() => state.adAttempts[id]=approval)) return false;
-      setAdPaused(true);
-      try { await driver.show(customData:approval['customData'] as String); }
-      finally { setAdPaused(false); }
-      return await _queryAd(gateway,account,id);
-    } catch (e) { notice='광고 검증 대기를 유지했어요: $e';return false;
-    } finally { setAdPaused(false);_adBusy=false;if(!disposed) notifyListeners(); }
-  }
-  Future<bool> _queryAd(WorkshopOnline gateway,String account,String id) async {
-    final result=validateWorkshopAd(await gateway.queryAd(id),account,id);
-    if (gateway.authenticatedAccount!=account) return false;
-    return command(() {
-      final old=state.adAttempts[id]!;
-      if (old['paid']==true && (result['paid']!=true || old['receiptId']!=result['receiptId'] || old['providerProofKey']!=result['providerProofKey'])) throw const FormatException('광고 지급 결과 역행');
-      if ((old['status']=='verified' && result['status']!='verified') ||
-          (old['status']=='verifying' && result['status']=='reserved') ||
-          (old['status']=='rejectedFinal' && result['status']!='rejectedFinal')) throw const FormatException('광고 검증 상태 역행');
-      if (old['status']!='unknown' && result['status']!='unknown' &&
-          (old['day']!=result['day'] || old['revision']!=result['revision'] || old['gold']!=result['gold'])) throw const FormatException('광고 승인 근거 충돌');
-      if (result['status']!='unknown') state.adAttempts[id]=result;
-    });
-  }
-  Future<bool> recoverAds() async {
-    final gateway=onlineGateway;
-    if (gateway==null || _adBusy || disposed || error!=null) return false;
-    _adBusy=true;
-    try {
-      final account=gateway.authenticatedAccount;
-      await gateway.requireActiveProgress(state.grid.runId);
-      if (!await _bindRewardAccount(gateway,account)) return false;
-      for (final e in state.adAttempts.entries.toList()) {
-        if (e.value['paid']==true || e.value['status']=='rejectedFinal') continue;
-        if (!await _queryAd(gateway,account,e.key)) return false;
-      }
-      return true;
-    } catch(e) { notice='광고 복구 확인이 필요해요: $e';return false;
-    } finally { _adBusy=false;if(!disposed) notifyListeners(); }
-  }
-  /// Pause gameplay clocks for an approved ad without pausing economy time.
-  void setAdPaused(bool value) {
-    if (disposed || value == _adPaused) return;
-    _flushActive(); _adPaused = value; notifyListeners();
-  }
-  Future<bool> purchaseSkill(WorkshopPurchaseGateway gateway, String skill, {int quantity = 1}) async {
-    if (_purchaseBusy || error != null || disposed) return false;
-    _purchaseBusy = true;
-    try {
-      final account = gateway.authenticatedAccount;
-      if (state.rewardAccount != null && state.rewardAccount != account) throw const FormatException('원래 보상 계정으로 확인해 주세요.');
-      if (account.isEmpty) throw const FormatException('로그인 후 구매할 수 있어요.');
-      await gateway.requireActiveProgress(state.grid.runId);
-      if (disposed || gateway.authenticatedAccount != account) return false;
-      final quote = quoteWorkshopProduct(config, skill, owned: state.purchases.owned[skill] ?? 0, quantity: quantity);
-      final intent = PurchaseJournal.start(account, _id(), quote);
-      if (!await command(() => state.purchases = state.purchases.prepare(config, intent,
-          buns: state.buns, lifetime: state.lifetime,level:state.level))) return false;
-      final response = await gateway.reserve(intent);
-      if (!await _purchaseResponse(gateway, account, intent.transactionId, response)) return false;
-      return await _finishPurchase(gateway, account, intent.transactionId);
-    } catch (e) {
-      notice = '구매 확인이 남아 있어요. 새 거래 대신 같은 기록을 복구해 주세요: $e';
-      return false;
-    } finally { _purchaseBusy = false; if (!disposed) notifyListeners(); }
-  }
-  Future<bool> recoverPurchase(WorkshopPurchaseGateway gateway, String transaction, {bool cancel = false}) async {
-    if (_purchaseBusy || error != null || disposed) return false;
-    _purchaseBusy = true;
-    try {
-      final account = gateway.authenticatedAccount;
-      final saved = state.purchases.journal(transaction);
-      if (account != saved.accountId) throw const FormatException('원래 구매 계정으로 확인해 주세요.');
-      await gateway.requireActiveProgress(state.grid.runId);
-      if (disposed || gateway.authenticatedAccount != account) return false;
-      var response = await gateway.query(account, transaction);
-      if (response['status'] == 'unknown' && !cancel) response = await gateway.reserve(saved);
-      if (!await _purchaseResponse(gateway, account, transaction, response)) return false;
-      if (cancel && !state.purchases.journal(transaction).settled) {
-        response = await gateway.cancel(account, transaction);
-        if (!await _purchaseResponse(gateway, account, transaction, response)) return false;
-        if (state.purchases.journal(transaction).serverStatus == 'reserved') return false;
-      }
-      return await _finishPurchase(gateway, account, transaction);
-    } catch (e) { notice = '구매 복구 확인이 필요해요: $e'; return false;
-    } finally { _purchaseBusy = false; if (!disposed) notifyListeners(); }
-  }
-  Future<bool> _purchaseResponse(WorkshopPurchaseGateway gateway, String account, String transaction,
-      Map<String, dynamic> response) async {
-    if (disposed || gateway.authenticatedAccount != account) return false;
-    return command(() => state.purchases = state.purchases.response(transaction, response));
-  }
-  Future<bool> _finishPurchase(WorkshopPurchaseGateway gateway, String account, String transaction) async {
-    var journal = state.purchases.journal(transaction);
-    if (journal.serverStatus == 'reserved') {
-      if (!await command(() {
-        final result = state.purchases.debit(transaction, state.buns);
-        state.purchases = result.purchases; state.buns = result.buns;
-      })) return false;
-      journal = state.purchases.journal(transaction);
-      final response = await gateway.commit(journal);
-      if (!await _purchaseResponse(gateway, account, transaction, response)) return false;
-    }
-    journal = state.purchases.journal(transaction);
-    if (journal.serverStatus == 'unknown' || journal.serverStatus == 'reserved') return false;
-    return command(() {
-      final previous=state.purchases.journal(transaction);
-      final result = state.purchases.settle(transaction, state.buns);
-      state.purchases = result.purchases; state.buns = result.buns;
-      final current=state.purchases.journal(transaction);
-      if(!previous.applied && current.applied && !current.quote.skillId.startsWith('cosmetic:')) {
-        state.missions=state.missions.observe(now(),purchases:current.quote.quantity,autoPeak:autoRate);
-      }
-    });
-  }
+  // ---- 재료 타이쿤 C 끝 ----
+  // ---- 재료 타이쿤 E: 홈 표시·안내 (lib/pantry_home.dart) ----
+  /// Gift, rescue and thrown-away notices of the last command, for one short
+  /// centre notice each. Memory only; the page takes them.
+  final List<String> pantryNews = [];
+  /// For the command extensions in the part files (workshop_controller_*.dart),
+  /// which cannot call the protected notifyListeners.
+  void _notifyChanged() => notifyListeners();
   @override
   void dispose() { disposed = true; _timer?.cancel(); _clock.stop(); super.dispose(); }
+}
+
+/// 이/가 after [word]: by whether its last syllable has a final consonant.
+String _subjectParticle(String word) {
+  if (word.isEmpty) return '이';
+  final code = word.codeUnitAt(word.length - 1);
+  if (code < 0xAC00 || code > 0xD7A3) return '이';
+  return (code - 0xAC00) % 28 == 0 ? '가' : '이';
 }

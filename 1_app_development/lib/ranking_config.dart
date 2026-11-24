@@ -30,7 +30,7 @@ const rankingTopCount = 100;
 const rankingGrowthSlack = 10;
 const rankingGrowthPerHour = 10;
 final rankingGrowthFloor = {
-  rankingBestAutoRate: BigInt.from(1000000),
-  rankingLifetime: BigInt.from(1000000000),
+  rankingBestAutoRate: BigInt.from(1000),
+  rankingLifetime: BigInt.from(10000000),
   rankingBestCombo: BigInt.from(1000),
 };

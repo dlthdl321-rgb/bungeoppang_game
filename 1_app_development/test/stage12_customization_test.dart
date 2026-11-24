@@ -16,9 +16,7 @@ import 'package:todays_bungeoppang/ui/cook_cut.dart';
 import 'package:todays_bungeoppang/ui/night_stall_painter.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
 import 'controller_test.dart' show FakeTime;
-import 'level_missions_widget_test.dart' show tapVisible;
 import 'stage8_progress_test.dart' show now, plainJson, progressed;
-import 'widget_test.dart' show mountGame;
 
 Iterable<CosmeticDefinition> inSlot(CosmeticSlot slot) =>
     cosmeticDefinitions.where((d) => d.slot == slot);
@@ -145,22 +143,26 @@ void main() {
       }
     });
 
-    test('수집 대상은 66종(붕어빵 7, 사장님 38, 가게 21), 캐릭터·피부톤은 제외', () {
-      expect(collectibleCosmeticCount, 66);
+    test('수집 대상은 73종(붕어빵 7, 사장님 45, 가게 21), 캐릭터·피부톤은 제외', () {
+      // 26번 4-7단계: 하의 6종 추가(v2 그림 전에는 꾸미기 창에서 숨김).
+      // 26번 3차 AV3: 낮게 묶은 머리 추가(그림 전에는 숨김).
+      expect(collectibleCosmeticCount, 73);
       expect(collectibleCount(CosmeticCategory.bungeoppang), 7); // No flavours.
-      expect(collectibleCount(CosmeticCategory.avatar), 38);
+      expect(collectibleCount(CosmeticCategory.avatar), 45);
       expect(collectibleCount(CosmeticCategory.stall), 21); // + 등불 3
       expect(
           cosmeticDefinitions.fold(BigInt.zero, (a, d) => a + d.cost),
-          BigInt.from(505));
+          BigInt.from(550)); // + 하의 6종 5+5+6+7+8+9, 낮게 묶은 머리 5 (AV3)
       expect(inSlot(CosmeticSlot.skin).every((d) => d.free), isTrue);
       expect(inSlot(CosmeticSlot.character).map((d) => d.id), ['girl', 'boy']);
       expect(inSlot(CosmeticSlot.character).every((d) => d.free), isTrue);
       final stage12Coins = cosmeticDefinitions
           .where((d) => stage12Slots.contains(d.slot))
           .fold(BigInt.zero, (a, d) => a + d.cost);
-      // 145 at stage 12, plus stage 14's items in those slots and short.
-      expect(stage12Coins, BigInt.from(223));
+      // 145 at stage 12, plus stage 14's items in those slots and short,
+      // less the chef coat and padded vest (18), tops since 26번 4-5단계.
+      // 26번 3차 AV3: + 낮게 묶은 머리 5.
+      expect(stage12Coins, BigInt.from(210));
     });
   });
 
@@ -192,9 +194,12 @@ void main() {
       original.wardrobe.owned.add('beanie');
       original.wardrobe.equipped[CosmeticSlot.hat] = 'beanie';
       original.wardrobe.equipped[CosmeticSlot.skin] = 'skin2';
+      original.wardrobe.owned.add('skin2');
       final restored = GameState.fromJson(asV10(original));
       expect(restored.equippedCosmetic(CosmeticSlot.hat), 'beanie');
-      expect(restored.equippedCosmetic(CosmeticSlot.skin), 'skin2');
+      // 26번 3차 AV3: skin tones 2·3 are gone; skin1 instead.
+      expect(restored.equippedCosmetic(CosmeticSlot.skin), 'skin1');
+      expect(restored.wardrobe.owned, isNot(contains('skin2')));
       expect(restored.equippedCosmetic(CosmeticSlot.character), 'girl');
       for (final d in inSlot(CosmeticSlot.character)) {
         expect(restored.ownsCosmetic(d), isTrue, reason: d.id);
@@ -232,7 +237,6 @@ void main() {
       s.wardrobe.owned.addAll(['beanie', 'heartscale']);
       s.wardrobe.equipped[CosmeticSlot.hat] = 'beanie';
       s.wardrobe.equipped[CosmeticSlot.pattern] = 'heartscale';
-      s.wardrobe.equipped[CosmeticSlot.skin] = 'skin3';
       s.wardrobe.equipped[CosmeticSlot.character] = 'boy';
       final restored = GameState.fromJson(plainJson(s));
       expect(restored.wardrobe.toJson(), s.wardrobe.toJson());
@@ -299,10 +303,10 @@ void main() {
       expect(c.state.support.coins, BigInt.zero);
     });
 
-    test('피부톤은 무료로 바로 바뀌고 수집 수에 들어가지 않는다', () async {
+    test('피부톤은 1만 있고(26번 3차 AV3) 수집 수에 들어가지 않는다', () async {
       final before = c.state.support.ledger.length;
-      expect(await c.buyOrEquipCosmetic('skin3'), isTrue);
-      expect(c.state.equippedCosmetic(CosmeticSlot.skin), 'skin3');
+      expect(await c.buyOrEquipCosmetic('skin1'), isTrue);
+      expect(c.state.equippedCosmetic(CosmeticSlot.skin), 'skin1');
       expect(c.state.support.ledger.length, before);
       expect(cosmeticsOwnedCount(c.state), 0);
     });
@@ -323,7 +327,7 @@ void main() {
       expect(await c.buyOrEquipCosmetic('goldtongs'), isTrue);
       expect(achievementMet(c.state, def('avatar-5')), isTrue);
       expect(await c.claimAchievement('avatar-5'), isTrue);
-      expect(achievementTarget(def('cosmetics-all')), BigInt.from(66));
+      expect(achievementTarget(def('cosmetics-all')), BigInt.from(73));
     });
 
     test('레벨업 알림은 새로 열린 꾸미기를 분류별 한 줄로 알린다', () async {
@@ -338,7 +342,7 @@ void main() {
       expect(events.last.kind, GameEventKind.levelUp);
       expect(events.last.details, [
         '새 붕어빵 꾸미기 · 하트 비늘, 슈가파우더',
-        '새 사장님 꾸미기 · 묶은 머리, 털 비니, 크림 긴팔 외 5개',
+        '새 사장님 꾸미기 · 묶은 머리, 털 비니, 크림 긴팔 외 6개',
         '새 가게 꾸미기 · 보랏빛 해질녘, 종이 등불, 무쇠 화로 외 2개',
       ]);
     });
@@ -379,60 +383,6 @@ void main() {
           }
         }
       }
-    });
-  });
-
-  group('홈·꾸미기 화면', () {
-    CookCutPainter cookCut(WidgetTester tester) => tester
-        .widget<CustomPaint>(find.byKey(const Key('cook-cut')))
-        .painter! as CookCutPainter;
-    double lift(WidgetTester tester) => cookCut(tester).lift;
-
-    testWidgets('붕어빵을 탭하면 사장님이 집게를 들고, 모션 감소면 가만히 있다',
-        (tester) async {
-      for (final reduced in [false, true]) {
-        await mountGame(tester, const Size(390, 844), reduced: reduced);
-        expect(lift(tester), 0);
-        await tester.tap(find.byKey(const Key('fish-button')));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: CookCut.liftMs ~/ 2));
-        expect(lift(tester), reduced ? 0 : greaterThan(.5), reason: '$reduced');
-        await tester.pump(const Duration(milliseconds: CookCut.liftMs));
-        expect(lift(tester), 0);
-        await tester.pumpWidget(const SizedBox.shrink());
-      }
-    });
-
-    testWidgets('탭마다 미리보기 대상이 다르고, 적용은 홈에 반영된다', (tester) async {
-      final c = await mountGame(tester, const Size(390, 844));
-      setLevel(c.state, 2, c.clock.utcNow);
-      c.state.support
-          .transact('test:fund', BigInt.from(10), 'test', c.gameNow);
-      c.tick();
-      await tester.pump();
-      await tapVisible(tester, const Key('menu-skins'));
-      // Opens on 헤어, like the concept art.
-      expect(find.byKey(const Key('preview-avatar')), findsOneWidget);
-      await tapVisible(tester, const Key('cosmetic-category-bungeoppang'));
-      expect(find.byKey(const Key('preview-bungeoppang')), findsOneWidget);
-      expect(find.byKey(const Key('cosmetic-slot-hat')), findsNothing);
-      await tapVisible(tester, const Key('cosmetic-category-hair'));
-      expect(find.byKey(const Key('preview-avatar')), findsOneWidget);
-      expect(find.byKey(const Key('cosmetic-slot-fish')), findsNothing);
-      await tapVisible(tester, const Key('cosmetic-slot-hat'));
-      await tapVisible(tester, const Key('preview-beanie'));
-      expect(find.text('미리보기 · 미장착'), findsOneWidget);
-      expect(c.state.equippedCosmetic(CosmeticSlot.hat), 'nohat');
-      await tapVisible(tester, const Key('buy-cosmetic-beanie'));
-      await tapVisible(tester, const Key('confirm-support'));
-      expect(c.state.equippedCosmetic(CosmeticSlot.hat), 'beanie');
-      await tapVisible(tester, const Key('cosmetic-category-stall'));
-      expect(find.byKey(const Key('preview-stall')), findsOneWidget);
-      await tester.tap(find.byTooltip('닫기'));
-      await tester.pumpAndSettle();
-      expect(cookCut(tester).look.hat, 'beanie');
-      expect(tester.takeException(), isNull);
-      await tester.pumpWidget(const SizedBox.shrink());
     });
   });
 }

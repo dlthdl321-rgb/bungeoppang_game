@@ -1,11 +1,11 @@
 {
   "metadata": {
     "schema_version": 1,
-    "revision": "development-provisional-3",
+    "revision": "development-provisional-4",
     "status": "approved_for_provisional_development",
     "release_validated": false,
     "runtime_connected": false,
-    "note": "신규 main→Workshop 집계/SQLite/영업·맛별 연습·6구·판매·승급·도감 소스 연결. 설정/로그인/IAP는 기존 포트 재사용, 실제 새 복합 결제·검증 황금/광고·친구 연동은 미완료. 컴파일/실행 검수 미실행.",
+    "note": "신규 main→Workshop 집계/SQLite/영업·맛별 연습·숙련된 붕어빵(6구)·판매·승급·도감 소스 연결. 설정/로그인/IAP는 기존 포트 재사용, 실제 새 복합 결제·검증 황금/광고·친구 연동은 미완료. 컴파일/실행 검수 미실행.",
     "runtime_scope": "partial_workshop_gameplay_settings_and_internal_server_contracts"
   },
   "fixed_requirements": {
@@ -33,532 +33,576 @@
     "free_skill_purchases": 0
   },
   "skill_purchase": {
-    "max_owned_per_skill": 1000,
+    "max_owned_per_skill": 100,
     "gold_step_purchase_count": 10,
     "gold_step_amount": 1,
     "entries": {
       "tap_1": {
-        "buns": "15",
-        "gold": 1,
+        "buns": "20",
+        "gold": 0,
         "effect": "1",
         "unlock_total": "0",
-        "ratio_numerator": 115,
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_2": {
-        "buns": "250",
-        "gold": 1,
-        "effect": "8",
-        "unlock_total": "500",
-        "ratio_numerator": 118,
+        "buns": "80",
+        "gold": 0,
+        "effect": "2",
+        "unlock_total": "150",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_3": {
-        "buns": "4000",
-        "gold": 1,
-        "effect": "60",
-        "unlock_total": "10000",
-        "ratio_numerator": 120,
+        "buns": "300",
+        "gold": 0,
+        "effect": "3",
+        "unlock_total": "600",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_4": {
-        "buns": "10000",
-        "gold": 1,
-        "effect": "600",
-        "unlock_total": "10000",
-        "ratio_numerator": 115,
+        "buns": "1200",
+        "gold": 0,
+        "effect": "4",
+        "unlock_total": "2500",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_5": {
-        "buns": "100000",
+        "buns": "40000",
         "gold": 2,
-        "effect": "3390",
-        "unlock_total": "100000",
-        "ratio_numerator": 115,
+        "effect": "6",
+        "unlock_total": "2000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_6": {
-        "buns": "1000000",
+        "buns": "150000",
         "gold": 2,
-        "effect": "19200",
-        "unlock_total": "1000000",
-        "ratio_numerator": 115,
+        "effect": "8",
+        "unlock_total": "3000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_7": {
-        "buns": "10000000",
+        "buns": "500000",
         "gold": 2,
-        "effect": "108000",
+        "effect": "12",
         "unlock_total": "10000000",
-        "ratio_numerator": 115,
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_8": {
-        "buns": "100000000",
+        "buns": "1500000",
         "gold": 2,
-        "effect": "611000",
-        "unlock_total": "100000000",
-        "ratio_numerator": 115,
+        "effect": "17",
+        "unlock_total": "30000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_9": {
-        "buns": "1000000000",
+        "buns": "5000000",
         "gold": 3,
-        "effect": "3450000",
-        "unlock_total": "1000000000",
-        "ratio_numerator": 115,
+        "effect": "26",
+        "unlock_total": "100000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_10": {
-        "buns": "10000000000",
+        "buns": "15000000",
         "gold": 3,
-        "effect": "19500000",
-        "unlock_total": "10000000000",
-        "ratio_numerator": 115,
+        "effect": "38",
+        "unlock_total": "300000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_11": {
-        "buns": "100000000000",
+        "buns": "50000000",
         "gold": 3,
-        "effect": "110000000",
-        "unlock_total": "100000000000",
-        "ratio_numerator": 115,
+        "effect": "58",
+        "unlock_total": "1000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_12": {
-        "buns": "1000000000000",
+        "buns": "150000000",
         "gold": 3,
-        "effect": "623000000",
-        "unlock_total": "1000000000000",
-        "ratio_numerator": 115,
+        "effect": "86",
+        "unlock_total": "3000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_13": {
-        "buns": "10000000000000",
+        "buns": "500000000",
         "gold": 4,
-        "effect": "3520000000",
-        "unlock_total": "10000000000000",
-        "ratio_numerator": 115,
+        "effect": "130",
+        "unlock_total": "10000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_14": {
-        "buns": "100000000000000",
+        "buns": "1500000000",
         "gold": 4,
-        "effect": "19900000000",
-        "unlock_total": "100000000000000",
-        "ratio_numerator": 115,
+        "effect": "195",
+        "unlock_total": "30000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_15": {
-        "buns": "1000000000000000",
+        "buns": "5000000000",
         "gold": 4,
-        "effect": "112000000000",
-        "unlock_total": "1000000000000000",
-        "ratio_numerator": 115,
+        "effect": "290",
+        "unlock_total": "100000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "tap_16": {
-        "buns": "10000000000000000",
+        "buns": "15000000000",
         "gold": 4,
-        "effect": "635000000000",
-        "unlock_total": "10000000000000000",
-        "ratio_numerator": 115,
+        "effect": "440",
+        "unlock_total": "300000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_1": {
-        "buns": "50",
-        "gold": 1,
+        "buns": "80",
+        "gold": 0,
         "effect": "1",
         "unlock_total": "0",
-        "ratio_numerator": 115,
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_2": {
-        "buns": "600",
-        "gold": 1,
-        "effect": "10",
-        "unlock_total": "1000",
-        "ratio_numerator": 118,
+        "buns": "300",
+        "gold": 0,
+        "effect": "2",
+        "unlock_total": "600",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_3": {
-        "buns": "8000",
-        "gold": 1,
-        "effect": "100",
-        "unlock_total": "20000",
-        "ratio_numerator": 120,
+        "buns": "1200",
+        "gold": 0,
+        "effect": "3",
+        "unlock_total": "2500",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_4": {
-        "buns": "20000",
-        "gold": 1,
-        "effect": "1000",
-        "unlock_total": "20000",
-        "ratio_numerator": 115,
+        "buns": "5000",
+        "gold": 0,
+        "effect": "4",
+        "unlock_total": "10000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_5": {
-        "buns": "200000",
+        "buns": "50000",
         "gold": 2,
-        "effect": "5650",
-        "unlock_total": "200000",
-        "ratio_numerator": 115,
+        "effect": "5",
+        "unlock_total": "2500000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_6": {
-        "buns": "2000000",
+        "buns": "200000",
         "gold": 2,
-        "effect": "31900",
-        "unlock_total": "2000000",
-        "ratio_numerator": 115,
+        "effect": "6",
+        "unlock_total": "4000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_7": {
-        "buns": "20000000",
+        "buns": "600000",
         "gold": 2,
-        "effect": "180000",
-        "unlock_total": "20000000",
-        "ratio_numerator": 115,
+        "effect": "8",
+        "unlock_total": "12000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_8": {
-        "buns": "200000000",
+        "buns": "2000000",
         "gold": 2,
-        "effect": "1020000",
-        "unlock_total": "200000000",
-        "ratio_numerator": 115,
+        "effect": "11",
+        "unlock_total": "40000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_9": {
-        "buns": "2000000000",
+        "buns": "6000000",
         "gold": 3,
-        "effect": "5760000",
-        "unlock_total": "2000000000",
-        "ratio_numerator": 115,
+        "effect": "15",
+        "unlock_total": "120000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_10": {
-        "buns": "20000000000",
+        "buns": "20000000",
         "gold": 3,
-        "effect": "32500000",
-        "unlock_total": "20000000000",
-        "ratio_numerator": 115,
+        "effect": "21",
+        "unlock_total": "400000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_11": {
-        "buns": "200000000000",
+        "buns": "60000000",
         "gold": 3,
-        "effect": "184000000",
-        "unlock_total": "200000000000",
-        "ratio_numerator": 115,
+        "effect": "29",
+        "unlock_total": "1200000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_12": {
-        "buns": "2000000000000",
+        "buns": "200000000",
         "gold": 3,
-        "effect": "1040000000",
-        "unlock_total": "2000000000000",
-        "ratio_numerator": 115,
+        "effect": "40",
+        "unlock_total": "4000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_13": {
-        "buns": "20000000000000",
+        "buns": "600000000",
         "gold": 4,
-        "effect": "5870000000",
-        "unlock_total": "20000000000000",
-        "ratio_numerator": 115,
+        "effect": "57",
+        "unlock_total": "12000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_14": {
-        "buns": "200000000000000",
+        "buns": "2000000000",
         "gold": 4,
-        "effect": "33200000000",
-        "unlock_total": "200000000000000",
-        "ratio_numerator": 115,
+        "effect": "80",
+        "unlock_total": "40000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_15": {
-        "buns": "2000000000000000",
+        "buns": "6000000000",
         "gold": 4,
-        "effect": "187000000000",
-        "unlock_total": "2000000000000000",
-        "ratio_numerator": 115,
+        "effect": "110",
+        "unlock_total": "120000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       },
       "auto_16": {
-        "buns": "20000000000000000",
+        "buns": "20000000000",
         "gold": 4,
-        "effect": "1060000000000",
-        "unlock_total": "20000000000000000",
-        "ratio_numerator": 115,
+        "effect": "155",
+        "unlock_total": "400000000000",
+        "ratio_numerator": 135,
         "ratio_denominator": 100
       }
     }
   },
   "cosmetic_purchase": {
     "night": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "4000000",
+      "gold": 10
     },
     "dusk": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "4000000",
+      "gold": 10
     },
     "forest": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "copper": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "lantern": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "bunting": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "snow": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "4000000",
+      "gold": 10
     },
     "cherry": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "seaside": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "castiron": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "golden": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "starlights": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "windchime": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "snowman": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "heartscale": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "starmark": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "crispgrid": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "sugar": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "choco": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "almond": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "sprinkle": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "short": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "ponytail": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
+    },
+    "lowponytail": {
+      "buns": "200000",
+      "gold": 4
     },
     "curly": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "padding": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "stripe": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "chefcoat": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "beanie": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "earmuffs": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "chefhat": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "santa": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "goldtongs": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "creamlong": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "pinksweater": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "sagesweater": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "creamsweater": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "cardigan": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "skirt": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "widepants": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "brownpants": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
+    },
+    "jeans": {
+      "buns": "200000",
+      "gold": 4
+    },
+    "denimshorts": {
+      "buns": "200000",
+      "gold": 4
+    },
+    "joggers": {
+      "buns": "600000",
+      "gold": 6
+    },
+    "checkskirt": {
+      "buns": "600000",
+      "gold": 6
+    },
+    "cargopants": {
+      "buns": "600000",
+      "gold": 6
+    },
+    "longskirt": {
+      "buns": "600000",
+      "gold": 6
     },
     "sneakers": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "boots": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "furboots": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "darkapron": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "creamapron": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "waistapron": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "bandana": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "redbandana": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "ballcap": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "newsboy": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "blackcap": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "ribbon": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "fishpin": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "glasses": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "scarf": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "mittens": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "crossbag": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "paperbag": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "fishhold": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "rain": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "4000000",
+      "gold": 10
     },
     "autumn": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "snowday": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "10000000",
+      "gold": 16
     },
     "paperlanterns": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "2000000",
+      "gold": 10
     },
     "roselamp": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "200000",
+      "gold": 4
     },
     "mintlamp": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
     },
     "lilaclamp": {
-      "buns": "1000",
-      "gold": 2
+      "buns": "600000",
+      "gold": 6
+    },
+    "girl": {
+      "buns": "600000",
+      "gold": 10
+    },
+    "boy": {
+      "buns": "600000",
+      "gold": 10
+    },
+    "day": {
+      "buns": "10000000",
+      "gold": 16
+    },
+    "night_time": {
+      "buns": "10000000",
+      "gold": 16
     }
   },
   "boost_purchase": {
@@ -654,8 +698,6 @@
       "practice_required": 8,
       "technique_passes_required": 3,
       "doneness_target_ms": 15000,
-      "batter_target_ms": 2500,
-      "batter_tolerance_permille": 150,
       "wrong_filling_inputs_allowed": 0,
       "success_doneness_min_index": 1,
       "success_doneness_max_index": 3
@@ -665,8 +707,6 @@
       "practice_required": 12,
       "technique_passes_required": 4,
       "doneness_target_ms": 18000,
-      "batter_target_ms": 2500,
-      "batter_tolerance_permille": 150,
       "wrong_filling_inputs_allowed": 0,
       "success_doneness_min_index": 1,
       "success_doneness_max_index": 3
@@ -676,8 +716,6 @@
       "practice_required": 16,
       "technique_passes_required": 5,
       "doneness_target_ms": 21000,
-      "batter_target_ms": 2500,
-      "batter_tolerance_permille": 150,
       "wrong_filling_inputs_allowed": 0,
       "success_doneness_min_index": 1,
       "success_doneness_max_index": 3
@@ -701,12 +739,48 @@
     "flip_ms": 1000,
     "minimum_cooling_ms": 0,
     "products_per_completed_result": 1,
-    "tilt_sampling_ms": 100,
-    "tilt_activation_degrees": 15,
-    "tilt_dead_zone_degrees": 5,
-    "touch_batter_tick_ms": 50,
     "checkpoint_ms": 1000,
-    "filling_capacity_ms": 4000
+    "paint_brush_width_permille": 140,
+    "batter_min_coverage_permille": 900,
+    "paint_overflow_amount_permille": 1300,
+    "batter_total_min_amount_permille": 1800,
+    "batter_total_overflow_amount_permille": 2600,
+    "flip_turn_degrees": 320,
+    "flip_dead_zone_permille": 150
+  },
+  "prep_minigames": {
+    "stir": {
+      "duration_ms": 8000,
+      "full_degrees": 1440,
+      "dead_zone_permille": 150,
+      "green_min_permille": 700,
+      "green_max_permille": 900
+    },
+    "heat": {
+      "duration_ms": 10000,
+      "start_permille": 550,
+      "fall_permille_per_second": 220,
+      "rise_permille_per_second": 380,
+      "green_min_permille": 450,
+      "green_max_permille": 700,
+      "success_time_permille": 700
+    },
+    "whisk": {
+      "duration_ms": 6000,
+      "stroke_min_permille": 120,
+      "fill_per_stroke_permille": 70,
+      "decay_permille_per_second": 50
+    }
+  },
+  "cooking_grade": {
+    "perfect_min_coverage_permille": 950,
+    "perfect_max_total_amount_permille": 2300,
+    "perfect_max_spill_permille": 50,
+    "perfect_doneness_index": 2,
+    "good_min_coverage_permille": 925,
+    "good_min_total_amount_permille": 1900,
+    "good_max_total_amount_permille": 2450,
+    "good_max_spill_permille": 150
   },
   "griddle": {
     "slot_speed_permille": [
@@ -718,7 +792,8 @@
       1100
     ],
     "reinsertion_delay_ms": 1000,
-    "products_per_harvest": 1
+    "products_per_harvest": 1,
+    "prep_ms": 3000
   },
   "ordinary_sale": {
     "base_buns_by_difficulty": [
@@ -767,13 +842,27 @@
     "specific_variant_basis_points": 3000,
     "customer_archetype_count": 8
   },
+  "customer_arrivals": {
+    "regular_min_ms": 30000,
+    "regular_max_ms": 300000,
+    "named_min_ms": 1800000,
+    "named_max_ms": 10800000,
+    "regular_slots": 3,
+    "named_slots": 1
+  },
+  "customer_notifications": {
+    "quiet_start_minute": 1320,
+    "quiet_end_minute": 480,
+    "regular_max_notices": 3,
+    "preview_horizon_ms": 86400000
+  },
   "rare_gold_sale": {
     "probability_basis_points_by_stars": [
-      100,
-      200,
       300,
-      400,
-      500
+      600,
+      900,
+      1200,
+      1500
     ],
     "gold_per_award": 1,
     "daily_gold_cap": 10,
@@ -791,603 +880,603 @@
   "level_progression": [
     {
       "level": 1,
-      "season_total_buns": "0",
+      "level_cost_buns": "0",
+      "level_cost_gold": 0,
       "additional_taps": 0,
-      "additional_sales": 0,
+      "additional_sold_pieces": 0,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 2,
-      "season_total_buns": "100",
+      "level_cost_buns": "200",
+      "level_cost_gold": 0,
       "additional_taps": 30,
-      "additional_sales": 1,
+      "additional_sold_pieces": 1,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 3,
-      "season_total_buns": "400",
+      "level_cost_buns": "500",
+      "level_cost_gold": 0,
       "additional_taps": 30,
-      "additional_sales": 1,
+      "additional_sold_pieces": 1,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 4,
-      "season_total_buns": "900",
+      "level_cost_buns": "1000",
+      "level_cost_gold": 0,
       "additional_taps": 30,
-      "additional_sales": 1,
+      "additional_sold_pieces": 1,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 5,
-      "season_total_buns": "1600",
+      "level_cost_buns": "2000",
+      "level_cost_gold": 0,
       "additional_taps": 30,
-      "additional_sales": 1,
+      "additional_sold_pieces": 1,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 1,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 6,
-      "season_total_buns": "2500",
+      "level_cost_buns": "5000",
+      "level_cost_gold": 0,
       "additional_taps": 30,
-      "additional_sales": 1,
+      "additional_sold_pieces": 1,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 7,
-      "season_total_buns": "3600",
+      "level_cost_buns": "8000",
+      "level_cost_gold": 0,
       "additional_taps": 40,
-      "additional_sales": 1,
+      "additional_sold_pieces": 1,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 8,
-      "season_total_buns": "4900",
+      "level_cost_buns": "12000",
+      "level_cost_gold": 0,
       "additional_taps": 40,
-      "additional_sales": 1,
+      "additional_sold_pieces": 1,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 9,
-      "season_total_buns": "6400",
+      "level_cost_buns": "20000",
+      "level_cost_gold": 0,
       "additional_taps": 40,
-      "additional_sales": 1,
+      "additional_sold_pieces": 2,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 10,
-      "season_total_buns": "8100",
+      "level_cost_buns": "30000",
+      "level_cost_gold": 20,
       "additional_taps": 40,
-      "additional_sales": 1,
+      "additional_sold_pieces": 2,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 1,
       "order_quantity_limit": 2,
-      "order_wait_ms": 300000,
-      "max_queue": 3
+      "order_wait_ms": 300000
     },
     {
       "level": 11,
-      "season_total_buns": "20000",
+      "level_cost_buns": "50000",
+      "level_cost_gold": 0,
       "additional_taps": 40,
-      "additional_sales": 1,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 12,
-      "season_total_buns": "24200",
+      "level_cost_buns": "55000",
+      "level_cost_gold": 0,
       "additional_taps": 50,
-      "additional_sales": 2,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 13,
-      "season_total_buns": "28800",
+      "level_cost_buns": "60000",
+      "level_cost_gold": 0,
       "additional_taps": 50,
-      "additional_sales": 2,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 14,
-      "season_total_buns": "33800",
+      "level_cost_buns": "65000",
+      "level_cost_gold": 0,
       "additional_taps": 50,
-      "additional_sales": 2,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 15,
-      "season_total_buns": "39200",
+      "level_cost_buns": "70000",
+      "level_cost_gold": 0,
       "additional_taps": 50,
-      "additional_sales": 2,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 3,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 16,
-      "season_total_buns": "45000",
+      "level_cost_buns": "75000",
+      "level_cost_gold": 0,
       "additional_taps": 50,
-      "additional_sales": 2,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 17,
-      "season_total_buns": "51200",
+      "level_cost_buns": "80000",
+      "level_cost_gold": 0,
       "additional_taps": 60,
-      "additional_sales": 2,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 18,
-      "season_total_buns": "57800",
+      "level_cost_buns": "85000",
+      "level_cost_gold": 0,
       "additional_taps": 60,
-      "additional_sales": 2,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 19,
-      "season_total_buns": "64800",
+      "level_cost_buns": "90000",
+      "level_cost_gold": 0,
       "additional_taps": 60,
-      "additional_sales": 2,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 20,
-      "season_total_buns": "72200",
+      "level_cost_buns": "100000",
+      "level_cost_gold": 40,
       "additional_taps": 60,
-      "additional_sales": 2,
+      "additional_sold_pieces": 9,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 2,
       "order_quantity_limit": 4,
-      "order_wait_ms": 270000,
-      "max_queue": 3
+      "order_wait_ms": 270000
     },
     {
       "level": 21,
-      "season_total_buns": "120000",
+      "level_cost_buns": "110000",
+      "level_cost_gold": 0,
       "additional_taps": 60,
-      "additional_sales": 2,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 22,
-      "season_total_buns": "132300",
+      "level_cost_buns": "120000",
+      "level_cost_gold": 0,
       "additional_taps": 70,
-      "additional_sales": 3,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 23,
-      "season_total_buns": "145200",
+      "level_cost_buns": "130000",
+      "level_cost_gold": 0,
       "additional_taps": 70,
-      "additional_sales": 3,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 24,
-      "season_total_buns": "158700",
+      "level_cost_buns": "140000",
+      "level_cost_gold": 0,
       "additional_taps": 70,
-      "additional_sales": 3,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 25,
-      "season_total_buns": "172800",
+      "level_cost_buns": "150000",
+      "level_cost_gold": 0,
       "additional_taps": 70,
-      "additional_sales": 3,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 5,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 26,
-      "season_total_buns": "187500",
+      "level_cost_buns": "160000",
+      "level_cost_gold": 0,
       "additional_taps": 70,
-      "additional_sales": 3,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 27,
-      "season_total_buns": "202800",
+      "level_cost_buns": "170000",
+      "level_cost_gold": 0,
       "additional_taps": 80,
-      "additional_sales": 3,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 28,
-      "season_total_buns": "218700",
+      "level_cost_buns": "180000",
+      "level_cost_gold": 0,
       "additional_taps": 80,
-      "additional_sales": 3,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 29,
-      "season_total_buns": "235200",
+      "level_cost_buns": "190000",
+      "level_cost_gold": 0,
       "additional_taps": 80,
-      "additional_sales": 3,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 30,
-      "season_total_buns": "252300",
+      "level_cost_buns": "200000",
+      "level_cost_gold": 60,
       "additional_taps": 80,
-      "additional_sales": 3,
+      "additional_sold_pieces": 12,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 3,
       "order_quantity_limit": 6,
-      "order_wait_ms": 240000,
-      "max_queue": 3
+      "order_wait_ms": 240000
     },
     {
       "level": 31,
-      "season_total_buns": "360000",
+      "level_cost_buns": "220000",
+      "level_cost_gold": 0,
       "additional_taps": 80,
-      "additional_sales": 3,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 32,
-      "season_total_buns": "384400",
+      "level_cost_buns": "240000",
+      "level_cost_gold": 0,
       "additional_taps": 90,
-      "additional_sales": 4,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 33,
-      "season_total_buns": "409600",
+      "level_cost_buns": "260000",
+      "level_cost_gold": 0,
       "additional_taps": 90,
-      "additional_sales": 4,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 34,
-      "season_total_buns": "435600",
+      "level_cost_buns": "280000",
+      "level_cost_gold": 0,
       "additional_taps": 90,
-      "additional_sales": 4,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 35,
-      "season_total_buns": "462400",
+      "level_cost_buns": "300000",
+      "level_cost_gold": 0,
       "additional_taps": 90,
-      "additional_sales": 4,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 7,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 36,
-      "season_total_buns": "490000",
+      "level_cost_buns": "320000",
+      "level_cost_gold": 0,
       "additional_taps": 90,
-      "additional_sales": 4,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 37,
-      "season_total_buns": "518400",
+      "level_cost_buns": "340000",
+      "level_cost_gold": 0,
       "additional_taps": 100,
-      "additional_sales": 4,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 38,
-      "season_total_buns": "547600",
+      "level_cost_buns": "360000",
+      "level_cost_gold": 0,
       "additional_taps": 100,
-      "additional_sales": 4,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 39,
-      "season_total_buns": "577600",
+      "level_cost_buns": "380000",
+      "level_cost_gold": 0,
       "additional_taps": 100,
-      "additional_sales": 4,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 40,
-      "season_total_buns": "608400",
+      "level_cost_buns": "400000",
+      "level_cost_gold": 80,
       "additional_taps": 100,
-      "additional_sales": 4,
+      "additional_sold_pieces": 18,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 8,
-      "order_wait_ms": 210000,
-      "max_queue": 3
+      "order_wait_ms": 210000
     },
     {
       "level": 41,
-      "season_total_buns": "800000",
+      "level_cost_buns": "450000",
+      "level_cost_gold": 0,
       "additional_taps": 100,
-      "additional_sales": 4,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 42,
-      "season_total_buns": "840500",
+      "level_cost_buns": "500000",
+      "level_cost_gold": 0,
       "additional_taps": 110,
-      "additional_sales": 5,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 43,
-      "season_total_buns": "882000",
+      "level_cost_buns": "550000",
+      "level_cost_gold": 0,
       "additional_taps": 110,
-      "additional_sales": 5,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 44,
-      "season_total_buns": "924500",
+      "level_cost_buns": "600000",
+      "level_cost_gold": 0,
       "additional_taps": 110,
-      "additional_sales": 5,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 45,
-      "season_total_buns": "968000",
+      "level_cost_buns": "650000",
+      "level_cost_gold": 0,
       "additional_taps": 110,
-      "additional_sales": 5,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 9,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 46,
-      "season_total_buns": "1012500",
+      "level_cost_buns": "700000",
+      "level_cost_gold": 0,
       "additional_taps": 110,
-      "additional_sales": 5,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 47,
-      "season_total_buns": "1058000",
+      "level_cost_buns": "750000",
+      "level_cost_gold": 0,
       "additional_taps": 120,
-      "additional_sales": 5,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 48,
-      "season_total_buns": "1104500",
+      "level_cost_buns": "800000",
+      "level_cost_gold": 0,
       "additional_taps": 120,
-      "additional_sales": 5,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 49,
-      "season_total_buns": "1152000",
+      "level_cost_buns": "850000",
+      "level_cost_gold": 0,
       "additional_taps": 120,
-      "additional_sales": 5,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     },
     {
       "level": 50,
-      "season_total_buns": "1200500",
+      "level_cost_buns": "900000",
+      "level_cost_gold": 100,
       "additional_taps": 120,
-      "additional_sales": 5,
+      "additional_sold_pieces": 24,
       "buns_reward": "0",
       "gold_reward": 0,
       "order_flavor_limit": 4,
       "order_quantity_limit": 10,
-      "order_wait_ms": 180000,
-      "max_queue": 3
+      "order_wait_ms": 180000
     }
   ],
   "feature_unlock_levels": {
@@ -1397,9 +1486,12 @@
     "core_sales": 1,
     "mastery_progress": 1,
     "six_slot_access": 1,
+    "skill_shop": 2,
+    "pantry_prep": 2,
     "full_recipe_collection_ui": 3,
     "fish_cosmetics": 5,
     "stall_cosmetics": 8,
+    "stall_background": 1,
     "friends": 10,
     "ranking": 10,
     "rewarded_ads": 1,
@@ -1473,33 +1565,19 @@
     "girl": {
       "label": "여자 사장님",
       "slot": "character",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },
     "boy": {
       "label": "남자 사장님",
       "slot": "character",
-      "free": true,
+      "free": false,
       "unlock_level": 1,
       "unlock_total": "0"
     },
     "skin1": {
       "label": "피부톤 1",
-      "slot": "skin",
-      "free": true,
-      "unlock_level": 1,
-      "unlock_total": "0"
-    },
-    "skin2": {
-      "label": "피부톤 2",
-      "slot": "skin",
-      "free": true,
-      "unlock_level": 1,
-      "unlock_total": "0"
-    },
-    "skin3": {
-      "label": "피부톤 3",
       "slot": "skin",
       "free": true,
       "unlock_level": 1,
@@ -1523,14 +1601,21 @@
       "label": "묶은 머리",
       "slot": "hair",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "lowponytail": {
+      "label": "낮게 묶은 머리",
+      "slot": "hair",
+      "free": false,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "curly": {
       "label": "곱슬머리",
       "slot": "hair",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "apron": {
@@ -1540,25 +1625,32 @@
       "unlock_level": 1,
       "unlock_total": "0"
     },
+    "noapron": {
+      "label": "앞치마 없음",
+      "slot": "outfit",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
     "padding": {
       "label": "패딩 조끼",
-      "slot": "outfit",
+      "slot": "top",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "stripe": {
       "label": "줄무늬 앞치마",
       "slot": "outfit",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "chefcoat": {
       "label": "요리사 복",
-      "slot": "outfit",
+      "slot": "top",
       "free": false,
-      "unlock_level": 7,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "nohat": {
@@ -1572,42 +1664,42 @@
       "label": "털 비니",
       "slot": "hat",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "earmuffs": {
       "label": "귀마개",
       "slot": "hat",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "chefhat": {
       "label": "요리사 모자",
       "slot": "hat",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "santa": {
       "label": "산타 모자",
       "slot": "hat",
       "free": false,
-      "unlock_level": 9,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "tongs": {
-      "label": "붕어빵 집게",
+      "label": "도구 없음",
       "slot": "tool",
       "free": true,
       "unlock_level": 1,
       "unlock_total": "0"
     },
     "goldtongs": {
-      "label": "황금 집게",
+      "label": "황금 뒤집개",
       "slot": "tool",
       "free": false,
-      "unlock_level": 9,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "tee": {
@@ -1621,35 +1713,35 @@
       "label": "크림 긴팔",
       "slot": "top",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "pinksweater": {
       "label": "분홍 니트",
       "slot": "top",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "sagesweater": {
       "label": "세이지 니트",
       "slot": "top",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "creamsweater": {
       "label": "꽈배기 니트",
       "slot": "top",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "cardigan": {
       "label": "카디건",
       "slot": "top",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "shorts": {
@@ -1663,21 +1755,63 @@
       "label": "주름치마",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "widepants": {
       "label": "와이드 바지",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "brownpants": {
       "label": "갈색 바지",
       "slot": "bottom",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "jeans": {
+      "label": "연청 청바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "denimshorts": {
+      "label": "데님 반바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "joggers": {
+      "label": "회색 조거 바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "checkskirt": {
+      "label": "빨강 체크 치마",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "cargopants": {
+      "label": "카키 카고 바지",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "longskirt": {
+      "label": "크림 롱스커트",
+      "slot": "bottom",
+      "free": false,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "flats": {
@@ -1691,77 +1825,77 @@
       "label": "흰 운동화",
       "slot": "shoes",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "boots": {
       "label": "앵클부츠",
       "slot": "shoes",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "furboots": {
       "label": "털 부츠",
       "slot": "shoes",
       "free": false,
-      "unlock_level": 7,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "darkapron": {
       "label": "초코 앞치마",
       "slot": "outfit",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "creamapron": {
       "label": "크림 앞치마",
       "slot": "outfit",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "waistapron": {
       "label": "허리 앞치마",
       "slot": "outfit",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "bandana": {
       "label": "크림 두건",
       "slot": "hat",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "redbandana": {
       "label": "빨간 두건",
       "slot": "hat",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "ballcap": {
       "label": "크림 야구모자",
       "slot": "hat",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "newsboy": {
       "label": "헌팅캡",
       "slot": "hat",
       "free": false,
-      "unlock_level": 4,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "blackcap": {
       "label": "검정 야구모자",
       "slot": "hat",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "noacc": {
@@ -1775,56 +1909,168 @@
       "label": "분홍 리본",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 2,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "fishpin": {
       "label": "붕어빵 머리핀",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "glasses": {
       "label": "동그란 안경",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 3,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "scarf": {
       "label": "분홍 목도리",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "mittens": {
       "label": "털장갑",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 6,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "crossbag": {
       "label": "크로스백",
       "slot": "accessory",
       "free": false,
-      "unlock_level": 7,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "paperbag": {
       "label": "붕어빵 봉투",
       "slot": "tool",
       "free": false,
-      "unlock_level": 5,
+      "unlock_level": 1,
       "unlock_total": "0"
     },
     "fishhold": {
       "label": "갓 구운 붕어빵",
       "slot": "tool",
       "free": false,
-      "unlock_level": 8,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "clear": {
+      "label": "맑은 날",
+      "slot": "background",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "night": {
+      "label": "야간 골목",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "dusk": {
+      "label": "보랏빛 해질녘",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "rain": {
+      "label": "비 오는 날",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "snow": {
+      "label": "눈 오는 밤",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "autumn": {
+      "label": "가을 골목",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "forest": {
+      "label": "숲길 노점",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "cherry": {
+      "label": "벚꽃 골목",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "snowday": {
+      "label": "눈 오는 낮",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "seaside": {
+      "label": "바닷가 야시장",
+      "slot": "background",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "amberlamp": {
+      "label": "기본 등불",
+      "slot": "lamp",
+      "free": true,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "roselamp": {
+      "label": "분홍 등불",
+      "slot": "lamp",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "mintlamp": {
+      "label": "민트 등불",
+      "slot": "lamp",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "lilaclamp": {
+      "label": "라일락 등불",
+      "slot": "lamp",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "day": {
+      "label": "낮 고정",
+      "slot": "time",
+      "free": false,
+      "unlock_level": 1,
+      "unlock_total": "0"
+    },
+    "night_time": {
+      "label": "밤 고정",
+      "slot": "time",
+      "free": false,
+      "unlock_level": 1,
       "unlock_total": "0"
     }
   },
@@ -1843,7 +2089,7 @@
         "reward_key": "daily_production"
       },
       "purchases": {
-        "label": "스킬 구매 수량",
+        "label": "스킬 레벨업 횟수",
         "metric": "purchases",
         "target": "3",
         "reward_key": "daily_purchases"
@@ -1869,7 +2115,7 @@
         "reward_key": "weekly_days"
       },
       "purchases": {
-        "label": "주간 스킬 구매 수량",
+        "label": "주간 스킬 레벨업 횟수",
         "metric": "purchases",
         "target": "20",
         "reward_key": "weekly_purchases"
@@ -1899,7 +2145,6 @@
     "recent_dialogue_limit": 3,
     "return_gap_business_days": 3,
     "new_npcs_daily_limit": 2,
-    "visits_per_npc_business_day": 1,
     "delay_threshold_permille": 700,
     "choice_first_business_day": 7,
     "choice_gap_business_days": 5,
@@ -1911,11 +2156,11 @@
       "c": 1,
       "wave": 0
     },
-    "anonymous_visit_basis_points": 3000,
     "own_portion_extra_quantity": 1,
     "holiday_visit_basis_points": 3000,
     "friendly_dialogue_stage": 2,
-    "regular_dialogue_stage": 3
+    "regular_dialogue_stage": 3,
+    "special_daily_cap": 3
   },
   "customer_choice_conditions": {
     "npc_yunha": {
@@ -2046,5 +2291,300 @@
   },
   "welcome_reward": {
     "gold": 10
+  },
+  "invite_rewards": {
+    "inviter_gold": 5,
+    "invitee_gold": 3,
+    "target_level": 5,
+    "inviter_daily_limit": 3,
+    "inviter_lifetime_limit": 20,
+    "menu_unlock_level": 3
+  },
+  "daily_return": {
+    "rate_taps_per_second": 2,
+    "special_order": {
+      "reward_seconds": 600,
+      "min_buns": "200",
+      "affinity": 3,
+      "quantity_max": 2
+    },
+    "story_daily_limit": 1,
+    "attendance": {
+      "cycle_days": 7,
+      "buns_seconds": 300,
+      "min_buns": "100",
+      "gold": 1,
+      "substitute_seconds": 1800,
+      "substitute_min_buns": "600"
+    },
+    "seasonal_events": [
+      {
+        "id": "first_snow_2026",
+        "kind": "first_snow",
+        "label": "첫눈",
+        "start": "2026-12-01",
+        "end": "2026-12-07",
+        "decoration": "event_first_snow",
+        "greeting": "첫눈 왔어요! 이런 날엔 따끈한 붕어빵이죠.",
+        "order_note": "첫눈 기념 주문이에요."
+      },
+      {
+        "id": "christmas_2026",
+        "kind": "christmas",
+        "label": "크리스마스",
+        "start": "2026-12-20",
+        "end": "2026-12-26",
+        "decoration": "event_christmas",
+        "greeting": "메리 크리스마스! 붕어빵 선물하러 왔어요.",
+        "order_note": "크리스마스 선물용 주문이에요."
+      },
+      {
+        "id": "seollal_2027",
+        "kind": "seollal",
+        "label": "설날",
+        "start": "2027-02-05",
+        "end": "2027-02-09",
+        "decoration": "event_seollal",
+        "greeting": "새해 복 많이 받으세요! 세배 다녀오는 길이에요.",
+        "order_note": "설날 손님맞이 주문이에요."
+      }
+    ]
+  },
+  "share": {
+    "card_width": 1080,
+    "card_height": 1350,
+    "store_line_mode": "soon",
+    "store_line_soon": "오늘의 붕어빵 · 곧 Google Play에서",
+    "store_line_live": "오늘의 붕어빵 · Google Play에서 만나요",
+    "store_url": "https://play.google.com/store/apps/details?id=com.todaybungeoppang.app"
+  },
+  "collection_counts": {
+    "required_by_difficulty": [
+      [
+        10,
+        15,
+        20,
+        15,
+        10
+      ],
+      [
+        10,
+        20,
+        30,
+        20,
+        10
+      ],
+      [
+        10,
+        25,
+        40,
+        25,
+        10
+      ]
+    ],
+    "required_by_flavor": {
+      "redbean": [
+        2,
+        3,
+        5,
+        3,
+        2
+      ]
+    }
+  },
+  "collection_rewards": {
+    "cell_buns_seconds": 300,
+    "cell_min_buns": "100",
+    "flavor_gold": 3,
+    "titles": {
+      "redbean": "팥 장인",
+      "custard": "슈크림 장인",
+      "cocoa": "초코 장인"
+    },
+    "title_default_suffix": "장인",
+    "server_min_ms_per_cell": 30000
+  },
+  "ingredients": {
+    "rate_taps_per_second": 2,
+    "min_price_buns": "1",
+    "buy_steps": [
+      1,
+      10,
+      100
+    ],
+    "portions_per_tub": 100,
+    "batch_tubs": [
+      1,
+      3,
+      5
+    ],
+    "minigame_bonus_portions_per_tub": 10,
+    "expiry_ms": 86400000,
+    "stock_limit_tubs": [
+      {
+        "from_level": 1,
+        "tubs": 10
+      },
+      {
+        "from_level": 10,
+        "tubs": 15
+      },
+      {
+        "from_level": 20,
+        "tubs": 20
+      }
+    ],
+    "consume": {
+      "taps_per_portion": 10,
+      "auto_ms_per_portion": 10000,
+      "special_mold_portions": 1,
+      "griddle_cell_portions": 1
+    },
+    "filling_fallback_order": [
+      "redbean",
+      "custard",
+      "cocoa"
+    ],
+    "basic": {
+      "flour": {
+        "label": "밀가루",
+        "unit_label": "밀가루 1포대",
+        "price_seconds": 3,
+        "max_stock": 99
+      },
+      "milk": {
+        "label": "우유",
+        "unit_label": "우유 1팩",
+        "price_seconds": 3,
+        "max_stock": 99
+      },
+      "egg": {
+        "label": "달걀",
+        "unit_label": "달걀 1판",
+        "price_seconds": 3,
+        "max_stock": 99
+      },
+      "sugar": {
+        "label": "설탕",
+        "unit_label": "설탕 1봉지",
+        "price_seconds": 2,
+        "max_stock": 99
+      },
+      "salt": {
+        "label": "소금",
+        "unit_label": "소금 1봉지",
+        "price_seconds": 1,
+        "max_stock": 99
+      },
+      "adzuki": {
+        "label": "팥",
+        "unit_label": "팥 1자루",
+        "price_seconds": 4,
+        "max_stock": 99
+      },
+      "cocoa_powder": {
+        "label": "코코아 가루",
+        "unit_label": "코코아 가루 1봉지",
+        "price_seconds": 5,
+        "max_stock": 99,
+        "requires_recipe": "cocoa"
+      }
+    },
+    "premium": {
+      "unlock_level": 5,
+      "pack_gold": 1,
+      "pack_count": 2,
+      "bonus_permille": 500,
+      "items": {
+        "cultured_butter": {
+          "label": "발효 버터",
+          "prepared": "batter",
+          "max_stock": 99
+        },
+        "fresh_adzuki": {
+          "label": "국산 햇팥",
+          "prepared": "redbean",
+          "max_stock": 99
+        },
+        "vanilla_bean": {
+          "label": "바닐라 빈",
+          "prepared": "custard",
+          "max_stock": 99
+        },
+        "fine_chocolate": {
+          "label": "고급 초콜릿",
+          "prepared": "cocoa",
+          "max_stock": 99
+        }
+      }
+    },
+    "prepared": {
+      "batter": {
+        "label": "반죽",
+        "premium_label": "특제 반죽",
+        "minigame": "stir",
+        "recipe": {
+          "flour": 2,
+          "milk": 1,
+          "egg": 1,
+          "sugar": 1,
+          "salt": 1
+        }
+      },
+      "redbean": {
+        "label": "팥소",
+        "premium_label": "특제 팥소",
+        "minigame": "heat",
+        "flavor": "redbean",
+        "recipe": {
+          "adzuki": 2,
+          "sugar": 1,
+          "salt": 1
+        }
+      },
+      "custard": {
+        "label": "슈크림",
+        "premium_label": "특제 슈크림",
+        "minigame": "whisk",
+        "flavor": "custard",
+        "recipe": {
+          "milk": 2,
+          "egg": 2,
+          "sugar": 1
+        }
+      },
+      "cocoa": {
+        "label": "초코 크림",
+        "premium_label": "특제 초코 크림",
+        "minigame": "heat",
+        "flavor": "cocoa",
+        "recipe": {
+          "cocoa_powder": 2,
+          "milk": 1,
+          "sugar": 1
+        }
+      }
+    },
+    "starting_stock": {
+      "tubs": {
+        "batter": 3,
+        "redbean": 3
+      },
+      "recipe_sets": {
+        "batter": 1,
+        "redbean": 1
+      }
+    },
+    "recipe_gift": {
+      "tubs": 1,
+      "recipe_sets": 1
+    },
+    "rescue_pack": {
+      "daily_limit": 3,
+      "recipe_sets": {
+        "batter": 1,
+        "redbean": 1
+      }
+    }
   }
 }

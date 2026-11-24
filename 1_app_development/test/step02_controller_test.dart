@@ -5,6 +5,7 @@ import 'dart:math';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cooking_input.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
+import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
 import 'package:todays_bungeoppang/development_rules.dart';
@@ -39,8 +40,9 @@ void main() {
         jsonDecode(File('config/development_balance.json').readAsStringSync())
             as Map<String, dynamic>);
     repository = MemoryRepository();
+    // safetySaveMs 0: a checkpoint save each check, as these tests hold them open (28번 8절).
     controller = WorkshopController(config, repository,
-        now: () => DateTime.utc(2026, 10, 18), random: Random(2));
+        now: () => DateTime.utc(2026, 10, 18), random: Random(2), safetySaveMs: 0);
     await controller.initialize();
   });
   tearDown(() => controller.dispose());
@@ -50,9 +52,9 @@ void main() {
         flavor: 'redbean',
         practice: true,
         fillingSequence: [CookingDirection.left]);
-    session = session.pour(session.token, 2500);
+    session = session.pour(session.token, PaintAmount.even);
     session = session.fill(session.token, CookingDirection.left);
-    session = session.pour(session.token, 2500);
+    session = session.pour(session.token, PaintAmount.even);
     session = session.close(session.token);
     return session.flip(session.token);
   }
@@ -178,9 +180,9 @@ void main() {
         flavor: 'redbean',
         practice: true,
         fillingSequence: [CookingDirection.left]);
-    session = session.pour(session.token, 2500);
+    session = session.pour(session.token, PaintAmount.even);
     session = session.fill(session.token, CookingDirection.left);
-    session = session.pour(session.token, 2500);
+    session = session.pour(session.token, PaintAmount.even);
     await controller.command(() {
       controller.state.session = session;
       controller.state.phaseMs = 0;
@@ -214,12 +216,12 @@ void main() {
     expect(controller.busy, isTrue);
     expect(controller.cookingInputBlocked, isFalse);
     final released =
-        controller.cookingCommand(session.pour(session.token, 2500));
+        controller.cookingCommand(session.pour(session.token, PaintAmount.even));
     expect(controller.state.session!.phase, CookingPhase.firstBatter);
     repository.pauseSave = null;
     gate.complete();
     expect(await released, isTrue);
-    expect(controller.state.session!.firstBatterMs, 2500);
+    expect(controller.state.session!.firstBatter, PaintAmount.even);
     expect(controller.state.session!.phase, CookingPhase.filling);
   });
   test(

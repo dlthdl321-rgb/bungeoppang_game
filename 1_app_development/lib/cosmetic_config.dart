@@ -27,7 +27,8 @@ enum CosmeticSlot {
 enum CosmeticCategory { bungeoppang, avatar, stall }
 
 /// Tabs of the wardrobe screen (approved stage 14, D3): the vendor's
-/// 헤어 / 의상 / 소품, then the pastry and the stall.
+/// 헤어 / 의상 / 소품, then the pastry and the stall (shown as '배경' since
+/// 4차 피드백 g10).
 enum WardrobeTab { hair, outfit, props, bungeoppang, stall }
 
 extension CosmeticSlotCategory on CosmeticSlot {
@@ -80,8 +81,9 @@ extension CosmeticSlotCategory on CosmeticSlot {
           WardrobeTab.stall,
       };
 
-  /// Slots the wardrobe lists. The flavour slot has only redbean left.
-  bool get shown => this != CosmeticSlot.fish;
+  /// Slots the wardrobe lists. The flavour slot has only redbean left;
+  /// the skin slot only skin1 (26번 3차 AV3, DEC-TBD-hAV3-2).
+  bool get shown => this != CosmeticSlot.fish && this != CosmeticSlot.skin;
 
   /// Character and skin tone are free personal choices, never priced or
   /// collected.
@@ -101,8 +103,12 @@ class CosmeticDefinition {
   BigInt get cost => configBigInt(price);
   BigInt get unlockProductionAmount => configBigInt(unlockProduction);
 
-  /// Counts toward the collection: not a slot default, character or skin tone.
-  bool get collectible => slot.collectible && defaultCosmetics[slot] != id;
+  /// Counts toward the collection: not a slot default, a free extra choice
+  /// ([freeChoiceCosmetics]), character or skin tone.
+  bool get collectible =>
+      slot.collectible &&
+      defaultCosmetics[slot] != id &&
+      !freeChoiceCosmetics.contains(id);
 
   /// Owned from the start without a purchase.
   bool get free => !collectible;
@@ -131,10 +137,10 @@ const cosmeticDefinitions = [
   CosmeticDefinition('castiron', '무쇠 화로', CosmeticSlot.stove, '6', 2),
   CosmeticDefinition('golden', '황금 화로', CosmeticSlot.stove, '15', 9),
   CosmeticDefinition('starlights', '별 전구', CosmeticSlot.decoration, '5', 3),
-  CosmeticDefinition('windchime', '풍경', CosmeticSlot.decoration, '9', 5),
+  CosmeticDefinition('windchime', '풍경 종', CosmeticSlot.decoration, '9', 5),
   CosmeticDefinition('snowman', '눈사람', CosmeticSlot.decoration, '12', 7),
   // Stage 12: pastry pattern and topping.
-  CosmeticDefinition('scales', '기본 비늘', CosmeticSlot.pattern, '0', 1),
+  CosmeticDefinition('scales', '기본 모양', CosmeticSlot.pattern, '0', 1),
   CosmeticDefinition('heartscale', '하트 비늘', CosmeticSlot.pattern, '5', 2),
   CosmeticDefinition('starmark', '별 도장', CosmeticSlot.pattern, '8', 4),
   CosmeticDefinition('crispgrid', '바삭 격자', CosmeticSlot.pattern, '11', 6),
@@ -148,23 +154,29 @@ const cosmeticDefinitions = [
   CosmeticDefinition('boy', '남자 사장님', CosmeticSlot.character, '0', 1),
   // Stage 12: the vendor. Skin tones are free and always owned.
   CosmeticDefinition('skin1', '피부톤 1', CosmeticSlot.skin, '0', 1),
-  CosmeticDefinition('skin2', '피부톤 2', CosmeticSlot.skin, '0', 1),
-  CosmeticDefinition('skin3', '피부톤 3', CosmeticSlot.skin, '0', 1),
   CosmeticDefinition('long', '긴 생머리', CosmeticSlot.hair, '0', 1),
   CosmeticDefinition('short', '짧은 머리', CosmeticSlot.hair, '3', 1),
   CosmeticDefinition('ponytail', '묶은 머리', CosmeticSlot.hair, '5', 2),
+  // 26번 3차 AV3 (DEC-TBD-hAV3-4): tied low at the nape, so every hat fits
+  // over it. Price and unlock copy the ponytail (placeholder). Withdrawn
+  // ([withdrawnAvatarItems]) until its art (25번) is in.
+  CosmeticDefinition('lowponytail', '낮게 묶은 머리', CosmeticSlot.hair, '5', 2),
   CosmeticDefinition('curly', '곱슬머리', CosmeticSlot.hair, '8', 5),
   CosmeticDefinition('apron', '기본 앞치마', CosmeticSlot.outfit, '0', 1),
-  CosmeticDefinition('padding', '패딩 조끼', CosmeticSlot.outfit, '6', 3),
+  // Stage 26 4-4: the default apron is drawn now; this takes it off.
+  CosmeticDefinition('noapron', '앞치마 없음', CosmeticSlot.outfit, '0', 1),
   CosmeticDefinition('stripe', '줄무늬 앞치마', CosmeticSlot.outfit, '9', 5),
-  CosmeticDefinition('chefcoat', '요리사 복', CosmeticSlot.outfit, '12', 7),
   CosmeticDefinition('nohat', '모자 없음', CosmeticSlot.hat, '0', 1),
   CosmeticDefinition('beanie', '털 비니', CosmeticSlot.hat, '3', 2),
   CosmeticDefinition('earmuffs', '귀마개', CosmeticSlot.hat, '6', 3),
   CosmeticDefinition('chefhat', '요리사 모자', CosmeticSlot.hat, '10', 6),
   CosmeticDefinition('santa', '산타 모자', CosmeticSlot.hat, '14', 9),
-  CosmeticDefinition('tongs', '붕어빵 집게', CosmeticSlot.tool, '0', 1),
-  CosmeticDefinition('goldtongs', '황금 집게', CosmeticSlot.tool, '15', 9),
+  // 26번 3차 H8: the tongs in the vendor's hand are gone ("집게를 지워"):
+  // the tool default keeps its id for saves but draws nothing.
+  CosmeticDefinition('tongs', '도구 없음', CosmeticSlot.tool, '0', 1),
+  // 26번 3차 AV (25번 41번, DEC-146 갱신): drawn again as a golden turner;
+  // same id, price and unlock, owners keep it.
+  CosmeticDefinition('goldtongs', '황금 뒤집개', CosmeticSlot.tool, '15', 9),
   // Stage 14: the concept art (개발에셋 261006_1905_01). Prices estimated.
   CosmeticDefinition('tee', '흰 티셔츠', CosmeticSlot.top, '0', 1),
   CosmeticDefinition('creamlong', '크림 긴팔', CosmeticSlot.top, '3', 2),
@@ -172,10 +184,22 @@ const cosmeticDefinitions = [
   CosmeticDefinition('sagesweater', '세이지 니트', CosmeticSlot.top, '6', 4),
   CosmeticDefinition('creamsweater', '꽈배기 니트', CosmeticSlot.top, '8', 5),
   CosmeticDefinition('cardigan', '카디건', CosmeticSlot.top, '10', 6),
+  // 26번 4-5단계(G12): tops now, not aprons (saves move them, see
+  // [movedToTop]); the apron can go over them.
+  CosmeticDefinition('padding', '패딩 조끼', CosmeticSlot.top, '6', 3),
+  CosmeticDefinition('chefcoat', '요리사 복', CosmeticSlot.top, '12', 7),
   CosmeticDefinition('shorts', '베이지 반바지', CosmeticSlot.bottom, '0', 1),
   CosmeticDefinition('skirt', '주름치마', CosmeticSlot.bottom, '4', 2),
   CosmeticDefinition('widepants', '와이드 바지', CosmeticSlot.bottom, '6', 3),
   CosmeticDefinition('brownpants', '갈색 바지', CosmeticSlot.bottom, '7', 4),
+  // 26번 4-7단계 (G11): bottoms 4 -> 10. Drawn only for the v2 vendor
+  // (avatar_v2/), so the wardrobe hides them until avatarV2Ready.
+  CosmeticDefinition('jeans', '연청 청바지', CosmeticSlot.bottom, '5', 2),
+  CosmeticDefinition('denimshorts', '데님 반바지', CosmeticSlot.bottom, '5', 3),
+  CosmeticDefinition('joggers', '회색 조거 바지', CosmeticSlot.bottom, '6', 3),
+  CosmeticDefinition('checkskirt', '빨강 체크 치마', CosmeticSlot.bottom, '7', 4),
+  CosmeticDefinition('cargopants', '카키 카고 바지', CosmeticSlot.bottom, '8', 5),
+  CosmeticDefinition('longskirt', '크림 롱스커트', CosmeticSlot.bottom, '9', 6),
   CosmeticDefinition('flats', '갈색 단화', CosmeticSlot.shoes, '0', 1),
   CosmeticDefinition('sneakers', '흰 운동화', CosmeticSlot.shoes, '4', 2),
   CosmeticDefinition('boots', '앵클부츠', CosmeticSlot.shoes, '7', 4),
@@ -207,11 +231,13 @@ const cosmeticDefinitions = [
   CosmeticDefinition('roselamp', '분홍 등불', CosmeticSlot.lamp, '4', 2),
   CosmeticDefinition('mintlamp', '민트 등불', CosmeticSlot.lamp, '6', 3),
   CosmeticDefinition('lilaclamp', '라일락 등불', CosmeticSlot.lamp, '8', 4),
-  // Day or night for every season, free like the character and skin tone.
-  CosmeticDefinition('scenetime', '배경 그대로', CosmeticSlot.time, '0', 1),
-  CosmeticDefinition('day', '낮', CosmeticSlot.time, '0', 1),
-  CosmeticDefinition('night_time', '밤', CosmeticSlot.time, '0', 1),
+  // Day or night for every season (4차 피드백 g10, ID9, 2026-11-21): the
+  // device's clock by default and free; a fixed day or night is sold in the
+  // Workshop like the special backgrounds (avatar_catalog slot `time`). The
+  // old '배경 그대로' (scenetime) is gone ([retiredCosmetics]).
   CosmeticDefinition('clock', '기기 시간 따라', CosmeticSlot.time, '0', 1),
+  CosmeticDefinition('day', '낮 고정', CosmeticSlot.time, '0', 1),
+  CosmeticDefinition('night_time', '밤 고정', CosmeticSlot.time, '0', 1),
 ];
 const defaultCosmetics = {
   CosmeticSlot.fish: 'redbean',
@@ -231,8 +257,50 @@ const defaultCosmetics = {
   CosmeticSlot.stove: 'iron',
   CosmeticSlot.decoration: 'none',
   CosmeticSlot.lamp: 'amberlamp',
-  CosmeticSlot.time: 'scenetime'
+  CosmeticSlot.time: 'clock'
 };
+
+/// Items taken out, worn in older saves, and what a save wearing one wears
+/// now (4차 피드백 g10, ID9: '배경 그대로' became the device's clock). An
+/// older save that owns one just drops it.
+const retiredCosmetics = {'scenetime': 'clock'};
+
+/// Each character's own default hair (26번 3차 G, 2026-11-20 사용자 결정:
+/// "남자 사장님 기본 머리는 짧은 머리"). A shop that has the character has
+/// its default hair without buying it, and a vendor whose hair was never
+/// picked wears it. The girl keeps [defaultCosmetics]' long hair.
+const characterDefaultHair = {'girl': 'long', 'boy': 'short'};
+
+/// v1 vendor only (26번 3차 G): the hair style drawn as the base's own hair
+/// while a hat is on. v1 hats were cut from pictures of the base hair under
+/// them, so the boy's short hair (his default, close to his base hair) and
+/// a hat left loose strands; under a hat he shows the base hair instead.
+/// Goes away with the 25번 43~44번 art.
+const v1HatHairAsBase = {'boy': 'short'};
+
+/// The hair [character] wears until another is picked.
+String defaultHairOf(String character) =>
+    characterDefaultHair[character] ?? defaultCosmetics[CosmeticSlot.hair]!;
+
+/// The item [character] wears in [slot] until another is picked: its own
+/// default hair, else the slot default.
+String defaultAvatarItem(CosmeticSlot slot, String character) =>
+    slot == CosmeticSlot.hair ? defaultHairOf(character) : defaultCosmetics[slot]!;
+
+/// Free choices besides the slot defaults, owned from the start and not
+/// collected: taking off the default apron (stage 26 4-4).
+const freeChoiceCosmetics = {'noapron'};
+
+/// Removed items and what a save holding them wears instead (26번 3차
+/// AV3, DEC-TBD-hAV3-2: skin tones 2·3 left the game before launch, so a
+/// save wearing one wears skin1 and nothing is refunded).
+const removedCosmetics = {'skin2': 'skin1', 'skin3': 'skin1'};
+
+/// Items that were aprons ([CosmeticSlot.outfit]) before 26번 4-5단계 and
+/// are tops now. An older save wearing one wears it as the top and takes
+/// the apron off ('noapron'), so the vendor looks the same (account save
+/// v14, Workshop schema 9).
+const movedToTop = {'chefcoat', 'padding'};
 
 /// Slots added in save format v10; older saves get their defaults.
 const stage12Slots = {
@@ -271,19 +339,63 @@ int cosmeticSlotSince(CosmeticSlot slot) => stage14Slots.contains(slot)
 /// amberlamp keeps the lamps drawn in the background itself.
 const blankCosmetics = {
   'none',
+  'tongs',
   'plain',
   'nohat',
   'noacc',
+  'noapron',
   'amberlamp',
-  'scenetime',
   'day',
   'night_time',
   'clock',
 };
 
-/// Whether the [time] choice shows the night, or null to keep each
-/// background's own time ('scenetime'). 'clock' follows the device: night
-/// from 19:00 to 6:00.
+/// Avatar items taken out of the shop and the wardrobe on that character
+/// (26번 3차 녹화 피드백 H8·H10): the golden tongs ("집게를 지워"), and any
+/// item whose art is broken. No one can buy or pick them, a save that owns
+/// one keeps it (ownership is not touched), and the vendor wearing one is
+/// drawn without it. A redraw goes to 25번 and the entry comes out.
+const withdrawnAvatarItems = <String, Set<String>>{
+  // 26번 3차 AV: the golden tongs came back as the golden turner (25번 41번).
+  // 26번 3차 AV3 (DEC-TBD-hAV3-4): the low ponytail waits for its art; take
+  // it out of both sets once its pictures are in avatar_v2/.
+  'girl': {'lowponytail'},
+  'boy': {'lowponytail'},
+};
+
+bool avatarItemWithdrawn(String character, String id) =>
+    withdrawnAvatarItems[character]?.contains(id) ?? false;
+
+/// Hats that cannot be worn over a hair style (26번 3차 AV3, DEC-TBD-hAV3-3,
+/// 2026-11-20 사용자 결정): the high ponytail's knot sits on the crown, so a
+/// hat covering the whole crown cannot go over it. Caps and earmuffs can.
+const hairBlockedHats = <String, Set<String>>{
+  'ponytail': {'beanie', 'bandana', 'redbandana', 'chefhat', 'santa', 'newsboy'},
+};
+
+/// Whether [hair] and [hat] cannot be worn together.
+bool hairHatClash(String hair, String hat) =>
+    hairBlockedHats[hair]?.contains(hat) ?? false;
+
+/// The hat drawn over [hair]: none when the two cannot go together (a save
+/// or a received look holding such a pair).
+String wearableHat(String hair, String hat) =>
+    hairHatClash(hair, hat) ? defaultCosmetics[CosmeticSlot.hat]! : hat;
+
+/// Why a hat cannot be picked over the hair worn (center toast).
+const hatOverHairText = '묶은 머리에는 이 모자를 쓸 수 없어요';
+
+/// Why a hair style cannot be picked under the hat worn (center toast).
+const hairUnderHatText = '이 모자를 쓰면 묶은 머리를 할 수 없어요';
+
+/// The clock the day/night choice 'clock' follows on screen: the device's
+/// (4차 피드백 g10, ID9: the default for every shop). Tests fix it
+/// (test/flutter_test_config.dart) so pictures do not change with the hour.
+DateTime Function() sceneClock = DateTime.now;
+
+/// Whether the [time] choice shows the night: 'clock' (the default) follows
+/// the device, night from 19:00 to 6:00; 'day' and 'night_time' are fixed.
+/// Null (each background's own time) only for an unknown choice.
 bool? isNightTime(String time, DateTime local) => switch (time) {
       'night_time' => true,
       'day' => false,
@@ -306,7 +418,7 @@ String dayBackground(String background) =>
 
 String cosmeticSlotLabel(CosmeticSlot slot) => switch (slot) {
       CosmeticSlot.fish => '맛',
-      CosmeticSlot.pattern => '무늬',
+      CosmeticSlot.pattern => '틀',
       CosmeticSlot.topping => '토핑',
       CosmeticSlot.character => '캐릭터',
       CosmeticSlot.skin => '피부톤',
@@ -318,7 +430,8 @@ String cosmeticSlotLabel(CosmeticSlot slot) => switch (slot) {
       CosmeticSlot.hat => '모자',
       CosmeticSlot.accessory => '액세서리',
       CosmeticSlot.tool => '도구',
-      CosmeticSlot.background => '배경',
+      // 4차 피드백 g10(ID8): the tab is 배경 now, its pictures 풍경.
+      CosmeticSlot.background => '풍경',
       CosmeticSlot.stove => '화로',
       CosmeticSlot.decoration => '장식',
       CosmeticSlot.lamp => '등불',
@@ -336,5 +449,6 @@ String wardrobeTabLabel(WardrobeTab t) => switch (t) {
       WardrobeTab.outfit => '의상',
       WardrobeTab.props => '소품',
       WardrobeTab.bungeoppang => '붕어빵',
-      WardrobeTab.stall => '가게',
+      // 4차 피드백 g10(ID8): '가게' → '배경' (풍경·등불·밤낮 칸).
+      WardrobeTab.stall => '배경',
     };

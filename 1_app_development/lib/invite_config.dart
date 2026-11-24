@@ -19,5 +19,5 @@ const mockInviteBaseUrl = 'https://example.invalid/todays-bungeoppang/invite';
 // Release "share the game": no reward, no tracking parameters, no referral.
 // Resolves only once the app is published under this application ID.
 const storeUrl =
-    'https://play.google.com/store/apps/details?id=com.todaybungeoppang.todays_bungeoppang';
+    'https://play.google.com/store/apps/details?id=com.todaybungeoppang.app';
 const gameShareText = '오늘의 붕어빵 — 밤 골목 붕어빵 클리커, 광고 없이 무료!\n$storeUrl';

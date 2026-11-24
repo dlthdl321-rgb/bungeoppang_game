@@ -112,9 +112,23 @@ void main() {
             '9999.99${koreanLargeUnits[group - 1]}');
       }
     }
-    expect(compactNumber(BigInt.from(10).pow(52)), '1.00e52');
-    expect(compactNumber(BigInt.from(10).pow(1000)), '1.00e1000');
-    expect(compactNumber(-BigInt.from(10).pow(1000)), '-1.00e1000');
+    // 4차 g14: past 극 the units go on (항하사…무량대수), never 'e' notation.
+    expect(compactNumber(BigInt.from(10).pow(52)), '1항하사');
+    expect(compactNumber(BigInt.from(10).pow(68)), '1무량대수');
+    expect(compactNumber(BigInt.from(10).pow(72) - BigInt.one),
+        '9999.99무량대수');
+    expect(compactNumber(BigInt.from(10).pow(72)), '1만 무량대수');
+    expect(compactNumber(BigInt.from(10).pow(72) * BigInt.from(10999) ~/
+            BigInt.from(10000)),
+        '1.09만 무량대수');
+    expect(compactNumber(BigInt.parse('987${'0' * 113}')), '9870재 무량대수');
+    expect(compactNumber(BigInt.from(10).pow(136)), '1무량대수 무량대수');
+    expect(compactNumber(-BigInt.from(10).pow(140)), '-1만 무량대수 무량대수');
+    for (final e in [52, 115, 300, 1000]) {
+      final text = compactNumber(BigInt.from(10).pow(e) * BigInt.from(987));
+      expect(text.contains('e'), isFalse, reason: text);
+      expect(RegExp(r'^\d').hasMatch(text), isTrue, reason: text);
+    }
     expect(exactNumber(BigInt.parse('12345678901234567890')),
         '12,345,678,901,234,567,890');
   });

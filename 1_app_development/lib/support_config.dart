@@ -31,14 +31,15 @@ const dailyDefinitions = [
       'taps', '붕어빵 탭', DailyMetric.taps, '50', RewardDefinition('2')),
   DailyDefinition('production', '오늘 붕어빵 생산', DailyMetric.production, '1000',
       RewardDefinition('3')),
-  DailyDefinition('purchases', '스킬 구매 수량', DailyMetric.purchases, '3',
+  DailyDefinition('purchases', '스킬 레벨업 횟수', DailyMetric.purchases, '3',
       RewardDefinition('2')),
   DailyDefinition(
       'auto', '기본 초당 생산', DailyMetric.autoRate, '10', RewardDefinition('3')),
 ];
 const dailyAllReward = RewardDefinition('10');
-// Active production only; purchased quantity (not button presses); base skill
-// rate peak (temporary boosts cannot satisfy this goal). Explicit estimates.
+// Active production only; levels gained (not button presses: one ×10
+// press counts 10); base skill rate peak (temporary boosts cannot satisfy
+// this goal). Explicit estimates.
 const dailyOfflineCounts = false;
 
 /// Timed production boosts (stage 14). Each one multiplies both tap and

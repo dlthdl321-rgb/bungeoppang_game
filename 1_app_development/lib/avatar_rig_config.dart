@@ -17,6 +17,11 @@ enum RigLayer {
 
   /// The pose's picture: body, face, default hair and clothes.
   base,
+
+  /// Hair styles other than the base's own (`hair_<id>.png`). Every worn
+  /// item's `_cut` mask erases what it hides from the base first, so the
+  /// masks never bite into the hair, the face or the clothes.
+  hair,
   eyes,
   mouth,
   bottom,
@@ -31,9 +36,10 @@ enum RigLayer {
   front,
 }
 
-/// The layer each worn slot draws on (character, skin and hair change the
-/// base picture itself).
+/// The layer each worn slot draws on. character picks the base picture and
+/// skin its recoloured copy (`<file>@<skin>.png`, see [rigSkinPicture]).
 const rigSlotLayers = {
+  CosmeticSlot.hair: RigLayer.hair,
   CosmeticSlot.bottom: RigLayer.bottom,
   CosmeticSlot.shoes: RigLayer.shoes,
   CosmeticSlot.top: RigLayer.top,
@@ -48,6 +54,19 @@ const rigSlotLayers = {
 /// `<slot>_<id>_back.png` and/or `_front.png`; [PixelSprites] finds them in
 /// the asset list, so adding one needs no code.
 const rigItemHalves = {'back': RigLayer.behind, 'front': RigLayer.front};
+
+/// The mask a worn item ships beside its picture: base pixels the item
+/// hides (`<slot>_<id>_cut.png`, opaque where to erase), made by
+/// tools/avatar_layers.py worn.
+String rigCutPicture(String item) => item.replaceFirst('.png', '_cut.png');
+
+/// [picture] recoloured for [skin] (`<file>@<skin>.png`, made by
+/// tools/avatar_layers.py skin), or [picture] itself for the drawn skin.
+/// Pictures without skin have no copy; the rig then draws [picture].
+String rigSkinPicture(String picture, String skin) =>
+    skin == defaultCosmetics[CosmeticSlot.skin]
+        ? picture
+        : picture.replaceFirst('.png', '@$skin.png');
 
 /// The anchor of the canvas itself: (0, 0) of the pose's picture.
 const rigOrigin = 'origin';
@@ -77,6 +96,12 @@ const rigPlacements = <String, RigPlacement>{};
 /// A face feature that can change on its own: the eyes blink and the mouth
 /// talks. [frames] lists its pictures; the [rest] frame is the art itself
 /// (no file), so a missing picture always falls back to the face as drawn.
+///
+/// The resting face is neutral (무표정, 26번 3차 AV3, DEC-TBD-hAV3-5,
+/// 2026-11-20 사용자 결정): nothing here picks a smile - the eyes rest open
+/// and the mouth closed, which is the base picture's own face (redrawn
+/// neutral by 25번 53번). Only short motions change it: a blink, talking
+/// while greeting, and the share card's open mouth.
 class RigChannel {
   final String id;
   final RigLayer layer;

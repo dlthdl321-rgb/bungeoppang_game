@@ -45,8 +45,12 @@ export function parseCompositeIntent(value: unknown, authenticatedUid: string): 
     owned: natural(row.owned), quantity: natural(row.quantity),
     buns: decimal(row.buns), gold: decimal(row.gold),
   };
+  // DEC-041: a skill may cost 0 gold (tiers 1~4); a cosmetic always costs gold.
+  // 재료 타이쿤 C: a special ingredient costs gold only (no 붕어빵력).
+  const ingredient = result.skill.startsWith("ingredient:");
   if (result.account !== authenticatedUid || !authenticatedUid ||
-      result.quantity === 0 || BigInt(result.buns) === 0n || BigInt(result.gold) === 0n) {
+      result.quantity === 0 || (BigInt(result.buns) === 0n) !== ingredient ||
+      (BigInt(result.gold) === 0n && (result.skill.startsWith("cosmetic:") || result.skill.startsWith("level:") || ingredient))) {
     return fail("계정 또는 유상 견적 불일치");
   }
   return result;
@@ -211,6 +215,29 @@ export function validateDevelopmentCompositeQuote(config: unknown, input: unknow
   const requested = parseCompositeIntent(input, authenticatedUid);
   const root = object(config), metadata = object(root.metadata);
   const purchase = object(root.skill_purchase), entries = object(purchase.entries);
+  if (requested.skill.startsWith("level:")) {
+    // 4차 피드백 g9: the gold level-ups (Lv.10·20·30·40·50) pay both
+    // currencies once each; the price is the level's row.
+    const level = Number(requested.skill.slice(6)), rows = root.level_progression;
+    if (!Number.isSafeInteger(level) || `level:${level}` !== requested.skill || level < 2 || level > 50 || !Array.isArray(rows)) return fail("레벨업 비용 식별자 오류");
+    const row = object(rows[level - 1]), gold = natural(row.level_cost_gold);
+    if (!gold || natural(row.level) !== level || natural(authoritativeOwned) !== 0 || requested.owned !== 0 || requested.quantity !== 1) return fail("레벨업 비용 보유/수량 오류");
+    const expected = { ...requested, revision: text(metadata.revision), buns: decimal(row.level_cost_buns), gold: String(gold) };
+    assertSameCompositeIntent(expected, requested); return expected;
+  }
+  if (requested.skill.startsWith("ingredient:")) {
+    // 재료 타이쿤 C: packs of a special ingredient (`ingredients.premium`),
+    // `pack_gold` each, as many times as wanted. owned counts the packs
+    // bought so far; one purchase fits in `max_stock` (÷ `pack_count`).
+    const premium = object(object(root.ingredients).premium), items = object(premium.items);
+    const id = requested.skill.slice(11);
+    if (!Object.prototype.hasOwnProperty.call(items, id)) return fail("알 수 없는 특별한 재료");
+    const limit = Math.floor(natural(object(items[id]).max_stock) / Math.max(1, natural(premium.pack_count)));
+    const owned = natural(authoritativeOwned), gold = BigInt(natural(premium.pack_gold)) * BigInt(requested.quantity);
+    if (requested.owned !== owned || requested.quantity > limit || gold === 0n) return fail("특별한 재료 보유/수량 오류");
+    const expected = { ...requested, revision: text(metadata.revision), buns: "0", gold: gold.toString() };
+    assertSameCompositeIntent(expected, requested); return expected;
+  }
   if (requested.skill.startsWith("cosmetic:")) {
     const item=requested.skill.slice(9),catalog=object(root.avatar_catalog),entry=object(catalog[item]);
     const price=object(object(root.cosmetic_purchase)[item]);
@@ -227,13 +254,14 @@ export function validateDevelopmentCompositeQuote(config: unknown, input: unknow
   const num = natural(row.ratio_numerator), den = natural(row.ratio_denominator);
   const step = natural(purchase.gold_step_purchase_count), increment = natural(purchase.gold_step_amount);
   const initialGold = natural(row.gold), base = BigInt(decimal(row.buns));
-  if (!den || num < den || !step || !initialGold || base === 0n) return fail("서버 가격 설정 오류");
+  if (!den || num < den || !step || base === 0n) return fail("서버 가격 설정 오류");
   let numerator = base * BigInt(num) ** BigInt(owned);
   let denominator = BigInt(den) ** BigInt(owned);
   let buns = 0n, gold = 0n;
   for (let n = owned; n < owned + requested.quantity; n++) {
     buns += (numerator + denominator - 1n) / denominator;
-    gold += BigInt(initialGold) + BigInt(Math.floor(n / step)) * BigInt(increment);
+    // DEC-041: base gold 0 means no gold at any count (no step increment).
+    if (initialGold > 0) gold += BigInt(initialGold) + BigInt(Math.floor(n / step)) * BigInt(increment);
     numerator *= BigInt(num);
     denominator *= BigInt(den);
   }

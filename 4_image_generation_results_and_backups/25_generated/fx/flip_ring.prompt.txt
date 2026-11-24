@@ -1,0 +1,9 @@
+﻿Pixel art game UI sprite, 512x512 pixels, transparent background, crisp dot
+texture matching a cozy Korean street-food stall game (bungeoppang). A thin
+circular guide ring centred in the canvas (radius about 236 px, line about
+16 px thick) in soft cream (#FEF1D6) at about 50% opacity, with two small
+solid cream arrowheads sitting ON the ring at the upper right and lower left,
+both pointing clockwise along the ring, to tell the player to draw a circle
+with a finger. Thin warm-brown outline on the arrowheads, no text, no hand,
+nothing inside the ring.
+Fully transparent empty centre and exterior, no glow, no shadow.

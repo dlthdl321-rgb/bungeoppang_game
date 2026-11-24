@@ -1,0 +1,21 @@
+{
+  "section": 12,
+  "section_hash": "db809a03e1a7ba136f607631a82687d918d33c1aea82eb79564096cb880a9755",
+  "required": [
+    32,
+    32
+  ],
+  "actual": [
+    1254,
+    1254
+  ],
+  "method": "built-in imagegen",
+  "references": [],
+  "limitations": "Generated candidate; requested dimensions, alignment, exact tile seams/opacity require verification before game integration",
+  "mode": "RGBA",
+  "alpha_extrema": [
+    0,
+    253
+  ],
+  "visual_review": "White core/honey light/no black outline. Frame2 larger than frames1/3. Glow boundary has scattered alpha artifacts, needs cleanup and frame alignment before use."
+}

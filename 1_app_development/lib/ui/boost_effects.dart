@@ -41,6 +41,27 @@ const griddleCavities = [
   Offset(.743, .715),
 ];
 
+/// The top of the griddle's front rim as a fraction of the stove sprite's
+/// height (the art above it is see-through; all four stoves, closed, empty
+/// and full, are wide from 163–186 of 470 px). The griddle's lock notice
+/// sits on this edge (4차 피드백 IB2).
+const griddleRimTop = .38;
+
+/// The bungeoppang in each cavity of the stove art as fractions of the
+/// sprite (all four stoves, measured with tools/empty_griddle.py's fish
+/// masks). The two rows meet at .6085. GriddlePainter cuts a cooking cell's
+/// bungeoppang with these from the stove's fish-only layer (or the full
+/// art) over the empty griddle. The drawn empty griddles' fish hollows sit
+/// within a few pixels of these and of [griddleCavities] (25번 1번).
+const griddleFishClips = [
+  Rect.fromLTRB(.188, .430, .380, .6085),
+  Rect.fromLTRB(.406, .430, .596, .6085),
+  Rect.fromLTRB(.619, .430, .816, .6085),
+  Rect.fromLTRB(.149, .6085, .362, .815),
+  Rect.fromLTRB(.395, .6085, .603, .815),
+  Rect.fromLTRB(.632, .6085, .847, .815),
+];
+
 /// Where GriddlePainter draws a [sprite]-sized stove in [box]: fitted and
 /// bottom-aligned.
 Rect griddleSpriteRect(Size box, Size sprite) {
@@ -266,7 +287,10 @@ AvatarLook lookFromServer(Map<String, String> look) {
     return id != null &&
             cosmeticDefinitions.any((d) => d.slot == slot && d.id == id)
         ? id
-        : defaultCosmetics[slot]!;
+        // Hair not sent: the character's own default (26번 3차 G).
+        : slot == CosmeticSlot.hair
+            ? defaultHairOf(pick(CosmeticSlot.character))
+            : defaultCosmetics[slot]!;
   }
 
   return AvatarLook.of(pick);

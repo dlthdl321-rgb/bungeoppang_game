@@ -11,6 +11,7 @@ import '../cosmetic_config.dart';
 import 'boost_effects.dart';
 import 'fish_painter.dart';
 import 'pixel_sprites.dart';
+import 'sparkle_art.dart';
 import 'tap_effects.dart';
 
 class _Burst {
@@ -320,18 +321,14 @@ class SparklePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final sprite = PixelSprites.fx('sparkle');
-    if (sprite != null) {
+    // The no-outline twinkle of 26번 4단계 F11 (ui/sparkle_art.dart), still.
+    if (PixelSprites.fx(SparkleArt.frames[1]) != null ||
+        SparkleArt.style != SparkleStyle.star) {
       for (final (fx, fy, n) in _sparkles) {
-        // Logical 7x7 sparkle; the art may be exported at finer dots.
-        final side = 7 * (1.0 + n) * (size.width / 360);
-        PixelSprites.draw(
-            canvas,
-            sprite,
-            Rect.fromCenter(
-                center: Offset(size.width * fx, size.height * fy),
-                width: side,
-                height: side));
+        // The 32x32 art is mostly glow: a little larger than the old 7x7.
+        final side = 10 * (1.0 + n) * (size.width / 360);
+        SparkleArt.paint(canvas, Offset(size.width * fx, size.height * fy), side,
+            SparkleArt.stillPhase);
       }
       return;
     }

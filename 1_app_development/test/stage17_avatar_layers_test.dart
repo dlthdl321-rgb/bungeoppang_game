@@ -5,18 +5,27 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/avatar_atlas.dart';
 import 'package:todays_bungeoppang/avatar_motion.dart';
 import 'package:todays_bungeoppang/avatar_rig_config.dart';
+import 'package:todays_bungeoppang/avatar_v2.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/ui/avatar_face.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
 import 'package:todays_bungeoppang/ui/boost_effects.dart' show lookFromServer;
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
+import 'package:todays_bungeoppang/ui/public_menus.dart';
+import 'test_support.dart' show setUpAccount;
 
 // Stage 17: the vendor as separate layers (lib/avatar_rig_config.dart),
 // eye and mouth frames over the drawn face, and their motions.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(PixelSprites.load);
-  tearDown(() => AvatarRigDebug.show.value = false);
+  // These check the v1 rig (26번 4-4); the v2 vendor is on since 26번 3차
+  // and has its own tests (avatar_v2_test.dart).
+  setUp(() => debugAvatarV2Override = false);
+  tearDown(() {
+    AvatarRigDebug.show.value = false;
+    debugAvatarV2Override = null;
+  });
 
   AvatarLook dressed(Map<CosmeticSlot, String> worn,
           {String character = 'girl'}) =>
@@ -24,14 +33,21 @@ void main() {
           ? character
           : worn[s] ?? defaultCosmetics[s]!);
 
-  const restLook = ['avatar/girl/base.png', 'avatar/girl/tool_tongs.png'];
+  // The default apron is drawn since stage 26 4-4; the tongs are gone
+  // since 26번 3차 H8 (the tool default draws nothing).
+  const restLook = [
+    'avatar/girl/base.png',
+    'avatar/girl/outfit_apron.png',
+  ];
   const winter = {
     CosmeticSlot.hat: 'beanie',
     CosmeticSlot.accessory: 'scarf',
-    CosmeticSlot.top: 'cardigan',
-    CosmeticSlot.outfit: 'padding',
+    // 26번 4-5단계(G12): the padded vest is a top; an apron goes over it.
+    CosmeticSlot.top: 'padding',
+    CosmeticSlot.outfit: 'darkapron',
     CosmeticSlot.shoes: 'sneakers',
     CosmeticSlot.bottom: 'skirt',
+    CosmeticSlot.tool: 'paperbag',
   };
 
   Future<Uint8List> pixels(AvatarRig rig) async {
@@ -45,7 +61,7 @@ void main() {
   }
 
   group('레이어 구성', () {
-    test('기본 차림은 몸 그림과 집게뿐이고, 얼굴은 그려진 그대로다', () {
+    test('기본 차림은 몸 그림·기본 앞치마이고(집게 없음), 얼굴은 그려진 그대로다', () {
       // The base already wears the default hair, tee, shorts and flats.
       final rig = AvatarRig('girl', frontPose, look: dressed({}));
       expect(rig.sprites.map((s) => s.asset), restLook);
@@ -123,9 +139,11 @@ void main() {
         }
         mouths.add(sprites.last.anchor);
       }
-      // One shared mouth picture, placed per frame (frame 1's head is 30
-      // pixels right of frame 2's, measured by tools/avatar_layers.py).
-      expect(mouths[0] - mouths[1], const Offset(30, -1));
+      // One shared mouth picture, placed per frame (measured by
+      // tools/avatar_layers.py, then moved with the frames by
+      // tools/align_cook_cuts.py: frame 1's head is now 1 pixel right of
+      // frame 2's instead of 30, 26번 4-2단계 F9).
+      expect(mouths[0] - mouths[1], const Offset(1, -1));
     });
 
     test('서버 외형(아이템 id)과 저장된 차림은 같은 레이어가 된다', () {
@@ -135,6 +153,179 @@ void main() {
         'hat': 'not-an-item',
       });
       expect(fromServer, dressed({...winter, CosmeticSlot.hat: 'nohat'}));
+    });
+  });
+
+  group('그림 매칭 (26번 4-4)', () {
+    final avatarItems = cosmeticDefinitions.where((d) =>
+        d.slot.category == CosmeticCategory.avatar &&
+        d.slot != CosmeticSlot.character);
+
+    test('꾸미기에 보이는 모든 아이템은 남녀 모두 그림이 실제로 바뀐다', () {
+      for (final character in ['girl', 'boy']) {
+        final rest = AvatarRig(character, frontPose,
+                look: dressed({}, character: character))
+            .sprites
+            .map((s) => s.asset)
+            .toList();
+        for (final d in avatarItems) {
+          if (!PixelSprites.avatarArtReady(character, d.slot, d.id)) continue;
+          if (d.id == defaultCosmetics[d.slot]) continue;
+          final worn = AvatarRig(character, frontPose,
+                  look: dressed({d.slot: d.id}, character: character))
+              .sprites
+              .map((s) => s.asset)
+              .toList();
+          expect(worn, isNot(equals(rest)), reason: '$character ${d.id}');
+        }
+      }
+    });
+
+    test('그림이 준비되지 않은 유료 아이템은 숨기고, 무료 선택지는 숨기지 않는다', () {
+      for (final character in ['girl', 'boy']) {
+        // Flat hats wait for their worn picture (25번 문서 17번).
+        for (final id in ['beanie', 'bandana', 'ballcap', 'newsboy']) {
+          expect(
+              PixelSprites.avatarArtReady(character, CosmeticSlot.hat, id),
+              avatarWornLayers.contains('avatar/$character/hat_$id.png'),
+              reason: '$character $id');
+        }
+        for (final d in avatarItems) {
+          final ready = PixelSprites.avatarArtReady(character, d.slot, d.id);
+          final drawnByBase = blankCosmetics.contains(d.id) ||
+              d.id == defaultCosmetics[d.slot];
+          if (ready && !drawnByBase && d.slot != CosmeticSlot.skin) {
+            expect(
+                PixelSprites.byPath(
+                    PixelSprites.avatarPartPath(character, d.slot, d.id)),
+                isNotNull,
+                reason: '$character ${d.id}');
+          }
+        }
+        for (final id in ['skin1', 'long', 'noapron']) { // skin1 only (26번 3차 AV3)
+          final d = cosmeticDefinitions.firstWhere((d) => d.id == id);
+          expect(PixelSprites.avatarArtReady(character, d.slot, id), isTrue,
+              reason: '$character $id');
+        }
+      }
+    });
+
+    test('생성 목록은 실제 에셋과 같다', () {
+      for (final path in avatarArtFiles) {
+        // 26번 3차 AV3 (DEC-TBD-hAV3-2): the v1 skin2·3 copies stay on disk
+        // but no skin tone loads them any more.
+        if (path.contains('@skin2') || path.contains('@skin3')) continue;
+        expect(PixelSprites.byPath(path), isNotNull, reason: path);
+      }
+      for (final path in avatarWornLayers) {
+        expect(avatarArtFiles, contains(path));
+      }
+    });
+
+    test('피부톤은 skin1 하나: 몸·얼굴은 원래 그림 (26번 3차 AV3)', () {
+      expect([for (final d in cosmeticDefinitions) if (d.slot == CosmeticSlot.skin) d.id], ['skin1']);
+      for (final character in ['girl', 'boy']) {
+        final rig = AvatarRig(character, frontPose,
+            look: dressed({CosmeticSlot.skin: 'skin1'}, character: character));
+        expect(rig.sprites.first.asset, 'avatar/$character/base.png');
+        final talking = AvatarRig(character, frontPose,
+            look: dressed({}, character: character), face: {'mouth': 'wide'});
+        expect(talking.sprites.map((s) => s.asset),
+            contains('parts/${character}_front_mouth_wide.png'));
+      }
+    });
+
+    test('머리 모양은 base 바로 위 hair 레이어이고, _cut이 긴 머리를 지운다', () async {
+      for (final character in ['girl', 'boy']) {
+        final rig = AvatarRig(character, frontPose,
+            look: dressed({CosmeticSlot.hair: 'short'}, character: character));
+        final hair = rig.sprites[1];
+        expect(hair.asset, 'avatar/$character/hair_short.png');
+        expect(hair.layer, RigLayer.hair);
+        final cut = rig.cuts
+            .singleWhere((s) => s.asset.endsWith('hair_short_cut.png'));
+        final long = await pixels(AvatarRig(character, frontPose,
+            look: dressed({}, character: character)));
+        final short = await pixels(rig);
+        final mask = (await cut.image.toByteData())!;
+        var erased = 0;
+        for (var y = 0; y < cut.image.height; y++) {
+          for (var x = 0; x < cut.image.width; x++) {
+            if (mask.getUint8((y * cut.image.width + x) * 4 + 3) == 0) {
+              continue;
+            }
+            final i = ((cut.trim.dy.round() + y) * 280 +
+                        cut.trim.dx.round() +
+                        x) *
+                    4 +
+                3;
+            if (long[i] > 0 && short[i] == 0) erased++;
+          }
+        }
+        expect(erased, greaterThan(200), reason: character);
+      }
+    });
+
+    test('모자 _cut 마스크는 그 모자를 쓸 때만 그려진다', () {
+      final plain = AvatarRig('girl', frontPose, look: dressed({}));
+      expect(plain.cuts.where((s) => s.asset.contains('/hat_')), isEmpty);
+      final chef = AvatarRig('girl', frontPose,
+          look: dressed({CosmeticSlot.hat: 'chefhat'}));
+      expect(chef.cuts.map((s) => s.asset),
+          contains('avatar/girl/hat_chefhat_cut.png'));
+    });
+
+    test('앞치마 없음을 고르면 앞치마 레이어가 빠진다', () {
+      for (final character in ['girl', 'boy']) {
+        final sprites = AvatarRig(character, frontPose,
+                look: dressed({CosmeticSlot.outfit: 'noapron'},
+                    character: character))
+            .sprites;
+        expect(sprites.where((s) => s.layer == RigLayer.outfit), isEmpty);
+        expect(
+            AvatarRig(character, frontPose,
+                    look: dressed({}, character: character))
+                .sprites
+                .map((s) => s.asset),
+            contains('avatar/$character/outfit_apron.png'));
+      }
+    });
+
+    testWidgets('잠긴 아이템도 눌러서 미리 볼 수 있고, 숨긴 아이템은 목록에 없다',
+        (tester) async {
+      final c = await setUpAccount(tester, const Size(390, 844));
+      final access = CosmeticMenuAccess(
+          equipped: c.state.equippedCosmetic,
+          owned: (d) => d.free,
+          unlocked: (d) => d.free,
+          canApply: (_) => false,
+          price: (_) => '',
+          action: (_) => '잠김',
+          apply: (_) async => false,
+          // Every hat has its worn art now (25번 문서 17번), so the test
+          // hides one itself to check the panel leaves hidden items out.
+          listed: (d) =>
+              d.id != 'ballcap' &&
+              (d.slot.category != CosmeticCategory.avatar ||
+                  PixelSprites.avatarArtReady('girl', d.slot, d.id)));
+      // 26번 4-5단계: locked items are tried on in the shop's 꾸미기 tab.
+      await tester.pumpWidget(MaterialApp(
+          home: Scaffold(
+              body: WardrobePanel(
+                  controller: c, access: access, mode: WardrobeMode.shop))));
+      await tester.tap(find.byKey(const Key('cosmetic-slot-hat')));
+      await tester.pump();
+      expect(find.byKey(const Key('preview-ballcap')), findsNothing);
+      await tester.ensureVisible(find.byKey(const Key('preview-chefhat')));
+      await tester.tap(find.byKey(const Key('preview-chefhat')));
+      await tester.pump();
+      expect(find.text('입어 보는 중'), findsOneWidget);
+      final painter = tester
+          .widget<CustomPaint>(find.byKey(const Key('preview-avatar-face')))
+          .painter! as AvatarPainter;
+      expect(painter.look.hat, 'chefhat');
+      await tester.pumpWidget(const SizedBox.shrink());
+      c.dispose(); // No GameApp owns this controller here (28번 C2).
     });
   });
 

@@ -11,7 +11,7 @@ parser.add_argument('--app', default='C:/Temp/bungeoppang-step02-analysis')
 parser.add_argument('--smoke-only', action='store_true')
 parser.add_argument('--review-only', action='store_true',
                     help='Build and open the real app with a read-only physical-review observer')
-parser.add_argument('--gradle-home', default='C:/GradleCache')
+parser.add_argument('--gradle-home', default='D:/DevMoved/GradleCache')  # C:/GradleCache is a junction; Kotlin DSL recompiles fail through it
 args = parser.parse_args()
 if args.smoke_only and args.review_only:
     parser.error('--smoke-only and --review-only are mutually exclusive')
@@ -29,7 +29,7 @@ env['GRADLE_OPTS'] = env.get('GRADLE_OPTS', '') + ' -Dorg.gradle.jvmargs="-Xmx2g
 Path(env['TEMP']).mkdir(parents=True, exist_ok=True)
 flutter = 'C:/flutter-sdk/bin/flutter.bat'
 adb = 'C:/Android/sdk/platform-tools/adb.exe'
-package = 'com.todaybungeoppang.todays_bungeoppang.step02audit'
+package = 'com.todaybungeoppang.app.step02audit'
 run = time.strftime('%Y%m%d%H%M%S')
 logs = Path('C:/Temp') / f'step02-device-{run}'
 logs.mkdir()
@@ -54,7 +54,7 @@ if args.review_only:
     apk = app / 'build/app/outputs/flutter-apk/app-debug.apk'
     execute('review-install', [adb, '-s', args.device, 'install', '-r', str(apk)])
     execute('review-launch', [adb, '-s', args.device, 'shell', 'am', 'start', '-n',
-        package + '/com.todaybungeoppang.todays_bungeoppang.MainActivity'])
+        package + '/com.todaybungeoppang.app.MainActivity'])
     print(f'REVIEW OPENED: physical touch/tilt/lifecycle still require observation; logs={logs}', flush=True)
     raise SystemExit(0)
 

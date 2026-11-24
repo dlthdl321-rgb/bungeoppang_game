@@ -24,6 +24,13 @@ class WorkshopCustomerCatalog {
     if (id == 'npc_sua' && completedStories.contains('story_sua_01')) return '우리 동네 수아 씨';
     return npc(id)['display_name'] as String;
   }
+  /// The short name for the counter and notifications (S4-1-Q2): '도윤',
+  /// '윤하 씨', … After 서진's story she is '서진 씨', as in [address].
+  String shortName(String id, Set<String> completedStories) {
+    if (!contains(id)) return '손님';
+    if (id == 'npc_seojin' && completedStories.contains('story_seojin_01')) return '서진 씨';
+    return npc(id)['short_name'] as String;
+  }
   String address(String id, Set<String> completedStories) =>
       id == 'npc_seojin' && completedStories.contains('story_seojin_01')
           ? '서진 씨' : npc(id)['address_default'] as String;
@@ -62,6 +69,15 @@ class WorkshopCustomerCatalog {
   }
 }
 
+/// [name] with the subject particle 이/가 chosen by its last syllable's
+/// final consonant: '도윤이', '윤하 씨가'. Non-Hangul endings get '이(가)'.
+String withSubjectParticle(String name) {
+  if (name.isEmpty) return name;
+  final code = name.runes.last;
+  if (code < 0xAC00 || code > 0xD7A3) return '$name이(가)';
+  return (code - 0xAC00) % 28 == 0 ? '$name가' : '$name이';
+}
+
 /// Copy-on-command local relationship journal. It does not own money, products,
 /// gold, server receipts, order timers, or decide whether a sale/story is valid.
 /// The aggregate must commit its result with the corresponding sale/story.
@@ -94,21 +110,25 @@ class WorkshopRelationships {
       .where((v) => (v as Map)['npc'] == npc).fold<int>(0,(n,v) => ((v as Map)['day'] as int) > n ? v['day'] as int : n);
   int introducedOnDay(int businessDay) => met.where((npc) => (_data['visits'] as Map).values
       .where((v) => (v as Map)['npc'] == npc).every((v) => (v as Map)['day'] >= businessDay) && visitsOnDay(npc,businessDay)>0).length;
-  String? selectNamedVisitor(int businessDay, int drawBasisPoints, int pick,
-      DevelopmentBalance config, WorkshopCustomerCatalog catalog, {Set<String> alreadyQueued = const {}}) {
-    if (businessDay < day || drawBasisPoints < 0 || drawBasisPoints >= 10000 || pick < 0) throw const FormatException('손님 배정 입력 오류');
+  /// The named customer for a named-clock arrival (26번 5-1단계, DEC-055):
+  /// the very first guest is 도윤; an unmet neighbor is introduced while
+  /// fewer than `new_npcs_daily_limit` were introduced on [businessDay];
+  /// otherwise a met neighbor other than [lastVisitor] (the one just before),
+  /// picked by [pick]. With only one choice that neighbor comes again. There is
+  /// no once-a-day limit and no anonymous chance any more: the regular clock
+  /// brings the anonymous guests.
+  String? selectNamedVisitor(int businessDay, int pick, DevelopmentBalance config,
+      WorkshopCustomerCatalog catalog, {Set<String> alreadyQueued = const {}, String? lastVisitor}) {
+    if (businessDay < day || pick < 0) throw const FormatException('손님 배정 입력 오류');
     final rules = config.section('customer_relationships');
     final priority = ['npc_doyun', ...catalog.ids.where((id) => id != 'npc_doyun')];
     if (met.isEmpty) return alreadyQueued.contains(priority.first) ? null : priority.first;
-    final available = priority.where((id) => met.contains(id) && !alreadyQueued.contains(id) && visitsOnDay(id,businessDay) < DevelopmentBalance.integer(rules,'visits_per_npc_business_day')).toList();
-    final previous = available.where((id) => lastVisitDay(id) < businessDay).toList();
-    final familiarAlreadyVisited = met.any((id) => visitsOnDay(id,businessDay)>0 &&
-      (_data['visits'] as Map).values.any((v) => (v as Map)['npc']==id && v['day']<businessDay));
-    if (!familiarAlreadyVisited && previous.isNotEmpty) return previous[pick % previous.length];
     final unknown = priority.where((id) => !met.contains(id) && !alreadyQueued.contains(id)).toList();
     if (unknown.isNotEmpty && introducedOnDay(businessDay) < DevelopmentBalance.integer(rules,'new_npcs_daily_limit')) return unknown.first;
-    if (drawBasisPoints < DevelopmentBalance.integer(rules,'anonymous_visit_basis_points') || available.isEmpty) return null;
-    return available[pick % available.length];
+    final known = priority.where((id) => met.contains(id) && !alreadyQueued.contains(id)).toList();
+    final fresh = known.where((id) => id != lastVisitor).toList();
+    final candidates = fresh.isNotEmpty ? fresh : known;
+    return candidates.isEmpty ? null : candidates[pick % candidates.length];
   }
   WorkshopRelationships _copy() => WorkshopRelationships._(toJson());
   void _npc(String npc, WorkshopCustomerCatalog catalog) {
@@ -192,6 +212,20 @@ class WorkshopRelationships {
         actions[dailyKey] = {'npc': npc, 'day': businessDay, 'dialogue': dialogueId};
       }
     }
+    return next;
+  }
+  /// 26번 7단계: the day's order (오늘의 주문서) handed over for [npc].
+  /// Its own `special` bucket and daily cap, apart from sales and talks.
+  /// [orderDay] is the KST day of the order; one award per order.
+  WorkshopRelationships specialOrder(String npc, String orderDay, int businessDay, int amount,
+      DevelopmentBalance config, WorkshopCustomerCatalog catalog) {
+    _npc(npc, catalog);
+    if (!met.contains(npc) || amount <= 0) throw const FormatException('주문서 손님 근거 오류');
+    final next = _copy(), key = 'special:$orderDay';
+    if ((next._data['actions'] as Map).containsKey(key)) throw const FormatException('주문서 보상 중복');
+    next._atDay(businessDay);
+    next._award(key, npc, amount, 'special', config);
+    (next._data['actions'] as Map<String, dynamic>)[key] = {'npc': npc, 'day': businessDay};
     return next;
   }
   /// Caller validates the authored per-NPC prerequisites before completing.
@@ -333,6 +367,12 @@ class WorkshopRelationships {
         final npc = action['npc'], dialogue = action['dialogue'];
         if (npc is! String || dialogue is! String || !state.met.contains(npc) ||
             entry.key != 'dialogue:$npc:$actionDay' || !(copy['seenDialogue'] as List).contains('$npc:$dialogue')) throw const FormatException('자동 대화 근거 오류');
+      } else if (entry.key.startsWith('special:')) {
+        final npc = action['npc'], day = entry.key.substring(8);
+        if (npc is! String || !state.met.contains(npc) || DateTime.tryParse('${day}T00:00:00Z') == null ||
+            !RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(day)) {
+          throw const FormatException('주문서 관계 근거 오류');
+        }
       } else { throw const FormatException('알 수 없는 관계 처리 기록'); }
     }
     for (final entry in (copy['affinity'] as Map<String, dynamic>).entries) {
@@ -340,19 +380,19 @@ class WorkshopRelationships {
     }
     for (final entry in (copy['earned'] as Map<String, dynamic>).entries) {
       final split = entry.key.split(':');
-      if (split.length != 2 || !state.met.contains(split.first) || !['ordinary','choice'].contains(split.last) || entry.value is! int || (entry.value as int) < 0 || (entry.value as int) > _historicalDailyCap(copy, entry.key, DevelopmentBalance.integer(rules,'${split.last}_daily_cap'))) throw const FormatException('관계 일일 상한 오류');
+      if (split.length != 2 || !state.met.contains(split.first) || !['ordinary','choice','special'].contains(split.last) || entry.value is! int || (entry.value as int) < 0 || (entry.value as int) > _historicalDailyCap(copy, entry.key, DevelopmentBalance.integer(rules,'${split.last}_daily_cap'))) throw const FormatException('관계 일일 상한 오류');
     }
     final totals = <String,int>{}, daily = <String,int>{};
     for (final entry in (copy['awards'] as Map<String,dynamic>).entries) {
       final award = entry.value;
       if (award is! Map<String,dynamic> || award['npc'] is! String || !state.met.contains(award['npc']) ||
-          !['ordinary','choice'].contains(award['bucket']) || award['revision'] is! String || (award['revision'] as String).isEmpty) throw const FormatException('관계 보상 원장 오류');
+          !['ordinary','choice','special'].contains(award['bucket']) || award['revision'] is! String || (award['revision'] as String).isEmpty) throw const FormatException('관계 보상 원장 오류');
       final npc = award['npc'] as String, bucket = award['bucket'] as String;
       final at = DevelopmentBalance.integer(award,'day'), earned = DevelopmentBalance.integer(award,'earned');
       final applied = DevelopmentBalance.integer(award,'applied'), cap = DevelopmentBalance.integer(award,'dailyCap');
       if (at < 1 || at > state.day || applied > earned || earned > cap || cap == 0 ||
           applied > DevelopmentBalance.integer(award,'totalCap')) throw const FormatException('관계 보상 수치 오류');
-      if (bucket == 'ordinary') {
+      if (bucket == 'ordinary' || bucket == 'special') {
         final action = (copy['actions'] as Map)[entry.key];
         final visit = action is Map ? (copy['visits'] as Map)[action['visit']] : null;
         if (action is! Map || action['day'] != at ||

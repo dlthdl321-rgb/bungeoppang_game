@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
 import 'avatar_painter.dart';
+import 'boost_effects.dart' show griddleFishClips;
 import 'pixel_sprites.dart';
 
 /// Pixel-art stall scene: background, vendor, counter, stove and decoration
@@ -31,13 +33,18 @@ class NightStallPainter extends CustomPainter {
   /// Prefer the copy of [background] without the baked mold (the home
   /// stage then draws its own; see PixelSprites.hasCleanBackground).
   final bool cleanCounter;
+
+  /// The picture with the stall lowered to the towel (assets/images/bg_low,
+  /// 26번 4-1단계); it has no baked mold either.
+  final bool lowStall;
   const NightStallPainter(
       {this.background = 'clear',
       this.night,
       this.stove = 'iron',
       this.decoration = 'none',
       this.avatar,
-      this.cleanCounter = false});
+      this.cleanCounter = false,
+      this.lowStall = false});
 
   static const sceneSize = Size(180, 400);
 
@@ -59,6 +66,12 @@ class NightStallPainter extends CustomPainter {
     // On the street at the right, behind the counter: the home screen's
     // cooking cut covers the counter's right end.
     'snowman': [(Offset(128, 66), false)],
+    // Winter events only (25번 32번): strung like starlights. The first
+    // snow's snowman sits at the art's right end; mirrored it stays clear
+    // of the home's '오늘' button at the right.
+    'event_first_snow': [(Offset(0, 104), true)],
+    'event_christmas': [(Offset(0, 104), false)],
+    'event_seollal': [(Offset(0, 104), false)],
   };
 
   /// Decoration art is stored at this many pixels per scene unit
@@ -91,6 +104,53 @@ class NightStallPainter extends CustomPainter {
     final f = w / 335;
     return Rect.fromPoints(map(Offset(conceptFish.left * f, conceptFish.top)),
         map(Offset(conceptFish.right * f, conceptFish.bottom)));
+  }
+
+  /// Top edge of the red check towel at the left of each concept background
+  /// (335x762 pixels), measured by tools/towel_top.py: the first row where
+  /// the cloth covers 60% of columns 28..40. The Workshop sale counter's top
+  /// sits on it (DEC-038).
+  static final towelTops = <String, int>{
+    'bg/autumn': 520,
+    'bg/autumn_night': 518,
+    'bg/cherry': 523,
+    'bg/cherry_night': 523,
+    'bg/clear': 522,
+    'bg/clear_night': 520,
+    'bg/dusk': 523,
+    'bg/forest': 521,
+    'bg/night': 522,
+    'bg/rain': 529,
+    'bg/rain_night': 530,
+    'bg/seaside': 522,
+    'bg/snow': 530,
+    'bg/snowday': 530,
+    'bg_clean/clear': 524,
+    // tools/apply_26_home_art.py moves each lowered picture so the towel's
+    // top is at 524 (its TOWEL_AT_335 table, checked on its preview sheet).
+    for (final id in PixelSprites.lowStallBackgrounds) 'bg_low/$id': 524,
+  };
+
+  /// Where the towel's top edge shows on a [size] screen for the picture
+  /// [sceneBackground] picks, or null when that picture has no measured
+  /// towel (scene-sized pixel art or a new background).
+  static double? towelTopOnScreen(Size size, String background, bool? night,
+      {bool clean = false, bool low = false}) {
+    final (image, _) = low
+        ? PixelSprites.lowStallBackground(background, night)
+        : PixelSprites.sceneBackground(background, night, clean: clean);
+    final path = PixelSprites.pathOf(image);
+    if (image == null || path == null) return null;
+    final key = path
+        .replaceFirst('assets/images/', '')
+        .replaceFirst(RegExp(r'\.png$'), '');
+    final top = towelTops[key];
+    if (top == null) return null;
+    final w = image.width.toDouble(), h = image.height.toDouble();
+    final s = math.max(sceneSize.width / w, sceneSize.height / h);
+    final dy = sceneSize.height - h * s;
+    final (k, origin) = fit(size);
+    return origin.dy + (dy + top * s) * k;
   }
 
   /// Draws [image] covering the scene, anchored to its bottom (the counter
@@ -131,8 +191,9 @@ class NightStallPainter extends CustomPainter {
     canvas.save();
     canvas.translate(origin.dx, origin.dy);
     canvas.scale(scale);
-    final (image, darken) =
-        PixelSprites.sceneBackground(background, night, clean: cleanCounter);
+    final (image, darken) = lowStall
+        ? PixelSprites.lowStallBackground(background, night)
+        : PixelSprites.sceneBackground(background, night, clean: cleanCounter);
     _drawBackground(canvas, image);
     if (darken) {
       // No night picture yet: the day one under a deep blue night wash.
@@ -179,7 +240,8 @@ class NightStallPainter extends CustomPainter {
       stove != oldDelegate.stove ||
       decoration != oldDelegate.decoration ||
       avatar != oldDelegate.avatar ||
-      cleanCounter != oldDelegate.cleanCounter;
+      cleanCounter != oldDelegate.cleanCounter ||
+      lowStall != oldDelegate.lowStall;
 }
 
 /// The stall's frame from the concept art: a striped awning across the top
@@ -237,16 +299,59 @@ class StallFramePainter extends CustomPainter {
 /// screen, scaled to the canvas width and anchored to its bottom edge.
 class GriddlePainter extends CustomPainter {
   final String stove;
-  const GriddlePainter(this.stove);
+
+  /// Null draws the stove art as it is (a bungeoppang in every cavity).
+  /// Otherwise the empty griddle ([PixelSprites.emptyStove]) with a
+  /// bungeoppang only in these cavities (indices into griddleCavities), cut
+  /// at the same place (24번 4단계) from the stove's fish-only layer
+  /// ([PixelSprites.stoveFish]), so the drawn hollow stays around it; from
+  /// the full art when that layer is missing.
+  final Set<int>? filled;
+
+  /// The griddle closed and cold (26번 4-2단계 F8, DEC-099): the
+  /// closed art ([PixelSprites.closedStove]) instead of the plate, no
+  /// bungeoppang. Without that art: the empty plate under a dark veil.
+  final bool closed;
+  const GriddlePainter(this.stove, {this.filled, this.closed = false});
 
   @override
   void paint(Canvas canvas, Size size) {
     final image = PixelSprites.cosmetic(CosmeticSlot.stove, stove);
     if (image == null) return;
+    final empty = filled == null && !closed ? null : PixelSprites.emptyStove(stove);
     final scale =
         math.min(size.width / image.width, size.height / image.height);
     final w = image.width * scale, h = image.height * scale;
     final dst = Rect.fromLTWH((size.width - w) / 2, size.height - h, w, h);
+    if (closed) {
+      final art = PixelSprites.closedStove(stove);
+      if (art != null) {
+        _draw(canvas, art, dst, scale);
+        return;
+      }
+      _draw(canvas, empty ?? image, dst, scale);
+      canvas.drawRect(dst, Paint()..color = Colors.black.withValues(alpha: .45)
+        ..blendMode = BlendMode.srcATop);
+      return;
+    }
+    if (empty == null) {
+      _draw(canvas, image, dst, scale);
+      return;
+    }
+    _draw(canvas, empty, dst, scale);
+    final fish = PixelSprites.stoveFish(stove) ?? image;
+    for (final i in filled!) {
+      if (i < 0 || i >= griddleFishClips.length) continue;
+      final f = griddleFishClips[i];
+      canvas.save();
+      canvas.clipRect(Rect.fromLTRB(dst.left + f.left * w,
+          dst.top + f.top * h, dst.left + f.right * w, dst.top + f.bottom * h));
+      _draw(canvas, fish, dst, scale);
+      canvas.restore();
+    }
+  }
+
+  static void _draw(Canvas canvas, ui.Image image, Rect dst, double scale) {
     // The concept griddle is bigger than its box: scale it down smoothly so
     // its fine detail does not shimmer.
     if (scale < 1) {
@@ -264,5 +369,46 @@ class GriddlePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant GriddlePainter oldDelegate) =>
+      stove != oldDelegate.stove ||
+      closed != oldDelegate.closed ||
+      !setEquals(filled, oldDelegate.filled);
+}
+
+/// The open griddle's lid (26번 4-2단계 F8): the rows of
+/// [PixelSprites.openStove] above the plate, drawn so they stand on the
+/// plate that [GriddlePainter] draws in [plateBox]'s bottom part. The
+/// canvas is the area above the griddle box (its width, the lid's height),
+/// so the griddle box and its cells stay where they were. The low lid of
+/// 25번 34번 lies within the box's empty top strip (above the plate's back
+/// edge [plateBack]), so the art is drawn down to that edge, past the
+/// canvas's bottom; the griddle box, drawn after it, keeps its plate on top.
+class GriddleLidPainter extends CustomPainter {
+  final String stove;
+  const GriddleLidPainter(this.stove);
+
+  /// The plate's back edge in `stove_empty` rows (tools/apply_26_stoves.py
+  /// PLATE_BACK): the lid art reaches down to it.
+  static const plateBack = 186;
+
+  /// Height of the lid area over a griddle box [griddleW] wide whose stove
+  /// art is [stoveW] pixels wide (the box keeps the art's shape).
+  static double heightFor(double griddleW, double stoveW) =>
+      griddleW * PixelSprites.openStoveLidRoom / stoveW;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final art = PixelSprites.openStove(stove);
+    if (art == null) return;
+    final room = PixelSprites.openStoveLidRoom.toDouble();
+    final reach = room + plateBack;
+    final scale = size.width / art.width;
+    final src = Rect.fromLTWH(0, 0, art.width.toDouble(), reach);
+    final dst = Rect.fromLTWH(0, size.height - room * scale, size.width, reach * scale);
+    canvas.drawImageRect(art, src, dst,
+        scale < 1 ? GriddlePainter._rawPaint : (Paint()..filterQuality = FilterQuality.none));
+  }
+
+  @override
+  bool shouldRepaint(covariant GriddleLidPainter oldDelegate) =>
       stove != oldDelegate.stove;
 }

@@ -7,6 +7,13 @@ export class WorkshopMissionError extends Error {}
 function semantic(payload:Record<string,unknown>):string {
   if (Number.isSafeInteger(payload.level) && (payload.level as number)>=2 && (payload.level as number)<=50) return `level:${payload.level}`;
   const scope=payload.scope,period=payload.period,goal=payload.goal;
+  // 26번 7단계: the seventh attendance stamp of a KST day.
+  if(scope==="attendance" && goal==="day7" && typeof period==="string" && /^\d{4}-\d{2}-\d{2}$/.test(period) &&
+      Number.isFinite(Date.parse(`${period}T00:00:00Z`)) && new Date(`${period}T00:00:00Z`).toISOString().slice(0,10)===period) {
+    return `attendance:${period}`;
+  }
+  // 4차 피드백 g6: a flavor's full 도감, once per account and flavor.
+  if(scope==="collection" && typeof goal==="string" && /^[a-z][a-z0-9_]{0,31}$/.test(goal)) return `collection:${goal}`;
   const allowed=scope==="daily" ? ["taps","production","purchases","auto","all"]:
     scope==="weekly" ? ["taps","days","purchases","dailyAll"]:[];
   if(typeof period!=="string" || !/^\d{4}-\d{2}-\d{2}$/.test(period) ||
@@ -16,7 +23,10 @@ function semantic(payload:Record<string,unknown>):string {
   }
   return `${scope}:${period}:${goal}`;
 }
-export async function creditWorkshopMission(store:Store,verified:VerifiedEarnedGold,payload:Record<string,unknown>,serverNowMs:number) {
+/** 26번 7단계: a seven-box attendance card takes at least seven KST days, so
+ * one account gets attendance gold at most once in [attendanceCycleDays]. */
+export async function creditWorkshopMission(store:Store,verified:VerifiedEarnedGold,payload:Record<string,unknown>,serverNowMs:number,
+    attendanceCycleDays=7) {
   if(verified.kind!=="mission" || !verified.account || verified.account.includes("/") || !verified.claimId ||
       !verified.revision || !verified.fingerprint || !Number.isSafeInteger(verified.gold) || verified.gold<=0 ||
       !Number.isSafeInteger(serverNowMs) || serverNowMs<0) throw new WorkshopMissionError("미션 지급 검증 결과 오류");
@@ -26,6 +36,8 @@ export async function creditWorkshopMission(store:Store,verified:VerifiedEarnedG
   return store.run(async tx=>{
     const lockPath=`${base}/workshopMissionClaims/${identity}`,ledgerPath=`${base}/ledger/earned_${claim}`;
     const old=await tx.get(lockPath),ledger=await tx.get(ledgerPath),wallet=await tx.get(base);
+    const attendancePath=`${base}/workshopAttendance/latest`;
+    const attendance=goal.startsWith("attendance:") ? await tx.get(attendancePath) : undefined;
     if(old) {
       if(old.claimId!==verified.claimId) return {outcome:"unverifiable",gold:0};
       if(!ledger || old.fingerprint!==verified.fingerprint || old.gold!==verified.gold) throw new WorkshopMissionError("미션 지급 원장 충돌");
@@ -35,12 +47,17 @@ export async function creditWorkshopMission(store:Store,verified:VerifiedEarnedG
       return {outcome:"eligible",gold:verified.gold};
     }
     if(ledger) throw new WorkshopMissionError("미션 지급 원장 보호 기록 재대조 필요");
+    if(attendance) {
+      const gap=(Date.parse(`${goal.slice(11)}T00:00:00Z`)-Date.parse(`${String(attendance.period)}T00:00:00Z`))/86400000;
+      if(!(gap>=attendanceCycleDays)) return {outcome:"unverifiable",gold:0};
+    }
     const balance=wallet?.gold ?? 0;
     if(typeof balance!=="number" || !Number.isSafeInteger(balance) || balance<0 ||
         BigInt(balance)+BigInt(verified.gold)>BigInt(Number.MAX_SAFE_INTEGER)) throw new WorkshopMissionError("황금 지갑 범위 오류");
     tx.set(base,{...wallet,gold:balance+verified.gold});
     tx.create(ledgerPath,{...verified,type:"missionGold",delta:verified.gold,atMs:serverNowMs});
     tx.create(lockPath,{claimId:verified.claimId,fingerprint:verified.fingerprint,gold:verified.gold,goal});
+    if(goal.startsWith("attendance:")) tx.set(attendancePath,{period:goal.slice(11),claimId:verified.claimId});
     return {outcome:"eligible",gold:verified.gold};
   });
 }

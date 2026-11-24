@@ -1,5 +1,7 @@
 part of 'workshop_controller.dart';
 
+/// Saves from schema 2 on carry the purchase guard.
+bool _guardedSchema(Object? schema) => schema is int && schema >= 2 && schema <= workshopSchema;
 abstract class WorkshopRepository {
   Future<Map<String, dynamic>?> load();
   Future<void> save(Map<String, dynamic> next, int expectedSequence);
@@ -50,7 +52,7 @@ class SqliteWorkshopRepository implements WorkshopRepository, WorkshopProduction
       Map<String, dynamic> decode(Map<String, Object?> record) {
         final body = jsonDecode(record['body'] as String) as Map<String, dynamic>;
         if (body['sequence'] != record['sequence'] ||
-            ([2,3,4,5,6].contains(body['schema']) &&
+            (_guardedSchema(body['schema']) &&
                 (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
             (body['schema'] == 1 && guards.isNotEmpty) ||
             (witnesses.isNotEmpty && witnesses.single['body'] != record['body'])) {
@@ -125,7 +127,7 @@ class SqliteWorkshopRepository implements WorkshopRepository, WorkshopProduction
       if (current.isNotEmpty) {
         final body = jsonDecode(current.single['body'] as String) as Map<String, dynamic>;
         if (body['sequence'] != current.single['sequence'] ||
-            ([2,3,4,5,6].contains(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
+            (_guardedSchema(body['schema']) && (guards.isEmpty || guards.single['body'] != _workshopGuard(body))) ||
             (body['schema'] == 1 && guards.isNotEmpty)) throw const FormatException('구매 보호 기록 충돌');
       }
       final oldSequence = current.isEmpty ? 0 : current.single['sequence'];
@@ -136,7 +138,7 @@ class SqliteWorkshopRepository implements WorkshopRepository, WorkshopProduction
       if (witnesses.isNotEmpty && (current.isEmpty || witnesses.single['body'] != current.single['body'])) {
         throw const FormatException('최신 저장 증거 충돌');
       }
-      if (next['schema'] != 6 || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
+      if (next['schema'] != workshopSchema || next['purchases'] is! Map<String, dynamic>) throw const FormatException('구매 보호 저장 형식 오류');
       final encoded = jsonEncode(next);
       final pending = await tx.query('production_journal', where: 'id = ?', whereArgs: [1]);
       if (pending.isNotEmpty && (pending.single['body'] != encoded ||

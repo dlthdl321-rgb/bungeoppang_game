@@ -1,7 +1,8 @@
 import 'invite_models.dart';
 
 // The app's view of the Firebase backend (firebase/functions): sign-in with
-// a Kakao account, the 황금 붕어빵 wallet, friends, invitations and the
+// a Kakao or Google account (26번 2-1단계), the account profile and account
+// deletion, the 황금 붕어빵 wallet, friends, invitations and the
 // online ranking. FirebaseOnlineBackend
 // (lib/firebase_online_backend.dart) talks to the real server;
 // FakeOnlineBackend follows the same rules in memory for tests.
@@ -21,9 +22,44 @@ enum OnlineFailure {
   notFound,
 }
 
-/// How a Kakao login ended. [canceled] means the player backed out: no
-/// error is shown for it.
-enum SignInResult { success, canceled, failed }
+/// How a login ended. [canceled] means the player backed out: no error is
+/// shown for it. [offline] means no connection (the first-run screen asks to
+/// connect and try again).
+enum SignInResult { success, canceled, failed, offline }
+
+/// The two ways to log in (26번 2-1단계). They make two separate accounts:
+/// the same person logging in with both gets two shops on the server.
+enum LoginProvider {
+  kakao('카카오'),
+  google('구글');
+
+  final String label;
+  const LoginProvider(this.label);
+}
+
+/// What the first-run screens and the settings send to the server's
+/// account profile (functions/src/account.ts accountProfileSet). Gender and
+/// age band go only with the separate optional consent. [over14Confirmed]:
+/// the player ticked '(필수) 만 14세 이상입니다' with the required consent
+/// (the server refuses the profile without it, DEC-125).
+class AccountProfileUpdate {
+  final String name, consentVersion;
+  final bool over14Confirmed;
+  final String? gender, ageBand;
+  const AccountProfileUpdate(
+      {required this.name,
+      required this.consentVersion,
+      required this.over14Confirmed,
+      this.gender,
+      this.ageBand});
+  bool get hasOptional => gender != null && ageBand != null;
+  Map<String, Object?> toJson() => {
+        'name': name,
+        'consentVersion': consentVersion,
+        'over14Confirmed': over14Confirmed,
+        if (hasOptional) 'optional': {'gender': gender, 'ageBand': ageBand},
+      };
+}
 
 class OnlineException implements Exception {
   final OnlineFailure failure;
@@ -108,15 +144,33 @@ abstract class OnlineBackend {
   bool get configured;
 
   /// Logs in with Kakao (KakaoTalk if installed, else the Kakao account
-  /// page) and signs in to Firebase with the server's custom token. Opens
-  /// Kakao's screens, so only call it when the player asked to log in.
-  Future<SignInResult> signIn();
+  /// page; the server's custom token signs in to Firebase) or with Google
+  /// (the account picker; Firebase's Google provider). Opens the provider's
+  /// screens, so only call it when the player asked to log in.
+  Future<SignInResult> signIn([LoginProvider provider = LoginProvider.kakao]);
+
+  /// The login buttons this build can offer (Google needs its client ID).
+  Set<LoginProvider> get loginProviders;
+
+  /// How the current session logged in, or null when signed out.
+  LoginProvider? get loginProvider;
+
+  /// The Firebase account id (`kakao:<회원번호>` or Google's uid), or null.
+  String? get accountId;
 
   /// True while the Firebase session lasts, also after an app restart.
   bool get signedIn;
 
-  /// Signs out of Firebase and Kakao.
+  /// Signs out of Firebase and of Kakao or Google.
   Future<void> signOut();
+
+  /// Saves the owner name, the required consent and the optional info on
+  /// the server profile (only the server reads it).
+  Future<void> saveAccountProfile(AccountProfileUpdate update);
+
+  /// Deletes the account on the server (all its records and the login),
+  /// then signs out here and disconnects Kakao or Google.
+  Future<void> deleteAccount();
 
   Future<WalletSnapshot> syncWallet();
 
@@ -144,7 +198,9 @@ abstract class OnlineBackend {
 
   /// The invited player's side: accept [code] once. True if counted as new.
   Future<bool> inviteAccept(String code, {String? ticketId});
-  Future<void> inviteReachedLevelOne();
+  /// The invited player reached the goal (29번). False: the server said
+  /// "not yet" (ask again later); true: done or nothing to report.
+  Future<bool> inviteReachedLevelOne();
   Future<List<InviteEvent>> inviteFetchEvents(Set<String> committed);
 
   /// Sends my best scores (ranking_config.dart board names); the server
@@ -162,9 +218,20 @@ class NoOnlineBackend implements OnlineBackend {
   @override
   bool get signedIn => false;
   @override
-  Future<SignInResult> signIn() async => SignInResult.failed;
+  Future<SignInResult> signIn([LoginProvider provider = LoginProvider.kakao]) async =>
+      SignInResult.failed;
+  @override
+  Set<LoginProvider> get loginProviders => const {};
+  @override
+  LoginProvider? get loginProvider => null;
+  @override
+  String? get accountId => null;
   @override
   Future<void> signOut() async {}
+  @override
+  Future<void> saveAccountProfile(AccountProfileUpdate update) async => _off();
+  @override
+  Future<void> deleteAccount() async => _off();
   @override
   Future<WalletSnapshot> syncWallet() async => _off();
   @override
@@ -194,7 +261,7 @@ class NoOnlineBackend implements OnlineBackend {
   @override
   Future<bool> inviteAccept(String code, {String? ticketId}) async => _off();
   @override
-  Future<void> inviteReachedLevelOne() async => _off();
+  Future<bool> inviteReachedLevelOne() async => _off();
   @override
   Future<List<InviteEvent>> inviteFetchEvents(Set<String> committed) async =>
       _off();
@@ -221,6 +288,17 @@ class FakeOnlineBackend implements OnlineBackend {
   bool offline = false;
   @override
   bool signedIn = false;
+  @override
+  Set<LoginProvider> loginProviders = {LoginProvider.kakao, LoginProvider.google};
+  @override
+  LoginProvider? loginProvider;
+  /// The uid each provider's next login gets (a Kakao member or a Google user).
+  final accountIds = {LoginProvider.kakao: 'kakao:1001', LoginProvider.google: 'GoogleUid1001'};
+  @override
+  String? get accountId => signedIn ? accountIds[loginProvider] : null;
+  /// Server profiles by uid, as accountProfileSet keeps them.
+  final accountProfiles = <String, AccountProfileUpdate>{};
+  final deletedAccounts = <String>[];
   final grants = <String, WalletGrant>{};
   final redeemedTokens = <String>{};
   final inviteEvents = <InviteEvent>[];
@@ -231,6 +309,8 @@ class FakeOnlineBackend implements OnlineBackend {
   final visited = <String>{};
   final inbox = <ServerVisit>[];
   int levelOneReports = 0;
+  /// The server answers "not yet" to the invitation goal (29번).
+  bool inviteNotYet = false;
   @override
   String? displayName = '테스터';
 
@@ -299,10 +379,11 @@ class FakeOnlineBackend implements OnlineBackend {
   }
 
   @override
-  Future<SignInResult> signIn() async {
+  Future<SignInResult> signIn([LoginProvider provider = LoginProvider.kakao]) async {
     signIns++;
-    final result = offline ? SignInResult.failed : signInResult;
+    final result = offline ? SignInResult.offline : signInResult;
     signedIn = result == SignInResult.success;
+    loginProvider = signedIn ? provider : null;
     return result;
   }
 
@@ -310,6 +391,26 @@ class FakeOnlineBackend implements OnlineBackend {
   Future<void> signOut() async {
     signOuts++;
     signedIn = false;
+    loginProvider = null;
+  }
+
+  @override
+  Future<void> saveAccountProfile(AccountProfileUpdate update) async {
+    _check();
+    accountProfiles[accountId!] = update;
+  }
+
+  @override
+  Future<void> deleteAccount() async {
+    _check();
+    final id = accountId!;
+    accountProfiles.remove(id);
+    deletedAccounts.add(id);
+    gold = 0;
+    grants.clear();
+    friendList.clear();
+    rankingBest.clear();
+    await signOut();
   }
 
   /// My best per board, and other players' rows by board (rank ignored).
@@ -428,9 +529,10 @@ class FakeOnlineBackend implements OnlineBackend {
   }
 
   @override
-  Future<void> inviteReachedLevelOne() async {
+  Future<bool> inviteReachedLevelOne() async {
     _check();
     levelOneReports++;
+    return !inviteNotYet;
   }
 
   @override

@@ -1,0 +1,11 @@
+Use case: precise-object-edit. Edit the supplied 1200x880 transparent mold
+sprite (mold/filling_redbean.png as reference). Fill the WHOLE fish-shaped
+cavity with the filling, edge to edge, as if the filling had been piped over
+the batter everywhere: cocoa: dark glossy chocolate cream. Keep the cavity
+outline and canvas exactly; everything outside the fish cavity must be fully
+transparent (no iron mold, no background). Crisp 8-pixel-grid pixel art, soft
+top-left light, small highlights, no text.
+Input image is the edit target and shape/coordinate reference. Remove the
+iron mold, all handles and all golden batter; leave ONLY the complete fish
+silhouette entirely covered by dark chocolate cream at its original location.
+Preserve true transparency outside the fish. No external glow or shadow.

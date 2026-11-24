@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cooking_session.dart';
+import 'package:todays_bungeoppang/cooking_paint.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/development_inventory.dart';
 import 'package:todays_bungeoppang/development_orders.dart';
@@ -13,8 +14,9 @@ import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/ui/save_recovery.dart';
 import 'package:todays_bungeoppang/ui/workshop_guide.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
+import 'package:todays_bungeoppang/workshop_tutorial.dart';
 import 'step02_controller_test.dart' show MemoryRepository;
-import 'widget_test.dart' show mountGame;
+import 'test_support.dart' show setUpAccount;
 
 /// 4단계: 첫 실행 안내, 복귀 안내, 저장 손상 대처.
 void main() {
@@ -32,11 +34,27 @@ void main() {
     return f.evaluate().isEmpty ? null : tester.widget<Text>(f).data;
   }
   String text(WidgetTester tester) => tester.widget<Text>(find.byKey(const Key('tutorial-text'))).data!;
+  String? storyLine(WidgetTester tester) {
+    final f = find.descendant(of: find.byKey(const Key('story-card')), matching: find.byType(Text));
+    return f.evaluate().isEmpty ? null : tester.widget<Text>(f.first).data!.replaceAll('⁠', '');
+  }
+  /// 26번 3차 H6: reads the story through with '다음' (a tap anywhere also
+  /// works) and returns its lines.
+  Future<List<String>> readStory(WidgetTester tester) async {
+    final lines = <String>[];
+    while (find.byKey(const Key('story-overlay')).evaluate().isNotEmpty) {
+      lines.add(storyLine(tester)!);
+      await tester.tap(find.byKey(const Key('story-next')));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+    }
+    return lines;
+  }
 
   group('첫 실행 안내', () {
     for (final size in [const Size(360, 640), const Size(390, 844)]) {
       testWidgets('새 설치 → 굽기 → 보관 → 영업 시작 → 첫 판매로 안내가 끝난다 $size', (tester) async {
-        final account = await mountGame(tester, size, reduced: true);
+        final account = await setUpAccount(tester, size, reduced: true);
         final repository = MemoryRepository();
         final c = WorkshopController(load(), repository, now: () => DateTime.utc(2026, 10, 18));
         await c.initialize();
@@ -45,6 +63,13 @@ void main() {
         await tester.pumpWidget(GameApp(controller: account, workshop: c));
         await tester.pump();
         await tester.pump();
+        // 26번 3차 H6: the welcome story comes first, the guide card after it.
+        expect(progress(tester), isNull);
+        expect(await readStory(tester), [
+          '어서 오세요, 사장님! 환영합니다.',
+          '우리는 오늘부터 이 작은 노점에서 따끈한 붕어빵을 팔 거예요.',
+          '손님을 맞기 전에, 먼저 붕어빵 굽기 연습을 해 볼까요?',
+        ]);
         expect(progress(tester), '첫 영업 안내 1/7');
         expect(find.byKey(const Key('tutorial-ring')), findsOneWidget);
 
@@ -54,13 +79,13 @@ void main() {
         await tester.pump();
         expect(progress(tester), '첫 영업 안내 2/7');
         var session = c.state.session!;
-        expect(await c.cookingCommand(session.pour(session.token, 2500)), isTrue);
+        expect(await c.cookingCommand(session.pour(session.token, PaintAmount.even)), isTrue);
         await tester.pump();
         expect(progress(tester), '첫 영업 안내 3/7');
         session = c.state.session!;
-        expect(await c.cookingCommand(session.squeezeFilling(session.token, 1500)), isTrue);
+        expect(await c.cookingCommand(session.squeezeFilling(session.token, const PaintAmount(720, 830))), isTrue);
         session = c.state.session!;
-        expect(await c.cookingCommand(session.pour(session.token, 2500)), isTrue);
+        expect(await c.cookingCommand(session.pour(session.token, PaintAmount.even)), isTrue);
         await tester.pump();
         expect(progress(tester), '첫 영업 안내 4/7');
         final manual = c.config.section('manual_cooking');
@@ -87,6 +112,8 @@ void main() {
         expect(c.state.tutorial, 'sell');
         expect(repository.saved!['tutorial'], 'sell');
 
+        // The second chapter before opening the stall.
+        expect(await readStory(tester), hasLength(2));
         expect(progress(tester), '첫 영업 안내 7/7');
         expect(text(tester), contains('영업 시작'));
         await tester.tap(find.byKey(const Key('business-open')));
@@ -117,11 +144,19 @@ void main() {
     }
 
     testWidgets('건너뛰기는 저장되고 다시 열어도 안내가 나오지 않는다', (tester) async {
-      final account = await mountGame(tester, const Size(360, 800), textScale: 1.5, reduced: true);
+      final account = await setUpAccount(tester, const Size(360, 800), textScale: 1.5, reduced: true);
       final repository = MemoryRepository();
       final c = WorkshopController(load(), repository, now: () => DateTime.utc(2026, 10, 18));
       await c.initialize();
       await tester.pumpWidget(GameApp(controller: account, workshop: c));
+      await tester.pump();
+      await tester.pump();
+      // The story's own '건너뛰기' ends only the story, not the guide.
+      await tester.tap(find.byKey(const Key('story-skip')));
+      await tester.pump();
+      expect(find.byKey(const Key('story-overlay')), findsNothing);
+      expect(c.state.tutorial, 'cook');
+      // The guide card measures the menu after its first frame.
       await tester.pump();
       await tester.pump();
       // Large text: the card stays above the bottom menu.
@@ -140,6 +175,26 @@ void main() {
       expect(again.state.tutorial, 'skipped');
       expect(again.state.tutorialActive, isFalse);
       again.dispose();
+    });
+
+    test('26번 3차 H6: 이야기는 연습 전(환영)과 영업 시작 전에만, 사장님 이름을 넣어 들려준다', () async {
+      final c = WorkshopController(load(), MemoryRepository(), now: () => DateTime.utc(2026, 10, 18));
+      await c.initialize();
+      expect(workshopStoryChapter(c.state), WorkshopStoryChapter.welcome);
+      expect(workshopStoryLines(WorkshopStoryChapter.welcome, '소이').first, '어서 오세요, 소이 사장님! 환영합니다.');
+      expect(workshopStoryLines(WorkshopStoryChapter.welcome, null).first, '어서 오세요, 사장님! 환영합니다.');
+      expect(workshopStoryLines(WorkshopStoryChapter.welcome, null)[1], contains('붕어빵을 팔 거예요'));
+      expect(workshopStoryLines(WorkshopStoryChapter.welcome, null).last, contains('연습을 해 볼까요'));
+      expect(await c.startPractice(), isTrue);
+      expect(workshopStoryChapter(c.state), isNull, reason: '굽는 중에는 끼어들지 않음');
+      await c.command(() { c.state.session = null; c.state.tutorial = 'sell'; });
+      expect(workshopStoryChapter(c.state), WorkshopStoryChapter.open);
+      expect(await c.openBusiness(), isTrue);
+      expect(workshopStoryChapter(c.state), isNull);
+      await c.command(() => c.state.tutorial = 'skipped');
+      expect(await c.closeBusiness(), isTrue);
+      expect(workshopStoryChapter(c.state), isNull, reason: '안내를 건너뛰면 이야기도 없음');
+      c.dispose();
     });
 
     test('안내 중 첫 네임드 손님 판매에는 이야기 장면이 끼지 않는다', () async {
@@ -183,10 +238,10 @@ void main() {
     test('schema 5 이하 저장은 안내를 끝낸 것으로 올리고, 판매 뒤 진행 중 안내는 거절한다', () async {
       final c = WorkshopController(load(), MemoryRepository(), now: () => DateTime.utc(2026, 10, 18));
       await c.initialize();
-      final old = c.state.toJson()..['schema'] = 5..remove('tutorial');
+      final old = c.state.toJson()..['schema'] = 5..remove('tutorial')..remove('regularClock')..remove('namedClock')..remove('lastNamedVisitor')..remove('featureIntros')..remove('daily')..remove('pantry')..remove('pendingSales')..remove('archivedSales')..remove('archivedSalesBuns')..remove('archivedNamedSales');
       final migrated = WorkshopState.fromJson(old, c.config);
       expect(migrated.tutorial, 'done');
-      expect(migrated.toJson()['schema'], 6);
+      expect(migrated.toJson()['schema'], workshopSchema);
       expect(() => WorkshopState.fromJson(c.state.toJson()..['tutorial'] = 'later', c.config), throwsFormatException);
       expect(() => WorkshopState.fromJson(c.state.toJson()..['completedSales'] = 1, c.config), throwsFormatException);
       c.dispose();
@@ -252,10 +307,10 @@ void main() {
 
     testWidgets('홈은 복귀 보고를 한 번 띄우고 닫으면 지운다', (tester) async {
       var now = DateTime.utc(2026, 10, 18, 12);
-      final account = await mountGame(tester, const Size(360, 800), reduced: true);
+      final account = await setUpAccount(tester, const Size(360, 800), reduced: true);
       final c = WorkshopController(load(), MemoryRepository(), now: () => now);
       await c.initialize();
-      await c.command(() => c.state.tutorial = 'done');
+      await c.command(() => c.state..tutorial = 'done'..featureIntros.add('fairy'));
       await c.openBusiness();
       await tester.pumpWidget(GameApp(controller: account, workshop: c));
       await tester.pump();

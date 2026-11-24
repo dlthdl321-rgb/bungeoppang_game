@@ -1,5 +1,8 @@
 import 'dart:convert';
 
+import 'feedback_config.dart' show ratingStarsMax;
+import 'pantry_rules.dart' show PantryConfig;
+
 /// Development-only numeric contract. Existing purchases must not silently use
 /// this catalog: the server quote/recovery protocol is a separate integration.
 class DevelopmentBalance {
@@ -41,7 +44,7 @@ class DevelopmentBalance {
     for (final kind in ['tap', 'auto']) {
       for (var i = 1; i <= 16; i++) {
         final row = _map(entries['${kind}_$i']);
-        if (decimal(row, 'buns') <= BigInt.zero || integer(row, 'gold') <= 0 ||
+        if (decimal(row, 'buns') <= BigInt.zero || integer(row, 'gold') < 0 ||
             decimal(row, 'effect') <= BigInt.zero ||
             integer(row, 'ratio_denominator') <= 0 ||
             integer(row, 'ratio_numerator') < integer(row, 'ratio_denominator')) {
@@ -71,7 +74,12 @@ class DevelopmentBalance {
       }
     }
     final avatar=result.section('avatar_catalog');
-    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool'};
+    // 26번 3차 H42: backgrounds are sold through the same catalog.
+    // 4차 피드백 g10: the lamp glass and the fixed day/night too.
+    // 4차 피드백 g15: stoves, decorations, mold patterns and toppings may be
+    // sold the same way; the wardrobe shows their slots once something is.
+    const avatarSlots={'character','skin','hair','top','bottom','shoes','outfit','hat','accessory','tool','background','lamp','time',
+        'stove','decoration','pattern','topping'};
     for(final e in avatar.entries) {
       final row=_map(e.value),level=integer(row,'unlock_level');
       if(row['label'] is! String || (row['label'] as String).isEmpty || !avatarSlots.contains(row['slot']) || row['free'] is! bool ||
@@ -110,11 +118,52 @@ class DevelopmentBalance {
           integer(row, 'difficulty') > 2 || row['initial'] is! bool ||
           row['initial'] != (e.key == 'redbean')) throw const FormatException('맛 설정 오류');
     }
+    // 4차 피드백 IC9: customers' quality stars are 1~5 like every star row.
+    final starRow = result.section('ordinary_sale');
+    if (integer(starRow, 'stars_min') != 1 || integer(starRow, 'stars_max') != ratingStarsMax) {
+      throw const FormatException('별 범위 오류(1~5)');
+    }
     final manual = result.section('manual_cooking');
+    final brush = integer(manual, 'paint_brush_width_permille');
+    final coverage = integer(manual, 'batter_min_coverage_permille');
+    final totalMin = integer(manual, 'batter_total_min_amount_permille');
+    final totalCap = integer(manual, 'batter_total_overflow_amount_permille');
+    if (brush == 0 || brush > 1000 || coverage == 0 || coverage > 1000 ||
+        integer(manual, 'paint_overflow_amount_permille') < 1000 ||
+        totalMin < 1000 || totalMin > 2000 || totalCap < 2000 || totalCap > 18000) {
+      throw const FormatException('짤주머니 색칠 수치 오류');
+    }
+    final turn = integer(manual, 'flip_turn_degrees');
+    if (turn == 0 || turn > 720 || integer(manual, 'flip_dead_zone_permille') >= 500 ||
+        integer(manual, 'flip_ms') == 0) {
+      throw const FormatException('원 그려 뒤집기 수치 오류');
+    }
     if (integer(manual, 'checkpoint_ms') == 0 || integer(manual, 'filling_inputs') == 0 ||
-        integer(manual, 'tilt_sampling_ms') == 0 ||
         integer(result.section('doneness'), 'reference_medium_stage_index') != 2) {
       throw const FormatException('제작 입력/저장 수치 오류');
+    }
+    // 26번 4단계: '완벽' 등급은 성공 기준 안쪽(보여 주기 전용).
+    final grade = result.section('cooking_grade');
+    final perfectCoverage = integer(grade, 'perfect_min_coverage_permille');
+    final perfectAmount = integer(grade, 'perfect_max_total_amount_permille');
+    final perfectSpill = integer(grade, 'perfect_max_spill_permille');
+    final perfectDoneness = integer(grade, 'perfect_doneness_index');
+    if (perfectCoverage < coverage || perfectCoverage > 1000 || perfectAmount < totalMin ||
+        perfectAmount > totalCap || perfectSpill > totalCap - perfectAmount ||
+        result.rows('mastery_difficulties').any((row) =>
+            perfectDoneness < integer(row, 'success_doneness_min_index') ||
+            perfectDoneness > integer(row, 'success_doneness_max_index'))) {
+      throw const FormatException('결과 등급 수치 오류');
+    }
+    // 4차 피드백 g15: '잘 구움'과 '보통'의 경계는 성공 기준과 완벽 기준 사이.
+    final goodCoverage = integer(grade, 'good_min_coverage_permille');
+    final goodMin = integer(grade, 'good_min_total_amount_permille');
+    final goodMax = integer(grade, 'good_max_total_amount_permille');
+    final goodSpill = integer(grade, 'good_max_spill_permille');
+    if (goodCoverage < coverage || goodCoverage > perfectCoverage || goodMin < totalMin ||
+        goodMin > perfectAmount || goodMax < perfectAmount || goodMax > totalCap ||
+        goodSpill < perfectSpill || goodSpill > totalCap - goodMin) {
+      throw const FormatException('결과 등급 수치 오류');
     }
     final sale = result.section('ordinary_sale');
     if (integer(sale, 'quality_weight_permille') + integer(sale, 'freshness_weight_permille') != 1000) {
@@ -127,13 +176,19 @@ class DevelopmentBalance {
     }
     final levels = result.rows('level_progression');
     if (levels.length != 50) throw const FormatException('레벨 표 누락');
-    var last = BigInt.from(-1);
+    // 4차 피드백 g9: each level asks for pieces sold and taps in that level
+    // and a payment at level-up (no lifetime total); Lv.1 asks nothing and
+    // the 붕어빵력 cost never goes down.
+    var last = BigInt.zero;
     for (var i = 0; i < levels.length; i++) {
-      final total = decimal(levels[i], 'season_total_buns');
-      if (integer(levels[i], 'level') != i + 1 || total <= last) {
-        throw const FormatException('레벨 목표 순서 오류');
+      final row = levels[i], cost = decimal(row, 'level_cost_buns');
+      final pieces = integer(row, 'additional_sold_pieces'), gold = integer(row, 'level_cost_gold');
+      integer(row, 'additional_taps');
+      if (integer(row, 'level') != i + 1 || row.containsKey('season_total_buns') || row.containsKey('additional_sales') ||
+          (i == 0 ? cost != BigInt.zero || pieces != 0 || gold != 0 : cost <= BigInt.zero || cost < last || pieces < 1)) {
+        throw const FormatException('레벨 조건 표 오류');
       }
-      last = total;
+      last = cost;
     }
     final relationship = result.section('customer_relationships');
     final thresholds = result.integers('customer_relationships', 'stage_thresholds');
@@ -143,7 +198,7 @@ class DevelopmentBalance {
         integer(relationship, 'choice_chance_basis_points') > 10000 ||
         integer(relationship, 'delay_threshold_permille') > 1000) throw const FormatException('손님 관계 수치 오류');
     for (final key in ['affinity_cap','ordinary_daily_cap','choice_daily_cap','recent_dialogue_limit',
-        'return_gap_business_days','new_npcs_daily_limit','visits_per_npc_business_day',
+        'return_gap_business_days','new_npcs_daily_limit',
         'choice_first_business_day','choice_gap_business_days','choice_skip_retry_business_days']) {
       if (integer(relationship, key) == 0) throw const FormatException('손님 관계 양수 설정 오류');
     }
@@ -155,7 +210,24 @@ class DevelopmentBalance {
         integer(choices,'wave') != 0 || !(integer(choices,'a') > integer(choices,'b') && integer(choices,'b') > integer(choices,'c')) ||
         integer(choices,'a') > integer(relationship,'choice_daily_cap')) throw const FormatException('선택 친밀도 설정 오류');
     if (integer(relationship,'new_npcs_daily_limit')!=2) throw const FormatException('확정 신규 손님 일일 소개 한도 변경');
-    if (integer(relationship,'anonymous_visit_basis_points')>10000 || integer(relationship,'holiday_visit_basis_points')>10000 || integer(relationship,'own_portion_extra_quantity')<1) throw const FormatException('손님 방문 비율/수량 오류');
+    if (integer(relationship,'holiday_visit_basis_points')>10000 || integer(relationship,'own_portion_extra_quantity')<1) throw const FormatException('손님 방문 비율/수량 오류');
+    // 5-1단계: 실제 시간 손님 간격 두 개(일반·네임드)와 자리 수. 옛 무기명 확률·하루 1회·줄 상한은 없앴다.
+    if (relationship.containsKey('anonymous_visit_basis_points') || relationship.containsKey('visits_per_npc_business_day') ||
+        levels.any((row) => row.containsKey('max_queue'))) {
+      throw const FormatException('없앤 손님 방문 설정');
+    }
+    final arrivals = result.section('customer_arrivals');
+    for (final kind in ['regular', 'named']) {
+      final low = integer(arrivals, '${kind}_min_ms'), high = integer(arrivals, '${kind}_max_ms');
+      if (low == 0 || high < low || integer(arrivals, '${kind}_slots') == 0) {
+        throw const FormatException('손님 방문 간격/자리 오류');
+      }
+    }
+    final notices = result.section('customer_notifications');
+    if (integer(notices, 'quiet_start_minute') >= 1440 || integer(notices, 'quiet_end_minute') >= 1440 ||
+        integer(notices, 'regular_max_notices') == 0 || integer(notices, 'preview_horizon_ms') == 0) {
+      throw const FormatException('손님 알림 설정 오류');
+    }
     const npcIds={'npc_yunha','npc_doyun','npc_makrye','npc_seojin','npc_taeo','npc_eunchae','npc_minjae','npc_sua'};
     for(final section in ['customer_choice_conditions','customer_story_conditions','customer_order_preferences']) {
       final rows=result.section(section);
@@ -168,6 +240,8 @@ class DevelopmentBalance {
       final preference=_map(result.section('customer_order_preferences')[id]);
       if(!recipes.containsKey(preference['flavor']) || integer(preference,'quantity')<1) throw const FormatException('손님 주문 성향 오류');
     }
+    // 재료 타이쿤 (묶음 A): the `ingredients` section reads cleanly.
+    PantryConfig.parse(result.section('ingredients'), recipes);
     return result;
   }
 

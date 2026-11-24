@@ -24,6 +24,10 @@ void main() {
     expect(compactNumber(BigInt.from(100000000)), '1억');
     expect(compactNumber(BigInt.from(1000000000000)), '1조');
     expect(compactNumber(BigInt.from(10000000000000000)), '1경');
+    expect(compactNumber(BigInt.parse('123456789012')), '1234.56억');
+    expect(compactNumber(BigInt.parse('4500000000000')), '4.5조');
+    expect(compactNumber(BigInt.parse('78000000000000000')), '7.8경');
+    expect(compactNumber(BigInt.parse('167800')), '16.78만');
     // New Korean large units replace the v1 unbounded coefficient before 경.
     expect(compactNumber(BigInt.from(10).pow(30)), '100양');
   });

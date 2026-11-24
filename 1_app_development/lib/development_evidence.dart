@@ -105,8 +105,11 @@ bool compositeReceiptMatches(CompositeQuote quote, {
     required Map<String, dynamic> receipt}) {
   if (expectedAccountId.isEmpty || expectedTransactionId.isEmpty ||
       quote.quantity <= 0 || quote.owned < 0 || quote.revision.isEmpty ||
-      quote.skillId.isEmpty || quote.buns <= BigInt.zero ||
-      quote.gold <= BigInt.zero) return false;
+      quote.skillId.isEmpty || quote.buns.isNegative ||
+        // 재료 타이쿤 C: only a special ingredient costs no 붕어빵력 (gold only).
+        (quote.buns == BigInt.zero && (!quote.skillId.startsWith('ingredient:') || quote.gold == BigInt.zero)) || quote.gold.isNegative ||
+      // DEC-041: skills may cost no gold; cosmetics always cost some.
+      (quote.skillId.startsWith('cosmetic:') && quote.gold == BigInt.zero)) return false;
   return receipt['account'] == expectedAccountId &&
       receipt['transaction'] == expectedTransactionId &&
       receipt['revision'] == quote.revision && receipt['skill'] == quote.skillId &&

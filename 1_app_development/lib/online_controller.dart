@@ -15,15 +15,17 @@ extension OnlineCommands on GameController {
   /// Logs in with Kakao, then syncs and sends my ranking scores. Null on
   /// success and also when the player backs out (no message for that).
   Future<String?> signInOnline() async {
-    if (!online.configured) return '온라인 기능을 준비 중이에요';
+    if (!online.configured) return OnlineTexts.notSetUp;
     if (online.signedIn || _signingIn) return null;
     _signingIn = true;
     _notifyChanged();
     try {
-      final result = await online.signIn();
+      // The way this player first logged in (26번 2-1단계: Kakao or Google).
+      final result = await online.signIn(preferredLogin ?? LoginProvider.kakao);
       if (result == SignInResult.failed) {
         return '로그인하지 못했어요. 잠시 후 다시 해 주세요';
       }
+      if (result == SignInResult.offline) return '인터넷에 연결한 뒤 다시 해 주세요';
       if (result == SignInResult.success && !_disposed) {
         await syncOnline();
         await refreshRanking();
@@ -41,13 +43,14 @@ extension OnlineCommands on GameController {
     if (!online.configured) return;
     await online.signOut();
     _levelOneReported = false;
+    _inviteRetryAtMs = 0;
     _lastRankingScores = null;
     await refreshRanking();
   }
 
   /// Logs in first when needed (Kakao's screen opens). Null once signed in.
   Future<String?> _requireSignIn() async {
-    if (!online.configured) return '온라인 기능을 준비 중이에요';
+    if (!online.configured) return OnlineTexts.notSetUp;
     if (online.signedIn) return null;
     final error = await signInOnline();
     return error ?? (online.signedIn ? null : onlineSignInNeeded);
@@ -69,12 +72,16 @@ extension OnlineCommands on GameController {
     if (!online.signedIn) return;
     _onlineSyncing = true;
     try {
-      await online.setProfile(onlineLook, online.displayName ?? '친구');
-      // The server ignores this unless I accepted an invitation and have
-      // not reported yet, so one call per session is enough.
-      if (state.level >= 2 && !_levelOneReported) {
-        await online.inviteReachedLevelOne();
-        _levelOneReported = true;
+      // The owner name from the first-run screen (26번 2-1단계), else the
+      // login nickname.
+      await online.setProfile(onlineLook, ownerName ?? online.displayName ?? '친구');
+      // 29번: once the new game reaches the goal level. The server ignores
+      // this unless I accepted an invitation, and checks its own record of
+      // my level; "not yet" asks again after [inviteGoalRetryMs].
+      final nowMs = clock.monotonicMilliseconds;
+      if (!_levelOneReported && nowMs >= _inviteRetryAtMs && (inviteGoalReached?.call() ?? false)) {
+        _levelOneReported = await online.inviteReachedLevelOne();
+        if (!_levelOneReported) _inviteRetryAtMs = nowMs + inviteGoalRetryMs;
       }
       await _syncWallet();
       final visits = await online.fetchVisits(state.support.appliedVisits);

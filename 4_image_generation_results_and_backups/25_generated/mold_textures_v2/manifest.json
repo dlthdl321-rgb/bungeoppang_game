@@ -1,0 +1,41 @@
+{
+  "method": "built-in imagegen",
+  "reference_images": false,
+  "required_size": [
+    256,
+    256
+  ],
+  "status": "generated; sizing and seamless edge correction required",
+  "images": [
+    {
+      "file": "paint_redbean.png",
+      "prompt": "paint_redbean.prompt.txt",
+      "size": [
+        1254,
+        1254
+      ],
+      "mode": "RGB",
+      "opaque": true
+    },
+    {
+      "file": "paint_custard.png",
+      "prompt": "paint_custard.prompt.txt",
+      "size": [
+        1254,
+        1254
+      ],
+      "mode": "RGB",
+      "opaque": true
+    },
+    {
+      "file": "paint_cocoa.png",
+      "prompt": "paint_cocoa.prompt.txt",
+      "size": [
+        1254,
+        1254
+      ],
+      "mode": "RGB",
+      "opaque": true
+    }
+  ]
+}

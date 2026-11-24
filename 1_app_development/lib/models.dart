@@ -49,6 +49,15 @@ class GameSettings {
   String musicSelection;
   bool cookingSound;
   int cookingVolume;
+  /// Customer notifications (26번 5-1단계): regular guests off, named
+  /// neighbors on, quiet 22:00~08:00 on, and whether the one-time question
+  /// after the first-run guide was answered. Saves without them get these
+  /// defaults; the save format stays v13.
+  bool notifyRegularGuests, notifyNamedGuests, quietNightNotices, notificationPromptDone;
+  /// 사용 통계 보내기(26번 5단계, DEC-046): on by default, no first-run
+  /// notice; off stops Firebase Analytics collection. Saves without it get
+  /// true; the save format stays v13.
+  bool sendUsageStats;
   GameSettings(
       {this.vibration = true,
       this.holdToBake = false,
@@ -59,7 +68,12 @@ class GameSettings {
       this.musicVolume = provisionalDefaultBgmVolume,
       this.musicSelection = defaultMusicSelection,
       this.cookingSound = provisionalDefaultCookingEnabled,
-      this.cookingVolume = provisionalDefaultCookingVolume});
+      this.cookingVolume = provisionalDefaultCookingVolume,
+      this.notifyRegularGuests = false,
+      this.notifyNamedGuests = true,
+      this.quietNightNotices = true,
+      this.notificationPromptDone = false,
+      this.sendUsageStats = true});
   Map<String, dynamic> toJson() => {
         'vibration': vibration,
         'holdToBake': holdToBake,
@@ -71,16 +85,38 @@ class GameSettings {
         'musicSelection': musicSelection,
         'cookingSound': cookingSound,
         'cookingVolume': cookingVolume,
+        'notifyRegularGuests': notifyRegularGuests,
+        'notifyNamedGuests': notifyNamedGuests,
+        'quietNightNotices': quietNightNotices,
+        'notificationPromptDone': notificationPromptDone,
+        'sendUsageStats': sendUsageStats,
+        musicDefaultKey: true,
       };
+
+  /// 26번 3차 H7: 배경음 is on from the start. Saves written before this key
+  /// existed (test devices only, before release) get 배경음 turned on once
+  /// when read; from then on the player's own choice is kept. The save
+  /// format stays v13 (an extra settings key, like the notification ones).
+  static const musicDefaultKey = 'musicOnByDefault';
 
   /// Sound settings exist from v8; older saves get the defaults.
   factory GameSettings.fromJson(Object? raw,
       {bool withSound = false, bool withIndependentMusic = false}) {
     final m = raw is Map ? raw : const {};
+    bool flag(String key, bool fallback) {
+      final v = m[key];
+      if (v != null && v is! bool) throw FormatException('잘못된 $key');
+      return v as bool? ?? fallback;
+    }
     final settings = GameSettings(
         vibration: m['vibration'] is bool ? m['vibration'] as bool : true,
         holdToBake: m['holdToBake'] == true,
-        reduceMotion: m['reduceMotion'] == true);
+        reduceMotion: m['reduceMotion'] == true,
+        notifyRegularGuests: flag('notifyRegularGuests', false),
+        notifyNamedGuests: flag('notifyNamedGuests', true),
+        quietNightNotices: flag('quietNightNotices', true),
+        notificationPromptDone: flag('notificationPromptDone', false),
+        sendUsageStats: flag('sendUsageStats', true));
     if (!withSound) return settings;
     int volume(String key) {
       final v = m[key];
@@ -108,14 +144,14 @@ class GameSettings {
     }
     return settings
       ..soundEffects = m['soundEffects'] as bool
-      ..music = m['music'] as bool
+      ..music = m[musicDefaultKey] == true ? m['music'] as bool : true
       ..sfxVolume = volume('sfxVolume')
       ..musicVolume = volume('musicVolume');
   }
 }
 
 class GameState {
-  static const formatVersion = 13;
+  static const formatVersion = 14;
   BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
   int level, snapshotSequence;
   Map<String, int> upgradeCounts;

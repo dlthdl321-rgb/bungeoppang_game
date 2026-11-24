@@ -13,8 +13,8 @@ import 'weather_layer.dart';
 /// the home screen (3.5_completed_game_mockups/메인UI_화면).
 ///
 /// A character with concept cooking frames ([PixelSprites.cookFrames])
-/// loops them (준비 → 반죽 → 닫기 → 굽기 → 꺼내기 → 포장) and shows 꺼내기
-/// on a tap; the frames are the concept art as drawn, so they do not show
+/// loops them (준비 → 반죽 붓기 → 닫기 → 뒤집기 → 뚜껑 열기 → 집게로 꺼내
+/// 담기; 4~6 redrawn in 25번 10번) and shows 꺼내 담기 on a tap; the frames are the concept art as drawn, so they do not show
 /// equipped cosmetics. Others are drawn from avatar layers wearing every
 /// equipped item and lift the tongs on a tap. Either way the vendor blinks
 /// and talks while [greeting] (a visitor is at the stall) with eye and
@@ -139,8 +139,9 @@ class CookCutPainter extends CustomPainter {
       {required this.look, this.face = const {}, this.lift = 0, this.frame = 0})
       : super(repaint: AvatarRigDebug.show);
 
-  /// The 꺼내기 (taking out with tongs) frame, shown on a tap.
-  static const tapFrame = 4;
+  /// The 꺼내 담기 (tongs into the bag) frame, shown on a tap. Frame 5
+  /// held the tongs before 25번 10번 redrew 4~6 (now 5 opens the lid).
+  static const tapFrame = 5;
 
   /// Concept frames are big photos-sized art; high-quality downscaling keeps
   /// them sharp without shimmering at the window's small size. The shop

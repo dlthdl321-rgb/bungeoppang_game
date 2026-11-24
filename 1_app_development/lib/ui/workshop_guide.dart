@@ -1,9 +1,15 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../development_balance.dart';
 import '../workshop_controller.dart';
+import '../workshop_feature_unlocks.dart';
 import '../workshop_tutorial.dart';
+import 'bake_target.dart' show SparklePainter;
 import 'celebration.dart' show CountUpText;
 import 'cozy_style.dart';
+import 'first_run.dart' show FirstRunButton, FirstRunCard;
+import 'pixel_sprites.dart';
+import 'star_rating.dart';
 
 /// First-run guide over the real home: a ring around the widget keyed
 /// [WorkshopTutorialStep.target] inside [home], and a small card beside it.
@@ -12,13 +18,24 @@ class WorkshopTutorialOverlay extends StatefulWidget {
   final WorkshopTutorialStep step;
   final GlobalKey home;
   final VoidCallback? onSkip;
-  const WorkshopTutorialOverlay({super.key, required this.step, required this.home, required this.onSkip});
+  /// The card's left edge: 72 clear of the old left line, 12 in the
+  /// guests-at-the-stall layout (WorkshopHomeLayout.guideLeft).
+  final double cardLeft;
+  /// The small line over the text; null: '첫 영업 안내 n/7'. A feature tour
+  /// (4차 g5) says '도감 안내 1/2'.
+  final String? progress;
+  /// A feature tour's '다음' (or '알겠어요' on the last step, [nextLabel]);
+  /// null for the first-run guide, which moves on with the game.
+  final VoidCallback? onNext;
+  final String nextLabel;
+  const WorkshopTutorialOverlay({super.key, required this.step, required this.home, required this.onSkip,
+      this.cardLeft = 72, this.progress, this.onNext, this.nextLabel = '다음'});
   @override
   State<WorkshopTutorialOverlay> createState() => _WorkshopTutorialOverlayState();
 }
 
 class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
-  Rect? _target, _below, _nav;
+  Rect? _target, _above, _nav;
   Rect? _find(String name) {
     final overlay = context.findRenderObject(), root = widget.home.currentContext;
     if (overlay is! RenderBox || !overlay.hasSize || root is! Element) return null;
@@ -38,10 +55,10 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
   }
   void _measure() {
     if (!mounted) return;
-    final target = _find(widget.step.target), below = widget.step.below == null ? null : _find(widget.step.below!);
+    final target = _find(widget.step.target), above = widget.step.above == null ? null : _find(widget.step.above!);
     final nav = _find('home-nav');
-    if (target != _target || below != _below || nav != _nav) {
-      setState(() { _target = target; _below = below; _nav = nav; });
+    if (target != _target || above != _above || nav != _nav) {
+      setState(() { _target = target; _above = above; _nav = nav; });
     }
   }
 
@@ -56,19 +73,29 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
           padding: const EdgeInsets.fromLTRB(12, 8, 6, 8),
           child: Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-              Text('첫 영업 안내 ${widget.step.number}/$workshopTutorialSteps', key: const Key('tutorial-progress'),
-                  style: const TextStyle(fontSize: 12, color: Cozy.inkSoft)),
-              Text(widget.step.text, key: const Key('tutorial-text'), style: const TextStyle(fontSize: 15)),
+              Text(widget.progress ?? '첫 영업 안내 ${widget.step.number}/$workshopTutorialSteps', key: const Key('tutorial-progress'),
+                  style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 12, color: Cozy.inkSoft)),
+              Text(widget.step.text, key: const Key('tutorial-text'),
+                  style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 15)),
             ])),
-            TextButton(key: const Key('tutorial-skip'), onPressed: widget.onSkip,
-                child: const Text('건너뛰기', style: TextStyle(color: Cozy.wood))),
+            if (widget.onNext == null)
+              TextButton(key: const Key('tutorial-skip'), onPressed: widget.onSkip,
+                  child: const Text('건너뛰기', style: TextStyle(color: Cozy.wood)))
+            else
+              Column(mainAxisSize: MainAxisSize.min, children: [
+                CozyPrimaryButton(key: const Key('tour-next'), minHeight: 34, fontSize: 14,
+                    onPressed: widget.onNext, label: widget.nextLabel),
+                TextButton(key: const Key('tour-skip'), onPressed: widget.onSkip,
+                    style: TextButton.styleFrom(minimumSize: const Size(0, 30), padding: const EdgeInsets.symmetric(horizontal: 8)),
+                    child: const Text('건너뛰기', style: TextStyle(color: Cozy.wood, fontSize: 13))),
+              ]),
           ]));
       // Under the stage, or beside the target on the side with more room;
       // always between the top edge and the bottom menu, even at large text.
       final limit = (_nav?.top ?? box.maxHeight) - 6;
       final _CardPlace place;
-      if (_below != null) {
-        place = _CardPlace.top(_below!.bottom + 6);
+      if (_above != null) {
+        place = _CardPlace.bottom(_above!.top - 6);
       } else if (target == null) {
         place = const _CardPlace.bottom(double.infinity);
       } else if (target.center.dy > box.maxHeight / 2) {
@@ -76,8 +103,11 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
       } else {
         place = _CardPlace.top(target.bottom + 10);
       }
+      // A see-through Material under the card: its words take the theme's
+      // text style instead of the no-Material fallback (yellow underline).
       final placed = Positioned.fill(child: CustomSingleChildLayout(
-          delegate: _CardLayout(place, limit: limit), child: card));
+          delegate: _CardLayout(place, limit: limit, left: widget.cardLeft),
+          child: Material(type: MaterialType.transparency, child: card)));
       return Stack(children: [
         if (target != null)
           Positioned.fill(child: IgnorePointer(child: CustomPaint(
@@ -85,6 +115,99 @@ class _WorkshopTutorialOverlayState extends State<WorkshopTutorialOverlay> {
         placed,
       ]);
     });
+  }
+}
+
+/// The story before a guide stage (26번 3차 H6): one line at a time on a
+/// light card over a dimmed home, '다음' (or a tap anywhere) for the next,
+/// [action] on the last line and '건너뛰기' to end the story at once. Both
+/// end it with [onDone]; the guide's own card follows.
+class WorkshopStoryOverlay extends StatefulWidget {
+  final List<String> lines;
+  final String action;
+  final bool reduceMotion;
+  final VoidCallback onDone;
+  const WorkshopStoryOverlay(
+      {super.key, required this.lines, required this.action, required this.onDone, this.reduceMotion = false});
+  @override
+  State<WorkshopStoryOverlay> createState() => _WorkshopStoryOverlayState();
+}
+
+/// Korean may break between any two syllables; a word joiner between the
+/// letters of each word makes the story wrap at spaces only. It draws
+/// nothing (a default-ignorable character), so no font needs it.
+final _wordJoiner = String.fromCharCode(0x2060);
+String _keepWords(String line) =>
+    line.split(' ').map((w) => w.split('').join(_wordJoiner)).join(' ');
+
+class _WorkshopStoryOverlayState extends State<WorkshopStoryOverlay> {
+  int _line = 0;
+  bool get _last => _line >= widget.lines.length - 1;
+  void _next() => _last ? widget.onDone() : setState(() => _line++);
+
+  @override
+  Widget build(BuildContext context) {
+    final fade = widget.reduceMotion ? Duration.zero : const Duration(milliseconds: 220);
+    return Semantics(
+        key: const Key('story-overlay'),
+        scopesRoute: true,
+        explicitChildNodes: true,
+        child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: _next,
+            child: ColoredBox(
+                color: const Color(0x73000000),
+                child: SafeArea(
+                    child: Align(
+                        alignment: const Alignment(0, .35),
+                        child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 400),
+                                child: FirstRunCard(
+                                    key: const Key('story-card'),
+                                    padding: const EdgeInsets.fromLTRB(20, 18, 16, 14),
+                                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                                      const PixelIcon('bun', size: 44),
+                                      const SizedBox(height: 8),
+                                      AnimatedSwitcher(
+                                          duration: fade,
+                                          child: Text(_keepWords(widget.lines[_line]),
+                                              key: ValueKey(_line),
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                  fontFamily: 'Jua',
+                                                  fontFamilyFallback: Cozy.fontFallback,
+                                                  fontSize: 19,
+                                                  height: 1.35,
+                                                  color: Cozy.ink))),
+                                      const SizedBox(height: 12),
+                                      Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                                        for (var i = 0; i < widget.lines.length; i++)
+                                          AnimatedContainer(
+                                              duration: fade,
+                                              margin: const EdgeInsets.symmetric(horizontal: 3),
+                                              width: i == _line ? 16 : 6,
+                                              height: 6,
+                                              decoration: BoxDecoration(
+                                                  color: i == _line ? Cozy.amber : const Color(0xffe6cfb0),
+                                                  borderRadius: BorderRadius.circular(3))),
+                                      ]),
+                                      const SizedBox(height: 12),
+                                      Row(children: [
+                                        TextButton(
+                                            key: const Key('story-skip'),
+                                            style: TextButton.styleFrom(foregroundColor: Cozy.inkSoft),
+                                            onPressed: widget.onDone,
+                                            child: const Text('건너뛰기', style: TextStyle(fontSize: 13))),
+                                        const Spacer(),
+                                        FirstRunButton(
+                                            key: const Key('story-next'),
+                                            expand: true,
+                                            onPressed: _next,
+                                            label: _last ? widget.action : '다음'),
+                                      ]),
+                                    ])))))))));
   }
 }
 
@@ -100,13 +223,14 @@ class _CardPlace {
   int get hashCode => Object.hash(y, top);
 }
 
-/// Lays the card out 72px from the left (clear of the customer queue) and
-/// slides it up or down to stay above [limit], the bottom menu's top.
+/// Lays the card out [left] from the left (72 clears the old customer
+/// line) and slides it up or down to stay above [limit], the bottom menu's
+/// top.
 class _CardLayout extends SingleChildLayoutDelegate {
-  static const left = 72.0, right = 12.0, edge = 8.0;
+  static const right = 12.0, edge = 8.0;
   final _CardPlace place;
-  final double limit;
-  const _CardLayout(this.place, {required this.limit});
+  final double limit, left;
+  const _CardLayout(this.place, {required this.limit, this.left = 72});
   double _limit(Size size) => limit.clamp(edge * 2, size.height - edge);
   @override
   BoxConstraints getConstraintsForChild(BoxConstraints constraints) => BoxConstraints(
@@ -119,7 +243,7 @@ class _CardLayout extends SingleChildLayoutDelegate {
     return Offset(left, wanted.clamp(edge, (bottom - child.height).clamp(edge, double.infinity)));
   }
   @override
-  bool shouldRelayout(_CardLayout old) => old.place != place || old.limit != limit;
+  bool shouldRelayout(_CardLayout old) => old.place != place || old.limit != limit || old.left != left;
 }
 
 class _RingPainter extends CustomPainter {
@@ -181,13 +305,154 @@ class WorkshopWelcomeBackCard extends StatelessWidget {
                 const Text('가게 문이 닫혀 있어서 쌓인 붕어빵력은 없어요. 영업 중일 때만 자동 생산이 쌓여요.',
                     key: Key('welcome-back-closed'), textAlign: TextAlign.center),
               const SizedBox(height: 8),
+              if (report.arrivals > 0)
+                Text('자리 비운 동안 손님 ${report.arrivals}명이 왔어요.',
+                    key: const Key('welcome-back-arrivals'), textAlign: TextAlign.center),
+              // 26번 7단계: the '오늘' slip at the counter has something new.
+              if (report.newOrder)
+                const Text('오늘의 주문서가 도착했어요.', key: Key('welcome-back-order'), textAlign: TextAlign.center),
+              if (report.stampReady)
+                const Text('오늘 출석 도장을 찍을 수 있어요.', key: Key('welcome-back-stamp'), textAlign: TextAlign.center),
               Text(report.waiting > 0
                   ? '판매는 가게에 계실 때만 해요. 기다리던 손님 ${report.waiting}명은 그대로 있어요.'
-                  : '판매는 가게에 계실 때만 해요. 손님도 그때 찾아와요.',
+                  : '판매는 가게에 계실 때만 해요.',
                   key: const Key('welcome-back-sales'), textAlign: TextAlign.center, style: small),
               const SizedBox(height: 12),
               CozyPrimaryButton(key: const Key('welcome-back-close'), minHeight: 44,
                   onPressed: () => Navigator.pop(context), label: '확인'),
             ]))));
+  }
+}
+
+/// A feature's one-screen introduction (26번 2단계): a picture, two
+/// sentences and '알겠어요'. The picture is `ui/<art>.png` (25번 22번); until
+/// it is drawn an existing icon on a cream frame stands in.
+class WorkshopFeatureIntroCard extends StatelessWidget {
+  final WorkshopFeature feature;
+  final VoidCallback onDone;
+  const WorkshopFeatureIntroCard({super.key, required this.feature, required this.onDone});
+
+  @override
+  Widget build(BuildContext context) {
+    final intro = featureIntro(feature);
+    final art = PixelSprites.screenArt(intro.art);
+    return Dialog(
+        key: Key('feature-intro-${feature.name}'),
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(20),
+        child: CozyPanel(
+            padding: const EdgeInsets.fromLTRB(18, 16, 18, 12),
+            radius: 16,
+            child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(
+                width: 200,
+                height: 150,
+                decoration: BoxDecoration(color: Cozy.honeyLight.withValues(alpha: .5),
+                    borderRadius: BorderRadius.circular(12), border: Border.all(color: Cozy.woodLight, width: 2)),
+                padding: const EdgeInsets.all(8),
+                alignment: Alignment.center,
+                // 25번 22번 pictures are 160x120: drawn 1:1 (a PixelArt
+                // without a size would be laid out at zero size).
+                child: art != null
+                    ? PixelArt(art, key: const Key('feature-intro-art'), width: 160, height: 120)
+                    : PixelIcon(intro.fallbackIcon, key: const Key('feature-intro-standin'), size: 88),
+              ),
+              const SizedBox(height: 10),
+              Text(intro.title, key: const Key('feature-intro-title'), textAlign: TextAlign.center,
+                  style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 22, color: Cozy.wood)),
+              const SizedBox(height: 6),
+              Text(intro.body, key: const Key('feature-intro-body'), textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 15, color: Cozy.ink)),
+              const SizedBox(height: 12),
+              CozyPrimaryButton(key: const Key('feature-intro-ok'), minHeight: 44, onPressed: onDone, label: '알겠어요'),
+            ]))));
+  }
+}
+
+/// The first sale's praise (26번 2단계, S2-Q4): the guest's words in a
+/// speech bubble, a big star with the star count and a short sparkle. It
+/// shows for two seconds, then [onDone]; with reduced motion it stands still.
+class WorkshopSalePraiseBanner extends StatefulWidget {
+  final WorkshopSalePraise praise;
+  final bool reduceMotion;
+  final VoidCallback onDone;
+  const WorkshopSalePraiseBanner({super.key, required this.praise, required this.onDone, this.reduceMotion = false});
+  static const duration = Duration(seconds: 2);
+  @override
+  State<WorkshopSalePraiseBanner> createState() => _WorkshopSalePraiseBannerState();
+}
+
+class _WorkshopSalePraiseBannerState extends State<WorkshopSalePraiseBanner> with SingleTickerProviderStateMixin {
+  late final AnimationController _t = AnimationController(vsync: this, duration: WorkshopSalePraiseBanner.duration);
+  Timer? _close;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.reduceMotion) _t.forward();
+    _close = Timer(WorkshopSalePraiseBanner.duration, widget.onDone);
+  }
+
+  @override
+  void dispose() {
+    _close?.cancel();
+    _t.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final p = widget.praise;
+    final content = Column(mainAxisSize: MainAxisSize.min, children: [
+      // The speech bubble: who and what they said.
+      CozyPanel(
+        key: const Key('sale-praise-bubble'),
+        padding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
+        radius: 16,
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(p.name, style: const TextStyle(fontSize: 13, color: Cozy.inkSoft, fontWeight: FontWeight.w700)),
+          Text(p.speech, key: const Key('sale-praise-speech'), textAlign: TextAlign.center,
+              style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 18, color: Cozy.ink)),
+        ]),
+      ),
+      const SizedBox(height: 8),
+      SizedBox(
+        width: 190,
+        height: 110,
+        child: Stack(alignment: Alignment.center, children: [
+          if (!widget.reduceMotion)
+            Positioned.fill(child: FadeTransition(
+                opacity: TweenSequence([
+                  TweenSequenceItem(tween: Tween(begin: 0.0, end: 1.0), weight: 15),
+                  TweenSequenceItem(tween: ConstantTween(1.0), weight: 60),
+                  TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.0), weight: 25),
+                ]).animate(_t),
+                child: const CustomPaint(key: Key('sale-praise-sparkle'), painter: SparklePainter()))),
+          Column(mainAxisSize: MainAxisSize.min, children: [
+            // 4차 피드백 IC9: the same five-star row as the bake result.
+            StarRating(key: const Key('sale-praise-star'), stars: p.stars, size: 28),
+            const SizedBox(height: 4),
+            Text('별 ${p.stars}개!', key: const Key('sale-praise-stars'),
+                style: const TextStyle(fontFamily: 'Jua', fontFamilyFallback: Cozy.fontFallback, fontSize: 24, color: Cozy.cream,
+                    shadows: [Shadow(color: Cozy.woodDark, offset: Offset(2, 2)), Shadow(color: Cozy.woodDark, blurRadius: 4)])),
+          ]),
+        ]),
+      ),
+    ]);
+    final shown = widget.reduceMotion
+        ? content
+        : ScaleTransition(
+            scale: TweenSequence([
+              TweenSequenceItem(tween: Tween(begin: .6, end: 1.08).chain(CurveTween(curve: Curves.easeOut)), weight: 15),
+              TweenSequenceItem(tween: Tween(begin: 1.08, end: 1.0), weight: 10),
+              TweenSequenceItem(tween: ConstantTween(1.0), weight: 75),
+            ]).animate(_t),
+            child: content);
+    return Semantics(
+      liveRegion: true,
+      label: '${p.name}: ${p.speech} ${StarRating.label(p.stars)}',
+      excludeSemantics: true,
+      child: IgnorePointer(child: Center(key: const Key('sale-praise'), child: shown)),
+    );
   }
 }

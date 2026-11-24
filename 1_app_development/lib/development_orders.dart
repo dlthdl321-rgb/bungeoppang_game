@@ -20,20 +20,24 @@ class CustomerOrderLine {
 class CustomerDelivery {
   final String batch, flavor;
   final int line, variant, quantity, madeOnBusinessIndex, soldOnBusinessIndex;
+  /// The product's 특제 bonus ([ProductBatch.bonusPermille], 4차 병합 3):
+  /// [ordinaryBuns] already includes it. Saved only when not 1000.
+  final int bonusPermille;
   final BigInt ordinaryBuns;
   CustomerDelivery({required this.batch, required this.flavor, required this.line, required this.variant,
       required this.quantity, required this.madeOnBusinessIndex, required this.soldOnBusinessIndex,
-      required this.ordinaryBuns}) {
+      required this.ordinaryBuns, this.bonusPermille = 1000}) {
     if (batch.isEmpty || flavor.isEmpty || line < 0 || variant < 0 || variant >= 4 || quantity <= 0 ||
         madeOnBusinessIndex <= 0 || soldOnBusinessIndex < madeOnBusinessIndex || age >= 5 ||
-        ordinaryBuns.isNegative) {
+        ordinaryBuns.isNegative || bonusPermille < 1000 || bonusPermille > maxProductBonusPermille) {
       throw const FormatException('부분 판매 기록 오류');
     }
   }
   int get age => soldOnBusinessIndex - madeOnBusinessIndex;
   Map<String, dynamic> toJson() => {'batch': batch, 'flavor': flavor, 'line': line, 'variant': variant,
     'quantity': quantity, 'madeOnBusinessIndex': madeOnBusinessIndex,
-    'soldOnBusinessIndex': soldOnBusinessIndex, 'ordinaryBuns': ordinaryBuns.toString()};
+    'soldOnBusinessIndex': soldOnBusinessIndex, 'ordinaryBuns': ordinaryBuns.toString(),
+    if (bonusPermille != 1000) 'bonusPermille': bonusPermille};
   factory CustomerDelivery.fromJson(Map<String, dynamic> row) {
     if (row['batch'] is! String || row['flavor'] is! String) throw const FormatException('부분 판매 저장 오류');
     return CustomerDelivery(batch: row['batch'] as String, flavor: row['flavor'] as String,
@@ -41,9 +45,16 @@ class CustomerDelivery {
       quantity: DevelopmentBalance.integer(row, 'quantity'),
       madeOnBusinessIndex: DevelopmentBalance.integer(row, 'madeOnBusinessIndex'),
       soldOnBusinessIndex: DevelopmentBalance.integer(row, 'soldOnBusinessIndex'),
-      ordinaryBuns: DevelopmentBalance.decimal(row, 'ordinaryBuns'));
+      ordinaryBuns: DevelopmentBalance.decimal(row, 'ordinaryBuns'),
+      bonusPermille: row.containsKey('bonusPermille') ? DevelopmentBalance.integer(row, 'bonusPermille') : 1000);
   }
 }
+
+/// A sale's ordinary buns for products made with a 특제 portion: [buns] ×
+/// [bonusPermille] ÷ 1000 (재료 타이쿤, 4차 병합 3 사용자 결정: 특제 반죽 또는
+/// 속 +50%, 둘 다 +100%, 손님 판매 대금에만).
+BigInt premiumSaleBuns(BigInt buns, int bonusPermille) =>
+    bonusPermille == 1000 ? buns : buns * BigInt.from(bonusPermille) ~/ BigInt.from(1000);
 class CustomerOrder {
   final String id, customerId;
   final List<CustomerOrderLine> lines;
@@ -179,7 +190,8 @@ List<CustomerDelivery> _handOver(DevelopmentBalance config, CustomerOrder order,
           age: age, difficulty: difficulty, requestedVariant: line.variant, specialOrder: line.special)]);
       handed.add(CustomerDelivery(batch: batch.id, flavor: batch.flavor, line: i, variant: batch.variant,
           quantity: entry.value, madeOnBusinessIndex: batch.madeOnBusinessIndex,
-          soldOnBusinessIndex: businessIndex, ordinaryBuns: quote.provisionalOrdinaryBuns));
+          soldOnBusinessIndex: businessIndex, bonusPermille: batch.bonusPermille,
+          ordinaryBuns: premiumSaleBuns(quote.provisionalOrdinaryBuns, batch.bonusPermille)));
     }
     if (count > order.remaining(i)) throw const FormatException('주문보다 많은 제품이에요.');
   }
@@ -208,9 +220,14 @@ SaleCommit prepareCustomerSale(DevelopmentBalance config, CustomerOrder order,
     'order': order.placed.toJson(), 'businessIndex': businessIndex,
     'products': [for (final d in all) {'batch': d.batch, 'flavor': d.flavor, 'variant': d.variant,
       'quantity': d.quantity, 'madeOnBusinessIndex': d.madeOnBusinessIndex, 'age': d.age, 'line': d.line,
-      if (d.soldOnBusinessIndex != businessIndex) 'soldOnBusinessIndex': d.soldOnBusinessIndex}],
+      if (d.soldOnBusinessIndex != businessIndex) 'soldOnBusinessIndex': d.soldOnBusinessIndex,
+      if (d.bonusPermille != 1000) 'bonusPermille': d.bonusPermille}],
     'revision': config.revision, 'stars': quality.stars, 'scorePermille': quality.scorePermille,
     'ordinaryBuns': quality.provisionalOrdinaryBuns.toString(),
+    // 4차 병합 3: what the 특제 bonus added on top (only when there is any).
+    if (all.any((d) => d.bonusPermille != 1000))
+      'premiumBuns': all.fold<BigInt>(BigInt.zero, (n, d) => n + d.ordinaryBuns -
+          d.ordinaryBuns * BigInt.from(1000) ~/ BigInt.from(d.bonusPermille)).toString(),
   }, paidNow: handed.fold<BigInt>(BigInt.zero, (n, d) => n + d.ordinaryBuns));
 }
 
@@ -289,6 +306,9 @@ Map<String, dynamic> validateStoredCustomerSale(String id, String encoded) {
     final variant = DevelopmentBalance.integer(value, 'variant');
     final made = DevelopmentBalance.integer(value, 'madeOnBusinessIndex');
     final age = DevelopmentBalance.integer(value, 'age');
+    // 4차 병합 3: a 특제 product's bonus (1000 when left out).
+    final bonus = value.containsKey('bonusPermille') ? DevelopmentBalance.integer(value, 'bonusPermille') : 1000;
+    if (bonus < 1000 || bonus > maxProductBonusPermille) throw const FormatException('판매 제품 특제 기록 오류');
     // A partial delivery keeps the day it was handed over.
     final sold = value.containsKey('soldOnBusinessIndex') ? DevelopmentBalance.integer(value, 'soldOnBusinessIndex') : index;
     if (lineIndex >= order.lines.length || quantity == 0 || made == 0 || sold >= index && value.containsKey('soldOnBusinessIndex') ||
@@ -300,7 +320,7 @@ Map<String, dynamic> validateStoredCustomerSale(String id, String encoded) {
         (variant == 0 && !(line.special && line.variant == 0)) || selected[lineIndex].containsKey(batch)) {
       throw const FormatException('판매 제품과 주문 불일치');
     }
-    final facts = jsonEncode([value['flavor'], variant, made]);
+    final facts = jsonEncode([value['flavor'], variant, made, bonus]);
     if (batchFacts.containsKey(batch) && batchFacts[batch] != facts) throw const FormatException('동일 제품 증거 충돌');
     batchFacts[batch] = facts;
     selected[lineIndex][batch] = quantity;

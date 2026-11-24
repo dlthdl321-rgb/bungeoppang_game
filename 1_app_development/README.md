@@ -70,20 +70,21 @@ flutter test
 flutter run
 ```
 
-이 Windows 환경에서는 한글 경로에서 Flutter 셰이더 도구와 Kotlin 데몬이 실패했으므로 영문 경로 또는 영문 드라이브 매핑에서 실행해야 합니다. 예: `subst B: "프로젝트 절대경로"` 후 `B:`에서 실행합니다. `android/gradle.properties`는 Kotlin 인프로세스 컴파일을 사용하도록 설정되어 있습니다. release 빌드는 Gradle·Pub 캐시도 영문 경로여야 합니다: `$env:GRADLE_USER_HOME='C:\GradleCache'; $env:PUB_CACHE='C:\PubCacheBungeoppang'` 후 `flutter pub get`, `flutter build apk --release`. 기본 Pub 캐시(한글 사용자 폴더)에서는 오디오 패키지가 가져오는 `jni`의 CMake 빌드가 실패합니다.
+이 Windows 환경에서는 한글 경로에서 Flutter 셰이더 도구와 Kotlin 데몬이 실패했으므로 영문 경로 또는 영문 드라이브 매핑에서 실행해야 합니다. 예: `subst B: "프로젝트 절대경로"` 후 `B:`에서 실행합니다. `android/gradle.properties`는 Kotlin 인프로세스 컴파일을 사용하도록 설정되어 있습니다. release 빌드는 Gradle·Pub 캐시도 영문 경로여야 합니다: `$env:GRADLE_USER_HOME='D:\DevMoved\GradleCache'; $env:PUB_CACHE='C:\PubCacheBungeoppang'` 후 `flutter pub get`, `flutter build appbundle --release`(또는 `apk --release`). `C:\GradleCache`는 `D:\DevMoved\GradleCache`로 가는 정션이라 그 경로로는 빌드 스크립트(`*.gradle.kts`)를 고친 뒤 다시 컴파일할 때 `Unresolved reference 'println'`처럼 표준 함수를 모두 못 찾습니다(2026-11-17 확인). release 서명은 업로드 키가 있어야 하며 만드는 법은 `2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/release_signing.md`에 있습니다. 기본 Pub 캐시(한글 사용자 폴더)에서는 오디오 패키지가 가져오는 `jni`의 CMake 빌드가 실패합니다.
 
 debug APK는 `flutter build apk --debug`로 다시 만들 수 있습니다. 생성 위치는 `build/app/outputs/flutter-apk/app-debug.apk`입니다.
 
 Android 가상 기기는 `TodayBungeoppang_API35`입니다. 2026-10-05에는 AEHD 2.2가 사용 가능한 것으로 확인됐습니다. `tools/run_android_emulator.ps1`은 현재 빌드 경로의 APK만 선택하고 대상 AVD를 확인합니다. 부팅 제한 시간은 3분이며 사용자 기기에는 설치하지 않습니다. 설치/실행 검증의 실제 결과는 재현 감사 보고서를 참고하세요.
 
 
-온라인 기능을 켜려면 키 5개를 dart-define으로 넘깁니다. 하나라도 없으면 랭킹·친구가 "준비 중"으로 표시되고 게임은 오프라인으로 동작합니다. 키는 저장소에 넣지 않습니다.
+온라인 기능을 켜려면 키 파일 `dart_defines/online.json`을 만들어 빌드에 넘깁니다(`online.example.json`을 복사해 채움, git에서 제외됨). 필수 키 5개 중 하나라도 비면 게임은 오프라인으로 동작합니다. 키는 저장소에 넣지 않습니다.
 
 ```
-flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KEY=... --dart-define=FIREBASE_APP_ID=... --dart-define=FIREBASE_SENDER_ID=... --dart-define=FIREBASE_PROJECT_ID=...
+flutter run --dart-define-from-file=dart_defines/online.json
+flutter build appbundle --release --dart-define-from-file=dart_defines/online.json
 ```
 
-서버 설정과 배포는 [15단계 기록](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/stage15_release_online.md)과 [16단계 기록](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/stage16_kakao_login_ranking.md)을 참고하세요.
+운영 Firebase·카카오·Play 결제·App Check 설정과 서버 배포는 [온라인 운영 설정](../2_development_plans_and_checklists/2.1_development_specs_tasks_and_progress/2.1.3_legacy_code_policies_and_online_setup/online_setup.md)(23번 7단계, 초보자용)을 따릅니다.
 
 ## 코드 구조
 
@@ -123,10 +124,12 @@ flutter run --dart-define=KAKAO_NATIVE_APP_KEY=... --dart-define=FIREBASE_API_KE
 | 에셋 | 출처 | 라이선스 |
 | --- | --- | --- |
 | `assets/images/` | 이 프로젝트에서 제작한 도트 그림. 원본과 시안은 `이미지/`, 변환 스크립트는 `tools/` | 프로젝트 소유 |
-| `assets/audio/` 효과음 4종, `bgm_*.wav` 6종 | `tools/generate_sounds.py`로 직접 합성(외부 샘플 없음, 고정 시드로 재현 가능) | CC0 1.0 |
+| `assets/audio/` 효과음 8종(`tap`·`purchase`·`reward`·`levelup`·`result_*`) | `tools/generate_sounds.py`로 직접 합성(외부 샘플 없음, 고정 시드로 재현 가능) | CC0 1.0 |
+| `assets/audio/sizzle_loop.wav` | 녹음 'Crepe Making' — mefrancis13, Freesound 117602 (https://freesound.org/people/mefrancis13/sounds/117602/, 공개 미리듣기 MP3, 원본 `../4_image_generation_results_and_backups/26_feedback_generated/sounds/`), `tools/make_seamless_loop.py`로 16.4초 이음매 없는 반복 | CC0 1.0 (표기 의무 없음, 기록용) |
+| `assets/audio/bgm_warm_stall.ogg` | 'Warm Bungeoppang Stall' — 사용자가 Suno 유료 요금제로 2026-10-17 생성(원본 `../7_music/`), `tools/prepare_bgm.py`로 반복용 변환 | 유료 요금제 생성곡, 상업 이용 가능(표기 의무 없음) |
 | `assets/fonts/Jua-Regular.ttf` | Jua 글꼴 | SIL OFL 1.1 (`assets/fonts/Jua-OFL.txt`) |
 
-소리를 다시 만들려면 `python tools/generate_sounds.py`(numpy 필요)를 실행합니다.
+소리를 다시 만들려면 `python tools/generate_sounds.py`(효과음), `python tools/make_seamless_loop.py ../4_image_generation_results_and_backups/26_feedback_generated/sounds/crepe_making_117602_preview.mp3 --start 22.8 --end 41.3 --seconds 16.4 --flatten 2`(굽는 소리, 예비 합성본은 `tools/generate_cooking_sound.py`), `python tools/prepare_bgm.py`(배경음악)를 실행합니다(numpy, 배경음악·굽는 소리는 imageio-ffmpeg도 필요).
 
 패키지 라이선스는 각 배포물의 라이선스를 따릅니다.
 

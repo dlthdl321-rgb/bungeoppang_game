@@ -29,6 +29,11 @@ const offlineWelcomeAfter = Duration(hours: 24);
 /// Shorter absences settle silently.
 const workshopWelcomeBackAfter = Duration(hours: 2);
 
+/// First-run screens (로그인·이름·캐릭터·선택 정보, 26번 3차 H2): the lowered
+/// home background drawn behind them, with its falling weather. A winter
+/// night stall until 25번 37번 (a first-run illustration) arrives.
+const firstRunBackground = 'snow';
+
 /// After a failed automatic level-up save, wait this long before retrying.
 const autoLevelRetryMs = 10000;
 
@@ -50,3 +55,34 @@ class ComboBonus {
 
 // OFF by default: combos are a visual effect only unless this is enabled.
 const comboBonus = ComboBonus(enabled: false, threshold: 20, permille: 1100);
+
+/// 붕어빵 품질 별(26번 3차 피드백 H24 → 4차 피드백 IC9 '별은 다섯 개까지'):
+/// how many of [cookingStarsMax] stars each bake grade
+/// (cooking_result_rules.dart `cookingGrade`) shows on the result — out of
+/// five like the order quality stars (ordinary_sale `stars_min`~`stars_max`,
+/// 1~5). Five grades 5·4·3·2·0 (4차 피드백 g15, 사용자 결정 2026-11-21:
+/// 완벽 5 · 잘 구움 4 · 보통 3 · 아깝다 2 · 실패 0 — a failed bake shows five
+/// empty stars). Presentation only: grades, mastery and prices are unchanged.
+const cookingStarsMax = ratingStarsMax;
+
+/// The one star scale of the game (IC9): every star rating — the bake
+/// result and the customers' quality stars (config ordinary_sale
+/// `stars_max`, checked to be this) — is out of five (ui/star_rating.dart).
+const ratingStarsMax = 5;
+const cookingStarsPerfect = 5;
+const cookingStarsGood = 4;
+const cookingStarsFair = 3;
+const cookingStarsNear = 2;
+const cookingStarsFail = 0;
+
+// 원 그려 뒤집기(4차 피드백 IC5, 2026-11-20 사용자 결정): the closed mold
+// turns over its axle as the finger draws circles round it — the turn
+// follows the circle (manual_cooking `flip_turn_degrees` of circling = a
+// half turn of the mold), and the circle done finishes the flip.
+
+/// The axle's place in the mold picture (mold/*.png, 1200x880): the centres
+/// of the two side rings' holes, where the brass pins of mold/axle_front.png
+/// sit (25번 36번 art, measured on mold/closed.png; tools/apply_25_art.py
+/// --only mold).
+const flipAxleLeftRing = (118.0, 441.5);
+const flipAxleRightRing = (1076.0, 441.5);

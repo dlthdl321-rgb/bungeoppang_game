@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import config from "../src/generated/development_balance.json";
+import generatedConfig from "../src/generated/development_balance.json";
+import { withPaidTap1 } from "./paid_skill_fixture";
+// 결제 흐름 검사용: tap_1만 황금 1(실제 설정은 DEC-041로 0).
+const config = withPaidTap1(generatedConfig);
 import { MemoryStore } from "../src/store";
 import { WorkshopService, rewardFingerprint } from "../src/workshop_service";
 import { evidencePath } from "../src/workshop_evidence";
@@ -12,7 +15,7 @@ async function setup() {
   await service.claim("a",{progress:"progress_0001"});return {store,service};
 }
 const intent={account:"a",transaction:"transaction_0001",revision:config.metadata.revision,
-  skill:"tap_1",owned:0,quantity:1,buns:"15",gold:"1"};
+  skill:"tap_1",owned:0,quantity:1,buns:"20",gold:"1"};
 const context={progress:"progress_0001",epoch:1};
 test("클라이언트 차감 JSON만으로는 황금 홀드/상품 지급이 열리지 않는다",async()=>{
   const {store,service}=await setup();store.docs.set("users/a",{gold:5});
@@ -90,7 +93,7 @@ test("아바타 구매도 서버 가격·레벨·보유 회차와 승인 증거�
     gold:String(config.cosmetic_purchase.short.gold)};
   const proof={source:"trustedServerValidation",verifierVersion:1,account:"a",progress:context.progress,epoch:1,
     transaction:cosmetic.transaction,fingerprint:purchaseFingerprint(cosmetic),snapshotDigest:"protected",
-    availableBuns:"2000",lifetimeBuns:"2000",phase:"reservation",level:0};
+    availableBuns:"2000000",lifetimeBuns:"2000000",phase:"reservation",level:0};
   const path=evidencePath("a","reservation",cosmetic.transaction);
   store.docs.set(path,proof);
   await assert.rejects(service.purchase("a","reserve",{...context,intent:cosmetic}));
@@ -99,6 +102,26 @@ test("아바타 구매도 서버 가격·레벨·보유 회차와 승인 증거�
   store.docs.set(evidencePath("a","debit",cosmetic.transaction),{...proof,phase:"debit",level:50});
   await service.purchase("a","commit",{...context,intent:cosmetic});
   assert.equal(store.docs.get("users/a/compositeSkills/cosmetic:short")!.owned,1);
+});
+
+// 26번 3차 H42: the backgrounds are sold through the same catalog again.
+test("배경 구매도 같은 꾸미기 카탈로그의 서버 가격·레벨로 검사한다",async()=>{
+  const {store,service}=await setup();store.docs.set("users/a",{gold:20});
+  const entry=(config as unknown as {avatar_catalog:Record<string,{slot:string;unlock_level:number;free:boolean}>}).avatar_catalog.seaside;
+  assert.equal(entry.slot,"background");assert.equal(entry.free,false);
+  const bg={...intent,transaction:"cosmetic_0002",skill:"cosmetic:seaside",buns:config.cosmetic_purchase.seaside.buns,
+    gold:String(config.cosmetic_purchase.seaside.gold)};
+  const proof={source:"trustedServerValidation",verifierVersion:1,account:"a",progress:context.progress,epoch:1,
+    transaction:bg.transaction,fingerprint:purchaseFingerprint(bg),snapshotDigest:"protected",
+    availableBuns:"20000000",lifetimeBuns:"20000000",phase:"reservation",level:entry.unlock_level-1};
+  const path=evidencePath("a","reservation",bg.transaction);
+  store.docs.set(path,proof);
+  await assert.rejects(service.purchase("a","reserve",{...context,intent:bg}));
+  store.docs.set(path,{...proof,level:entry.unlock_level});
+  await service.purchase("a","reserve",{...context,intent:bg});
+  store.docs.set(evidencePath("a","debit",bg.transaction),{...proof,phase:"debit",level:entry.unlock_level});
+  await service.purchase("a","commit",{...context,intent:bg});
+  assert.equal(store.docs.get("users/a/compositeSkills/cosmetic:seaside")!.owned,1);
 });
 
 test("다른 진행 ID로 같은 일일 목표를 제출해도 계정별 지급을 복제하지 않는다",async()=>{
@@ -161,4 +184,28 @@ test("SSV accepted before wallet failure is recoverable by query across KST midn
   assert.equal(store.docs.get("users/a")!.gold,config.rewarded_ads.gold_per_verified_view);
   const next=await later.adStart("a",{attempt:"recover_0002"});assert.equal(next.day,"2026-10-17");
   assert.equal((await later.adStart("a",{attempt:"recover_0001"})).day,"2026-10-16");
+});
+
+// 재료 타이쿤 C: special ingredients go through the same purchase path.
+test("특별한 재료 구매는 서버 가격·Lv.5 해금·보유 묶음 수를 검사하고 몇 번이든 산다",async()=>{
+  const {store,service}=await setup();store.docs.set("users/a",{gold:10});
+  const premium=(config as unknown as {ingredients:{premium:{unlock_level:number;pack_gold:number}}}).ingredients.premium;
+  const buy=async(transaction:string,owned:number,quantity:number,level:number)=>{
+    const item={...intent,transaction,skill:"ingredient:vanilla_bean",owned,quantity,buns:"0",gold:String(premium.pack_gold*quantity)};
+    const proof={source:"trustedServerValidation",verifierVersion:1,account:"a",progress:context.progress,epoch:1,
+      transaction,fingerprint:purchaseFingerprint(item),snapshotDigest:"protected",
+      availableBuns:"0",lifetimeBuns:"0",phase:"reservation",level};
+    store.docs.set(evidencePath("a","reservation",transaction),proof);
+    await service.purchase("a","reserve",{...context,intent:item});
+    store.docs.set(evidencePath("a","debit",transaction),{...proof,phase:"debit"});
+    return service.purchase("a","commit",{...context,intent:item});
+  };
+  await assert.rejects(buy("ingredient_0001",0,2,premium.unlock_level-1));
+  assert.equal(store.docs.get("users/a")!.gold,10,"해금 전에는 황금을 잡지 않음");
+  assert.equal((await buy("ingredient_0002",0,2,premium.unlock_level)).status,"committed");
+  assert.equal((await buy("ingredient_0003",2,3,premium.unlock_level)).status,"committed");
+  assert.equal(store.docs.get("users/a/compositeSkills/ingredient:vanilla_bean")!.owned,5);
+  assert.equal(store.docs.get("users/a")!.gold,10-premium.pack_gold*5);
+  // A stale owned count (2 again) is refused.
+  await assert.rejects(buy("ingredient_0004",2,1,premium.unlock_level));
 });

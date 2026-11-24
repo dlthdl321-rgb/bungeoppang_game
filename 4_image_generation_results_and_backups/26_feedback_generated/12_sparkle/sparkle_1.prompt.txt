@@ -1,0 +1,1 @@
+Pixel-art twinkle effect, ONE individual animation frame 1 of three, 32x32, transparent background. A soft four-point star glint with NO outline: a bright white core fading outward into warm honey-yellow (#FDBE38) and then transparent, with a faint round glow. Frame 1 small. Pixel-crisp but gentle, cozy, not sci-fi. No text. Output this single frame only, not a sprite sheet.

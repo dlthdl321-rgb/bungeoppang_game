@@ -138,25 +138,61 @@ void main() {
     const ready=WorkshopStoryFacts(met:{'npc_sua','npc_makrye'},affinity:{'npc_sua':60,'npc_makrye':30});
     expect(eligibleCustomerStory('npc_sua',ready,config),isTrue);
   });
-  test('4영업일 소개 제한과 이전 단골 우선은 저장 복원 뒤에도 유지된다', () {
+  test('4영업일 소개 하루 2명은 저장 복원 뒤에도 유지되고 하루 1회 제한은 없다 (5-1단계)', () {
     var p=WorkshopRelationships.empty();
+    String? last;
     for(var day=1;day<=4;day++) {
       if(day>1) {
-        final familiar=p.selectNamedVisitor(day,9999,0,config,catalog)!;
-        expect(p.met,contains(familiar));
-        p=p.visit('regular-$day',familiar,day,catalog);
+        final familiar=p.selectNamedVisitor(day,0,config,catalog,lastVisitor:last);
+        // Unmet neighbors left but none introduced today yet: introduce first.
+        expect(p.met, isNot(contains(familiar)));
       }
       for(var i=0;i<2;i++) {
-        final next=p.selectNamedVisitor(day,9999,0,config,catalog)!;
+        final next=p.selectNamedVisitor(day,0,config,catalog,lastVisitor:last)!;
         expect(p.met, isNot(contains(next)));
         p=p.visit('new-$day-$i',next,day,catalog);
+        last=next;
         p=WorkshopRelationships.fromJson(p.toJson(),config,catalog);
       }
       expect(p.introducedOnDay(day),2);
-      final additional=p.selectNamedVisitor(day,0,0,config,catalog);
-      expect(additional,isNull);
+      // After two introductions a met neighbor comes, again and again the same day.
+      for(var i=0;i<3;i++) {
+        final again=p.selectNamedVisitor(day,i,config,catalog,lastVisitor:last)!;
+        expect(p.met,contains(again));
+        expect(again,isNot(last),reason:'바로 앞 네임드는 빼고 고른다');
+        p=p.visit('again-$day-$i',again,day,catalog);
+        last=again;
+      }
     }
     expect(p.met.length,8);
+  });
+  test('네임드 고르기: 첫 손님 도윤, 직전 제외, 한 명뿐이면 그 사람, 줄에 선 사람 제외 (5-1단계)', () {
+    final empty=WorkshopRelationships.empty();
+    expect(empty.selectNamedVisitor(1,12345,config,catalog),'npc_doyun');
+    expect(empty.selectNamedVisitor(1,0,config,catalog,alreadyQueued:{'npc_doyun'}),isNull);
+    // Only 도윤 met and the day's introductions used up: 도윤 again.
+    var p=WorkshopRelationships.empty().visit('a','npc_doyun',1,catalog).visit('b','npc_yunha',1,catalog);
+    final picks={for(var pick=0;pick<20;pick++) p.selectNamedVisitor(1,pick,config,catalog,lastVisitor:'npc_yunha')};
+    expect(picks,{'npc_doyun'});
+    expect(p.selectNamedVisitor(1,3,config,catalog,lastVisitor:'npc_yunha',alreadyQueued:{'npc_doyun'}),'npc_yunha',
+        reason:'남은 사람이 직전 손님뿐이면 그 사람');
+    expect(p.selectNamedVisitor(1,3,config,catalog,alreadyQueued:{'npc_doyun','npc_yunha'}),isNull);
+    // A new day introduces the next unmet neighbor in catalog order.
+    expect(p.selectNamedVisitor(2,0,config,catalog,lastVisitor:'npc_yunha'),'npc_makrye');
+    // Every met neighbor but the last one is possible.
+    for(final id in catalog.ids) { p=p.visit('all-$id',id,2,catalog); }
+    final spread={for(var pick=0;pick<200;pick++) p.selectNamedVisitor(3,pick,config,catalog,lastVisitor:'npc_sua')};
+    expect(spread,catalog.ids.toSet()..remove('npc_sua'));
+  });
+  test('짧은 이름과 이/가 조사 (S4-1-Q2)', () {
+    expect(catalog.shortName('npc_doyun',{}),'도윤');
+    expect(withSubjectParticle(catalog.shortName('npc_doyun',{})),'도윤이');
+    expect(withSubjectParticle(catalog.shortName('npc_yunha',{})),'윤하 씨가');
+    expect(withSubjectParticle(catalog.shortName('npc_makrye',{})),'막례 할머니가');
+    expect(withSubjectParticle(catalog.shortName('npc_seojin',{})),'오 작가님이');
+    expect(catalog.shortName('npc_seojin',{'story_seojin_01'}),'서진 씨');
+    for(final id in catalog.ids) { expect(catalog.shortName(id,{}),isNotEmpty); }
+    expect(withSubjectParticle('Kim'),'Kim이(가)');
   });
   test('선택 전과 반응 중 복원·닫기·재선택은 보상과 후일담을 한 번만 유지한다', () {
     var p=met(7).rollChoice(7,['choice_doyun_01'],0,config,catalog);

@@ -12,6 +12,17 @@ Map<String, dynamic> receipt(PurchaseJournal journal, String status) =>
       'grantId': status == 'committed' ? 'grant-1' : ''};
 
 void main() {
+  test('DEC-041: 황금 0 스킬 견적은 저널을 시작하고 영수증도 맞는다, 꾸미기 황금 0은 거부', () {
+    final free = CompositeQuote('draft', 'tap_1', 10, 1, BigInt.from(61), BigInt.zero);
+    var journal = PurchaseJournal.start('account-a', 'transaction-free', free);
+    journal = journal.recordReservation(receipt(journal, 'reserved'));
+    expect(journal.reserved, isTrue);
+    expect(() => PurchaseJournal.start('account-a', 'transaction-c',
+        CompositeQuote('draft', 'cosmetic:short', 0, 1, BigInt.from(1000), BigInt.zero)), throwsFormatException);
+    expect(() => PurchaseJournal.start('account-a', 'transaction-n',
+        CompositeQuote('draft', 'tap_1', 0, 1, BigInt.from(15), -BigInt.one)), throwsFormatException);
+    expect(PurchaseJournal.fromJson(journal.toJson()).quote.gold, BigInt.zero);
+  });
   test('확정 후 저장 실패를 같은 ID로 재시도하고 지급은1회다', () async {
     final repo = MemoryPurchaseJournalRepository();
     var journal = intent();

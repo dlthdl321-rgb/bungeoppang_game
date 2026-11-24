@@ -89,8 +89,9 @@ void main() {
     expect(opened, isTrue);
   });
 
-  testWidgets('돌아가기 버튼은 이전과 같은 높이(여백 3 + 48)를 유지한다', (tester) async {
+  // 26번 3차 H41: the frame padding is gone; the pill keeps the 48 tap height.
+  testWidgets('돌아가기 버튼은 누르는 높이 48을 유지한다', (tester) async {
     await tester.pumpWidget(_host(Center(child: CozyBackButton(onPressed: () {}))));
-    expect(tester.getSize(find.byKey(const Key('sheet-back'))).height, 54);
+    expect(tester.getSize(find.byKey(const Key('sheet-back'))).height, 48);
   });
 }

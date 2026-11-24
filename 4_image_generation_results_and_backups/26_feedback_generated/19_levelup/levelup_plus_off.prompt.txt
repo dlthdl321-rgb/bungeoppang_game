@@ -1,0 +1,3 @@
+Use case: precise-object-edit. Pixel art round game button, 64x64, transparent background.
+levelup_plus_off: the same supplied honey-yellow plus button greyed out (desaturated warm grey, flat, no highlight) to show it cannot be pressed.
+Keep the circular silhouette, rim, placement and chunky cream "+" sign identical. Change only the colour and remove the glossy highlight. No text except the exact + sign.

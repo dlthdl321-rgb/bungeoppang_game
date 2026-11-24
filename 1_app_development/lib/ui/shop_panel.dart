@@ -12,7 +12,9 @@ import 'support_panels.dart';
 
 /// Shop tabs of the concept art (3.5_completed_game_mockups/상점): gear (griddle, tongs), the
 /// vendor and pastry cosmetics, and stall themes.
-enum ShopTab { gear, cosmetics, theme, gold }
+/// 재료 타이쿤 C: [ingredients] (the Workshop's '재료' tab, between 꾸미기
+/// and 충전) only when [ShopPanel.ingredients] is given.
+enum ShopTab { gear, cosmetics, ingredients, theme, gold }
 
 /// The concept art's shop (3.5_completed_game_mockups/상점): tabs 장비 / 꾸미기 / 테마 and item
 /// cards (picture, name, price, 구매). Buying a cosmetic also wears it.
@@ -22,18 +24,31 @@ class ShopPanel extends StatefulWidget {
 
   /// Opens another sheet (the item and coin details).
   final void Function(String destination) onOpen;
-  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access});
+  /// The Workshop shop opens its 꾸미기 tab at this slot (from the
+  /// wardrobe's '상점에서 더 보기').
+  final CosmeticSlot? initialSlot;
+  /// A build without the online settings: the charge tab hands out free
+  /// test gold instead of Play packs (4차 피드백 IC10 후속).
+  final bool localTestGold;
+  /// The '재료' tab's content (재료 타이쿤 C, lib/ui/pantry_shop.dart); the
+  /// Workshop passes it, the old clicker has no such tab.
+  final WidgetBuilder? ingredients;
+  const ShopPanel({super.key, required this.controller, required this.onOpen,this.access,this.initialSlot,
+    this.localTestGold=false,this.ingredients});
   @override
   State<ShopPanel> createState() => _ShopPanelState();
 }
 
 class _ShopPanelState extends State<ShopPanel> {
-  ShopTab tab = ShopTab.gear;
+  /// The workshop opens on 꾸미기, where gold buys avatar items (26번 3단계);
+  /// the old clicker keeps 장비 first.
+  late ShopTab tab = widget.access == null ? ShopTab.gear : ShopTab.cosmetics;
   GameController get c => widget.controller;
 
   static String _label(ShopTab t) => switch (t) {
         ShopTab.gear => '장비',
         ShopTab.cosmetics => '꾸미기',
+        ShopTab.ingredients => '재료',
         ShopTab.theme => '테마',
         ShopTab.gold => '충전',
       };
@@ -49,33 +64,105 @@ class _ShopPanelState extends State<ShopPanel> {
         _ => ShopTab.cosmetics,
       };
 
-  static Iterable<CosmeticDefinition> _catalog(ShopTab t) =>
+  Iterable<CosmeticDefinition> _catalog(ShopTab t) =>
       cosmeticDefinitions
-          .where((d) => d.collectible && d.slot.shown && _tabOf(d.slot) == t);
+          .where((d) => d.collectible && d.slot.shown && _tabOf(d.slot) == t &&
+              (widget.access?.listed(d) ?? true));
+
+  /// Tabs with something in them; a tab with nothing for sale is left out.
+  /// The Workshop sells avatar items only, all in 꾸미기 (26번 4-5단계).
+  List<ShopTab> get _tabs => widget.access != null ? [ShopTab.cosmetics, if (widget.ingredients != null) ShopTab.ingredients, ShopTab.gold] : [
+        for (final t in ShopTab.values)
+          if (t == ShopTab.gold || (t != ShopTab.ingredients && _catalog(t).isNotEmpty)) t
+      ];
+
+  Widget _tabChips(List<ShopTab> tabs, ShopTab tab) => Wrap(spacing: 6, runSpacing: 4, children: [
+        for (final t in tabs)
+          ChoiceChip(
+              key: Key('shop-tab-${t.name}'),
+              avatar: PixelIcon(switch (t) {
+                ShopTab.gear => 'tab_gear',
+                ShopTab.cosmetics => 'tab_outfit',
+                ShopTab.ingredients => 'tab_ingredients',
+                ShopTab.theme => 'theme',
+                ShopTab.gold => 'gold_bun',
+              }, size: 28),
+              // 4차 피드백 ID4: a chip keeps its avatar at 18 unless told.
+              avatarBoxConstraints: const BoxConstraints.tightFor(width: 28, height: 28),
+              // Less padding above and below, so the bigger icon does not
+              // make the chip taller than before.
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              // The label is as tall as the icon: a chip's content must not be
+              // shorter than its avatar.
+              label: ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 28),
+                  child: Center(
+                      widthFactor: 1,
+                      child: Text(_label(t), style: const TextStyle(fontWeight: FontWeight.w900)))),
+              showCheckmark: false,
+              // H41: a hairline pill; the picked one honey (no wooden outline).
+              shape: StadiumBorder(side: BorderSide(color: t == tab ? Cozy.honeyDeep : Cozy.line)),
+              backgroundColor: Cozy.cream,
+              selected: t == tab,
+              selectedColor: Cozy.honey,
+              onSelected: (_) => setState(() => this.tab = t)),
+      ]);
+
+  /// The Workshop shop (26번 4-5단계, S45-Q1 B): 꾸미기 is the wardrobe's
+  /// look with the avatar items for sale (locked ones to try on), bought
+  /// and worn at once; 충전 is the gold tab.
+  Widget _workshop(BuildContext context, CosmeticMenuAccess access) {
+    final tabs = _tabs;
+    final tab = tabs.contains(this.tab) ? this.tab : tabs.first;
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Padding(padding: const EdgeInsets.fromLTRB(12, 0, 12, 8), child: _tabChips(tabs, tab)),
+      saveError(c),
+      Expanded(
+          child: tab == ShopTab.ingredients
+              ? widget.ingredients!(context)
+              : tab == ShopTab.gold
+              ? SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: GoldChargeTab(controller: c, legacyBoost: false, localTestGold: widget.localTestGold))
+              : WardrobePanel(
+                  key: const Key('shop-wardrobe'),
+                  controller: c,
+                  access: access,
+                  mode: WardrobeMode.shop,
+                  initialSlot: widget.initialSlot)),
+    ]);
+  }
 
   @override
-  Widget build(BuildContext context) => SingleChildScrollView(
+  Widget build(BuildContext context) {
+    if (widget.access case final access?) {
+      return _workshop(context, access);
+    }
+    final tabs = _tabs;
+    final tab = tabs.contains(this.tab) ? this.tab : tabs.first;
+    return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         Wrap(spacing: 6, runSpacing: 4, children: [
-          for (final t in ShopTab.values)
+          for (final t in tabs)
             ChoiceChip(
                 key: Key('shop-tab-${t.name}'),
                 avatar: PixelIcon(switch (t) {
                   ShopTab.gear => 'tab_gear',
                   ShopTab.cosmetics => 'tab_outfit',
+                  ShopTab.ingredients => 'tab_ingredients',
                   ShopTab.theme => 'theme',
                   ShopTab.gold => 'coin',
                 }, size: 18),
                 label: Text(_label(t)),
                 selected: t == tab,
                 selectedColor: Cozy.orange,
-                onSelected: (_) => setState(() => tab = t)),
+                onSelected: (_) => setState(() => this.tab = t)),
         ]),
         const SizedBox(height: 8),
         saveError(c),
         if (tab == ShopTab.gold)
-          GoldChargeTab(controller: c)
+          GoldChargeTab(controller: c, legacyBoost: widget.access == null)
         else
         LayoutBuilder(builder: (context, box) {
           const gap = 8.0;
@@ -93,6 +180,7 @@ class _ShopPanelState extends State<ShopPanel> {
               child: const Text('코인 · 부스트 보기')),
         ],
       ]));
+  }
 
   Widget _cosmeticCard(BuildContext context, CosmeticDefinition d) {
     final access=widget.access;

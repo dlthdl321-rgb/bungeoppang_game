@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import config from "../src/generated/development_balance.json";
+import generatedConfig from "../src/generated/development_balance.json";
+import { withPaidTap1 } from "./paid_skill_fixture";
+// 결제 흐름 검사용: tap_1만 황금 1(실제 설정은 DEC-041로 0).
+const config = withPaidTap1(generatedConfig);
 import { MemoryStore } from "../src/store";
 import { WorkshopService } from "../src/workshop_service";
 import { PlausibilityValidator } from "../src/plausibility_validator";
@@ -15,7 +18,7 @@ function setup() {
 }
 const snapshot=(buns:string,lifetimeBuns:string,taps=0,sales=0,level=1)=>({buns,lifetimeBuns,level,taps,sales});
 function intent(transaction="transaction_0001",owned=0) {
-  return {account:"a",transaction,revision:config.metadata.revision,skill:"tap_1",owned,quantity:1,buns:owned ? "18":"15",gold:"1"};
+  return {account:"a",transaction,revision:config.metadata.revision,skill:"tap_1",owned,quantity:1,buns:owned ? "27":"20",gold:"1"};
 }
 function daily(goal:"taps"|"production",value:string,extra:Record<string,unknown>={}) {
   const row=config.mission_targets.daily[goal];
@@ -36,7 +39,7 @@ test("타당한 스냅샷이면 예약·차감·확정까지 서버 검증으로
   const reserved=await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
   assert.equal(reserved.status,"reserved");assert.equal(gold(store),config.welcome_reward.gold-1);
   clock.now+=2000;
-  const committed=await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  const committed=await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
   assert.equal(committed.status,"committed");
   assert.equal(store.docs.get("users/a/compositeSkills/tap_1")!.owned,1);
   // Retry replays the terminal receipt without new evidence.
@@ -50,17 +53,30 @@ test("차감하지 않은 스냅샷으로는 구매를 확정하지 않는다",a
 test("서버 시간으로 설명할 수 없는 붕어빵력 증가는 거절하고, 시간이 지나면 허용한다",async()=>{
   const {service,clock}=setup();await service.claim("a",{progress});
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
-  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
   const second={...context,intent:intent("transaction_0002",1)};
   await assert.rejects(service.purchase("a","reserve",{...second,snapshot:snapshot("900000","900000",40)}));
   // 2 taps/s for 10 minutes at tap rate 2 is plausible.
   clock.now+=600000;
   assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot("2425","2440",1240)})).status,"reserved");
 });
+test("자동 승급(4차 IA1)으로 두 레벨이 한꺼번에 오른 스냅샷도 조건을 채웠으면 받고, 못 채웠으면 거절한다 (4차 g9 조건)",async()=>{
+  const {service,clock}=setup();await service.claim("a",{progress});
+  await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+  clock.now+=600000;
+  const second={...context,intent:intent("transaction_0002",1)};
+  const lv3=config.level_progression[2];
+  // The checkpoint was at Lv.1 with 40 taps: Lv.2 may have been partly done
+  // then, so Lv.3's taps and pieces sold must come after it (4차 g9).
+  const at=(taps:number)=>({buns:"385",lifetimeBuns:"400",level:3,taps,sales:lv3.additional_sold_pieces,pieces:lv3.additional_sold_pieces});
+  await assert.rejects(service.purchase("a","reserve",{...second,snapshot:at(40+lv3.additional_taps-1)}),/레벨 조건/);
+  assert.equal((await service.purchase("a","reserve",{...second,snapshot:at(40+lv3.additional_taps)})).status,"reserved");
+});
 test("진행 기록이 줄어든 스냅샷은 거절한다",async()=>{
   const {service}=setup();await service.claim("a",{progress});
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
-  await assert.rejects(service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("25","30",40)}));
+  await assert.rejects(service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","30",40)}));
 });
 test("붕어빵력이 부족해 거절된 예약은 무과금 취소 기록으로 정리된다",async()=>{
   const {store,service}=setup();await service.claim("a",{progress});
@@ -108,8 +124,172 @@ test("판매 보상은 판매 기록 수 안에서만 검증하고 서버 추첨
   assert.equal(extra.outcome,"unverifiable");
   assert.ok(gold(store)<=config.welcome_reward.gold+1);
 });
+// 4차 병합 3: a product made with a 특제 portion carries `bonusPermille`
+// (1500·2000) and `premiumBuns` on top of `ordinaryBuns`; the sale is verified
+// like any other.
+test("특제로 만든 붕어빵 판매(bonusPermille·premiumBuns)도 판매 증거로 받는다",async()=>{
+  const {service}=setup();await service.claim("a",{progress});
+  const payload={fingerprint:"local",evidence:{order:{id:"order_0001"},products:[{batch:"b",flavor:"redbean",bonusPermille:2000}],
+    revision:config.metadata.revision,stars:5,scorePermille:900,ordinaryBuns:"60",premiumBuns:"60",businessIndex:1}};
+  const first=await service.reward("a",{...context,claim:"order_0001",kind:"sale",payload,snapshot:snapshot("120","120",30,1)},true);
+  assert.ok(["eligible","noWin"].includes(String(first.outcome)),String(first.outcome));
+});
 test("스냅샷 없는 보상 제출은 기존처럼 대기로 남는다",async()=>{
   const {service}=setup();await service.claim("a",{progress});
   const data={...context,claim:`${progress}:mission:daily:2026-10-16:taps`,kind:"mission",payload:daily("taps","50")};
   assert.equal((await service.reward("a",data,true)).outcome,"pending");
+});
+// 26번 7단계: 출석 7일째 황금과 오늘의 주문서·출석 붕어빵력 한도.
+const stamp=(period:string,extra:Record<string,unknown>={})=>({scope:"attendance",period,goal:"day7",
+  gold:config.daily_return.attendance.gold,revision:config.metadata.revision,...extra});
+test("출석 7일째 황금은 서버 검증 후 한 번만, 다음 황금은 7일 뒤에만 지급한다",async()=>{
+  const {store,service,clock}=setup();await service.claim("a",{progress});
+  const data={...context,claim:`${progress}:attendance:2026-10-16`,kind:"mission",payload:stamp("2026-10-16"),snapshot:snapshot("50","50",50)};
+  const first=await service.reward("a",data,true);
+  assert.equal(first.outcome,"eligible");assert.equal(first.gold,config.daily_return.attendance.gold);
+  assert.deepEqual(await service.reward("a",data,true),first);
+  assert.equal(gold(store),config.welcome_reward.gold+1);
+  // A second card three days later (impossible with seven boxes) pays nothing.
+  clock.now+=3*86400000;
+  const early=await service.reward("a",{...context,claim:`${progress}:attendance:2026-10-19`,kind:"mission",payload:stamp("2026-10-19"),snapshot:snapshot("50","50",50)},true);
+  assert.equal(early.outcome,"unverifiable");
+  clock.now+=4*86400000;
+  const next=await service.reward("a",{...context,claim:`${progress}:attendance:2026-10-23`,kind:"mission",payload:stamp("2026-10-23"),snapshot:snapshot("50","50",50)},true);
+  assert.equal(next.outcome,"eligible");
+  assert.equal(gold(store),config.welcome_reward.gold+2);
+});
+test("출석 황금은 보상량·형식·기간이 틀리면 지급하지 않는다",async()=>{
+  const {store,service}=setup();await service.claim("a",{progress});
+  const ask=(claim:string,payload:Record<string,unknown>)=>service.reward("a",{...context,claim:`${progress}:${claim}`,kind:"mission",payload,snapshot:snapshot("50","50",50)},true);
+  assert.equal((await ask("attendance:w1",stamp("2026-10-16",{gold:5}))).outcome,"unverifiable");
+  assert.equal((await ask("attendance:w2",stamp("2026-10-16",{goal:"day6"}))).outcome,"unverifiable");
+  assert.equal((await ask("attendance:w3",stamp("2026-10-16",{extra:true}))).outcome,"unverifiable");
+  assert.equal((await ask("attendance:w4",stamp("2026-10-01"))).outcome,"unverifiable");
+  assert.equal((await ask("attendance:w5",stamp("2026-10-20"))).outcome,"unverifiable");
+  assert.equal(gold(store),config.welcome_reward.gold);
+});
+test("오늘의 주문서·출석 붕어빵력은 하루치만 서버 한도에 더한다",async()=>{
+  const {service,clock}=setup();await service.claim("a",{progress});
+  await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+  const second={...context,intent:intent("transaction_0002",1)};
+  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns);
+  // 4차 g7: rewards follow R = tap power × rate_taps_per_second + auto/s. After
+  // one tap_1 level the tap power is 2 and there is no auto skill.
+  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds));
+  const perDay=seconds*2n*BigInt(d.rate_taps_per_second)+minimum;
+  // Two touched days of order + stamp fit on top of the slack.
+  const fits=(40n+BigInt(config.server_validation.slack_buns)+2n*perDay).toString();
+  clock.now+=1000;
+  assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot(fits,fits,40)})).status,"reserved");
+  const {service:other}=setup();await other.claim("a",{progress});
+  await other.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await other.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+  // 4차 병합: one 도감 cell (g6) is always allowed on top, so step past it.
+  const cell=BigInt(config.collection_rewards.cell_min_buns);
+  const tooMuch=(40n+BigInt(config.server_validation.slack_buns)+2n*perDay+cell+1n).toString();
+  await assert.rejects(other.purchase("a","reserve",{...second,snapshot:snapshot(tooMuch,tooMuch,40)}));
+});
+// 4차 피드백 g6: 도감을 다 채운 맛의 황금과 칸 완성 붕어빵력 한도.
+const collected=(goal:string,extra:Record<string,unknown>={})=>({scope:"collection",goal,
+  gold:config.collection_rewards.flavor_gold,revision:config.metadata.revision,...extra});
+test("도감 완성 황금은 서버 검증 후 계정·맛마다 한 번만 지급한다",async()=>{
+  const {store,service}=setup();await service.claim("a",{progress});
+  const data={...context,claim:`${progress}:collection:redbean`,kind:"mission",payload:collected("redbean"),snapshot:snapshot("50","50",50)};
+  const first=await service.reward("a",data,true);
+  assert.equal(first.outcome,"eligible");assert.equal(first.gold,config.collection_rewards.flavor_gold);
+  assert.deepEqual(await service.reward("a",data,true),first);
+  // Another claim ID (a reinstalled game) asking for the same flavor gets nothing more.
+  const again=await service.reward("a",{...data,claim:`${progress}:collection:redbean_again`},true);
+  assert.notEqual(again.outcome,"eligible");
+  const custard=await service.reward("a",{...context,claim:`${progress}:collection:custard`,kind:"mission",payload:collected("custard"),snapshot:snapshot("50","50",50)},true);
+  assert.equal(custard.outcome,"eligible");
+  assert.equal(gold(store),config.welcome_reward.gold+2*config.collection_rewards.flavor_gold);
+});
+test("도감 완성 황금은 모르는 맛·보상량·형식이 틀리면 지급하지 않는다",async()=>{
+  const {store,service}=setup();await service.claim("a",{progress});
+  const ask=(claim:string,payload:Record<string,unknown>)=>service.reward("a",{...context,claim:`${progress}:${claim}`,kind:"mission",payload,snapshot:snapshot("50","50",50)},true);
+  assert.equal((await ask("collection:w1",collected("redbean",{gold:99}))).outcome,"unverifiable");
+  assert.equal((await ask("collection:w2",collected("matcha"))).outcome,"unverifiable");
+  assert.equal((await ask("collection:w3",collected("redbean",{extra:true}))).outcome,"unverifiable");
+  assert.equal((await ask("collection:w4",collected("redbean",{revision:"old"}))).outcome,"unverifiable");
+  assert.equal(gold(store),config.welcome_reward.gold);
+});
+test("도감 칸 완성 붕어빵력은 지난 시간만큼의 칸 수까지만 서버 한도에 더한다",async()=>{
+  const {service,clock}=setup();await service.claim("a",{progress});
+  await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+  const second={...context,intent:intent("transaction_0002",1)};
+  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns);
+  // 4차 g7: a day's order + stamp follow R (tap power 2 after one tap_1, no auto).
+  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds));
+  const daily=seconds*2n*BigInt(d.rate_taps_per_second)+minimum;
+  const cell=BigInt(config.collection_rewards.cell_min_buns),per=config.collection_rewards.server_min_ms_per_cell;
+  // Two cells' time: three cells (two + one) of minimum buns fit, a fourth does not.
+  clock.now+=2*per;
+  const base=40n+BigInt(config.server_validation.slack_buns)+2n*daily;
+  const fits=(base+3n*cell).toString();
+  assert.equal((await service.purchase("a","reserve",{...second,snapshot:snapshot(fits,fits,40)})).status,"reserved");
+  const {service:other,clock:otherClock}=setup();await other.claim("a",{progress});
+  await other.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+  await other.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+  otherClock.now+=2*per;
+  const tooMuch=(base+4n*cell).toString();
+  await assert.rejects(other.purchase("a","reserve",{...second,snapshot:snapshot(tooMuch,tooMuch,40)}));
+});
+test("레벨 조건은 앞 확인 이후 시작한 레벨만 그 구간의 판매 개수·탭으로 확인하고 누적 붕어빵력은 보지 않는다 (4차 g9)",async()=>{
+  const {store,service,clock}=setup();await service.claim("a",{progress});
+  const v=new PlausibilityValidator(store,config,()=>clock.now);
+  let n=0;
+  const check=(s:object)=>v.purchase({account:"a",...context},intent(`transaction_g9${String(++n).padStart(3,"0")}`),"reservation",s);
+  const at=(level:number,taps:number,sales:number,pieces?:number)=>({buns:"40",lifetimeBuns:"40",level,taps,sales,...(pieces===undefined ? {} : {pieces})});
+  const row=(level:number)=>config.level_progression[level-1];
+  // First check: every level so far in full (Lv.2), but no lifetime goal.
+  await assert.rejects(check(at(2,row(2).additional_taps-1,1,1)),/레벨 조건/);
+  await check(at(2,row(2).additional_taps,1,row(2).additional_sold_pieces));
+  clock.now+=600000;
+  // Lv.3 may have been begun before the last check; Lv.4 must be done since.
+  await assert.rejects(check(at(4,row(2).additional_taps+row(4).additional_taps,1,1)),/레벨 조건/);
+  await check(at(4,row(2).additional_taps+row(4).additional_taps,1+row(4).additional_sold_pieces,1+row(4).additional_sold_pieces));
+  clock.now+=600000;
+  // More pieces than the new sales can hand over is refused.
+  await assert.rejects(check(at(4,100,3,1+row(4).additional_sold_pieces+1000)),/판매 개수/);
+  // An app from before pieces: sales stand in for them (Lv.6 is done since).
+  await assert.rejects(check(at(6,200,2)),/레벨 조건/);
+  await check(at(6,200,4));
+});
+
+// 재료 타이쿤 (4차 병합 3 사용자 결정): the 특제 bonus is paid only on
+// customer sales, so special ingredients raise the bound by at most twice
+// `bonus_permille` of the sale proceeds — never for taps or auto.
+test("산 특별한 재료가 있으면 판매 대금의 특제 덤만큼만 붕어빵력 증가 한도가 늘고, 탭에는 덤이 없다",async()=>{
+  const taps=1240;
+  async function attempt(lifetime:bigint,packs:number,sales:number) {
+    const {store,service,clock}=setup();await service.claim("a",{progress});
+    await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
+    await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
+    if (packs) store.docs.set("users/a/compositeSkills/ingredient:cultured_butter",{owned:packs});
+    clock.now+=600000;
+    try {
+      await service.purchase("a","reserve",{...context,intent:intent("transaction_0002",1),snapshot:snapshot(lifetime.toString(),lifetime.toString(),taps,sales)});
+      return true;
+    } catch { return false; }
+  }
+  // The highest lifetime accepted.
+  async function highest(packs:number,sales:number) {
+    let low=40n,high=10n**12n;
+    while (high-low>1n) { const mid=(low+high)/2n; if (await attempt(mid,packs,sales)) low=mid; else high=mid; }
+    return low;
+  }
+  // Taps only: special ingredients change nothing (no bonus on taps).
+  assert.equal(await highest(10,0),await highest(0,0));
+  // Three sales: the bound grows by at most twice the bonus of their proceeds.
+  const plain=await highest(0,3),special=await highest(10,3);
+  const permille=BigInt(config.ingredients.premium.bonus_permille);
+  const base=(config.ordinary_sale.base_buns_by_difficulty as string[]).map(BigInt).reduce((a,b)=>a>b?a:b);
+  assert.ok(special>plain,`${special} > ${plain}`);
+  assert.ok(special-plain<=3n*base*1000n*2n*permille/1000n,`덤은 판매 대금의 ${2n*permille}‰까지: ${special-plain}`);
+  // With very few special ingredients the stock caps the extra instead.
+  const one=await highest(1,3);
+  assert.ok(one>plain && one<=special);
 });
