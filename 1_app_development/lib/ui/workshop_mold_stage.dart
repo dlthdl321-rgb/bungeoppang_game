@@ -926,14 +926,28 @@ class WorkshopGriddleLayer extends StatelessWidget {
           if (lock != null)
             Positioned.fromRect(
                 rect: sprite,
-                child: LockedOverlay(
+                // 5차 피드백 7: drawn as before, but it takes no touches...
+                child: IgnorePointer(child: LockedOverlay(
                     key: const Key('griddle-locked'),
                     caption: lock,
                     // On the griddle's top rim, not over its cells (4차 IB2).
                     maxLock: 20,
                     edgeBadgeAt: griddleRimTop,
-                    onTap: () => showCenterToast(context, '숙련된 붕어빵 틀: $lock'),
-                    child: const SizedBox.expand())),
+                    child: const SizedBox.expand()))),
+          if (lock != null)
+            // ...only the griddle itself (its rim down) does: the art above
+            // the rim is see-through, where the fairy swims, so a tap on the
+            // fairy no longer pops the griddle's notice again and again.
+            Positioned.fromRect(
+                rect: Rect.fromLTRB(sprite.left, sprite.top + sprite.height * griddleRimTop,
+                    sprite.right, sprite.bottom),
+                child: Semantics(
+                    button: true,
+                    label: '숙련된 붕어빵 틀: $lock',
+                    child: GestureDetector(
+                        key: const Key('griddle-locked-touch'),
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => showCenterToast(context, '숙련된 붕어빵 틀: $lock')))),
           for (var i = 0; i < s.grid.cells.length; i++)
             if (lock == null || s.grid.cells[i].cooking)
             Builder(builder: (context) {

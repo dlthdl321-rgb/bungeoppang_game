@@ -182,4 +182,20 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
     });
   });
+
+  // 5차 피드백 8 (2026-11-25): 원근감 — 위(멀리)는 작게, 제자리(가까이)는 원래 크기.
+  test('헤엄치며 높이에 따라 크기가 바뀐다: 맨 위 0.6배, 제자리 1배', () {
+    expect(path.depthScale(yBottom), 1);
+    expect(path.depthScale(yTop), closeTo(FairyMotion.farScale, 1e-9));
+    expect(path.depthScale((yTop + yBottom) / 2), closeTo((1 + FairyMotion.farScale) / 2, 1e-9));
+    var small = 1.0, big = 0.0;
+    for (var ms = step; ms < span; ms += step) {
+      final pose = path.swim(ms);
+      if (path.offStage(pose)) continue;
+      small = math.min(small, pose.scale);
+      big = math.max(big, pose.scale);
+    }
+    expect(small, lessThan(.75), reason: '위쪽으로 가면 작아짐');
+    expect(big, greaterThan(.95), reason: '아래쪽(가까이)으로 오면 커짐');
+  });
 }

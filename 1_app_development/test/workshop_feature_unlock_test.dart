@@ -405,8 +405,17 @@ void main() {
       await tester.tap(find.byKey(const Key('griddle-locked')));
       await tester.pump();
       expect(find.textContaining('숙련된 붕어빵 틀: 팥 도감을 완성하면'), findsOneWidget);
+      // 5차 피드백 7: tapping again keeps the same notice (no fade out/in).
+      final shown = tester.widget(find.textContaining('숙련된 붕어빵 틀: 팥 도감을 완성하면'));
+      await tester.tap(find.byKey(const Key('griddle-locked-touch')));
+      await tester.pump();
+      expect(identical(tester.widget(find.textContaining('숙련된 붕어빵 틀: 팥 도감을 완성하면')), shown), isTrue);
       CenterToast.hide();
       await tester.pumpAndSettle();
+      // The see-through art above the rim (where the fairy swims) takes no touch.
+      final art = tester.getRect(find.byKey(const Key('griddle-locked')));
+      final touch = tester.getRect(find.byKey(const Key('griddle-locked-touch')));
+      expect(touch.top, greaterThan(art.top + art.height * .3));
       expect(tester.widget(find.byKey(const Key('griddle-locked'))), isA<LockedOverlay>());
       expect(find.descendant(of: find.byKey(const Key('griddle-locked')), matching: find.byKey(const Key('lock-hatch'))),
           findsOneWidget);
