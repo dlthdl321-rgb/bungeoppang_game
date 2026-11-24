@@ -180,6 +180,10 @@ export const visitsFetch = onCall(options, (req) =>
 export const rankingSubmit = onCall(options, (req) =>
   handle(() => ranking.submit(store, signedIn(req), req.data ?? {}, Date.now())));
 
+// DEC-153 (31번): new-game scores from the server's own progress record.
+export const rankingWorkshopSubmit = onCall(options, (req) =>
+  handle(() => ranking.submitWorkshop(store, signedIn(req), Date.now())));
+
 export const rankingTop = onCall(options, (req) =>
   handle(() => ranking.top(store, rankingQueries, signedIn(req), req.data ?? {})));
 

@@ -1,4 +1,6 @@
+import { readDevelopmentProgress } from "./active_progress";
 import { cleanName, readProfile } from "./friends";
+import { plausibilityCheckpointPath } from "./plausibility_validator";
 import { publicPlayerId } from "./invites";
 import { Doc, MemoryStore, Store } from "./store";
 
@@ -11,13 +13,16 @@ import { Doc, MemoryStore, Store } from "./store";
 // Mirrors lib/ranking_config.dart; test/stage16_kakao_ranking_test.dart
 // checks that the two agree.
 export const rankingBoards = ["bestAutoRate", "lifetime", "bestCombo"] as const;
-export type Board = (typeof rankingBoards)[number];
+/** DEC-153 (31번): the new game's boards, scored by the server from its own
+ * verified progress record (never from the app). */
+export const workshopRankingBoards = ["workshopPieces", "workshopLifetime"] as const;
+export type Board = (typeof rankingBoards)[number] | (typeof workshopRankingBoards)[number];
 export const rankingScoreMax = 9223372036854775807n;
 export const rankingSubmitMinGapMs = 60000;
 export const rankingTopCount = 100;
 export const rankingGrowthSlack = 10;
 export const rankingGrowthPerHour = 10;
-export const rankingGrowthFloor: Record<Board, bigint> = {
+export const rankingGrowthFloor: Record<(typeof rankingBoards)[number], bigint> = {
   bestAutoRate: 1000n,
   lifetime: 10000000n,
   bestCombo: 1000n,
@@ -38,7 +43,8 @@ export interface RankingQueries {
 }
 
 const entryPath = (board: Board, uid: string) => `rankings/${board}/entries/${uid}`;
-const isBoard = (x: unknown): x is Board => rankingBoards.includes(x as Board);
+const isBoard = (x: unknown): x is Board =>
+  (rankingBoards as readonly string[]).includes(x as string) || (workshopRankingBoards as readonly string[]).includes(x as string);
 
 function parseScore(raw: unknown): bigint {
   let value: bigint;
@@ -59,7 +65,7 @@ function parseScore(raw: unknown): bigint {
  * that a score may grow rankingGrowthSlack times at once plus
  * rankingGrowthPerHour times per hour since the previous record.
  */
-export function plausible(board: Board, previous: bigint, next: bigint, elapsedMs: number): boolean {
+export function plausible(board: (typeof rankingBoards)[number], previous: bigint, next: bigint, elapsedMs: number): boolean {
   const floor = rankingGrowthFloor[board];
   if (next <= floor) return true;
   const base = previous > floor ? previous : floor;
@@ -76,7 +82,7 @@ export function plausible(board: Board, previous: bigint, next: bigint, elapsedM
  * rankingSubmitMinGapMs old, or when a score jumps implausibly.
  */
 export async function submit(store: Store, uid: string, input: Record<string, unknown>, now: number) {
-  const scores = new Map<Board, bigint>();
+  const scores = new Map<(typeof rankingBoards)[number], bigint>();
   for (const board of rankingBoards) {
     if (input[board] !== undefined) scores.set(board, parseScore(input[board]));
   }
@@ -110,6 +116,46 @@ export async function submit(store: Store, uid: string, input: Record<string, un
     }
     for (const [path, data] of writes) tx.set(path, data);
     tx.set(`rankingSubmits/${uid}`, { atMs: now });
+    return { best };
+  });
+}
+
+/**
+ * DEC-153 (31번): records my new-game scores from the server's own record
+ * of my active progress (the plausibility checkpoint, checked against server
+ * time): pieces sold (sales where an older app sent no pieces) and lifetime
+ * 붕어빵력, capped at rankingScoreMax. Scores never go down. Nothing to record
+ * before the first server check. Same minimum gap as [submit].
+ */
+export async function submitWorkshop(store: Store, uid: string, now: number) {
+  return store.run(async (tx) => {
+    const last = await tx.get(`rankingWorkshopSubmits/${uid}`);
+    if (last && now - Number(last.atMs) < rankingSubmitMinGapMs) {
+      throw new RankingError("too-soon", "ranking submitted too often");
+    }
+    const progress = await readDevelopmentProgress(tx, uid);
+    const checkpoint = progress ? await tx.get(plausibilityCheckpointPath(uid, progress.progressId)) : undefined;
+    if (!checkpoint) return { best: {} };
+    const pieces = BigInt(Number(checkpoint.pieces ?? checkpoint.sales ?? 0));
+    const lifetime = /^[0-9]{1,4096}$/.test(String(checkpoint.lifetimeBuns)) ? BigInt(String(checkpoint.lifetimeBuns)) : 0n;
+    const scores: Array<[Board, bigint]> = [
+      ["workshopPieces", pieces], ["workshopLifetime", lifetime > rankingScoreMax ? rankingScoreMax : lifetime]];
+    const profile = await readProfile(tx, uid);
+    const old = new Map<Board, Doc | undefined>();
+    for (const [board] of scores) old.set(board, await tx.get(entryPath(board, uid)));
+    const name = cleanName(profile.name), look = (profile.look as Record<string, string> | undefined) ?? {};
+    const best: Record<string, string> = {};
+    for (const [board, score] of scores) {
+      const previous = old.get(board), before = previous ? BigInt(String(previous.scoreText)) : -1n;
+      if (score > before) {
+        tx.set(entryPath(board, uid), { score: Number(score), scoreText: score.toString(), name, look, updatedAt: now });
+        best[board] = score.toString();
+      } else if (previous) {
+        tx.set(entryPath(board, uid), { ...previous, name, look });
+        best[board] = before.toString();
+      }
+    }
+    tx.set(`rankingWorkshopSubmits/${uid}`, { atMs: now });
     return { best };
   });
 }

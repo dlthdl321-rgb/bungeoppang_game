@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/invite_reward_rules.dart';
+import 'package:todays_bungeoppang/ranking_config.dart';
 import 'package:todays_bungeoppang/online_texts.dart';
 import 'package:todays_bungeoppang/balance.dart';
 import 'package:todays_bungeoppang/billing_service.dart';
@@ -223,6 +224,20 @@ void main() {
     await c.syncOnline();
     await c.syncOnline();
     expect(b.levelOneReports, 2);
+    c.dispose();
+  });
+
+  test('새 게임 랭킹(DEC-153): 출시 스위치를 켜야 동기화 때 서버에 기록을 부탁하고, 점수는 보내지 않는다', () async {
+    final t = FakeTime();
+    final (c, b, _, _) = await start(t);
+    await b.signIn();
+    await c.syncOnline();
+    expect(b.workshopRankingSubmits, 0);
+    debugRankingLaunchedOverride = true;
+    addTearDown(() => debugRankingLaunchedOverride = null);
+    t.advance(onlineSyncIntervalMs);
+    await c.syncOnline();
+    expect(b.workshopRankingSubmits, 1);
     c.dispose();
   });
 

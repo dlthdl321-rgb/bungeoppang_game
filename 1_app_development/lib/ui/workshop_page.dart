@@ -51,6 +51,8 @@ import '../pantry_rules.dart' show PantryShortage;
 import 'pantry_home.dart';
 import '../invite_reward_rules.dart';
 import 'friends_panel.dart';
+import 'ranking_panel.dart';
+import '../ranking_config.dart' show workshopRankingBoards, workshopRankingLaunched;
 
 class WorkshopPage extends StatefulWidget {
   final WorkshopController controller;
@@ -598,7 +600,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
       // later (도감 Lv.3, 배경 테마 after the guide) are listed locked with
       // their condition; a tap says why (H32 → 4차 g5).
       // 29번: '친구'(초대) opens at the official launch (DEC-150).
-      hidden:{'ranking',if(!invitesLaunched)'friends','share','daily','event'},
+      hidden:{if(!workshopRankingLaunched)'ranking',if(!invitesLaunched)'friends','share','daily','event'},
       locks:{for(final d in const ['achievements:collection','skins:stall','friends'])
         if(_lockFor(d) case final lock?)d:lock},
       onOpen:(destination){Navigator.pop(ctx);_open(destination);})),
@@ -644,6 +646,8 @@ class _WorkshopPageState extends State<WorkshopPage> {
       case 'daily': case 'event': unawaited(_daily());
       case 'missions': unawaited(_window('레벨 미션',(_)=>_levelMissions()));
       case 'gold': unawaited(_goldPacks());
+      case 'ranking': unawaited(_window('온라인 랭킹',(_)=>RankingPanel(controller:widget.accountController,
+        boards:workshopRankingBoards)));
       case 'friends': unawaited(_window('친구',(_)=>FriendsPanel(controller:widget.accountController,
         showRewardDetails:false,inviteGuide:_inviteRules.guide,inviteGoalLevel:_inviteRules.targetLevel)));
       case 'photo': _sharePhoto();

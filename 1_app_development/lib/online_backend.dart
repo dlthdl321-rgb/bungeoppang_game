@@ -207,6 +207,9 @@ abstract class OnlineBackend {
   /// keeps each board's highest.
   Future<void> rankingSubmit(Map<String, int> scores);
   Future<RankingBoard> rankingTop(String board);
+  /// DEC-153: asks the server to record my new-game scores from its own
+  /// record of my progress (the app sends none).
+  Future<void> rankingWorkshopSubmit();
 }
 
 /// No Firebase in this build: everything reports [OnlineFailure.unavailable].
@@ -269,6 +272,8 @@ class NoOnlineBackend implements OnlineBackend {
   Future<void> rankingSubmit(Map<String, int> scores) async => _off();
   @override
   Future<RankingBoard> rankingTop(String board) async => _off();
+  @override
+  Future<void> rankingWorkshopSubmit() async => _off();
 }
 
 /// In-memory backend with the server's rules, for tests and debug builds.
@@ -415,6 +420,12 @@ class FakeOnlineBackend implements OnlineBackend {
 
   /// My best per board, and other players' rows by board (rank ignored).
   final rankingBest = <String, BigInt>{};
+  int workshopRankingSubmits = 0;
+  @override
+  Future<void> rankingWorkshopSubmit() async {
+    _check();
+    workshopRankingSubmits++;
+  }
   final rankingOthers = <String, List<RankingEntry>>{};
   final rankingSubmissions = <Map<String, int>>[];
 

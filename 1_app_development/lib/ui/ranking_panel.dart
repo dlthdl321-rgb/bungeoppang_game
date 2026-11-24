@@ -84,11 +84,14 @@ const _boardLabels = {
   rankingBestAutoRate: '초당 생산',
   rankingLifetime: '누적 생산',
   rankingBestCombo: '콤보',
+  rankingWorkshopPieces: '판매왕',
+  rankingWorkshopLifetime: '누적 붕어빵력',
 };
 
 String rankingScoreLabel(String board, BigInt score) => switch (board) {
       rankingBestAutoRate => '초당 ${compactNumber(score)}개',
       rankingBestCombo => '${compactNumber(score)}콤보',
+      rankingWorkshopLifetime => '${compactNumber(score)} 붕어빵력',
       _ => '${compactNumber(score)}개',
     };
 
@@ -96,13 +99,16 @@ String rankingScoreLabel(String board, BigInt score) => switch (board) {
 /// own rank pinned under the list.
 class RankingPanel extends StatefulWidget {
   final GameController controller;
-  const RankingPanel({super.key, required this.controller});
+  /// The boards to show: the old clicker's by default, the new game's
+  /// ([workshopRankingBoards]) on the new home (DEC-153).
+  final List<String> boards;
+  const RankingPanel({super.key, required this.controller, this.boards = rankingBoards});
   @override
   State<RankingPanel> createState() => _RankingPanelState();
 }
 
 class _RankingPanelState extends State<RankingPanel> {
-  String _board = rankingBestAutoRate;
+  late String _board = widget.boards.first;
   RankingBoard? _data;
   bool _loading = false, _failed = false, _signedIn = false;
 
@@ -157,8 +163,10 @@ class _RankingPanelState extends State<RankingPanel> {
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: OnlineAccountBar(
               controller: c,
-              guide: '카카오 계정으로 로그인하면 초당 생산·누적 생산·콤보 순위를 '
-                  '다른 플레이어와 겨뤄요.'));
+              guide: widget.boards == workshopRankingBoards
+                  ? '카카오 계정으로 로그인하면 판매왕·누적 붕어빵력 순위를 다른 사장님과 겨뤄요.'
+                  : '카카오 계정으로 로그인하면 초당 생산·누적 생산·콤보 순위를 '
+                      '다른 플레이어와 겨뤄요.'));
     }
     final capped = _board == rankingLifetime && lifetimeExceedsRanking(c.state);
     // The account line and tabs scroll away with the list (large text
@@ -175,7 +183,7 @@ class _RankingPanelState extends State<RankingPanel> {
                     OnlineAccountBar(controller: c, guide: ''),
                     const SizedBox(height: 6),
                     Wrap(spacing: 8, children: [
-                      for (final board in rankingBoards)
+                      for (final board in widget.boards)
                         ChoiceChip(
                             key: Key('ranking-tab-$board'),
                             label: Text(_boardLabels[board]!),

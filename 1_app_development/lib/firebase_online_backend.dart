@@ -410,6 +410,9 @@ class FirebaseOnlineBackend implements OnlineBackend, WorkshopTransport {
           {for (final e in scores.entries) e.key: e.value.toString()});
 
   @override
+  Future<void> rankingWorkshopSubmit() => _call('rankingWorkshopSubmit');
+
+  @override
   Future<RankingBoard> rankingTop(String board) async {
     final r = await _call('rankingTop', {'board': board});
     final me = r['me'];

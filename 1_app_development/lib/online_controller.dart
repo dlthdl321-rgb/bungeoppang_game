@@ -84,6 +84,10 @@ extension OnlineCommands on GameController {
         if (!_levelOneReported) _inviteRetryAtMs = nowMs + inviteGoalRetryMs;
       }
       await _syncWallet();
+      // DEC-153: new-game scores, read by the server from its own record.
+      if (workshopRankingLaunched) {
+        try { await online.rankingWorkshopSubmit(); } on OnlineException { /* next sync retries */ }
+      }
       final visits = await online.fetchVisits(seenFriendVisits?.call() ?? state.support.appliedVisits);
       if (onFriendVisits case final hand? when visits.isNotEmpty && !_disposed) {
         await hand(visits);

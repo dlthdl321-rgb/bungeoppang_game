@@ -112,3 +112,30 @@ test("rankingTop returns at most the top count", async () => {
   assert.equal(board.entries[0].score, String(ranking.rankingTopCount + 5));
   assert.deepEqual(board.me, { rank: ranking.rankingTopCount + 5, score: "1" });
 });
+
+// DEC-153 (31번): new-game boards from the server's own progress record.
+async function checkpoint(store: MemoryStore, uid: string, row: Record<string, unknown>) {
+  await store.run(async (tx) => {
+    tx.set(`users/${encodeURIComponent(uid)}/developmentProgress/active`, { progressId: `progress-${uid}`, epoch: 1 });
+    tx.set(`users/${uid}/workshopPlausibility/progress-${uid}`, row);
+  });
+}
+
+test("새 게임 랭킹: 서버의 진행 확인 기록에서 판매 개수·누적 붕어빵력을 올리고, 줄지 않는다", async () => {
+  const store = new MemoryStore();
+  const queries = ranking.memoryRankingQueries(store);
+  assert.deepEqual(await ranking.submitWorkshop(store, "alice", 0), { best: {} }, "서버 확인 전엔 기록 없음");
+  await checkpoint(store, "alice", { level: 5, sales: 30, pieces: 70, lifetimeBuns: "123456", buns: "10" });
+  assert.deepEqual(await ranking.submitWorkshop(store, "alice", 70000),
+    { best: { workshopPieces: "70", workshopLifetime: "123456" } });
+  await assert.rejects(ranking.submitWorkshop(store, "alice", 80000), (e) => (e as ranking.RankingError).code === "too-soon");
+  await checkpoint(store, "bob", { level: 2, sales: 4, lifetimeBuns: "999", buns: "1" });
+  await ranking.submitWorkshop(store, "bob", 70000);
+  const board = await ranking.top(store, queries, "bob", { board: "workshopPieces" });
+  assert.deepEqual(board.entries.map((e) => e.score), ["70", "4"], "판매 개수가 없던 앱은 판매 수");
+  assert.deepEqual(board.me, { rank: 2, score: "4" });
+  // A lower record (e.g. another device's older progress) never lowers the board.
+  await checkpoint(store, "alice", { level: 5, sales: 1, pieces: 1, lifetimeBuns: "5", buns: "1" });
+  assert.deepEqual(await ranking.submitWorkshop(store, "alice", 200000),
+    { best: { workshopPieces: "70", workshopLifetime: "123456" } });
+});

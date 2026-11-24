@@ -6,6 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/invite_reward_rules.dart';
+import 'package:todays_bungeoppang/ranking_config.dart';
+import 'package:todays_bungeoppang/online_ranking.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/ui/game_app.dart';
 import 'package:todays_bungeoppang/workshop_controller.dart';
@@ -26,10 +28,11 @@ void main() {
 
   Future<(WorkshopController, GameController)> home(WidgetTester tester, Size size,
       {double textScale = 1, bool reduced = true, int level = 1, CountingRepository? repository,
-      FakeAudio? audio, void Function(GameController)? setUp}) async {
+      FakeAudio? audio, void Function(GameController)? setUp, bool ranking = false}) async {
     final online = FakeOnlineBackend(products: const {}, prices: const {})..signedIn = true;
     final account = await setUpAccount(tester, size,
-        textScale: textScale, reduced: reduced, online: online, repository: repository);
+        textScale: textScale, reduced: reduced, online: online, repository: repository,
+        ranking: ranking ? ServerRankingService(online) : const NoRankingService());
     setUp?.call(account);
     final c = WorkshopController(config, MemoryRepository(),
         now: () => DateTime.utc(2026, 11, 23), monotonicMs: () => 0);
@@ -166,6 +169,27 @@ void main() {
     expect(find.textContaining('친구는 황금 3개'), findsOneWidget);
     expect(find.textContaining('Lv.5이 되면 나도 황금 5개'), findsOneWidget);
     expect(find.textContaining('하루 3명, 모두 20명까지'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    await tester.pumpWidget(const SizedBox.shrink());
+  });
+
+  // DEC-153 (31번): the new game's ranking, behind its launch switch.
+  testWidgets('새 홈 메뉴 온라인 랭킹: 가출시엔 없고, 스위치를 켜면 판매왕·누적 붕어빵력 두 판', (tester) async {
+    await home(tester, const Size(390, 844), level: 3);
+    await tester.tap(find.byKey(const Key('menu-menubar')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('menu-ranking')), findsNothing, reason: '가출시(DEC-029)');
+    await tester.pumpWidget(const SizedBox.shrink());
+    debugRankingLaunchedOverride = true;
+    addTearDown(() => debugRankingLaunchedOverride = null);
+    await home(tester, const Size(390, 844), level: 3, ranking: true);
+    await tester.tap(find.byKey(const Key('menu-menubar')));
+    await tester.pumpAndSettle();
+    await tap(tester, 'menu-ranking');
+    expect(find.byKey(const Key('ranking-tab-workshopPieces')), findsOneWidget);
+    expect(find.byKey(const Key('ranking-tab-workshopLifetime')), findsOneWidget);
+    expect(find.byKey(const Key('ranking-tab-bestAutoRate')), findsNothing, reason: '예전 클리커 판은 없음');
+    expect(find.text('판매왕'), findsOneWidget);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

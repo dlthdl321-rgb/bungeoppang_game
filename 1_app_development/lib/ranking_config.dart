@@ -6,6 +6,18 @@ const rankingLifetime = 'lifetime';
 const rankingBestCombo = 'bestCombo';
 const rankingBoards = [rankingBestAutoRate, rankingLifetime, rankingBestCombo];
 
+// DEC-153 (31번): the new game's boards. The server scores them from its own
+// verified record of my progress; the app sends no score.
+const rankingWorkshopPieces = 'workshopPieces';
+const rankingWorkshopLifetime = 'workshopLifetime';
+const workshopRankingBoards = [rankingWorkshopPieces, rankingWorkshopLifetime];
+
+/// 새 게임 랭킹은 정식 출시 때 연다 (DEC-153). Until then the new home's
+/// menu keeps '온라인 랭킹' hidden (가출시: DEC-029).
+const rankingLaunched = false;
+bool? debugRankingLaunchedOverride;
+bool get workshopRankingLaunched => debugRankingLaunchedOverride ?? rankingLaunched;
+
 // Scores are kept as signed 64-bit integers. Larger values are submitted as
 // this maximum and the ranking screen says so.
 final rankingScoreMax = BigInt.parse('9223372036854775807');
