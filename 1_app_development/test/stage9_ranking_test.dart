@@ -51,7 +51,7 @@ final now = DateTime.utc(2026, 10, 5, 3);
 /// Two other players on every board, one with an avatar.
 FakeOnlineBackend rankedBackend() {
   final b = backend();
-  for (final board in rankingBoards) {
+  for (final board in [...rankingBoards, ...workshopRankingBoards]) {
     b.rankingOthers[board] = [
       RankingEntry(
           rank: 0,
@@ -248,9 +248,9 @@ void main() {
             developerTools: false,
             online: online,
             ranking: ServerRankingService(online));
-        c.state.lifetime = rankingScoreMax + BigInt.one;
-        c.state.records.bestAutoRate = BigInt.from(5);
-        c.tick();
+        // 32번 1단계: the new game's boards (DEC-153); my score is the
+        // server's own record.
+        online.rankingBest[rankingWorkshopPieces] = BigInt.from(42);
         await showPanel(tester, c, () => RankingPanel(controller: c));
         expectNoPrototypeText(tester, 'ranking');
         expect(find.byKey(const Key('ranking-list')), findsNothing);
@@ -261,17 +261,12 @@ void main() {
         expect(find.text('붕어왕'), findsOneWidget);
         expect(
             find.text(rankingScoreLabel(
-                rankingBestAutoRate, BigInt.parse('123456789012345'))),
+                rankingWorkshopPieces, BigInt.parse('123456789012345'))),
             findsOneWidget);
         expect(find.text('내 순위 · 2위'), findsOneWidget);
-        await tapVisible(tester, Key('ranking-tab-$rankingLifetime'));
+        await tapVisible(tester, Key('ranking-tab-$rankingWorkshopLifetime'));
         await tester.pumpAndSettle();
-        expect(
-            find.byKey(const Key('ranking-lifetime-capped')), findsOneWidget);
-        expect(find.text('내 순위 · 1위'), findsOneWidget);
-        await tapVisible(tester, Key('ranking-tab-$rankingBestCombo'));
-        await tester.pumpAndSettle();
-        expect(find.byKey(const Key('ranking-me')), findsOneWidget);
+        expect(find.text('붕어왕'), findsOneWidget);
         expect(tester.takeException(), isNull);
         await tapVisible(tester, const Key('online-sign-out'));
         await tester.pumpAndSettle();

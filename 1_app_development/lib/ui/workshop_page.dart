@@ -17,7 +17,6 @@ import 'cook_cut.dart';
 import 'customer_story_panel.dart';
 import 'game_app.dart' show SoundSettings;
 import 'pixel_sprites.dart';
-import '../menu_rules.dart';
 import '../economy.dart';
 import 'public_menus.dart';
 import 'pantry_shop.dart';
@@ -71,6 +70,12 @@ class _WorkshopPageState extends State<WorkshopPage> {
   WorkshopController get c => widget.controller;
   /// 29번 친구 초대: amounts, goal level and the '친구' menu level.
   late final _inviteRules = InviteRewardRules.fromConfig(c.config);
+  /// DEC-154: what a friend's visit gives.
+  String get _visitGuide {
+    final r=c.friendVisitRules;
+    return '친구가 하루 한 번 내 가게에 들르면 ${r.visitMs~/60000}분 동안 생산 ${r.multiplierPermille~/1000}배 '
+      '(초대한 친구는 ${r.inviteMs~/60000}분, 하루 ${r.dailyLimit}번까지)';
+  }
   int _windowCount=0;
   final _homeKey=GlobalKey();
   /// Story chapters already told in this run (26번 3차 H6, not saved).
@@ -315,7 +320,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     // is sold through the avatar catalog like the backgrounds and lamps.
     bool owned(CosmeticDefinition d)=>avatar(d) ? c.ownsAvatar(d.id):d.slot==CosmeticSlot.time || account.state.ownsCosmetic(d);
     bool unlocked(CosmeticDefinition d)=>avatar(d) ? owned(d) || c.state.level>=DevelopmentBalance.integer(catalog[d.id] as Map<String,dynamic>,'unlock_level') &&
-      c.state.lifetime>=DevelopmentBalance.decimal(catalog[d.id] as Map<String,dynamic>,'unlock_total'):d.slot==CosmeticSlot.time || cosmeticUnlocked(account.state,d);
+      c.state.lifetime>=DevelopmentBalance.decimal(catalog[d.id] as Map<String,dynamic>,'unlock_total'):d.slot==CosmeticSlot.time || owned(d);
     String price(CosmeticDefinition d){
       if(owned(d))return '보유 중';
       if(!avatar(d))return '판매하지 않아요';
@@ -595,7 +600,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
     // 4차 피드백 g6: the titles of collected flavors, under the shop's name.
     if(c.collectionTitles.isNotEmpty)Text('칭호 · ${c.collectionTitles.join(' · ')}',key:const Key('menu-owner-title'),
       textAlign:TextAlign.center,style:const TextStyle(fontSize:14,fontWeight:FontWeight.w700,color:Color(0xffa86a00))),
-    Expanded(child:MenuPanel(controller:widget.accountController,legacyDescriptions:false,rewardCounts:_rewardCounts(),
+    Expanded(child:MenuPanel(controller:widget.accountController,rewardCounts:_rewardCounts(),
       // 일일 미션·주간 도전 live in the '오늘' window (H36). Rows that open
       // later (도감 Lv.3, 배경 테마 after the guide) are listed locked with
       // their condition; a tap says why (H32 → 4차 g5).
@@ -649,7 +654,7 @@ class _WorkshopPageState extends State<WorkshopPage> {
       case 'ranking': unawaited(_window('온라인 랭킹',(_)=>RankingPanel(controller:widget.accountController,
         boards:workshopRankingBoards)));
       case 'friends': unawaited(_window('친구',(_)=>FriendsPanel(controller:widget.accountController,
-        showRewardDetails:false,inviteGuide:_inviteRules.guide,inviteGoalLevel:_inviteRules.targetLevel)));
+        visitGuide:_visitGuide,inviteGuide:_inviteRules.guide,inviteGoalLevel:_inviteRules.targetLevel)));
       case 'photo': _sharePhoto();
       // 재료 타이쿤 D: '재료 준비' 창 (홈의 재료 표시·'재료 준비' 버튼, 묶음 E).
       case 'pantry': unawaited(_window('재료 준비',(_)=>PantryWindow(controller:c,

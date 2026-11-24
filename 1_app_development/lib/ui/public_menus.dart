@@ -4,10 +4,7 @@ import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
 import '../economy.dart';
 import '../game_controller.dart';
-import '../home_presentation.dart';
 import '../menu_rules.dart';
-import '../mission_alerts.dart';
-import '../weekly_config.dart';
 import 'avatar_face.dart';
 import 'avatar_painter.dart';
 import 'center_toast.dart';
@@ -457,8 +454,8 @@ class _FitImagePainter extends CustomPainter {
 class MenuPanel extends StatelessWidget {
   final GameController controller;
   final void Function(String destination) onOpen;
-  final Map<String,int>? rewardCounts;
-  final bool legacyDescriptions;
+  /// Rewards ready to claim per row (the new game's daily, event, missions).
+  final Map<String,int> rewardCounts;
 
   /// Destinations left out of this build's menu (the soft launch hides the
   /// online ranking, friends and sharing: DEC-029).
@@ -474,18 +471,12 @@ class MenuPanel extends StatelessWidget {
   /// The padlock's side on a locked row's icon.
   static const lockSize = 18.0;
   const MenuPanel({super.key, required this.controller, required this.onOpen,
-    this.rewardCounts,this.legacyDescriptions=true,this.hidden=const {},this.locks=const {}});
+    this.rewardCounts=const {},this.hidden=const {},this.locks=const {}});
 
   @override
   Widget build(BuildContext context) {
-    final weekly = controller.state.weekly;
-    final theme = seasonThemeForMonth(DateTime.parse(weekly.week).month);
-    // Rewards ready to claim, per row (daily, event, missions, achievements).
-    final claimable = <String, int>{};
-    if(rewardCounts!=null) claimable.addAll(rewardCounts!);
-    if(rewardCounts==null) for (final g in claimableGoals(controller.state)) {
-      claimable[g.destination] = (claimable[g.destination] ?? 0) + 1;
-    }
+    // 32번 1단계: only the new game's counts (no old-clicker goals).
+    final claimable = rewardCounts;
     Widget fish() => const SizedBox(
         width: 36, height: 27, child: CustomPaint(painter: FishPainter()));
     final rows = <(String, String, String?, Widget, Key)>[
@@ -514,7 +505,7 @@ class MenuPanel extends StatelessWidget {
       (
         'ranking',
         '온라인 랭킹',
-        legacyDescriptions ? '초당 생산·누적 생산·콤보 순위' : null,
+null,
         const PixelIcon('leaderboard', size: 32),
         const Key('menu-ranking')
       ),
@@ -535,7 +526,7 @@ class MenuPanel extends StatelessWidget {
       (
         'event',
         '주간 도전',
-        legacyDescriptions ? '${theme.title} · ${weeklyCountdownLabel(weekly.week, controller.gameNow)}' : null,
+null,
         const PixelIcon('weekly', size: 32),
         const Key('event-entry')
       ),
@@ -549,7 +540,7 @@ class MenuPanel extends StatelessWidget {
       (
         'friends',
         '친구',
-        legacyDescriptions ? '하루 한 번 서로 방문하면 황금 부스트' : null,
+null,
         const _FriendsGlyph(),
         const Key('menu-friends')
       ),

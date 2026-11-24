@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
 import '../game_audio.dart';
 import '../game_controller.dart';
-import 'celebration.dart';
 import 'cozy_style.dart';
 import 'pixel_sprites.dart';
 import '../workshop_controller.dart';
@@ -199,8 +198,9 @@ class _GameAppState extends State<GameApp> with WidgetsBindingObserver {
               builder: (context, child) => CozyMotion(
                   reduce: widget.controller.state.settings.reduceMotion,
                   child: child!),
-              child: _covered(CelebrationHost(
-                  controller: widget.controller, child: child!)))),
+              // 32번 1단계: no old-clicker celebration host (it announced the
+              // old game's weekly goals on the new home).
+              child: _covered(child!))),
       home: _workshopHome());
 
   /// Above the navigator: the connection notice covers every route.

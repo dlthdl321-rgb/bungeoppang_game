@@ -3,9 +3,8 @@ import 'package:flutter/services.dart';
 import '../game_controller.dart';
 import '../online_texts.dart';
 import '../online_backend.dart';
-import '../support_config.dart';
 import 'avatar_painter.dart';
-import 'boost_effects.dart';
+import 'server_look.dart';
 import 'cozy_style.dart';
 import 'ranking_panel.dart' show OnlineAccountBar;
 
@@ -13,12 +12,13 @@ import 'ranking_panel.dart' show OnlineAccountBar;
 /// daily visit that gives a friend a 5-minute boost.
 class FriendsPanel extends StatefulWidget {
   final GameController controller;
-  final bool showRewardDetails;
+  /// What a friend's visit gives (DEC-154), or null.
+  final String? visitGuide;
   /// The new home (29번): how invitations pay, and the level the invited
   /// friend aims for. Null in the old screens.
   final String? inviteGuide;
   final int? inviteGoalLevel;
-  const FriendsPanel({super.key, required this.controller,this.showRewardDetails=true,
+  const FriendsPanel({super.key, required this.controller,this.visitGuide,
     this.inviteGuide,this.inviteGoalLevel});
   @override
   State<FriendsPanel> createState() => _FriendsPanelState();
@@ -78,7 +78,6 @@ class _FriendsPanelState extends State<FriendsPanel> {
       }
     }
     final online = c.online.configured;
-    final visit = boostOf(BoostKind.visit), invite = boostOf(BoostKind.invite);
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -108,8 +107,7 @@ class _FriendsPanelState extends State<FriendsPanel> {
           ]),
         ),
         const SizedBox(height: 4),
-        if(widget.showRewardDetails) Text(
-            '친구가 하루 한 번 내 가게에 들르면 ${visit.durationSeconds ~/ 60}분 동안 생산 ${visit.multiplierPermille ~/ 1000}배'),
+        if (widget.visitGuide case final guide?) Text(guide, key: const Key('visit-guide')),
         if (_message case final m?)
           Padding(
               padding: const EdgeInsets.symmetric(vertical: 6),
@@ -156,8 +154,6 @@ class _FriendsPanelState extends State<FriendsPanel> {
             ),
           ),
         const Divider(height: 28),
-        if(widget.showRewardDetails) Text('초대받았나요? 친구 아이디를 입력하고 Lv.1을 달성하면, 그 친구가 손님으로 와서 '
-            '${invite.durationSeconds ~/ 60}분 동안 생산 ${invite.multiplierPermille ~/ 1000}배'),
         if (widget.inviteGuide case final guide?)
           Text(guide, key: const Key('invite-guide'), style: const TextStyle(fontSize: 13)),
         const SizedBox(height: 6),

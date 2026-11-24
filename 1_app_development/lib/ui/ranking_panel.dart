@@ -5,7 +5,6 @@ import '../economy.dart';
 import '../game_controller.dart';
 import '../online_texts.dart';
 import '../online_backend.dart';
-import '../online_ranking.dart';
 import '../ranking_config.dart';
 import 'avatar_painter.dart';
 import 'server_look.dart';
@@ -102,7 +101,7 @@ class RankingPanel extends StatefulWidget {
   /// The boards to show: the old clicker's by default, the new game's
   /// ([workshopRankingBoards]) on the new home (DEC-153).
   final List<String> boards;
-  const RankingPanel({super.key, required this.controller, this.boards = rankingBoards});
+  const RankingPanel({super.key, required this.controller, this.boards = workshopRankingBoards});
   @override
   State<RankingPanel> createState() => _RankingPanelState();
 }
@@ -168,7 +167,6 @@ class _RankingPanelState extends State<RankingPanel> {
                   : '카카오 계정으로 로그인하면 초당 생산·누적 생산·콤보 순위를 '
                       '다른 플레이어와 겨뤄요.'));
     }
-    final capped = _board == rankingLifetime && lifetimeExceedsRanking(c.state);
     // The account line and tabs scroll away with the list (large text
     // leaves little room); my rank stays pinned below.
     return Padding(
@@ -190,9 +188,6 @@ class _RankingPanelState extends State<RankingPanel> {
                             selected: _board == board,
                             onSelected: (_) => _select(board)),
                     ]),
-                    if (capped)
-                      const Text('누적 생산은 순위표 최대치로 올라가요.',
-                          key: Key('ranking-lifetime-capped')),
                     const SizedBox(height: 6),
                   ]),
             ),
