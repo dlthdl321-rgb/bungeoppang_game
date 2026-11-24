@@ -117,7 +117,7 @@
 | --- | --- |
 | DB | sqflite `todays_bungeoppang.db` |
 | 테이블 | `snapshots(slot, sequence, body)`. 슬롯 `current`, `backup` |
-| 저장 형식 버전 | `GameState.formatVersion = 14` (`models.dart`) |
+| 저장 형식 버전 | `GameState.formatVersion = 15` (`models.dart`) |
 | 밸런스 버전 | `economyBalanceVersion = 3` |
 | 보조 시스템 버전 | `supportConfigVersion = 'support-v2'` (v1도 읽음) |
 | 주간 버전 | `weeklyConfigVersion = 'weekly-v1'` (다르면 읽기 실패) |
@@ -195,6 +195,7 @@
 | v12 | 꾸미기 칸: lamp, time, top, bottom, shoes, accessory |
 | v13 | 독립 음악 선택·굽기 채널 설정만 추가. 구형 v1~12 파싱/자산 유지, 실제 이전·실행 검수 미실행 |
 | v14 | 26번 4-5단계(G12): 필드 추가 없음. 13 이하에서 `wardrobe.equipped.outfit`이 `chefcoat`·`padding`이면 `top`=그 id, `outfit`=`noapron`(`menu_state.dart`). 14에서 앞치마 칸에 두 아이템이 있으면 거절 |
+| v15 | 32번 3단계(2026-11-25, DEC-155): 예전 클리커 진행을 지움. 쓰는 키는 `formatVersion`·`snapshotSequence`·`wardrobe`·`premium`(`configVersion`·`gold`만)·`ownedSkins`·`equippedSkin`·`settings`. v1~14 저장은 예전 키(붕어빵·누적·레벨·스킬·미션·보조·초대·기록·주간·업적·환생·튜토리얼·정산 시각, `premium`의 지급 기록·먼저 해금·동기화 표시)를 무시하고 읽음. 설정(v8 소리·v13 음악)·꾸미기(v6~)·스킨 규칙은 그대로. 옛 견본 `account_format14.json` 읽기 검사 |
 | (버전 없음) | premium: 키가 없으면 기본값, 잘못된 값이면 오류 |
 
 ### 시간 규칙

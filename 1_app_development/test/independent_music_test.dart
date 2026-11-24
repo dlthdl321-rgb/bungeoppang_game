@@ -32,16 +32,14 @@ Map<String, dynamic> encoded(GameState state) =>
 void main() {
   test('v12 자산과 기존 배경 연동은 보존하고 v13으로 저장한다', () {
     final state = GameState.initial(DateTime.utc(2026, 10, 16));
-    state.buns = BigInt.from(1234);
-    state.lifetime = BigInt.from(5678);
+    state.premium.gold = 7;
     final old = encoded(state)..['formatVersion'] = 12;
     (old['settings'] as Map)
       ..remove('musicSelection')
       ..remove('cookingSound')
       ..remove('cookingVolume');
     final restored = GameState.fromJson(old);
-    expect(restored.buns, state.buns);
-    expect(restored.lifetime, state.lifetime);
+    expect(restored.premium.gold, 7);
     expect(restored.settings.musicSelection, 'auto');
     expect(restored.toJson()['formatVersion'], GameState.formatVersion);
   });

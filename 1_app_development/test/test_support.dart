@@ -8,7 +8,6 @@ import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
 import 'package:todays_bungeoppang/online_ranking.dart';
-import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/time_service.dart';
 import 'package:todays_bungeoppang/ui/pixel_sprites.dart';
@@ -62,13 +61,9 @@ Future<GameController> setUpAccount(WidgetTester tester, Size size,
   });
   final time = clock ?? FixedTime();
   final repo = repository ?? CountingRepository();
-  repo.current = GameState.initial(time.utcNow)
-    ..tutorialDone = true
-    ..buns = BigInt.parse('1234567890123')
-    ..lifetime = BigInt.parse('2345678901234')
-    ..level = maxLevel ? 10 : 1;
-  repo.current!.missions =
-      MissionState.forLevel(repo.current!.level, time.utcNow);
+  // 32번 3단계: the account save has no old-clicker progress any more
+  // ([maxLevel] is kept for its callers and changes nothing).
+  repo.current = GameState.initial(time.utcNow);
   repo.current!.settings
     ..vibration = false
     ..reduceMotion = reduced;

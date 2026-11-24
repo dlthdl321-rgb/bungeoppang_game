@@ -57,6 +57,24 @@ void main() {
     expect(normalize(GameState.fromJson(sample).toJson()), sample,
         reason: '견본 계정 저장을 읽어 다시 쓰면 내용이 달라집니다(옛 저장 읽기가 깨졌을 수 있음).');
   });
+
+  // 32번 3단계 (2026-11-25): format 15 dropped the old clicker's progress. The
+  // last old account sample keeps loading (old keys ignored) and keeps what
+  // the account save still holds.
+  for (final old in [14]) {
+    test('옛 계정 저장 견본(formatVersion $old)도 읽고 지금 형식으로 다시 쓴다', () {
+      final sample = readFixture(File('test/fixtures/save_format/account_format$old.json'))['sample'] as Map<String, dynamic>;
+      expect(sample['formatVersion'], old);
+      final restored = GameState.fromJson(sample);
+      final json = normalize(restored.toJson());
+      expect(json['formatVersion'], GameState.formatVersion);
+      expect(json['settings'], sample['settings']);
+      expect(json['wardrobe'], sample['wardrobe']);
+      expect(json['ownedSkins'], sample['ownedSkins']);
+      expect(json['equippedSkin'], sample['equippedSkin']);
+      expect((json['premium'] as Map)['gold'], (sample['premium'] as Map)['gold']);
+    });
+  }
 }
 
 /// The JSON a save becomes on disk (BigInt and the like already strings).

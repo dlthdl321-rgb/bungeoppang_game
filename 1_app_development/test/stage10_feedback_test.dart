@@ -28,13 +28,10 @@ void main() {
           ..remove('musicVolume');
         expect(settings, isNotEmpty);
         final restored = GameState.fromJson(json);
-        expect(restored.buns, original.buns, reason: 'v$version');
-        expect(restored.level, original.level, reason: 'v$version');
-        expect(restored.support.coins, BigInt.from(42), reason: 'v$version');
+        // 32번 3단계: the old clicker's progress is no longer kept; what
+        // the account save still holds must come through.
+        expect(restored.premium.gold, 42, reason: 'v$version');
         expect(restored.ownedSkins, original.ownedSkins, reason: 'v$version');
-        if (version >= 4) {
-          expect(restored.support.boostUses, original.support.boostUses);
-        }
         if (version >= 6) {
           expect(restored.wardrobe.toJson(), original.wardrobe.toJson());
         }

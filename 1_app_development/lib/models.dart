@@ -1,17 +1,8 @@
-import 'achievement_config.dart';
-import 'balance.dart' show balanceVersion, upgrades, levels;
-import 'economy.dart' show autoRate;
-import 'economy_config.dart';
 import 'music_config.dart';
 import 'development_audio_defaults.dart';
-import 'mission_state.dart';
-import 'support_state.dart';
-import 'invite_models.dart';
 import 'menu_state.dart';
 import 'cosmetic_config.dart';
-import 'progress_state.dart';
 import 'premium_state.dart';
-import 'prestige_rules.dart' show totalStarsFor;
 
 enum UpgradeKind { tap, auto }
 
@@ -151,143 +142,48 @@ class GameSettings {
 }
 
 class GameState {
-  static const formatVersion = 14;
-  BigInt buns, lifetime, stars, activeRemainder, savedAutoRate;
-  int level, snapshotSequence;
-  Map<String, int> upgradeCounts;
-  Map<int, LevelRewardRecord> levelRewards;
-  MissionState missions;
-  SupportState support;
-  InviteState invites;
+  /// 15 (32번 3단계, 2026-11-25): the old clicker's progress is gone; the
+  /// account save keeps settings, the 황금 balance, the old wardrobe and
+  /// fish skins. Saves 1~14 still load (their old keys are ignored).
+  static const formatVersion = 15;
+  int snapshotSequence;
   WardrobeState wardrobe;
-  RecordState records;
-  WeeklyState weekly;
-  AchievementState achievements;
-  PrestigeState prestige;
 
-  /// 황금 붕어빵 wallet copy and what was bought with it (stage 15).
+  /// 황금 붕어빵 wallet copy (the server owns the balance).
   PremiumState premium;
   Set<String> ownedSkins;
   String equippedSkin;
-  bool tutorialDone;
   GameSettings settings;
-  DateTime lastSettledUtc;
   GameState(
-      {required this.buns,
-      required this.lifetime,
-      required this.stars,
-      required this.level,
-      required this.snapshotSequence,
-      required this.upgradeCounts,
-      required this.levelRewards,
-      required this.missions,
-      required this.support,
-      required this.invites,
+      {required this.snapshotSequence,
       required this.wardrobe,
-      required this.records,
-      required this.weekly,
-      required this.achievements,
-      required this.prestige,
       required this.premium,
       required this.ownedSkins,
       required this.equippedSkin,
-      required this.tutorialDone,
-      required this.settings,
-      required this.lastSettledUtc,
-      required this.savedAutoRate,
-      required this.activeRemainder});
-  factory GameState.initial([DateTime? now]) =>
-      _initial(now ?? DateTime.now().toUtc());
-  // A new game counts its creation day as the first play day.
-  static GameState _initial(DateTime now) => GameState(
-      buns: BigInt.zero,
-      lifetime: BigInt.zero,
-      stars: BigInt.zero,
-      level: 1,
+      required this.settings});
+  factory GameState.initial([DateTime? now]) => GameState(
       snapshotSequence: 0,
-      upgradeCounts: {for (final u in upgrades) u.id: 0},
-      levelRewards: {},
-      missions: MissionState.forLevel(1, now),
-      support: SupportState.initial(now),
-      invites: InviteState(),
       wardrobe: WardrobeState.initial(),
-      records: RecordState.initial(),
-      weekly: WeeklyState.initial(now),
-      achievements: AchievementState(),
-      prestige: PrestigeState(),
       premium: PremiumState(),
       ownedSkins: {'redbean'},
       equippedSkin: 'redbean',
-      tutorialDone: false,
-      settings: GameSettings(),
-      lastSettledUtc: now.toUtc(),
-      savedAutoRate: BigInt.zero,
-      activeRemainder: BigInt.zero)
-    ..records.touchDay(dailyKey(now))
-    ..weekly.touchDay(dailyKey(now));
+      settings: GameSettings());
   GameState copy() => GameState.fromJson(toJson());
   Map<String, dynamic> toJson() => {
         'formatVersion': formatVersion,
-        'balanceVersion': balanceVersion,
         'snapshotSequence': snapshotSequence,
-        'buns': '$buns',
-        'lifetime': '$lifetime',
-        'stars': '$stars',
-        'upgradeCounts': Map<String, int>.of(upgradeCounts),
-        'level': level,
-        'levelRewards': {
-          for (final r in levelRewards.entries) '${r.key}': r.value.toJson()
-        },
-        'missions': missions.toJson(),
-        'support': support.toJson(),
-        'invites': invites.toJson(),
         'wardrobe': wardrobe.toJson(),
-        'records': records.toJson(),
-        'weekly': weekly.toJson(),
-        'achievements': achievements.toJson(),
-        'prestige': prestige.toJson(),
         'premium': premium.toJson(),
         'ownedSkins': ownedSkins.toList(),
         'equippedSkin': equippedSkin,
-        'tutorialDone': tutorialDone,
         'settings': settings.toJson(),
-        'lastSettledUtc': lastSettledUtc.toUtc().toIso8601String(),
-        'savedAutoRate': '$savedAutoRate',
-        'activeRemainder': '$activeRemainder'
       };
   // [cosmetics] lets catalog-evolution tests load saves against a future catalog.
   factory GameState.fromJson(Map<String, dynamic> m,
       {Iterable<CosmeticDefinition> cosmetics = cosmeticDefinitions}) {
-    BigInt natural(String key) {
-      final v = BigInt.tryParse('${m[key]}');
-      if (v == null || v.isNegative) {
-        throw FormatException('잘못된 $key');
-      }
-      return v;
-    }
-
     final version = m['formatVersion'];
     if (version is! int || version < 1 || version > formatVersion) {
       throw const FormatException('지원하지 않는 저장 버전');
-    }
-    final countsRaw = m['upgradeCounts'];
-    if (countsRaw is! Map) {
-      throw const FormatException('업그레이드 데이터 손상');
-    }
-    final counts = <String, int>{};
-    for (final u in upgrades) {
-      final legacyId = {'tap_1', 'tap_2', 'tap_3', 'auto_1', 'auto_2', 'auto_3'}
-          .contains(u.id);
-      final n = version == 1 && !legacyId ? 0 : countsRaw[u.id];
-      final limit = version == 1 ? legacySkillCountLimit : skillCountLimit;
-      if (n is! int || n < 0 || n > limit) {
-        throw FormatException('잘못된 업그레이드 ${u.id}');
-      }
-      counts[u.id] = n;
-    }
-    final lvl = m['level'];
-    if (lvl is! int || lvl < 1 || lvl > levels.last.level) {
-      throw const FormatException('잘못된 레벨');
     }
     final fishIds = {
       for (final d in cosmetics)
@@ -307,128 +203,23 @@ class GameState {
     if (!owned.contains(equipped)) {
       throw const FormatException('장착 외형을 보유하지 않음');
     }
-    final last = DateTime.tryParse('${m['lastSettledUtc']}');
-    if (last == null) {
-      throw const FormatException('잘못된 저장 시각');
+    final premium = m['premium'];
+    if (m.containsKey('premium') && premium is! Map) {
+      throw const FormatException('황금 붕어빵 저장 손상');
     }
-    // v6 'events' (fixed mock season) is dropped in v7. Rewards already
-    // claimed from it live on in the coin ledger and inventory.
-    final rewards = <int, LevelRewardRecord>{};
-    late final MissionState missions;
-    if (version >= 3) {
-      final rawRewards = m['levelRewards'], rawMissions = m['missions'];
-      if (rawRewards is! Map || rawMissions is! Map) {
-        throw const FormatException('레벨 미션 저장 누락');
-      }
-      for (final entry in rawRewards.entries) {
-        if (entry.value is! Map) throw const FormatException('보상 기록 손상');
-        final record = LevelRewardRecord.fromJson(
-            Map<String, dynamic>.from(entry.value as Map));
-        if (entry.key != '${record.level}') {
-          throw const FormatException('보상 ID 불일치');
-        }
-        rewards[record.level] = record;
-      }
-      final saved =
-          MissionState.fromJson(Map<String, dynamic>.from(rawMissions), lvl);
-      // v7 saves keep their season (debug builds can run the legacy one).
-      missions = version < 7 ? saved.migrateToCurrentSeason() : saved;
-    } else {
-      for (final level
-          in (m['rewardedLevels'] as List? ?? []).whereType<int>()) {
-        if (level >= 2 && level <= levels.last.level) {
-          rewards[level] = LevelRewardRecord(
-              level: level, seasonId: 'legacy-v$version', source: 'legacy');
-        }
-      }
-      missions = MissionState.forLevel(lvl, null);
-    }
-    final result = GameState(
-        buns: natural('buns'),
-        lifetime: natural('lifetime'),
-        stars: natural('stars'),
-        level: lvl,
+    return GameState(
         snapshotSequence:
             m['snapshotSequence'] is int ? m['snapshotSequence'] as int : 0,
-        upgradeCounts: counts,
-        levelRewards: rewards,
-        missions: missions,
         wardrobe: version >= 6
-            ? WardrobeState.fromJson(inviteMap(m['wardrobe']),
-                version: version)
+            ? WardrobeState.fromJson(_map(m['wardrobe']), version: version)
             : WardrobeState.initial(),
-        records: version >= 7
-            ? RecordState.fromJson(inviteMap(m['records']))
-            : RecordState.initial(),
-        weekly: version >= 7
-            ? WeeklyState.fromJson(inviteMap(m['weekly']))
-            : WeeklyState.initial(last.toUtc()),
-        achievements: version >= 7
-            ? AchievementState.fromJson(inviteMap(m['achievements']))
-            : AchievementState(),
-        prestige: version >= 9
-            ? PrestigeState.fromJson(inviteMap(m['prestige']))
-            : PrestigeState(),
         // Added without a format bump: saves before stage 15 have none.
         premium: PremiumState.fromJson(
-            m['premium'] is Map
-                ? Map<String, dynamic>.from(m['premium'] as Map)
-                : m.containsKey('premium')
-                    ? throw const FormatException('황금 붕어빵 저장 손상')
-                    : null,
-            isSkill: (id) => upgrades.any((u) => u.id == id)),
-        invites: version >= 5
-            ? InviteState.fromJson(inviteMap(m['invites']))
-            : InviteState.migrate(missions.seenInvitePlayers),
-        support: version >= 4
-            ? SupportState.fromJson(m['support'] is Map
-                ? Map<String, dynamic>.from(m['support'] as Map)
-                : throw const FormatException('보조 진행 저장 누락'))
-            : SupportState.initial(last.toUtc(),
-                legacyStars: natural('stars'),
-                legacyFraction: natural('activeRemainder')),
+            premium is Map ? Map<String, dynamic>.from(premium) : null),
         ownedSkins: owned,
         equippedSkin: equipped,
-        tutorialDone: m['tutorialDone'] == true,
         settings: GameSettings.fromJson(m['settings'],
-            withSound: version >= 8, withIndependentMusic: version >= 13),
-        lastSettledUtc: last.toUtc(),
-        savedAutoRate: natural('savedAutoRate'),
-        activeRemainder: natural('activeRemainder') % BigInt.from(1000));
-    if (version < 7) result._migrateProgress();
-    if (BigInt.from(result.prestige.stars) > totalStarsFor(result.lifetime)) {
-      throw const FormatException('누적 생산보다 많은 명성 별');
-    }
-    final ledger = result.support.ledger;
-    if (result.achievements.claimed
-            .any((id) => !ledger.containsKey('achievement:$id')) ||
-        result.weekly.claimed.any(
-            (id) => !ledger.containsKey('weekly:${result.weekly.week}:$id'))) {
-      throw const FormatException('업적·주간 보상 원장 누락');
-    }
-    return result;
-  }
-
-  /// v7: seed records from what older saves can prove, never invent values.
-  void _migrateProgress() {
-    final today = support.daily.day;
-    final days = {
-      today,
-      for (final id in support.ledger.keys)
-        if (id.startsWith('daily:')) id.split(':')[1],
-    };
-    final rates = [autoRate(this), savedAutoRate, support.daily.peakAuto];
-    records
-      ..bestAutoRate = rates.reduce((a, b) => a > b ? a : b)
-      ..lifetimeTaps = support.daily.taps
-      ..playDays = days.length
-      ..lastPlayDay = today;
-    weekly.rollTo(support.observedUtc);
-    if (support.ledger.containsKey(legacyFinalExchangeId) &&
-        support.transact('achievement:$legacyFinisherAchievement', BigInt.zero,
-            '완주 기록 이전', lastSettledUtc)) {
-      achievements.claimed.add(legacyFinisherAchievement);
-    }
+            withSound: version >= 8, withIndependentMusic: version >= 13));
   }
 
   String equippedCosmetic(CosmeticSlot slot) =>
@@ -436,4 +227,9 @@ class GameState {
   bool ownsCosmetic(CosmeticDefinition item) => item.slot == CosmeticSlot.fish
       ? ownedSkins.contains(item.id)
       : wardrobe.owned.contains(item.id);
+}
+
+Map<String, dynamic> _map(Object? value) {
+  if (value is! Map) throw const FormatException('저장 항목 손상');
+  return Map<String, dynamic>.from(value);
 }

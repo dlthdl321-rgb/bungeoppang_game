@@ -16,7 +16,7 @@ void main(){
     final config=DevelopmentBalance.fromJson(jsonDecode(File('config/development_balance.json').readAsStringSync()) as Map<String,dynamic>);
     final c=WorkshopController(config,MemoryRepository());await c.initialize();
     await tester.pumpWidget(GameApp(controller:account,workshop:c));await tester.pump();
-    final oldLegacy=account.state.buns,coins=account.state.support.coins,oldBuns=c.state.buns;
+    final oldBuns=c.state.buns;
     Future<void> tapKey(String key)async{
       final finder=find.byKey(Key(key));await tester.ensureVisible(finder);await tester.pumpAndSettle();
       await tester.tap(finder);await tester.pumpAndSettle();
@@ -78,7 +78,7 @@ void main(){
     // 3차 피드백 H36: 일일 미션·주간 도전 are in the '오늘' window, not the menu.
     for(final key in ['menu-daily','event-entry']){expect(find.byKey(Key(key)),findsNothing);}
     await close();
-    expect(account.state.buns,oldLegacy);expect(account.state.support.coins,coins);expect(c.state.buns,oldBuns);
+    expect(c.state.buns,oldBuns);
     await tester.pumpWidget(const SizedBox.shrink());
   });
 }

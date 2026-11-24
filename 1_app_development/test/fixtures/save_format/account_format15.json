@@ -1,0 +1,130 @@
+{
+  "shape": {
+    "formatVersion": "int",
+    "snapshotSequence": "int",
+    "wardrobe": {
+      "owned": [
+        "string"
+      ],
+      "equipped": {
+        "pattern": "string",
+        "topping": "string",
+        "character": "string",
+        "skin": "string",
+        "hair": "string",
+        "top": "string",
+        "bottom": "string",
+        "shoes": "string",
+        "outfit": "string",
+        "hat": "string",
+        "accessory": "string",
+        "tool": "string",
+        "background": "string",
+        "stove": "string",
+        "decoration": "string",
+        "lamp": "string",
+        "time": "string"
+      }
+    },
+    "premium": {
+      "configVersion": "string",
+      "gold": "int"
+    },
+    "ownedSkins": [
+      "string"
+    ],
+    "equippedSkin": "string",
+    "settings": {
+      "vibration": "bool",
+      "holdToBake": "bool",
+      "reduceMotion": "bool",
+      "soundEffects": "bool",
+      "music": "bool",
+      "sfxVolume": "int",
+      "musicVolume": "int",
+      "musicSelection": "string",
+      "cookingSound": "bool",
+      "cookingVolume": "int",
+      "notifyRegularGuests": "bool",
+      "notifyNamedGuests": "bool",
+      "quietNightNotices": "bool",
+      "notificationPromptDone": "bool",
+      "sendUsageStats": "bool",
+      "musicOnByDefault": "bool"
+    }
+  },
+  "sample": {
+    "formatVersion": 15,
+    "snapshotSequence": 0,
+    "wardrobe": {
+      "owned": [
+        "clear",
+        "iron",
+        "none",
+        "scales",
+        "plain",
+        "girl",
+        "boy",
+        "skin1",
+        "long",
+        "apron",
+        "noapron",
+        "nohat",
+        "tongs",
+        "tee",
+        "shorts",
+        "flats",
+        "noacc",
+        "amberlamp",
+        "clock",
+        "day",
+        "night_time"
+      ],
+      "equipped": {
+        "pattern": "scales",
+        "topping": "plain",
+        "character": "girl",
+        "skin": "skin1",
+        "hair": "long",
+        "top": "tee",
+        "bottom": "shorts",
+        "shoes": "flats",
+        "outfit": "apron",
+        "hat": "nohat",
+        "accessory": "noacc",
+        "tool": "tongs",
+        "background": "clear",
+        "stove": "iron",
+        "decoration": "none",
+        "lamp": "amberlamp",
+        "time": "clock"
+      }
+    },
+    "premium": {
+      "configVersion": "premium-v1",
+      "gold": 0
+    },
+    "ownedSkins": [
+      "redbean"
+    ],
+    "equippedSkin": "redbean",
+    "settings": {
+      "vibration": true,
+      "holdToBake": false,
+      "reduceMotion": false,
+      "soundEffects": true,
+      "music": true,
+      "sfxVolume": 70,
+      "musicVolume": 40,
+      "musicSelection": "auto",
+      "cookingSound": false,
+      "cookingVolume": 50,
+      "notifyRegularGuests": false,
+      "notifyNamedGuests": true,
+      "quietNightNotices": true,
+      "notificationPromptDone": false,
+      "sendUsageStats": true,
+      "musicOnByDefault": true
+    }
+  }
+}

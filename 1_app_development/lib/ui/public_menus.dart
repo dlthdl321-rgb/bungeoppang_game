@@ -2,10 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
-import '../economy.dart';
 import '../game_controller.dart';
-import '../menu_rules.dart';
-import 'avatar_face.dart';
 import 'avatar_painter.dart';
 import 'center_toast.dart';
 import 'count_badge.dart';
@@ -13,7 +10,6 @@ import 'cozy_style.dart';
 import 'fish_painter.dart';
 import 'lock_overlay.dart';
 import 'pixel_sprites.dart';
-import 'support_panels.dart';
 import 'weather_layer.dart';
 import 'workshop_wardrobe.dart';
 export 'workshop_wardrobe.dart' show WardrobeMode, WardrobePrice, WorkshopWardrobe;
@@ -79,289 +75,33 @@ class AccessCosmeticAction extends StatelessWidget {
   ]));
 }
 
-class WardrobePanel extends StatefulWidget {
+class WardrobePanel extends StatelessWidget {
   final GameController controller;
   final WardrobeTab initialTab;
-  final CosmeticMenuAccess? access;
-  /// With [access]: wear what is owned, or the shop's avatar items.
+  /// What can be worn or bought (32번: the old coin wardrobe is gone).
+  final CosmeticMenuAccess access;
+  /// Wear what is owned, or the shop's avatar items.
   final WardrobeMode mode;
   final CosmeticSlot? initialSlot;
-  /// With [access] in [WardrobeMode.wear]: '상점에서 더 보기' for a slot.
+  /// In [WardrobeMode.wear]: '상점에서 더 보기' for a slot.
   final void Function(CosmeticSlot slot)? onMore;
-  /// With [access]: closes the window once everything tried on is worn.
+  /// Closes the window once everything tried on is worn.
   final VoidCallback? onClose;
   const WardrobePanel(
       {super.key,
       required this.controller,
-      this.initialTab = WardrobeTab.hair,this.access,this.mode=WardrobeMode.wear,
+      this.initialTab = WardrobeTab.hair,required this.access,this.mode=WardrobeMode.wear,
       this.initialSlot,this.onMore,this.onClose});
-  @override
-  State<WardrobePanel> createState() => _WardrobePanelState();
-}
-
-class _WardrobePanelState extends State<WardrobePanel> {
-  late WardrobeTab tab = widget.initialTab;
-  late CosmeticSlot slot = _slots(tab).first;
-  String? preview;
-
-  static List<CosmeticSlot> _slots(WardrobeTab t) =>
-      CosmeticSlot.values.where((s) => s.shown && s.tab == t).toList();
-
-  GameController get c => widget.controller;
-
-  /// What [s] shows: the picked item in its own slot, else what is worn.
-  String _shown(CosmeticSlot s) {
-    if (s == slot && preview != null) return preview!;
-    final worn = widget.access?.equipped(s) ?? c.state.equippedCosmetic(s);
-    // Another character tried on: hair that is only the worn character's
-    // own default shows as the new one's (26번 3차 G).
-    if (s == CosmeticSlot.hair && slot == CosmeticSlot.character && preview != null &&
-        worn == defaultHairOf(_shownWorn(CosmeticSlot.character))) {
-      return defaultHairOf(preview!);
-    }
-    return worn;
-  }
-
-  String _shownWorn(CosmeticSlot s) => widget.access?.equipped(s) ?? c.state.equippedCosmetic(s);
 
   @override
-  Widget build(BuildContext context) {
-    if (widget.access case final access?) {
-      return WorkshopWardrobe(
-          access: access,
-          mode: widget.mode,
-          initialTab: widget.initialTab,
-          initialSlot: widget.initialSlot,
-          onMore: widget.onMore,
-          onClose: widget.onClose,
-          animate: WeatherLayer.animate && !c.state.settings.reduceMotion);
-    }
-    final picked = cosmeticDefinitions
-        .firstWhere((d) => d.slot == slot && d.id == _shown(slot));
-    return SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child:
-            Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          const Text('모습만 바뀌어요 (생산 효과 없음)'),
-          const SizedBox(height: 8),
-          Wrap(spacing: 6, runSpacing: 4, children: [
-            for (final t in WardrobeTab.values)
-              ChoiceChip(
-                  key: Key('cosmetic-category-${t.name}'),
-                  avatar: PixelIcon(
-                      switch (t) {
-                        WardrobeTab.hair => 'tab_hair',
-                        WardrobeTab.outfit => 'tab_outfit',
-                        WardrobeTab.props => 'tab_acc',
-                        WardrobeTab.bungeoppang => 'tab_fish',
-                        WardrobeTab.stall => 'tab_stall',
-                      },
-                      size: 18),
-                  label: Text(wardrobeTabLabel(t)),
-                  selected: t == tab,
-                  selectedColor: Cozy.orange,
-                  onSelected: (_) => setState(() {
-                        tab = t;
-                        slot = _slots(t).first;
-                        preview = null;
-                      })),
-          ]),
-          const SizedBox(height: 8),
-          Semantics(
-              label: '${wardrobeTabLabel(tab)} 꾸미기 미리보기',
-              child: SizedBox(
-                  height: tab == WardrobeTab.stall ? 260 : 180,
-                  child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: _preview()))),
-          Text(preview == null ? '현재 장착 모습' : '미리보기 · 미장착',
-              key: const Key('cosmetic-preview-status')),
-          const SizedBox(height: 8),
-          Wrap(spacing: 6, runSpacing: 4, children: [
-            for (final s in _slots(tab))
-              ChoiceChip(
-                  key: Key('cosmetic-slot-${s.name}'),
-                  label: Text(cosmeticSlotLabel(s)),
-                  selected: s == slot,
-                  onSelected: (_) => setState(() {
-                        slot = s;
-                        preview = null;
-                      })),
-          ]),
-          const SizedBox(height: 8),
-          LayoutBuilder(builder: (context, box) {
-            const gap = 8.0;
-            final w = (box.maxWidth - gap * 2) / 3;
-            return Wrap(spacing: gap, runSpacing: gap, children: [
-              for (final d in cosmeticDefinitions.where((d) => d.slot == slot && (widget.access?.listed(d) ?? true)))
-                SizedBox(width: w, child: _tile(d, d.id == picked.id)),
-            ]);
-          }),
-          const SizedBox(height: 12),
-          _apply(context, picked),
-          if (c.error != null) Text(c.error!),
-        ]));
-  }
-
-  Widget _tile(CosmeticDefinition d, bool selected) {
-    final worn = (widget.access?.equipped(slot) ?? c.state.equippedCosmetic(slot)) == d.id;
-    final unlocked = widget.access?.unlocked(d) ?? cosmeticUnlocked(c.state, d);
-    final status = worn
-        ? '장착 중'
-        : !unlocked
-            ? widget.access!=null ? '잠김':'Lv.${d.unlockLevel} 해금'
-            : (widget.access?.owned(d) ?? c.state.ownsCosmetic(d))
-                ? '보유'
-                : widget.access != null ? widget.access!.price(d) : d.free
-                    ? '무료'
-                    : '${d.cost} 코인';
-    return Semantics(
-      button: true,
-      selected: selected,
-      label: '${d.name} $status',
-      excludeSemantics: true,
-      child: Material(
-        color: selected ? Cozy.orange : Cozy.woodLight,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          key: Key('preview-${d.id}'),
-          borderRadius: BorderRadius.circular(10),
-          onTap: () => setState(() => preview = d.id),
-          child: Container(
-            margin: const EdgeInsets.all(2),
-            padding: const EdgeInsets.fromLTRB(4, 6, 4, 6),
-            decoration: BoxDecoration(
-                color: selected ? Cozy.creamDeep : Cozy.cream,
-                borderRadius: BorderRadius.circular(8)),
-            child: Column(children: [
-              SizedBox(
-                  height: 52,
-                  child: Opacity(
-                      opacity: unlocked ? 1 : .45,
-                      child: CosmeticThumb(d, widget.access?.equipped ?? c.state.equippedCosmetic))),
-              const SizedBox(height: 4),
-              Text(d.name,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                      color: Cozy.ink,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800)),
-              Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                if (worn || !unlocked)
-                  PixelIcon(worn ? 'check' : 'lock', size: 14),
-                Flexible(
-                    child: Text(status,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                            color: worn ? Cozy.brick : Cozy.inkSoft,
-                            fontSize: 11))),
-              ]),
-            ]),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _apply(BuildContext context, CosmeticDefinition d) {
-    if(widget.access!=null) return AccessCosmeticAction(access:widget.access!,item:d,
-      onDone:(){if(mounted)setState(()=>preview=null);});
-    final worn = (widget.access?.equipped(slot) ?? c.state.equippedCosmetic(slot)) == d.id;
-    final unlocked = widget.access?.unlocked(d) ?? cosmeticUnlocked(c.state, d);
-    final owned = c.state.ownsCosmetic(d);
-    final current = cosmeticDefinitions
-        .firstWhere((item) => item.id == c.state.equippedCosmetic(slot));
-    return CozyPanel(
-      padding: const EdgeInsets.all(10),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text(d.name,
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900)),
-        Text(d.free ? '무료' : '${compactNumber(d.cost)} 코인'),
-        Text(
-            '해금 Lv.${d.unlockLevel} · 누적 ${compactNumber(d.unlockProductionAmount)}개'),
-        Text('현재 ${current.name} → ${d.name}'),
-        const SizedBox(height: 6),
-        FilledButton(
-            key: Key('buy-cosmetic-${d.id}'),
-            style: FilledButton.styleFrom(
-                backgroundColor: Cozy.orange, foregroundColor: Cozy.ink),
-            onPressed: !c.busy &&
-                    unlocked &&
-                    !worn &&
-                    (owned || c.state.support.coins >= d.cost)
-                ? () async {
-                    if (owned ||
-                        await confirmAction(
-                            context,
-                            '${d.name} 구매',
-                            '가격 ${d.cost} 코인\n코인 ${exactNumber(c.state.support.coins)} → ${exactNumber(c.state.support.coins - d.cost)}\n영구 보유 · 바로 장착',
-                            '구매')) {
-                      final ok = await c.buyOrEquipCosmetic(d.id);
-                      if (mounted && ok) setState(() => preview = null);
-                    }
-                  }
-                : null,
-            child: Text(worn
-                ? '장착 중'
-                : !unlocked
-                    ? '잠김'
-                    : owned
-                        ? '적용'
-                        : '구매하고 적용')),
-      ]),
-    );
-  }
-
-  /// Each tab previews its own subject: the pastry up close, the vendor
-  /// alone, or the whole stall without the vendor (4차 피드백 g10 ID5).
-  Widget _preview() {
-    final fish = CustomPaint(
-        painter: FishPainter(
-            skin: _shown(CosmeticSlot.fish),
-            pattern: _shown(CosmeticSlot.pattern),
-            topping: _shown(CosmeticSlot.topping)));
-    return switch (tab) {
-      WardrobeTab.bungeoppang => ColoredBox(
-          key: const Key('preview-bungeoppang'),
-          color: Cozy.woodDark,
-          child: Padding(padding: const EdgeInsets.all(12), child: fish)),
-      WardrobeTab.hair || WardrobeTab.outfit || WardrobeTab.props => ColoredBox(
-          key: const Key('preview-avatar'),
-          color: Cozy.woodDark,
-          child: Stack(fit: StackFit.expand, children: [
-            // The shop interior of the concept art's 꾸미기 screen.
-            FittedBox(
-                fit: BoxFit.cover,
-                child: PixelArt(PixelSprites.screenArt('wardrobe_bg'),
-                    width: 120, height: 72)),
-            // Blinks by itself; tapping no longer makes it talk (26번
-            // 4-5단계, G2). Trying items on keeps the blink going.
-            Padding(
-                padding: const EdgeInsets.all(8),
-                child: AvatarFace(
-                    animate: WeatherLayer.animate &&
-                        !c.state.settings.reduceMotion,
-                    builder: (context, face) => CustomPaint(
-                        key: const Key('preview-avatar-face'),
-                        painter:
-                            AvatarPainter(AvatarLook.of(_shown), face: face)))),
-          ])),
-      // 4차 피드백 g10(ID5): the whole stall as the home shows it, without
-      // the vendor, as in the Workshop wardrobe.
-      WardrobeTab.stall => CustomPaint(
-          key: const Key('preview-stall'),
-          size: Size.infinite,
-          painter: StallPreviewPainter(
-              background: _shown(CosmeticSlot.background),
-              night: isNightTime(_shown(CosmeticSlot.time), sceneClock()),
-              stove: _shown(CosmeticSlot.stove),
-              decoration: _shown(CosmeticSlot.decoration),
-              lamp: _shown(CosmeticSlot.lamp),
-              lowStall: false)),
-    };
-  }
+  Widget build(BuildContext context) => WorkshopWardrobe(
+      access: access,
+      mode: mode,
+      initialTab: initialTab,
+      initialSlot: initialSlot,
+      onMore: onMore,
+      onClose: onClose,
+      animate: WeatherLayer.animate && !controller.state.settings.reduceMotion);
 }
 
 /// [item]'s tile picture: the pastry wearing it, the avatar item's own

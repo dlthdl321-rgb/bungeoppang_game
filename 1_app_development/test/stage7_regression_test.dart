@@ -3,10 +3,8 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
-import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
-import 'package:todays_bungeoppang/support_config.dart';
 import 'fake_time.dart' show FakeTime;
 
 /// Holds the next save open until [gate] completes, so a command can be
@@ -28,27 +26,15 @@ Map<String, dynamic> plainJson(GameState s) =>
     jsonDecode(jsonEncode(s.toJson())) as Map<String, dynamic>;
 
 GameState progressed(DateTime now) {
-  final s = GameState.initial(now)
-    ..buns = BigInt.parse('123456789012345678901234567890')
-    ..lifetime = BigInt.parse('999999999999999999999')
-    ..level = 3
-    ..tutorialDone = true;
-  s.missions = MissionState.forLevel(3, now);
-  s.upgradeCounts['tap_1'] = 7;
-  s.support.transact('test:fund', BigInt.from(42), 'test', now);
-  s.support.startBoost(boostOf(BoostKind.bought), now);
+  final s = GameState.initial(now)..premium.gold = 42;
   s.wardrobe.owned.add('dusk');
   s.wardrobe.equipped[CosmeticSlot.background] = 'dusk';
   return s;
 }
 
 void expectProgressKept(GameState restored, GameState original) {
-  expect(restored.buns, original.buns);
-  expect(restored.lifetime, original.lifetime);
-  expect(restored.level, original.level);
-  expect(restored.support.coins, original.support.coins);
-  expect(restored.support.boostUses, original.support.boostUses);
-  expect(restored.upgradeCounts, original.upgradeCounts);
+  // 32번 3단계: what the account save still keeps.
+  expect(restored.premium.gold, original.premium.gold);
   expect(restored.ownedSkins, original.ownedSkins);
   expect(restored.equippedSkin, original.equippedSkin);
   expect(restored.wardrobe.toJson(), original.wardrobe.toJson());
@@ -101,18 +87,12 @@ void main() {
     });
     test('없어진 맛을 장착한 옛 저장은 팥 붕어빵으로 불러온다', () {
       final s = GameState.initial(now);
-      s.support
-        ..transact('test:fund', BigInt.from(10), 'test', now)
-        ..transact('skin:custard', BigInt.from(-6), '커스터드 구매', now);
       final json = plainJson(s)
         ..['ownedSkins'] = ['redbean', 'custard']
         ..['equippedSkin'] = 'custard';
       final restored = GameState.fromJson(json);
       expect(restored.equippedSkin, 'redbean');
       expect(restored.ownedSkins, {'redbean'});
-      // The old receipt stays in the ledger; nothing is refunded.
-      expect(restored.support.coins, BigInt.from(4));
-      expect(restored.support.ledger.containsKey('skin:custard'), isTrue);
       expect(GameState.fromJson(plainJson(restored)).toJson(),
           restored.toJson());
     });

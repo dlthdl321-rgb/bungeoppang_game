@@ -92,7 +92,6 @@ void main() {
       // Before opening the griddle is an empty picture with no cells (24번 3단계).
       expect(find.byKey(const Key('griddle-idle')),findsOneWidget);
       expect(find.byKey(const Key('workshop-cell-5')),findsNothing);
-      final oldBuns=account.state.buns;
       await tester.ensureVisible(find.byKey(const Key('workshop-mold-action')));
       await tester.tap(find.byKey(const Key('workshop-mold-action')));
       await tester.pump();
@@ -117,7 +116,6 @@ void main() {
       expect(tester.widget<Text>(find.byKey(const Key('workshop-phase-time'))).data,contains('일시정지'));
       await c.setForeground(true);await tester.pump();
       expect(c.state.session?.phase,CookingPhase.firstBatter);
-      expect(account.state.buns,oldBuns);
       await paintMold(tester);
       expect(c.state.session?.phase,CookingPhase.filling);
       expect(c.state.session!.firstBatter!.coverage,greaterThan(0));
@@ -174,7 +172,6 @@ void main() {
       if(why!=null&&grade==CookingGrade.near) expect(caption,contains('반죽'));
       await tester.tap(find.text('보관하기'));await tester.pump();
       expect(c.state.session,isNull);
-      expect(account.state.buns,oldBuns);
       expect(tester.takeException(),isNull);
       await tester.pumpWidget(const SizedBox.shrink());
 

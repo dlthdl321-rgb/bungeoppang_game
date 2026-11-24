@@ -29,15 +29,11 @@ Future<void> showPanel(WidgetTester tester, GameController c, Widget Function() 
 
 class FakeRanking implements RankingService {
   bool configured, authenticated;
-  final submissions = <Map<String, int>>[];
   final loaded = <String>[];
   FakeRanking({this.configured = true, this.authenticated = true});
   @override
   Future<RankingStatus> status() async => RankingStatus(
       configured: configured, authenticated: configured && authenticated);
-  @override
-  Future<void> submit(Map<String, int> scores) async =>
-      submissions.add(Map.of(scores));
   @override
   Future<RankingBoard> top(String board) async {
     loaded.add(board);
@@ -87,7 +83,6 @@ void main() {
       clock.advance(rankingSubmitIntervalMs);
       c.tick();
       expect((await c.loadRanking(rankingWorkshopPieces))!.board, rankingWorkshopPieces);
-      expect(ranking.submissions, isEmpty);
       expect(ranking.loaded, [rankingWorkshopPieces]);
       expect(repo.saves, saves);
     });

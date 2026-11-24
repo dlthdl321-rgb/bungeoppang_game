@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/menu_state.dart';
-import 'package:todays_bungeoppang/mission_state.dart';
 import 'package:todays_bungeoppang/models.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/ui/avatar_painter.dart';
@@ -69,10 +68,6 @@ Map<String, dynamic> asV9(GameState s) {
       .removeWhere((slot, _) => stage12Slots.any((s) => s.name == slot));
   return json;
 }
-
-void setLevel(GameState s, int level, DateTime at) => s
-  ..level = level
-  ..missions = MissionState.forLevel(level, at);
 
 /// Collectible cosmetics [s] owns (was progress_rules.dart, 32번).
 int cosmeticsOwnedCount(GameState s) =>
@@ -287,10 +282,8 @@ void main() {
     tearDown(() => c.dispose());
 
     test('피부톤은 1만 있고(26번 3차 AV3) 수집 수에 들어가지 않는다', () async {
-      final before = c.state.support.ledger.length;
       expect(await c.buyOrEquipCosmetic('skin1'), isTrue);
       expect(c.state.equippedCosmetic(CosmeticSlot.skin), 'skin1');
-      expect(c.state.support.ledger.length, before);
     });
 
   });

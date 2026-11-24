@@ -16,7 +16,6 @@ import 'package:todays_bungeoppang/premium_config.dart';
 import 'package:todays_bungeoppang/repository.dart';
 import 'package:todays_bungeoppang/support_config.dart';
 import 'fake_time.dart' show FakeTime;
-import 'stage12_customization_test.dart' show setLevel;
 
 FakeOnlineBackend fakeBackend(FakeTime t) => FakeOnlineBackend(products: {
       for (final p in goldProducts) p.id: p.gold
@@ -113,10 +112,7 @@ void main() {
     c.inviteGoalReached = () => reached;
     await b.signIn();
     await c.syncOnline();
-    expect(b.levelOneReports, 0);
-    setLevel(c.state, 2, t.now);
-    await c.syncOnline();
-    expect(b.levelOneReports, 0, reason: '예전 레벨은 목표가 아님');
+    expect(b.levelOneReports, 0, reason: '목표 전에는 알리지 않음');
     reached = true;
     b.inviteNotYet = true;
     await c.syncOnline();
@@ -182,22 +178,16 @@ void main() {
 
   test('황금 붕어빵 기록은 저장 후 다시 불러와도 같고, 없던 세이브는 빈 지갑이다', () {
     final s = GameState.initial(DateTime.utc(2026));
-    s.premium
-      ..gold = 42
-      ..synced = true
-      ..appliedGrants.add('spend_x')
-      ..skillUnlocks.add('tap_4');
+    s.premium.gold = 42;
     final restored = GameState.fromJson(s.toJson());
     expect(restored.premium.gold, 42);
-    expect(restored.premium.skillUnlocks, {'tap_4'});
-    expect(restored.premium.appliedGrants, {'spend_x'});
+    // 32번 3단계: an older save's grant records are ignored, its gold kept.
+    final older = s.toJson()
+      ..['premium'] = {...s.premium.toJson(), 'synced': true, 'appliedGrants': ['spend_x'], 'skillUnlocks': ['tap_4']};
+    expect(GameState.fromJson(older).premium.gold, 42);
     final old = s.toJson()..remove('premium');
     expect(GameState.fromJson(old).premium.gold, 0);
-    final bad = s.toJson()
-      ..['premium'] = {
-        ...s.premium.toJson(),
-        'skillUnlocks': ['tap_999']
-      };
+    final bad = s.toJson()..['premium'] = {...s.premium.toJson(), 'gold': -1};
     expect(() => GameState.fromJson(bad), throwsFormatException);
   });
 }

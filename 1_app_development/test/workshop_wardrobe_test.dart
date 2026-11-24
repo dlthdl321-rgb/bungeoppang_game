@@ -65,7 +65,7 @@ void main() {
       final restored = GameState.fromJson(json);
       expect(restored.equippedCosmetic(CosmeticSlot.top), 'chefcoat');
       expect(restored.equippedCosmetic(CosmeticSlot.outfit), 'noapron');
-      expect(restored.toJson()['formatVersion'], 14);
+      expect(restored.toJson()['formatVersion'], GameState.formatVersion);
       // v14 is strict: a chef coat in the apron slot is refused.
       final v14 = jsonDecode(jsonEncode(json)) as Map<String, dynamic>..['formatVersion'] = 14;
       expect(() => GameState.fromJson(v14), throwsFormatException);
