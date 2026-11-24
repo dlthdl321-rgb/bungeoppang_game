@@ -11,7 +11,7 @@ import '../feedback_config.dart';
 import '../workshop_controller.dart';
 import '../workshop_feature_unlocks.dart';
 import 'center_toast.dart';
-import 'boost_effects.dart';
+import 'griddle_geometry.dart';
 import 'cooking_result_effects.dart';
 import 'lock_overlay.dart';
 import 'flavor_picker.dart';

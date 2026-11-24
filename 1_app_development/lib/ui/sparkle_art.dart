@@ -192,3 +192,57 @@ class _TwinklePainter extends CustomPainter {
   bool shouldRepaint(covariant _TwinklePainter old) =>
       old.still != still || old.points != points;
 }
+
+/// Fixed four-point pixel sparkles around the bungeoppang (concept art).
+class SparklePainter extends CustomPainter {
+  const SparklePainter();
+
+  /// Centre (fraction of the box) and size in sparkle pixels.
+  static const _sparkles = [
+    (.12, .22, 3),
+    (.86, .18, 2),
+    (.2, .78, 2),
+    (.9, .7, 3),
+    (.08, .52, 1),
+    (.78, .9, 1),
+  ];
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // The no-outline twinkle of 26번 4단계 F11 (ui/sparkle_art.dart), still.
+    if (PixelSprites.fx(SparkleArt.frames[1]) != null ||
+        SparkleArt.style != SparkleStyle.star) {
+      for (final (fx, fy, n) in _sparkles) {
+        // The 32x32 art is mostly glow: a little larger than the old 7x7.
+        final side = 10 * (1.0 + n) * (size.width / 360);
+        SparkleArt.paint(canvas, Offset(size.width * fx, size.height * fy), side,
+            SparkleArt.stillPhase);
+      }
+      return;
+    }
+    final px = math.max(2.0, (size.width / 120).roundToDouble());
+    final core = Paint()..color = const Color(0xfffff3c4);
+    final ray = Paint()..color = const Color(0xccfed794);
+    for (final (fx, fy, n) in _sparkles) {
+      final c = Offset((size.width * fx / px).roundToDouble() * px,
+          (size.height * fy / px).roundToDouble() * px);
+      canvas.drawRect(Rect.fromCenter(center: c, width: px, height: px), core);
+      for (var i = 1; i <= n; i++) {
+        for (final d in const [
+          Offset(1, 0),
+          Offset(-1, 0),
+          Offset(0, 1),
+          Offset(0, -1)
+        ]) {
+          canvas.drawRect(
+              Rect.fromCenter(
+                  center: c + d * px * i.toDouble(), width: px, height: px),
+              ray);
+        }
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant SparklePainter oldDelegate) => false;
+}

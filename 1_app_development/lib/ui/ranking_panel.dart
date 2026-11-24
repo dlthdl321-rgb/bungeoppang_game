@@ -8,7 +8,7 @@ import '../online_backend.dart';
 import '../online_ranking.dart';
 import '../ranking_config.dart';
 import 'avatar_painter.dart';
-import 'boost_effects.dart' show lookFromServer;
+import 'server_look.dart';
 import 'cozy_style.dart';
 
 /// The Kakao account line shared by the online screens: the login button

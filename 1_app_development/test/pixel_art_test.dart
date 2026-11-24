@@ -3,7 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/avatar_atlas.dart';
-import 'package:todays_bungeoppang/balance.dart';
+import 'package:todays_bungeoppang/skill_catalog.dart';
 import 'package:todays_bungeoppang/avatar_v2.dart';
 import 'package:todays_bungeoppang/cosmetic_config.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
@@ -119,8 +119,8 @@ void main() {
   });
 
   test('모든 스킬에 정사각형 그림이 있다 (논리 32×32, 더 촘촘한 도트 허용)', () {
-    expect(PixelSprites.skillIds.toSet(), upgrades.map((u) => u.id).toSet());
-    for (final u in upgrades) {
+    expect(PixelSprites.skillIds.toSet(), skillCatalog.map((u) => u.id).toSet());
+    for (final u in skillCatalog) {
       final (w, h) = sizeOf(PixelSprites.skill(u.id));
       // Drawn into a fixed box, so any whole multiple of 32 looks the same
       // size on screen (the art may be exported at finer dots).

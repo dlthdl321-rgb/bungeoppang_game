@@ -1,5 +1,5 @@
 import 'balance.dart';
-import 'economy_config.dart';
+export 'number_format.dart';
 import 'models.dart';
 import 'support_config.dart';
 
@@ -126,34 +126,6 @@ BigInt autoRate(GameState s) =>
     upgrades.where((u) => u.kind == UpgradeKind.auto).fold(BigInt.zero,
         (v, u) => v + u.effect * BigInt.from(s.upgradeCounts[u.id] ?? 0));
 
-String exactNumber(BigInt n) =>
-    n.toString().replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (_) => ',');
-
-/// Truncates display only; never converts currency to double or platform int.
-/// Korean units 만·억·조·경 … 무량대수(10^68), 2 decimals truncated
-/// ('1.09만', '9999.99억'). Past 9999.99무량대수 the part above 무량대수
-/// is written the same way and joined ('1만 무량대수', '9870재 무량대수'),
-/// so the screen never shows scientific notation like '9.87e115'.
-String compactNumber(BigInt n) {
-  final sign = n.isNegative ? '-' : '';
-  final magnitude = n.abs();
-  if (magnitude < BigInt.from(10000)) return exactNumber(n);
-  final top = koreanLargeUnits.length - 1;
-  final topUnit = BigInt.from(10000).pow(top);
-  if (magnitude >= topUnit * BigInt.from(10000)) {
-    return '$sign${compactNumber(magnitude ~/ topUnit)} ${koreanLargeUnits[top]}';
-  }
-  final digits = magnitude.toString();
-  final group = (digits.length - 1) ~/ 4;
-  final unit = BigInt.from(10000).pow(group);
-  final hundredths = magnitude * BigInt.from(100) ~/ unit;
-  final whole = hundredths ~/ BigInt.from(100);
-  final fraction = (hundredths % BigInt.from(100))
-      .toString()
-      .padLeft(2, '0')
-      .replaceFirst(RegExp(r'0+$'), '');
-  return '$sign$whole${fraction.isEmpty ? '' : '.$fraction'}${koreanLargeUnits[group]}';
-}
 
 /// A skill can be bought once lifetime production reaches its goal, or
 /// earlier if it was unlocked with 황금 붕어빵.

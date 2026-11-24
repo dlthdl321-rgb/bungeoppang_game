@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import '../balance.dart';
+import '../skill_catalog.dart';
 import '../development_balance.dart';
 import '../development_rules.dart';
 import '../economy.dart';
 import '../game_controller.dart';
-import '../models.dart';
 import '../online_texts.dart';
 import '../workshop_controller.dart';
 import 'center_toast.dart';
@@ -32,7 +31,7 @@ class WorkshopSkillShop extends StatefulWidget {
 }
 
 class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
-  UpgradeKind _kind = UpgradeKind.tap;
+  SkillKind _kind = SkillKind.tap;
 
   /// The height of every skill row, wheel or not (4차 피드백 ID1).
   static const rowHeight = 80.0;
@@ -58,7 +57,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
   Widget build(BuildContext context) {
     final c = widget.controller, account = widget.account;
     final cap = DevelopmentBalance.integer(c.config.section('skill_purchase'), 'max_owned_per_skill');
-    final skills = upgrades.where((u) => u.kind == _kind).toList();
+    final skills = skillCatalog.where((u) => u.kind == _kind).toList();
     final rows = <Widget>[];
     var nextLockedShown = false;
     for (final skill in skills) {
@@ -77,8 +76,8 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
       Padding(
         padding: const EdgeInsets.fromLTRB(12, 0, 12, 4),
         child: Row(children: [
-          for (final kind in UpgradeKind.values) ...[
-            if (kind != UpgradeKind.values.first) const SizedBox(width: 6),
+          for (final kind in SkillKind.values) ...[
+            if (kind != SkillKind.values.first) const SizedBox(width: 6),
             Expanded(child: _KindTab(kind: kind, selected: kind == _kind, onTap: () => setState(() => _kind = kind))),
           ],
         ]),
@@ -149,7 +148,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
     if (id.startsWith('level:')) return '레벨업 확인 대기: Lv.${id.substring(6)} 황금붕어빵력';
     // 재료 타이쿤 C: a special ingredient waits like a cosmetic.
     if (id.startsWith('ingredient:')) return '구매 확인 대기: ${_premiumLabel(id.substring(11))}';
-    final skill = upgrades.where((u) => u.id == id);
+    final skill = skillCatalog.where((u) => u.id == id);
     return '레벨업 확인 대기: ${skill.isEmpty ? id : skill.first.name}';
   }
 
@@ -172,7 +171,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
     return null;
   }
 
-  Widget _row(UpgradeDefinition skill, {required int owned, required int cap, required bool unlocked}) {
+  Widget _row(SkillInfo skill, {required int owned, required int cap, required bool unlocked}) {
     final c = widget.controller, account = widget.account, id = skill.id;
     final rule = c.config.skill(id);
     final maxed = owned >= cap;
@@ -187,7 +186,7 @@ class _WorkshopSkillShopState extends State<WorkshopSkillShop> {
     final maxStep = step == skillLevelUpMax;
     final reason = maxed ? null : _blocked(unlocked: unlocked, id: id, quote: quote, buns: buns, gold: gold);
     final picture = PixelImage(PixelSprites.skill(id), size: 40);
-    final unit = _kind == UpgradeKind.tap ? '클릭' : '초';
+    final unit = _kind == SkillKind.tap ? '클릭' : '초';
     // Every row the same height (4차 피드백 ID1): locked and MAX rows have
     // no wheel, so the row is at least [rowHeight], and the lit row's
     // thicker edge comes out of its padding instead of adding to it.
@@ -362,7 +361,7 @@ class LevelUpButton extends StatelessWidget {
 /// A tab of the skill window: icon and name, the chosen one filled honey.
 /// No check mark (a ChoiceChip's check covered the icon, F19).
 class _KindTab extends StatelessWidget {
-  final UpgradeKind kind;
+  final SkillKind kind;
   final bool selected;
   final VoidCallback onTap;
   const _KindTab({required this.kind, required this.selected, required this.onTap});
@@ -384,10 +383,10 @@ class _KindTab extends StatelessWidget {
               border: Border.all(color: selected ? Cozy.honeyDeep : Cozy.line),
             ),
             child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              PixelIcon(kind == UpgradeKind.tap ? 'tab_tap' : 'tab_auto', size: 34),
+              PixelIcon(kind == SkillKind.tap ? 'tab_tap' : 'tab_auto', size: 34),
               const SizedBox(width: 2),
               Flexible(
-                child: Text(kind == UpgradeKind.tap ? '클릭 생산' : '자동 생산',
+                child: Text(kind == SkillKind.tap ? '클릭 생산' : '자동 생산',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(

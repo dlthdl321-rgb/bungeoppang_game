@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart' show setEquals;
 import 'package:flutter/material.dart';
 import '../cosmetic_config.dart';
 import 'avatar_painter.dart';
-import 'boost_effects.dart' show griddleFishClips;
+import 'griddle_geometry.dart' show griddleFishClips;
 import 'pixel_sprites.dart';
 
 /// Pixel-art stall scene: background, vendor, counter, stove and decoration
