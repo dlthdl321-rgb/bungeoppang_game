@@ -213,7 +213,16 @@ class AvatarRig {
               case final mask?)
             mask,
     ];
-    add(avatarV2Base(character, skin), RigLayer.base, erase: bare);
+    // 2026-11-24 사용자: the light grey underwear only when the vendor wears
+    // nothing over the body (no top, no bottom); dressed, the bare base, so
+    // no underwear ever shows past the clothes.
+    final undressed = blankCosmetics.contains(look.worn(CosmeticSlot.top)) &&
+        blankCosmetics.contains(look.worn(CosmeticSlot.bottom));
+    final underwear = avatarV2BaseUnderwear(character, skin);
+    add(undressed && PixelSprites.byPath(underwear) != null
+            ? underwear
+            : avatarV2Base(character, skin),
+        RigLayer.base, erase: bare);
     for (final channel in rigChannels) {
       final frame = face[channel.id] ?? channel.rest;
       final anchor = avatarV2FaceAnchors[character]?[channel.id];

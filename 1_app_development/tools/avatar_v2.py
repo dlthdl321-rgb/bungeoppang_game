@@ -803,6 +803,12 @@ def bare(data, demo):
         for s, arr in tones.items():
             out = arr.copy()
             out[cap] = 0
+            # 2026-11-24 사용자: the vendor wearing nothing shows the 42번
+            # base's own light grey vest and shorts; dressed, the bare base
+            # below (no underwear ever shows past the clothes). Kept on the
+            # full canvas (no trim entry needed). Right only after 'align'
+            # (the aligned base still wears the underwear).
+            save(out, out_dir(demo) / f'avatar_v2/{c}/base_underwear@{s}.png')
             # One flat skin colour (each tone's own): a neckline or hem gap
             # shows plain skin, never a smear of edge colours.
             out[under, :3] = np.median(arr[body][:, :3], axis=0).astype(np.uint8)

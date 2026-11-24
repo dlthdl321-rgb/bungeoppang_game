@@ -237,6 +237,23 @@ void main() {
       }
     });
 
+    test('속옷 바탕은 상의·하의를 모두 안 입었을 때만, 옷을 입으면 맨 바탕(2026-11-24)', () {
+      for (final c in ['girl', 'boy']) {
+        final underwear = 'avatar_v2/$c/base_underwear@skin1.png';
+        PixelSprites.debugPut(underwear, art['avatar_v2/$c/base@skin1.png']);
+        addTearDown(() => PixelSprites.debugPut(underwear, null));
+        final dressed = AvatarRig(c, frontPose, look: _look({}, character: c));
+        expect(dressed.sprites.first.asset, 'avatar_v2/$c/base@skin1.png');
+        expect(dressed.sprites.any((s) => s.asset.contains('base_underwear')), isFalse);
+        final topOnly = AvatarRig(c, frontPose,
+            look: _look({CosmeticSlot.bottom: 'none'}, character: c));
+        expect(topOnly.sprites.first.asset, 'avatar_v2/$c/base@skin1.png');
+        final undressed = AvatarRig(c, frontPose,
+            look: _look({CosmeticSlot.top: 'none', CosmeticSlot.bottom: 'none'}, character: c));
+        expect(undressed.sprites.first.asset, 'avatar_v2/$c/base_underwear@skin1.png');
+      }
+    });
+
     testWidgets('G10: 다른 하의를 입으면 반바지 픽셀이 없다', (tester) async {
       await tester.runAsync(() async {
         expect(_has(await _render(_look({})), _shorts), isTrue);
@@ -357,7 +374,10 @@ void main() {
                 // 26번 3차 AV: halves behind / in front of the body (one per
                 // skin when drawn in skin) and the share card's proud pose.
                 RegExp(r'_(back|front)(@skin\d)?\.png$').hasMatch(name) ||
-                name.startsWith('pose_proud_'),
+                name.startsWith('pose_proud_') ||
+                // 2026-11-24: the base with its light grey underwear, drawn
+                // only when the vendor wears no top and no bottom.
+                name.startsWith('base_underwear@'),
             isTrue,
             reason: f);
         final (x, y) = avatarV2TrimOffsets[f] ?? (0, 0);

@@ -39,6 +39,12 @@ const rigV2Order = [
 String avatarV2Base(String character, String skin) =>
     'avatar_v2/$character/base@$skin.png';
 
+/// The 42번 base still wearing its own light grey vest and shorts, on the
+/// full 280x520 canvas (2026-11-24 사용자: underwear only when the vendor
+/// wears nothing; dressed, [avatarV2Base] so it never shows past clothes).
+String avatarV2BaseUnderwear(String character, String skin) =>
+    'avatar_v2/$character/base_underwear@$skin.png';
+
 String avatarV2Item(String character, CosmeticSlot slot, String id) =>
     'avatar_v2/$character/${slot.name}_$id.png';
 
