@@ -1,6 +1,30 @@
 import 'dart:convert';
 import 'development_balance.dart';
 import 'development_business.dart';
+import 'workshop_daily.dart' show dailyBuns, dailyIncomeRate;
+
+/// 5차 피드백 13 (2026-11-25): the reward key of [goal] in [scope]
+/// (`mission_gold_rewards`), `daily_all` for all four daily missions.
+String missionRewardKey(DevelopmentBalance config, String scope, String goal) =>
+    scope == 'daily' && goal == 'all' ? 'daily_all' :
+    ((config.section('mission_targets')[scope] as Map<String, dynamic>)[goal] as Map<String, dynamic>)['reward_key'] as String;
+
+/// The gold [goal] pays (0: it pays 붕어빵력 instead — each daily mission).
+int missionGold(DevelopmentBalance config, String scope, String goal) =>
+    DevelopmentBalance.integer(config.section('mission_gold_rewards'), missionRewardKey(config, scope, goal));
+
+/// The 붕어빵력 a gold-less mission pays: `mission_buns_rewards.seconds` of
+/// the income rate R (taps at `rate_taps_per_second` plus auto), at least
+/// `min_buns` — the attendance stamp's pattern.
+BigInt missionBuns(DevelopmentBalance config, {required BigInt tapRate, required BigInt autoRate}) {
+  final row = config.section('mission_buns_rewards');
+  return dailyBuns(dailyIncomeRate(config, tapRate: tapRate, autoRate: autoRate),
+      DevelopmentBalance.integer(row, 'seconds'), DevelopmentBalance.decimal(row, 'min_buns'));
+}
+
+/// The gold a saved claim record asks the server for (0: a 붕어빵력 claim,
+/// paid at once and never sent).
+int claimGold(String record) => DevelopmentBalance.integer(jsonDecode(record) as Map<String, dynamic>, 'gold');
 
 String workshopWeekKst(DateTime utc) {
   final date=utc.toUtc().add(const Duration(hours:9));
@@ -45,16 +69,17 @@ class WorkshopMissions {
     return row is Map<String,dynamic> && progress(scope,row['metric'] as String)>=DevelopmentBalance.decimal(row,'target');
   }
   String claimKey(String scope,String goal)=>'$scope:${scope=='daily' ? day:week}:$goal';
-  WorkshopMissions claim(DevelopmentBalance config,String scope,String goal) {
+  /// [buns]: what a gold-less mission pays ([missionBuns] now); kept in the
+  /// record ('buns') so the claim shows what it paid.
+  WorkshopMissions claim(DevelopmentBalance config,String scope,String goal,{BigInt? buns}) {
     final key=claimKey(scope,goal);
     if(claims.containsKey(key)) return this;
     if(!complete(config,scope,goal)) throw const FormatException('미션 목표를 먼저 달성해 주세요.');
-    final reward=scope=='daily' && goal=='all' ? 'daily_all':
-      (goals(config,scope)[goal] as Map<String,dynamic>)['reward_key'] as String;
-    final gold=DevelopmentBalance.integer(config.section('mission_gold_rewards'),reward);
+    final gold=missionGold(config,scope,goal);
+    if(gold==0 && (buns==null || buns<=BigInt.zero)) throw const FormatException('미션 붕어빵력 보상 오류');
     final requirements=scope=='daily' && goal=='all' ? goals(config,scope):{goal:goals(config,scope)[goal]};
     final record=jsonEncode({'requirements':{for(final e in requirements.entries) e.key:{'metric':(e.value as Map)['metric'],'target':(e.value as Map)['target']}},'scope':scope,'period':scope=='daily' ? day:week,'goal':goal,'revision':config.revision,
-      'gold':gold,'progress':Map<String,String>.from((scope=='daily' ? daily[day]:weekly[week])??{})});
+      'gold':gold,if(gold==0)'buns':'$buns','progress':Map<String,String>.from((scope=='daily' ? daily[day]:weekly[week])??{})});
     final weeks=Map<String,Map<String,String>>.from(weekly);
     weeks[week]=Map<String,String>.from(weekly[week]??{});
     if(scope=='daily' && goal=='all') {
@@ -105,7 +130,12 @@ class WorkshopMissions {
       final body=jsonDecode(e.value as String);
       if(body is! Map<String,dynamic> || !['daily','weekly'].contains(body['scope']) || body['period'] is! String || body['goal'] is! String ||
           body['revision'] is! String || (body['revision'] as String).isEmpty || body['progress'] is! Map<String,dynamic> ||
-          DevelopmentBalance.integer(body,'gold')==0 || e.key!="${body['scope']}:${body['period']}:${body['goal']}") throw const FormatException('미션 신청 근거 오류');
+          e.key!="${body['scope']}:${body['period']}:${body['goal']}") throw const FormatException('미션 신청 근거 오류');
+      // 5차 피드백 13: a gold claim, or (a daily mission, not all four) a
+      // 붕어빵력 claim paid at once ('gold' 0 + 'buns').
+      final gold=DevelopmentBalance.integer(body,'gold');
+      if(gold==0 ? body['scope']!='daily' || body['goal']=='all' || DevelopmentBalance.decimal(body,'buns')<=BigInt.zero :
+          body.containsKey('buns')) throw const FormatException('미션 신청 보상 근거 오류');
       final period=body['period'] as String,scope=body['scope'],goal=body['goal'];
       if(!(scope=='daily' ? daily:weekly).containsKey(period) || !(scope=='daily' ? {'taps','production','purchases','auto','all'}:{'taps','days','purchases','dailyAll'}).contains(goal)) throw const FormatException('미션 신청 기간/목표 오류');
       final original=(scope=='daily' ? daily:weekly)[period]!;

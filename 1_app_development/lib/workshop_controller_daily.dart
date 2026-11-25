@@ -54,9 +54,12 @@ extension WorkshopDailyReturn on WorkshopController {
   int get attendanceCycle => DevelopmentBalance.integer(_stampRules, 'cycle_days');
   /// The box the next stamp takes (1~7); after the seventh it starts again.
   int get nextStamp => state.daily.stamps >= attendanceCycle ? 1 : state.daily.stamps + 1;
-  /// Day 7 gives gold through the server wallet; without a server (builds
-  /// with no online keys) it gives more buns instead.
-  bool stampGivesGold(int box) => box == attendanceCycle && onlineGateway != null;
+  /// Day 7 gives gold through the server wallet — or, in a test build
+  /// without the online settings, the device's test gold (5차 피드백 12:
+  /// "도장을 찍으면 보상은 무조건 반영"). Only a build with neither gives
+  /// more buns instead.
+  bool stampGivesGold(int box) => box == attendanceCycle &&
+      (onlineGateway != null || purchaseGateway is LocalTestPurchaseGateway);
   int get attendanceGold => DevelopmentBalance.integer(_stampRules, 'gold');
   BigInt stampBuns(int box) => box == attendanceCycle
       ? dailyBuns(dailyRate, DevelopmentBalance.integer(_stampRules, 'substitute_seconds'),
