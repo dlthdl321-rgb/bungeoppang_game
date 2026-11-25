@@ -112,8 +112,12 @@ def validate(data, catalog):
         goals = data['mission_targets'][scope]
         require(set(goals) == expected, '사용자 확정 미션 구성')
         for key, row in goals.items():
+            # 5차 피드백 13: 일일 미션 하나하나는 붕어빵력(황금 0), 주간은 황금.
+            gold = data['mission_gold_rewards'][row['reward_key']]
             require(row['metric'] == key and re.fullmatch(r'[1-9][0-9]*', row['target']) and
-                    data['mission_gold_rewards'][row['reward_key']] > 0, f'{scope}/{key}: 미션 목표/보상')
+                    (gold == 0 if scope == 'daily' else gold > 0), f'{scope}/{key}: 미션 목표/보상')
+    mission_buns = data['mission_buns_rewards']
+    require(mission_buns['seconds'] > 0 and re.fullmatch(r'[1-9][0-9]*', mission_buns['min_buns']), '미션 붕어빵력 보상')
     avatar = data['avatar_catalog']
     # 26번 3차 H42: backgrounds are sold through the same catalog.
     # 4차 피드백 g10(ID8·ID9): 등불 색과 낮·밤 고정도 같은 목록으로 판다.
@@ -427,11 +431,15 @@ def render(data):
     text += '\n### 출시 아바타 카탈로그: 기존 에셋 재사용, 수치는 임시값\n\n| ID | 이름 | 슬롯 | 기본 무료 | 해금 Lv | 해금 누적 |\n| --- | --- | --- | --- | --- | --- |\n'
     for key, row in data['avatar_catalog'].items():
         text += f"| {key} | {row['label']} | {row['slot']} | {row['free']} | {row['unlock_level']} | {row['unlock_total']} |\n"
-    text += '\n### 신규 일일·주간 미션: 구매·자동 생산 포함(사용자 확정), 수치는 임시값\n\n| 기간 | ID | 목표 | 임시 요구 | 황금 보상 |\n| --- | --- | --- | --- | --- |\n'
+    text += '\n### 신규 일일·주간 미션: 구매·자동 생산 포함(사용자 확정), 수치는 임시값\n\n| 기간 | ID | 목표 | 임시 요구 | 보상 |\n| --- | --- | --- | --- | --- |\n'
+    mission_buns = data['mission_buns_rewards']
     for scope, goals in data['mission_targets'].items():
         for key, row in goals.items():
-            text += f"| {scope} | {key} | {row['label']} | {row['target']} | {data['mission_gold_rewards'][row['reward_key']]} |\n"
-    text += f"\n일일 전체 완료 추가 황금: {data['mission_gold_rewards']['daily_all']}. 모든 황금은 서버 검증 후 지급.\n"
+            gold = data['mission_gold_rewards'][row['reward_key']]
+            reward = f'황금 {gold}' if gold > 0 else f"붕어빵력 {mission_buns['seconds']}초분(최소 {mission_buns['min_buns']})"
+            text += f"| {scope} | {key} | {row['label']} | {row['target']} | {reward} |\n"
+    text += (f"\n일일 전체 완료 황금: {data['mission_gold_rewards']['daily_all']}. 일일 미션 하나하나는 황금 대신 붕어빵력"
+             f"(초당 수입 R의 {mission_buns['seconds']}초분, 최소 {mission_buns['min_buns']}, 5차 피드백 13). 모든 황금은 서버 검증 후 지급.\n")
     text += '\n## 6. 아직 수치로 해결할 수 없는 항목\n\n'
     text += '\n'.join('- ' + v for v in data['unresolved_non_numeric_policies']) + '\n\n'
     text += '[이전·복구 위험](13_저장이전과구매복구위험검토.md) · [선행 설계](12_선행기획검토와복구설계.md) · [체크리스트](CHECKLIST.md)\n'

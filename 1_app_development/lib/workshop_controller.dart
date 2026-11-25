@@ -29,6 +29,8 @@ import 'workshop_feature_unlocks.dart';
 import 'workshop_daily.dart';
 import 'workshop_collection_rules.dart';
 import 'workshop_sale_archive.dart';
+import 'workshop_local_rewards.dart';
+import 'local_test_purchases.dart';
 import 'workshop_friend_visits.dart';
 import 'usage_stats.dart';
 import 'pantry_rules.dart';
@@ -595,6 +597,11 @@ class WorkshopState {
       state.pendingGold[e.key] = e.value as String;
     }
     for(final claim in state.missions.claims.entries) {
+      // 5차 피드백 13: a 붕어빵력 claim was paid at once; only gold waits.
+      if(claimGold(claim.value)==0) {
+        if(state.pendingGold.containsKey('mission:${claim.key}')) throw const FormatException('붕어빵력 미션의 황금 신청');
+        continue;
+      }
       if(state.pendingGold['mission:${claim.key}']!=claim.value) throw const FormatException('미션 황금 신청 누락');
     }
     for (final sale in state.sales.keys) {
@@ -1036,7 +1043,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
     final levelBefore = state.level;
     final newsBefore = collectionNews.length;
     final pantryNewsBefore = pantryNews.length;
-    var saved = false;
+    var saved = false, localGold = 0;
     (int, int)? archiveMark;
     try {
       // 4차 병합: g6 collection rewards settle first, so their buns count
@@ -1045,6 +1052,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
         _expirePantry(); // 재료 타이쿤 E: 24시간 지난 통을 먼저 버림
         mutate(); _observeDaily(); _settleCollection(); _promote();
         _rescuePantry(); // 재료 타이쿤 E: 빈털터리 방지 꾸러미
+        localGold = _settleLocalTestRewards(); // 5차 피드백 12: 시험용 빌드만
         archiveMark = _archiveSettledSales(); // 30번 2-A
       } on FormatException catch (e) {
         state = WorkshopState.fromJson(before, config); notice = e.message;
@@ -1060,6 +1068,7 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       _lastSaveMono = _mono;
       if (archiveMark case (final day, final receipts)) { _archiveCheckedDay = day; _archiveCheckedReceipts = receipts; }
       if (state.level > levelBefore) promotedTo = state.level;
+      if (localGold > 0) unawaited(_creditLocalTestGold(localGold));
       return saved = true;
     } catch (e) {
       state = WorkshopState.fromJson(before, config);
@@ -1070,6 +1079,31 @@ class WorkshopController extends ChangeNotifier implements WorkshopProgressSourc
       busy = false; _commandIdle?.complete(); _commandIdle = null; if (!disposed) notifyListeners();
       // Only after the save: never part of the command or its transaction.
       if (saved) usage.observeProgress(progressBefore, _usageProgress);
+    }
+  }
+  /// 5차 피드백 12: a test build without the online settings settles its
+  /// reward claims here, once each ([settleLocalTestRewards]); returns the
+  /// gold to add to the device's test gold after the save. 0 elsewhere.
+  int _settleLocalTestRewards() {
+    if (purchaseGateway is! LocalTestPurchaseGateway ||
+        (state.rewardAccount != null && state.rewardAccount != localTestAccount) ||
+        (state.purchases.account != null && state.purchases.account != localTestAccount)) return 0;
+    final settled = settleLocalTestRewards(pendingGold: state.pendingGold, rewardReceipts: state.rewardReceipts,
+        account: localTestAccount, progress: state.grid.runId);
+    if (settled.isEmpty) return 0;
+    state.rewardAccount = localTestAccount;
+    state.rewardReceipts.addAll(settled.receipts);
+    return settled.gold;
+  }
+  /// Adds [gold] to the test build's gold (the account save), after the
+  /// receipts saying it was paid are saved — a failure loses test gold,
+  /// never pays twice.
+  Future<void> _creditLocalTestGold(int gold) async {
+    final gateway = purchaseGateway;
+    if (gateway is! LocalTestPurchaseGateway) return;
+    if (!await gateway.setGold(gateway.gold() + gold)) {
+      notice = '시험용 황금을 저장하지 못했어요.';
+      if (!disposed) notifyListeners();
     }
   }
   Future<void> reloadAfterError() async {

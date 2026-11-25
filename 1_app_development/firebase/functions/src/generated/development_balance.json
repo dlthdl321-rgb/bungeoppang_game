@@ -1531,15 +1531,19 @@
     "활성 한 기기 진행의 이전 증거 검증 어댑터·서버 판매/미션 근거 검증·실제 서비스/실행 검수"
   ],
   "mission_gold_rewards": {
-    "daily_taps": 1,
-    "daily_production": 1,
-    "daily_purchases": 1,
-    "daily_auto": 1,
+    "daily_taps": 0,
+    "daily_production": 0,
+    "daily_purchases": 0,
+    "daily_auto": 0,
     "daily_all": 2,
-    "weekly_taps": 2,
-    "weekly_days": 2,
-    "weekly_purchases": 2,
-    "weekly_daily_all": 3
+    "weekly_taps": 1,
+    "weekly_days": 1,
+    "weekly_purchases": 1,
+    "weekly_daily_all": 1
+  },
+  "mission_buns_rewards": {
+    "seconds": 300,
+    "min_buns": "100"
   },
   "active_recipes": {
     "redbean": {
