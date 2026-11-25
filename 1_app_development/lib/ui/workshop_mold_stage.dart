@@ -933,6 +933,9 @@ class WorkshopGriddleLayer extends StatelessWidget {
                     // On the griddle's top rim, not over its cells (4차 IB2).
                     maxLock: 20,
                     edgeBadgeAt: griddleRimTop,
+                    // 5차 피드백 17: under the rim, not half hidden by the
+                    // counter's note card above it.
+                    edgeBadgeShift: .5,
                     child: const SizedBox.expand()))),
           if (lock != null)
             // ...only the griddle itself (its rim down) does: the art above

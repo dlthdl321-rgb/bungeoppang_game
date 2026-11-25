@@ -34,9 +34,13 @@ class LockedOverlay extends StatelessWidget {
   /// six-cell griddle's notice covered its cells). [maxLock] is then the
   /// padlock in the pill.
   final double? edgeBadgeAt;
+  /// How far the edge badge moves down from [edgeBadgeAt], in its own
+  /// heights: −0.5 centres it on the line (the default), 0.5 puts its top
+  /// half a badge below it (5차 피드백 17: clear of the note above).
+  final double edgeBadgeShift;
   const LockedOverlay({super.key, required this.child, required this.caption, this.style = LockStyle.hatch,
       this.onTap, this.maxLock = 56, this.showCaption = true, this.lockAlignment = Alignment.center,
-      this.edgeBadgeAt});
+      this.edgeBadgeAt, this.edgeBadgeShift = -.5});
 
   static const stripe = Color(0xff5b3a24);
   /// The [LockStyle.hidden] silhouette colour (the stripe's warm brown).
@@ -67,7 +71,7 @@ class LockedOverlay extends StatelessWidget {
               ],
               if (edgeBadgeAt case final at?)
                 Positioned(left: 0, right: 0, top: h * at, child: IgnorePointer(child: FractionalTranslation(
-                    translation: const Offset(0, -.5),
+                    translation: Offset(0, edgeBadgeShift),
                     child: Center(child: Container(
                       key: const Key('lock-edge-badge'),
                       padding: const EdgeInsets.fromLTRB(4, 2, 8, 2),
