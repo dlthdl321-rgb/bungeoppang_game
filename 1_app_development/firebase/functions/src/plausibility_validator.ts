@@ -73,7 +73,7 @@ export class PlausibilityValidator {
       // The most pieces one finished sale can hand over.
       salePieces: Math.max(quantity, preferred),
       levels, revision: String(object(root.metadata).revision),
-      daily: PlausibilityValidator.dailyLimits(object(root.daily_return), root),
+      daily: PlausibilityValidator.dailyLimits(object(root.daily_return)),
       collection: PlausibilityValidator.collectionLimits(root),
       premium: PlausibilityValidator.premiumLimits(root, base),
       friend: PlausibilityValidator.friendLimits(root),
@@ -126,22 +126,12 @@ export class PlausibilityValidator {
    * stamp pay buns, each `seconds` of the income rate R or at least `min`.
    * R = tap power × `rate_taps_per_second` + auto per second (4차 피드백 g7,
    * the app's `dailyIncomeRate`). */
-  private static dailyLimits(daily: Row, root: Row) {
+  private static dailyLimits(daily: Row) {
     const order = object(daily.special_order), stamp = object(daily.attendance);
-    // 5차 피드백 13: each daily mission without gold pays `mission_buns_rewards`
-    // (seconds of R, at least min_buns), once per KST day each.
-    let missionSeconds = 0, missionMinimum = 0n;
-    if (root.mission_buns_rewards !== undefined) {
-      const buns = object(root.mission_buns_rewards), gold = object(root.mission_gold_rewards);
-      const count = Object.values(object(object(root.mission_targets).daily))
-        .filter((row) => natural(gold[String(object(row).reward_key)]) === 0).length;
-      missionSeconds = count * natural(buns.seconds);
-      missionMinimum = BigInt(count) * decimal(buns.min_buns);
-    }
     return {
       tapsPerSecond: BigInt(natural(daily.rate_taps_per_second)),
-      seconds: BigInt(natural(order.reward_seconds) + Math.max(natural(stamp.buns_seconds), natural(stamp.substitute_seconds)) + missionSeconds),
-      minimum: decimal(order.min_buns) + (decimal(stamp.min_buns) > decimal(stamp.substitute_min_buns) ? decimal(stamp.min_buns) : decimal(stamp.substitute_min_buns)) + missionMinimum,
+      seconds: BigInt(natural(order.reward_seconds) + Math.max(natural(stamp.buns_seconds), natural(stamp.substitute_seconds))),
+      minimum: decimal(order.min_buns) + (decimal(stamp.min_buns) > decimal(stamp.substitute_min_buns) ? decimal(stamp.min_buns) : decimal(stamp.substitute_min_buns)),
       attendanceGold: natural(stamp.gold),
     };
   }

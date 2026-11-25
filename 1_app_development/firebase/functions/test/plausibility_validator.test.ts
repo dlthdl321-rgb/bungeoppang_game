@@ -27,18 +27,6 @@ function daily(goal:"taps"|"production",value:string,extra:Record<string,unknown
     progress:{[goal]:value},...extra};
 }
 const gold=(store:MemoryStore)=>Number(store.docs.get("users/a")!.gold);
-// 5차 피드백 13: each daily mission pays 붕어빵력 (gold 0), once per KST day,
-// so the daily allowance grows by four of them.
-const goldless=Object.values(config.mission_targets.daily).filter(r=>
-  config.mission_gold_rewards[r.reward_key as keyof typeof config.mission_gold_rewards]===0).length;
-const missionSeconds=goldless*config.mission_buns_rewards.seconds;
-const missionMinimum=BigInt(goldless)*BigInt(config.mission_buns_rewards.min_buns);
-function weekly(goal:"taps"|"days"|"purchases"|"dailyAll",value:string) {
-  const row=config.mission_targets.weekly[goal];
-  return {requirements:{[goal]:{metric:row.metric,target:row.target}},scope:"weekly",period:"2026-10-12",goal,
-    revision:config.metadata.revision,gold:config.mission_gold_rewards[row.reward_key as keyof typeof config.mission_gold_rewards],
-    progress:{[goal]:value}};
-}
 // DEC-154: the friend-visit boost allowed over [elapsedMs] (tap power 2
 // after one tap_1, no auto): capped by daily_limit × invite time per day.
 function friendExtra(elapsedMs:number,days=2n,tapPower=2n,auto=0n) {
@@ -114,22 +102,13 @@ test("예약된 구매의 취소는 황금을 돌려주고 스킬을 지급하�
   assert.equal(canceled.status,"canceled");assert.equal(gold(store),config.welcome_reward.gold);
   assert.equal(store.docs.has("users/a/compositeSkills/tap_1"),false);
 });
-test("달성한 주간 도전은 서버 검증 후 정해진 황금(1)만 한 번 지급한다 (5차 피드백 13)",async()=>{
+test("달성한 일일 미션은 서버 검증 후 정해진 황금만 한 번 지급한다",async()=>{
   const {store,service}=setup();await service.claim("a",{progress});
-  assert.equal(config.mission_gold_rewards.weekly_days,1);
-  const data={...context,claim:`${progress}:mission:weekly:2026-10-12:days`,kind:"mission",payload:weekly("days","3"),snapshot:snapshot("50","50",50)};
+  const data={...context,claim:`${progress}:mission:daily:2026-10-16:taps`,kind:"mission",payload:daily("taps","50"),snapshot:snapshot("50","50",50)};
   const first=await service.reward("a",data,true);
   assert.equal(first.outcome,"eligible");assert.equal(first.gold,1);
   assert.deepEqual(await service.reward("a",data,true),first);
   assert.equal(gold(store),config.welcome_reward.gold+1);
-});
-test("일일 미션 하나하나는 황금을 주지 않는다 — 예전 앱의 황금 1 신청도 지급 없이 확정 거절 (5차 피드백 13)",async()=>{
-  const {store,service}=setup();await service.claim("a",{progress});
-  assert.equal(config.mission_gold_rewards.daily_taps,0);
-  const old=await service.reward("a",{...context,claim:`${progress}:mission:daily:2026-10-16:taps`,kind:"mission",
-    payload:daily("taps","50",{gold:1}),snapshot:snapshot("50","50",50)},true);
-  assert.equal(old.outcome,"unverifiable");assert.equal(old.gold,0);
-  assert.equal(gold(store),config.welcome_reward.gold);
 });
 test("보상량·기간·진행량이 맞지 않는 미션은 지급 없이 확정 거절한다",async()=>{
   const {store,service,clock}=setup();await service.claim("a",{progress});
@@ -201,10 +180,10 @@ test("오늘의 주문서·출석 붕어빵력은 하루치만 서버 한도에 
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
   await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
   const second={...context,intent:intent("transaction_0002",1)};
-  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns)+missionMinimum;
+  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns);
   // 4차 g7: rewards follow R = tap power × rate_taps_per_second + auto/s. After
   // one tap_1 level the tap power is 2 and there is no auto skill.
-  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds)+missionSeconds);
+  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds));
   const perDay=seconds*2n*BigInt(d.rate_taps_per_second)+minimum;
   // Two touched days of order + stamp fit on top of the slack.
   const fits=(40n+BigInt(config.server_validation.slack_buns)+2n*perDay).toString();
@@ -248,9 +227,9 @@ test("도감 칸 완성 붕어빵력은 지난 시간만큼의 칸 수까지만 
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
   await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
   const second={...context,intent:intent("transaction_0002",1)};
-  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns)+missionMinimum;
+  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns);
   // 4차 g7: a day's order + stamp follow R (tap power 2 after one tap_1, no auto).
-  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds)+missionSeconds);
+  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds));
   const daily=seconds*2n*BigInt(d.rate_taps_per_second)+minimum;
   const cell=BigInt(config.collection_rewards.cell_min_buns),per=config.collection_rewards.server_min_ms_per_cell;
   // Two cells' time: three cells (two + one) of minimum buns fit, a fourth does not.
@@ -327,8 +306,8 @@ test("친구 방문 부스트(DEC-154): 하루 한도 시간만큼의 2배 몫�
   await service.purchase("a","reserve",{...context,intent:intent(),snapshot:snapshot("40","40",40)});
   await service.purchase("a","commit",{...context,intent:intent(),snapshot:snapshot("20","40",40)});
   const second={...context,intent:intent("transaction_0002",1)};
-  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns)+missionMinimum;
-  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds)+missionSeconds);
+  const d=config.daily_return,minimum=BigInt(d.special_order.min_buns)+BigInt(d.attendance.substitute_min_buns);
+  const seconds=BigInt(d.special_order.reward_seconds+Math.max(d.attendance.buns_seconds,d.attendance.substitute_seconds));
   const daily=seconds*2n*BigInt(d.rate_taps_per_second)+minimum;
   // An hour with no taps: the boost's share of tap time is allowed (capped by
   // the day's visits), nothing more.

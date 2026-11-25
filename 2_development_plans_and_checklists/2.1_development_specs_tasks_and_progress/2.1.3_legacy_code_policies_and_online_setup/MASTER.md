@@ -388,7 +388,7 @@
 
 ### 주간 도전 (`lib/weekly_config.dart` `weeklyGoals`)
 
-**Workshop(현재 경로)**: 일일 미션·주간 도전은 메뉴가 아니라 홈 '오늘' 창에 있다(3차 피드백 H36, 34장). 목표·보상은 `config/development_balance.json` `mission_targets`·`mission_gold_rewards`·`mission_buns_rewards`. **5차 피드백 13(2026-11-25, 황금 희귀하게):** 일일 미션 하나하나(탭·생산·스킬 레벨업·초당)는 황금 0 — 받으면 붕어빵력을 바로 줌(초당 수입 R의 `mission_buns_rewards.seconds` 300초분, 최소 `min_buns` 100, 출석 도장과 같은 방식, 서버 신청 없음, 미션 기록에 'gold':0·'buns' 남김). '오늘 미션 모두 끝내기'만 황금 2, 주간 도전은 모두 황금 1(예전 2·2·2·3). 서버는 일일 미션 하나하나의 황금 신청을 확정 거절(예전 앱의 황금 1 신청·예전 주간 2 신청도 금액 불일치로 지급 없이 확정), 붕어빵력 증가 한도에 하루치 미션 붕어빵력(4개 × (300초 × R + 100))을 더함. 컨트롤러 `missionReward(scope, goal)`이 (황금, 붕어빵력)을 돌려줌. **5차 피드백 12:** 온라인 설정 없는 시험용 빌드(`LocalTestPurchaseGateway`)는 명령마다 남은 황금 신청(미션·출석·도감·승급)을 기기 안에서 한 번씩 확정(`lib/workshop_local_rewards.dart`, 서버와 같은 영수증 모양, 계정 `local-test`)하고 저장 뒤 시험용 황금에 더함. 판매는 `noWin`(서버 추첨 흉내 안 냄). 출석 7일째도 시험용 빌드에서 황금. 정식 빌드는 그대로 서버만. 아래 표는 구형 홈 기록.
+**Workshop(현재 경로)**: 일일 미션·주간 도전은 메뉴가 아니라 홈 '오늘' 창에 있다(3차 피드백 H36, 34장). 목표·보상은 `config/development_balance.json` `mission_targets`·`mission_gold_rewards`. 아래 표는 구형 홈 기록.
 
 | id | 내용 | 목표 | 보상 |
 | --- | --- | --- | --- |

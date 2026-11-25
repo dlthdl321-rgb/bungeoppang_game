@@ -41,9 +41,6 @@ class CenterToast {
 void showCenterToast(BuildContext context, String message, {Duration duration = CenterToast.duration}) {
   final overlay = Overlay.maybeOf(context, rootOverlay: true);
   if (overlay == null) return;
-  // 5차 피드백 7: the same notice already up stays as it is (tapping again
-  // used to make it fade out and in, a blink).
-  if (CenterToast._current == message && CenterToast._entry != null && CenterToast._entry!.mounted) return;
   CenterToast.hide();
   late final OverlayEntry entry;
   entry = OverlayEntry(

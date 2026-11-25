@@ -64,19 +64,13 @@ class DevelopmentBalance {
     final missions=result.section('mission_targets'),rewards=result.section('mission_gold_rewards');
     const expectedGoals={'daily':{'taps','production','purchases','auto'},'weekly':{'taps','days','purchases','dailyAll'}};
     if(integer(rewards,'daily_all')<=0) throw const FormatException('미션 보상 누락');
-    // 5차 피드백 13 (2026-11-25): each daily mission pays 붕어빵력
-    // (`mission_buns_rewards`, gold 0); only all four together and the
-    // weekly ones pay gold.
-    final missionBuns=result.section('mission_buns_rewards');
-    if(integer(missionBuns,'seconds')<=0 || decimal(missionBuns,'min_buns')<=BigInt.zero) throw const FormatException('미션 붕어빵력 보상 오류');
     for(final scope in expectedGoals.entries) {
       final goals=_map(missions[scope.key]);
       if(goals.length!=scope.value.length || !goals.keys.toSet().containsAll(scope.value)) throw const FormatException('확정 미션 구성 변경');
       for(final e in goals.entries) {
         final row=_map(e.value);
         if(row['metric']!=e.key || row['label'] is! String || (row['label'] as String).isEmpty || decimal(row,'target')<=BigInt.zero ||
-            row['reward_key'] is! String || (scope.key=='daily' ? integer(rewards,row['reward_key'] as String)!=0 :
-            integer(rewards,row['reward_key'] as String)<=0)) throw const FormatException('미션 목표/보상 오류');
+            row['reward_key'] is! String || integer(rewards,row['reward_key'] as String)<=0) throw const FormatException('미션 목표/보상 오류');
       }
     }
     final avatar=result.section('avatar_catalog');

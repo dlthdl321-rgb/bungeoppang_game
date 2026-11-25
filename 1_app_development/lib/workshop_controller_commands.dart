@@ -13,24 +13,10 @@ extension WorkshopCommands on WorkshopController {
   Future<bool> claimMission(String scope,String goal,{String? expectedPeriod})=>command(() {
     state.missions=state.missions.observe(now(),autoPeak:autoRate);
     if(expectedPeriod!=null && expectedPeriod!=(scope=='daily' ? state.missions.day:state.missions.week)) throw const FormatException('미션 기간이 바뀌었어요. 다시 확인해 주세요.');
-    // 5차 피드백 13: each daily mission pays 붕어빵력 at once; all four
-    // together and the weekly ones ask the server for gold.
-    final buns=missionBuns(config,tapRate:tapRate,autoRate:autoRate);
-    state.missions=state.missions.claim(config,scope,goal,buns:buns);
-    final key=state.missions.claimKey(scope,goal),record=state.missions.claims[key]!;
-    if(claimGold(record)>0) {
-      state.pendingGold['mission:$key']=record;
-    } else {
-      final paid=DevelopmentBalance.decimal(jsonDecode(record) as Map<String,dynamic>,'buns');
-      state.buns+=paid;state.lifetime+=paid;
-    }
+    state.missions=state.missions.claim(config,scope,goal);
+    final key=state.missions.claimKey(scope,goal);
+    state.pendingGold['mission:$key']=state.missions.claims[key]!;
   });
-  /// What [goal] in [scope] pays when claimed now: gold (server-checked), or
-  /// 붕어빵력 at once (each daily mission, 5차 피드백 13). For the '오늘' card.
-  ({int gold, BigInt buns}) missionReward(String scope,String goal) {
-    final gold=missionGold(config,scope,goal);
-    return (gold:gold,buns:gold>0 ? BigInt.zero : missionBuns(config,tapRate:tapRate,autoRate:autoRate));
-  }
   bool ownsAvatar(String id) => state.hasAvatar(config.section('avatar_catalog'),id);
   /// The first run's 여자/남자 사장님 choice (3차 피드백 H11): that one is
   /// this shop's for good and worn now; the other is bought in 꾸미기.

@@ -6,7 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:todays_bungeoppang/development_balance.dart';
 import 'package:todays_bungeoppang/game_controller.dart';
 import 'package:todays_bungeoppang/invite_reward_rules.dart';
-import 'package:todays_bungeoppang/local_test_purchases.dart';
 import 'package:todays_bungeoppang/ranking_config.dart';
 import 'package:todays_bungeoppang/online_ranking.dart';
 import 'package:todays_bungeoppang/online_backend.dart';
@@ -29,19 +28,14 @@ void main() {
 
   Future<(WorkshopController, GameController)> home(WidgetTester tester, Size size,
       {double textScale = 1, bool reduced = true, int level = 1, CountingRepository? repository,
-      FakeAudio? audio, void Function(GameController)? setUp, bool ranking = false, bool testBuild = false}) async {
+      FakeAudio? audio, void Function(GameController)? setUp, bool ranking = false}) async {
     final online = FakeOnlineBackend(products: const {}, prices: const {})..signedIn = true;
     final account = await setUpAccount(tester, size,
-        textScale: textScale, reduced: reduced, repository: repository,
-        // A test build has no online settings (main.dart): no server, local test gold.
-        online: testBuild ? const NoOnlineBackend() : online,
+        textScale: textScale, reduced: reduced, online: online, repository: repository,
         ranking: ranking ? ServerRankingService(online) : const NoRankingService());
     setUp?.call(account);
     final c = WorkshopController(config, MemoryRepository(),
-        now: () => DateTime.utc(2026, 11, 23), monotonicMs: () => 0,
-        purchaseGateway: testBuild
-            ? LocalTestPurchaseGateway(gold: () => account.state.premium.gold, setGold: account.setLocalTestGold)
-            : null);
+        now: () => DateTime.utc(2026, 11, 23), monotonicMs: () => 0);
     await c.initialize();
     await c.command(() {
       c.state.tutorial = 'done';
@@ -196,21 +190,6 @@ void main() {
     expect(find.byKey(const Key('ranking-tab-workshopLifetime')), findsOneWidget);
     expect(find.byKey(const Key('ranking-tab-bestAutoRate')), findsNothing, reason: '예전 클리커 판은 없음');
     expect(find.text('판매왕'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-    await tester.pumpWidget(const SizedBox.shrink());
-  });
-
-  // 5차 피드백 9 (2026-11-25): '시험용 빌드여도 + 누르면 충전 화면이 나와야'.
-  testWidgets('시험용 빌드: 황금 +는 바로 주지 않고 충전 화면을 열며, 시험용 황금은 그 화면 버튼으로만', (tester) async {
-    final (_, account) = await home(tester, const Size(390, 844), level: 3, testBuild: true);
-    final before = account.state.premium.gold;
-    expect(find.byKey(const Key('hud-gold')), findsOneWidget);
-    await tap(tester, 'hud-gold');
-    expect(find.byKey(const Key('gold-charge-sheet')), findsOneWidget);
-    expect(find.text('황금붕어빵력 충전'), findsOneWidget);
-    expect(account.state.premium.gold, before, reason: '+만 눌러서는 황금이 늘지 않음');
-    await tap(tester, 'gold-charge-test-add');
-    expect(account.state.premium.gold, before + 10);
     expect(tester.takeException(), isNull);
     await tester.pumpWidget(const SizedBox.shrink());
   });

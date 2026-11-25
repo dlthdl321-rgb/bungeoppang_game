@@ -401,8 +401,7 @@ class WorkshopMissionSection extends StatelessWidget {
     final c = controller, missions = c.state.missions;
     final claimed = missions.claims.containsKey(missions.claimKey(scope, goal));
     final complete = missions.complete(c.config, scope, goal);
-    // 5차 피드백 13: a daily mission on its own pays 붕어빵력, the rest gold.
-    final reward = c.missionReward(scope, goal);
+    final gold = DevelopmentBalance.integer(c.config.section('mission_gold_rewards'), rewardKey);
     final shown = current > target ? target : current;
     final ratio = target == BigInt.zero ? 1.0 : (shown * BigInt.from(1000) ~/ target).toInt() / 1000;
     final ready = complete && !claimed;
@@ -443,10 +442,7 @@ class WorkshopMissionSection extends StatelessWidget {
         ])),
         const SizedBox(width: 10),
         Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.end, children: [
-          if (reward.gold > 0)
-            CurrencyAmount(Currency.gold, BigInt.from(reward.gold), key: Key('mission-$scope-$goal-gold'))
-          else
-            CurrencyAmount(Currency.buns, reward.buns, key: Key('mission-$scope-$goal-buns')),
+          CurrencyAmount(Currency.gold, BigInt.from(gold), key: Key('mission-$scope-$goal-gold')),
           if (action != null) ...[const SizedBox(height: 4), action],
         ]),
       ]),

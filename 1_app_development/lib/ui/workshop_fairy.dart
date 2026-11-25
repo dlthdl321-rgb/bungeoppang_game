@@ -107,12 +107,6 @@ class FairyMotion {
   /// The tap box is the fish's box, never smaller than [minHit] either way
   /// (a fair target, also while peeking).
   static const minHit = 56.0;
-
-  /// Depth (5차 피드백 8, 2026-11-25 '멀리 가면 작아 보이다가 가까이 오면
-  /// 커 보이게'): at the top of its swim (far up the street) the fish is
-  /// [farScale] of its size, at its place (the bottom, near) full size,
-  /// in between by height.
-  static const farScale = .6;
 }
 
 /// Where the fairy is at one moment: its centre, size scale, which way it
@@ -164,15 +158,6 @@ class FairyPath {
   double get _xMax => math.max(_xMin, stage.width - home.width / 2 - FairyMotion.sideMargin);
   double get _yBottom => home.center.dy;
   double get _yTop => math.min(_yBottom, FairyMotion.topClearance + home.height / 2);
-
-  /// The size scale at height [y]: [FairyMotion.farScale] at the top of the
-  /// swim, 1 at its place.
-  double depthScale(double y) {
-    final top = _yTop, bottom = _yBottom;
-    if (bottom - top < 1) return 1;
-    final t = ((y - top) / (bottom - top)).clamp(0.0, 1.0);
-    return FairyMotion.farScale + (1 - FairyMotion.farScale) * t;
-  }
 
   /// Out of the stage at the left (or right) side, at height [y].
   Offset _outside(bool left, double y) => Offset(
@@ -295,7 +280,7 @@ class FairyPath {
     final face = leg.fromFace + (leg.face - leg.fromFace) * (turn * turn * (3 - 2 * turn));
     final y = pos.dy + FairyMotion.bob * _wave(ms, FairyMotion.bobMs);
     // Nose up while rising.
-    return FairyPose(Offset(pos.dx, y), depthScale(pos.dy), face, -vy.clamp(-1.0, 1.0) * FairyMotion.tilt * face);
+    return FairyPose(Offset(pos.dx, y), 1, face, -vy.clamp(-1.0, 1.0) * FairyMotion.tilt * face);
   }
 
   /// The hiding spot's size scale.
